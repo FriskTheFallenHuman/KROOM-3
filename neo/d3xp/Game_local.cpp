@@ -618,6 +618,11 @@ void idGameLocal::SaveGame( idFile* f, idFile* strings )
 
 	savegame.WriteInt( vacuumAreaNum );
 
+	for( int i = 0; i < 32; i++ )
+	{
+		savegame.WriteInt( hazardAreaNums[i] );
+	}
+
 	savegame.WriteInt( entityDefBits );
 
 	savegame.WriteInt( GetLocalClientNum() );
@@ -1045,6 +1050,18 @@ void idGameLocal::LoadMap( const char* mapName, int randseed )
 	ResetSlowTimeVars();
 
 	vacuumAreaNum = -1;		// if an info_vacuum is spawned, it will set this
+
+	int hazardAreaNumSize = sizeof( hazardAreaNums ) / sizeof( int );
+
+	for( int i = 0; i < hazardAreaNumSize; i++ )
+	{
+		if( hazardAreaNums[i] == -1 )
+		{
+			break;
+		}
+		hazardAreaNums[i] = -1;
+	}
+	idHazardEntity::index = 0;
 
 	if( !editEntities )
 	{
@@ -1563,6 +1580,11 @@ bool idGameLocal::InitFromSaveGame( const char* mapName, idRenderWorld* renderWo
 	savegame.ReadInt( time );
 
 	savegame.ReadInt( vacuumAreaNum );
+
+	for( int i = 0; i < 32; i++ )
+	{
+		savegame.ReadInt( hazardAreaNums[i] );
+	}
 
 	savegame.ReadInt( entityDefBits );
 

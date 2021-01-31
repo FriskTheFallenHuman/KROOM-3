@@ -7326,6 +7326,24 @@ void idPlayer::UpdateAir()
 		return;
 	}
 
+	if( gameLocal.vacuumAreaNum != -1 )
+	{
+		UpdateOxygen();
+	}
+	else if( gameLocal.hazardAreaNums[0] != -1 )
+	{
+		UpdateEnviro();
+	}
+
+}
+
+/*
+==============
+idPlayer::UpdateOxygen
+==============
+*/
+void idPlayer::UpdateOxygen()
+{
 	// see if the player is connected to the info_vacuum
 	bool	newAirless = false;
 
@@ -7340,7 +7358,7 @@ void idPlayer::UpdateAir()
 			// otherwise a rotating player box may poke into an outside area
 			if( num == 1 )
 			{
-				const int*	pvsAreas = GetPVSAreas();
+				const int* pvsAreas = GetPVSAreas();
 				areaNum = pvsAreas[0];
 			}
 			else
@@ -7394,12 +7412,113 @@ void idPlayer::UpdateAir()
 
 	airless = newAirless;
 
-	if( hud && !PowerUpActive( ENVIROSUIT ) )
+	if( hud )
 	{
 		hud->UpdateOxygen( airless, 100 * airMsec / pm_airMsec.GetInteger() );
 	}
 }
 
+/*
+==============
+idPlayer::UpdateEnviro
+==============
+*/
+void idPlayer::UpdateEnviro()
+{
+	// see if the player is connected to the info_hazard
+	bool	inHazard = false;
+	float	envirotime = -1.0f; // GK: Start at -1 so if the player has no envirosuit, then start doing damage
+	int hazardAreaNumSize = sizeof( gameLocal.hazardAreaNums ) / sizeof( int );
+
+	for( int i = 0; i < hazardAreaNumSize; i++ )
+	{
+		if( gameLocal.hazardAreaNums[i] != -1 )
+		{
+			int	num = GetNumPVSAreas();
+			if( num > 0 )
+			{
+				int		areaNum;
+
+				// if the player box spans multiple areas, get the area from the origin point instead,
+				// otherwise a rotating player box may poke into an outside area
+				if( num == 1 )
+				{
+					const int* pvsAreas = GetPVSAreas();
+					areaNum = pvsAreas[0];
+				}
+				else
+				{
+					areaNum = gameRenderWorld->PointInArea( this->GetPhysics()->GetOrigin() );
+				}
+				inHazard = gameRenderWorld->AreasAreConnected( gameLocal.hazardAreaNums[i], areaNum, PS_BLOCK_HAZARD );
+				if( inHazard )
+				{
+					break;
+				}
+			}
+		}
+	}
+
+	// GK: If Envirosuit is active calculate how much time is left
+	if( PowerUpActive( ENVIROSUIT ) )
+	{
+		envirotime = ( float )( inventory.powerupEndTime[ENVIROTIME] - gameLocal.time );
+	}
+
+	// GK: No more enviro time and still in hazard, start damaging the player
+	if( envirotime < 0 && inHazard )
+	{
+		envirotime = 0.0f;
+
+		// check for damage
+		const idDict* damageDef = gameLocal.FindEntityDefDict( "damage_triggerhurt_5", false );
+		int dmgTiming = 1000 * ( ( damageDef ) ? damageDef->GetFloat( "delay", "1.25" ) : 1.25f );
+		if( gameLocal.time > lastAirDamage + dmgTiming )
+		{
+			if( lastAirDamage > 0 )
+			{
+				Damage( NULL, NULL, vec3_origin, "damage_triggerhurt_5", 1.0f, 0 );
+			}
+			lastAirDamage = gameLocal.time;
+		}
+
+	}
+	else if( !inHazard && PowerUpActive( ENVIROSUIT ) )
+	{
+		inventory.powerupEndTime[ENVIROTIME] += ( gameLocal.time - gameLocal.previousTime ); // GK: If the envirosuit is on but not in hazard susspend enviro time
+	}
+
+	// GK: No more enviro time and still in hazard, start damaging the player
+	if( envirotime < 0 && inHazard )
+	{
+		envirotime = 0.0f;
+
+		// check for damage
+		const idDict* damageDef = gameLocal.FindEntityDefDict( "damage_triggerhurt_5", false );
+		int dmgTiming = 1000 * ( ( damageDef ) ? damageDef->GetFloat( "delay", "1.25" ) : 1.25f );
+		if( gameLocal.time > lastAirDamage + dmgTiming )
+		{
+			Damage( NULL, NULL, vec3_origin, "damage_triggerhurt_5", 1.0f, 0 );
+			lastAirDamage = gameLocal.time;
+		}
+
+	}
+	else if( !inHazard && PowerUpActive( ENVIROSUIT ) )
+	{
+		inventory.powerupEndTime[ENVIROTIME] += ( gameLocal.time - gameLocal.previousTime ); //GK: If the envirosuit is on but not in hazard susspend enviro time
+	}
+
+	if( hud )
+	{
+		hud->UpdateOxygen( PowerUpActive( ENVIROSUIT ) && inHazard, 100.0 * ( envirotime / hudPowerupDuration ) );
+	}
+}
+
+/*
+==============
+idPlayer::UpdatePowerupHud
+==============
+*/
 void idPlayer::UpdatePowerupHud()
 {
 	if( health <= 0 )

@@ -620,7 +620,8 @@ public:
 	void					SetCurrentHeartRate();
 	int						GetBaseHeartRate();
 	void					UpdateAir();
-
+	void					UpdateOxygen();
+	void					UpdateEnviro();
 	void					UpdatePowerupHud();
 
 	virtual bool			HandleSingleGuiCommand( idEntity* entityGui, idLexer* src );

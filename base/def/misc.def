@@ -122,6 +122,16 @@ entityDef info_vacuum {
 	"spawnclass"			"idVacuumEntity"
 }
 
+entityDef info_hazard {
+	"editor_color"			"1 1 0"
+	"editor_mins"			"-4 -4 -4"
+	"editor_maxs"			"4 4 4"
+
+	"editor_usage"			"Place one of these in an hazard area in each map for hazard flooding"
+
+	"spawnclass"			"idHazardEntity"
+}
+
 entityDef info_vacuumSeparator {
 	"editor_color"			"1 1 0"
 	"editor_mins"			"-16 -16 -16"

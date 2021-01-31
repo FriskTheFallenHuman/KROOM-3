@@ -354,6 +354,8 @@ public:
 
 	int						vacuumAreaNum;			// -1 if level doesn't have any outside areas
 
+	int						hazardAreaNums[ 32 ];	// -1 if level doesn't have any outside areas
+
 	gameType_t				gameType;
 	idLinkList<idEntity>	snapshotEntities;		// entities from the last snapshot
 	int						realClientTime;			// real client time
