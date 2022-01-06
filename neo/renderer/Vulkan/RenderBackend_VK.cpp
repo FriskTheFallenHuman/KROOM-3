@@ -417,6 +417,11 @@ static void EnumeratePhysicalDevices()
 				idLib::Printf( "Found device[%i] Vendor: AMD\n", i );
 				break;
 
+            // SRS - Added support for Apple GPUs
+            case 0x106B:
+                idLib::Printf( "Found device[%i] Vendor: Apple\n", i );
+                break;
+
 			default:
 				idLib::Printf( "Found device[%i] Vendor: Unknown (0x%x)\n", i, gpu.props.vendorID );
 		}
@@ -660,23 +665,48 @@ static void SelectPhysicalDevice()
 			switch( gpu.props.vendorID )
 			{
 				case 0x8086:
-					idLib::Printf( "Device[%i] : Vendor: Intel \n", i );
+					idLib::Printf( "Device[%i] : Vendor: Intel\n", i );
 					glConfig.vendor = VENDOR_INTEL;
+                    glConfig.vendor_string = "Intel Inc.";
 					break;
 
 				case 0x10DE:
 					idLib::Printf( "Device[%i] : Vendor: NVIDIA\n", i );
 					glConfig.vendor = VENDOR_NVIDIA;
+                    glConfig.vendor_string = "NVIDIA Corporation";
 					break;
 
 				case 0x1002:
 					idLib::Printf( "Device[%i] : Vendor: AMD\n", i );
 					glConfig.vendor = VENDOR_AMD;
+                    glConfig.vendor_string = "ATI Technologies Inc.";
 					break;
+
+                // SRS - Added support for Apple GPUs
+                case 0x106B:
+                    idLib::Printf( "Found device[%i] Vendor: Apple\n", i );
+                    glConfig.vendor = VENDOR_APPLE;
+                    glConfig.vendor_string = "Apple";
+                    break;
 
 				default:
 					idLib::Printf( "Device[%i] : Vendor: Unknown (0x%x)\n", i, gpu.props.vendorID );
 			}
+
+            glConfig.renderer_string = gpu.props.deviceName;
+            
+            static char version_string[24];
+            sprintf( version_string, "Vulkan %i.%i.%i", VK_API_VERSION_MAJOR(gpu.props.apiVersion), VK_API_VERSION_MINOR(gpu.props.apiVersion), VK_API_VERSION_PATCH(gpu.props.apiVersion) );
+            glConfig.version_string = version_string;
+            
+            static idStr extensions_string;
+            extensions_string.Clear();
+            for( int i = 0; i < gpu.extensionProps.Num(); i++ )
+            {
+                extensions_string.Append( gpu.extensionProps[i].extensionName );
+                extensions_string.Append( ' ' );
+            }
+            glConfig.extensions_string = extensions_string.c_str();
 
 			return;
 		}
@@ -1987,7 +2017,14 @@ void idRenderBackend::GL_StartFrame()
 		{
 			vkGetQueryPoolResults( vkcontext.device, queryPool, MRB_GPU_TIME, numQueries,
 								   results.ByteSize(), results.Ptr(), sizeof( uint64 ), VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT );
-
+#if defined(__APPLE__)
+            // SRS - When using Metal-derived timestamps on OSX, update timestampPeriod every frame based on ongoing calibration within MoltenVK
+            // Only need to do this for non-Apple GPUs, for Apple GPUs timestampPeriod = 1 and ongoing calibration within MoltenVK is skipped
+            if( vkcontext.gpu->props.vendorID != 0x106B )
+            {
+                vkGetPhysicalDeviceProperties( vkcontext.gpu->device, &vkcontext.gpu->props );
+            }
+#endif
 			const uint64 gpuStart = results[ assignedIndex[ MRB_GPU_TIME * 2 + 0 ] ];
 			const uint64 gpuEnd = results[ assignedIndex[ MRB_GPU_TIME * 2 + 1 ]  ];
 			const uint64 tick = ( 1000 * 1000 * 1000 ) / vkcontext.gpu->props.limits.timestampPeriod;
@@ -1997,7 +2034,6 @@ void idRenderBackend::GL_StartFrame()
 			{
 				const uint64 gpuStart = results[ assignedIndex[ MRB_FILL_DEPTH_BUFFER * 2 + 0 ] ];
 				const uint64 gpuEnd = results[ assignedIndex[ MRB_FILL_DEPTH_BUFFER * 2 + 1 ]  ];
-				const uint64 tick = ( 1000 * 1000 * 1000 ) / vkcontext.gpu->props.limits.timestampPeriod;
 				pc.gpuDepthMicroSec = ( ( gpuEnd - gpuStart ) * 1000 * 1000 ) / tick;
 			}
 
@@ -2005,7 +2041,6 @@ void idRenderBackend::GL_StartFrame()
 			{
 				const uint64 gpuStart = results[ assignedIndex[ MRB_SSAO_PASS * 2 + 0 ] ];
 				const uint64 gpuEnd = results[ assignedIndex[ MRB_SSAO_PASS * 2 + 1 ]  ];
-				const uint64 tick = ( 1000 * 1000 * 1000 ) / vkcontext.gpu->props.limits.timestampPeriod;
 				pc.gpuScreenSpaceAmbientOcclusionMicroSec = ( ( gpuEnd - gpuStart ) * 1000 * 1000 ) / tick;
 			}
 
@@ -2013,7 +2048,6 @@ void idRenderBackend::GL_StartFrame()
 			{
 				const uint64 gpuStart = results[ assignedIndex[ MRB_AMBIENT_PASS * 2 + 0 ] ];
 				const uint64 gpuEnd = results[ assignedIndex[ MRB_AMBIENT_PASS * 2 + 1 ]  ];
-				const uint64 tick = ( 1000 * 1000 * 1000 ) / vkcontext.gpu->props.limits.timestampPeriod;
 				pc.gpuAmbientPassMicroSec = ( ( gpuEnd - gpuStart ) * 1000 * 1000 ) / tick;
 			}
 
@@ -2021,7 +2055,6 @@ void idRenderBackend::GL_StartFrame()
 			{
 				const uint64 gpuStart = results[ assignedIndex[ MRB_DRAW_INTERACTIONS * 2 + 0 ] ];
 				const uint64 gpuEnd = results[ assignedIndex[ MRB_DRAW_INTERACTIONS * 2 + 1 ]  ];
-				const uint64 tick = ( 1000 * 1000 * 1000 ) / vkcontext.gpu->props.limits.timestampPeriod;
 				pc.gpuInteractionsMicroSec = ( ( gpuEnd - gpuStart ) * 1000 * 1000 ) / tick;
 			}
 
@@ -2029,7 +2062,6 @@ void idRenderBackend::GL_StartFrame()
 			{
 				const uint64 gpuStart = results[ assignedIndex[ MRB_DRAW_SHADER_PASSES * 2 + 0 ] ];
 				const uint64 gpuEnd = results[ assignedIndex[ MRB_DRAW_SHADER_PASSES * 2 + 1 ]  ];
-				const uint64 tick = ( 1000 * 1000 * 1000 ) / vkcontext.gpu->props.limits.timestampPeriod;
 				pc.gpuShaderPassMicroSec = ( ( gpuEnd - gpuStart ) * 1000 * 1000 ) / tick;
 			}
 
@@ -2037,7 +2069,6 @@ void idRenderBackend::GL_StartFrame()
 			{
 				const uint64 gpuStart = results[ assignedIndex[ MRB_POSTPROCESS * 2 + 0 ] ];
 				const uint64 gpuEnd = results[ assignedIndex[ MRB_POSTPROCESS * 2 + 1 ]  ];
-				const uint64 tick = ( 1000 * 1000 * 1000 ) / vkcontext.gpu->props.limits.timestampPeriod;
 				pc.gpuPostProcessingMicroSec = ( ( gpuEnd - gpuStart ) * 1000 * 1000 ) / tick;
 			}
 		}
