@@ -846,16 +846,18 @@ void idCommonLocal::Frame()
 		{
 			soundWorld->Pause();
 			soundSystem->SetPlayingSoundWorld( menuSoundWorld );
+			soundSystem->SetMute( false );
 		}
 		else
 		{
 			soundWorld->UnPause();
 			soundSystem->SetPlayingSoundWorld( soundWorld );
+			soundSystem->SetMute( false );
 		}
-		// SRS - Play silence when dialog waiting or window not in focus
+		// SRS - Mute all sound output when dialog waiting or window not in focus (mutes Doom3, Classic, Cinematic Audio)
 		if( Dialog().IsDialogPausing() || session->IsSystemUIShowing() || com_pause.GetInteger() )
 		{
-			soundSystem->SetPlayingSoundWorld( NULL );
+			soundSystem->SetMute( true );
 		}
 
 		soundSystem->Render();
