@@ -650,6 +650,12 @@ public:
 		BindShader_Builtin( BUILTIN_BINK );
 	}
 
+	// SRS - Added Bink shader without sRGB to linear conversion for testVideo cmd
+	void	BindShader_Bink_sRGB()
+	{
+		BindShader_Builtin( BUILTIN_BINK_SRGB );
+	}
+
 	void	BindShader_BinkGUI()
 	{
 		BindShader_Builtin( BUILTIN_BINK_GUI );
@@ -805,6 +811,7 @@ private:
 		BUILTIN_DEEP_GBUFFER_RADIOSITY_BLUR_AND_OUTPUT,
 		// RB end
 		BUILTIN_BINK,
+		BUILTIN_BINK_SRGB,	// SRS - Added Bink shader without sRGB to linear conversion for testVideo cmd
 		BUILTIN_BINK_GUI,
 		BUILTIN_MOTION_BLUR,
 
