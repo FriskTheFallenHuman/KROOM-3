@@ -243,11 +243,8 @@ void CinematicAudio_OpenAL::ShutdownAudio()
 		}
 	}
 
-	if( alMusicBuffercin )
-	{
-		alDeleteBuffers( NUM_BUFFERS, alMusicBuffercin );
-	}
-	
+	alDeleteBuffers( NUM_BUFFERS, alMusicBuffercin );
+
 	while( !tBuffer.empty() )
 	{
 		uint8_t* tempdata = tBuffer.front();
