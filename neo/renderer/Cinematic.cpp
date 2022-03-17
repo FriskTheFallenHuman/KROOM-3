@@ -415,12 +415,27 @@ void idCinematic::Close()
 }
 
 // RB begin
+/*
+==============
+idCinematic::IsPlaying
+==============
+*/
 bool idCinematic::IsPlaying() const
 {
 	return false;
 }
 // RB end
 
+// SRS begin
+/*
+==============
+CinematicAudio::~CinematicAudio
+==============
+*/
+CinematicAudio::~CinematicAudio()
+{
+}
+// SRS end
 
 //===========================================
 
@@ -567,6 +582,7 @@ idCinematicLocal::~idCinematicLocal()
 
 	//GK: Properly close local XAudio2 or OpenAL voice
 	cinematicAudio->ShutdownAudio();
+	delete cinematicAudio;
 }
 
 #if defined(USE_FFMPEG)
@@ -621,6 +637,7 @@ bool idCinematicLocal::InitFromFFMPEGFile( const char* qpath, bool amilooping )
 	int ret;
 	int ret2;
 	int file_size;
+	char error[64];
 	looping = amilooping;
 	startTime = 0;
 	isRoQ = false;
@@ -690,8 +707,7 @@ bool idCinematicLocal::InitFromFFMPEGFile( const char* qpath, bool amilooping )
 	dec_ctx = avcodec_alloc_context3( dec );
 	if( ( ret = avcodec_parameters_to_context( dec_ctx, fmt_ctx->streams[video_stream_index]->codecpar ) ) < 0 )
 	{
-		char* error = new char[256];
-		av_strerror( ret, error, 256 );
+		av_strerror( ret, error, sizeof( error ) );
 		common->Warning( "idCinematic: Failed to create video codec context from codec parameters with error: %s\n", error );
 	}
 	//dec_ctx->time_base = fmt_ctx->streams[video_stream_index]->time_base;			// SRS - decoder timebase is set by avcodec_open2()
@@ -700,8 +716,7 @@ bool idCinematicLocal::InitFromFFMPEGFile( const char* qpath, bool amilooping )
 	/* init the video decoder */
 	if( ( ret = avcodec_open2( dec_ctx, dec, NULL ) ) < 0 )
 	{
-		char* error = new char[256];
-		av_strerror( ret, error, 256 );
+		av_strerror( ret, error, sizeof( error ) );
 		common->Warning( "idCinematic: Cannot open video decoder for: '%s', %d, with error: %s\n", qpath, looping, error );
 		return false;
 	}
@@ -714,8 +729,7 @@ bool idCinematicLocal::InitFromFFMPEGFile( const char* qpath, bool amilooping )
 		dec_ctx2 = avcodec_alloc_context3( dec2 );
 		if( ( ret2 = avcodec_parameters_to_context( dec_ctx2, fmt_ctx->streams[audio_stream_index]->codecpar ) ) < 0 )
 		{
-			char* error = new char[256];
-			av_strerror( ret2, error, 256 );
+			av_strerror( ret2, error, sizeof( error ) );
 			common->Warning( "idCinematic: Failed to create audio codec context from codec parameters with error: %s\n", error );
 		}
 		//dec_ctx2->time_base = fmt_ctx->streams[audio_stream_index]->time_base;	// SRS - decoder timebase is set by avcodec_open2()
@@ -851,6 +865,11 @@ void idCinematicLocal::FFMPEGReset()
 }
 #endif
 
+/*
+==============
+idCinematicLocal::InitFromBinkDecFile
+==============
+*/
 #ifdef USE_BINKDEC
 bool idCinematicLocal::InitFromBinkDecFile( const char* qpath, bool amilooping )
 {
@@ -927,6 +946,11 @@ bool idCinematicLocal::InitFromBinkDecFile( const char* qpath, bool amilooping )
 	return true;
 }
 
+/*
+==============
+idCinematicLocal::BinkDecReset
+==============
+*/
 void idCinematicLocal::BinkDecReset()
 {
 	framePos = -1;
@@ -1177,6 +1201,11 @@ int idCinematicLocal::AnimationLength()
 }
 
 // RB begin
+/*
+==============
+idCinematicLocal::IsPlaying
+==============
+*/
 bool idCinematicLocal::IsPlaying() const
 {
 	return ( status == FMV_PLAY );
@@ -1351,6 +1380,7 @@ idCinematicLocal::ImageForTimeFFMPEG
 cinData_t idCinematicLocal::ImageForTimeFFMPEG( int thisTime )
 {
 	cinData_t	cinData;
+	char		error[64];
 	uint8_t*	audioBuffer = NULL;
 	int			num_bytes = 0;
 
@@ -1442,8 +1472,7 @@ cinData_t idCinematicLocal::ImageForTimeFFMPEG( int thisTime )
 				// Decode video frame
 				if( ( res = avcodec_send_packet( dec_ctx, &packet ) ) != 0 )
 				{
-					char* error = new char[256];
-					av_strerror( res, error, 256 );
+					av_strerror( res, error, sizeof( error ) );
 					common->Warning( "idCinematic: Failed to send video packet for decoding with error: %s\n", error );
 				}
 				else
@@ -1451,8 +1480,7 @@ cinData_t idCinematicLocal::ImageForTimeFFMPEG( int thisTime )
 					frameFinished = avcodec_receive_frame( dec_ctx, frame );
 					if( frameFinished != 0 && frameFinished != AVERROR( EAGAIN ) )
 					{
-						char* error = new char[256];
-						av_strerror( frameFinished, error, 256 );
+						av_strerror( frameFinished, error, sizeof( error ) );
 						common->Warning( "idCinematic: Failed to receive video frame from decoding with error: %s\n", error );
 					}
 				}
@@ -1463,8 +1491,7 @@ cinData_t idCinematicLocal::ImageForTimeFFMPEG( int thisTime )
 				res = avcodec_send_packet( dec_ctx2, &packet );
 				if( res != 0 && res != AVERROR( EAGAIN ) )
 				{
-					char* error = new char[256];
-					av_strerror( res, error, 256 );
+					av_strerror( res, error, sizeof( error ) );
 					common->Warning( "idCinematic: Failed to send audio packet for decoding with error: %s\n", error );
 				}
 				//SRS - Separate frame finisher for audio since there can be multiple audio frames per video frame (e.g. at bik startup)
@@ -1475,8 +1502,7 @@ cinData_t idCinematicLocal::ImageForTimeFFMPEG( int thisTime )
 					{
 						if( frameFinished1 != AVERROR( EAGAIN ) )
 						{
-							char* error = new char[256];
-							av_strerror( frameFinished1, error, 256 );
+							av_strerror( frameFinished1, error, sizeof( error ) );
 							common->Warning( "idCinematic: Failed to receive audio frame from decoding with error: %s\n", error );
 						}
 					}
@@ -1555,6 +1581,11 @@ cinData_t idCinematicLocal::ImageForTimeFFMPEG( int thisTime )
 #endif
 
 
+/*
+==============
+idCinematicLocal::ImageForTimeBinkDec
+==============
+*/
 #ifdef USE_BINKDEC
 cinData_t idCinematicLocal::ImageForTimeBinkDec( int thisTime )
 {
