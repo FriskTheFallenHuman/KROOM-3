@@ -256,7 +256,7 @@ int		IntForSixtets( byte* in );
 #include "Callback.h"
 #include "ParallelJobList.h"
 #include "Debug.h"
-
 #include "SoftwareCache.h"
+#include "TileMap.h" // RB
 
 #endif	/* !__LIB_H__ */
