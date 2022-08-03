@@ -103,6 +103,7 @@ private:	// map loading
 	int						ContentsForAAS( int contents );
 	idBrushList				AddBrushesForMapBrush( const idMapBrush* mapBrush, const idVec3& origin, const idMat3& axis, int entityNum, int primitiveNum, idBrushList brushList );
 	idBrushList				AddBrushesForMapPatch( const idMapPatch* mapPatch, const idVec3& origin, const idMat3& axis, int entityNum, int primitiveNum, idBrushList brushList );
+	idBrushList				AddBrushesForMapPolygonMesh( const MapPolygonMesh* mapMesh, const idVec3& origin, const idMat3& axis, int entityNum, int primitiveNum, idBrushList brushList );
 	idBrushList				AddBrushesForMapEntity( const idMapEntity* mapEnt, int entityNum, idBrushList brushList );
 	idBrushList				AddBrushesForMapFile( const idMapFile* mapFile, idBrushList brushList );
 	bool					CheckForEntities( const idMapFile* mapFile, idStrList& entityClassNames ) const;
