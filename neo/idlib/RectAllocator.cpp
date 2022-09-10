@@ -30,7 +30,7 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "TileMap.h"
-#include "../libs/binpack2d/binpack2d.h"
+#include "binpack2d/binpack2d.h"
 
 
 /*

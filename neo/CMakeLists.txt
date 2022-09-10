@@ -393,6 +393,26 @@ if(BINKDEC)
 	add_definitions(-DUSE_BINKDEC)
 endif()
 
+# optimize this source file even in debug builds, to make speed (esp. loading times) more bearable
+# used for libs integrated here like stb_* and miniz(ip)
+if(CMAKE_MAJOR_VERSION LESS 3 OR (CMAKE_MAJOR_VERSION EQUAL 3 AND CMAKE_MINOR_VERSION LESS 11))
+	function(always_optimize_sourcefile srcfilename)
+		if(MSVC)
+			set_source_files_properties(${srcfilename} PROPERTIES COMPILE_FLAGS "/Ox")
+		else()
+			set_source_files_properties(${srcfilename} PROPERTIES COMPILE_FLAGS "-O2")
+		endif()
+	endfunction()
+else()
+	function(always_optimize_sourcefile srcfilename)
+		if(MSVC)
+			set_source_files_properties(${srcfilename} PROPERTIES COMPILE_OPTIONS "/Ox")
+		else()
+			set_source_files_properties(${srcfilename} PROPERTIES COMPILE_OPTIONS "-O2")
+		endif()
+	endfunction()
+endif()
+
 ##################### Core ###########################
 
 file(GLOB src_cm cm/*.cpp cm/*.h)
@@ -438,7 +458,15 @@ set_source_files_properties(
 file(GLOB src_sound sound/*.cpp sound/*.c sound/*.h)
 source_group("Sound" FILES ${src_sound})
 
-#always_optimize_sourcefile(sound/stbvorbis_impl.c)
+# Don't use precompiled headers for sound/stbvorbis_impl.c source.
+set_source_files_properties(
+	sound/stbvorbis_impl.c
+	PROPERTIES
+	SKIP_PRECOMPILE_HEADERS ON
+	LANGUAGE C
+)
+
+always_optimize_sourcefile(sound/stbvorbis_impl.c)
 
 file(GLOB src_swf swf/*.cpp swf/*.h)
 source_group("SWF" FILES ${src_swf})

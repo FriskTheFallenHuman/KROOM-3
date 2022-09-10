@@ -32,6 +32,7 @@ If you have questions concerning this license or the applicable additional terms
 #define __SND_LOCAL_H__
 
 #include "WaveFile.h"
+#include "OggFile.h"
 
 // Maximum number of voices we can have allocated
 #define MAX_HARDWARE_VOICES 48

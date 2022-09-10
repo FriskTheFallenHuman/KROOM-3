@@ -34,7 +34,7 @@ extern "C"
 #endif
 
 #if defined(USE_BINKDEC)
-	#include <BinkDecoder.h>
+	#include "libbinkdec/include/BinkDecoder.h"
 #endif
 
 CinematicAudio_XAudio2::CinematicAudio_XAudio2():
