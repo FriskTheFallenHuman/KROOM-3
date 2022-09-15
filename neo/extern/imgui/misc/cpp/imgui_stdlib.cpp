@@ -23,6 +23,20 @@
 #ifndef IMGUI_DISABLE
 #include "imgui_stdlib.h"
 
+
+// RB: replaced std::string with idStr
+#include "sys/sys_defines.h"
+#include "sys/sys_builddefines.h"
+#include "sys/sys_includes.h"
+#include "sys/sys_assert.h"
+#include "sys/sys_types.h"
+#include "sys/sys_intrinsics.h"
+#include "sys/sys_threading.h"
+
+#include "CmdArgs.h"
+#include "containers/Sort.h"
+#include "Str.h"
+
 // Clang warnings with -Weverything
 #if defined(__clang__)
 #pragma clang diagnostic push
@@ -31,7 +45,7 @@
 
 struct InputTextCallback_UserData
 {
-    std::string*            Str;
+    idStr*            Str;
     ImGuiInputTextCallback  ChainCallback;
     void*                   ChainCallbackUserData;
 };
@@ -43,9 +57,9 @@ static int InputTextCallback(ImGuiInputTextCallbackData* data)
     {
         // Resize string callback
         // If for some reason we refuse the new length (BufTextLen) and/or capacity (BufSize) we need to set them back to what we want.
-        std::string* str = user_data->Str;
+        idStr* str = user_data->Str;
         IM_ASSERT(data->Buf == str->c_str());
-        str->resize(data->BufTextLen);
+        str->ReAllocate( data->BufTextLen, true );
         data->Buf = (char*)str->c_str();
     }
     else if (user_data->ChainCallback)
@@ -57,7 +71,7 @@ static int InputTextCallback(ImGuiInputTextCallbackData* data)
     return 0;
 }
 
-bool ImGui::InputText(const char* label, std::string* str, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void* user_data)
+bool ImGui::InputText(const char* label, idStr* str, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void* user_data)
 {
     IM_ASSERT((flags & ImGuiInputTextFlags_CallbackResize) == 0);
     flags |= ImGuiInputTextFlags_CallbackResize;
@@ -66,10 +80,10 @@ bool ImGui::InputText(const char* label, std::string* str, ImGuiInputTextFlags f
     cb_user_data.Str = str;
     cb_user_data.ChainCallback = callback;
     cb_user_data.ChainCallbackUserData = user_data;
-    return InputText(label, (char*)str->c_str(), str->capacity() + 1, flags, InputTextCallback, &cb_user_data);
+    return InputText( label, ( char* )str->c_str(), str->Size() + 1, flags, InputTextCallback, &cb_user_data );
 }
 
-bool ImGui::InputTextMultiline(const char* label, std::string* str, const ImVec2& size, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void* user_data)
+bool ImGui::InputTextMultiline(const char* label, idStr* str, const ImVec2& size, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void* user_data)
 {
     IM_ASSERT((flags & ImGuiInputTextFlags_CallbackResize) == 0);
     flags |= ImGuiInputTextFlags_CallbackResize;
@@ -78,10 +92,10 @@ bool ImGui::InputTextMultiline(const char* label, std::string* str, const ImVec2
     cb_user_data.Str = str;
     cb_user_data.ChainCallback = callback;
     cb_user_data.ChainCallbackUserData = user_data;
-    return InputTextMultiline(label, (char*)str->c_str(), str->capacity() + 1, size, flags, InputTextCallback, &cb_user_data);
+    return InputTextMultiline( label, (char*)str->c_str(), str->Size() + 1, size, flags, InputTextCallback, &cb_user_data );
 }
 
-bool ImGui::InputTextWithHint(const char* label, const char* hint, std::string* str, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void* user_data)
+bool ImGui::InputTextWithHint(const char* label, const char* hint, idStr* str, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void* user_data)
 {
     IM_ASSERT((flags & ImGuiInputTextFlags_CallbackResize) == 0);
     flags |= ImGuiInputTextFlags_CallbackResize;
@@ -90,7 +104,7 @@ bool ImGui::InputTextWithHint(const char* label, const char* hint, std::string* 
     cb_user_data.Str = str;
     cb_user_data.ChainCallback = callback;
     cb_user_data.ChainCallbackUserData = user_data;
-    return InputTextWithHint(label, hint, (char*)str->c_str(), str->capacity() + 1, flags, InputTextCallback, &cb_user_data);
+    return InputTextWithHint( label, hint, ( char* )str->c_str(), str->Size() + 1, flags, InputTextCallback, &cb_user_data );
 }
 
 #if defined(__clang__)

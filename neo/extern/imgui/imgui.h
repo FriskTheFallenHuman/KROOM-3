@@ -4496,4 +4496,7 @@ typedef ImFontAtlasRect ImFontAtlasCustomRect;
 #endif
 #endif
 
+// RB: added idlib idStr integration for string inputs
+#include "misc/cpp/imgui_stdlib.h"
+
 #endif // #ifndef IMGUI_DISABLE

@@ -31,7 +31,7 @@ file(GLOB src_external_mesa mesa/*.h)
 source_group("Mesa" FILES ${src_external_mesa})
 list(APPEND src_external ${src_external_mesa})
 
-file(GLOB src_external_imgui imgui/*.cpp imgui/*.h)
+file(GLOB src_external_imgui imgui/*.cpp imgui/misc/cpp/*.cpp imgui/misc/cpp/*.h imgui/*.h)
 source_group("ImGUI" FILES ${src_external_imgui})
 list(APPEND src_external ${src_external_imgui})
 
