@@ -2089,6 +2089,8 @@ idRenderSystemLocal::Shutdown
 */
 void idRenderSystemLocal::Shutdown()
 {
+	extern idCVar com_smp;
+
 	common->Printf( "idRenderSystem::Shutdown()\n" );
 
 	fonts.DeleteContents();
@@ -2121,7 +2123,11 @@ void idRenderSystemLocal::Shutdown()
 	UnbindBufferObjects();
 
 	// SRS - wait for fence to hit before freeing any resources the GPU may be using, otherwise get Vulkan validation layer errors on shutdown
-	backend.GL_BlockingSwapBuffers();
+	// SRS - skip this step if we are in Doom 3 mode (com_smp = -1) which has already finished and presented
+	if( com_smp.GetInteger() != -1 )
+	{
+		backend.GL_BlockingSwapBuffers();
+	}
 
 	// free the vertex cache, which should have nothing allocated now
 	vertexCache.Shutdown();
