@@ -328,8 +328,8 @@ float idConsoleLocal::DrawFPS( float y )
 	const uint64 rendererEndFrameSyncTime = commonLocal.GetRendererEndFrameSyncMicroseconds();
 
 	// SRS - Total CPU and Frame time calculations depend on whether game is operating in smp mode or not
-	const uint64 totalCPUTime = ( com_smp.GetInteger() > 0 && com_editors == 0 ? std::max( gameThreadTotalTime, rendererBackEndTime ) : gameThreadTotalTime + rendererBackEndTime );
-	const uint64 totalFrameTime = ( com_smp.GetInteger() > 0 && com_editors == 0 ? std::max( gameThreadTotalTime, rendererEndFrameSyncTime ) : gameThreadTotalTime + rendererEndFrameSyncTime ) + rendererStartFrameSyncTime;
+	const uint64 totalCPUTime = ( com_smp.GetInteger() > 0 && com_editors == 0 ? Max( gameThreadTotalTime, rendererBackEndTime ) : gameThreadTotalTime + rendererBackEndTime );
+	const uint64 totalFrameTime = ( com_smp.GetInteger() > 0 && com_editors == 0 ? Max( gameThreadTotalTime, rendererEndFrameSyncTime ) : gameThreadTotalTime + rendererEndFrameSyncTime ) + rendererStartFrameSyncTime;
 
 #if defined( USE_VULKAN )
 	const char* API = "Vulkan";
