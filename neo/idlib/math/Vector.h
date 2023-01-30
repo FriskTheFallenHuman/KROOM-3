@@ -104,6 +104,7 @@ public:
 	const char* 	ToString( int precision = 2 ) const;
 
 	void			Lerp( const idVec2& v1, const idVec2& v2, const float l );
+	void			MulCW( const idVec2& a );									// multiply on vector component-wise
 };
 
 extern idVec2 vec2_origin;
@@ -406,6 +407,10 @@ public:
 	bool			FixDegenerateNormal();	// fix degenerate axial cases
 	bool			FixDenormals();			// change tiny numbers to zero
 
+	idVec3&			MulCW( const idVec3& a );										// multiply on vector component-wise
+	idVec3&			DivCW( const idVec3& a );										// divide on vector component-wise
+	float			Max() const;
+	float			Min() const;
 	idVec3			Cross( const idVec3& a ) const;
 	idVec3& 		Cross( const idVec3& a, const idVec3& b );
 	float			Length() const;
@@ -758,6 +763,34 @@ ID_INLINE idVec3& idVec3::Cross( const idVec3& a, const idVec3& b )
 	z = a.x * b.y - a.y * b.x;
 
 	return *this;
+}
+
+ID_FORCE_INLINE idVec3& idVec3::MulCW( const idVec3& a )
+{
+	x *= a.x;
+	y *= a.y;
+	z *= a.z;
+
+	return *this;
+}
+
+ID_FORCE_INLINE idVec3& idVec3::DivCW( const idVec3& a )
+{
+	x /= a.x;
+	y /= a.y;
+	z /= a.z;
+
+	return *this;
+}
+
+ID_INLINE float idVec3::Max() const
+{
+	return idMath::Fmax( x, idMath::Fmax( y, z ) );
+}
+
+ID_INLINE float idVec3::Min() const
+{
+	return idMath::Fmin( x, idMath::Fmin( y, z ) );
 }
 
 ID_INLINE float idVec3::Length() const

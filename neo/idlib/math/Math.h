@@ -429,6 +429,17 @@ public:
 	static unsigned short		Ftoui16( float f );			// float to unsigned short conversion
 	static byte					Ftob( float f );			// float to byte conversion, the result is clamped to the range [0-255]
 
+	//stgatilov: branchless min and max for floating point values
+	static float				Fmin( float a, float b );
+	static float				Fmin( float a, float b, float c )
+	{
+		return Fmin( a, Fmin( b, c ) );
+	}
+	static float				Fmax( float a, float b );
+
+	static int					Imin( int a, int b );
+	static int					Imax( int a, int b );
+
 	static signed char			ClampChar( int i );
 	static signed short			ClampShort( int i );
 	static int					ClampInt( int min, int max, int value );
@@ -1440,6 +1451,35 @@ ID_INLINE byte idMath::Ftob( float f )
 	return static_cast<byte>( i );
 #endif
 }
+
+ID_FORCE_INLINE float idMath::Fmin( float a, float b )
+{
+#ifdef __SSE__
+	return _mm_cvtss_f32( _mm_min_ss( _mm_set_ss( a ), _mm_set_ss( b ) ) );
+#else
+	return a < b ? a : b;
+#endif
+}
+
+ID_FORCE_INLINE float idMath::Fmax( float a, float b )
+{
+#ifdef __SSE__
+	return _mm_cvtss_f32( _mm_max_ss( _mm_set_ss( a ), _mm_set_ss( b ) ) );
+#else
+	return a > b ? a : b;
+#endif
+}
+
+ID_INLINE int idMath::Imin( int a, int b )
+{
+	return ( a < b ? a : b );
+}
+
+ID_INLINE int idMath::Imax( int a, int b )
+{
+	return ( a > b ? a : b );
+}
+
 
 /*
 ========================
