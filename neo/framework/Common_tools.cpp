@@ -185,8 +185,8 @@ static void Com_EditLights_f( const idCmdArgs& args )
 		com_editors &= ~EDITOR_LIGHT;
 
 		// turn off light debug drawing in the render backend
-		//r_singleLight.SetInteger( -1 );
-		//r_showLights.SetInteger( 0 );
+		cvarSystem->SetCVarInteger( "r_singleLight", -1 );
+		cvarSystem->SetCVarInteger( "r_showLights", 0 );
 	}
 
 	// put player into fly mode
