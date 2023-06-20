@@ -88,7 +88,7 @@ struct netVersion_s
 {
 	netVersion_s()
 	{
-		sprintf( string, "%s.%d", ENGINE_VERSION, BUILD_NUMBER );
+		idStr::snPrintf( string, sizeof( string ), "%s.%d", ENGINE_VERSION, BUILD_NUMBER );
 	}
 	char	string[256];
 } netVersion;
