@@ -80,6 +80,8 @@ public:
 class LightEditor
 {
 private:
+	bool	isShown;
+
 	idStr	title;
 	idStr	entityName;
 	idVec3	entityPos;
@@ -109,17 +111,25 @@ private:
 
 	LightEditor()
 	{
+		isShown = false;
 		Reset();
 	}
 
-	static LightEditor TheLightEditor; // FIXME: maybe at some point we could allow more than one..
-
 public:
-	static void ReInit( const idDict* dict, idEntity* light );
+	static LightEditor&	Instance();
+	static void	ReInit( const idDict* dict, idEntity* light );
 
-	static void Draw();
+	ID_INLINE void	ShowIt( bool show )
+	{
+		isShown = show;
+	}
 
-	static bool showIt;
+	ID_INLINE bool	IsShown() const
+	{
+		return isShown;
+	}
+
+	void	Draw();
 };
 
 } //namespace ImGuiTools

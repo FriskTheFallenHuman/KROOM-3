@@ -72,21 +72,10 @@ bool ReleaseMouseForTools()
 
 void DrawToolWindows()
 {
-#if 0
-	ImGui::Begin( "Show Ingame Editors", &showToolWindows, 0 );
-
-	ImGui::Checkbox( "Light", &LightEditor::showIt );
-	ImGui::SameLine();
-	ImGui::Checkbox( "Particle", &showParticlesEditor );
-#endif // 0
-
-	if( LightEditor::showIt )
+	if( LightEditor::Instance().IsShown() )
 	{
-		LightEditor::Draw();
+		LightEditor::Instance().Draw();
 	}
-
-	// TODO: other editor windows..
-	//ImGui::End();
 }
 
 void LightEditorInit( const idDict* dict, idEntity* ent )
@@ -102,7 +91,7 @@ void LightEditorInit( const idDict* dict, idEntity* ent )
 			  && "LightEditorInit() must only be called with light entities or NULL!" );
 
 
-	LightEditor::showIt = true;
+	LightEditor::Instance().ShowIt( true );
 	impl::SetReleaseToolMouse( true );
 
 	LightEditor::ReInit( dict, ent );
