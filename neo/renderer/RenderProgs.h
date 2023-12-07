@@ -252,8 +252,8 @@ public:
 
 	void	StartFrame();
 
-	void	SetRenderParm( renderParm_t rp, const float* value );
-	void	SetRenderParms( renderParm_t rp, const float* values, int numValues );
+	void	SetRenderParm( renderParm_t rp, const float value[4] );
+	void	SetRenderParms( renderParm_t rp, const float values[], int numValues );
 
 	int		FindShader( const char* name, rpStage_t stage, const char* nameOutSuffix, uint32 features, bool builtin, vertexLayoutType_t vertexLayout = LAYOUT_DRAW_VERT );
 
@@ -697,7 +697,7 @@ public:
 	static const int	MAX_GLSL_USER_PARMS = 8;
 	const char*	GetGLSLParmName( int rp ) const;
 
-	void		SetUniformValue( const renderParm_t rp, const float* value );
+	void		SetUniformValue( const renderParm_t rp, const float value[4] );
 	void		CommitUniforms( uint64 stateBits );
 	void		CachePipeline( uint64 stateBits );
 	int			FindGLSLProgram( const char* name, int vIndex, int fIndex );

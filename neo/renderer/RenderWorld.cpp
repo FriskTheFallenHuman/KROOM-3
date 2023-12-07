@@ -682,6 +682,7 @@ void idRenderWorldLocal::UpdateEnvprobeDef( qhandle_t envprobeHandle, const rend
 
 		probe->world = this;
 		probe->index = envprobeHandle;
+		probe->viewCount = 0;
 	}
 
 	probe->parms = *ep;

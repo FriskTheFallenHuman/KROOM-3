@@ -155,7 +155,7 @@ TestGameAPI
 */
 void TestGameAPI()
 {
-	gameImport_t testImport;
+	gameImport_t testImport = {};
 	gameExport_t testExport;
 
 	testImport.sys						= ::sys;
