@@ -1808,7 +1808,7 @@ void idRenderBackend::Shutdown()
 	// destroy main window
 // SRS - Generalized Vulkan SDL platform
 #if defined(VULKAN_USE_PLATFORM_SDL)
-	VKimp_Shutdown();
+	VKimp_Shutdown( true );
 #else
 	GLimp_Shutdown();
 #endif

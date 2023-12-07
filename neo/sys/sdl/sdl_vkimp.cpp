@@ -459,7 +459,7 @@ bool VKimp_SetScreenParms( glimpParms_t parms )
 VKimp_Shutdown
 ===================
 */
-void VKimp_Shutdown()
+void VKimp_Shutdown( bool shutdownSDL )
 {
 	common->Printf( "Shutting down Vulkan subsystem\n" );
 
@@ -469,7 +469,7 @@ void VKimp_Shutdown()
 		window = nullptr;
 	}
 
-	if( SDL_WasInit( 0 ) )
+	if( shutdownSDL && SDL_WasInit( 0 ) )
 	{
 		SDL_Quit();
 	}

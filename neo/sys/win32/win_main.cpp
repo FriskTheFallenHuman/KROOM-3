@@ -138,7 +138,7 @@ void Sys_Error( const char* error, ... )
 	Sys_ShutdownInput();
 
 #if defined( USE_VULKAN ) && defined( USE_SDL )
-	VKimp_Shutdown();
+	VKimp_Shutdown( true );
 #else
 	GLimp_Shutdown();
 #endif
