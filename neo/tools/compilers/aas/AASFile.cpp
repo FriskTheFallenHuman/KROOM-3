@@ -669,6 +669,17 @@ bool idAASSettings::ValidEntity( const char* classname ) const
 
 		if( !ValidForBounds( bounds ) )
 		{
+			common->Printf( "bounds: (%f %f %f) to (%f %f %f)\n",
+							bounds[0][0], bounds[0][1], bounds[0][2],
+							bounds[1][0], bounds[1][1], bounds[1][2] );
+
+			for( int i = 0; i < 3; i++ )
+			{
+				common->Printf( "boundingBoxes %d: (%f %f %f) to (%f %f %f)\n", i,
+								boundingBoxes[i][0][0], boundingBoxes[i][0][1], boundingBoxes[i][0][2],
+								boundingBoxes[i][1][0], boundingBoxes[i][1][1], boundingBoxes[i][1][2] );
+			}
+
 			common->Error( "%s cannot use %s\n", classname, fileExtension.c_str() );
 		}
 
