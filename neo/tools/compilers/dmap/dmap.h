@@ -527,3 +527,7 @@ void WriteOutputFile();
 
 //=============================================================================
 
+// verbosity
+
+#define DMAP_VERBOSITY( ... ) idLib::PrintfIf(dmapGlobals.verbose, __VA_ARGS__)
+

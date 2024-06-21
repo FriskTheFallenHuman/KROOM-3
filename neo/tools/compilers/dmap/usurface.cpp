@@ -388,7 +388,7 @@ void ClipSidesByTree( uEntity_t* e )
 	side_t*			side;
 	primitive_t*		prim;
 
-	common->Printf( "----- ClipSidesByTree -----\n" );
+	DMAP_VERBOSITY( "----- ClipSidesByTree -----\n" );
 
 	for( prim = e->primitives ; prim ; prim = prim->next )
 	{
@@ -696,7 +696,7 @@ void PutPrimitivesInAreas( uEntity_t* e )
 	primitive_t*		prim;
 	mapTri_t*		tri;
 
-	common->Printf( "----- PutPrimitivesInAreas -----\n" );
+	DMAP_VERBOSITY( "----- PutPrimitivesInAreas -----\n" );
 
 	// allocate space for surface chains for each area
 	e->areas = ( uArea_t* )Mem_Alloc( e->numAreas * sizeof( e->areas[0] ), TAG_TOOLS );
@@ -885,7 +885,7 @@ void FilterMeshesIntoTree( uEntity_t* e )
 	int				r;
 	int				c_unique, c_clusters;
 
-	common->Printf( "----- FilterMeshesIntoTree -----\n" );
+	DMAP_VERBOSITY( "----- FilterMeshesIntoTree -----\n" );
 
 	c_unique = 0;
 	c_clusters = 0;
@@ -908,8 +908,8 @@ void FilterMeshesIntoTree( uEntity_t* e )
 		}
 	}
 
-	common->Printf( "%5i total BSP triangles\n", c_unique );
-	common->Printf( "%5i cluster references\n", c_clusters );
+	DMAP_VERBOSITY( "%5i total BSP triangles\n", c_unique );
+	DMAP_VERBOSITY( "%5i cluster references\n", c_clusters );
 }
 // RB end
 
@@ -1149,7 +1149,7 @@ void Prelight( uEntity_t* e )
 
 	if( dmapGlobals.shadowOptLevel > 0 )
 	{
-		common->Printf( "----- BuildLightShadows -----\n" );
+		DMAP_VERBOSITY( "----- BuildLightShadows -----\n" );
 		start = Sys_Milliseconds();
 
 		// calc bounds for all the groups to speed things up
@@ -1164,13 +1164,13 @@ void Prelight( uEntity_t* e )
 		}
 
 		end = Sys_Milliseconds();
-		common->Printf( "%5.1f seconds for BuildLightShadows\n", ( end - start ) / 1000.0 );
+		DMAP_VERBOSITY( "%5.1f seconds for BuildLightShadows\n", ( end - start ) / 1000.0 );
 	}
 
 
 	if( !dmapGlobals.noLightCarve )
 	{
-		common->Printf( "----- CarveGroupsByLight -----\n" );
+		DMAP_VERBOSITY( "----- CarveGroupsByLight -----\n" );
 		start = Sys_Milliseconds();
 		// now subdivide the optimize groups into additional groups for
 		// each light that illuminates them
@@ -1181,7 +1181,7 @@ void Prelight( uEntity_t* e )
 		}
 
 		end = Sys_Milliseconds();
-		common->Printf( "%5.1f seconds for CarveGroupsByLight\n", ( end - start ) / 1000.0 );
+		DMAP_VERBOSITY( "%5.1f seconds for CarveGroupsByLight\n", ( end - start ) / 1000.0 );
 	}
 
 }

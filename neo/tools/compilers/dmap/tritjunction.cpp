@@ -540,11 +540,8 @@ void	FixAreaGroupsTjunctions( optimizeGroup_t* groupList )
 
 	startCount = CountGroupListTris( groupList );
 
-	if( dmapGlobals.verbose )
-	{
-		common->Printf( "----- FixAreaGroupsTjunctions -----\n" );
-		common->Printf( "%6i triangles in\n", startCount );
-	}
+	DMAP_VERBOSITY( "----- FixAreaGroupsTjunctions -----\n" );
+	DMAP_VERBOSITY( "%6i triangles in\n", startCount );
 
 	HashTriangles( groupList );
 
@@ -567,10 +564,7 @@ void	FixAreaGroupsTjunctions( optimizeGroup_t* groupList )
 	}
 
 	endCount = CountGroupListTris( groupList );
-	if( dmapGlobals.verbose )
-	{
-		common->Printf( "%6i triangles out\n", endCount );
-	}
+	DMAP_VERBOSITY( "%6i triangles out\n", endCount );
 }
 
 
@@ -603,7 +597,7 @@ void	FixGlobalTjunctions( uEntity_t* e )
 	optimizeGroup_t*	group;
 	int			areaNum;
 
-	common->Printf( "----- FixGlobalTjunctions -----\n" );
+	DMAP_VERBOSITY( "----- FixGlobalTjunctions -----\n" );
 
 	// clear the hash tables
 	memset( hashVerts, 0, sizeof( hashVerts ) );

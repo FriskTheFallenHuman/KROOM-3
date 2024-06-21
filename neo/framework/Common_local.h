@@ -377,14 +377,14 @@ public:
 	// some cases, which includes filename and ETA information, note that
 	// the progress function takes 0-1 float, not 0-100, and can be called
 	// very quickly (it will check that enough time has passed when updating)
-	void LoadPacifierBinarizeFilename( const char* filename, const char* reason );
-	void LoadPacifierBinarizeInfo( const char* info );
-	void LoadPacifierBinarizeMiplevel( int level, int maxLevel );
-	void LoadPacifierBinarizeProgress( float progress );
-	void LoadPacifierBinarizeEnd();
+	virtual void				LoadPacifierBinarizeFilename( const char* filename, const char* reason );
+	virtual void				LoadPacifierBinarizeInfo( const char* info );
+	virtual void				LoadPacifierBinarizeMiplevel( int level, int maxLevel );
+	virtual void				LoadPacifierBinarizeProgress( float progress );
+	virtual void				LoadPacifierBinarizeEnd();
 	// for images in particular we can measure more accurately this way (to deal with mipmaps)
-	void LoadPacifierBinarizeProgressTotal( int total );
-	void LoadPacifierBinarizeProgressIncrement( int step );
+	virtual void				LoadPacifierBinarizeProgressTotal( int total );
+	virtual void				LoadPacifierBinarizeProgressIncrement( int step );
 
 	frameTiming_t		frameTiming;
 	frameTiming_t		mainFrameTiming;

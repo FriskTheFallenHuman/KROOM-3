@@ -147,21 +147,19 @@ ProcessModels
 */
 bool ProcessModels()
 {
-	bool	oldVerbose;
-	uEntity_t*	entity;
+	bool oldVerbose = dmapGlobals.verbose;
 
-	oldVerbose = dmapGlobals.verbose;
+	idStrStatic<128> entityInfo;
 
-	for( dmapGlobals.entityNum = 0 ; dmapGlobals.entityNum < dmapGlobals.num_entities ; dmapGlobals.entityNum++ )
+	for( dmapGlobals.entityNum = 0; dmapGlobals.entityNum < dmapGlobals.num_entities; dmapGlobals.entityNum++ )
 	{
-
-		entity = &dmapGlobals.uEntities[dmapGlobals.entityNum];
+		uEntity_t* entity = &dmapGlobals.uEntities[dmapGlobals.entityNum];
 		if( !entity->primitives )
 		{
 			continue;
 		}
 
-		common->Printf( "############### entity %i ###############\n", dmapGlobals.entityNum );
+		//common->Printf( "############### entity %i ###############\n", dmapGlobals.entityNum );
 
 		// if we leaked, stop without any more processing
 		if( !ProcessModel( entity, ( bool )( dmapGlobals.entityNum == 0 ) ) )
