@@ -233,6 +233,19 @@ public:
 	virtual bool				LoadPacifierRunning() = 0;
 	// RB end
 
+	// foresthale 2014-05-30: a special binarize pacifier has to be shown in
+	// some cases, which includes filename and ETA information, note that
+	// the progress function takes 0-1 float, not 0-100, and can be called
+	// very quickly (it will check that enough time has passed when updating)
+	virtual void				LoadPacifierBinarizeFilename( const char* filename, const char* reason ) = 0;
+	virtual void				LoadPacifierBinarizeInfo( const char* info ) = 0;
+	virtual void				LoadPacifierBinarizeMiplevel( int level, int maxLevel ) = 0;
+	virtual void				LoadPacifierBinarizeProgress( float progress ) = 0;
+	virtual void				LoadPacifierBinarizeEnd() = 0;
+	// for images in particular we can measure more accurately this way (to deal with mipmaps)
+	virtual void				LoadPacifierBinarizeProgressTotal( int total ) = 0;
+	virtual void				LoadPacifierBinarizeProgressIncrement( int step ) = 0;
+
 	// Checks for and removes command line "+set var arg" constructs.
 	// If match is NULL, all set commands will be executed, otherwise
 	// only a set with the exact name.
