@@ -823,6 +823,21 @@ void idImageManager::Preload( const idPreloadManifest& manifest, const bool& map
 		int numLoaded = 0;
 
 		//fileSystem->StartPreload( preloadImageFiles );
+
+		// count
+		int numPreload = 0;
+		for( int i = 0; i < manifest.NumResources(); i++ )
+		{
+			const preloadEntry_s& p = manifest.GetPreloadByIndex( i );
+			if( p.resType == PRELOAD_IMAGE && !ExcludePreloadImage( p.resourceName ) )
+			{
+				numPreload++;
+			}
+		}
+
+		common->LoadPacifierInfo( "Preloading images" );
+		common->LoadPacifierProgressTotal( numPreload );
+
 		for( int i = 0; i < manifest.NumResources(); i++ )
 		{
 			const preloadEntry_s& p = manifest.GetPreloadByIndex( i );
@@ -830,6 +845,8 @@ void idImageManager::Preload( const idPreloadManifest& manifest, const bool& map
 			{
 				globalImages->ImageFromFile( p.resourceName, ( textureFilter_t )p.imgData.filter, ( textureRepeat_t )p.imgData.repeat, ( textureUsage_t )p.imgData.usage, ( cubeFiles_t )p.imgData.cubeMap );
 				numLoaded++;
+
+				common->LoadPacifierProgressIncrement( 1 );
 			}
 		}
 		//fileSystem->StopPreload();
@@ -847,16 +864,25 @@ idImageManager::LoadLevelImages
 */
 int idImageManager::LoadLevelImages( bool pacifier )
 {
+	//common->UpdateLevelLoadPacifier();
+
+	if( pacifier )
+	{
+		common->LoadPacifierInfo( "Loading level images" );
+		common->LoadPacifierProgressTotal( images.Num() );
+	}
+
 	int	loadCount = 0;
 	for( int i = 0 ; i < images.Num() ; i++ )
 	{
+		idImage*	image = images[ i ];
+
 		if( pacifier )
 		{
 			common->UpdateLevelLoadPacifier();
-
+			common->LoadPacifierProgressIncrement( 1 );
 		}
 
-		idImage*	image = images[ i ];
 		if( image->generatorFunction )
 		{
 			continue;
