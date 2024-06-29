@@ -908,9 +908,6 @@ void idCommonLocal::LoadPacifierBinarizeProgress( float progress )
 		loadPacifierBinarizeActive = true;
 
 		UpdateLevelLoadPacifier();
-
-		// TODO merge
-		//UpdateLevelLoadPacifier( true, progress );
 	}
 }
 
@@ -939,7 +936,11 @@ void idCommonLocal::LoadPacifierBinarizeProgressTotal( int total )
 void idCommonLocal::LoadPacifierBinarizeProgressIncrement( int step )
 {
 	loadPacifierBinarizeProgressCurrent += step;
-	LoadPacifierBinarizeProgress( ( float )loadPacifierBinarizeProgressCurrent / loadPacifierBinarizeProgressTotal );
+
+	if( loadPacifierBinarizeProgressTotal > 0 )
+	{
+		LoadPacifierBinarizeProgress( ( float )loadPacifierBinarizeProgressCurrent / loadPacifierBinarizeProgressTotal );
+	}
 }
 
 /*
