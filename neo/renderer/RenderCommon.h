@@ -1438,6 +1438,16 @@ void R_LinkDrawSurfToView( drawSurf_t* drawSurf, viewDef_t* viewDef );
 void R_AddModels();
 
 /*
+============================================================
+
+TR_FRONTEND_MASKED_OCCLUSION_CULLING
+
+============================================================
+*/
+
+void R_FillMaskedOcclusionBufferWithModels();
+
+/*
 =============================================================
 
 TR_FRONTEND_DEFORM
