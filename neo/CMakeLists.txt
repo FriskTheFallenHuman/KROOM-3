@@ -339,6 +339,7 @@ endif()
 ##################### Dependencies ###########################
 
 set(sys_thirdparty)
+set(sys_thirdparty_dependencies)
 
 if(UNIX)
 	find_package(PkgConfig REQUIRED)
@@ -394,6 +395,7 @@ if(BINKDEC)
 endif()
 
 add_subdirectory(extern/moc)
+list(APPEND sys_thirdparty_dependencies MaskedOcclusionCulling)
 
 # optimize this source file even in debug builds, to make speed (esp. loading times) more bearable
 # used for libs integrated here like stb_* and miniz(ip)
@@ -823,7 +825,7 @@ else()
 endif()
 
 add_executable(${CMAKE_PROJECT_NAME} MACOSX_BUNDLE WIN32 ${src_core})
-add_dependencies(${CMAKE_PROJECT_NAME} idLib external)
+add_dependencies(${CMAKE_PROJECT_NAME} idLib external ${sys_thirdparty_dependencies})
 
 target_link_libraries(${CMAKE_PROJECT_NAME} idLib external ${sys_libs} ${sys_thirdparty})
 if(USE_PRECOMPILED_HEADERS)
