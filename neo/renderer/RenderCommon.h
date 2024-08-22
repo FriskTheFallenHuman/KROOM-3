@@ -979,8 +979,8 @@ public:
 	idList<calcLightGridPointParms_t*>	lightGridJobs;
 
 	MaskedOcclusionCulling*	maskedOcclusionCulling;
-	idVec4					maskZeroOneCubeVerts[8];
-	unsigned int			maskZeroOneCubeIndexes[36];
+	idVec4					maskedZeroOneCubeVerts[8];
+	unsigned int			maskedZeroOneCubeIndexes[36];
 
 private:
 	bool					bInitialized;
@@ -1200,6 +1200,8 @@ extern idCVar r_showLightGrid;				// show Quake 3 style light grid points
 extern idCVar r_useLightGrid;
 
 extern idCVar r_exposure;
+
+extern idCVar r_useMaskedOcclusionCulling;
 // RB end
 
 /*

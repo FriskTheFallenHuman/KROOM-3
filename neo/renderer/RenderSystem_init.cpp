@@ -310,6 +310,9 @@ idCVar r_showLightGrid( "r_showLightGrid", "0", CVAR_RENDERER | CVAR_INTEGER, "s
 idCVar r_useLightGrid( "r_useLightGrid", "1", CVAR_RENDERER | CVAR_BOOL, "" );
 
 idCVar r_exposure( "r_exposure", "0.5", CVAR_ARCHIVE | CVAR_RENDERER | CVAR_FLOAT, "HDR exposure or LDR brightness [0.0 .. 1.0]", 0.0f, 1.0f );
+
+idCVar r_useMaskedOcclusionCulling( "r_useMaskedOcclusionCulling", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_NEW, "SIMD optimized software culling by Intel" );
+
 // RB end
 
 const char* fileExten[4] = { "tga", "png", "jpg", "exr" };
@@ -1721,6 +1724,13 @@ void idRenderSystemLocal::Clear()
 	envprobeJobList = NULL;
 	envprobeJobs.Clear();
 	lightGridJobs.Clear();
+
+	// destroy occlusion culling object and free hierarchical z-buffer
+	if( maskedOcclusionCulling != NULL )
+	{
+		MaskedOcclusionCulling::Destroy( maskedOcclusionCulling );
+		maskedOcclusionCulling = NULL;
+	}
 }
 
 /*
@@ -1870,9 +1880,7 @@ static srfTriangles_t* R_MakeZeroOneCubeTris()
 // RB begin
 static void R_MakeZeroOneCubeTrisForMaskedOcclusionCulling()
 {
-	//idDrawVert* verts = tri->verts;
-
-	const float low = 0.0f;
+	const float low = -1.0f;
 	const float high = 1.0f;
 
 	idVec3 center( 0.0f );
@@ -1883,7 +1891,7 @@ static void R_MakeZeroOneCubeTrisForMaskedOcclusionCulling()
 	idVec3 mz( 0.0f, 0.0f,  low );
 	idVec3 pz( 0.0f, 0.0f, high );
 
-	idVec4* verts = tr.maskZeroOneCubeVerts;
+	idVec4* verts = tr.maskedZeroOneCubeVerts;
 
 	verts[0].ToVec3() = center + mx + my + mz;
 	verts[1].ToVec3() = center + px + my + mz;
@@ -1903,7 +1911,7 @@ static void R_MakeZeroOneCubeTrisForMaskedOcclusionCulling()
 	verts[6].w = 1;
 	verts[7].w = 1;
 
-	unsigned int* indexes = tr.maskZeroOneCubeIndexes;
+	unsigned int* indexes = tr.maskedZeroOneCubeIndexes;
 
 	// bottom
 	indexes[ 0 * 3 + 0] = 2;
