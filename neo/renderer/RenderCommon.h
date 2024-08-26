@@ -979,6 +979,7 @@ public:
 	idList<calcLightGridPointParms_t*>	lightGridJobs;
 
 	MaskedOcclusionCulling*	maskedOcclusionCulling;
+	idVec4					maskedUnitCubeVerts[8];
 	idVec4					maskedZeroOneCubeVerts[8];
 	unsigned int			maskedZeroOneCubeIndexes[36];
 
