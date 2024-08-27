@@ -32,7 +32,10 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "imgui/imgui.h"
-#include "moc/MaskedOcclusionCulling.h"
+
+#if defined(USE_INTRINSICS_SSE)
+	#include "moc/MaskedOcclusionCulling.h"
+#endif
 
 #include "RenderCommon.h"
 
@@ -1725,12 +1728,14 @@ void idRenderSystemLocal::Clear()
 	envprobeJobs.Clear();
 	lightGridJobs.Clear();
 
+#if defined(USE_INTRINSICS_SSE)
 	// destroy occlusion culling object and free hierarchical z-buffer
 	if( maskedOcclusionCulling != NULL )
 	{
 		MaskedOcclusionCulling::Destroy( maskedOcclusionCulling );
 		maskedOcclusionCulling = NULL;
 	}
+#endif
 }
 
 /*
@@ -1878,6 +1883,7 @@ static srfTriangles_t* R_MakeZeroOneCubeTris()
 }
 
 // RB begin
+#if defined(USE_INTRINSICS_SSE)
 static void R_MakeZeroOneCubeTrisForMaskedOcclusionCulling()
 {
 	const float low = 0.0f;
@@ -1990,6 +1996,7 @@ static void R_MakeUnitCubeTrisForMaskedOcclusionCulling()
 	verts[6].w = 1;
 	verts[7].w = 1;
 }
+#endif
 
 static srfTriangles_t* R_MakeZeroOneSphereTris()
 {
@@ -2220,12 +2227,14 @@ void idRenderSystemLocal::Init()
 
 	bInitialized = true;
 
+#if defined(USE_INTRINSICS_SSE)
 	// Flush denorms to zero to avoid performance issues with small values
 	_mm_setcsr( _mm_getcsr() | 0x8040 );
 
 	maskedOcclusionCulling = MaskedOcclusionCulling::Create();
 	R_MakeZeroOneCubeTrisForMaskedOcclusionCulling();
 	R_MakeUnitCubeTrisForMaskedOcclusionCulling();
+#endif
 
 	// make sure the command buffers are ready to accept the first screen update
 	SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );

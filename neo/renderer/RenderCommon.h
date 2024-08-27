@@ -978,10 +978,12 @@ public:
 	idList<calcEnvprobeParms_t*>		envprobeJobs;
 	idList<calcLightGridPointParms_t*>	lightGridJobs;
 
+#if defined(USE_INTRINSICS_SSE)
 	MaskedOcclusionCulling*	maskedOcclusionCulling;
 	idVec4					maskedUnitCubeVerts[8];
 	idVec4					maskedZeroOneCubeVerts[8];
 	unsigned int			maskedZeroOneCubeIndexes[36];
+#endif
 
 private:
 	bool					bInitialized;

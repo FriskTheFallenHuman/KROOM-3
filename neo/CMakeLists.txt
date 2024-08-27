@@ -394,8 +394,11 @@ if(BINKDEC)
 	add_definitions(-DUSE_BINKDEC)
 endif()
 
-add_subdirectory(extern/moc)
-list(APPEND sys_thirdparty_dependencies MaskedOcclusionCulling)
+if(USE_INTRINSICS_SSE)
+	add_subdirectory(extern/moc)
+	list(APPEND sys_thirdparty_dependencies MaskedOcclusionCulling)
+	list(APPEND sys_thirdparty MaskedOcclusionCulling)
+endif()
 
 # optimize this source file even in debug builds, to make speed (esp. loading times) more bearable
 # used for libs integrated here like stb_* and miniz(ip)

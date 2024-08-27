@@ -398,11 +398,12 @@ float idConsoleLocal::DrawFPS( float y )
 		CREATE_OVERLAY( gdyncallbacks, timeStr, JUSTIFY_RIGHT, colorLtGrey, TEXTSIZE_SMALL, false );
 
 
-		timeStr.Format( "MASKCULL: tests:%-3i culls:%i maskVerts:%i maskTris:%i",
-							commonLocal.stats_frontend.c_mocTests,
-							commonLocal.stats_frontend.c_mocCulls,
-							commonLocal.stats_frontend.c_mocVerts,
-							commonLocal.stats_frontend.c_mocIndexes );
+		timeStr.Format( "MASKCULL: tests:%-3i lightCulls:%i surfCulls:%i verts:%i tris:%i",
+						commonLocal.stats_frontend.c_mocTests,
+						commonLocal.stats_frontend.c_mocCulledLights,
+						commonLocal.stats_frontend.c_mocCulledSurfaces,
+						commonLocal.stats_frontend.c_mocVerts,
+						commonLocal.stats_frontend.c_mocIndexes );
 		CREATE_OVERLAY( gmaskcull, timeStr, JUSTIFY_RIGHT, colorLtGrey, TEXTSIZE_SMALL, false );
 
 		timeStr.Format( "ADDMODEL: callback:%-2i createInteractions:%i createShadowVolumes:%i",
