@@ -832,11 +832,11 @@ void idCommonLocal::RenderSplash( bool photsensitivity )
 	renderSystem->SetColor4( 1, 1, 1, 1 );
 	renderSystem->DrawStretchPic( barWidth, barHeight, SCREEN_WIDTH - barWidth * 2.0f, SCREEN_HEIGHT - barHeight * 2.0f, 0, 0, 1, 1, photsensitivity ? photsensitivityScreen : splashScreen );
 
-	const emptyCommand_t* cmd = renderSystem->SwapCommandBuffers( &time_frontend, &time_backend, &time_shadows, &time_gpu, &stats_backend, &stats_frontend );
+	const emptyCommand_t* cmd = renderSystem->SwapCommandBuffers( &time_frontend, &time_backend, &time_moc, &time_gpu, &stats_backend, &stats_frontend );
 	renderSystem->RenderCommandBuffers( cmd );
 
 	// RB: this is the same as Doom 3 renderSystem->EndFrame()
-	//renderSystem->SwapCommandBuffers_FinishRendering( &time_frontend, &time_backend, &time_shadows, &time_gpu );
+	//renderSystem->SwapCommandBuffers_FinishRendering( &time_frontend, &time_backend, &time_moc, &time_gpu );
 }
 
 /*
@@ -868,8 +868,8 @@ void idCommonLocal::RenderBink( const char* path )
 	bool escapeEvent = false;
 	while( ( Sys_Milliseconds() <= ( material->GetCinematicStartTime() + cinematicLength ) ) && material->CinematicIsPlaying() )
 	{
-		renderSystem->DrawStretchPic( chop, 0, imageWidth, SCREEN_HEIGHT, 0, 0, 1, 1, material );
-		const emptyCommand_t* cmd = renderSystem->SwapCommandBuffers( &time_frontend, &time_backend, &time_shadows, &time_gpu, &stats_backend, &stats_frontend );
+		renderSystem->DrawStretchPic( chop, 0, imageWidth, renderSystem->GetVirtualHeight(), 0, 0, 1, 1, material );
+		const emptyCommand_t* cmd = renderSystem->SwapCommandBuffers( &time_frontend, &time_backend, &time_moc, &time_gpu, &stats_backend, &stats_frontend );
 		renderSystem->RenderCommandBuffers( cmd );
 
 		Sys_GenerateEvents();

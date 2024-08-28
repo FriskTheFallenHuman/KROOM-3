@@ -3,6 +3,7 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2017-2024 Robert Beckebans
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -310,7 +311,7 @@ float idConsoleLocal::DrawFPS( float y )
 	const uint64 gameThreadRenderTime	= commonLocal.mainFrameTiming.finishDrawTime - commonLocal.mainFrameTiming.finishGameTime;
 
 	const uint64 rendererBackEndTime = commonLocal.GetRendererBackEndMicroseconds();
-	const uint64 rendererShadowsTime = commonLocal.GetRendererShadowsMicroseconds();
+	const uint64 rendererMaskedOcclusionCullingTime = commonLocal.GetRendererMaskedOcclusionRasterizationMicroseconds();
 	// SRS - GPU idle time calculation depends on whether game is operating in smp mode or not
 	const uint64 rendererGPUIdleTime = commonLocal.GetRendererIdleMicroseconds() - ( com_smp.GetInteger() > 0 && com_editors == 0 ? 0 : gameThreadTotalTime );
 	const uint64 rendererGPUTime = commonLocal.GetRendererGPUMicroseconds();
@@ -438,8 +439,8 @@ float idConsoleLocal::DrawFPS( float y )
 	timeStr.Format( "RB:      %5llu us   AmbientPass:  %5llu us", rendererBackEndTime, rendererGPUAmbientPassTime );
 	CREATE_OVERLAY( rb, timeStr, JUSTIFY_RIGHT, rendererBackEndTime > maxTime ? colorRed : colorWhite, TEXTSIZE_SMALL, false );
 
-	timeStr.Format( "Shadows: %5llu us   Interactions: %5llu us", rendererShadowsTime, rendererGPUInteractionsTime );
-	CREATE_OVERLAY( rbsv, timeStr, JUSTIFY_RIGHT, rendererShadowsTime > maxTime ? colorRed : colorWhite, TEXTSIZE_SMALL, false );
+	timeStr.Format( "MOC: %5llu us   Interactions: %5llu us", rendererMaskedOcclusionCullingTime, rendererGPUInteractionsTime );
+	CREATE_OVERLAY( rbsv, timeStr, JUSTIFY_RIGHT, rendererMaskedOcclusionCullingTime > maxTime ? colorRed : colorWhite, TEXTSIZE_SMALL, false );
 
 	timeStr.Format( "                    ShaderPass:   %5llu us", rendererGPUShaderPassesTime );
 	CREATE_OVERLAY( rbgpuShader, timeStr, JUSTIFY_RIGHT, rendererGPUShaderPassesTime > maxTime ? colorRed : colorWhite, TEXTSIZE_SMALL, false );
