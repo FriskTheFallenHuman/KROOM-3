@@ -4,7 +4,7 @@
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
 Copyright (C) 2014-2016 Kot in Action Creative Artel
-Copyright (C) 2012-2021 Robert Beckebans
+Copyright (C) 2012-2024 Robert Beckebans
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -46,7 +46,8 @@ idCVar idRenderModelStatic::r_slopNormal( "r_slopNormal", "0.02", CVAR_RENDERER,
 
 static const byte BRM_VERSION_BFG = 108;
 static const byte BRM_VERSION_SHADOWMAPPING = 109;
-static const byte BRM_VERSION = BRM_VERSION_SHADOWMAPPING;
+static const byte BRM_VERSION_MOC_DATA = 110;
+static const byte BRM_VERSION = BRM_VERSION_MOC_DATA;
 
 static const unsigned int BRM_MAGIC_BFG = ( 'B' << 24 ) | ( 'R' << 16 ) | ( 'M' << 8 ) | BRM_VERSION_BFG;
 static const unsigned int BRM_MAGIC = ( 'B' << 24 ) | ( 'R' << 16 ) | ( 'M' << 8 ) | BRM_VERSION;
@@ -522,6 +523,7 @@ bool idRenderModelStatic::LoadBinaryModel( idFile* file, const ID_TIME_T sourceT
 						file->ReadBig( stub );
 					}
 				}
+				// jmarshall end
 			}
 
 			file->ReadBig( temp );
@@ -548,6 +550,29 @@ bool idRenderModelStatic::LoadBinaryModel( idFile* file, const ID_TIME_T sourceT
 				file->ReadBig( stub );
 				file->ReadBig( stub );
 			}
+
+			// RB: read MOC data
+			if( magic == BRM_MAGIC )
+			{
+				tri.mocVerts = NULL;
+				tri.mocIndexes = NULL;
+
+				if( tri.numVerts > 0 )
+				{
+					R_AllocStaticTriSurfMocVerts( &tri, tri.numVerts );
+					for( int j = 0; j < tri.numVerts; j++ )
+					{
+						file->ReadVec4( tri.mocVerts[j] );
+					}
+				}
+
+				if( tri.numIndexes > 0 )
+				{
+					R_AllocStaticTriSurfMocIndexes( &tri, tri.numIndexes );
+					file->ReadBigArray( tri.mocIndexes, tri.numIndexes );
+				}
+			}
+			// RB end
 
 			tri.ambientSurface = NULL;
 			tri.nextDeferredFree = NULL;
@@ -695,6 +720,21 @@ void idRenderModelStatic::WriteBinaryModel( idFile* file, ID_TIME_T* _timeStamp 
 					file->WriteFloat( tri.dominantTris[j].normalizationScale[2] );
 				}
 			}
+
+			// RB: write Masked Occlusion data
+			if( tri.numVerts > 0 && tri.mocVerts != NULL )
+			{
+				for( int j = 0; j < tri.numVerts; j++ )
+				{
+					file->WriteVec4( tri.mocVerts[ j ] );
+				}
+			}
+
+			if( tri.numIndexes > 0 && tri.mocIndexes != NULL )
+			{
+				file->WriteBigArray( tri.mocIndexes, tri.numIndexes );
+			}
+			// RB end
 		}
 	}
 
