@@ -1565,6 +1565,7 @@ void				R_CreateStaticBuffersForTri( srfTriangles_t& tri );
 
 // RB
 idVec3				R_ClosestPointPointTriangle( const idVec3& point, const idVec3& vertex1, const idVec3& vertex2, const idVec3& vertex3 );
+idVec3				R_ClosestPointOnLineSegment( const idVec3& point, const idVec3& lineStart, const idVec3& lineEnd, float& t );
 
 // deformable meshes precalculate as much as possible from a base frame, then generate
 // complete srfTriangles_t from just a new set of vertexes

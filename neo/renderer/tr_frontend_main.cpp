@@ -558,8 +558,12 @@ static void R_FindClosestEnvironmentProbes()
 	float denom = idWinding::TriangleArea( verts[0], verts[1], verts[2] );
 	if( denom == 0 )
 	{
-		// all points at same location
-		bary.Set( 1, 0, 0 );
+		// triangle is line
+		float t;
+
+		R_ClosestPointOnLineSegment( testOrigin, verts[0], verts[1], t );
+
+		bary.Set( 1.0f - t, t, 0 );
 	}
 	else
 	{
