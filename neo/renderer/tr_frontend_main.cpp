@@ -537,6 +537,12 @@ static void R_FindClosestEnvironmentProbes()
 		tr.viewDef->irradianceImage = nearest->irradianceImage;
 	}
 
+	static float oldBarys[3] = {0};
+	static int oldIndexes[3] = {0};
+	static int triIndexes[3];
+	//static int mapIndexes[3];
+	static int timeInterpolateStart = 0;
+
 	// form a triangle of the 3 closest probes
 	idVec3 verts[3];
 	for( int i = 0; i < 3; i++ )
@@ -544,11 +550,23 @@ static void R_FindClosestEnvironmentProbes()
 		verts[i] = viewEnvprobes[0]->parms.origin;
 	}
 
+	bool triChanged = false;
 	for( int i = 0; i < viewEnvprobes.Num() && i < 3; i++ )
 	{
 		RenderEnvprobeLocal* vProbe = viewEnvprobes[i];
 
 		verts[i] = vProbe->parms.origin;
+		triIndexes[i] = vProbe->index;
+
+		if( oldIndexes[i] != triIndexes[i] )
+		{
+			triChanged = true;
+		}
+	}
+
+	if( triChanged )
+	{
+		timeInterpolateStart = Sys_Milliseconds();
 	}
 
 	idVec3 closest = R_ClosestPointPointTriangle( testOrigin, verts[0], verts[1], verts[2] );
@@ -574,6 +592,52 @@ static void R_FindClosestEnvironmentProbes()
 		c = idWinding::TriangleArea( closest, verts[0], verts[1] ) / denom;
 
 		bary.Set( a, b, c );
+
+#if 0
+		if( triChanged )
+		{
+			int time = Sys_Milliseconds();
+
+			float t = -( timeInterpolateStart - time ) / 5000.0f;
+
+			t = idMath::ClampFloat( 0.0f, 1.0f, t );
+
+			// are there at least 2 old matching indices then interpolate from the old barycentrics over time
+			int nInterpolants = 0;
+			int interpolants[2];
+			int mapIndex[2];
+			for( int i = 0; i < 3 && i < viewEnvprobes.Num(); i++ )
+			{
+				for( int j = 0; j < 3 && j < viewEnvprobes.Num(); j++ )
+				{
+					if( oldIndexes[i] == triIndexes[j] )
+					{
+						interpolants[nInterpolants] = i;
+						mapIndex[nInterpolants] = j;
+						nInterpolants++;
+					}
+
+					if( nInterpolants == 2 )
+					{
+						break;
+					}
+				}
+			}
+
+			if( nInterpolants == 2 )
+			{
+				bary[mapIndex[0]] = Lerp( oldBarys[interpolants[0]], bary[mapIndex[0]], t );
+				bary[mapIndex[1]] = Lerp( oldBarys[interpolants[1]], bary[mapIndex[1]], t );
+			}
+
+			//if( time >= ( timeInterpolateStart + 5000 ) )
+			{
+				oldIndexes[0] = triIndexes[0];
+				oldIndexes[1] = triIndexes[1];
+				oldIndexes[2] = triIndexes[2];
+			}
+		}
+#endif
 	}
 
 	tr.viewDef->radianceImageBlends.Set( bary.x, bary.y, bary.z, 0.0f );
