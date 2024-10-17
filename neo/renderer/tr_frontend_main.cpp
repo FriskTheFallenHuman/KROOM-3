@@ -537,17 +537,17 @@ static void R_FindClosestEnvironmentProbes()
 		tr.viewDef->irradianceImage = nearest->irradianceImage;
 	}
 
-	static float oldBarys[3] = {0};
+	static float oldBarycentricWeights[3] = {0};
 	static int oldIndexes[3] = {0};
-	static int triIndexes[3];
-	//static int mapIndexes[3];
 	static int timeInterpolateStart = 0;
 
 	// form a triangle of the 3 closest probes
+	int triIndexes[3];
 	idVec3 verts[3];
 	for( int i = 0; i < 3; i++ )
 	{
 		verts[i] = viewEnvprobes[0]->parms.origin;
+		triIndexes[i] =  viewEnvprobes[0]->index;
 	}
 
 	bool triChanged = false;
@@ -557,31 +557,60 @@ static void R_FindClosestEnvironmentProbes()
 
 		verts[i] = vProbe->parms.origin;
 		triIndexes[i] = vProbe->index;
+	}
 
-		if( oldIndexes[i] != triIndexes[i] )
+	// don't assume tri changed if we just moved inside a triangle and only the indixes switched
+	// because one vertex is closer than before
+
+	static int numInterpolantsDuringChange = 0;
+	int numInterpolants = 0;
+	int interpolants[3];
+	int mapIndexes[3] = {0, 1, 2};
+
+	for( int i = 0; i < 3; i++ )
+	{
+		for( int j = 0; j < 3; j++ )
 		{
-			triChanged = true;
+			if( oldIndexes[i] == triIndexes[j] && numInterpolants < 3 )
+			{
+				interpolants[numInterpolants] = i;
+				mapIndexes[numInterpolants] = j;
+				numInterpolants++;
+			}
 		}
 	}
 
-	if( triChanged )
+	if( numInterpolants != 3 )
 	{
+		triChanged = true;
 		timeInterpolateStart = Sys_Milliseconds();
+		numInterpolantsDuringChange = numInterpolants;
+
+		//idLib::Printf( "env_probe triangle changed!\n" );
 	}
 
+	const int c_interpolationTimeframe = 2000.0f;
+
 	idVec3 closest = R_ClosestPointPointTriangle( testOrigin, verts[0], verts[1], verts[2] );
-	idVec3 bary;
+	idVec3 barycentricWeights;
+
+	int time = Sys_Milliseconds();
 
 	// find the barycentric coordinates
 	float denom = idWinding::TriangleArea( verts[0], verts[1], verts[2] );
 	if( denom == 0 )
 	{
-		// triangle is line
+		// triangle is a line
+		// this can be the case in long corridors
 		float t;
 
 		R_ClosestPointOnLineSegment( testOrigin, verts[0], verts[1], t );
 
-		bary.Set( 1.0f - t, t, 0 );
+		barycentricWeights.Set( 1.0f - t, t, 0 );
+
+		oldBarycentricWeights[0] = barycentricWeights[0];
+		oldBarycentricWeights[1] = barycentricWeights[1];
+		oldBarycentricWeights[2] = barycentricWeights[2];
 	}
 	else
 	{
@@ -591,56 +620,38 @@ static void R_FindClosestEnvironmentProbes()
 		b = idWinding::TriangleArea( closest, verts[2], verts[0] ) / denom;
 		c = idWinding::TriangleArea( closest, verts[0], verts[1] ) / denom;
 
-		bary.Set( a, b, c );
+		barycentricWeights.Set( a, b, c );
 
-#if 0
-		if( triChanged )
+		// are there at least 2 old matching indices then interpolate from the old barycentrics over time
+		if( numInterpolantsDuringChange == 2 && ( time < ( timeInterpolateStart + c_interpolationTimeframe ) ) )
 		{
-			int time = Sys_Milliseconds();
-
-			float t = -( timeInterpolateStart - time ) / 5000.0f;
+			float t = -float( timeInterpolateStart - time ) / c_interpolationTimeframe;
 
 			t = idMath::ClampFloat( 0.0f, 1.0f, t );
 
-			// are there at least 2 old matching indices then interpolate from the old barycentrics over time
-			int nInterpolants = 0;
-			int interpolants[2];
-			int mapIndex[2];
-			for( int i = 0; i < 3 && i < viewEnvprobes.Num(); i++ )
-			{
-				for( int j = 0; j < 3 && j < viewEnvprobes.Num(); j++ )
-				{
-					if( oldIndexes[i] == triIndexes[j] )
-					{
-						interpolants[nInterpolants] = i;
-						mapIndex[nInterpolants] = j;
-						nInterpolants++;
-					}
+			barycentricWeights[mapIndexes[0]] = Lerp( oldBarycentricWeights[interpolants[0]], barycentricWeights[mapIndexes[0]], t );
+			barycentricWeights[mapIndexes[1]] = Lerp( oldBarycentricWeights[interpolants[1]], barycentricWeights[mapIndexes[1]], t );
+			barycentricWeights.z = 1.0f - idMath::Sqrt( idMath::Fabs( barycentricWeights.x * barycentricWeights.x + barycentricWeights.y * barycentricWeights.y ) );
 
-					if( nInterpolants == 2 )
-					{
-						break;
-					}
-				}
-			}
-
-			if( nInterpolants == 2 )
-			{
-				bary[mapIndex[0]] = Lerp( oldBarys[interpolants[0]], bary[mapIndex[0]], t );
-				bary[mapIndex[1]] = Lerp( oldBarys[interpolants[1]], bary[mapIndex[1]], t );
-			}
-
-			//if( time >= ( timeInterpolateStart + 5000 ) )
-			{
-				oldIndexes[0] = triIndexes[0];
-				oldIndexes[1] = triIndexes[1];
-				oldIndexes[2] = triIndexes[2];
-			}
-		}
+#if 0
+			idLib::Printf( "start %i time %i lerp %.2f old[ %.2f %.2f %.2f] new [ %.2f %.2f %.2f]\n", timeInterpolateStart, time, t,
+						   oldBarycentricWeights[0], oldBarycentricWeights[1], oldBarycentricWeights[2],
+						   barycentricWeights.x, barycentricWeights.y, barycentricWeights.z );
 #endif
+		}
+		else
+		{
+			oldBarycentricWeights[0] = barycentricWeights[0];
+			oldBarycentricWeights[1] = barycentricWeights[1];
+			oldBarycentricWeights[2] = barycentricWeights[2];
+		}
 	}
 
-	tr.viewDef->radianceImageBlends.Set( bary.x, bary.y, bary.z, 0.0f );
+	oldIndexes[0] = triIndexes[0];
+	oldIndexes[1] = triIndexes[1];
+	oldIndexes[2] = triIndexes[2];
+
+	tr.viewDef->radianceImageBlends.Set( barycentricWeights.x, barycentricWeights.y, barycentricWeights.z, 0.0f );
 
 	for( int i = 0; i < viewEnvprobes.Num() && i < 3; i++ )
 	{
