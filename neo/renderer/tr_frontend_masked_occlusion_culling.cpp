@@ -508,6 +508,10 @@ void R_FillMaskedOcclusionBufferWithModels( viewDef_t* viewDef )
 	int viewWidth = viewDef->viewport.x2 - viewDef->viewport.x1 + 1;
 	int viewHeight = viewDef->viewport.y2 - viewDef->viewport.y1 + 1;
 
+	// reduce to half res
+	viewWidth = idMath::Floor( viewWidth * 0.5f );
+	viewHeight = idMath::Floor( viewHeight * 0.5f );
+
 	if( viewWidth & 7 )
 	{
 		// must be multiple of 8
