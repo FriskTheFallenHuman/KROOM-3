@@ -1154,6 +1154,10 @@ CONSOLE_COMMAND( bakeLightGrids, "Bake irradiance/vis light grid data", NULL )
 	int oldVsync = r_swapInterval.GetInteger();
 	r_swapInterval.SetInteger( 0 );
 
+	// turn off clear in between views so we keep the progress bar visible
+	int oldClear = r_clear.GetInteger();
+	r_clear.SetInteger( 0 );
+
 	idLib::Printf( "----------------------------------\n" );
 	idLib::Printf( "Processing %i light probes in %i areas for %i bounces\n", totalProcessedProbes, totalProcessedAreas, bounces );
 	//common->Printf( "ETA %5.1f minutes\n\n", ( totalEnd - totalStart ) / ( 1000.0f * 60 ) );
@@ -1446,5 +1450,6 @@ CONSOLE_COMMAND( bakeLightGrids, "Bake irradiance/vis light grid data", NULL )
 
 	// restore vsync setting
 	r_swapInterval.SetInteger( oldVsync );
+	r_clear.SetInteger( oldClear );
 }
 
