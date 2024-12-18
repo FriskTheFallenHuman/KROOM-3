@@ -1734,7 +1734,7 @@ void idRenderBackend::RenderInteractions( const drawSurf_t* surfList, const view
 	// are added single-threaded, and there is only a negligable amount
 	// of benefit to trying to sort by materials.
 	//---------------------------------
-	static const int MAX_INTERACTIONS_PER_LIGHT = 1024;
+	static const int MAX_INTERACTIONS_PER_LIGHT = 2048; // 1024 in BFG
 	static const int MAX_COMPLEX_INTERACTIONS_PER_LIGHT = 256;
 	idStaticList< const drawSurf_t*, MAX_INTERACTIONS_PER_LIGHT > allSurfaces;
 	idStaticList< const drawSurf_t*, MAX_COMPLEX_INTERACTIONS_PER_LIGHT > complexSurfaces;
