@@ -1308,17 +1308,17 @@ sysEvent_t Sys_GetEvent()
 			{
 				static int controllerButtonRemap[][2] =
 				{
-					{K_JOY1, J_ACTION1},
-					{K_JOY2, J_ACTION2},
-					{K_JOY3, J_ACTION3},
-					{K_JOY4, J_ACTION4},
-					{K_JOY9, J_ACTION9},
-					{K_JOY11, J_ACTION11},
-					{K_JOY10, J_ACTION10},
-					{K_JOY7, J_ACTION7},
-					{K_JOY8, J_ACTION8},
-					{K_JOY5, J_ACTION5},
-					{K_JOY6, J_ACTION6},
+					{K_JOY1, J_ACTION1},	// A
+					{K_JOY2, J_ACTION2},	// B
+					{K_JOY3, J_ACTION3},	// X
+					{K_JOY4, J_ACTION4},	// Y
+					{K_JOY10, J_ACTION10},	// Back / View
+					{K_JOY11, J_ACTION11},	// Guide / Xbox button (shouldn't be used)
+					{K_JOY9, J_ACTION9},	// Start / Menu
+					{K_JOY7, J_ACTION7},	// Left Stick Down
+					{K_JOY8, J_ACTION8},	// Right Stick Down
+					{K_JOY5, J_ACTION5},	// LB / L1
+					{K_JOY6, J_ACTION6},	// RB / R1
 					{K_JOY_DPAD_UP, J_DPAD_UP},
 					{K_JOY_DPAD_DOWN, J_DPAD_DOWN},
 					{K_JOY_DPAD_LEFT, J_DPAD_LEFT},
