@@ -178,7 +178,6 @@ idRenderModel* R_EntityDefDynamicModel( idRenderEntityLocal* def )
 	// if we don't have a snapshot of the dynamic model, generate it now
 	if( def->dynamicModel == NULL )
 	{
-
 		SCOPED_PROFILE_EVENT( "InstantiateDynamicModel" );
 
 		// instantiate the snapshot of the dynamic model, possibly reusing memory from the cached snapshot
@@ -710,16 +709,23 @@ void R_AddSingleModel( viewEntity_t* vEntity )
 				tr.pc.c_mocIndexes += 36;
 				tr.pc.c_mocVerts += 8;
 
-				const float size = 16.0f;
-				idBounds debugBounds( idVec3( -size ), idVec3( size ) );
-				//debugBounds = vEntity->entityDef->localReferenceBounds;
-				debugBounds = tri->bounds;
+				idBounds surfaceBounds;
+#if 1
+				if( gpuSkinned )
+				{
+					surfaceBounds = vEntity->entityDef->localReferenceBounds;
+				}
+				else
+#endif
+				{
+					surfaceBounds = tri->bounds;
+				}
 
 				idRenderMatrix modelRenderMatrix;
 				idRenderMatrix::CreateFromOriginAxis( renderEntity->origin, renderEntity->axis, modelRenderMatrix );
 
 				idRenderMatrix inverseBaseModelProject;
-				idRenderMatrix::OffsetScaleForBounds( modelRenderMatrix, debugBounds, inverseBaseModelProject );
+				idRenderMatrix::OffsetScaleForBounds( modelRenderMatrix, surfaceBounds, inverseBaseModelProject );
 
 				idRenderMatrix invProjectMVPMatrix;
 				idRenderMatrix::Multiply( viewDef->worldSpace.mvp, inverseBaseModelProject, invProjectMVPMatrix );
