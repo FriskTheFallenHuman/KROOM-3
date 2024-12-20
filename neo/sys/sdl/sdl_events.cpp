@@ -1296,13 +1296,48 @@ sysEvent_t Sys_GetEvent()
 				continue;
 
 			case SDL_CONTROLLERAXISMOTION:
+			{
+				extern idCVar joy_deadZone;
+				static int controllerAxisRemap[][2] =
+				{
+					{K_JOY_STICK1_LEFT, K_JOY_STICK1_RIGHT},	// Left Stick X Axis: SDL_CONTROLLER_AXIS_LEFTX
+					{K_JOY_STICK1_UP, K_JOY_STICK1_DOWN},		// Left Stick Y Axis: SDL_CONTROLLER_AXIS_LEFTY
+					{K_JOY_STICK2_LEFT, K_JOY_STICK2_RIGHT},	// Right Stick X Axis: SDL_CONTROLLER_AXIS_RIGHTX
+					{K_JOY_STICK2_UP, K_JOY_STICK2_DOWN},		// Right Stick Y Axis: SDL_CONTROLLER_AXIS_RIGHTY
+					{K_NONE, K_NONE},							// Null padding: SDL_CONTROLLER_AXIS_TRIGGERLEFT
+					{K_NONE, K_NONE},							// Null padding: SDL_CONTROLLER_AXIS_TRIGGERRIGHT
+				};
+
 				res.evType = SE_JOYSTICK;
 				res.evValue = J_AXIS_LEFT_X + ( ev.caxis.axis - SDL_CONTROLLER_AXIS_LEFTX );
 				res.evValue2 = ev.caxis.value;
 
 				joystick_polls.Append( joystick_poll_t( res.evValue, res.evValue2 ) );
-				return res;
 
+				// SRS - Synthesize joystick axis key presses to enable navigation in game menus and the PDA
+				if( ev.caxis.axis <= SDL_CONTROLLER_AXIS_RIGHTY )
+				{
+					int axisIndex = ( ev.caxis.axis - SDL_CONTROLLER_AXIS_LEFTX );
+					bool stickNeg = static_cast<float>( ev.caxis.value ) / 32767.0f < - joy_deadZone.GetFloat();
+					bool stickPos = static_cast<float>( ev.caxis.value ) / 32767.0f >   joy_deadZone.GetFloat();
+
+					if( buttonStates[controllerAxisRemap[axisIndex][0]] != stickNeg )
+					{
+						buttonStates[controllerAxisRemap[axisIndex][0]] = stickNeg;
+						res.evType = SE_KEY;
+						res.evValue = controllerAxisRemap[axisIndex][0];
+						res.evValue2 = stickNeg ? 1 : 0;
+					}
+					if( buttonStates[controllerAxisRemap[axisIndex][1]] != stickPos )
+					{
+						buttonStates[controllerAxisRemap[axisIndex][1]] = stickPos;
+						res.evType = SE_KEY;
+						res.evValue = controllerAxisRemap[axisIndex][1];
+						res.evValue2 = stickPos ? 1 : 0;
+					}
+				}
+				return res;
+			}
 			case SDL_CONTROLLERBUTTONDOWN:
 			case SDL_CONTROLLERBUTTONUP:
 			{
