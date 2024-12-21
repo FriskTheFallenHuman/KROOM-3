@@ -1330,7 +1330,7 @@ sysEvent_t Sys_GetEvent()
 						res.evValue = controllerAxisRemap[axisIndex][0];
 						res.evValue2 = stickNeg ? 1 : 0;
 					}
-					if( buttonStates[controllerAxisRemap[axisIndex][1]] != stickPos )
+					else if( buttonStates[controllerAxisRemap[axisIndex][1]] != stickPos )
 					{
 						buttonStates[controllerAxisRemap[axisIndex][1]] = stickPos;
 						res.evType = SE_KEY;
