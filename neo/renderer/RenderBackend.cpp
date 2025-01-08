@@ -1309,7 +1309,7 @@ void idRenderBackend::DrawSingleInteraction( drawInteraction_t* din, bool useFas
 	const textureUsage_t specUsage = din->specularImage->GetUsage();
 
 	// RB begin
-	if( useIBL && currentSpace->useLightGrid && r_useLightGrid.GetBool() )
+	if( useIBL && din->surf->area != NULL && r_useLightGrid.GetBool() )
 	{
 		idVec4 probeMins, probeMaxs, probeCenter;
 
@@ -1331,9 +1331,11 @@ void idRenderBackend::DrawSingleInteraction( drawInteraction_t* din, bool useFas
 		SetVertexParm( RENDERPARM_WOBBLESKY_Z, probeCenter.ToFloatPtr() );
 
 		// use rpGlobalLightOrigin for lightGrid center
-		idVec4 lightGridOrigin( currentSpace->lightGridOrigin.x, currentSpace->lightGridOrigin.y, currentSpace->lightGridOrigin.z, 1.0f );
-		idVec4 lightGridSize( currentSpace->lightGridSize.x, currentSpace->lightGridSize.y, currentSpace->lightGridSize.z, 1.0f );
-		idVec4 lightGridBounds( currentSpace->lightGridBounds[0], currentSpace->lightGridBounds[1], currentSpace->lightGridBounds[2], 1.0f );
+		const LightGrid& lightGrid = din->surf->area->lightGrid;
+
+		idVec4 lightGridOrigin( lightGrid.lightGridOrigin.x, lightGrid.lightGridOrigin.y, lightGrid.lightGridOrigin.z, 1.0f );
+		idVec4 lightGridSize( lightGrid.lightGridSize.x, lightGrid.lightGridSize.y, lightGrid.lightGridSize.z, 1.0f );
+		idVec4 lightGridBounds( lightGrid.lightGridBounds[0], lightGrid.lightGridBounds[1], lightGrid.lightGridBounds[2], 1.0f );
 
 		renderProgManager.SetUniformValue( RENDERPARM_GLOBALLIGHTORIGIN, lightGridOrigin.ToFloatPtr() );
 		renderProgManager.SetUniformValue( RENDERPARM_JITTERTEXSCALE, lightGridSize.ToFloatPtr() );
@@ -1341,10 +1343,10 @@ void idRenderBackend::DrawSingleInteraction( drawInteraction_t* din, bool useFas
 
 		// individual probe sizes on the atlas image
 		idVec4 probeSize;
-		probeSize[0] = currentSpace->lightGridAtlasSingleProbeSize - currentSpace->lightGridAtlasBorderSize;
-		probeSize[1] = currentSpace->lightGridAtlasSingleProbeSize;
-		probeSize[2] = currentSpace->lightGridAtlasBorderSize;
-		probeSize[3] = float( currentSpace->lightGridAtlasSingleProbeSize - currentSpace->lightGridAtlasBorderSize ) / currentSpace->lightGridAtlasSingleProbeSize;
+		probeSize[0] = lightGrid.imageSingleProbeSize - lightGrid.imageBorderSize;
+		probeSize[1] = lightGrid.imageSingleProbeSize;
+		probeSize[2] = lightGrid.imageBorderSize;
+		probeSize[3] = float( lightGrid.imageSingleProbeSize - lightGrid.imageBorderSize ) / lightGrid.imageSingleProbeSize;
 		renderProgManager.SetUniformValue( RENDERPARM_SCREENCORRECTIONFACTOR, probeSize.ToFloatPtr() ); // rpScreenCorrectionFactor
 
 		// specular cubemap blend weights
@@ -1392,9 +1394,9 @@ void idRenderBackend::DrawSingleInteraction( drawInteraction_t* din, bool useFas
 #endif
 
 		GL_SelectTexture( INTERACTION_TEXUNIT_AMBIENT_CUBE1 );
-		currentSpace->lightGridAtlasImage->Bind();
+		lightGrid.GetIrradianceImage()->Bind();
 
-		idVec2i res = currentSpace->lightGridAtlasImage->GetUploadResolution();
+		idVec2i res = lightGrid.GetIrradianceImage()->GetUploadResolution();
 		idVec4 textureSize( res.x, res.y, 1.0f / res.x, 1.0f / res.y );
 
 		renderProgManager.SetUniformValue( RENDERPARM_CASCADEDISTANCES, textureSize.ToFloatPtr() );
