@@ -504,12 +504,15 @@ void	R_WriteEXR( const char* filename, const void* data, int channelsPerPixel, i
 
 class idImageManager
 {
+	friend class idImage;
+
 public:
 
 	idImageManager()
 	{
 		insideLevelLoad = false;
 		preloadingMapImages = false;
+		cacheImages = false;
 	}
 
 	void				Init();
@@ -623,9 +626,14 @@ public:
 
 	idList<idImage*, TAG_IDLIB_LIST_IMAGE>	images;
 	idHashIndex			imageHash;
+	
+	static void			CacheGlobalIlluminationData_f( const idCmdArgs& args ); // RB
+	static void			R_ListImages_f( const idCmdArgs& args );
 
 	bool				insideLevelLoad;			// don't actually load images now
 	bool				preloadingMapImages;		// unless this is set
+	bool									cacheImages;				// similar to preload but surpresses prints
+
 };
 
 extern idImageManager*	globalImages;		// pointer to global list for the rest of the system

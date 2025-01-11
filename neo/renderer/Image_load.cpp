@@ -479,7 +479,11 @@ void idImage::ActuallyLoadImage( bool fromBackEnd )
 			DeriveOpts();
 
 			// foresthale 2014-05-30: give a nice progress display when binarizing
-			commonLocal.LoadPacifierBinarizeFilename( generatedName.c_str(), binarizeReason.c_str() );
+			if( !globalImages->cacheImages )
+			{
+				commonLocal.LoadPacifierBinarizeFilename( generatedName.c_str(), binarizeReason.c_str() );
+			}
+
 			if( opts.numLevels > 1 )
 			{
 				commonLocal.LoadPacifierBinarizeProgressTotal( opts.width * opts.width * 6 * 4 / 3 );
@@ -552,14 +556,21 @@ void idImage::ActuallyLoadImage( bool fromBackEnd )
 			// RB: convert to compressed DXT or whatever choosen target format
 			if( cubeFiles == CF_2D_PACKED_MIPCHAIN )
 			{
-				commonLocal.LoadPacifierBinarizeFilename( generatedName.c_str(), binarizeReason.c_str() );
+				if( !globalImages->cacheImages )
+				{
+					commonLocal.LoadPacifierBinarizeFilename( generatedName.c_str(), binarizeReason.c_str() );
+				}
 				commonLocal.LoadPacifierBinarizeProgressTotal( width * opts.height );
 
 				im.Load2DAtlasMipchainFromMemory( width, opts.height, pic, opts.numLevels, opts.format, opts.colorFormat );
 			}
 			else
 			{
-				commonLocal.LoadPacifierBinarizeFilename( generatedName.c_str(), binarizeReason.c_str() );
+				if( !globalImages->cacheImages )
+				{
+					commonLocal.LoadPacifierBinarizeFilename( generatedName.c_str(), binarizeReason.c_str() );
+				}
+
 				if( opts.numLevels > 1 )
 				{
 					commonLocal.LoadPacifierBinarizeProgressTotal( opts.width * opts.height * 4 / 3 );
