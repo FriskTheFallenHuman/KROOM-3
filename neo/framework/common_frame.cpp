@@ -492,6 +492,7 @@ void idCommonLocal::ProcessGameReturn( const gameReturn_t& ret )
 extern idCVar com_forceGenericSIMD;
 
 extern idCVar com_pause;
+extern idCVar com_activeApp;
 
 /*
 =================
@@ -605,6 +606,21 @@ void idCommonLocal::Frame()
 			renderSystem->SwapCommandBuffers_FinishRendering( &time_frontend, &time_backend, &time_moc, &time_gpu, &stats_backend, &stats_frontend );
 		}
 		frameTiming.finishSyncTime = Sys_Microseconds();
+
+		// RB: slow down engine in background so it does not eat up so many resources along other 3D tools
+		if( !com_activeApp.GetBool() /* and not VR */ )
+		{
+			const float backgroundEngineHz = 15.0f;
+			com_engineHz_denominator = 100LL * backgroundEngineHz;
+			com_engineHz_latched = backgroundEngineHz;
+		}
+		else
+		{
+			// allow com_engineHz to be changed between map loads
+			com_engineHz_denominator = 100LL * com_engineHz.GetFloat();
+			com_engineHz_latched = com_engineHz.GetFloat();
+		}
+		// RB end
 
 		//--------------------------------------------
 		// Determine how many game tics we are going to run,
