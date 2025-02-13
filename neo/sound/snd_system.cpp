@@ -155,8 +155,9 @@ void idSoundSystemLocal::Init()
 	if( !s_noSound.GetBool() )
 	{
 		hardware.Init();
-		InitStreamBuffers();
 	}
+
+	InitStreamBuffers();
 
 	cmdSystem->AddCommand( "testSound", TestSound_f, 0, "tests a sound", idCmdSystem::ArgCompletion_SoundName );
 	cmdSystem->AddCommand( "s_restart", RestartSound_f, 0, "restart sound system" );
@@ -327,12 +328,6 @@ idSoundSystemLocal::Render
 */
 void idSoundSystemLocal::Render()
 {
-
-	if( s_noSound.GetBool() )
-	{
-		return;
-	}
-
 	if( needsRestart )
 	{
 		needsRestart = false;
@@ -607,12 +602,12 @@ void idSoundSystemLocal::Preload( idPreloadManifest& manifest )
 		const preloadEntry_s& p = manifest.GetPreloadByIndex( ps.idx );
 		filename = p.resourceName;
 		filename.Replace( "generated/", "" );
-		numLoaded++;
 		idSoundSample* sample = LoadSample( filename );
 		if( sample != NULL && !sample->IsLoaded() )
 		{
 			sample->LoadResource();
 			sample->SetLevelLoadReferenced();
+			numLoaded++;
 		}
 	}
 

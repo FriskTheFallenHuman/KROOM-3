@@ -332,12 +332,6 @@ idSoundWorldLocal::Update
 */
 void idSoundWorldLocal::Update()
 {
-
-	if( s_noSound.GetBool() )
-	{
-		return;
-	}
-
 	// ------------------
 	// Update emitters
 	//
