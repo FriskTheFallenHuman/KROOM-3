@@ -37,7 +37,6 @@ extern "C"
 	#include <BinkDecoder.h>
 #endif
 
-extern idCVar s_noSound;
 extern idCVar s_volume_dB;
 
 CinematicAudio_OpenAL::CinematicAudio_OpenAL():
@@ -51,7 +50,7 @@ CinematicAudio_OpenAL::CinematicAudio_OpenAL():
 	alSource3i( alMusicSourceVoicecin, AL_POSITION, 0, 0, 0 );
 	alSourcei( alMusicSourceVoicecin, AL_SOURCE_RELATIVE, AL_TRUE );
 	alSourcei( alMusicSourceVoicecin, AL_ROLLOFF_FACTOR, 0 );
-	alListenerf( AL_GAIN, s_noSound.GetBool() ? 0.0f : DBtoLinear( s_volume_dB.GetFloat() ) ); //GK: Set the sound volume the same that is used in DOOM 3
+	alListenerf( AL_GAIN, DBtoLinear( s_volume_dB.GetFloat() ) ); //GK: Set the sound volume the same that is used in DOOM 3
 	alGenBuffers( NUM_BUFFERS, &alMusicBuffercin[0] );
 }
 
