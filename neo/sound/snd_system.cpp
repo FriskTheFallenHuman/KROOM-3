@@ -341,7 +341,10 @@ void idSoundSystemLocal::Render()
 		currentSoundWorld->Update();
 	}
 
-	hardware.Update();
+	if( !s_noSound.GetBool() )
+	{
+		hardware.Update();
+	}
 
 	// The sound system doesn't use game time or anything like that because the sounds are decoded in real time.
 	soundTime = Sys_Milliseconds();
@@ -375,7 +378,11 @@ void idSoundSystemLocal::StopAllSounds()
 			sw->StopAllSounds();
 		}
 	}
-	hardware.Update();
+
+	if( !s_noSound.GetBool() )
+	{
+		hardware.Update();
+	}
 }
 
 /*

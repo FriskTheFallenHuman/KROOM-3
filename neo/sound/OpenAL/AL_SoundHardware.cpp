@@ -379,9 +379,7 @@ idSoundHardware_OpenAL::Update
 */
 void idSoundHardware_OpenAL::Update()
 {
-	extern idCVar s_noSound;
-
-	if( openalDevice == NULL && !s_noSound.GetBool() )
+	if( openalDevice == NULL )
 	{
 		int nowTime = Sys_Milliseconds();
 		if( lastResetTime + 1000 < nowTime )
