@@ -609,12 +609,12 @@ void idSoundSystemLocal::Preload( idPreloadManifest& manifest )
 		const preloadEntry_s& p = manifest.GetPreloadByIndex( ps.idx );
 		filename = p.resourceName;
 		filename.Replace( "generated/", "" );
+		numLoaded++;
 		idSoundSample* sample = LoadSample( filename );
 		if( sample != NULL && !sample->IsLoaded() )
 		{
 			sample->LoadResource();
 			sample->SetLevelLoadReferenced();
-			numLoaded++;
 		}
 	}
 
