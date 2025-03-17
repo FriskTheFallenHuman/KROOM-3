@@ -348,5 +348,6 @@ idSound::ShowEditingDialog
 */
 void idSound::ShowEditingDialog()
 {
+	common->InitTool( EDITOR_SOUND, &spawnArgs );
 }
 

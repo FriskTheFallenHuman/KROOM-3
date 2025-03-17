@@ -1140,6 +1140,11 @@ void idUsercmdGenLocal::MakeCurrent()
 		// keyboard angle adjustment
 		AdjustAngles();
 
+		// Recenter the player view
+		if ( ButtonState( UB_CENTER_VIEW ) ) {
+			viewangles[PITCH] = 0;
+		}
+
 		// set button bits
 		CmdButtons();
 

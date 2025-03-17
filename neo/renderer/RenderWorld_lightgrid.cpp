@@ -197,7 +197,7 @@ void LightGrid::ProbeIndexToGridCoord( const int probeIndex, int gridCoord[3] )
 
 idVec3 LightGrid::GetGridCoordDebugColor( int gridCoord[3] )
 {
-	idVec3 color( colorGold.x, colorGold.y, colorGold.z );
+	idVec3 color( colorOrange.x, colorOrange.y, colorOrange.z );
 
 #if 0
 	color.x = float( gridCoord[0] & 1 );
@@ -229,7 +229,7 @@ idVec3 LightGrid::GetGridCoordDebugColor( int gridCoord[3] )
 
 idVec3 LightGrid::GetProbeIndexDebugColor( const int probeIndex )
 {
-	idVec3 color( colorGold.x, colorGold.y, colorGold.z );
+	idVec3 color( colorOrange.x, colorOrange.y, colorOrange.z );
 
 	int gridCoord[3];
 	ProbeIndexToGridCoord( probeIndex, gridCoord );

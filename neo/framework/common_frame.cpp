@@ -34,13 +34,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "Common_local.h"
 #include "../renderer/Image.h"
 
-// RB begin
-#if defined(USE_DOOMCLASSIC)
-	#include "../../doomclassic/doom/doomlib.h"
-	#include "../../doomclassic/doom/globaldata.h"
-#endif
-// RB end
-
 /*
 
 New for tech4x:
@@ -141,13 +134,7 @@ int idGameThread::Run()
 	// we should have consumed all of our usercmds
 	if( userCmdMgr )
 	{
-		// RB begin
-#if defined(USE_DOOMCLASSIC)
-		if( userCmdMgr->HasUserCmdForPlayer( game->GetLocalClientNum() ) && common->GetCurrentGame() == DOOM3_BFG )
-#else
 		if( userCmdMgr->HasUserCmdForPlayer( game->GetLocalClientNum() ) )
-#endif
-			// RB end
 		{
 			idLib::Printf( "idGameThread::Run: didn't consume all usercmds\n" );
 		}
@@ -234,7 +221,7 @@ void idCommonLocal::DrawWipeModel()
 
 	float fade = ( float )( currentTime - wipeStartTime ) / ( wipeStopTime - wipeStartTime );
 	renderSystem->SetColor4( 1, 1, 1, fade );
-	renderSystem->DrawStretchPic( 0, 0, renderSystem->GetVirtualWidth(), renderSystem->GetVirtualHeight(), 0, 0, 1, 1, wipeMaterial );
+	renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 1, 1, wipeMaterial );
 }
 
 /*
@@ -255,7 +242,7 @@ void idCommonLocal::Draw()
 		// foresthale 2014-05-30: when binarizing an asset we show a special
 		// overlay indicating progress
 		renderSystem->SetColor( colorBlack );
-		renderSystem->DrawStretchPic( 0, 0, renderSystem->GetVirtualWidth(), renderSystem->GetVirtualHeight(), 0, 0, 1, 1, whiteMaterial );
+		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 1, 1, whiteMaterial );
 
 		// render the loading gui (idSWF actually) if it is loaded
 		// (we want to see progress of the loading gui binarize too)
@@ -292,56 +279,28 @@ void idCommonLocal::Draw()
 
 		// draw our basic overlay
 		renderSystem->SetColor( idVec4( 0.0f, 0.0f, 0.5f, 1.0f ) );
-		renderSystem->DrawStretchPic( 0, renderSystem->GetVirtualHeight() - 48, renderSystem->GetVirtualWidth(), 48, 0, 0, 1, 1, whiteMaterial );
+		renderSystem->DrawStretchPic( 0, SCREEN_HEIGHT - 48, SCREEN_WIDTH, 48, 0, 0, 1, 1, whiteMaterial );
 		renderSystem->SetColor( idVec4( 0.0f, 0.5f, 0.8f, 1.0f ) );
-		renderSystem->DrawStretchPic( 0, renderSystem->GetVirtualHeight() - 48, loadPacifierBinarizeProgress * renderSystem->GetVirtualWidth(), 32, 0, 0, 1, 1, whiteMaterial );
-		renderSystem->DrawSmallStringExt( 0, renderSystem->GetVirtualHeight() - 48, loadPacifierBinarizeFilename.c_str(), idVec4( 1.0f, 1.0f, 1.0f, 1.0f ), true );
-		renderSystem->DrawSmallStringExt( 0, renderSystem->GetVirtualHeight() - 32, va( "%s %d/%d lvls", loadPacifierBinarizeInfo.c_str(), loadPacifierBinarizeMiplevel, loadPacifierBinarizeMiplevelTotal ), idVec4( 1.0f, 1.0f, 1.0f, 1.0f ), true );
-		renderSystem->DrawSmallStringExt( 0, renderSystem->GetVirtualHeight() - 16, text, idVec4( 1.0f, 1.0f, 1.0f, 1.0f ), true );
+		renderSystem->DrawStretchPic( 0, SCREEN_HEIGHT - 48, loadPacifierBinarizeProgress * SCREEN_WIDTH, 32, 0, 0, 1, 1, whiteMaterial );
+		renderSystem->DrawSmallStringExt( 0, SCREEN_HEIGHT - 48, loadPacifierBinarizeFilename.c_str(), idVec4( 1.0f, 1.0f, 1.0f, 1.0f ), true );
+		renderSystem->DrawSmallStringExt( 0, SCREEN_HEIGHT - 32, va( "%s %d/%d lvls", loadPacifierBinarizeInfo.c_str(), loadPacifierBinarizeMiplevel, loadPacifierBinarizeMiplevelTotal ), idVec4( 1.0f, 1.0f, 1.0f, 1.0f ), true );
+		renderSystem->DrawSmallStringExt( 0, SCREEN_HEIGHT - 16, text, idVec4( 1.0f, 1.0f, 1.0f, 1.0f ), true );
 	}
 	else if( loadGUI != NULL )
 	{
 		// foresthale 2014-05-30: showing a black background looks better than flickering in widescreen
 		renderSystem->SetColor( colorBlack );
-		renderSystem->DrawStretchPic( 0, 0, renderSystem->GetVirtualWidth(), renderSystem->GetVirtualHeight(), 0, 0, 1, 1, whiteMaterial );
+		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 1, 1, whiteMaterial );
 
 		loadGUI->Render( renderSystem, Sys_Milliseconds() );
 	}
-	// RB begin
-#if defined(USE_DOOMCLASSIC)
-	else if( currentGame == DOOM_CLASSIC || currentGame == DOOM2_CLASSIC )
-	{
-		const float sysWidth = renderSystem->GetWidth() * renderSystem->GetPixelAspect();
-		const float sysHeight = renderSystem->GetHeight();
-		const float sysAspect = sysWidth / sysHeight;
-		const float doomAspect = 4.0f / 3.0f;
-		const float adjustment = sysAspect / doomAspect;
-		const float barHeight = ( adjustment >= 1.0f ) ? 0.0f : ( 1.0f - adjustment ) * ( float )renderSystem->GetVirtualHeight() * 0.25f;
-		const float barWidth = ( adjustment <= 1.0f ) ? 0.0f : ( adjustment - 1.0f ) * ( float )renderSystem->GetVirtualWidth() * 0.25f;
-		if( barHeight > 0.0f )
-		{
-			renderSystem->SetColor( colorBlack );
-			renderSystem->DrawStretchPic( 0, 0, renderSystem->GetVirtualWidth(), barHeight, 0, 0, 1, 1, whiteMaterial );
-			renderSystem->DrawStretchPic( 0, renderSystem->GetVirtualHeight() - barHeight, renderSystem->GetVirtualWidth(), barHeight, 0, 0, 1, 1, whiteMaterial );
-		}
-		if( barWidth > 0.0f )
-		{
-			renderSystem->SetColor( colorBlack );
-			renderSystem->DrawStretchPic( 0, 0, barWidth, renderSystem->GetVirtualHeight(), 0, 0, 1, 1, whiteMaterial );
-			renderSystem->DrawStretchPic( renderSystem->GetVirtualWidth() - barWidth, 0, barWidth, renderSystem->GetVirtualHeight(), 0, 0, 1, 1, whiteMaterial );
-		}
-		renderSystem->SetColor4( 1, 1, 1, 1 );
-		renderSystem->DrawStretchPic( barWidth, barHeight, renderSystem->GetVirtualWidth() - barWidth * 2.0f, renderSystem->GetVirtualHeight() - barHeight * 2.0f, 0, 0, 1, 1, doomClassicMaterial );
-	}
-#endif
-	// RB end
 	else if( game && game->Shell_IsActive() )
 	{
 		bool gameDraw = game->Draw( game->GetLocalClientNum() );
 		if( !gameDraw )
 		{
 			renderSystem->SetColor( colorBlack );
-			renderSystem->DrawStretchPic( 0, 0, renderSystem->GetVirtualWidth(), renderSystem->GetVirtualHeight(), 0, 0, 1, 1, whiteMaterial );
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 1, 1, whiteMaterial );
 		}
 		game->Shell_Render();
 	}
@@ -370,7 +329,7 @@ void idCommonLocal::Draw()
 		if( !gameDraw )
 		{
 			renderSystem->SetColor( colorBlack );
-			renderSystem->DrawStretchPic( 0, 0, renderSystem->GetVirtualWidth(), renderSystem->GetVirtualHeight(), 0, 0, 1, 1, whiteMaterial );
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 1, 1, whiteMaterial );
 		}
 
 		// save off the 2D drawing from the game
@@ -383,7 +342,7 @@ void idCommonLocal::Draw()
 	else
 	{
 		renderSystem->SetColor4( 0, 0, 0, 1 );
-		renderSystem->DrawStretchPic( 0, 0, renderSystem->GetVirtualWidth(), renderSystem->GetVirtualHeight(), 0, 0, 1, 1, whiteMaterial );
+		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 1, 1, whiteMaterial );
 	}
 
 	{
@@ -521,14 +480,6 @@ void idCommonLocal::Frame()
 			com_forceGenericSIMD.ClearModified();
 		}
 
-		// RB begin
-#if defined(USE_DOOMCLASSIC)
-		// Do the actual switch between Doom 3 and the classics here so
-		// that things don't get confused in the middle of the frame.
-		PerformGameSwitch();
-#endif
-		// RB end
-
 		// pump all the events
 		Sys_GenerateEvents();
 
@@ -553,15 +504,9 @@ void idCommonLocal::Frame()
 		bool chatting = false;
 
 		// DG: Add pause from com_pause cvar
-		// RB begin
-#if defined(USE_DOOMCLASSIC)
-		if( com_pause.GetInteger() || console->Active() || Dialog().IsDialogActive() || session->IsSystemUIShowing()
-				|| ( game && game->InhibitControls() && !IsPlayingDoomClassic() ) || ImGuiTools::ReleaseMouseForTools() )
-#else
 		if( com_pause.GetInteger() || console->Active() || Dialog().IsDialogActive() || session->IsSystemUIShowing()
 				|| ( game && game->InhibitControls() ) ||  ImGuiTools::ReleaseMouseForTools() )
-#endif
-			// RB end, DG end
+		// DG end
 		{
 			// RB: don't release the mouse when opening a PDA or menu
 			// SRS - but always release at main menu after exiting game or demo
@@ -578,20 +523,10 @@ void idCommonLocal::Frame()
 			usercmdGen->InhibitUsercmd( INHIBIT_SESSION, false );
 		}
 
-		// RB begin
-#if defined(USE_DOOMCLASSIC)
-		const bool pauseGame = ( !mapSpawned
-								 || ( !IsMultiplayer()
-									  && ( Dialog().IsDialogPausing() || session->IsSystemUIShowing()
-										   || ( game && game->Shell_IsActive() ) || com_pause.GetInteger() ) ) )
-							   && !IsPlayingDoomClassic();
-#else
 		const bool pauseGame = ( !mapSpawned
 								 || ( !IsMultiplayer()
 									  && ( Dialog().IsDialogPausing() || session->IsSystemUIShowing()
 										   || ( game && game->Shell_IsActive() ) || com_pause.GetInteger() ) ) );
-#endif
-		// RB end
 
 		// save the screenshot and audio from the last draw if needed
 		if( aviCaptureMode )
@@ -856,17 +791,6 @@ void idCommonLocal::Frame()
 			userCmdMgr.PutUserCmdForPlayer( game->GetLocalClientNum(), newCmd );
 		}
 
-		// RB begin
-#if defined(USE_DOOMCLASSIC)
-		// If we're in Doom or Doom 2, run tics and upload the new texture.
-		// SRS - Add check for com_pause cvar to make sure window is in focus - if not classic game should be paused (FIXME: but classic music still plays in background)
-		if( ( GetCurrentGame() == DOOM_CLASSIC || GetCurrentGame() == DOOM2_CLASSIC ) && !( Dialog().IsDialogPausing() || session->IsSystemUIShowing() || com_pause.GetInteger() ) )
-		{
-			RunDoomClassicFrame();
-		}
-#endif
-		// RB end
-
 		// start the game / draw command generation thread going in the background
 		gameReturn_t ret = gameThread.RunGameAndDraw( numGameFrames, userCmdMgr, IsClient(), gameFrame - numGameFrames );
 
@@ -975,14 +899,6 @@ void idCommonLocal::Frame()
 	}
 	catch( idException& )
 	{
-		// an ERP_DROP was thrown
-#if defined(USE_DOOMCLASSIC)
-		if( currentGame == DOOM_CLASSIC || currentGame == DOOM2_CLASSIC )
-		{
-			return;
-		}
-#endif
-
 		// kill loading gui
 		delete loadGUI;
 		loadGUI = NULL;
@@ -995,61 +911,3 @@ void idCommonLocal::Frame()
 		return;
 	}
 }
-
-// RB begin
-#if defined(USE_DOOMCLASSIC)
-
-/*
-=================
-idCommonLocal::RunDoomClassicFrame
-=================
-*/
-void idCommonLocal::RunDoomClassicFrame()
-{
-	static int doomTics = 0;
-
-	if( DoomLib::expansionDirty )
-	{
-
-		// re-Initialize the Doom Engine.
-		DoomLib::Interface.Shutdown();
-		DoomLib::Interface.Startup( 1, false );
-		DoomLib::expansionDirty = false;
-	}
-
-
-	if( DoomLib::Interface.Frame( doomTics, &userCmdMgr ) )
-	{
-		Globals* data = ( Globals* )DoomLib::GetGlobalData( 0 );
-
-		idArray< unsigned int, 256 > palette;
-		std::copy( data->XColorMap, data->XColorMap + palette.Num(), palette.Ptr() );
-
-		// Do the palette lookup.
-		for( int row = 0; row < DOOMCLASSIC_RENDERHEIGHT; ++row )
-		{
-			for( int column = 0; column < DOOMCLASSIC_RENDERWIDTH; ++column )
-			{
-				const int doomScreenPixelIndex = row * DOOMCLASSIC_RENDERWIDTH + column;
-				const byte paletteIndex = data->screens[0][doomScreenPixelIndex];
-				const unsigned int paletteColor = palette[paletteIndex];
-				const byte red = ( paletteColor & 0xFF000000 ) >> 24;
-				const byte green = ( paletteColor & 0x00FF0000 ) >> 16;
-				const byte blue = ( paletteColor & 0x0000FF00 ) >> 8;
-
-				const int imageDataPixelIndex = row * DOOMCLASSIC_RENDERWIDTH * DOOMCLASSIC_BYTES_PER_PIXEL + column * DOOMCLASSIC_BYTES_PER_PIXEL;
-				doomClassicImageData[imageDataPixelIndex]		= red;
-				doomClassicImageData[imageDataPixelIndex + 1]	= green;
-				doomClassicImageData[imageDataPixelIndex + 2]	= blue;
-				doomClassicImageData[imageDataPixelIndex + 3]	= 255;
-			}
-		}
-	}
-
-	renderSystem->UploadImage( "_doomClassic", doomClassicImageData.Ptr(), DOOMCLASSIC_RENDERWIDTH, DOOMCLASSIC_RENDERHEIGHT );
-	doomTics++;
-}
-
-#endif
-// RB end
-

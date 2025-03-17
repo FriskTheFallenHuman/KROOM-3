@@ -138,10 +138,10 @@ bool idPlayerStart::ClientReceiveEvent( int event, int time, const idBitMsg& msg
 			return true;
 		}
 		default:
-		{
-			return idEntity::ClientReceiveEvent( event, time, msg );
-		}
+			break;
 	}
+
+	return idEntity::ClientReceiveEvent( event, time, msg );
 }
 
 /*
@@ -843,6 +843,35 @@ void idSpring::Spawn()
 	ent1 = ent2 = NULL;
 
 	PostEventMS( &EV_PostSpawn, 0 );
+}
+
+/*
+================
+idSpring::Save
+================
+*/
+void idSpring::Save( idSaveGame* savefile ) const
+{
+	savefile->WriteInt( id1 );
+	savefile->WriteInt( id2 );
+	savefile->WriteVec3( p1 );
+	savefile->WriteVec3( p2 );
+	spring.Save( savefile );
+}
+
+/*
+================
+idSpring::Restore
+================
+*/
+void idSpring::Restore( idRestoreGame* savefile )
+{
+	savefile->ReadInt( id1 );
+	savefile->ReadInt( id2 );
+	savefile->ReadVec3( p1 );
+	savefile->ReadVec3( p2 );
+	spring.Restore( savefile );
+	Event_LinkSpring( );
 }
 
 /*
@@ -1723,6 +1752,7 @@ idStaticEntity::ShowEditingDialog
 */
 void idStaticEntity::ShowEditingDialog()
 {
+	common->InitTool( EDITOR_PARTICLE, &spawnArgs );
 }
 /*
 ================

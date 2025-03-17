@@ -1829,7 +1829,6 @@ int idFile_InZip::Seek( long offset, fsOrigin_t origin )
 		case FS_SEEK_SET:
 		{
 			// set the file position in the zip file (also sets the current file info)
-			// DG use standard unzip.h function instead of custom one (not needed anymore with minizip 1.1)
 			unzSetOffset64( z, zipFilePos );
 			unzOpenCurrentFile( z );
 			if( offset <= 0 )

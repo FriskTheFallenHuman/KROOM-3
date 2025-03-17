@@ -106,31 +106,27 @@ bool idDeclEntityDef::Parse( const char* text, const int textLength, bool allowB
 	// find all of the dicts first, because copying inherited values will modify the dict
 	idList<const idDeclEntityDef*> defList;
 
-	// RB: don't grab properties of inherited parent when exporting to FGD
-	if( !( com_editors & EDITOR_EXPORTDEFS ) )
+	while( 1 )
 	{
-		while( 1 )
+		const idKeyValue* kv;
+		kv = dict.MatchPrefix( "inherit", NULL );
+		if( !kv )
 		{
-			const idKeyValue* kv;
-			kv = dict.MatchPrefix( "inherit", NULL );
-			if( !kv )
-			{
-				break;
-			}
-
-			const idDeclEntityDef* copy = static_cast<const idDeclEntityDef*>( declManager->FindType( DECL_ENTITYDEF, kv->GetValue(), false ) );
-			if( !copy )
-			{
-				src.Warning( "Unknown entityDef '%s' inherited by '%s'", kv->GetValue().c_str(), GetName() );
-			}
-			else
-			{
-				defList.Append( copy );
-			}
-
-			// delete this key/value pair
-			dict.Delete( kv->GetKey() );
+			break;
 		}
+
+		const idDeclEntityDef* copy = static_cast<const idDeclEntityDef*>( declManager->FindType( DECL_ENTITYDEF, kv->GetValue(), false ) );
+		if( !copy )
+		{
+			src.Warning( "Unknown entityDef '%s' inherited by '%s'", kv->GetValue().c_str(), GetName() );
+		}
+		else
+		{
+			defList.Append( copy );
+		}
+
+		// delete this key/value pair
+		dict.Delete( kv->GetKey() );
 	}
 
 	// now copy over the inherited key / value pairs
@@ -141,7 +137,7 @@ bool idDeclEntityDef::Parse( const char* text, const int textLength, bool allowB
 
 	// precache all referenced media
 	// do this as long as we arent in modview
-	if( !( com_editors & ( EDITOR_AAS | EDITOR_EXPORTDEFS ) ) )
+	if( !( com_editors & ( EDITOR_AAS ) ) )
 	{
 		game->CacheDictionaryMedia( &dict );
 	}

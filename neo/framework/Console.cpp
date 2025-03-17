@@ -72,8 +72,6 @@ public:
 	void				Clear();
 
 private:
-	void				Resize();
-
 	void				KeyDownEvent( int key );
 
 	void				Linefeed();
@@ -141,9 +139,6 @@ private:
 
 	idList< overlayText_t >	overlayText;
 	idList< idDebugGraph*> debugGraphs;
-
-	int					lastVirtualScreenWidth;
-	int					lastVirtualScreenHeight;
 
 	static idCVar		con_speed;
 	static idCVar		con_notifyTime;
@@ -541,10 +536,10 @@ void idConsoleLocal::Init()
 
 	keyCatching = false;
 
-	LOCALSAFE_LEFT		= 0;
-	LOCALSAFE_RIGHT		= SCREEN_WIDTH - LOCALSAFE_LEFT;
+	LOCALSAFE_LEFT		= 32;
+	LOCALSAFE_RIGHT		= 608;
 	LOCALSAFE_TOP		= 24;
-	LOCALSAFE_BOTTOM	= SCREEN_HEIGHT - LOCALSAFE_TOP;
+	LOCALSAFE_BOTTOM	= 456;
 	LOCALSAFE_WIDTH		= LOCALSAFE_RIGHT - LOCALSAFE_LEFT;
 	LOCALSAFE_HEIGHT	= LOCALSAFE_BOTTOM - LOCALSAFE_TOP;
 
@@ -614,7 +609,7 @@ void	idConsoleLocal::Open()
 {
 	if( keyCatching )
 	{
-		return;    // already open
+		return; // already open
 	}
 
 	consoleField.ClearAutoComplete();
@@ -647,7 +642,7 @@ void idConsoleLocal::Clear()
 
 	for( i = 0 ; i < CON_TEXTSIZE ; i++ )
 	{
-		text[i] = ( idStr::ColorIndex( C_COLOR_WHITE ) << 8 ) | ' ';
+		text[i] = ( idStr::ColorIndex( C_COLOR_CYAN ) << 8 ) | ' ';
 	}
 
 	Bottom();		// go to end
@@ -720,26 +715,6 @@ void idConsoleLocal::Dump( const char* fileName )
 	}
 
 	fileSystem->CloseFile( f );
-}
-
-/*
-==============
-idConsoleLocal::Resize
-==============
-*/
-void idConsoleLocal::Resize()
-{
-	if( renderSystem->GetVirtualWidth() == lastVirtualScreenWidth && renderSystem->GetVirtualHeight() == lastVirtualScreenHeight )
-	{
-		return;
-	}
-
-	lastVirtualScreenWidth = renderSystem->GetVirtualWidth();
-	lastVirtualScreenHeight = renderSystem->GetVirtualHeight();
-	LOCALSAFE_RIGHT		= renderSystem->GetVirtualWidth() - LOCALSAFE_LEFT;
-	LOCALSAFE_BOTTOM	= renderSystem->GetVirtualHeight() - LOCALSAFE_TOP;
-	LOCALSAFE_WIDTH		= LOCALSAFE_RIGHT - LOCALSAFE_LEFT;
-	LOCALSAFE_HEIGHT	= LOCALSAFE_BOTTOM - LOCALSAFE_TOP;
 }
 
 /*
@@ -1118,7 +1093,7 @@ void idConsoleLocal::Linefeed()
 	for( i = 0; i < LINE_WIDTH; i++ )
 	{
 		int offset = ( ( unsigned int )current % TOTAL_LINES ) * LINE_WIDTH + i;
-		text[offset] = ( idStr::ColorIndex( C_COLOR_WHITE ) << 8 ) | ' ';
+		text[offset] = ( idStr::ColorIndex( C_COLOR_CYAN ) << 8 ) | ' ';
 	}
 }
 
@@ -1142,7 +1117,7 @@ void idConsoleLocal::Print( const char* txt )
 		return;
 	}
 
-	color = idStr::ColorIndex( C_COLOR_WHITE );
+	color = idStr::ColorIndex( C_COLOR_CYAN );
 
 	while( ( c = *( const unsigned char* )txt ) != 0 )
 	{
@@ -1150,7 +1125,7 @@ void idConsoleLocal::Print( const char* txt )
 		{
 			if( *( txt + 1 ) == C_COLOR_DEFAULT )
 			{
-				color = idStr::ColorIndex( C_COLOR_WHITE );
+				color = idStr::ColorIndex( C_COLOR_CYAN );
 			}
 			else
 			{
@@ -1260,11 +1235,11 @@ void idConsoleLocal::DrawInput()
 		}
 	}
 
-	renderSystem->SetColor( idStr::ColorForIndex( C_COLOR_WHITE ) );
+	renderSystem->SetColor( idStr::ColorForIndex( C_COLOR_CYAN ) );
 
 	renderSystem->DrawSmallChar( LOCALSAFE_LEFT + 1 * SMALLCHAR_WIDTH, y, ']' );
 
-	consoleField.Draw( LOCALSAFE_LEFT + 2 * SMALLCHAR_WIDTH, y, renderSystem->GetVirtualWidth() - 3 * SMALLCHAR_WIDTH, true );
+	consoleField.Draw( LOCALSAFE_LEFT + 2 * SMALLCHAR_WIDTH, y, SCREEN_WIDTH - 3 * SMALLCHAR_WIDTH, true );
 }
 
 
@@ -1327,7 +1302,7 @@ void idConsoleLocal::DrawNotify()
 		v += SMALLCHAR_HEIGHT;
 	}
 
-	renderSystem->SetColor( colorWhite );
+	renderSystem->SetColor( colorCyan );
 }
 
 /*
@@ -1347,71 +1322,44 @@ void idConsoleLocal::DrawSolidConsole( float frac )
 	int				lines;
 	int				currentColor;
 
-	lines = idMath::Ftoi( renderSystem->GetVirtualHeight() * frac );
+	lines = idMath::Ftoi( SCREEN_HEIGHT * frac );
 	if( lines <= 0 )
 	{
 		return;
 	}
 
-	if( lines > renderSystem->GetVirtualHeight() )
+	if( lines > SCREEN_HEIGHT )
 	{
-		lines = renderSystem->GetVirtualHeight();
+		lines = SCREEN_HEIGHT;
 	}
 
 	// draw the background
-	y = frac * renderSystem->GetVirtualHeight() - 2;
+	y = frac * SCREEN_HEIGHT - 2;
 	if( y < 1.0f )
 	{
 		y = 0.0f;
 	}
 	else
 	{
-		renderSystem->DrawFilled( idVec4( 0.0f, 0.0f, 0.0f, 0.75f ), 0, 0, renderSystem->GetVirtualWidth(), y );
+		renderSystem->DrawFilled( idVec4( 0.0f, 0.0f, 0.0f, 0.75f ), 0, 0, SCREEN_WIDTH, y );
 	}
 
-	renderSystem->DrawFilled( colorGold, 0, y, renderSystem->GetVirtualWidth(), 2 );
+	renderSystem->DrawFilled( colorCyan, 0, y, SCREEN_WIDTH, 2 );
 
 	// draw the version number
 
-	renderSystem->SetColor( colorGold );
+	renderSystem->SetColor( idStr::ColorForIndex( C_COLOR_CYAN ) );
 
-	// RB begin
-	//idStr version = va( "%s.%i.%i", ENGINE_VERSION, BUILD_NUMBER, BUILD_NUMBER_MINOR );
-	idStr version = va( "%s %s", ENGINE_VERSION, BUILD_STRING );
-	//idStr version = com_version.GetString();
-	// RB end
-
+	idStr version = va( "%s (Build:v%i.%i)", ENGINE_VERSION, BUILD_NUMBER, BUILD_NUMBER_MINOR );
 	i = version.Length();
 
-#define VERSION_LINE_SPACE (SMALLCHAR_HEIGHT + 4)
-
 	for( x = 0; x < i; x++ )
 	{
 		renderSystem->DrawSmallChar( LOCALSAFE_WIDTH - ( i - x ) * SMALLCHAR_WIDTH,
-									 ( lines - ( SMALLCHAR_HEIGHT + SMALLCHAR_HEIGHT / 4 ) ) - VERSION_LINE_SPACE - VERSION_LINE_SPACE, version[x] );
-
-	}
-// jmarshall
-	idStr branchVersion = va( "Branch %s", ENGINE_BRANCH );
-	i = branchVersion.Length();
-
-	for( x = 0; x < i; x++ )
-	{
-		renderSystem->DrawSmallChar( LOCALSAFE_WIDTH - ( i - x ) * SMALLCHAR_WIDTH,
-									 ( lines - ( SMALLCHAR_HEIGHT + SMALLCHAR_HEIGHT / 2 ) ) - ( VERSION_LINE_SPACE - 2 ), branchVersion[x] );
+									 ( lines - ( SMALLCHAR_HEIGHT + SMALLCHAR_HEIGHT / 4 ) ), version[x] );
 
 	}
 
-	idStr builddate = va( "%s %s", __DATE__, __TIME__ );
-	i = builddate.Length();
-
-	for( x = 0; x < i; x++ )
-	{
-		renderSystem->DrawSmallChar( LOCALSAFE_WIDTH - ( i - x ) * SMALLCHAR_WIDTH,
-									 ( lines - ( SMALLCHAR_HEIGHT + SMALLCHAR_HEIGHT / 2 ) ), builddate[x] );
-
-	}
-// jmarshall end
 
 	// draw the text
 	vislines = lines;
@@ -1423,7 +1371,7 @@ void idConsoleLocal::DrawSolidConsole( float frac )
 	if( display != current )
 	{
 		// draw arrows to show the buffer is backscrolled
-		renderSystem->SetColor( idStr::ColorForIndex( C_COLOR_WHITE ) );
+		renderSystem->SetColor( idStr::ColorForIndex( C_COLOR_CYAN ) );
 		for( x = 0; x < LINE_WIDTH; x += 4 )
 		{
 			renderSystem->DrawSmallChar( LOCALSAFE_LEFT + ( x + 1 )*SMALLCHAR_WIDTH, idMath::Ftoi( y ), '^' );
@@ -1475,7 +1423,7 @@ void idConsoleLocal::DrawSolidConsole( float frac )
 	// draw the input prompt, user text, and cursor if desired
 	DrawInput();
 
-	renderSystem->SetColor( colorWhite );
+	renderSystem->SetColor( colorCyan );
 }
 
 
@@ -1488,8 +1436,6 @@ ForceFullScreen is used by the editor
 */
 void idConsoleLocal::Draw( bool forceFullScreen )
 {
-	Resize();
-
 	if( forceFullScreen )
 	{
 		// if we are forced full screen because of a disconnect,
@@ -1524,7 +1470,6 @@ void idConsoleLocal::Draw( bool forceFullScreen )
 	float lefty = LOCALSAFE_TOP;
 	float righty = LOCALSAFE_TOP;
 	float centery = LOCALSAFE_TOP;
-
 	if( com_showFPS.GetBool() )
 	{
 		righty = DrawFPS( righty );
@@ -1533,7 +1478,6 @@ void idConsoleLocal::Draw( bool forceFullScreen )
 	{
 		righty = DrawMemoryUsage( righty );
 	}
-
 	DrawOverlayText( lefty, righty, centery );
 	DrawDebugGraphs();
 }

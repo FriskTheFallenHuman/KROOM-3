@@ -853,8 +853,6 @@ public:
 	virtual void			EnableStereoScopicRendering( const stereo3DMode_t mode ) const;
 	virtual int				GetWidth() const;
 	virtual int				GetHeight() const;
-	virtual int				GetVirtualWidth() const;
-	virtual int				GetVirtualHeight() const;
 	virtual float			GetPixelAspect() const;
 	virtual float			GetPhysicalScreenWidthInCentimeters() const;
 	virtual idRenderWorld* 	AllocRenderWorld();
@@ -1366,9 +1364,6 @@ void R_FreeEntityDefDecals( idRenderEntityLocal* def );
 void R_FreeEntityDefOverlay( idRenderEntityLocal* def );
 void R_FreeEntityDefFadedDecals( idRenderEntityLocal* def, int time );
 
-// RB: for dmap
-void R_DeriveLightData( idRenderLightLocal* light );
-
 // Called by the editor and dmap to operate on light volumes
 void R_RenderLightFrustum( const renderLight_t& renderLight, idPlane lightFrustum[6] );
 
@@ -1379,6 +1374,7 @@ void R_FreeEnvprobeDefDerivedData( RenderEnvprobeLocal* probe );
 
 // RB end
 void R_CreateLightRefs( idRenderLightLocal* light );
+void R_DeriveLightData( idRenderLightLocal* light );
 void R_FreeLightDefDerivedData( idRenderLightLocal* light );
 
 void R_FreeDerivedData();
@@ -1604,6 +1600,7 @@ TR_TRISURF
 
 srfTriangles_t* 	R_AllocStaticTriSurf();
 void				R_AllocStaticTriSurfVerts( srfTriangles_t* tri, int numVerts );
+void				R_AllocStaticTriSurfPlanes( srfTriangles_t *tri, int numIndexes );
 void				R_AllocStaticTriSurfIndexes( srfTriangles_t* tri, int numIndexes );
 void				R_AllocStaticTriSurfPreLightShadowVerts( srfTriangles_t* tri, int numVerts );
 void				R_AllocStaticTriSurfSilIndexes( srfTriangles_t* tri, int numIndexes );
@@ -1632,6 +1629,7 @@ void				R_RemoveDegenerateTriangles( srfTriangles_t* tri );
 void				R_RemoveUnusedVerts( srfTriangles_t* tri );
 void				R_RangeCheckIndexes( const srfTriangles_t* tri );
 void				R_CreateVertexNormals( srfTriangles_t* tri );		// also called by dmap
+void				R_DeriveFacePlanes( srfTriangles_t *tri );		// also called by renderbump
 void				R_CleanupTriangles( srfTriangles_t* tri, bool createNormals, bool identifySilEdges, bool useUnsmoothedTangents, bool useMikktspace );
 void				R_ReverseTriangles( srfTriangles_t* tri );
 

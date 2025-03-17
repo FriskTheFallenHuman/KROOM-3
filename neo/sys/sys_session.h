@@ -425,7 +425,6 @@ public:
 
 	enum sessionState_t
 	{
-		PRESS_START,
 		IDLE,
 		SEARCHING,
 		CONNECTING,
@@ -474,7 +473,6 @@ public:
 	virtual	void			ClearSessionOption( sessionOption_t option ) = 0;
 	virtual sessionState_t	GetBackState() = 0;
 	virtual void			Cancel() = 0;
-	virtual void			MoveToPressStart() = 0;
 	virtual void			FinishDisconnect() = 0;
 	virtual void			LoadingFinished() = 0;
 	virtual bool			IsCurrentLobbyMigrating() const = 0;

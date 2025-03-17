@@ -865,13 +865,7 @@ void idAI::Spawn()
 	while( kv )
 	{
 		jointName = kv->GetKey();
-
-		// RB: TrenchBroom interop use look_joint.<name> instead so we can build this up using the FGD files
-		if( !jointName.StripLeadingOnce( "look_joint " ) )
-		{
-			jointName.StripLeadingOnce( "look_joint." );
-		}
-		// RB end
+		jointName.StripLeadingOnce( "look_joint " );
 
 		joint = animator.GetJointHandle( jointName );
 		if( joint == INVALID_JOINT )
@@ -1662,7 +1656,6 @@ float idAI::TravelDistance( const idVec3& start, const idVec3& end ) const
 	int			toArea;
 	float		dist;
 	idVec2		delta;
-	aasPath_t	path;
 
 	if( !aas )
 	{
@@ -3049,16 +3042,12 @@ idAI::DeadMove
 void idAI::DeadMove()
 {
 	idVec3				delta;
-	monsterMoveResult_t	moveResult;
-
-	idVec3 org = physicsObj.GetOrigin();
 
 	GetMoveDelta( viewAxis, viewAxis, delta );
 	physicsObj.SetDelta( delta );
 
 	RunPhysics();
 
-	moveResult = physicsObj.GetMoveResult();
 	AI_ONGROUND = physicsObj.OnGround();
 }
 
@@ -3073,7 +3062,6 @@ void idAI::AnimMove()
 	idVec3				delta;
 	idVec3				goalDelta;
 	float				goalDist;
-	monsterMoveResult_t	moveResult;
 	idVec3				newDest;
 
 	idVec3 oldorigin = physicsObj.GetOrigin();
@@ -3158,7 +3146,6 @@ void idAI::AnimMove()
 		gameRenderWorld->DebugLine( colorCyan, oldorigin, physicsObj.GetOrigin(), 5000 );
 	}
 
-	moveResult = physicsObj.GetMoveResult();
 	if( !af_push_moveables && attack.Length() && TestMelee() )
 	{
 		DirectDamage( attack, enemy.GetEntity() );
@@ -3221,11 +3208,9 @@ void idAI::SlideMove()
 	idVec3				delta;
 	idVec3				goalDelta;
 	float				goalDist;
-	monsterMoveResult_t	moveResult;
 	idVec3				newDest;
 
 	idVec3 oldorigin = physicsObj.GetOrigin();
-	idMat3 oldaxis = viewAxis;
 
 	AI_BLOCKED = false;
 
@@ -3286,7 +3271,7 @@ void idAI::SlideMove()
 	vel += goalDelta * MS2SEC( gameLocal.time - gameLocal.previousTime );
 
 	// cap our speed
-	vel = vel.Truncate( fly_speed );
+	vel.Truncate( fly_speed );
 	vel.z = z;
 	physicsObj.SetLinearVelocity( vel );
 	physicsObj.UseVelocityMove( true );
@@ -3314,7 +3299,6 @@ void idAI::SlideMove()
 		gameRenderWorld->DebugLine( colorCyan, oldorigin, physicsObj.GetOrigin(), 5000 );
 	}
 
-	moveResult = physicsObj.GetMoveResult();
 	if( !af_push_moveables && attack.Length() && TestMelee() )
 	{
 		DirectDamage( attack, enemy.GetEntity() );
@@ -4434,7 +4418,6 @@ void idAI::UpdateEnemyPosition()
 	int				enemyAreaNum;
 	int				areaNum;
 	aasPath_t		path;
-	predictedPath_t predictedPath;
 	idVec3			enemyPos;
 	bool			onGround;
 

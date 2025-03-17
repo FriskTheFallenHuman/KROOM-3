@@ -335,4 +335,4 @@ public:
 	// Ugh, hate having to ifdef these, but we're doing some fairly platform specific callbacks
 };
 
-#endif	// __SYS_LOBBY_BACKEND_H__ 
+#endif	// __SYS_LOBBY_BACKEND_H__

@@ -1525,8 +1525,8 @@ bool idExplodingBarrel::ClientReceiveEvent( int event, int time, const idBitMsg&
 			return true;
 		}
 		default:
-		{
-			return idBarrel::ClientReceiveEvent( event, time, msg );
-		}
+			break;
 	}
+
+	return idBarrel::ClientReceiveEvent( event, time, msg );
 }

@@ -31,8 +31,11 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 #include "../renderer/Image.h"
 
-
-
+/*
+=============
+OBJExporter
+=============
+*/
 class OBJExporter
 {
 public:
@@ -65,6 +68,11 @@ public:
 	void	Write( const char* relativePath, const char* basePath = "fs_basepath" );
 };
 
+/*
+=============
+OBJExporter::Write
+=============
+*/
 void OBJExporter::Write( const char* relativePath, const char* basePath )
 {
 	idStrStatic< MAX_OSPATH > convertedFileName = relativePath;
@@ -170,7 +178,11 @@ void OBJExporter::Write( const char* relativePath, const char* basePath )
 	}
 }
 
-
+/*
+=============
+OBJExporter::ConvertBrushToOBJ
+=============
+*/
 void OBJExporter::ConvertBrushToOBJ( OBJGroup& group, const idMapBrush* mapBrush, int entityNum, int primitiveNum, const idMat4& transform )
 {
 	OBJExporter::OBJObject& geometry = group.objects.Alloc();
@@ -277,29 +289,6 @@ void OBJExporter::ConvertBrushToOBJ( OBJGroup& group, const idMapBrush* mapBrush
 			st.x = ( xyz * texVec[0].ToVec3() ) + texVec[0][3];
 			st.y = ( xyz * texVec[1].ToVec3() ) + texVec[1][3];
 
-			// RB: support Valve 220 projection
-			if( ( mapSide->GetProjectionType() == idMapBrushSide::PROJECTION_VALVE220 ) )
-			{
-				const idMaterial* material = declManager->FindMaterial( mapSide->GetMaterial() );
-
-				// RB: TODO
-				idVec2i texSize;
-
-				idImage* image = material->GetEditorImage();
-				if( image != NULL )
-				{
-					texSize.x = image->GetUploadWidth();
-					texSize.y = image->GetUploadHeight();
-				}
-				else
-				{
-					texSize = mapSide->GetTextureSize();
-				}
-
-				st.x /= texSize.x;
-				st.y /= texSize.y;
-			}
-
 			// flip y
 			st.y = 1.0f - st.y;
 
@@ -338,7 +327,11 @@ void OBJExporter::ConvertBrushToOBJ( OBJGroup& group, const idMapBrush* mapBrush
 	}
 }
 
-
+/*
+=============
+OBJExporter::ConvertPatchToOBJ
+=============
+*/
 void OBJExporter::ConvertPatchToOBJ( OBJGroup& group, const idMapPatch* patch, int entityNum, int primitiveNum, const idMat4& transform )
 {
 	OBJExporter::OBJObject& geometry = group.objects.Alloc();
@@ -388,6 +381,11 @@ void OBJExporter::ConvertPatchToOBJ( OBJGroup& group, const idMapPatch* patch, i
 	delete cp;
 }
 
+/*
+=============
+OBJExporter::ConvertMeshToOBJ
+=============
+*/
 void OBJExporter::ConvertMeshToOBJ( OBJGroup& group, const MapPolygonMesh* mesh, int entityNum, int primitiveNum, const idMat4& transform )
 {
 	OBJExporter::OBJObject& geometry = group.objects.Alloc();
@@ -443,7 +441,6 @@ void OBJExporter::ConvertMeshToOBJ( OBJGroup& group, const MapPolygonMesh* mesh,
 		numVerts += verts.Num();
 	}
 }
-
 
 CONSOLE_COMMAND( exportMapToOBJ, "Convert .map file to .obj/.mtl ", idCmdSystem::ArgCompletion_MapName )
 {
@@ -590,24 +587,7 @@ CONSOLE_COMMAND( exportMapToOBJ, "Convert .map file to .obj/.mtl ", idCmdSystem:
 	common->SetRefreshOnPrint( false );
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-CONSOLE_COMMAND( convertMap, "Convert .map file to new map format with polygons instead of brushes", idCmdSystem::ArgCompletion_MapNameNoJson )
+CONSOLE_COMMAND( convertMap, "Convert .map file to new map format with polygons instead of brushes", idCmdSystem::ArgCompletion_MapName )
 {
 	common->SetRefreshOnPrint( true );
 
@@ -644,49 +624,6 @@ CONSOLE_COMMAND( convertMap, "Convert .map file to new map format with polygons 
 		convertedFileName += "_converted";
 
 		map.Write( convertedFileName, ".map" );
-	}
-
-	common->SetRefreshOnPrint( false );
-}
-
-
-CONSOLE_COMMAND( convertMapToJSON, "Convert .map file to new .json map format with polygons instead of brushes", idCmdSystem::ArgCompletion_MapNameNoJson )
-{
-	common->SetRefreshOnPrint( true );
-
-	if( args.Argc() != 2 )
-	{
-		common->Printf( "Usage: convertMapToJSON <map>\n" );
-		return;
-	}
-
-	idStr filename = args.Argv( 1 );
-	if( !filename.Length() )
-	{
-		return;
-	}
-	filename.StripFileExtension();
-
-	idStr mapName;
-	sprintf( mapName, "maps/%s.map", filename.c_str() );
-
-	idMapFile map;
-	if( map.Parse( mapName, true, false ) )
-	{
-		map.ConvertToPolygonMeshFormat();
-
-		idStrStatic< MAX_OSPATH > canonical = mapName;
-		canonical.ToLower();
-
-		idStrStatic< MAX_OSPATH > extension;
-		canonical.StripFileExtension();
-
-		idStrStatic< MAX_OSPATH > convertedFileName;
-
-		convertedFileName = canonical;
-		//convertedFileName += "_converted";
-
-		map.WriteJSON( convertedFileName, ".json" );
 	}
 
 	common->SetRefreshOnPrint( false );

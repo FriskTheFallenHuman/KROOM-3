@@ -116,37 +116,11 @@ public:
 	}
 	void					GetTextureVectors( idVec4 v[2] ) const;
 
-	// RB: support Valve 220 projection by TrenchBroom
-	enum ProjectionType
-	{
-		PROJECTION_BP		= 0,
-		PROJECTION_VALVE220	= 1
-	};
-
-	ProjectionType			GetProjectionType() const
-	{
-		return projection;
-	}
-
-	const idVec2i&			GetTextureSize() const
-	{
-		return texSize;
-	}
-	// RB end
-
 protected:
 	idStr					material;
 	idPlane					plane;
 	idVec3					texMat[2];
 	idVec3					origin;
-
-	// RB
-	idVec3					planepts[ 3 ]; // for writing back original planepts
-	ProjectionType			projection;
-	idVec4					texValve[ 2 ]; // alternative texture coordinate mapping
-	idVec2					texScale;
-	idVec2i					texSize;
-
 };
 
 ID_INLINE idMapBrushSide::idMapBrushSide()
@@ -155,14 +129,6 @@ ID_INLINE idMapBrushSide::idMapBrushSide()
 	texMat[0].Zero();
 	texMat[1].Zero();
 	origin.Zero();
-
-	projection = PROJECTION_BP;
-	texValve[0].Zero();
-	texValve[1].Zero();
-	texScale[0] = 1.0f;
-	texScale[1] = 1.0f;
-	texSize[0] = 32;
-	texSize[1] = 32;
 }
 
 
@@ -180,9 +146,9 @@ public:
 	}
 	static idMapBrush* 		Parse( idLexer& src, const idVec3& origin, bool newFormat = true, float version = CURRENT_MAP_VERSION );
 	static idMapBrush* 		ParseQ3( idLexer& src, const idVec3& origin );
-	static idMapBrush* 		ParseValve220( idLexer& src, const idVec3& origin ); // RB
+
 	bool					Write( idFile* fp, int primitiveNum, const idVec3& origin ) const;
-	bool					WriteValve220( idFile* fp, int primitiveNum, const idVec3& origin ) const; // RB
+
 	int						GetNumSides() const
 	{
 		return sides.Num();
@@ -196,8 +162,6 @@ public:
 		return sides[i];
 	}
 	unsigned int			GetGeometryCRC() const;
-
-	bool					IsOriginBrush() const;
 
 protected:
 	int						numSides;
@@ -349,11 +313,6 @@ public:
 	static MapPolygonMesh*	Parse( idLexer& src, const idVec3& origin, float version = CURRENT_MAP_VERSION );
 	bool					Write( idFile* fp, int primitiveNum, const idVec3& origin ) const;
 
-	static MapPolygonMesh*	ParseJSON( idLexer& src );
-	bool					WriteJSON( idFile* fp, int primitiveNum, const idVec3& origin ) const;
-
-
-
 	int						GetNumVertices() const
 	{
 		return verts.Num();
@@ -423,7 +382,6 @@ class idMapEntity
 
 public:
 	idDict					epairs;
-	idVec3					originOffset{ vec3_origin };
 
 public:
 	idMapEntity()
@@ -435,11 +393,8 @@ public:
 		primitives.DeleteContents( true );
 	}
 	static idMapEntity* 	Parse( idLexer& src, bool worldSpawn = false, float version = CURRENT_MAP_VERSION );
-	bool					Write( idFile* fp, int entityNum, bool valve220 ) const;
-	// RB begin
-	static idMapEntity* 	ParseJSON( idLexer& src );
-	bool					WriteJSON( idFile* fp, int entityNum, int numEntities ) const;
-	// RB end
+	bool					Write( idFile* fp, int entityNum ) const;
+
 	int						GetNumPrimitives() const
 	{
 		return primitives.Num();
@@ -456,8 +411,6 @@ public:
 	void					RemovePrimitiveData();
 
 protected:
-	void					CalculateBrushOrigin();
-
 	idList<idMapPrimitive*, TAG_IDLIB_LIST_MAP>	primitives;
 };
 
@@ -479,7 +432,6 @@ public:
 	bool					Write( const char* fileName, const char* ext, bool fromBasePath = true );
 
 	// RB begin
-	bool					WriteJSON( const char* fileName, const char* ext, bool fromBasePath = true );
 	bool					ConvertToPolygonMeshFormat();
 	// RB end
 
@@ -514,7 +466,6 @@ public:
 
 	int						AddEntity( idMapEntity* mapentity );
 	idMapEntity* 			FindEntity( const char* name );
-	idMapEntity*			FindEntityAtOrigin( const idVec3& org ); // RB
 	void					RemoveEntity( idMapEntity* mapEnt );
 	void					RemoveEntities( const char* classname );
 	void					RemoveAllEntities();
@@ -531,7 +482,6 @@ protected:
 	idList<idMapEntity*, TAG_IDLIB_LIST_MAP>	entities;
 	idStr					name;
 	bool					hasPrimitiveData;
-	bool					valve220Format; // RB: for TrenchBroom support
 
 private:
 	void					SetGeometryCRC();
@@ -544,7 +494,6 @@ ID_INLINE idMapFile::idMapFile()
 	geometryCRC = 0;
 	entities.Resize( 1024, 256 );
 	hasPrimitiveData = false;
-	valve220Format = false;
 }
 
 #endif /* !__MAPFILE_H__ */

@@ -99,37 +99,21 @@ idEventDef::idEventDef( const char* command, const char* formatspec, char return
 		{
 			case D_EVENT_FLOAT :
 				bits |= 1 << i;
-				// RB: 64 bit fix, changed sizeof( float ) to sizeof( intptr_t )
 				argsize += sizeof( intptr_t );
-				// RB end
 				break;
 
 			case D_EVENT_INTEGER :
-				// RB: 64 bit fix, changed sizeof( int ) to sizeof( intptr_t )
+			case D_EVENT_ENTITY :
+			case D_EVENT_ENTITY_NULL :
 				argsize += sizeof( intptr_t );
-				// RB end
 				break;
 
 			case D_EVENT_VECTOR :
-				// RB: 64 bit fix, changed sizeof( idVec3 ) to E_EVENT_SIZEOF_VEC
 				argsize += E_EVENT_SIZEOF_VEC;
-				// RB end
 				break;
 
 			case D_EVENT_STRING :
 				argsize += MAX_STRING_LEN;
-				break;
-
-			case D_EVENT_ENTITY :
-				// RB: 64 bit fix, sizeof( idEntityPtr<idEntity> ) to sizeof( intptr_t )
-				argsize += sizeof( intptr_t );
-				// RB end
-				break;
-
-			case D_EVENT_ENTITY_NULL :
-				// RB: 64 bit fix, sizeof( idEntityPtr<idEntity> ) to sizeof( intptr_t )
-				argsize += sizeof( intptr_t );
-				// RB end
 				break;
 
 			case D_EVENT_TRACE :
@@ -377,10 +361,8 @@ idEvent* idEvent::Alloc( const idEventDef* evdef, int numargs, va_list args )
 idEvent::CopyArgs
 ================
 */
-// RB: 64 bit fixes, changed int to intptr_t
 void idEvent::CopyArgs( const idEventDef* evdef, int numargs, va_list args, intptr_t data[ D_EVENT_MAXARGS ] )
 {
-// RB end
 	int			i;
 	const char*	format;
 	idEventArg*	arg;
@@ -565,9 +547,7 @@ void idEvent::ServiceEvents()
 {
 	idEvent*		event;
 	int			num;
-	// RB: 64 bit fixes, changed int to intptr_t
 	intptr_t	args[ D_EVENT_MAXARGS ];
-	// RB end
 	int			offset;
 	int			i;
 	int			numargs;
@@ -648,15 +628,6 @@ void idEvent::ServiceEvents()
 		assert( event->object );
 		event->object->ProcessEventArgPtr( ev, args );
 
-#if 0
-		// event functions may never leave return values on the FPU stack
-		// enable this code to check if any event call left values on the FPU stack
-		if( !sys->FPU_StackIsEmpty() )
-		{
-			gameLocal.Error( "idEvent::ServiceEvents %d: %s left a value on the FPU stack\n", num, ev->GetName() );
-		}
-#endif
-
 		// return the event to the free list
 		event->Free();
 
@@ -678,10 +649,8 @@ idEvent::ServiceFastEvents
 void idEvent::ServiceFastEvents()
 {
 	idEvent*	event;
-	int			num;
-	// RB: 64 bit fixes, changed int to intptr_t
+	int		num;
 	intptr_t	args[ D_EVENT_MAXARGS ];
-	// RB end
 	int			offset;
 	int			i;
 	int			numargs;
@@ -759,15 +728,6 @@ void idEvent::ServiceFastEvents()
 		event->eventNode.Remove();
 		assert( event->object );
 		event->object->ProcessEventArgPtr( ev, args );
-
-#if 0
-		// event functions may never leave return values on the FPU stack
-		// enable this code to check if any event call left values on the FPU stack
-		if( !sys->FPU_StackIsEmpty() )
-		{
-			gameLocal.Error( "idEvent::ServiceEvents %d: %s left a value on the FPU stack\n", num, event->eventdef->GetName() );
-		}
-#endif
 
 		// return the event to the free list
 		event->Free();
@@ -855,9 +815,7 @@ void idEvent::Save( idSaveGame* savefile )
 	byte* dataPtr;
 	bool validTrace;
 	const char*	format;
-	// RB: for missing D_EVENT_STRING
 	idStr s;
-	// RB end
 
 	savefile->WriteInt( EventQueue.Num() );
 
@@ -877,40 +835,27 @@ void idEvent::Save( idSaveGame* savefile )
 			{
 				case D_EVENT_FLOAT :
 					savefile->WriteFloat( *reinterpret_cast<float*>( dataPtr ) );
-					// RB: 64 bit fix, changed sizeof( float ) to sizeof( intptr_t )
 					size += sizeof( intptr_t );
-					// RB end
 					break;
 				case D_EVENT_INTEGER :
-					// RB: 64 bit fix, changed sizeof( int ) to sizeof( intptr_t )
 					savefile->WriteInt( *reinterpret_cast<int*>( dataPtr ) );
 					size += sizeof( intptr_t );
 					break;
-				// RB end
 				case D_EVENT_ENTITY :
 				case D_EVENT_ENTITY_NULL :
-					// RB: 64 bit fix, changed alignment to sizeof( intptr_t )
 					reinterpret_cast< idEntityPtr<idEntity> * >( dataPtr )->Save( savefile );
 					size += sizeof( intptr_t );
-					// RB end
 					break;
 				case D_EVENT_VECTOR :
 					savefile->WriteVec3( *reinterpret_cast<idVec3*>( dataPtr ) );
-					// RB: 64 bit fix, changed sizeof( int ) to E_EVENT_SIZEOF_VEC
 					size += E_EVENT_SIZEOF_VEC;
-					// RB end
 					break;
-#if 1
-				// RB: added missing D_EVENT_STRING case
 				case D_EVENT_STRING :
 					s.Clear();
 					s.Append( reinterpret_cast<char*>( dataPtr ) );
 					savefile->WriteString( s );
-					//size += s.Length();
 					size += MAX_STRING_LEN;
 					break;
-					// RB end
-#endif
 				case D_EVENT_TRACE :
 					validTrace = *reinterpret_cast<bool*>( dataPtr );
 					savefile->WriteBool( validTrace );
@@ -932,7 +877,7 @@ void idEvent::Save( idSaveGame* savefile )
 					break;
 			}
 		}
-		assert( size == ( int )event->eventdef->GetArgSize() );
+		assert( size == event->eventdef->GetArgSize() );
 		event = event->eventNode.Next();
 	}
 
@@ -966,9 +911,7 @@ void idEvent::Restore( idRestoreGame* savefile )
 	byte* dataPtr;
 	idEvent*	event;
 	const char*	format;
-	// RB: for missing D_EVENT_STRING
 	idStr s;
-	// RB end
 
 	savefile->ReadInt( num );
 
@@ -1007,7 +950,7 @@ void idEvent::Restore( idRestoreGame* savefile )
 
 		// read the args
 		savefile->ReadInt( argsize );
-		if( argsize != ( int )event->eventdef->GetArgSize() )
+		if( argsize != event->eventdef->GetArgSize() )
 		{
 			// RB: fixed wrong formatting
 			savefile->Error( "idEvent::Restore: arg size (%zd) doesn't match saved arg size(%zd) on event '%s'", event->eventdef->GetArgSize(), argsize, event->eventdef->GetName() );
@@ -1025,40 +968,26 @@ void idEvent::Restore( idRestoreGame* savefile )
 				{
 					case D_EVENT_FLOAT :
 						savefile->ReadFloat( *reinterpret_cast<float*>( dataPtr ) );
-						// RB: 64 bit fix, changed sizeof( float ) to sizeof( intptr_t )
 						size += sizeof( intptr_t );
-						// RB end
 						break;
 					case D_EVENT_INTEGER :
-						// RB: 64 bit fix
 						savefile->ReadInt( *reinterpret_cast<int*>( dataPtr ) );
 						size += sizeof( intptr_t );
 						break;
-					// RB end
 					case D_EVENT_ENTITY :
 					case D_EVENT_ENTITY_NULL :
-						// RB: 64 bit fix, changed alignment to sizeof( intptr_t )
-						reinterpret_cast<idEntityPtr<idEntity> *>( dataPtr )->Restore( savefile );
+						reinterpret_cast< idEntityPtr<idEntity> * >( dataPtr )->Restore( savefile );
 						size += sizeof( intptr_t );
-						// RB end
 						break;
 					case D_EVENT_VECTOR :
 						savefile->ReadVec3( *reinterpret_cast<idVec3*>( dataPtr ) );
-						// RB: 64 bit fix, changed sizeof( int ) to E_EVENT_SIZEOF_VEC
 						size += E_EVENT_SIZEOF_VEC;
-						// RB end
 						break;
-#if 1
-					// RB: added missing D_EVENT_STRING case
 					case D_EVENT_STRING :
 						savefile->ReadString( s );
-						//idStr::Copynz(reinterpret_cast<char *>( dataPtr ), s, s.Length() );
-						//size += s.Length();
 						idStr::Copynz( reinterpret_cast<char*>( dataPtr ), s, MAX_STRING_LEN );
 						size += MAX_STRING_LEN;
 						break;
-						// RB end
-#endif
 					case D_EVENT_TRACE :
 						savefile->ReadBool( *reinterpret_cast<bool*>( dataPtr ) );
 						size += sizeof( bool );
@@ -1079,7 +1008,7 @@ void idEvent::Restore( idRestoreGame* savefile )
 						break;
 				}
 			}
-			assert( size == ( int )event->eventdef->GetArgSize() );
+			assert( size == event->eventdef->GetArgSize() );
 		}
 		else
 		{
@@ -1125,9 +1054,9 @@ void idEvent::Restore( idRestoreGame* savefile )
 
 		// read the args
 		savefile->ReadInt( argsize );
-		if( argsize != ( int )event->eventdef->GetArgSize() )
+		if( argsize != event->eventdef->GetArgSize() )
 		{
-			savefile->Error( "idEvent::Restore: arg size (%d) doesn't match saved arg size(%d) on event '%s'", event->eventdef->GetArgSize(), argsize, event->eventdef->GetName() );
+			savefile->Error( "idEvent::Restore: arg size (%zd) doesn't match saved arg size(%d) on event '%s'", event->eventdef->GetArgSize(), argsize, event->eventdef->GetName() );
 		}
 		if( argsize )
 		{
@@ -1201,8 +1130,6 @@ CreateEventCallbackHandler
 */
 void CreateEventCallbackHandler()
 {
-	int num;
-	int count;
 	int i, j, k;
 	char argString[ D_EVENT_MAXARGS + 1 ];
 	idStr string1;
@@ -1238,9 +1165,7 @@ void CreateEventCallbackHandler()
 				}
 				else
 				{
-					// RB: 64 bit fix, changed int to intptr_t
 					string1 += "const intptr_t";
-					// RB end
 					string2 += va( "data[ %d ]", k );
 				}
 

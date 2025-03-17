@@ -71,4 +71,4 @@ private:
 	netadr_t				address;
 };
 
-#endif	// __SYS_LOBBY_BACKEND_DIRECT_H__ 
+#endif	// __SYS_LOBBY_BACKEND_DIRECT_H__

@@ -192,7 +192,6 @@ public:
 	static void			ArgCompletion_Decl( const idCmdArgs& args, void( *callback )( const char* s ) );
 	static void			ArgCompletion_FileName( const idCmdArgs& args, void( *callback )( const char* s ) );
 	static void			ArgCompletion_MapName( const idCmdArgs& args, void( *callback )( const char* s ) );
-	static void			ArgCompletion_MapNameNoJson( const idCmdArgs& args, void( *callback )( const char* s ) );
 	static void			ArgCompletion_ModelName( const idCmdArgs& args, void( *callback )( const char* s ) );
 	static void			ArgCompletion_SoundName( const idCmdArgs& args, void( *callback )( const char* s ) );
 	static void			ArgCompletion_ImageName( const idCmdArgs& args, void( *callback )( const char* s ) );
@@ -243,32 +242,27 @@ ID_INLINE void idCmdSystem::ArgCompletion_FileName( const idCmdArgs& args, void(
 
 ID_INLINE void idCmdSystem::ArgCompletion_MapName( const idCmdArgs& args, void( *callback )( const char* s ) )
 {
-	cmdSystem->ArgCompletion_FolderExtension( args, callback, "maps/", true, ".map", ".json", NULL );
-}
-
-ID_INLINE void idCmdSystem::ArgCompletion_MapNameNoJson( const idCmdArgs& args, void( *callback )( const char* s ) )
-{
 	cmdSystem->ArgCompletion_FolderExtension( args, callback, "maps/", true, ".map", NULL );
 }
 
 ID_INLINE void idCmdSystem::ArgCompletion_ModelName( const idCmdArgs& args, void( *callback )( const char* s ) )
 {
-	cmdSystem->ArgCompletion_FolderExtension( args, callback, "models/", false, ".lwo", ".ase", ".md5mesh", ".ma", NULL );
+	cmdSystem->ArgCompletion_FolderExtension( args, callback, "models/", false, ".lwo", ".ase", ".md5mesh", ".ma", ".obj", ".md3", NULL );
 }
 
 ID_INLINE void idCmdSystem::ArgCompletion_SoundName( const idCmdArgs& args, void( *callback )( const char* s ) )
 {
-	cmdSystem->ArgCompletion_FolderExtension( args, callback, "sound/", false, ".wav", NULL );
+	cmdSystem->ArgCompletion_FolderExtension( args, callback, "sound/", false, ".wav", ".ogg", NULL );
 }
 
 ID_INLINE void idCmdSystem::ArgCompletion_ImageName( const idCmdArgs& args, void( *callback )( const char* s ) )
 {
-	cmdSystem->ArgCompletion_FolderExtension( args, callback, "/", false, ".tga", ".dds", ".jpg", ".pcx", NULL );
+	cmdSystem->ArgCompletion_FolderExtension( args, callback, "/", false, ".tga", ".png", ".jpg", ".exr", ".hdr", NULL );
 }
 
 ID_INLINE void idCmdSystem::ArgCompletion_VideoName( const idCmdArgs& args, void( *callback )( const char* s ) )
 {
-	cmdSystem->ArgCompletion_FolderExtension( args, callback, "/", false, ".bik", NULL );
+	cmdSystem->ArgCompletion_FolderExtension( args, callback, "/", false, ".bik", ".roq", NULL );
 }
 
 ID_INLINE void idCmdSystem::ArgCompletion_ConfigName( const idCmdArgs& args, void( *callback )( const char* s ) )

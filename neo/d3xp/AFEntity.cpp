@@ -1004,6 +1004,7 @@ idAFEntity_Base::ShowEditingDialog
 */
 void idAFEntity_Base::ShowEditingDialog()
 {
+	common->InitTool( EDITOR_AF, &spawnArgs );
 }
 
 /*

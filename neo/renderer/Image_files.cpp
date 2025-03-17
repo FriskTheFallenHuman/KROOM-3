@@ -33,15 +33,18 @@ If you have questions concerning this license or the applicable additional terms
 #undef strncmp
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "../libs/stb/stb_image.h"
+#include "stb/stb_image.h"
 
 //#define STB_IMAGE_WRITE_IMPLEMENTATION
-//#include "../libs/stb/stb_image_write.h"
+//#include "stb/stb_image_write.h"
 
+#include "miniz/miniz.h"
+
+#define TINYEXR_USE_MINIZ 0
 #define TINYEXR_IMPLEMENTATION
-#include "../libs/tinyexr/tinyexr.h"
+#include "tinyexr/tinyexr.h"
 
-#include "../libs/mesa/format_r11g11b10f.h"
+#include "mesa/format_r11g11b10f.h"
 
 #include "RenderCommon.h"
 
@@ -61,8 +64,13 @@ void R_LoadImage( const char *name, byte **pic, int *width, int *height, bool ma
  * You may also wish to include "jerror.h".
  */
 
+#ifdef _WIN32
+#include "jpeg-6/jpeglib.h"
+#include "jpeg-6/jerror.h"
+#else
 #include <jpeglib.h>
 #include <jerror.h>
+#endif
 
 // hooks from jpeg lib to our system
 
@@ -634,7 +642,12 @@ PNG LOADING
 extern "C"
 {
 #include <string.h>
+
+#ifdef _WIN32
+#include "png/png.h"
+#else
 #include <png.h>
+#endif
 
 
 	static void png_Error( png_structp pngPtr, png_const_charp msg )

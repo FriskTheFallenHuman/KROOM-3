@@ -169,11 +169,6 @@ void idMenuScreen_Shell_Save::UpdateSaveEnumerations()
 			}
 		}
 
-		if( saveGameInfo.Num() == MAX_SAVEGAMES || ( !hasAutosave && saveGameInfo.Num() == MAX_SAVEGAMES - 1 ) )
-		{
-			newSaveOffset = 0;
-		}
-
 		if( newSaveOffset != 0 )
 		{
 			idList< idStr > newSave;
@@ -183,7 +178,7 @@ void idMenuScreen_Shell_Save::UpdateSaveEnumerations()
 
 		if( options != NULL )
 		{
-			sortedSaves.Sort( idSort_SavesByDate() );
+			sortedSaves.SortWithTemplate( idSort_SavesByDate() );
 
 			for( int slot = 0; slot < sortedSaves.Num(); ++slot )
 			{
@@ -354,18 +349,17 @@ void idMenuScreen_Shell_Save::SaveGame( int index )
 		}
 	}
 
-	if( saveGameInfo.Num() == MAX_SAVEGAMES || ( ( saveGameInfo.Num() == MAX_SAVEGAMES - 1 ) && !hasAutosave ) )
-	{
-		newSaveOffset = 0;
-	}
-
 	if( index == 0 && newSaveOffset == 1 )
 	{
 		// New save...
 
 		// Scan all the savegames for the first doom3_xxx slot.
 		const idStr savePrefix = "doom3_";
-		uint64 slotMask = 0;
+		uint64 slotMask = 1;
+		std::vector<int> slots;
+#if _ITERATOR_DEBUG_LEVEL < 2
+		slots.reserve( MAX_SAVEGAMES );
+#endif
 		for( int slot = 0; slot < saveGameInfo.Num(); ++slot )
 		{
 			const idSaveGameDetails& details = saveGameInfo[slot];
@@ -381,23 +375,34 @@ void idMenuScreen_Shell_Save::SaveGame( int index )
 			name.StripLeading( savePrefix.c_str() );
 			if( name.IsNumeric() )
 			{
-				int slotNumber = atoi( name.c_str() );
-				slotMask |= ( 1ULL << slotNumber );
+				int slotNum = atoi( name.c_str() );
+#if _ITERATOR_DEBUG_LEVEL < 2
+				if( slots.capacity() == slots.size() )
+				{
+					slots.reserve( slots.size() + MAX_SAVEGAMES );
+				}
+				slots.emplace_back( slotNum );
+#else
+				slots.push_back( slotNum );
+#endif
+				if( slotMask < slotNum )
+				{
+					slotMask = slotNum;
+				}
 			}
 		}
 
-		int slotNumber = 0;
-		for( slotNumber = 0; slotNumber < ( sizeof( slotMask ) * 8 ); slotNumber++ )
+		uint64 slotNumber = 0;
+		for( slotNumber = 0; slotNumber < slotMask + 1; slotNumber++ )
 		{
 			// If the slot isn't used, grab it
-			if( !( slotMask & ( 1ULL << slotNumber ) ) )
+			if( std::find( slots.begin(), slots.end(), slotNumber ) == slots.end() )
 			{
 				break;
 			}
 		}
 
-		assert( slotNumber < ( sizeof( slotMask ) * 8 ) );
-		idStr name = va( "%s%d", savePrefix.c_str(), slotNumber );
+		idStr name = va( "%s%llu", savePrefix.c_str(), slotNumber );
 		cmdSystem->AppendCommandText( va( "savegame %s\n", name.c_str() ) );
 
 		// Throw up the saving message...
@@ -498,10 +503,7 @@ void idMenuScreen_Shell_Save::DeleteGame( int index )
 		}
 	}
 
-	if( ( saveInfo.Num() < MAX_SAVEGAMES - 1 ) || ( ( saveInfo.Num() == MAX_SAVEGAMES - 1 ) && hasAutosave ) )
-	{
-		index--;	// Subtract 1 from the index for 'New Game'
-	}
+	index--;	// Subtract 1 from the index for 'New Game'
 
 	common->Dialog().AddDialog( GDM_DELETE_SAVE, DIALOG_ACCEPT_CANCEL, new idSWFScriptFunction_DeleteGame( GDM_DELETE_SAVE, true, index, this ), new idSWFScriptFunction_DeleteGame( GDM_DELETE_SAVE, false, index, this ), false );
 

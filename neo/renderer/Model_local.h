@@ -40,7 +40,6 @@ If you have questions concerning this license or the applicable additional terms
 
 class idJointMat;
 struct deformInfo_t;
-class ColladaParser;	// RB: Collada support
 struct objModel_t;		// RB: Wavefront OBJ support
 
 class idRenderModelStatic : public idRenderModel
@@ -59,10 +58,6 @@ public:
 	{
 		return true;
 	}
-
-	// RB begin
-	virtual void				ExportOBJ( idFile* objFile, idFile* mtlFile, ID_TIME_T* _timeStamp = NULL );
-	// RB end
 
 	virtual void				PartialInitFromFile( const char* fileName );
 	virtual void				PurgeModel();
@@ -120,10 +115,8 @@ public:
 	bool						LoadASE( const char* fileName, ID_TIME_T* sourceTimeStamp );
 	bool						LoadLWO( const char* fileName, ID_TIME_T* sourceTimeStamp );
 	bool						LoadMA( const char* filename, ID_TIME_T* sourceTimeStamp );
-	bool						LoadDAE( const char* fileName, ID_TIME_T* sourceTimeStamp ); // RB
 	bool						LoadOBJ( const char* fileName, ID_TIME_T* sourceTimeStamp ); // RB
 
-	bool						ConvertDAEToModelSurfaces( const ColladaParser* dae ); // RB
 	bool						ConvertOBJToModelSurfaces( const objModel_t* obj ); // RB
 	bool						ConvertASEToModelSurfaces( const struct aseModel_s* ase );
 	bool						ConvertLWOToModelSurfaces( const struct st_lwObject* lwo );
@@ -236,10 +229,6 @@ public:
 	{
 		return true;
 	}
-
-	// RB begin
-	virtual void				ExportOBJ( idFile* objFile, idFile* mtlFile, ID_TIME_T* _timeStamp = NULL );
-	// RB end
 
 private:
 	idList<idMD5Joint, TAG_MODEL>	joints;

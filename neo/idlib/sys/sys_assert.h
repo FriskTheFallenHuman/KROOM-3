@@ -98,7 +98,7 @@ bool AssertFailed( const char* file, int line, const char* expression );
 #define assert_aligned_to_type_size( ptr )	assert( ( ((uintptr_t)(ptr)) & ( sizeof( (ptr)[0] ) - 1 ) ) == 0 )
 // RB end
 
-#if !defined( __TYPEINFOGEN__ ) && !defined( _lint )	// pcLint has problems with assert_offsetof()
+#if !defined( _lint )	// pcLint has problems with assert_offsetof()
 
 #if __cplusplus >= 201103L
 #define compile_time_assert( x ) static_assert( x, "Assertion failure" )

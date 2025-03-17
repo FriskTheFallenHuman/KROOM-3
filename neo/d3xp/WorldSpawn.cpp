@@ -25,12 +25,6 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
-/*
-game_worldspawn.cpp
-
-Worldspawn class.  Each map has one worldspawn which handles global spawnargs.
-
-*/
 
 #include "precompiled.h"
 #pragma hdrstop
@@ -41,6 +35,7 @@ Worldspawn class.  Each map has one worldspawn which handles global spawnargs.
 ================
 idWorldspawn
 
+Worldspawn class.  Each map has one worldspawn which handles global spawnargs.
 Every map should have exactly one worldspawn.
 ================
 */

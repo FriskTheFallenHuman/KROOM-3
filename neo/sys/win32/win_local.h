@@ -33,7 +33,7 @@ If you have questions concerning this license or the applicable additional terms
 
 // RB: replaced QGL with GLEW
 #if !defined(USE_VULKAN)
-	#include "../../libs/glew/include/GL/wglew.h" // windows OpenGL extensions
+	#include "glew/include/GL/wglew.h" // windows OpenGL extensions
 #endif
 // RB end
 
@@ -124,9 +124,6 @@ typedef struct
 	static idCVar	win_viewlog;
 	static idCVar	win_timerUpdate;
 	static idCVar	win_allowMultipleInstances;
-
-	static idCVar	sys_useSteamPath;
-	static idCVar	sys_useGOGPath;
 
 	CRITICAL_SECTION criticalSections[MAX_CRITICAL_SECTIONS];
 

@@ -6,5 +6,5 @@ entityDef env_probe
 	
 	"editor_usage"				"Environment probe for Image Based Lighting"
 	
-	"spawnclass"				"EnvironmentProbe"
+	"spawnclass"				"idEnvProbes"
 }

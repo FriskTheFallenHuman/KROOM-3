@@ -680,8 +680,8 @@ void	FixGlobalTjunctions( uEntity_t* e )
 				continue;
 			}
 
-			// RB: DAE and OBJ support
-			if( !strstr( modelName, ".lwo" ) && !strstr( modelName, ".ase" ) && !strstr( modelName, ".ma" ) && !strstr( modelName, ".dae" ) && !strstr( modelName, ".obj" ) )
+			// RB: OBJ support
+			if( !strstr( modelName, ".lwo" ) && !strstr( modelName, ".ase" ) && !strstr( modelName, ".ma" ) && !strstr( modelName, ".md3" ) && !strstr( modelName, ".obj" ) )
 			{
 				continue;
 			}

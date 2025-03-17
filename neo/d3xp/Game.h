@@ -306,7 +306,6 @@ public:
 	virtual void				MapSave( const char* path = NULL ) const;
 	virtual void				MapSetEntityKeyVal( const char* name, const char* key, const char* val ) const ;
 	virtual void				MapCopyDictToEntity( const char* name, const idDict* dict ) const;
-	virtual void				MapCopyDictToEntityAtOrigin( const idVec3& org, const idDict* dict ) const;
 	virtual int					MapGetUniqueMatchingKeyVals( const char* key, const char* list[], const int max ) const;
 	virtual void				MapAddEntity( const idDict* dict ) const;
 	virtual int					MapGetEntitiesMatchingClassWithString( const char* classname, const char* match, const char* list[], const int max ) const;

@@ -37,29 +37,12 @@ Contains external code for building ZipFiles.
 
 #include "Zip.h"
 
-
 // #undef STDC
 
 idCVar zip_verbosity( "zip_verbosity", "0", CVAR_BOOL, "1 = verbose logging when building zip files" );
+
 #define	DEFAULT_COMPRESSION_LEVEL	(5)	/* 1 == Compress faster, 9 == Compress better */
 #define DEFAULT_WRITEBUFFERSIZE (16384)
-
-/*
- * DG: all the zip implementation has been updated to minizip 1.1 and is in framework/minizip/zip.cpp
- *     In the D3 BFG implementation there were some things specific to Doom3:
- *     * FILE was replaced by idFile, thus
- *       - fseek(), fread(), fwrite(), ftell() were replaced by idFile functions
- *       - fopen() was replaced by fileSystem->OpenExplicitFileWrite()
- *       - fclose() was replaced by fileSystem->CloseFile()
- *
- *     As this isn't important for the code to work I haven't done these changes, but using the
- *     Doom3 specific functions could be quite easily done by using zipOpen2() with an appropriate
- *     zlib_filefunc_def.
- *
- * TODO: Doom3 should already support zip64 for unzipping, maybe it would make sense to use the
- *       corresponding functions here as well.. but then we can't use idFile, because it only
- *       supports files up to 2GB (Length() and Tell() return ints)
- */
 
 /*
 ========================

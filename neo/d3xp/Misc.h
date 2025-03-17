@@ -214,6 +214,8 @@ public:
 	CLASS_PROTOTYPE( idSpring );
 
 	void				Spawn();
+	void				Save( idSaveGame* savefile ) const;
+	void				Restore( idRestoreGame* savefile );
 
 	virtual void		Think();
 

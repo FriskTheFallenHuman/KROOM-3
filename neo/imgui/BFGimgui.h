@@ -2,9 +2,9 @@
 #ifndef NEO_IMGUI_BFGIMGUI_H_
 #define NEO_IMGUI_BFGIMGUI_H_
 
-#include "libs/imgui/imgui.h"
+#include "imgui/imgui.h"
 
-#include "../idlib/math/Vector.h"
+#include "math/Vector.h"
 
 // add custom functions for imgui
 namespace ImGui

@@ -895,7 +895,7 @@ void idThread::Error( const char* fmt, ... ) const
 	vsprintf( text, fmt, argptr );
 	va_end( argptr );
 
-	interpreter.Error( text );
+	interpreter.Error( "%s", text );
 }
 
 /*
@@ -912,7 +912,7 @@ void idThread::Warning( const char* fmt, ... ) const
 	vsprintf( text, fmt, argptr );
 	va_end( argptr );
 
-	interpreter.Warning( text );
+	interpreter.Warning( "%s", text );
 }
 
 /*
@@ -1039,9 +1039,6 @@ idThread::Event_TerminateThread
 */
 void idThread::Event_TerminateThread( int num )
 {
-	idThread* thread;
-
-	thread = GetThread( num );
 	KillThread( num );
 }
 
@@ -1222,16 +1219,7 @@ idThread::Event_GetTime
 */
 void idThread::Event_GetTime()
 {
-
 	ReturnFloat( MS2SEC( gameLocal.realClientTime ) );
-
-	/*  Script always uses realClient time to determine scripty stuff. ( This Fixes Weapon Animation timing bugs )
-	if ( common->IsMultiplayer() ) {
-		ReturnFloat( MS2SEC( gameLocal.GetServerGameTimeMs() ) );
-	} else {
-		ReturnFloat( MS2SEC( gameLocal.realClientTime ) );
-	}
-	*/
 }
 
 /*

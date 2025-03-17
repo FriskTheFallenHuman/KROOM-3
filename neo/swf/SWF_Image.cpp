@@ -29,8 +29,12 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 #include "../renderer/Image.h"
-//#include "../../renderer/ImageTools/ImageProcess.h"
+
+#ifdef _WIN32
+#include "jpeg-6/jpeglib.h"
+#else
 #include <jpeglib.h>
+#endif
 
 idCVar swf_useChannelScale( "swf_useChannelScale", "0", CVAR_BOOL, "compress texture atlas colors" );
 

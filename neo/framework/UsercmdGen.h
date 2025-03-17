@@ -148,6 +148,7 @@ typedef enum
 
 	UB_ATTACK,
 	UB_SPEED,
+	UB_CENTER_VIEW,
 	UB_ZOOM,
 	UB_SHOWSCORES,
 	UB_USE,

@@ -64,4 +64,4 @@ private:
 	idCallback* 		callback;
 };
 
-#endif	// __DEDICATEDSERVERSEARCH_H__ 
+#endif	// __DEDICATEDSERVERSEARCH_H__

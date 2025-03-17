@@ -71,7 +71,6 @@ void LightInfo::Defaults()
 	castSpecular = true;
 	hasCenter = false;
 	isParallel = false;
-	lightStyle = -1;
 }
 
 
@@ -175,9 +174,6 @@ void LightInfo::FromDict( const idDict* e )
 			hasCenter = true;
 		}
 	}
-
-	// RB: Quake 1 light styles
-	lightStyle = e->GetInt( "style", -1 );
 }
 
 // the returned idDict is supposed to be used by idGameEdit::EntityChangeSpawnArgs()
@@ -266,16 +262,6 @@ void LightInfo::ToDict( idDict* e )
 		e->Set( "light_center", DELETE_VAL );
 		e->Set( "parallel", DELETE_VAL );
 	}
-
-	// RB: Quake 1 light styles
-	if( lightStyle != -1 )
-	{
-		e->SetInt( "style", lightStyle );
-	}
-	else
-	{
-		e->Set( "style", DELETE_VAL );
-	}
 }
 
 LightInfo::LightInfo()
@@ -314,11 +300,6 @@ void LightEditor::Init( const idDict* dict, idEntity* light )
 		LoadLightTextures();
 	}
 
-	if( styleNames.Num() == 0 )
-	{
-		LoadLightStyles();
-	}
-
 	if( dict )
 	{
 		original.FromDict( dict );
@@ -326,18 +307,10 @@ void LightEditor::Init( const idDict* dict, idEntity* light )
 
 		gameEdit->EntityGetOrigin( light, entityPos );
 
-		const char* name = dict->GetString( "name", NULL );
-		if( name )
-		{
-			entityName = name;
-			title.Format( "Light Editor: %s at (%s)", name, entityPos.ToString() );
-		}
-		else
-		{
-			//idassert( 0 && "LightEditor::Init(): Given entity has no 'name' property?!" );
-			entityName = ""; // TODO: generate name or handle gracefully or something?
-			title.Format( "Light Editor: <unnamed> light at (%s)", entityPos.ToString() );
-		}
+		idStr name = dict->GetString( "name", NULL );
+		entityName = name ? name :  gameEdit->GetUniqueEntityName( "light" );
+		name.Format( "Light Editor: %s at (%s)###LightEditor", entityName.c_str(), entityPos.ToString() );
+		title = name;
 
 		currentTextureIndex = 0;
 		currentTexture = NULL;
@@ -353,12 +326,6 @@ void LightEditor::Init( const idDict* dict, idEntity* light )
 					break;
 				}
 			}
-		}
-
-		// RB: light styles
-		if( original.lightStyle >= 0 )
-		{
-			currentStyleIndex = original.lightStyle + 1;
 		}
 	}
 
@@ -379,7 +346,6 @@ void LightEditor::Reset()
 	currentTextureIndex = 0;
 	currentTexture = NULL;
 	currentTextureMaterial = NULL;
-	currentStyleIndex = 0;
 }
 
 namespace
@@ -480,60 +446,6 @@ void LightEditor::LoadCurrentTexture()
 	}
 }
 
-void LightEditor::LoadLightStyles()
-{
-	styleNames.Clear();
-
-	const idDeclEntityDef* decl = static_cast<const idDeclEntityDef*>( declManager->FindType( DECL_ENTITYDEF, "light", false ) );
-	if( decl == NULL )
-	{
-		return;
-	}
-
-	int numStyles = decl->dict.GetInt( "num_styles", "0" );
-	if( numStyles > 0 )
-	{
-		for( int i = 0; i < numStyles; i++ )
-		{
-			idStr style = decl->dict.GetString( va( "light_style%d", i ) );
-			styleNames.Append( style );
-		}
-	}
-	else
-	{
-		// RB: it's not defined in entityDef light so use predefined Quake 1 table
-		for( int i = 0; i < 12; i++ )
-		{
-			idStr style( predef_lightstylesinfo[ i ] );
-			styleNames.Append( style );
-		}
-	}
-}
-
-// static
-bool LightEditor::StyleItemsGetter( void* data, int idx, const char** outText )
-{
-	LightEditor* self = static_cast<LightEditor*>( data );
-	if( idx == 0 )
-	{
-		*outText = "<No Lightstyle>";
-		return true;
-	}
-
-	// as index 0 has special purpose, the "real" index is one less
-	--idx;
-
-	if( idx < 0 || idx >= self->styleNames.Num() )
-	{
-		*outText = "<Invalid Index!>";
-		return false;
-	}
-
-	*outText = self->styleNames[idx].c_str();
-
-	return true;
-}
-
 void LightEditor::TempApplyChanges()
 {
 	if( lightEntity != NULL )
@@ -556,11 +468,19 @@ void LightEditor::SaveChanges()
 	}
 	else if( entityPos.x != idMath::INFINITUM )
 	{
-		entityName = gameEdit->GetUniqueEntityName( "light" );
+		assert( 0 && "unimplemented" );
+
+#if 0 // TODO: I'm not quite sure about this, we prolly need to set a name before anyway for TempApplyChanges()
+		entityName = "light_42"; // FIXME: generate unique name!!
+		title.Format( "Light Editor: %s", entityName );
+
 		d.Set( "name", entityName );
 
-		// RB: this is really HACKY
-		gameEdit->MapCopyDictToEntityAtOrigin( entityPos, &d );
+		d.Set( "classname", "light" );
+		d.Set( "spawnclass", "idLight" );
+
+		gameEdit->MapAddEntity( &d );
+#endif // 0
 	}
 
 	gameEdit->MapSave();
@@ -687,16 +607,6 @@ void LightEditor::DrawWindow()
 		}
 
 		ImGui::Unindent();
-
-		if( ImGui::Combo( "Style", &currentStyleIndex, StyleItemsGetter, this, styleNames.Num() + 1 ) )
-		{
-			changes = true;
-
-			// -1 because 0 is "<No Lightstyle>"
-			cur.lightStyle = ( currentStyleIndex > 0 ) ? currentStyleIndex - 1 : -1;
-		}
-
-		ImGui::Spacing();
 
 		if( ImGui::Combo( "Texture", &currentTextureIndex, TextureItemsGetter, this, textureNames.Num() + 1 ) )
 		{

@@ -28,6 +28,9 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
+#ifndef __COMMON_LOCAL_H__
+#define __COMMON_LOCAL_H__
+
 static const int MAX_USERCMD_BACKUP = 256;
 static const int NUM_USERCMD_RELAY = 10;
 static const int NUM_USERCMD_SEND = 8;
@@ -38,6 +41,10 @@ static const int initialBaseTicksPerSec = initialHz * initialBaseTicks;
 
 static const int LOAD_TIP_CHANGE_INTERVAL = 12000;
 static const int LOAD_TIP_COUNT = 26;
+
+static const int MAX_CONSOLE_LINES = 32;
+static int com_numConsoleLines;
+static idCmdArgs com_consoleLines[MAX_CONSOLE_LINES];
 
 class idGameThread : public idSysThread
 {
@@ -109,12 +116,6 @@ enum errorParm_t
 	ERP_DISCONNECT					// don't kill server
 };
 
-enum gameLaunch_t
-{
-	LAUNCH_TITLE_DOOM = 0,
-	LAUNCH_TITLE_DOOM2,
-};
-
 struct netTimes_t
 {
 	int localTime;
@@ -161,7 +162,8 @@ public:
 //	virtual void				UpdateLevelLoadPacifier( bool Secondary );
 //	virtual void				UpdateLevelLoadPacifier( bool updateSecondary, int mProgress );
 	virtual void				StartupVariable( const char* match );
-	virtual void				InitTool( const toolFlag_t tool, const idDict* dict, idEntity* entity );
+	virtual void				InitTool( const toolFlag_t tool, const idDict *dict );
+	virtual void				ActivateTool( bool active );
 	virtual void				WriteConfigToFile( const char* filename );
 	virtual void				BeginRedirect( char* buffer, int buffersize, void ( *flush )( const char* ) );
 	virtual void				EndRedirect();
@@ -277,16 +279,6 @@ public:
 	{
 		showShellRequested = true;
 	}
-
-	// RB begin
-#if defined(USE_DOOMCLASSIC)
-	virtual currentGame_t		GetCurrentGame() const
-	{
-		return currentGame;
-	}
-	virtual void				SwitchToGame( currentGame_t newGame );
-#endif
-	// RB end
 
 public:
 	void	Draw();			// called by gameThread
@@ -619,27 +611,13 @@ private:
 
 	bool				showShellRequested;
 
-	// RB begin
-#if defined(USE_DOOMCLASSIC)
-	currentGame_t		currentGame;
-	currentGame_t		idealCurrentGame;		// Defer game switching so that bad things don't happen in the middle of the frame.
-	const idMaterial* 	doomClassicMaterial;
-
-	static const int			DOOMCLASSIC_RENDERWIDTH = 320 * 3;
-	static const int			DOOMCLASSIC_RENDERHEIGHT = 200 * 3;
-	static const int			DOOMCLASSIC_BYTES_PER_PIXEL = 4;
-	static const int			DOOMCLASSIC_IMAGE_SIZE_IN_BYTES = DOOMCLASSIC_RENDERWIDTH * DOOMCLASSIC_RENDERHEIGHT * DOOMCLASSIC_BYTES_PER_PIXEL;
-
-	idArray< byte, DOOMCLASSIC_IMAGE_SIZE_IN_BYTES >	doomClassicImageData;
-#endif
-	// RB end
-
 private:
 	void	InitCommands();
 	void	InitSIMD();
 	void	AddStartupCommands();
 	void	ParseCommandLine( int argc, const char* const* argv );
 	bool	SafeMode();
+	void	CheckToolMode();
 	void	CloseLogFile();
 	void	WriteConfiguration();
 	void	DumpWarnings();
@@ -702,19 +680,8 @@ private:
 	void	PlayIntroGui();
 
 	void	ScrubSaveGameFileName( idStr& saveFileName ) const;
-
-	// RB begin
-#if defined(USE_DOOMCLASSIC)
-	// Doom classic support
-	void	RunDoomClassicFrame();
-	void	RenderDoomClassic();
-	bool	IsPlayingDoomClassic() const
-	{
-		return GetCurrentGame() != DOOM3_BFG;
-	}
-	void	PerformGameSwitch();
-#endif
-	// RB end
 };
 
 extern idCommonLocal commonLocal;
+
+#endif /* !__COMMON_LOCAL_H__ */

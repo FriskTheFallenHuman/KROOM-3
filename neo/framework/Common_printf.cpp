@@ -260,6 +260,29 @@ void idCommonLocal::VPrintf( const char* fmt, va_list args )
 			UpdateScreen( captureToImage );
 		}
 	}
+
+#ifdef _WIN32
+	if ( com_outputMsg )
+	{
+		if ( com_msgID == -1 )
+		{
+			com_msgID = ::RegisterWindowMessage( DMAP_MSGID );
+			if ( !FindEditor() )
+			{
+				com_outputMsg = false;
+			}
+			else
+			{
+				Sys_ShowWindow( false );
+			}
+		}
+		if ( com_hwndMsg )
+		{
+			ATOM atom = ::GlobalAddAtom( msg );
+			::PostMessage( com_hwndMsg, com_msgID, 0, static_cast<LPARAM>(atom) );
+		}
+	}
+#endif
 }
 
 /*

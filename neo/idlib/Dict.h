@@ -184,10 +184,6 @@ public:
 	void				WriteToFileHandle( idFile* f ) const;
 	void				ReadFromFileHandle( idFile* f );
 
-	// RB begin
-	void				WriteJSON( idFile* f, const char* prefix = "" ) const;
-	// RB end
-
 	void				WriteToIniFile( idFile* f ) const;
 	bool				ReadFromIniFile( idFile* f );
 

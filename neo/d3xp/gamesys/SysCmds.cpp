@@ -94,7 +94,7 @@ void Cmd_EntityList_f( const idCmdArgs& args )
 		size += check->spawnArgs.Allocated();
 	}
 
-	gameLocal.Printf( "...%d entities\n...%d bytes of spawnargs\n", count, size );
+	gameLocal.Printf( "...%d entities\n...%zd bytes of spawnargs\n", count, size );
 }
 
 /*
@@ -166,21 +166,6 @@ void Cmd_ReloadScript_f( const idCmdArgs& args )
 
 	// error out so that the user can rerun the scripts
 	gameLocal.Error( "Exiting map to reload scripts" );
-}
-
-CONSOLE_COMMAND( reloadScript2, "Doesn't thow an error...  Use this when switching game modes", 0 )
-{
-	// shutdown the map because entities may point to script objects
-	gameLocal.MapShutdown();
-
-	// recompile the scripts
-	gameLocal.program.Startup( SCRIPT_DEFAULT );
-
-	if( fileSystem->ReadFile( "doom_main.script", NULL ) > 0 )
-	{
-		gameLocal.program.CompileFile( "doom_main.script" );
-		gameLocal.program.FinishCompilation();
-	}
 }
 
 /*
@@ -766,7 +751,7 @@ Cmd_AddChatLine_f
 */
 static void Cmd_AddChatLine_f( const idCmdArgs& args )
 {
-	gameLocal.mpGame.AddChatLine( args.Argv( 1 ) );
+	gameLocal.mpGame.AddChatLine( "%s", args.Argv( 1 ) );
 }
 
 /*
@@ -1440,7 +1425,7 @@ static void PrintFloat( float f )
 		buf[i] = ' ';
 	}
 	buf[i] = '\0';
-	gameLocal.Printf( buf );
+	gameLocal.Printf( "%s", buf );
 }
 
 /*
@@ -1642,7 +1627,7 @@ static void Cmd_ListAnims_f( const idCmdArgs& args )
 			}
 		}
 
-		gameLocal.Printf( "%d memory used in %d entity animators\n", size, num );
+		gameLocal.Printf( "%zd memory used in %d entity animators\n", size, num );
 	}
 }
 
@@ -2200,7 +2185,7 @@ Cmd_SaveEnvprobes_f
 static void Cmd_SaveEnvprobes_f( const idCmdArgs& args )
 {
 	int e;
-	EnvironmentProbe* envProbe = NULL;
+	idEnvProbes* envProbe = NULL;
 	idMapEntity* mapEnt = NULL;
 	idMapFile* mapFile = gameLocal.GetLevelMap();
 	idDict dict;
@@ -2227,9 +2212,9 @@ static void Cmd_SaveEnvprobes_f( const idCmdArgs& args )
 
 	for( e = 0; e < MAX_GENTITIES; e++ )
 	{
-		envProbe = static_cast<EnvironmentProbe*>( gameLocal.entities[ e ] );
+		envProbe = static_cast<idEnvProbes*>( gameLocal.entities[ e ] );
 
-		if( !envProbe || !envProbe->IsType( EnvironmentProbe::Type ) )
+		if( !envProbe || !envProbe->IsType( idEnvProbes::Type ) )
 		{
 			continue;
 		}
@@ -2339,137 +2324,6 @@ static void Cmd_TestSave_f( const idCmdArgs& args )
 	strings = NULL;
 	gameLocal.SaveGame( f, strings );
 	fileSystem->CloseFile( f );
-}
-
-/*
-==================
-Cmd_RecordViewNotes_f
-==================
-*/
-static void Cmd_RecordViewNotes_f( const idCmdArgs& args )
-{
-	idPlayer* player;
-	idVec3 origin;
-	idMat3 axis;
-
-	if( args.Argc() <= 3 )
-	{
-		return;
-	}
-
-	player = gameLocal.GetLocalPlayer();
-	if( !player )
-	{
-		return;
-	}
-
-	player->GetViewPos( origin, axis );
-
-	// Argv(1) = filename for map (viewnotes/mapname/person)
-	// Argv(2) = note number (person0001)
-	// Argv(3) = comments
-
-	idStr str = args.Argv( 1 );
-	str.SetFileExtension( ".txt" );
-
-	idFile* file = fileSystem->OpenFileAppend( str );
-
-	if( file )
-	{
-		file->WriteFloatString( "\"view\"\t( %s )\t( %s )\r\n", origin.ToString(), axis.ToString() );
-		file->WriteFloatString( "\"comments\"\t\"%s: %s\"\r\n\r\n", args.Argv( 2 ), args.Argv( 3 ) );
-		fileSystem->CloseFile( file );
-	}
-
-	idStr viewComments = args.Argv( 1 );
-	viewComments.StripLeading( "viewnotes/" );
-	viewComments += " -- Loc: ";
-	viewComments += origin.ToString();
-	viewComments += "\n";
-	viewComments += args.Argv( 3 );
-
-	// TODO_SPARTY: removed old hud need to find a way of doing this with the new hud
-	//player->hud->SetStateString( "viewcomments", viewComments );
-	//player->hud->HandleNamedEvent( "showViewComments" );
-}
-
-/*
-==================
-Cmd_CloseViewNotes_f
-==================
-*/
-static void Cmd_CloseViewNotes_f( const idCmdArgs& args )
-{
-	idPlayer* player = gameLocal.GetLocalPlayer();
-
-	if( !player )
-	{
-		return;
-	}
-
-	// TODO_SPARTY: removed old hud need to find a way of doing this with the new hud
-	//player->hud->SetStateString( "viewcomments", "" );
-	//player->hud->HandleNamedEvent( "hideViewComments" );
-}
-
-/*
-==================
-Cmd_ShowViewNotes_f
-==================
-*/
-static void Cmd_ShowViewNotes_f( const idCmdArgs& args )
-{
-	static idLexer parser( LEXFL_ALLOWPATHNAMES | LEXFL_NOSTRINGESCAPECHARS | LEXFL_NOSTRINGCONCAT | LEXFL_NOFATALERRORS );
-	idToken	token;
-	idPlayer* player;
-	idVec3 origin;
-	idMat3 axis;
-
-	player = gameLocal.GetLocalPlayer();
-
-	if( !player )
-	{
-		return;
-	}
-
-	if( !parser.IsLoaded() )
-	{
-		idStr str = "viewnotes/";
-		str += gameLocal.GetMapName();
-		str.StripFileExtension();
-		str += "/";
-		if( args.Argc() > 1 )
-		{
-			str += args.Argv( 1 );
-		}
-		else
-		{
-			str += "comments";
-		}
-		str.SetFileExtension( ".txt" );
-		if( !parser.LoadFile( str ) )
-		{
-			gameLocal.Printf( "No view notes for %s\n", gameLocal.GetMapName() );
-			return;
-		}
-	}
-
-	if( parser.ExpectTokenString( "view" ) && parser.Parse1DMatrix( 3, origin.ToFloatPtr() ) &&
-			parser.Parse1DMatrix( 9, axis.ToFloatPtr() ) && parser.ExpectTokenString( "comments" ) && parser.ReadToken( &token ) )
-	{
-
-		// TODO_SPARTY: removed old hud need to find a way of doing this with the new hud
-		//player->hud->SetStateString( "viewcomments", token );
-		//player->hud->HandleNamedEvent( "showViewComments" );
-		player->Teleport( origin, axis.ToAngles(), NULL );
-	}
-	else
-	{
-		parser.FreeSource();
-		// TODO_SPARTY: removed old hud need to find a way of doing this with the new hud
-		//player->hud->HandleNamedEvent( "hideViewComments" );
-		return;
-	}
 }
 
 /*
@@ -2689,14 +2543,6 @@ void Cmd_SetActorState_f( const idCmdArgs& args )
 	actor->PostEventMS( &AI_SetState, 0, args.Argv( 2 ) );
 }
 
-#if 0
-// not used
-static void ArgCompletion_DefFile( const idCmdArgs& args, void( *callback )( const char* s ) )
-{
-	cmdSystem->ArgCompletion_FolderExtension( args, callback, "def/", true, ".def", NULL );
-}
-#endif
-
 /*
 ===============
 Cmd_TestId_f
@@ -2723,7 +2569,6 @@ void Cmd_TestId_f( const idCmdArgs& args )
 	}
 	gameLocal.mpGame.AddChatLine( idLocalization::GetString( id ), "<nothing>", "<nothing>", "<nothing>" );
 }
-
 
 /*
 =================
@@ -2806,18 +2651,14 @@ void idGameLocal::InitConsoleCommands()
 	cmdSystem->AddCommand( "gameError",				Cmd_GameError_f,			CMD_FL_GAME | CMD_FL_CHEAT,	"causes a game error" );
 
 	cmdSystem->AddCommand( "disasmScript",			Cmd_DisasmScript_f,			CMD_FL_GAME | CMD_FL_CHEAT,	"disassembles script" );
-	cmdSystem->AddCommand( "recordViewNotes",		Cmd_RecordViewNotes_f,		CMD_FL_GAME | CMD_FL_CHEAT,	"record the current view position with notes" );
-	cmdSystem->AddCommand( "showViewNotes",			Cmd_ShowViewNotes_f,		CMD_FL_GAME | CMD_FL_CHEAT,	"show any view notes for the current map, successive calls will cycle to the next note" );
-	cmdSystem->AddCommand( "closeViewNotes",		Cmd_CloseViewNotes_f,		CMD_FL_GAME | CMD_FL_CHEAT,	"close the view showing any notes for this map" );
 
 	// RB begin
 	cmdSystem->AddCommand( "exportScriptEvents",	idClass::ExportScriptEvents_f,	CMD_FL_GAME | CMD_FL_TOOL,	"update script/doom_events.script" );
-	cmdSystem->AddCommand( "editLights",			idClass::EditLights_f,		CMD_FL_GAME | CMD_FL_TOOL,	"launches the in-game Light Editor" );
 	cmdSystem->AddCommand( "saveEnvprobes",			Cmd_SaveEnvprobes_f,		CMD_FL_GAME | CMD_FL_CHEAT,	"saves all autogenerated env_probes to a .extras_env_probes.map file" );
 	// RB end
 
 	// multiplayer client commands ( replaces old impulses stuff )
-	//cmdSystem->AddCommand( "clientDropWeapon",		idMultiplayerGame::DropWeapon_f, CMD_FL_GAME,			"drop current weapon" );
+	cmdSystem->AddCommand( "clientDropWeapon",		idMultiplayerGame::DropWeapon_f, CMD_FL_GAME,			"drop current weapon" );
 	cmdSystem->AddCommand( "clientMessageMode",		idMultiplayerGame::MessageMode_f, CMD_FL_GAME,			"ingame gui message mode" );
 	// FIXME: implement
 //	cmdSystem->AddCommand( "clientVote",			idMultiplayerGame::Vote_f,	CMD_FL_GAME,				"cast your vote: clientVote yes | no" );

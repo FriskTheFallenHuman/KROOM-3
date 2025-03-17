@@ -3,7 +3,6 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
-Copyright (C) 2015-2021 Robert Beckebans
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -97,30 +96,15 @@ idMapBrushSide::GetTextureVectors
 */
 void idMapBrushSide::GetTextureVectors( idVec4 v[2] ) const
 {
-	if( projection == PROJECTION_VALVE220 )
-	{
-		v[0][0] = texValve[0][0] * ( 1.0f / texScale[0] );
-		v[0][1] = texValve[0][1] * ( 1.0f / texScale[0] );
-		v[0][2] = texValve[0][2] * ( 1.0f / texScale[0] );
-		v[0][3] = texValve[0][3];
+	idVec3 texX, texY;
 
-		v[1][0] = texValve[1][0] * ( 1.0f / texScale[1] );
-		v[1][1] = texValve[1][1] * ( 1.0f / texScale[1] );
-		v[1][2] = texValve[1][2] * ( 1.0f / texScale[1] );
-		v[1][3] = texValve[1][3];
-	}
-	else
+	ComputeAxisBase( plane.Normal(), texX, texY );
+	for( int i = 0; i < 2; i++ )
 	{
-		idVec3 texX, texY;
-
-		ComputeAxisBase( plane.Normal(), texX, texY );
-		for( int i = 0; i < 2; i++ )
-		{
-			v[i][0] = texX[0] * texMat[i][0] + texY[0] * texMat[i][1];
-			v[i][1] = texX[1] * texMat[i][0] + texY[1] * texMat[i][1];
-			v[i][2] = texX[2] * texMat[i][0] + texY[2] * texMat[i][1];
-			v[i][3] = texMat[i][2] + ( origin * v[i].ToVec3() );
-		}
+		v[i][0] = texX[0] * texMat[i][0] + texY[0] * texMat[i][1];
+		v[i][1] = texX[1] * texMat[i][0] + texY[1] * texMat[i][1];
+		v[i][2] = texX[2] * texMat[i][0] + texY[2] * texMat[i][1];
+		v[i][3] = texMat[i][2] + ( origin * v[i].ToVec3() );
 	}
 }
 
@@ -573,121 +557,6 @@ idMapBrush* idMapBrush::ParseQ3( idLexer& src, const idVec3& origin )
 }
 
 /*
-=================
-idMapBrush::ParseValve220
-=================
-*/
-idMapBrush* idMapBrush::ParseValve220( idLexer& src, const idVec3& origin )
-{
-	float scale[2], rotate;
-	idVec3 planepts[3];
-	idToken token;
-	idList<idMapBrushSide*> sides;
-	idMapBrushSide*	side;
-	idDict epairs;
-
-	do
-	{
-		if( src.CheckTokenString( "}" ) )
-		{
-			break;
-		}
-
-		side = new( TAG_IDLIB ) idMapBrushSide();
-		sides.Append( side );
-
-		// read the three point plane definition
-		if( !src.Parse1DMatrix( 3, planepts[0].ToFloatPtr() ) ||
-				!src.Parse1DMatrix( 3, planepts[1].ToFloatPtr() ) ||
-				!src.Parse1DMatrix( 3, planepts[2].ToFloatPtr() ) )
-		{
-			src.Error( "idMapBrush::ParseQ3: unable to read brush side plane definition" );
-			sides.DeleteContents( true );
-			return NULL;
-		}
-
-		// backup source points
-		side->planepts[0] = planepts[0];
-		side->planepts[1] = planepts[1];
-		side->planepts[2] = planepts[2];
-
-		planepts[0] -= origin;
-		planepts[1] -= origin;
-		planepts[2] -= origin;
-
-		side->plane.FromPoints( planepts[0], planepts[1], planepts[2] );
-
-		// read the material
-		if( !src.ReadTokenOnLine( &token ) )
-		{
-			src.Error( "idMapBrush::ParseQ3: unable to read brush side material" );
-			sides.DeleteContents( true );
-			return NULL;
-		}
-
-		// we have an implicit 'textures/' in the old format
-		side->material = "textures/" + token;
-		side->projection = idMapBrushSide::PROJECTION_VALVE220;
-
-		for( int axis = 0; axis < 2; axis++ )
-		{
-			src.ExpectTokenString( "[" );
-
-			for( int comp = 0; comp < 4; comp++ )
-			{
-				side->texValve[axis][comp] = src.ParseFloat();
-			}
-
-			src.ExpectTokenString( "]" );
-		}
-
-		// read the texture rotate and scale
-		rotate = src.ParseFloat();
-
-		scale[0] = src.ParseFloat();
-		scale[1] = src.ParseFloat();
-
-		if( scale[0] < idMath::FLOAT_EPSILON )
-		{
-			scale[0] = 1.0f;
-		}
-		if( scale[1] < idMath::FLOAT_EPSILON )
-		{
-			scale[1] = 1.0f;
-		}
-
-		side->texScale[0] = scale[0];
-		side->texScale[1] = scale[1];
-
-		side->texMat[0] = idVec3( 0.03125f, 0.0f, 0.0f );
-		side->texMat[1] = idVec3( 0.0f, 0.03125f, 0.0f );
-		side->origin = origin;
-
-		// Q2 allowed override of default flags and values, but we don't any more
-		if( src.ReadTokenOnLine( &token ) )
-		{
-			if( src.ReadTokenOnLine( &token ) )
-			{
-				if( src.ReadTokenOnLine( &token ) )
-				{
-				}
-			}
-		}
-	}
-	while( 1 );
-
-	idMapBrush* brush = new( TAG_IDLIB ) idMapBrush();
-	for( int i = 0; i < sides.Num(); i++ )
-	{
-		brush->AddSide( sides[i] );
-	}
-
-	brush->epairs = epairs;
-
-	return brush;
-}
-
-/*
 ============
 idMapBrush::Write
 ============
@@ -722,54 +591,6 @@ bool idMapBrush::Write( idFile* fp, int primitiveNum, const idVec3& origin ) con
 }
 
 /*
-============
-RB idMapBrush::WriteValve220
-============
-*/
-bool idMapBrush::WriteValve220( idFile* fp, int primitiveNum, const idVec3& origin ) const
-{
-	int i;
-	idMapBrushSide* side;
-
-	fp->WriteFloatString( "// brush %d\n{\n", primitiveNum );
-
-	// write brush epairs
-	for( i = 0; i < epairs.GetNumKeyVals(); i++ )
-	{
-		fp->WriteFloatString( "  \"%s\" \"%s\"\n", epairs.GetKeyVal( i )->GetKey().c_str(), epairs.GetKeyVal( i )->GetValue().c_str() );
-	}
-
-	// write brush sides
-	for( i = 0; i < GetNumSides(); i++ )
-	{
-		side = GetSide( i );
-		fp->WriteFloatString( "( %f %f %f ) ( %f %f %f ) ( %f %f %f )",
-							  side->planepts[0][0], side->planepts[0][1], side->planepts[0][2],
-							  side->planepts[1][0], side->planepts[1][1], side->planepts[1][2],
-							  side->planepts[2][0], side->planepts[2][1], side->planepts[2][2] );
-
-		// strip off textures/
-		if( idStr::Icmpn( side->material.c_str(), "textures/", 9 ) == 0 )
-		{
-			fp->WriteFloatString( " %s ", side->material.c_str() + 9 );
-		}
-		else
-		{
-			fp->WriteFloatString( " %s ", side->material.c_str() );
-		}
-
-		fp->WriteFloatString( "[ %f %f %f %f ] [ %f %f %f %f ] 0 %f %f 0 0 0\n",
-							  side->texValve[0][0], side->texValve[0][1], side->texValve[0][2], side->texValve[0][3],
-							  side->texValve[1][0], side->texValve[1][1], side->texValve[1][2], side->texValve[1][3],
-							  side->texScale[0], side->texScale[1] );
-	}
-
-	fp->WriteFloatString( "}\n" );
-
-	return true;
-}
-
-/*
 ===============
 idMapBrush::GetGeometryCRC
 ===============
@@ -792,25 +613,6 @@ unsigned int idMapBrush::GetGeometryCRC() const
 	}
 
 	return crc;
-}
-
-/*
-===============
-idMapBrush::IsOriginBrush
-===============
-*/
-bool idMapBrush::IsOriginBrush() const
-{
-	for( int i = 0; i < GetNumSides(); i++ )
-	{
-		const idMaterial* material = declManager->FindMaterial( sides[i]->GetMaterial() );
-		if( material && material->GetContentFlags() & CONTENTS_ORIGIN )
-		{
-			return true;
-		}
-	}
-
-	return false;
 }
 
 /*
@@ -908,11 +710,11 @@ idMapEntity* idMapEntity::Parse( idLexer& src, bool worldSpawn, float version )
 				mapEnt->AddPrimitive( mapMesh );
 			}
 			// RB end
-			// assume it's a brush in Valve 220 style from TrenchBroom
+			// assume it's a brush in Q3 or older style
 			else
 			{
 				src.UnreadToken( &token );
-				mapBrush = idMapBrush::ParseValve220( src, origin );
+				mapBrush = idMapBrush::ParseQ3( src, origin );
 				if( !mapBrush )
 				{
 					return NULL;
@@ -953,8 +755,6 @@ idMapEntity* idMapEntity::Parse( idLexer& src, bool worldSpawn, float version )
 	}
 	while( 1 );
 
-	mapEnt->CalculateBrushOrigin();
-
 	return mapEnt;
 }
 
@@ -963,7 +763,7 @@ idMapEntity* idMapEntity::Parse( idLexer& src, bool worldSpawn, float version )
 idMapEntity::Write
 ============
 */
-bool idMapEntity::Write( idFile* fp, int entityNum, bool valve220 ) const
+bool idMapEntity::Write( idFile* fp, int entityNum ) const
 {
 	int i;
 	idMapPrimitive* mapPrim;
@@ -987,14 +787,7 @@ bool idMapEntity::Write( idFile* fp, int entityNum, bool valve220 ) const
 		switch( mapPrim->GetType() )
 		{
 			case idMapPrimitive::TYPE_BRUSH:
-				if( valve220 )
-				{
-					static_cast<idMapBrush*>( mapPrim )->WriteValve220( fp, i, origin );
-				}
-				else
-				{
-					static_cast<idMapBrush*>( mapPrim )->Write( fp, i, origin );
-				}
+				static_cast<idMapBrush*>( mapPrim )->Write( fp, i, origin );
 				break;
 			case idMapPrimitive::TYPE_PATCH:
 				static_cast<idMapPatch*>( mapPrim )->Write( fp, i, origin );
@@ -1003,7 +796,7 @@ bool idMapEntity::Write( idFile* fp, int entityNum, bool valve220 ) const
 			case idMapPrimitive::TYPE_MESH:
 				static_cast<MapPolygonMesh*>( mapPrim )->Write( fp, i, origin );
 				break;
-				// RB end
+			// RB end
 		}
 	}
 
@@ -1011,255 +804,6 @@ bool idMapEntity::Write( idFile* fp, int entityNum, bool valve220 ) const
 
 	return true;
 }
-
-// RB begin
-bool idMapEntity::WriteJSON( idFile* fp, int entityNum, int numEntities ) const
-{
-	idVec3 origin;
-
-	fp->WriteFloatString( "\t\t{\n\t\t\t\"entity\": \"%d\",\n", entityNum );
-
-	idStr key;
-	idStr value;
-
-	for( int i = 0; i < epairs.GetNumKeyVals(); i++ )
-	{
-		key = epairs.GetKeyVal( i )->GetKey();
-
-		key.ReplaceChar( '\t', ' ' );
-
-		value = epairs.GetKeyVal( i )->GetValue();
-		value.BackSlashesToSlashes();
-
-		fp->WriteFloatString( "\t\t\t\"%s\": \"%s\"%s\n", key.c_str(), value.c_str(), ( ( i == ( epairs.GetNumKeyVals() - 1 ) ) && !GetNumPrimitives() ) ? "" : "," );
-	}
-
-	epairs.GetVector( "origin", "0 0 0", origin );
-
-	// write pritimives
-	if( GetNumPrimitives() )
-	{
-		fp->WriteFloatString( "\t\t\t\"primitives\":\n\t\t\t[\n" );
-	}
-
-	int numPrimitives = GetNumPrimitives();
-	for( int i = 0; i < numPrimitives; i++ )
-	{
-		idMapPrimitive* mapPrim = GetPrimitive( i );
-
-		switch( mapPrim->GetType() )
-		{
-#if 0
-			case idMapPrimitive::TYPE_BRUSH:
-				static_cast<idMapBrush*>( mapPrim )->Write( fp, i, origin );
-				break;
-			case idMapPrimitive::TYPE_PATCH:
-				static_cast<idMapPatch*>( mapPrim )->Write( fp, i, origin );
-				break;
-#endif
-			case idMapPrimitive::TYPE_MESH:
-				static_cast<MapPolygonMesh*>( mapPrim )->WriteJSON( fp, i, origin );
-				break;
-
-			default:
-				continue;
-		}
-
-		// find next mesh primitive
-		idMapPrimitive* nextPrim = NULL;
-		for( int j = i + 1; j < numPrimitives; j++ )
-		{
-			nextPrim = GetPrimitive( j );
-			if( nextPrim->GetType() == idMapPrimitive::TYPE_MESH )
-			{
-				break;
-			}
-		}
-
-
-		if( nextPrim && ( nextPrim->GetType() == idMapPrimitive::TYPE_MESH ) )
-		{
-			fp->WriteFloatString( ",\n" );
-		}
-		else
-		{
-			fp->WriteFloatString( "\n" );
-		}
-	}
-
-	if( GetNumPrimitives() )
-	{
-		fp->WriteFloatString( "\t\t\t]\n" );
-	}
-
-	fp->WriteFloatString( "\t\t}%s\n", ( entityNum == ( numEntities - 1 ) ) ? "" : "," );
-
-	return true;
-}
-
-idMapEntity* idMapEntity::ParseJSON( idLexer& src )
-{
-	idToken	token;
-	idMapEntity* mapEnt;
-	//idMapPatch* mapPatch;
-	//idMapBrush* mapBrush;
-	// RB begin
-	MapPolygonMesh* mapMesh;
-	// RB end
-	bool worldent;
-	idVec3 origin;
-	double v1, v2, v3;
-
-	if( !src.ReadToken( &token ) )
-	{
-		return NULL;
-	}
-
-	if( token == "]" )
-	{
-		return NULL;
-	}
-
-	if( token == "," )
-	{
-		if( !src.ReadToken( &token ) )
-		{
-			return NULL;
-		}
-	}
-
-	if( token != "{" )
-	{
-		src.Error( "idMapEntity::ParseJSON: { not found, found %s", token.c_str() );
-		return NULL;
-	}
-
-	mapEnt = new idMapEntity();
-
-	/*
-	if( worldSpawn )
-	{
-		mapEnt->primitives.Resize( 1024, 256 );
-	}
-	*/
-
-	origin.Zero();
-	worldent = false;
-	do
-	{
-		if( !src.ReadToken( &token ) )
-		{
-			src.Error( "idMapEntity::ParseJSON: EOF without closing brace" );
-			return NULL;
-		}
-
-		if( token == "}" )
-		{
-			break;
-		}
-
-		if( token == "," )
-		{
-			continue;
-		}
-
-		// RB: new mesh primitive with ngons
-		if( token == "primitives" )
-		{
-			if( !src.ExpectTokenString( ":" ) )
-			{
-				delete mapEnt;
-				src.Error( "idMapEntity::ParseJSON: expected : for primitives" );
-				return NULL;
-			}
-
-			if( !src.ExpectTokenString( "[" ) )
-			{
-				delete mapEnt;
-				src.Error( "idMapEntity::ParseJSON: expected [ for primitives" );
-				return NULL;
-			}
-
-			while( true )
-			{
-				if( !src.ReadToken( &token ) )
-				{
-					src.Error( "idMapEntity::ParseJSON: EOF without closing brace" );
-					return NULL;
-				}
-
-				if( token == "]" )
-				{
-					break;
-				}
-
-				if( token == "," )
-				{
-					continue;
-				}
-
-				if( token == "{" )
-				{
-					mapMesh = MapPolygonMesh::ParseJSON( src );
-					if( !mapMesh )
-					{
-						break;
-					}
-
-					mapEnt->AddPrimitive( mapMesh );
-				}
-			}
-		}
-		else
-		{
-			idStr key, value;
-
-			// parse a key / value pair
-			key = token;
-
-			if( !src.ReadToken( &token ) )
-			{
-				src.Error( "idMapEntity::ParseJSON: EOF without closing brace" );
-				delete mapEnt;
-				return NULL;
-			}
-
-			if( token != ":" )
-			{
-				delete mapEnt;
-				return NULL;
-			}
-
-			src.ReadTokenOnLine( &token );
-			value = token;
-
-			// strip trailing spaces that sometimes get accidentally
-			// added in the editor
-			value.StripTrailingWhitespace();
-			key.StripTrailingWhitespace();
-
-			mapEnt->epairs.Set( key, value );
-
-			if( !idStr::Icmp( key, "origin" ) )
-			{
-				// scanf into doubles, then assign, so it is idVec size independent
-				v1 = v2 = v3 = 0;
-				sscanf( value, "%lf %lf %lf", &v1, &v2, &v3 );
-				origin.x = v1;
-				origin.y = v2;
-				origin.z = v3;
-			}
-			else if( !idStr::Icmp( key, "classname" ) && !idStr::Icmp( value, "worldspawn" ) )
-			{
-				worldent = true;
-			}
-		}
-	}
-	while( 1 );
-
-	return mapEnt;
-}
-// RB end
 
 /*
 ===============
@@ -1309,66 +853,6 @@ unsigned int idMapEntity::GetGeometryCRC() const
 
 /*
 ===============
-idMapEntity::CalculateBrushOrigin
-===============
-*/
-void idMapEntity::CalculateBrushOrigin()
-{
-	// Collect the origin brushes
-	idList<idMapBrush*> originBrushes;
-	for( int i = 0; i < primitives.Num(); i++ )
-	{
-		if( primitives[i]->GetType() == idMapPrimitive::TYPE_BRUSH )
-		{
-			idMapBrush* brush = static_cast<idMapBrush*>( primitives[i] );
-			if( brush->IsOriginBrush() )
-			{
-				originBrushes.Append( brush );
-			}
-		}
-	}
-
-	if( !originBrushes.Num() )
-	{
-		return;
-	}
-
-	// Accumulate and average the origin brushes centres
-	for( int i = 0; i < originBrushes.Num(); i++ )
-	{
-		MapPolygonMesh mesh;
-		idBounds bounds;
-
-		mesh.ConvertFromBrush( originBrushes[i], 0, 0 );
-		mesh.GetBounds( bounds );
-
-		originOffset += bounds.GetCenter();
-	}
-
-	originOffset /= static_cast<float>( originBrushes.Num() );
-}
-
-class idSort_CompareMapEntity : public idSort_Quick< idMapEntity*, idSort_CompareMapEntity >
-{
-public:
-	int Compare( idMapEntity* const& a, idMapEntity* const& b ) const
-	{
-		if( idStr::Icmp( a->epairs.GetString( "name" ), "worldspawn" ) == 0 )
-		{
-			return 1;
-		}
-
-		if( idStr::Icmp( b->epairs.GetString( "name" ), "worldspawn" ) == 0 )
-		{
-			return -1;
-		}
-
-		return idStr::Icmp( a->epairs.GetString( "name" ), b->epairs.GetString( "name" ) );
-	}
-};
-
-/*
-===============
 idMapFile::Parse
 ===============
 */
@@ -1387,17 +871,11 @@ bool idMapFile::Parse( const char* filename, bool ignoreRegion, bool osPath )
 	fullName = name;
 	hasPrimitiveData = false;
 
-	bool isJSON = false;
 	if( !ignoreRegion )
 	{
-		// RB: try loading a .json file first
-		fullName.SetFileExtension( "json" );
+		// try loading a .reg file first
+		fullName.SetFileExtension( "reg" );
 		src.LoadFile( fullName, osPath );
-
-		if( src.IsLoaded() )
-		{
-			isJSON = true;
-		}
 	}
 
 	if( !src.IsLoaded() )
@@ -1416,102 +894,20 @@ bool idMapFile::Parse( const char* filename, bool ignoreRegion, bool osPath )
 	fileTime = src.GetFileTime();
 	entities.DeleteContents( true );
 
-	if( !src.ReadToken( &token ) )
+	if( src.CheckTokenString( "Version" ) )
 	{
-		return false;
+		src.ReadTokenOnLine( &token );
+		version = token.GetFloatValue();
 	}
 
-	// RB: TODO check for JSON in another way
-	//if( token == "{" )
-	//{
-	//	isJSON = true;
-	//}
-
-	if( isJSON )
+	while( 1 )
 	{
-		while( true )
+		mapEnt = idMapEntity::Parse( src, ( entities.Num() == 0 ), version );
+		if( !mapEnt )
 		{
-			if( !src.ReadToken( &token ) )
-			{
-				break;
-			}
-
-			if( token == "entities" )
-			{
-				if( !src.ReadToken( &token ) )
-				{
-					return false;
-				}
-
-				if( token != ":" )
-				{
-					src.Error( "idMapFile::Parse: : not found, found %s", token.c_str() );
-					return false;
-				}
-
-				if( !src.ReadToken( &token ) )
-				{
-					return false;
-				}
-
-				if( token != "[" )
-				{
-					src.Error( "idMapFile::Parse: [ not found, found %s", token.c_str() );
-					return false;
-				}
-
-				while( true )
-				{
-					mapEnt = idMapEntity::ParseJSON( src );
-					if( !mapEnt )
-					{
-						break;
-					}
-					entities.Append( mapEnt );
-				}
-			}
+			break;
 		}
-
-		//entities.SortWithTemplate( idSort_CompareMapEntity() );
-
-		if( entities.Num() > 0 && ( idStr::Icmp( entities[0]->epairs.GetString( "name" ), "worldspawn" ) != 0 ) )
-		{
-			// move world spawn to first place
-			for( int i = 1; i < entities.Num(); i++ )
-			{
-				if( idStr::Icmp( entities[i]->epairs.GetString( "name" ), "worldspawn" ) == 0 )
-				{
-					idMapEntity* tmp = entities[0];
-					entities[0] = entities[i];
-					entities[i] = tmp;
-					break;
-				}
-			}
-		}
-	}
-	else
-	{
-		if( token == "Version" )
-		{
-			src.ReadTokenOnLine( &token );
-			version = token.GetFloatValue();
-		}
-		else
-		{
-			// Valve 220 format and idMapEntity::Parse will expect {
-			src.UnreadToken( &token );
-			valve220Format = true;
-		}
-
-		while( 1 )
-		{
-			mapEnt = idMapEntity::Parse( src, ( entities.Num() == 0 ), version );
-			if( !mapEnt )
-			{
-				break;
-			}
-			entities.Append( mapEnt );
-		}
+		entities.Append( mapEnt );
 	}
 
 	SetGeometryCRC();
@@ -1671,69 +1067,17 @@ bool idMapFile::Write( const char* fileName, const char* ext, bool fromBasePath 
 		return false;
 	}
 
-	if( valve220Format )
-	{
-		fp->WriteFloatString( "// Game: Doom 3 BFG\n// Format: Doom3 (Valve)\n" );
-	}
-	else
-	{
-		fp->WriteFloatString( "Version %f\n", ( float ) CURRENT_MAP_VERSION );
-	}
+	fp->WriteFloatString( "Version %f\n", ( float ) CURRENT_MAP_VERSION );
 
 	for( i = 0; i < entities.Num(); i++ )
 	{
-		entities[i]->Write( fp, i, valve220Format );
+		entities[i]->Write( fp, i );
 	}
 
 	idLib::fileSystem->CloseFile( fp );
 
 	return true;
 }
-
-// RB begin
-bool idMapFile::WriteJSON( const char* fileName, const char* ext, bool fromBasePath )
-{
-	int i;
-	idStr qpath;
-	idFile* fp;
-
-	qpath = fileName;
-	qpath.SetFileExtension( ext );
-
-	idLib::common->Printf( "writing %s...\n", qpath.c_str() );
-
-	if( fromBasePath )
-	{
-		fp = idLib::fileSystem->OpenFileWrite( qpath, "fs_basepath" );
-	}
-	else
-	{
-		fp = idLib::fileSystem->OpenExplicitFileWrite( qpath );
-	}
-
-	if( !fp )
-	{
-		idLib::common->Warning( "Couldn't open %s\n", qpath.c_str() );
-		return false;
-	}
-
-	fp->Printf( "{\n" );
-	fp->WriteFloatString( "\t\"version\": \"%f\",\n", ( float ) CURRENT_MAP_VERSION );
-	fp->Printf( "\t\"entities\": \n\t[\n" );
-
-	for( i = 0; i < entities.Num(); i++ )
-	{
-		entities[i]->WriteJSON( fp, i, entities.Num() );
-	}
-
-	fp->Printf( "\t]\n" );
-	fp->Printf( "}\n" );
-
-	idLib::fileSystem->CloseFile( fp );
-
-	return true;
-}
-// RB end
 
 /*
 ===============
@@ -1773,31 +1117,6 @@ idMapEntity* idMapFile::FindEntity( const char* name )
 	{
 		idMapEntity* ent = entities[i];
 		if( idStr::Icmp( ent->epairs.GetString( "name" ), name ) == 0 )
-		{
-			return ent;
-		}
-	}
-	return NULL;
-}
-
-/*
-===============
-RB idMapFile::FindEntityAtOrigin
-===============
-*/
-idMapEntity* idMapFile::FindEntityAtOrigin( const idVec3& org )
-{
-	idBounds bo( org );
-	bo.ExpandSelf( 0.125f );
-
-	for( int i = 0; i < entities.Num(); i++ )
-	{
-		idMapEntity* ent = entities[i];
-
-		idVec3 entPos;
-		ent->epairs.GetVector( "origin", "", entPos );
-
-		if( bo.ContainsPoint( entPos ) )
 		{
 			return ent;
 		}
@@ -2101,65 +1420,6 @@ bool MapPolygonMesh::Write( idFile* fp, int primitiveNum, const idVec3& origin )
 	return true;
 }
 
-bool MapPolygonMesh::WriteJSON( idFile* fp, int primitiveNum, const idVec3& origin ) const
-{
-	fp->WriteFloatString( "\t\t\t\t{\n\t\t\t\t\t\"primitive\": \"%d\",\n", primitiveNum );
-
-	if( originalType == TYPE_BRUSH )
-	{
-		fp->WriteFloatString( "\t\t\t\t\t\"original\": \"brush\",\n" );
-	}
-	else if( originalType == TYPE_PATCH )
-	{
-		fp->WriteFloatString( "\t\t\t\t\t\"original\": \"curve\",\n" );
-	}
-
-	fp->WriteFloatString( "\t\t\t\t\t\"verts\":\n\t\t\t\t\t[\n" );
-	idVec2 st;
-	idVec3 n;
-	for( int i = 0; i < verts.Num(); i++ )
-	{
-		const idDrawVert& v = verts[ i ];
-		st = v.GetTexCoord();
-		n = v.GetNormalRaw();
-
-		//if( IsNAN( v.xyz ) )
-		//{
-		//   continue;
-		//}
-
-		//idVec3 xyz = v.xyz - origin;
-		fp->WriteFloatString( "\t\t\t\t\t\t{ \"xyz\": [%f, %f, %f], \"st\": [%f, %f], \"normal\": [%f, %f, %f] }%s\n", v.xyz[0], v.xyz[1], v.xyz[2], st[0], st[1], n[0], n[1], n[2], ( i == ( verts.Num() - 1 ) ) ? "" : "," );
-	}
-	fp->WriteFloatString( "\t\t\t\t\t],\n" );
-
-	fp->WriteFloatString( "\t\t\t\t\t\"polygons\":\n\t\t\t\t\t[\n" );
-	for( int i = 0; i < polygons.Num(); i++ )
-	{
-		const MapPolygon& poly = polygons[ i ];
-
-		fp->WriteFloatString( "\t\t\t\t\t\t{ \"material\": \"%s\", \"indices\": [", poly.GetMaterial() );
-
-#if 0
-		for( int j = 0; j < poly.indexes.Num(); j++ )
-		{
-			fp->WriteFloatString( "%d%s", poly.indexes[j], ( j == poly.indexes.Num() - 1 ) ? "" : ", " );
-		}
-#else
-		for( int j = poly.indexes.Num() - 1 ; j >= 0; j-- )
-		{
-			fp->WriteFloatString( "%d%s", poly.indexes[j], ( j == 0 ) ? "" : ", " );
-		}
-#endif
-		fp->WriteFloatString( "] }%s\n", ( i == ( polygons.Num() - 1 ) ) ? "" : "," );
-	}
-	fp->WriteFloatString( "\t\t\t\t\t]\n" );
-
-	fp->WriteFloatString( "\t\t\t\t}" );
-
-	return true;
-}
-
 MapPolygonMesh* MapPolygonMesh::Parse( idLexer& src, const idVec3& origin, float version )
 {
 	float		info[7];
@@ -2290,204 +1550,6 @@ MapPolygonMesh* MapPolygonMesh::Parse( idLexer& src, const idVec3& origin, float
 		delete mesh;
 		src.Error( "MapPolygonMesh::Parse: unable to parse mesh primitive end" );
 		return NULL;
-	}
-
-	mesh->SetContents();
-
-	return mesh;
-}
-
-MapPolygonMesh* MapPolygonMesh::ParseJSON( idLexer& src )
-{
-	idToken		token;
-
-	MapPolygonMesh* mesh = new MapPolygonMesh();
-
-	while( true )
-	{
-		if( !src.ReadToken( &token ) )
-		{
-			src.Error( "MapPolygonMesh::ParseJSON: EOF without closing brace" );
-			return NULL;
-		}
-
-		if( token == "}" )
-		{
-			break;
-		}
-
-		if( token == "," )
-		{
-			continue;
-		}
-
-		if( token == "verts" )
-		{
-			idDrawVert vert;
-			float v[8];
-
-			while( true )
-			{
-				if( !src.ReadToken( &token ) )
-				{
-					src.Error( "MapPolygonMesh::ParseJSON: EOF without closing brace" );
-					return NULL;
-				}
-
-				if( token == "}" )
-				{
-					mesh->AddVertex( vert );
-					continue;
-				}
-
-				if( token == "]" )
-				{
-					break;
-				}
-
-				if( token == "," )
-				{
-					continue;
-				}
-
-				if( token == "xyz" )
-				{
-					if( !src.ExpectTokenString( ":" ) )
-					{
-						delete mesh;
-						src.Error( "MapPolygonMesh::ParseJSON: EOF without closing brace" );
-						return NULL;
-					}
-
-					if( !src.Parse1DMatrixJSON( 3, v ) )
-					{
-						delete mesh;
-						src.Error( "MapPolygonMesh::ParseJSON: bad vertex column data" );
-						return NULL;
-					}
-
-					vert.xyz[0] = v[0];
-					vert.xyz[1] = v[1];
-					vert.xyz[2] = v[2];
-				}
-				else if( token == "st" )
-				{
-					if( !src.ExpectTokenString( ":" ) )
-					{
-						delete mesh;
-						src.Error( "MapPolygonMesh::ParseJSON: EOF without closing brace" );
-						return NULL;
-					}
-
-					if( !src.Parse1DMatrixJSON( 2, v ) )
-					{
-						delete mesh;
-						src.Error( "MapPolygonMesh::ParseJSON: bad vertex column data" );
-						return NULL;
-					}
-
-					vert.SetTexCoord( v[0], v[1] );
-				}
-				else if( token == "normal" )
-				{
-					if( !src.ExpectTokenString( ":" ) )
-					{
-						delete mesh;
-						src.Error( "MapPolygonMesh::ParseJSON: EOF without closing brace" );
-						return NULL;
-					}
-
-					if( !src.Parse1DMatrixJSON( 3, v ) )
-					{
-						delete mesh;
-						src.Error( "MapPolygonMesh::ParseJSON: bad vertex column data" );
-						return NULL;
-					}
-
-					idVec3 n( v[0], v[1], v[2] );
-					vert.SetNormal( n );
-				}
-			}
-		}
-
-
-		if( token == "polygons" )
-		{
-			MapPolygon* polygon = NULL;
-
-			while( true )
-			{
-				if( !src.ReadToken( &token ) )
-				{
-					src.Error( "MapPolygonMesh::ParseJSON: EOF without closing brace" );
-					return NULL;
-				}
-
-				if( token == "{" )
-				{
-					polygon = &mesh->polygons.Alloc();
-					continue;
-				}
-
-				if( token == "]" )
-				{
-					break;
-				}
-
-				if( token == "," )
-				{
-					continue;
-				}
-
-				if( token == "material" )
-				{
-					if( !src.ExpectTokenString( ":" ) )
-					{
-						delete mesh;
-						src.Error( "MapPolygonMesh::ParseJSON: EOF without closing brace" );
-						return NULL;
-					}
-
-					src.ReadToken( &token );
-					if( token.type == TT_STRING )
-					{
-						polygon->SetMaterial( token );
-					}
-				}
-				else if( token == "indices" )
-				{
-					idList<int> indices;
-
-					while( true )
-					{
-						if( !src.ReadToken( &token ) )
-						{
-							src.Error( "MapPolygonMesh::ParseJSON: EOF without closing brace" );
-							return NULL;
-						}
-
-						if( token == "]" )
-						{
-							// reverse order from Blender
-							for( int i = indices.Num() - 1; i >= 0; i-- )
-							{
-								polygon->AddIndex( indices[i] );
-							}
-							break;
-						}
-						else if( token.type == TT_NUMBER )
-						{
-							int index = token.GetIntValue();
-							indices.Append( index );
-						}
-						else if( token == "," )
-						{
-							continue;
-						}
-					}
-				}
-			}
-		}
 	}
 
 	mesh->SetContents();

@@ -114,18 +114,8 @@ static const char* fastEntityList[] =
 GetGameAPI
 ============
 */
-#if __MWERKS__
-	#pragma export on
-#endif
-#if __GNUC__ >= 4
-	#pragma GCC visibility push(default)
-#endif
 extern "C" gameExport_t* GetGameAPI( gameImport_t* import )
 {
-#if __MWERKS__
-#pragma export off
-#endif
-
 	if( import->version == GAME_API_VERSION )
 	{
 
@@ -157,9 +147,6 @@ extern "C" gameExport_t* GetGameAPI( gameImport_t* import )
 
 	return &gameExport;
 }
-#if __GNUC__ >= 4
-	#pragma GCC visibility pop
-#endif
 
 /*
 ===========
@@ -448,9 +435,6 @@ void idGameLocal::Shutdown()
 
 	// remove auto-completion function pointers pointing into this DLL
 	cvarSystem->RemoveFlaggedAutoCompletion( CVAR_GAME );
-
-	// enable leak test
-	Mem_EnableLeakTest( "game" );
 
 	// shutdown idLib
 	idLib::ShutDown();
@@ -1133,8 +1117,6 @@ void idGameLocal::LocalMapRestart( )
 
 	MapClear( false );
 
-
-
 	// clear the smoke particle free list
 	smokeParticles->Init();
 
@@ -1271,7 +1253,7 @@ void idGameLocal::PopulateEnvironmentProbes()
 
 	for( ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() )
 	{
-		if( ent->IsType( EnvironmentProbe::Type ) )
+		if( ent->IsType( idEnvProbes::Type ) )
 		{
 			numEnvprobes++;
 		}
@@ -2593,22 +2575,6 @@ void idGameLocal::RunEntityThink( idEntity& ent, idUserCmdMgr& userCmdMgr )
 
 idCVar g_recordTrace( "g_recordTrace", "0", CVAR_BOOL, "" );
 
-// jmarshall
-/*
-================
-idGameLocal::RunSharedThink
-================
-*/
-void idGameLocal::RunSharedThink( void )
-{
-	idEntity* ent;
-	for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() )
-	{
-		ent->SharedThink();
-	}
-}
-// jmarshall end
-
 /*
 ================
 idGameLocal::RunFrame
@@ -2785,9 +2751,7 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 			}
 
 			RunTimeGroup2( cmdMgr );
-// jmarshall
-			RunSharedThink();
-// jmarshall end
+
 			// Run catch-up for any client projectiles.
 			// This is done after the main think so that all projectiles will be up-to-date
 			// when snapshots are created.
@@ -2842,7 +2806,7 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 			// display how long it took to calculate the current game frame
 			if( g_frametime.GetBool() )
 			{
-				Printf( "game %d: all:%.1f th:%.1f ev:%.1f %d ents \n",
+				Printf( "game %d: all:%u th:%u ev:%u %d ents \n",
 						time, timer_think.Milliseconds() + timer_events.Milliseconds(),
 						timer_think.Milliseconds(), timer_events.Milliseconds(), num );
 			}
@@ -2870,7 +2834,6 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 		// when then we keep until the end of the function
 	}
 
-	//ret.syncNextGameFrame = skipCinematic; // this is form dhewm3 but it seems it's no longer useful
 	if( skipCinematic )
 	{
 		soundSystem->SetMute( false );
@@ -3436,10 +3399,7 @@ void idGameLocal::RunDebugInfo()
 			}
 			if( viewTextBounds.IntersectsBounds( entBounds ) )
 			{
-				//if( ent->IsType( EnvironmentProbe::Type ) )
-				{
-					gameRenderWorld->DrawText( ent->name.c_str(), entBounds.GetCenter(), 0.1f, colorWhite, axis, 1 );
-				}
+				gameRenderWorld->DrawText( ent->name.c_str(), entBounds.GetCenter(), 0.1f, colorWhite, axis, 1 );
 				gameRenderWorld->DrawText( va( "#%d", ent->entityNumber ), entBounds.GetCenter() + up, 0.1f, colorWhite, axis, 1 );
 			}
 		}
@@ -3900,14 +3860,14 @@ bool idGameLocal::SpawnEntityDef( const idDict& args, idEntity** ent, bool setDe
 		cls = idClass::GetClass( spawn );
 		if( !cls )
 		{
-			Warning( "Could not spawn '%s'.  Class '%s' not found%s.", classname, spawn, error.c_str() );
+			Warning( "Could not spawn '%s'.  Class '%s' not found %s.", classname, spawn, error.c_str() );
 			return false;
 		}
 
 		obj = cls->CreateInstance();
 		if( !obj )
 		{
-			Warning( "Could not spawn '%s'. Instance could not be created%s.", classname, error.c_str() );
+			Warning( "Could not spawn '%s'. Instance could not be created %s.", classname, error.c_str() );
 			return false;
 		}
 
@@ -3977,7 +3937,6 @@ idGameLocal::InhibitEntitySpawn
 */
 bool idGameLocal::InhibitEntitySpawn( idDict& spawnArgs )
 {
-
 	bool result = false;
 
 	if( common->IsMultiplayer() )
@@ -4091,9 +4050,6 @@ void idGameLocal::SpawnMapEntities()
 		{
 			// precache any media specified in the map entity
 			CacheDictionaryMedia( &args );
-
-			// Admer: brush origin offsets:
-			args.SetVector( BRUSH_ORIGIN_KEY, mapEnt->originOffset );
 
 			SpawnEntityDef( args );
 			num++;
@@ -5003,7 +4959,7 @@ idCamera* idGameLocal::GetCamera() const
 idGameLocal::SkipCinematic
 =============
 */
-bool idGameLocal::SkipCinematic( void )
+bool idGameLocal::SkipCinematic()
 {
 	if( camera )
 	{
@@ -5931,9 +5887,6 @@ void idGameLocal::Shell_SyncWithSession()
 	}
 	switch( session->GetState() )
 	{
-		case idSession::PRESS_START:
-			shellHandler->SetShellState( SHELL_STATE_PRESS_START );
-			break;
 		case idSession::INGAME:
 			shellHandler->SetShellState( SHELL_STATE_PAUSED );
 			break;

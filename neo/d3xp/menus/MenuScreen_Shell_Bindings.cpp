@@ -37,7 +37,7 @@ typedef struct
 
 static bindInfo_t keyboardBinds[] =
 {
-	{ "#str_02090",			""								},	// HEADING
+	{ "#str_02090",			""								},	// CONTROLS - MOVEMENT
 	{ "#str_02100",	"_forward"								},	// FORWARD
 	{ "#str_02101",	"_back"									},	// BACKPEDAL
 	{ "#str_02102",	"_moveLeft"								},	// MOVE LEFT
@@ -48,7 +48,7 @@ static bindInfo_t keyboardBinds[] =
 	{ "#str_02107",	"_right"								},	// TURN RIGHT
 	{ "#str_02109",	"_speed"								},	// SPRINT
 
-	{ "#str_02095",			""								},	// HEADING
+	{ "#str_02095",			""								},	// CONTROLS - ATTACK/LOOK
 	{ "#str_02112",	"_attack"								},	// ATTACK
 	{ "#str_02114",	"_impulse14"							},	// PREV. WEAPON
 	{ "#str_02113",	"_impulse15"							},	// NEXT WEAPON
@@ -56,9 +56,11 @@ static bindInfo_t keyboardBinds[] =
 	{ "#str_swf_action_use",	"_use"						},	// USE
 	{ "#str_02116",	"_lookUp"								},	// LOOK UP
 	{ "#str_02117",	"_lookDown"								},	// LOOK DOWN
+	{ "#str_02119",	"_center_view"							},	// CENTER VIEW
+	{ "#str_02120",	"_zoom"									},	// ZOOM VIEW
 	{ "#str_02121",	"_impulse19"							},	// PDA / SCOREBOARD
 
-	{ "#str_02093",			""								},	// HEADING
+	{ "#str_02093",			""								},	// CONTROLS - WEAPONS
 	{ "#str_00100177",	"_impulse0"							},	// FISTS / GRABBER
 	{ "#str_00100178",	"_impulse2"							},	// PISTOL
 	{ "#str_00100179",	"_impulse3"							},	// SHOTGUN / DOUBLE
@@ -71,13 +73,13 @@ static bindInfo_t keyboardBinds[] =
 	{ "#str_swf_soulcube_artifact",	"_impulse12"			},	// SOULCUBE / ARTIFACT
 	{ "#str_00100187",	"_impulse16"						},	// FLASHLIGHT
 
-	{ "#str_04065",			""								},	// HEADING
+	{ "#str_04065",			""								},	// CONTROLS - OTHER
 	{ "#str_04067",	"savegame quick"						},	// QUICK SAVE
 	{ "#str_04068",	"loadgame quick"						},	// QUICK LOAD
 	{ "#str_04069",	"screenshot"							},	// SCREENSHOT
 	{ "#str_02068",	"clientMessageMode"						},	// SCREENSHOT
 	{ "#str_02122",	"clientMessageMode 1"					},	// SCREENSHOT
-	//{ "#str_04071",	"clientDropWeapon"						}	// DROP WEAPON
+	{ "#str_04071",	"clientDropWeapon"						}	// DROP WEAPON
 };
 
 static const int numBinds = sizeof( keyboardBinds ) / sizeof( keyboardBinds[0] );

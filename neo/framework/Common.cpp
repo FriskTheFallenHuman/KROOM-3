@@ -36,15 +36,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "../sound/sound.h"
 
-// RB begin
-#if defined(USE_DOOMCLASSIC)
-	#include "../../doomclassic/doom/doomlib.h"
-	#include "../../doomclassic/doom/d_event.h"
-	#include "../../doomclassic/doom/d_main.h"
-#endif
-// RB end
-
-
 #include "../sys/sys_savegame.h"
 
 
@@ -100,14 +91,6 @@ float com_engineHz_latched = 60.0f; // Latched version of cvar, updated between 
 int64 com_engineHz_numerator = 100LL * 1000LL;
 int64 com_engineHz_denominator = 100LL * 60LL;
 
-// RB begin
-int com_editors = 0;
-
-#if defined(_WIN32)
-	HWND com_hwndMsg = NULL;
-#endif
-// RB end
-
 #ifdef __DOOM_DLL__
 	idGame* 		game = NULL;
 	idGameEdit* 	gameEdit = NULL;
@@ -118,9 +101,6 @@ idCommon* 		common = &commonLocal;
 
 // RB: defaulted this to 1 because we don't have a sound for the intro .bik video
 idCVar com_skipIntroVideos( "com_skipIntroVideos", "1", CVAR_BOOL , "skips intro videos" );
-
-// For doom classic
-struct Globals;
 
 /*
 ==================
@@ -137,14 +117,6 @@ idCommonLocal::idCommonLocal() :
 	lastPacifierGuiTime( 0 ),
 	lastPacifierDialogState( false ),
 	showShellRequested( false )
-	// RB begin
-#if defined(USE_DOOMCLASSIC)
-	,
-	currentGame( DOOM3_BFG ),
-	idealCurrentGame( DOOM3_BFG ),
-	doomClassicMaterial( NULL )
-#endif
-	// RB end
 {
 
 	snapCurrent.localTime = -1;
@@ -246,10 +218,6 @@ doom set test blah + map test
 ============================================================================
 */
 
-#define		MAX_CONSOLE_LINES	32
-int			com_numConsoleLines;
-idCmdArgs	com_consoleLines[MAX_CONSOLE_LINES];
-
 /*
 ==================
 idCommonLocal::ParseCommandLine
@@ -346,36 +314,6 @@ void idCommonLocal::StartupVariable( const char* match )
 		i++;
 	}
 }
-
-// DG: add doom3 tools
-/*
-=================
-idCommonLocal::InitTool
-=================
-*/
-void idCommonLocal::InitTool( const toolFlag_t tool, const idDict* dict, idEntity* entity )
-{
-#if defined(USE_MFC_TOOLS)
-	if( tool & EDITOR_SOUND )
-	{
-		//SoundEditorInit( dict ); // TODO: implement this somewhere
-	}
-	else if( tool & EDITOR_PARTICLE )
-	{
-		//ParticleEditorInit( dict );
-	}
-	else if( tool & EDITOR_AF )
-	{
-		//AFEditorInit( dict );
-	}
-#else
-	if( tool & EDITOR_LIGHT )
-	{
-		ImGuiTools::LightEditorInit( dict, entity );
-	}
-#endif
-}
-// DG end
 
 /*
 ==================
@@ -886,22 +824,22 @@ void idCommonLocal::RenderSplash()
 	const float sysAspect = sysWidth / sysHeight;
 	const float splashAspect = 16.0f / 9.0f;
 	const float adjustment = sysAspect / splashAspect;
-	const float barHeight = ( adjustment >= 1.0f ) ? 0.0f : ( 1.0f - adjustment ) * ( float )renderSystem->GetVirtualHeight() * 0.25f;
-	const float barWidth = ( adjustment <= 1.0f ) ? 0.0f : ( adjustment - 1.0f ) * ( float )renderSystem->GetVirtualWidth() * 0.25f;
+	const float barHeight = ( adjustment >= 1.0f ) ? 0.0f : ( 1.0f - adjustment ) * ( float )SCREEN_HEIGHT * 0.25f;
+	const float barWidth = ( adjustment <= 1.0f ) ? 0.0f : ( adjustment - 1.0f ) * ( float )SCREEN_WIDTH * 0.25f;
 	if( barHeight > 0.0f )
 	{
 		renderSystem->SetColor( colorBlack );
-		renderSystem->DrawStretchPic( 0, 0, renderSystem->GetVirtualWidth(), barHeight, 0, 0, 1, 1, whiteMaterial );
-		renderSystem->DrawStretchPic( 0, renderSystem->GetVirtualHeight() - barHeight, renderSystem->GetVirtualWidth(), barHeight, 0, 0, 1, 1, whiteMaterial );
+		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, barHeight, 0, 0, 1, 1, whiteMaterial );
+		renderSystem->DrawStretchPic( 0, SCREEN_HEIGHT - barHeight, SCREEN_WIDTH, barHeight, 0, 0, 1, 1, whiteMaterial );
 	}
 	if( barWidth > 0.0f )
 	{
 		renderSystem->SetColor( colorBlack );
-		renderSystem->DrawStretchPic( 0, 0, barWidth, renderSystem->GetVirtualHeight(), 0, 0, 1, 1, whiteMaterial );
-		renderSystem->DrawStretchPic( renderSystem->GetVirtualWidth() - barWidth, 0, barWidth, renderSystem->GetVirtualHeight(), 0, 0, 1, 1, whiteMaterial );
+		renderSystem->DrawStretchPic( 0, 0, barWidth, SCREEN_HEIGHT, 0, 0, 1, 1, whiteMaterial );
+		renderSystem->DrawStretchPic( SCREEN_WIDTH - barWidth, 0, barWidth, SCREEN_HEIGHT, 0, 0, 1, 1, whiteMaterial );
 	}
 	renderSystem->SetColor4( 1, 1, 1, 1 );
-	renderSystem->DrawStretchPic( barWidth, barHeight, renderSystem->GetVirtualWidth() - barWidth * 2.0f, renderSystem->GetVirtualHeight() - barHeight * 2.0f, 0, 0, 1, 1, splashScreen );
+	renderSystem->DrawStretchPic( barWidth, barHeight, SCREEN_WIDTH - barWidth * 2.0f, SCREEN_HEIGHT - barHeight * 2.0f, 0, 0, 1, 1, splashScreen );
 
 	const emptyCommand_t* cmd = renderSystem->SwapCommandBuffers( &time_frontend, &time_backend, &time_shadows, &time_gpu, &stats_backend, &stats_frontend );
 	renderSystem->RenderCommandBuffers( cmd );
@@ -921,8 +859,8 @@ void idCommonLocal::RenderBink( const char* path )
 	const float sysHeight = renderSystem->GetHeight();
 	const float sysAspect = sysWidth / sysHeight;
 	const float movieAspect = ( 16.0f / 9.0f );
-	const float imageWidth = renderSystem->GetVirtualWidth() * movieAspect / sysAspect;
-	const float chop = 0.5f * ( renderSystem->GetVirtualWidth() - imageWidth );
+	const float imageWidth = SCREEN_WIDTH * movieAspect / sysAspect;
+	const float chop = 0.5f * ( SCREEN_WIDTH - imageWidth );
 
 	idStr materialText;
 	materialText.Format( "{ translucent { videoMap %s } }", path );
@@ -938,7 +876,7 @@ void idCommonLocal::RenderBink( const char* path )
 	bool escapeEvent = false;
 	while( ( Sys_Milliseconds() <= ( material->GetCinematicStartTime() + cinematicLength ) ) && material->CinematicIsPlaying() )
 	{
-		renderSystem->DrawStretchPic( chop, 0, imageWidth, renderSystem->GetVirtualHeight(), 0, 0, 1, 1, material );
+		renderSystem->DrawStretchPic( chop, 0, imageWidth, SCREEN_HEIGHT, 0, 0, 1, 1, material );
 		const emptyCommand_t* cmd = renderSystem->SwapCommandBuffers( &time_frontend, &time_backend, &time_shadows, &time_gpu, &stats_backend, &stats_frontend );
 		renderSystem->RenderCommandBuffers( cmd );
 
@@ -1243,6 +1181,9 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 		// initialize processor specific SIMD implementation
 		InitSIMD();
 
+		// init commands
+		InitCommands();
+
 		// initialize the file system
 		fileSystem->Init();
 
@@ -1264,6 +1205,9 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 
 		// initialize the declaration manager
 		declManager->Init();
+
+		// force r_fullscreen 0 if running a tool
+		CheckToolMode();
 
 		// init journalling, etc
 		eventLoop->Init();
@@ -1367,9 +1311,6 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 		// startup the script debugger
 		// DebuggerServerInit();
 
-		// Init tool commands
-		InitCommands();
-
 		// load the game dll
 		LoadGameDLL();
 
@@ -1449,24 +1390,6 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 		}
 
 		fileSystem->EndLevelLoad();
-
-		// RB begin
-#if defined(USE_DOOMCLASSIC)
-		// Initialize support for Doom classic.
-		doomClassicMaterial = declManager->FindMaterial( "_doomClassic" );
-		idImage* image = globalImages->GetImage( "_doomClassic" );
-		if( image != NULL )
-		{
-			idImageOpts opts;
-			opts.format = FMT_RGBA8;
-			opts.colorFormat = CFM_DEFAULT;
-			opts.width = DOOMCLASSIC_RENDERWIDTH;
-			opts.height = DOOMCLASSIC_RENDERHEIGHT;
-			opts.numLevels = 1;
-			image->AllocImage( opts, TF_LINEAR, TR_REPEAT );
-		}
-#endif
-		// RB end
 
 		com_fullyInitialized = true;
 
@@ -1717,21 +1640,6 @@ void idCommonLocal::BusyWait()
 	session->Pump();
 }
 
-
-/*
-===============
-idCommonLocal::InitCommands
-===============
-*/
-void idCommonLocal::InitCommands()
-{
-	// compilers
-	cmdSystem->AddCommand( "dmap", Dmap_f, CMD_FL_TOOL, "compiles a map", idCmdSystem::ArgCompletion_MapName );
-	cmdSystem->AddCommand( "runAAS", RunAAS_f, CMD_FL_TOOL, "compiles an AAS file for a map", idCmdSystem::ArgCompletion_MapName );
-	cmdSystem->AddCommand( "runAASDir", RunAASDir_f, CMD_FL_TOOL, "compiles AAS files for all maps in a folder", idCmdSystem::ArgCompletion_MapName );
-	cmdSystem->AddCommand( "runReach", RunReach_f, CMD_FL_TOOL, "calculates reachability for an AAS file", idCmdSystem::ArgCompletion_MapName );
-}
-
 /*
 ===============
 idCommonLocal::WaitForSessionState
@@ -1862,44 +1770,6 @@ bool idCommonLocal::ProcessEvent( const sysEvent_t* event )
 		return true;
 	}
 
-	// RB begin
-#if defined(USE_DOOMCLASSIC)
-
-	// Let Doom classic run events.
-	if( IsPlayingDoomClassic() )
-	{
-		// Translate the event to Doom classic format.
-		event_t classicEvent;
-		if( event->evType == SE_KEY )
-		{
-
-			if( event->evValue2 == 1 )
-			{
-				classicEvent.type = ev_keydown;
-			}
-			else if( event->evValue2 == 0 )
-			{
-				classicEvent.type = ev_keyup;
-			}
-
-			DoomLib::SetPlayer( 0 );
-
-			extern Globals* g;
-			if( g != NULL )
-			{
-				classicEvent.data1 =  DoomLib::RemapControl( event->GetKey() );
-
-				D_PostEvent( &classicEvent );
-			}
-			DoomLib::SetPlayer( -1 );
-		}
-
-		// Let the classics eat all events.
-		return true;
-	}
-#endif
-	// RB end
-
 	// menus / etc
 	if( MenuEvent( event ) )
 	{
@@ -1937,94 +1807,6 @@ void idCommonLocal::ResetPlayerInput( int playerIndex )
 {
 	userCmdMgr.ResetPlayer( playerIndex );
 }
-
-// RB begin
-#if defined(USE_DOOMCLASSIC)
-
-/*
-========================
-idCommonLocal::SwitchToGame
-========================
-*/
-void idCommonLocal::SwitchToGame( currentGame_t newGame )
-{
-	idealCurrentGame = newGame;
-}
-
-/*
-========================
-idCommonLocal::PerformGameSwitch
-========================
-*/
-void idCommonLocal::PerformGameSwitch()
-{
-	// If the session state is past the menu, we should be in Doom 3.
-	// This will happen if, for example, we accept an invite while playing
-	// Doom or Doom 2.
-	if( session->GetState() > idSession::IDLE )
-	{
-		idealCurrentGame = DOOM3_BFG;
-	}
-
-	if( currentGame == idealCurrentGame )
-	{
-		return;
-	}
-
-	const int DOOM_CLASSIC_HZ = 35;
-
-	if( idealCurrentGame == DOOM_CLASSIC || idealCurrentGame == DOOM2_CLASSIC )
-	{
-		// Pause Doom 3 sound.
-		if( menuSoundWorld != NULL )
-		{
-			menuSoundWorld->Pause();
-		}
-
-		DoomLib::skipToNew = false;
-		DoomLib::skipToLoad = false;
-
-		// Reset match parameters for the classics.
-		DoomLib::matchParms = idMatchParameters();
-
-		// The classics use the usercmd manager too, clear it.
-		userCmdMgr.SetDefaults();
-
-		// Classics need a local user too.
-		session->UpdateSignInManager();
-		session->GetSignInManager().RegisterLocalUser( 0 );
-
-		com_engineHz_denominator = 100LL * DOOM_CLASSIC_HZ;
-		com_engineHz_latched = DOOM_CLASSIC_HZ;
-
-		DoomLib::SetCurrentExpansion( idealCurrentGame );
-
-	}
-	else if( idealCurrentGame == DOOM3_BFG )
-	{
-		DoomLib::Interface.Shutdown();
-		com_engineHz_denominator = 100LL * com_engineHz.GetFloat();
-		com_engineHz_latched = com_engineHz.GetFloat();
-
-		// Don't MoveToPressStart if we have an invite, we need to go
-		// directly to the lobby.
-		if( session->GetState() <= idSession::IDLE )
-		{
-			session->MoveToPressStart();
-		}
-
-		// Unpause Doom 3 sound.
-		if( menuSoundWorld != NULL )
-		{
-			menuSoundWorld->UnPause();
-		}
-	}
-
-	currentGame = idealCurrentGame;
-}
-
-#endif // #if defined(USE_DOOMCLASSIC)
-// RB end
 
 /*
 ==================

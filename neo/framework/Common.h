@@ -118,18 +118,18 @@ ID_INLINE bool EndTraceRecording()
 typedef enum
 {
 	EDITOR_NONE					= 0,
-	EDITOR_GUI					= BIT( 1 ),
-	EDITOR_DEBUGGER				= BIT( 2 ),
-	EDITOR_SCRIPT				= BIT( 3 ),
-	EDITOR_LIGHT				= BIT( 4 ),
-	EDITOR_SOUND				= BIT( 5 ),
-	EDITOR_DECL					= BIT( 6 ),
-	EDITOR_AF					= BIT( 7 ),
-	EDITOR_PARTICLE				= BIT( 8 ),
-	EDITOR_PDA					= BIT( 9 ),
-	EDITOR_AAS					= BIT( 10 ),
-	EDITOR_MATERIAL				= BIT( 11 ),
-	EDITOR_EXPORTDEFS			= BIT( 12 ), // RB
+	EDITOR_RADIANT				= BIT( 1 ),
+	EDITOR_GUI					= BIT( 2 ),
+	EDITOR_DEBUGGER				= BIT( 3 ),
+	EDITOR_SCRIPT				= BIT( 4 ),
+	EDITOR_LIGHT				= BIT( 5 ),
+	EDITOR_SOUND				= BIT( 6 ),
+	EDITOR_DECL					= BIT( 7 ),
+	EDITOR_AF					= BIT( 8 ),
+	EDITOR_PARTICLE				= BIT( 9 ),
+	EDITOR_PDA					= BIT( 10 ),
+	EDITOR_AAS					= BIT( 11 ),
+	EDITOR_MATERIAL				= BIT( 12 ),
 } toolFlag_t;
 
 #define STRTABLE_ID				"#str_"
@@ -143,8 +143,19 @@ extern idCVar		com_showFPS;
 extern idCVar		com_showMemoryUsage;
 extern idCVar		com_updateLoadSize;
 extern idCVar		com_productionMode;
+extern int			com_editors;			// current active editor(s)
+extern bool			com_editorActive;		// true if an editor has focus
 
-extern int			com_editors;			// currently opened editor(s)
+#ifdef _WIN32
+const char			DMAP_MSGID[] = "DMAPOutput";
+const char			DMAP_DONE[] = "DMAPDone";
+extern HWND			com_hwndMsg;
+extern bool			com_outputMsg;
+extern unsigned int	com_msgID;
+
+bool FindEditor();
+#endif
+
 struct MemInfo_t
 {
 	idStr			filebase;
@@ -181,17 +192,6 @@ struct mpMap_t
 };
 
 static const int	MAX_LOGGED_STATS = 60 * 120;		// log every half second
-
-// RB begin
-#if defined(USE_DOOMCLASSIC)
-enum currentGame_t
-{
-	DOOM_CLASSIC,
-	DOOM2_CLASSIC,
-	DOOM3_BFG
-};
-#endif
-// RB end
 
 class idCommon
 {
@@ -235,7 +235,10 @@ public:
 	virtual void				StartupVariable( const char* match ) = 0;
 
 	// Initializes a tool with the given dictionary.
-	virtual void				InitTool( const toolFlag_t tool, const idDict* dict, idEntity* entity ) = 0;
+	virtual void				InitTool( const toolFlag_t tool, const idDict *dict ) = 0;
+
+	// Activates or deactivates a tool.
+	virtual void				ActivateTool( bool active ) = 0;
 
 	// Begins redirection of console output to the given buffer.
 	virtual void				BeginRedirect( char* buffer, int buffersize, void ( *flush )( const char* ) ) = 0;
@@ -341,13 +344,6 @@ public:
 	virtual bool				JapaneseCensorship() const = 0;
 
 	virtual void				QueueShowShell() = 0;		// Will activate the shell on the next frame.
-
-	// RB begin
-#if defined(USE_DOOMCLASSIC)
-	virtual currentGame_t		GetCurrentGame() const = 0;
-	virtual void				SwitchToGame( currentGame_t newGame ) = 0;
-#endif
-	// RB end
 };
 
 extern idCommon* 		common;

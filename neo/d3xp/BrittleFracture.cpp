@@ -1548,8 +1548,8 @@ bool idBrittleFracture::ClientReceiveEvent( int event, int time, const idBitMsg&
 			return true;
 		}
 		default:
-		{
-			return idEntity::ClientReceiveEvent( event, time, msg );
-		}
+			break;
 	}
+
+	return idEntity::ClientReceiveEvent( event, time, msg );
 }

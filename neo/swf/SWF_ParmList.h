@@ -60,4 +60,4 @@ public:
 	void	Append( const bool b );
 };
 
-#endif	// __SWF_PARMLIST_H__ 
+#endif	// __SWF_PARMLIST_H__

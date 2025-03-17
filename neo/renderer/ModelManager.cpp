@@ -35,10 +35,6 @@ If you have questions concerning this license or the applicable additional terms
 idCVar binaryLoadRenderModels( "binaryLoadRenderModels", "1", 0, "enable binary load/write of render models" );
 idCVar preload_MapModels( "preload_MapModels", "1", CVAR_SYSTEM | CVAR_BOOL, "preload models during begin or end levelload" );
 
-// RB begin
-idCVar postLoadExportModels( "postLoadExportModels", "0", CVAR_BOOL | CVAR_RENDERER, "export models after loading to OBJ model format" );
-// RB end
-
 class idRenderModelManagerLocal : public idRenderModelManager
 {
 public:
@@ -342,8 +338,8 @@ idRenderModel* idRenderModelManagerLocal::GetModel( const char* _modelName, bool
 
 	idRenderModel* model = NULL;
 
-	// RB: Collada DAE and Wavefront OBJ
-	if( ( extension.Icmp( "dae" ) == 0 ) || ( extension.Icmp( "obj" ) == 0 ) || ( extension.Icmp( "ase" ) == 0 ) || ( extension.Icmp( "lwo" ) == 0 ) || ( extension.Icmp( "flt" ) == 0 ) || ( extension.Icmp( "ma" ) == 0 ) )
+	// RB: Wavefront OBJ
+	if( ( extension.Icmp( "obj" ) == 0 ) || ( extension.Icmp( "ase" ) == 0 ) || ( extension.Icmp( "lwo" ) == 0 ) || ( extension.Icmp( "flt" ) == 0 ) || ( extension.Icmp( "ma" ) == 0 ) )
 	{
 		model = new( TAG_MODEL ) idRenderModelStatic;
 	}
@@ -440,39 +436,6 @@ idRenderModel* idRenderModelManagerLocal::GetModel( const char* _modelName, bool
 	{
 		fileSystem->AddModelPreload( model->Name() );
 	}
-
-	// RB begin
-	if( postLoadExportModels.GetBool() && ( model != defaultModel && model != beamModel && model != spriteModel ) )
-	{
-		idStrStatic< MAX_OSPATH > exportedFileName;
-
-		exportedFileName = "exported/rendermodels/";
-
-		if( com_editors & EDITOR_EXPORTDEFS )
-		{
-			exportedFileName = "_tb/";
-		}
-
-		exportedFileName.AppendPath( canonical );
-		exportedFileName.SetFileExtension( ".obj" );
-
-		ID_TIME_T sourceTimeStamp = fileSystem->GetTimestamp( canonical );
-		ID_TIME_T timeStamp = fileSystem->GetTimestamp( exportedFileName );
-
-		// TODO only update if generated has changed
-
-		//if( timeStamp == FILE_NOT_FOUND_TIMESTAMP )
-		{
-			idFileLocal objFile( fileSystem->OpenFileWrite( exportedFileName, "fs_basepath" ) );
-			idLib::Printf( "Writing %s\n", exportedFileName.c_str() );
-
-			exportedFileName.SetFileExtension( ".mtl" );
-			idFileLocal mtlFile( fileSystem->OpenFileWrite( exportedFileName, "fs_basepath" ) );
-
-			model->ExportOBJ( objFile, mtlFile );
-		}
-	}
-	// RB end
 
 	AddModel( model );
 

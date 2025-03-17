@@ -30,7 +30,7 @@ If you have questions concerning this license or the applicable additional terms
 #define __SWF_SPRITES_H__
 
 #undef Bool
-#include "rapidjson/document.h"
+#include "rapidjson/include/rapidjson/document.h"
 
 /*
 ================================================

@@ -31,7 +31,7 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "RenderCommon.h"
-#include "libs/imgui/imgui.h"
+#include "imgui/imgui.h"
 
 const float idGuiModel::STEREO_DEPTH_NEAR = 0.0f;
 const float idGuiModel::STEREO_DEPTH_MID  = 0.5f;
@@ -268,16 +268,16 @@ void idGuiModel::EmitFullScreen()
 	viewDef->scissor.y2 = viewDef->viewport.y2 - viewDef->viewport.y1;
 
 	// RB: IMPORTANT - the projectionMatrix has a few changes to make it work with Vulkan
-	viewDef->projectionMatrix[0 * 4 + 0] = 2.0f / renderSystem->GetVirtualWidth();
+	viewDef->projectionMatrix[0 * 4 + 0] = 2.0f / SCREEN_WIDTH;
 	viewDef->projectionMatrix[0 * 4 + 1] = 0.0f;
 	viewDef->projectionMatrix[0 * 4 + 2] = 0.0f;
 	viewDef->projectionMatrix[0 * 4 + 3] = 0.0f;
 
 	viewDef->projectionMatrix[1 * 4 + 0] = 0.0f;
 #if defined(USE_VULKAN)
-	viewDef->projectionMatrix[1 * 4 + 1] = 2.0f / renderSystem->GetVirtualHeight();
+	viewDef->projectionMatrix[1 * 4 + 1] = 2.0f / SCREEN_HEIGHT;
 #else
-	viewDef->projectionMatrix[1 * 4 + 1] = -2.0f / renderSystem->GetVirtualHeight();
+	viewDef->projectionMatrix[1 * 4 + 1] = -2.0f / SCREEN_HEIGHT;
 #endif
 	viewDef->projectionMatrix[1 * 4 + 2] = 0.0f;
 	viewDef->projectionMatrix[1 * 4 + 3] = 0.0f;
@@ -347,7 +347,7 @@ void idGuiModel::EmitImGui( ImDrawData* drawData )
 	const float sysWidth = renderSystem->GetWidth();
 	const float sysHeight = renderSystem->GetHeight();
 
-	idVec2 scaleToVirtual( ( float )renderSystem->GetVirtualWidth() / sysWidth, ( float )renderSystem->GetVirtualHeight() / sysHeight );
+	idVec2 scaleToVirtual( ( float )SCREEN_WIDTH / sysWidth, ( float )SCREEN_HEIGHT / sysHeight );
 
 	for( int a = 0; a < drawData->CmdListsCount; a++ )
 	{

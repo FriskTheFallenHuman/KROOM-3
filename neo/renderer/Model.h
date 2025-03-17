@@ -120,6 +120,9 @@ struct srfTriangles_t
 	vertCacheHandle_t			ambientCache;			// idDrawVert
 	vertCacheHandle_t			shadowCache;			// idVec4
 
+	bool						facePlanesCalculated;	// set when the face planes have been calculated
+	idPlane *					facePlanes;
+
 	DISALLOW_COPY_AND_ASSIGN( srfTriangles_t );
 };
 
@@ -171,10 +174,6 @@ public:
 	virtual bool				LoadBinaryModel( idFile* file, const ID_TIME_T sourceTimeStamp ) = 0;
 	virtual void				WriteBinaryModel( idFile* file, ID_TIME_T* _timeStamp = NULL ) const = 0;
 	virtual bool				SupportsBinaryModel() = 0;
-
-	// RB begin
-	virtual void				ExportOBJ( idFile* objFile, idFile* mtlFile, ID_TIME_T* _timeStamp = NULL ) = 0;
-	// RB end
 
 	// renderBump uses this to load the very high poly count models, skipping the
 	// shadow and tangent generation, along with some surface cleanup to make it load faster

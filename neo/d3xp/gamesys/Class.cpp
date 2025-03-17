@@ -26,19 +26,18 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
+
+#include "precompiled.h"
+#pragma hdrstop
+
+#include "../Game_local.h"
+
 /*
 
 Base class for all C++ objects.  Provides fast run-time type checking and run-time
 instancing of objects.
 
 */
-
-#include "precompiled.h"
-#pragma hdrstop
-
-
-#include "../Game_local.h"
-
 
 /***********************************************************************
 
@@ -312,9 +311,7 @@ idClass::FindUninitializedMemory
 void idClass::FindUninitializedMemory()
 {
 #ifdef ID_DEBUG_UNINITIALIZED_MEMORY
-	// DG: use int instead of long for 64bit compatibility
 	unsigned int* ptr = ( ( unsigned int* )this ) - 1;
-	// DG end
 	int size = *ptr;
 	assert( ( size & 3 ) == 0 );
 	size >>= 2;
@@ -487,10 +484,10 @@ idClass::new
 */
 void* idClass::operator new( size_t s )
 {
-	int* p;
+	intptr_t* p;
 
-	s += sizeof( int );
-	p = ( int* )Mem_Alloc( s, TAG_IDCLASS );
+	s += sizeof( intptr_t );
+	p = ( intptr_t* )Mem_Alloc( s, TAG_IDCLASS );
 	*p = s;
 	memused += s;
 	numobjects++;
@@ -505,11 +502,11 @@ idClass::delete
 */
 void idClass::operator delete( void* ptr )
 {
-	int* p;
+	intptr_t* p;
 
 	if( ptr )
 	{
-		p = ( ( int* )ptr ) - 1;
+		p = ( ( intptr_t* )ptr ) - 1;
 		memused -= *p;
 		numobjects--;
 		Mem_Free( p );
@@ -880,9 +877,7 @@ bool idClass::ProcessEventArgs( const idEventDef* ev, int numargs, ... )
 {
 	idTypeInfo*	c;
 	int			num;
-	// RB: 64 bit fix, changed int to intptr_t
 	intptr_t	data[ D_EVENT_MAXARGS ];
-	// RB end
 	va_list		args;
 
 	assert( ev );
@@ -1000,10 +995,8 @@ bool idClass::ProcessEvent( const idEventDef* ev, idEventArg arg1, idEventArg ar
 idClass::ProcessEventArgPtr
 ================
 */
-// RB: 64 bit fixes, changed int to intptr_t
 bool idClass::ProcessEventArgPtr( const idEventDef* ev, intptr_t* data )
 {
-// RB end
 	idTypeInfo*	c;
 	int			num;
 	eventCallback_t	callback;
@@ -1035,18 +1028,6 @@ bool idClass::ProcessEventArgPtr( const idEventDef* ev, intptr_t* data )
 
 	callback = c->eventMap[ num ];
 
-// RB: I tried first to get CPU_EASYARGS switch running with x86_64
-// but it caused many crashes with the Doom scripts.
-// The new Callbacks.cpp was generated with intptr_t and it works fine.
-#if !CPU_EASYARGS
-
-	/*
-	on ppc architecture, floats are passed in a separate set of registers
-	the function prototypes must have matching float declaration
-
-	http://developer.apple.com/documentation/DeveloperTools/Conceptual/MachORuntime/2rt_powerpc_abi/chapter_9_section_5.html
-	*/
-
 	switch( ev->GetFormatspecIndex() )
 	{
 		case 1 << D_EVENT_MAXARGS :
@@ -1060,65 +1041,6 @@ bool idClass::ProcessEventArgPtr( const idEventDef* ev, intptr_t* data )
 			gameLocal.Warning( "Invalid formatspec on event '%s'", ev->GetName() );
 			break;
 	}
-
-#else
-
-	assert( D_EVENT_MAXARGS == 8 );
-
-	// RB: 64 bit fixes, changed int to intptr_t
-	switch( ev->GetNumArgs() )
-	{
-		case 0 :
-			( this->*callback )();
-			break;
-
-		case 1 :
-			typedef void ( idClass::*eventCallback_1_t )( const intptr_t );
-			( this->*( eventCallback_1_t )callback )( data[ 0 ] );
-			break;
-
-		case 2 :
-			typedef void ( idClass::*eventCallback_2_t )( const intptr_t, const intptr_t );
-			( this->*( eventCallback_2_t )callback )( data[ 0 ], data[ 1 ] );
-			break;
-
-		case 3 :
-			typedef void ( idClass::*eventCallback_3_t )( const intptr_t, const intptr_t, const intptr_t );
-			( this->*( eventCallback_3_t )callback )( data[ 0 ], data[ 1 ], data[ 2 ] );
-			break;
-
-		case 4 :
-			typedef void ( idClass::*eventCallback_4_t )( const intptr_t, const intptr_t, const intptr_t, const intptr_t );
-			( this->*( eventCallback_4_t )callback )( data[ 0 ], data[ 1 ], data[ 2 ], data[ 3 ] );
-			break;
-
-		case 5 :
-			typedef void ( idClass::*eventCallback_5_t )( const intptr_t, const intptr_t, const intptr_t, const intptr_t, const intptr_t );
-			( this->*( eventCallback_5_t )callback )( data[ 0 ], data[ 1 ], data[ 2 ], data[ 3 ], data[ 4 ] );
-			break;
-
-		case 6 :
-			typedef void ( idClass::*eventCallback_6_t )( const intptr_t, const intptr_t, const intptr_t, const intptr_t, const intptr_t, const intptr_t );
-			( this->*( eventCallback_6_t )callback )( data[ 0 ], data[ 1 ], data[ 2 ], data[ 3 ], data[ 4 ], data[ 5 ] );
-			break;
-
-		case 7 :
-			typedef void ( idClass::*eventCallback_7_t )( const intptr_t, const intptr_t, const intptr_t, const intptr_t, const intptr_t, const intptr_t, const intptr_t );
-			( this->*( eventCallback_7_t )callback )( data[ 0 ], data[ 1 ], data[ 2 ], data[ 3 ], data[ 4 ], data[ 5 ], data[ 6 ] );
-			break;
-
-		case 8 :
-			typedef void ( idClass::*eventCallback_8_t )( const intptr_t, const intptr_t, const intptr_t, const intptr_t, const intptr_t, const intptr_t, const intptr_t, const intptr_t );
-			( this->*( eventCallback_8_t )callback )( data[ 0 ], data[ 1 ], data[ 2 ], data[ 3 ], data[ 4 ], data[ 5 ], data[ 6 ], data[ 7 ] );
-			break;
-
-		default:
-			gameLocal.Warning( "Invalid formatspec on event '%s'", ev->GetName() );
-			break;
-	}
-	// RB end
-
-#endif
 
 	return true;
 }
@@ -1426,22 +1348,5 @@ void idClass::ExportScriptEvents_f( const idCmdArgs& args )
 	}
 
 	delete[] set;
-}
-
-void idClass::EditLights_f( const idCmdArgs& args )
-{
-	if( g_editEntityMode.GetInteger() != 1 )
-	{
-		g_editEntityMode.SetInteger( 1 );
-
-		// turn off com_smp multithreading so we can load and check light textures on main thread
-		com_editors |= EDITOR_LIGHT;
-	}
-	else
-	{
-		g_editEntityMode.SetInteger( 0 );
-
-		com_editors &= ~EDITOR_LIGHT;
-	}
 }
 // RB end

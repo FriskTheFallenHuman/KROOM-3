@@ -1022,9 +1022,13 @@ bool idAF::Load( idEntity* ent, const char* fileName )
 		idAFConstraint* constraint = physicsObj.GetConstraint( i );
 		for( j = 0; j < file->constraints.Num(); j++ )
 		{
-			// idADConstraint enum is a superset of declADConstraint, so the cast is valid
+			// DG: FIXME: GCC rightfully complains that file->constraints[j]->type and constraint->GetType()
+			//  are of different enum types, and their values are different in some cases:
+			//  CONSTRAINT_HINGESTEERING has no DECLAF_CONSTRAINT_ equivalent,
+			//  and thus DECLAF_CONSTRAINT_SLIDER != CONSTRAINT_SLIDER (5 != 6)
+			//  and DECLAF_CONSTRAINT_SPRING != CONSTRAINT_SPRING (6 != 10)
 			if( file->constraints[j]->name.Icmp( constraint->GetName() ) == 0 &&
-					( constraintType_t )( file->constraints[j]->type ) == constraint->GetType() )
+					file->constraints[j]->type == constraint->GetType() )
 			{
 				break;
 			}

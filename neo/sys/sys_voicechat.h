@@ -152,4 +152,4 @@ protected:
 };
 
 
-#endif	// __SYS_VOICECHATMGR_H__ 
+#endif	// __SYS_VOICECHATMGR_H__

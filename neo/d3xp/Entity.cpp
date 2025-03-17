@@ -284,34 +284,16 @@ void idGameEdit::ParseSpawnArgsToRenderEntity( const idDict* args, renderEntity_
 	// get the rotation matrix in either full form, or single angle form
 	if( !args->GetMatrix( "rotation", "1 0 0 0 1 0 0 0 1", renderEntity->axis ) )
 	{
-		// RB: TrenchBroom interop
-		// support "angles" like in Quake 3
-		idAngles angles;
-
-		if( args->GetAngles( "angles", "0 0 0", angles ) )
+		angle = args->GetFloat( "angle" );
+		if( angle != 0.0f )
 		{
-			if( angles.pitch != 0.0f || angles.yaw != 0.0f || angles.roll != 0.0f )
-			{
-				renderEntity->axis = angles.ToMat3();
-			}
-			else
-			{
-				renderEntity->axis.Identity();
-			}
+			renderEntity->axis = idAngles( 0.0f, angle, 0.0f ).ToMat3();
 		}
 		else
 		{
-			angle = args->GetFloat( "angle" );
-			if( angle != 0.0f )
-			{
-				renderEntity->axis = idAngles( 0.0f, angle, 0.0f ).ToMat3();
-			}
-			else
-			{
-				renderEntity->axis.Identity();
-			}
+			renderEntity->axis.Identity();
 		}
-		// RB end
+
 	}
 
 	renderEntity->referenceSound = NULL;
@@ -646,11 +628,6 @@ void idEntity::Spawn()
 	if( temp != NULL && *temp != '\0' )
 	{
 		SetModel( temp );
-
-		// Entities without models don't have origin brushes,
-		// so it makes sense to apply this only IF there is a model
-		origin += GetOriginBrushOffset();
-		SetOrigin( origin );
 	}
 
 	if( spawnArgs.GetString( "bind", "", &temp ) )
@@ -1005,23 +982,22 @@ bool idEntity::DoDormantTests()
 		}
 		return true;
 	}
-	else
-	{
-		// the monster area is topologically connected to a player, but if
-		// the monster hasn't been woken up before, do the more precise PVS check
-		if( !fl.hasAwakened )
-		{
-			if( !gameLocal.InPlayerPVS( this ) )
-			{
-				return true;		// stay dormant
-			}
-		}
 
-		// wake up
-		dormantStart = 0;
-		fl.hasAwakened = true;		// only go dormant when area closed off now, not just out of PVS
-		return false;
+	// the monster area is topologically connected to a player, but if
+	// the monster hasn't been woken up before, do the more precise PVS check
+	if( !fl.hasAwakened )
+	{
+		if( !gameLocal.InPlayerPVS( this ) )
+		{
+			return true;		// stay dormant
+		}
 	}
+
+	// wake up
+	dormantStart = 0;
+	fl.hasAwakened = true;		// only go dormant when area closed off now, not just out of PVS
+
+	return false;
 }
 
 /*
@@ -1716,7 +1692,7 @@ int idEntity::GetModelDefHandle()
 idEntity::UpdateRenderEntity
 ================
 */
-bool idEntity::UpdateRenderEntity( renderEntity_t* renderEntity, const renderView_t* renderView )
+bool idEntity::UpdateRenderEntity( renderEntity_s* renderEntity, const renderView_t* renderView )
 {
 	if( gameLocal.inCinematic && gameLocal.skipCinematic )
 	{
@@ -1745,7 +1721,7 @@ idEntity::ModelCallback
 	NOTE: may not change the game state whatsoever!
 ================
 */
-bool idEntity::ModelCallback( renderEntity_t* renderEntity, const renderView_t* renderView )
+bool idEntity::ModelCallback( renderEntity_s* renderEntity, const renderView_t* renderView )
 {
 	idEntity* ent;
 
@@ -4588,11 +4564,6 @@ void idEntity::ShowEditingDialog()
 {
 }
 
-idVec3 idEntity::GetOriginBrushOffset() const
-{
-	return spawnArgs.GetVector( BRUSH_ORIGIN_KEY, "0 0 0" );
-}
-
 /***********************************************************************
 
    Events
@@ -6059,10 +6030,10 @@ bool idEntity::ClientReceiveEvent( int event, int time, const idBitMsg& msg )
 			return true;
 		}
 		default:
-		{
-			return false;
-		}
+			break;
 	}
+
+	return false;
 }
 
 /*
@@ -6634,10 +6605,10 @@ bool idAnimatedEntity::ClientReceiveEvent( int event, int time, const idBitMsg& 
 			return true;
 		}
 		default:
-		{
-			return idEntity::ClientReceiveEvent( event, time, msg );
-		}
+			break;
 	}
+
+	return idEntity::ClientReceiveEvent( event, time, msg );
 }
 
 /*

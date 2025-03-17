@@ -3331,10 +3331,10 @@ bool idWeapon::ClientReceiveEvent( int event, int time, const idBitMsg& msg )
 			return true;
 		}
 		default:
-		{
-			return idEntity::ClientReceiveEvent( event, time, msg );
-		}
+			break;
 	}
+
+	return idEntity::ClientReceiveEvent( event, time, msg );
 }
 
 /***********************************************************************

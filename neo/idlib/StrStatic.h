@@ -135,4 +135,4 @@ public:
 private:
 	char		buffer[ _size_ ];
 };
-#endif	// __STRSTATIC_H__ 
+#endif	// __STRSTATIC_H__

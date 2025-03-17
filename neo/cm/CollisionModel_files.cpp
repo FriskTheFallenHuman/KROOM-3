@@ -546,6 +546,7 @@ cm_model_t* idCollisionModelManagerLocal::ParseCollisionModel( idLexer* src )
 	src->ExpectTokenString( "{" );
 	while( !src->CheckTokenString( "}" ) )
 	{
+
 		src->ReadToken( &token );
 
 		if( token == "vertices" )

@@ -1500,6 +1500,11 @@ void idAI::Event_GetJumpVelocity( const idVec3& pos, float speed, float max_heig
 		return;
 	}
 
+	if( speed <= 0.0f )
+	{
+		gameLocal.Error( "Invalid speed.  speed must be > 0." );
+	}
+
 	start = physicsObj.GetOrigin();
 	end = pos;
 	dir = end - start;
@@ -1997,7 +2002,6 @@ idAI::Event_TestChargeAttack
 */
 void idAI::Event_TestChargeAttack()
 {
-	trace_t trace;
 	idActor* enemyEnt = enemy.GetEntity();
 	predictedPath_t path;
 	idVec3 end;
@@ -2751,10 +2755,7 @@ void idAI::Event_ThrowMoveable()
 	if( moveable )
 	{
 		moveable->Unbind();
-
-		// RB: 64 bit fixes, changed NULL to 0
 		moveable->PostEventMS( &EV_SetOwner, 200, 0 );
-		// RB end
 	}
 }
 
@@ -2779,10 +2780,7 @@ void idAI::Event_ThrowAF()
 	if( af )
 	{
 		af->Unbind();
-
-		// RB: 64 bit fixes, changed NULL to 0
 		af->PostEventMS( &EV_SetOwner, 200, 0 );
-		// RB end
 	}
 }
 

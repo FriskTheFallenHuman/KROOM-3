@@ -302,8 +302,8 @@ public:
 
 	// animation
 	virtual bool			UpdateAnimationControllers();
-	bool					UpdateRenderEntity( renderEntity_t* renderEntity, const renderView_t* renderView );
-	static bool				ModelCallback( renderEntity_t* renderEntity, const renderView_t* renderView );
+	bool					UpdateRenderEntity( renderEntity_s* renderEntity, const renderView_t* renderView );
+	static bool				ModelCallback( renderEntity_s* renderEntity, const renderView_t* renderView );
 	virtual idAnimator* 	GetAnimator();	// returns animator object used by this entity
 
 	// sound
@@ -571,16 +571,6 @@ private:
 	void					UpdatePVSAreas();
 
 	// events
-public:
-// jmarshall
-	idVec3					GetOrigin( void );
-	float					DistanceTo( idEntity* ent );
-	float					DistanceTo( const idVec3& pos ) const;
-	idStr					GetNextKey( const char* prefix, const char* lastMatch );
-// jmarshall end
-
-	idVec3					GetOriginBrushOffset() const;
-
 	void					Event_GetName();
 	void					Event_SetName( const char* name );
 	void					Event_FindTargets();
@@ -650,16 +640,6 @@ public:
 	void					Event_GetGuiParmFloat( int guiNum, const char* key );
 	void					Event_GuiNamedEvent( int guiNum, const char* event );
 };
-
-ID_INLINE float idEntity::DistanceTo( idEntity* ent )
-{
-	return DistanceTo( ent->GetPhysics()->GetOrigin() );
-}
-
-ID_INLINE float idEntity::DistanceTo( const idVec3& pos ) const
-{
-	return ( pos - GetPhysics()->GetOrigin() ).LengthFast();
-}
 
 /*
 ===============================================================================

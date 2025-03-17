@@ -31,7 +31,6 @@ If you have questions concerning this license or the applicable additional terms
 enum shellAreas_t
 {
 	SHELL_AREA_INVALID = -1,
-	SHELL_AREA_START,
 	SHELL_AREA_ROOT,
 	SHELL_AREA_DEV,
 	SHELL_AREA_CAMPAIGN,
@@ -66,7 +65,6 @@ enum shellAreas_t
 enum shellState_t
 {
 	SHELL_STATE_INVALID = -1,
-	SHELL_STATE_PRESS_START,
 	SHELL_STATE_IDLE,
 	SHELL_STATE_PARTY_LOBBY,
 	SHELL_STATE_GAME_LOBBY,

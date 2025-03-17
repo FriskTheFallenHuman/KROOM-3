@@ -1,25 +1,25 @@
 /*
 ===========================================================================
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Doom 3 BFG Edition GPL Source Code
+Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
+This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
-Doom 3 Source Code is free software: you can redistribute it and/or modify
+Doom 3 BFG Edition Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-Doom 3 Source Code is distributed in the hope that it will be useful,
+Doom 3 BFG Edition Source Code is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+along with Doom 3 BFG Edition Source Code.  If not, see <http://www.gnu.org/licenses/>.
 
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+In addition, the Doom 3 BFG Edition Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 BFG Edition Source Code.  If not, please request a copy in writing from id Software at the address below.
 
 If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 
@@ -32,7 +32,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "Brush.h"
 #include "BrushBSP.h"
 
-
 #define BSP_GRID_SIZE					512.0f
 #define SPLITTER_EPSILON				0.1f
 #define VERTEX_MELT_EPSILON				0.1f
@@ -42,7 +41,6 @@ If you have questions concerning this license or the applicable additional terms
 #define PORTAL_PLANE_DIST_EPSILON		0.01f
 
 //#define OUPUT_BSP_STATS_PER_GRID_CELL
-
 
 //===============================================================
 //
@@ -87,7 +85,7 @@ void idBrushBSPPortal::AddToNodes( idBrushBSPNode* front, idBrushBSPNode* back )
 {
 	if( nodes[0] || nodes[1] )
 	{
-		common->Error( "AddToNode: allready included" );
+		common->Error( "AddToNode: already included" );
 	}
 
 	assert( front && back );
@@ -1011,7 +1009,7 @@ idBrushBSPNode* idBrushBSP::ProcessGridCell( idBrushBSPNode* node, int skipConte
 
 	BuildBrushBSP_r( node, planeList, testedPlanes, skipContents );
 
-	delete testedPlanes;
+	delete[] testedPlanes;
 
 #ifdef OUPUT_BSP_STATS_PER_GRID_CELL
 	common->Printf( "\r%6d splits\n", numGridCellSplits );
@@ -1320,7 +1318,7 @@ idBrushBSP::SplitNodePortals
 
 void idBrushBSP::SplitNodePortals( idBrushBSPNode* node )
 {
-	int side = 0;
+	int side;
 	idBrushBSPPortal* p, *nextPortal, *newPortal;
 	idBrushBSPNode* f, *b, *otherNode;
 	idPlane* plane;
@@ -1343,6 +1341,7 @@ void idBrushBSP::SplitNodePortals( idBrushBSPNode* node )
 		else
 		{
 			common->Error( "idBrushBSP::SplitNodePortals: mislinked portal" );
+			return;
 		}
 		nextPortal = p->next[side];
 
@@ -1474,7 +1473,6 @@ void idBrushBSP::MakeOutsidePortals()
 	idBounds bounds;
 	idBrushBSPPortal* p, *portals[6];
 	idVec3 normal;
-	idPlane planes[6];
 
 	// pad with some space so there will never be null volume leaves
 	bounds = treeBounds.Expand( 32 );
@@ -1614,15 +1612,15 @@ void idBrushBSP::FloodThroughPortals_r( idBrushBSPNode* node, int contents, int 
 	idBrushBSPPortal* p;
 	int s;
 
-	if( node->occupied )
-	{
-		common->Error( "FloodThroughPortals_r: node already occupied\n" );
-	}
 	if( !node )
 	{
 		common->Error( "FloodThroughPortals_r: NULL node\n" );
 	}
 
+	if( node->occupied )
+	{
+		common->Error( "FloodThroughPortals_r: node already occupied\n" );
+	}
 	node->occupied = depth;
 
 	for( p = node->portals; p; p = p->next[s] )
@@ -2258,7 +2256,10 @@ bool idBrushBSP::TryMergeLeafNodes( idBrushBSPPortal* portal, int side )
 	// replace every reference to node2 by a reference to node1
 	UpdateTreeAfterMerge_r( root, bounds, node2, node1 );
 
-	delete node2;
+	if( node2->GetFlags() & NODE_DONE )
+	{
+		delete node2;
+	}
 
 	return true;
 }

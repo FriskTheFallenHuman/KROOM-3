@@ -360,6 +360,8 @@ public:
 
 	static void					Init();
 
+	static float				RSqrt( float x );			// reciprocal square root, returns huge number when x == 0.0
+
 	static float				InvSqrt( float x );			// inverse square root with 32 bits precision, returns huge number when x == 0.0
 	static float				InvSqrt16( float x );		// inverse square root with 16 bits precision, returns huge number when x == 0.0
 
@@ -1583,7 +1585,7 @@ Lerps from "cur" to "dest", scaling the delta to change by "scale"
 If the delta between "cur" and "dest" is very small, dest is returned to prevent denormals.
 ========================
 */
-inline float idMath::LerpToWithScale( const float cur, const float dest, const float scale )
+ID_INLINE float idMath::LerpToWithScale( const float cur, const float dest, const float scale )
 {
 	float delta = dest - cur;
 	if( delta > -1.0e-6f && delta < 1.0e-6f )
@@ -1593,5 +1595,24 @@ inline float idMath::LerpToWithScale( const float cur, const float dest, const f
 	return cur + ( dest - cur ) * scale;
 }
 
+/*
+========================
+RSqrt
+
+reciprocal square root, returns huge number when x == 0.0
+========================
+*/
+ID_INLINE float idMath::RSqrt( float x ) {
+
+	int i;
+	float y, r;
+
+	y = x * 0.5f;
+	i = *reinterpret_cast<int *>( &x );
+	i = 0x5f3759df - ( i >> 1 );
+	r = *reinterpret_cast<float *>( &i );
+	r = r * ( 1.5f - r * r * y );
+	return r;
+}
 
 #endif /* !__MATH_MATH_H__ */

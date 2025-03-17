@@ -367,9 +367,7 @@ pvsStack_t* idPVS::FloodPassagePVS_r( pvsPortal_t* source, const pvsPortal_t* po
 	pvsArea_t* area;
 	pvsStack_t* stack;
 	pvsPassage_t* passage;
-	// RB: 64 bit fixes, changed long to int
 	int* sourceVis, *passageVis, *portalVis, *mightSee, *prevMightSee, more;
-	// RB end
 
 	area = &pvsAreas[portal->areaNum];
 
@@ -408,23 +406,17 @@ pvsStack_t* idPVS::FloodPassagePVS_r( pvsPortal_t* source, const pvsPortal_t* po
 		source->vis[n >> 3] |= ( 1 << ( n & 7 ) );
 
 		// get pointers to vis data
-
-		// RB: 64 bit fixes, changed long to int
 		prevMightSee = reinterpret_cast<int*>( prevStack->mightSee );
 		passageVis = reinterpret_cast<int*>( passage->canSee );
 		sourceVis = reinterpret_cast<int*>( source->vis );
 		mightSee = reinterpret_cast<int*>( stack->mightSee );
-		// RB end
 
 		more = 0;
 		// use the portal PVS if it has been calculated
 		if( p->done )
 		{
-			// RB: 64 bit fixes, changed long to int
 			portalVis = reinterpret_cast<int*>( p->vis );
-			// RB end
-
-			for( j = 0; j < portalVisLongs; j++ )
+			for( j = 0; j < portalVisInts; j++ )
 			{
 				// get new PVS which is decreased by going through this passage
 				m = *prevMightSee++ & *passageVis++ & *portalVis++;
@@ -437,7 +429,7 @@ pvsStack_t* idPVS::FloodPassagePVS_r( pvsPortal_t* source, const pvsPortal_t* po
 		else
 		{
 			// the p->mightSee is implicitely stored in the passageVis
-			for( j = 0; j < portalVisLongs; j++ )
+			for( j = 0; j < portalVisInts; j++ )
 			{
 				// get new PVS which is decreased by going through this passage
 				m = *prevMightSee++ & *passageVis++;
@@ -836,9 +828,7 @@ idPVS::AreaPVSFromPortalPVS
 int idPVS::AreaPVSFromPortalPVS() const
 {
 	int i, j, k, areaNum, totalVisibleAreas;
-	// RB: 64 bit fixes, changed long to int
 	int* p1, *p2;
-	// RB end
 	byte* pvs, *portalPVS;
 	pvsArea_t* area;
 
@@ -867,12 +857,9 @@ int idPVS::AreaPVSFromPortalPVS() const
 		// store the PVS of all portals in this area at the first portal
 		for( j = 1; j < area->numPortals; j++ )
 		{
-			// RB: 64 bit fixes, changed long to int
 			p1 = reinterpret_cast<int*>( area->portals[0]->vis );
 			p2 = reinterpret_cast<int*>( area->portals[j]->vis );
-			// RB end
-
-			for( k = 0; k < portalVisLongs; k++ )
+			for( k = 0; k < portalVisInts; k++ )
 			{
 				*p1++ |= *p2++;
 			}
@@ -930,9 +917,7 @@ void idPVS::Init()
 	areaQueue = new( TAG_PVS ) int[numAreas];
 
 	areaVisBytes = ( ( ( numAreas + 31 ) & ~31 ) >> 3 );
-	// RB: 64 bit fixes, changed long to int
-	areaVisLongs = areaVisBytes / sizeof( int );
-	// RB end
+	areaVisInts = areaVisBytes / sizeof( int );
 
 	areaPVS = new( TAG_PVS ) byte[numAreas * areaVisBytes];
 	memset( areaPVS, 0xFF, numAreas * areaVisBytes );
@@ -940,9 +925,7 @@ void idPVS::Init()
 	numPortals = GetPortalCount();
 
 	portalVisBytes = ( ( ( numPortals + 31 ) & ~31 ) >> 3 );
-	// RB: 64 bit fixes, changed long to int
-	portalVisLongs = portalVisBytes / sizeof( int );
-	// RB end
+	portalVisInts = portalVisBytes / sizeof( int );
 
 	for( int i = 0; i < MAX_CURRENT_PVS; i++ )
 	{
@@ -969,7 +952,7 @@ void idPVS::Init()
 
 	timer.Stop();
 
-	gameLocal.Printf( "%5.0f msec to calculate PVS\n", timer.Milliseconds() );
+	gameLocal.Printf( "%5u msec to calculate PVS\n", timer.Milliseconds() );
 	gameLocal.Printf( "%5d areas\n", numAreas );
 	gameLocal.Printf( "%5d portals\n", numPortals );
 	gameLocal.Printf( "%5d areas visible on average\n", totalVisibleAreas / numAreas );
@@ -992,23 +975,26 @@ void idPVS::Shutdown()
 {
 	if( connectedAreas )
 	{
-		delete connectedAreas;
+		delete[] connectedAreas;
 		connectedAreas = NULL;
 	}
 	if( areaQueue )
 	{
-		delete areaQueue;
+		delete[] areaQueue;
 		areaQueue = NULL;
 	}
 	if( areaPVS )
 	{
-		delete areaPVS;
+		delete[] areaPVS;
 		areaPVS = NULL;
 	}
-	for( int i = 0; i < MAX_CURRENT_PVS; i++ )
+	// if ( currentPVS ) - DG: can't be NULL
 	{
-		delete currentPVS[i].pvs;
-		currentPVS[i].pvs = NULL;
+		for( int i = 0; i < MAX_CURRENT_PVS; i++ )
+		{
+			delete[] currentPVS[i].pvs;
+			currentPVS[i].pvs = NULL;
+		}
 	}
 }
 
@@ -1164,9 +1150,7 @@ pvsHandle_t idPVS::SetupCurrentPVS( const int* sourceAreas, const int numSourceA
 {
 	int i, j;
 	unsigned int h;
-	// RB: 64 bit fixes, changed long to int
 	int* vis, *pvs;
-	// RB end
 	pvsHandle_t handle;
 
 	h = 0;
@@ -1191,11 +1175,9 @@ pvsHandle_t idPVS::SetupCurrentPVS( const int* sourceAreas, const int numSourceA
 
 			assert( sourceAreas[i] >= 0 && sourceAreas[i] < numAreas );
 
-			// RB: 64 bit fixes, changed long to int
 			vis = reinterpret_cast<int*>( areaPVS + sourceAreas[i] * areaVisBytes );
 			pvs = reinterpret_cast<int*>( currentPVS[handle.i].pvs );
-			// RB end
-			for( j = 0; j < areaVisLongs; j++ )
+			for( j = 0; j < areaVisInts; j++ )
 			{
 				*pvs++ |= *vis++;
 			}
@@ -1242,9 +1224,7 @@ idPVS::MergeCurrentPVS
 pvsHandle_t idPVS::MergeCurrentPVS( pvsHandle_t pvs1, pvsHandle_t pvs2 ) const
 {
 	int i;
-	// RB: 64 bit fixes, changed long to int
 	int* pvs1Ptr, *pvs2Ptr, *ptr;
-	// RB end
 	pvsHandle_t handle = { 0 };
 
 	if( pvs1.i < 0 || pvs1.i >= MAX_CURRENT_PVS || pvs1.h != currentPVS[pvs1.i].handle.h ||
@@ -1256,13 +1236,11 @@ pvsHandle_t idPVS::MergeCurrentPVS( pvsHandle_t pvs1, pvsHandle_t pvs2 ) const
 
 	handle = AllocCurrentPVS( pvs1.h ^ pvs2.h );
 
-	// RB: 64 bit fixes, changed long to int
 	ptr = reinterpret_cast<int*>( currentPVS[handle.i].pvs );
 	pvs1Ptr = reinterpret_cast<int*>( currentPVS[pvs1.i].pvs );
 	pvs2Ptr = reinterpret_cast<int*>( currentPVS[pvs2.i].pvs );
-	// RB end
 
-	for( i = 0; i < areaVisLongs; i++ )
+	for( i = 0; i < areaVisInts; i++ )
 	{
 		*ptr++ = *pvs1Ptr++ | *pvs2Ptr++;
 	}

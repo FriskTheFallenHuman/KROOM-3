@@ -5,7 +5,7 @@ Version 3
 "name" "env_probe_ingame_placed_0"
 "angle" "91.098633"
 "origin" "1878 1298 -609"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 1
 {
@@ -13,623 +13,623 @@ Version 3
 "name" "env_probe_ingame_placed_1"
 "angle" "268.417969"
 "origin" "2774 -5 -615"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 2
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_0_pos_3656_200__1372"
 "origin" "3656 200 -1372"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 3
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_1_pos_3184_160__576"
 "origin" "3184 160 -576"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 4
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_2_pos_2992_224__576"
 "origin" "2992 224 -576"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 5
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_3_pos_3080__472__348"
 "origin" "3080 -472 -348"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 6
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_4_pos_3072__368__384"
 "origin" "3072 -368 -384"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 7
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_5_pos_3520__494__256"
 "origin" "3520 -494 -256"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 8
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_7_pos_2984__920__380"
 "origin" "2984 -920 -380"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 9
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_8_pos_1960_1464__496"
 "origin" "1960 1464 -496"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 10
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_10_pos_2784_176__576"
 "origin" "2784 176 -576"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 11
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_11_pos_2600_176__576"
 "origin" "2600 176 -576"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 12
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_12_pos_2848__128__518"
 "origin" "2848 -128 -518"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 13
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_13_pos_2200_792__733"
 "origin" "2200 792 -733"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 14
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_14_pos_2200_792__769"
 "origin" "2200 792 -769"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 15
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_15_pos_2136_792__733"
 "origin" "2136 792 -733"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 16
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_16_pos_2136_792__769"
 "origin" "2136 792 -769"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 17
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_17_pos_2070_984__733"
 "origin" "2070 984 -733"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 18
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_18_pos_2072_888__741"
 "origin" "2072 888 -741"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 19
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_19_pos_2072_792__733"
 "origin" "2072 792 -733"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 20
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_20_pos_2070_984__769"
 "origin" "2070 984 -769"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 21
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_21_pos_2072_792__769"
 "origin" "2072 792 -769"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 22
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_23_pos_2168_588__741"
 "origin" "2168 588 -741"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 23
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_24_pos_1871_596__616"
 "origin" "1871 596 -616"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 24
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_25_pos_2408_160__620"
 "origin" "2408 160 -620"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 25
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_26_pos_2168_160__616"
 "origin" "2168 160 -616"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 26
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_27_pos_2200_384__733"
 "origin" "2200 384 -733"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 27
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_28_pos_2200_384__769"
 "origin" "2200 384 -769"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 28
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_29_pos_2024_384__741"
 "origin" "2024 384 -741"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 29
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_30_pos_2656__1016_196"
 "origin" "2656 -1016 196"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 30
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_31_pos_2564__992_196"
 "origin" "2564 -992 196"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 31
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_32_pos_2472__864_196"
 "origin" "2472 -864 196"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 32
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_33_pos_2472__928_196"
 "origin" "2472 -928 196"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 33
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_34_pos_2472__992_196"
 "origin" "2472 -992 196"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 34
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_35_pos_2344__864_194"
 "origin" "2344 -864 194"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 35
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_36_pos_1863__712_68"
 "origin" "1863 -712 68"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 36
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_37_pos_2308__824_44"
 "origin" "2308 -824 44"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 37
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_38_pos_2800__448__532"
 "origin" "2800 -448 -532"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 38
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_39_pos_2798__812__532"
 "origin" "2798 -812 -532"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 39
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_40_pos_2816__480__352"
 "origin" "2816 -480 -352"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 40
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_41_pos_2816__831__352"
 "origin" "2816 -831 -352"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 41
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_42_pos_2650__896__644"
 "origin" "2650 -896 -644"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 42
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_43_pos_2744__1130_594"
 "origin" "2744 -1130 594"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 43
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_44_pos_2768__1130__198"
 "origin" "2768 -1130 -198"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 44
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_45_pos_2768__1124__760"
 "origin" "2768 -1124 -760"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 45
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_46_pos_1880_1016__736"
 "origin" "1880 1016 -736"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 46
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_47_pos_1824_284_48"
 "origin" "1824 284 48"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 47
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_48_pos_1784_32_68"
 "origin" "1784 32 68"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 48
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_49_pos_1623_631__616"
 "origin" "1623 631 -616"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 49
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_50_pos_1907_259__616"
 "origin" "1907 259 -616"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 50
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_51_pos_1400_720__616"
 "origin" "1400 720 -616"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 51
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_52_pos_2006_984__733"
 "origin" "2006 984 -733"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 52
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_53_pos_2006_984__769"
 "origin" "2006 984 -769"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 53
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_54_pos_1848_384__733"
 "origin" "1848 384 -733"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 54
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_55_pos_1848_384__769"
 "origin" "1848 384 -769"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 55
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_56_pos_1880_288__732"
 "origin" "1880 288 -732"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 56
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_57_pos_1848_320__769"
 "origin" "1848 320 -769"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 57
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_58_pos_1808__224_68"
 "origin" "1808 -224 68"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 58
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_62_pos_1032__1072_288"
 "origin" "1032 -1072 288"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 59
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_63_pos_1232__352__96"
 "origin" "1232 -352 -96"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 60
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_64_pos_1008__560__32"
 "origin" "1008 -560 -32"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 61
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_65_pos_1070__800__30"
 "origin" "1070 -800 -30"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 62
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_66_pos_1056__1040__94"
 "origin" "1056 -1040 -94"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 63
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_67_pos_1504__640__128"
 "origin" "1504 -640 -128"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 64
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_68_pos_1556__864__129"
 "origin" "1556 -864 -129"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 65
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_69_pos_1604__1072__124"
 "origin" "1604 -1072 -124"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 66
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_70_pos_991__1712_116"
 "origin" "991 -1712 116"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 67
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_71_pos_1008__2120_80"
 "origin" "1008 -2120 80"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 68
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_74_pos_159__828_296"
 "origin" "159 -828 296"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 69
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_75_pos_583__800_288"
 "origin" "583 -800 288"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 70
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_76_pos_790__832_104"
 "origin" "790 -832 104"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 71
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_77_pos_832__1088_288"
 "origin" "832 -1088 288"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 72
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_78_pos_624__1072_288"
 "origin" "624 -1072 288"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 73
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_79_pos_160__1508_226"
 "origin" "160 -1508 226"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 74
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_80_pos__186__1244_280"
 "origin" "-186 -1244 280"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 75
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_82_pos_160__1568_226"
 "origin" "160 -1568 226"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 76
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_83_pos_128__1628_242"
 "origin" "128 -1628 242"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 77
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_84_pos_148__1940_316"
 "origin" "148 -1940 316"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 78
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_85_pos_160__1696_244"
 "origin" "160 -1696 244"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 79
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_86_pos_94__1248_147"
 "origin" "94 -1248 147"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 80
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_87_pos__34__1248_164"
 "origin" "-34 -1248 164"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 81
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_88_pos_96__1356_163"
 "origin" "96 -1356 163"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 82
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_89_pos_648__1888_112"
 "origin" "648 -1888 112"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 83
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_90_pos_720__2232_80"
 "origin" "720 -2232 80"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 84
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_91_pos_148__2464_160"
 "origin" "148 -2464 160"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 85
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_92_pos_128__2796_64"
 "origin" "128 -2796 64"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 86
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_93_pos_222__2636__26"
 "origin" "222 -2636 -26"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 87
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_94_pos__340__1964_98"
 "origin" "-340 -1964 98"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 88
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_95_pos__352__1632_96"
 "origin" "-352 -1632 96"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 89
 {
 "classname" "env_probe"
 "name" "env_probe_generated_area_96_pos__352__1752_96"
 "origin" "-352 -1752 96"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 90
 {
@@ -637,7 +637,7 @@ Version 3
 "name" "env_probe_ingame_placed_2"
 "angle" "287.204590"
 "origin" "1985 -818 6"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 91
 {
@@ -645,7 +645,7 @@ Version 3
 "name" "env_probe_ingame_placed_3"
 "angle" "93.515625"
 "origin" "1648 -606 36"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 92
 {
@@ -653,7 +653,7 @@ Version 3
 "name" "env_probe_ingame_placed_4"
 "angle" "93.164063"
 "origin" "1473 -978 82"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 93
 {
@@ -661,7 +661,7 @@ Version 3
 "name" "env_probe_ingame_placed_5"
 "angle" "188.311157"
 "origin" "1476 -392 -128"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 94
 {
@@ -669,7 +669,7 @@ Version 3
 "name" "env_probe_ingame_placed_6"
 "angle" "272.653198"
 "origin" "1060 -794 283"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 95
 {
@@ -677,7 +677,7 @@ Version 3
 "name" "env_probe_ingame_placed_7"
 "angle" "357.604980"
 "origin" "1003 -528 307"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 96
 {
@@ -685,7 +685,7 @@ Version 3
 "name" "env_probe_ingame_placed_8"
 "angle" "67.560425"
 "origin" "759 -497 275"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 97
 {
@@ -693,7 +693,7 @@ Version 3
 "name" "env_probe_ingame_placed_9"
 "angle" "179.923096"
 "origin" "12 -1231 269"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 98
 {
@@ -701,7 +701,7 @@ Version 3
 "name" "env_probe_ingame_placed_10"
 "angle" "3.290405"
 "origin" "-87 -1722 109"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 99
 {
@@ -709,7 +709,7 @@ Version 3
 "name" "env_probe_ingame_placed_11"
 "angle" "86.204224"
 "origin" "185 -1779 97"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 100
 {
@@ -717,7 +717,7 @@ Version 3
 "name" "env_probe_ingame_placed_12"
 "angle" "95.773315"
 "origin" "358 -1982 103"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 101
 {
@@ -725,7 +725,7 @@ Version 3
 "name" "env_probe_ingame_placed_13"
 "angle" "6.344604"
 "origin" "-69 -1942 49"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 102
 {
@@ -733,5 +733,5 @@ Version 3
 "name" "env_probe_ingame_placed_14"
 "angle" "92.362061"
 "origin" "161 -2204 61"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }

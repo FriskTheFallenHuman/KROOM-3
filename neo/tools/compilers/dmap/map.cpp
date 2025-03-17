@@ -346,26 +346,9 @@ static void ParseBrush( const idMapBrush* mapBrush, int primitiveNum )
 
 		ms->GetTextureVectors( s->texVec.v );
 
-		// RB: Valve 220 projection support
-		s->texValve220 = ( ms->GetProjectionType() == idMapBrushSide::PROJECTION_VALVE220 );
-
-		// RB: TODO
-		s->texSize = ms->GetTextureSize();
-
-		idImage* image = s->material->GetEditorImage();
-		if( image != NULL )
-		{
-			s->texSize.x = image->GetUploadWidth();
-			s->texSize.y = image->GetUploadHeight();
-		}
-		// RB end
-
 		// remove any integral shift, which will help with grouping
-		if( !s->texValve220 )
-		{
-			s->texVec.v[0][3] -= floor( s->texVec.v[0][3] );
-			s->texVec.v[1][3] -= floor( s->texVec.v[1][3] );
-		}
+		s->texVec.v[0][3] -= floor( s->texVec.v[0][3] );
+		s->texVec.v[1][3] -= floor( s->texVec.v[1][3] );
 	}
 
 	// if there are mirrored planes, the entire brush is invalid
@@ -605,6 +588,8 @@ static void CreateMapLight( const idMapEntity* mapEnt )
 	}
 
 	light = new mapLight_t;
+	light->name[0] = '\0';
+	light->shadowTris = NULL;
 
 	// parse parms exactly as the game do
 	// use the game's epair parsing code so
@@ -623,6 +608,17 @@ static void CreateMapLight( const idMapEntity* mapEnt )
 	}
 	// RB end
 
+	// get the name for naming the shadow surfaces
+	const char*	name;
+
+	mapEnt->epairs.GetString( "name", "", &name );
+
+	idStr::Copynz( light->name, name, sizeof( light->name ) );
+	if( !light->name[0] )
+	{
+		common->Error( "Light at (%f,%f,%f) didn't have a name",
+					   light->def.parms.origin[0], light->def.parms.origin[1], light->def.parms.origin[2] );
+	}
 #if 0
 	// use the renderer code to get the bounding planes for the light
 	// based on all the parameters

@@ -29,8 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __SYS_THREADING_H__
 #define __SYS_THREADING_H__
 
-#ifndef __TYPEINFOGEN__
-
 /*
 ================================================================================================
 
@@ -161,7 +159,6 @@ public:
 #define ID_TLS idSysThreadLocalStorage
 
 
-#endif // __TYPEINFOGEN__
 
 /*
 ================================================================================================

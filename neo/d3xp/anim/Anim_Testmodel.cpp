@@ -179,20 +179,15 @@ void idTestModel::Spawn()
 			{
 				jointName = kv->GetKey();
 
-				// RB: TrenchBroom interop use copy_joint_world.<name> instead so we can build this up using the FGD files
-				if( jointName.StripLeadingOnce( "copy_joint_world " ) || jointName.StripLeadingOnce( "copy_joint_world." ) )
+				if( jointName.StripLeadingOnce( "copy_joint_world " ) )
 				{
 					copyJoint.mod = JOINTMOD_WORLD_OVERRIDE;
 				}
 				else
 				{
-					if( !jointName.StripLeadingOnce( "copy_joint " ) )
-					{
-						jointName.StripLeadingOnce( "copy_joint." );
-					}
+					jointName.StripLeadingOnce( "copy_joint " );
 					copyJoint.mod = JOINTMOD_LOCAL_OVERRIDE;
 				}
-				// RB end
 
 				copyJoint.from = animator.GetJointHandle( jointName );
 				if( copyJoint.from == INVALID_JOINT )

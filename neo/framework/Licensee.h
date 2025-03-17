@@ -40,25 +40,22 @@ If you have questions concerning this license or the applicable additional terms
 // RB: changed home folder so we don't break the savegame of the original game
 #define SAVE_PATH						"\\id Software\\RBDOOM 3 BFG"
 
-#define ENGINE_VERSION					"RBDOOM 3 BFG 1.3.0"	// printed in console
+#define ENGINE_VERSION					"RBDOOM 3 BFG"	// printed in console
 // RB end
-
-// jmarshall
-#define ENGINE_BRANCH					"master"
-// jmarshall end
 
 #define	BASE_GAMEDIR					"base"
 
 #define CONFIG_FILE						"D3BFGConfig.cfg"
 
-// see ASYNC_PROTOCOL_VERSION
-// use a different major for each game
-#define ASYNC_PROTOCOL_MAJOR			1
-
 // <= Doom v1.1: 1. no DS_VERSION token ( default )
 // Doom v1.2:  2
 // Doom 3 BFG: 3
 #define RENDERDEMO_VERSION				3
+
+// editor info
+#define EDITOR_DEFAULT_PROJECT			"doom.qe4"
+#define EDITOR_REGISTRY_KEY				"DOOMRadiant"
+#define EDITOR_WINDOWTEXT				"DOOMEdit"
 
 // win32 info
 #define WIN32_CONSOLE_CLASS				"D3BFG_WinConsole"
@@ -74,9 +71,4 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 // RB end
 
-// raynorpat: Steam AppID and Steam App Name for figuring out Steam base path
-#define STEAMPATH_APPID					"208200"
-#define STEAMPATH_NAME					"DOOM 3 BFG Edition"
 
-// raynorpat: GOG.com Galaxy Launcher Game ID for figuring out Steam base path
-#define GOGPATH_ID						"1733124578"

@@ -42,7 +42,7 @@ TODO: CRC on each block
 ZlibAlloc
 ========================
 */
-void* ZlibAlloc( void* opaque, uInt items, uInt size )
+void* ZlibAlloc( void* opaque, size_t items, size_t size )
 {
 	return Mem_Alloc( items * size, TAG_SAVEGAMES );
 }
@@ -1071,7 +1071,7 @@ void idFile_SaveGamePipelined::DecompressBlock()
 			{
 				if( sgf_testCorruption.GetInteger() == numChecksums )
 				{
-					zStream.next_in[0] ^= 0xFF;
+					((Bytef *)zStream.next_in)[0] ^= 0xFF;
 				}
 				zStream.avail_in -= sizeof( uint32 );
 				uint32 checksum = MD5_BlockChecksum( zStream.next_in, zStream.avail_in );

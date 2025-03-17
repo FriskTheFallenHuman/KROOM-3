@@ -302,9 +302,7 @@ void idGrabber::StartDrag( idEntity* grabEnt, int id )
 	}
 	else if( grabEnt->IsType( idMoveableItem::Type ) )
 	{
-		// RB: 64 bit fixes, changed NULL to 0
 		grabEnt->PostEventMS( &EV_Touch, 250, thePlayer, 0 );
-		// RB end
 	}
 
 	// Get the current physics object to manipulate
@@ -547,8 +545,7 @@ int idGrabber::Update( idPlayer* player, bool hide )
 			if( newEnt && ( newEnt->IsType( idMoveable::Type ) ||
 							newEnt->IsType( idMoveableItem::Type ) ||
 							newEnt->IsType( idProjectile::Type ) ||
-							newEnt->IsType( idAFEntity_Gibbable::Type )
-						  ) &&
+							newEnt->IsType( idAFEntity_Gibbable::Type ) ) &&
 					newEnt->noGrab == false &&
 					newEnt->GetPhysics()->GetBounds().GetRadius() < MAX_PICKUP_SIZE &&
 					newEnt->GetPhysics()->GetLinearVelocity().LengthSqr() < MAX_PICKUP_VELOCITY )

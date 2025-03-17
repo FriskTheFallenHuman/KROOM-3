@@ -905,7 +905,7 @@ void idPhysics_Base::DrawVelocity( int id, float linearScale, float angularScale
 	dir *= linearScale;
 	if( dir.LengthSqr() > Square( 0.1f ) )
 	{
-		dir = dir.Truncate( 10.0f );
+		dir.Truncate( 10.0f );
 		org = GetOrigin( id );
 		gameRenderWorld->DebugArrow( colorRed, org, org + dir, 1 );
 	}

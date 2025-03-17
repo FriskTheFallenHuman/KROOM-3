@@ -1,50 +1,34 @@
 
-/* unzip.h -- IO for uncompress .zip files using zlib
-   Version 0.15 beta, Mar 19th, 1998,
+/*
+===========================================================================
 
-   Copyright (C) 1998 Gilles Vollant
+Doom 3 BFG Edition GPL Source Code
+Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
 
-   This unzip package allow extract file from .ZIP file, compatible with PKZip 2.04g
-     WinZip, InfoZip tools and compatible.
-   Encryption and multi volume ZipFile (span) are not supported.
-   Old compressions used by old PKZip 1.x are not supported
+This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
-   THIS IS AN ALPHA VERSION. AT THIS STAGE OF DEVELOPPEMENT, SOMES API OR STRUCTURE
-   CAN CHANGE IN FUTURE VERSION !!
-   I WAIT FEEDBACK at mail info@winimage.com
-   Visit also http://www.winimage.com/zLibDll/unzip.htm for evolution
+Doom 3 BFG Edition Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-   Condition of use and distribution are the same than zlib :
+Doom 3 BFG Edition Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this software.
+You should have received a copy of the GNU General Public License
+along with Doom 3 BFG Edition Source Code.  If not, see <http://www.gnu.org/licenses/>.
 
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
+In addition, the Doom 3 BFG Edition Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 BFG Edition Source Code.  If not, please request a copy in writing from id Software at the address below.
 
-  1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source distribution.
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 
-
+===========================================================================
 */
 #ifndef __UNZIP_H__
 #define __UNZIP_H__
 
-#include "../libs/zlib/minizip/unzip.h"
-
-/*
- * DG: all unzip code has been moved to minizip/
- *     when being updated to minizip 1.1 (instead of the previously used minizip 0.15beta from 1998)
- *     This update brings zip64 support (untested) and much cleaner code.
- *     Furthermore, updates to future minizip should be much easier now, as my changes to the
- *     original source files from minizip are quite small.
- */
+#include "minizip/unzip.h"
 
 #endif /* __UNZIP_H__ */

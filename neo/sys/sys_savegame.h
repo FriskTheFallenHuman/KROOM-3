@@ -40,13 +40,8 @@ If you have questions concerning this license or the applicable additional terms
 
 #define DEFINE_CLASS( x )					virtual const char * Name() const { return #x; }
 #define MAX_SAVEGAMES						16
-#define MAX_FILES_WITHIN_SAVEGAME			10
-
+#define MAX_SAVEGAME_STRING_TABLE_SIZE		( 400 * 1024 * 2 )	// 800 kB max string table size
 #define MIN_SAVEGAME_SIZE_BYTES				( 4 * 1024 * 1024 )
-
-// RB: doubled this for DoomSpartan360 mods
-#define MAX_SAVEGAME_STRING_TABLE_SIZE		( 400 * 1024 * 2 )	// 400 kB max string table size
-
 
 #define MAX_FILENAME_LENGTH					255
 #define MAX_FILENAME_LENGTH_PATTERN			8
@@ -210,7 +205,7 @@ public:
 	idStrStatic< MAX_FOLDER_NAME_LENGTH >	slotName;		// [out] folder/slot name, e.g. AUTOSAVE
 };
 
-typedef idStaticList< idSaveGameDetails, MAX_SAVEGAMES > saveGameDetailsList_t;
+typedef idList< idSaveGameDetails > saveGameDetailsList_t;
 
 // Making a unique_ptr to handle lifetime issues better
 typedef idList< idFile_SaveGame*, TAG_SAVEGAMES > saveFileEntryList_t;

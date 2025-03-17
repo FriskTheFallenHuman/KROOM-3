@@ -163,7 +163,7 @@ void GetPointOutsideObstacles( const obstacle_t* obstacles, const int numObstacl
 {
 	int i, j, k, n, bestObstacle, bestEdgeNum, queueStart, queueEnd, edgeNums[2];
 	float d, bestd, scale[2];
-	idVec3 plane, bestPlane;
+	idVec3 plane, bestPlane( 0.0f, 0.0f, 0.0f ); // DG: init it to shut up compiler
 	idVec2 newPoint, dir, bestPoint;
 	int* queue;
 	bool* obstacleVisited;
@@ -202,6 +202,11 @@ void GetPointOutsideObstacles( const obstacle_t* obstacles, const int numObstacl
 		{
 			break;
 		}
+	}
+
+	if( i == 0 )
+	{
+		return;
 	}
 
 	newPoint = point - ( bestd + PUSH_OUTSIDE_OBSTACLES ) * bestPlane.ToVec2();
@@ -486,6 +491,7 @@ int GetObstacles( const idPhysics* physics, const idAAS* aas, const idEntity* ig
 
 		lastVerts[0] = lastVerts[1] = 0;
 		lastEdgeNormal.Zero();
+		nextEdgeNormal.Zero();
 		nextVerts[0] = nextVerts[1] = 0;
 		for( i = 0; i < numWallEdges && numObstacles < MAX_OBSTACLES; i++ )
 		{
@@ -953,7 +959,7 @@ float PathLength( idVec2 optimizedPath[MAX_OBSTACLE_PATH], int numPathPoints, co
 	}
 
 	// add penalty if this path does not go in the current direction
-	if( curDir * ( optimizedPath[1] - optimizedPath[0] ) < 0.0f )
+	if( numPathPoints > 1 && curDir * ( optimizedPath[1] - optimizedPath[0] ) < 0.0f )
 	{
 		pathLength += 100.0f;
 	}
@@ -1313,7 +1319,8 @@ idAI::PredictPath
 bool idAI::PredictPath( const idEntity* ent, const idAAS* aas, const idVec3& start, const idVec3& velocity, int totalTime, int frameTime, int stopEvent, predictedPath_t& path )
 {
 	int i, j, step, numFrames, curFrameTime;
-	idVec3 delta, curStart, curEnd, curVelocity, lastEnd, stepUp, tmpStart;
+	idVec3 delta, curStart, curEnd, curVelocity, lastEnd, tmpStart;
+	idVec3 stepUp( 0, 0, 0 ); // DG: init this to get rid of compiler warning
 	idVec3 gravity, gravityDir, invGravityDir;
 	float maxStepHeight, minFloorCos;
 	pathTrace_t trace;
@@ -1510,7 +1517,6 @@ Ballistics
   also get the time it takes for the projectile to arrive at the target
 =====================
 */
-
 int Ballistics( const idVec3& start, const idVec3& end, float speed, float gravity, ballistics_t bal[2] )
 {
 	int n, i;
@@ -1549,15 +1555,14 @@ int Ballistics( const idVec3& start, const idVec3& end, float speed, float gravi
 	return n;
 }
 
-#if 0
-// not used
 /*
 =====================
 HeightForTrajectory
 
-Returns the maximum hieght of a given trajectory
+Returns the maximum height of a given trajectory
 =====================
 */
+#if 0
 static float HeightForTrajectory( const idVec3& start, float zVel, float gravity )
 {
 	float maxHeight, t;

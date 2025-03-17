@@ -221,17 +221,6 @@ typedef struct renderLight_s
 typedef struct
 {
 	idVec3					origin;
-	float					shaderParms[MAX_ENTITY_SHADER_PARMS];
-
-	// if non-zero, the environment probe will not show up in the specific view,
-	// which may be used if we want to have slightly different muzzle
-	// flash lights for the player and other views
-	int						suppressEnvprobeInViewID;
-
-	// if non-zero, the environment probe will only show up in the specific view
-	// which can allow player gun gui lights and such to not effect everyone
-	int						allowEnvprobeInViewID;
-
 } renderEnvironmentProbe_t;
 // RB end
 

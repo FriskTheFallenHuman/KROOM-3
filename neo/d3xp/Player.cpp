@@ -6640,6 +6640,12 @@ void idPlayer::UpdateFocus()
 	{
 		if( !oldFocus || oldFocus != focusGUIent )
 		{
+			// DG: tell the old UI it isn't focused anymore
+			if( oldFocus != NULL && oldUI != NULL )
+			{
+				command = oldUI->Activate( false, gameLocal.time );
+				// TODO: HandleGuiCommands( oldFocus, command ); ?
+			} // DG end
 			command = focusUI->Activate( true, gameLocal.time );
 			HandleGuiCommands( focusGUIent, command );
 			StartSound( "snd_guienter", SND_CHANNEL_ANY, 0, false, NULL );
@@ -7046,9 +7052,6 @@ void idPlayer::UpdateViewAngles()
 		return;
 	}
 
-	//
-
-
 	// circularly clamp the angles with deltas
 	for( i = 0; i < 3; i++ )
 	{
@@ -7331,7 +7334,17 @@ void idPlayer::UpdateAir()
 
 	if( hud )
 	{
-		hud->UpdateOxygen( airless, 100 * airMsec / pm_airMsec.GetInteger() );
+		// KR: Check if the player has the enviroment suit
+		if( PowerUpActive( ENVIROSUIT ) )
+		{
+			float envirotime = ( float )( inventory.powerupEndTime[ENVIROTIME] - gameLocal.time );
+			envirotime = envirotime >= 0 ? envirotime : 0.0;
+			hud->UpdateOxygen( true, 100.0 * ( envirotime / hudPowerupDuration ), true );
+		}
+		else
+		{
+			hud->UpdateOxygen( airless, 100 * airMsec / pm_airMsec.GetInteger() );
+		}
 	}
 }
 
@@ -9238,10 +9251,8 @@ bool idPlayer::CanGive( const char* statname, const char* value )
 		}
 		return true;
 	}
-	else
-	{
-		return inventory.CanGive( this, spawnArgs, statname, value );
-	}
+
+	return inventory.CanGive( this, spawnArgs, statname, value );
 }
 
 /*
@@ -9335,12 +9346,11 @@ idPlayer::RouteGuiMouse
 void idPlayer::RouteGuiMouse( idUserInterface* gui )
 {
 	sysEvent_t ev;
-	const char* command;
 
 	if( usercmd.mx != oldMouseX || usercmd.my != oldMouseY )
 	{
 		ev = sys->GenerateMouseMoveEvent( usercmd.mx - oldMouseX, usercmd.my - oldMouseY );
-		command = gui->HandleEvent( &ev, gameLocal.time );
+		gui->HandleEvent( &ev, gameLocal.time );
 		oldMouseX = usercmd.mx;
 		oldMouseY = usercmd.my;
 	}
@@ -12094,11 +12104,10 @@ bool idPlayer::ClientReceiveEvent( int event, int time, const idBitMsg& msg )
 			return true;
 		}
 		default:
-		{
-			return idActor::ClientReceiveEvent( event, time, msg );
-		}
+			break;
 	}
-//	return false;
+
+	return idActor::ClientReceiveEvent( event, time, msg );
 }
 
 /*

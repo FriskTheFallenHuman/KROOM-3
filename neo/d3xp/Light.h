@@ -41,37 +41,6 @@ extern const idEventDef EV_Light_GetLightParm;
 extern const idEventDef EV_Light_SetLightParm;
 extern const idEventDef EV_Light_SetLightParms;
 
-// jmarshall
-struct rvmLightStyleState_t
-{
-	rvmLightStyleState_t();
-
-	int				dl_frame;
-	float			dl_framef;
-	int				dl_oldframe;
-	int				dl_time;
-	float			dl_backlerp;
-
-	void			Reset();
-};
-
-ID_INLINE rvmLightStyleState_t::rvmLightStyleState_t()
-{
-	Reset();
-}
-
-ID_INLINE void rvmLightStyleState_t::Reset()
-{
-	dl_frame = 0;
-	dl_framef = 0;
-	dl_oldframe = 0;
-	dl_time = 0;
-	dl_backlerp = 0;
-}
-// jmarshall end
-
-
-
 class idLight : public idEntity
 {
 public:
@@ -91,9 +60,7 @@ public:
 	virtual void	FreeLightDef();
 	virtual bool	GetPhysicsToSoundTransform( idVec3& origin, idMat3& axis );
 	void			Present();
-// jmarshall
-	virtual void	SharedThink();
-// jmarshall end
+
 	void			SaveState( idDict* args );
 	virtual void	SetColor( float red, float green, float blue );
 	virtual void	SetColor( const idVec4& color );
@@ -155,11 +122,6 @@ private:
 
 	bool			breakOnTrigger;
 	int				count;
-// jmarshall
-	int				lightStyle;
-	int				lightStyleFrameTime;
-	idVec3			lightStyleBase;
-// jmarshall end
 	int				triggercount;
 	idEntity* 		lightParent;
 	idVec4			fadeFrom;
@@ -186,11 +148,6 @@ private:
 	void			Event_SetSoundHandles();
 	void			Event_FadeOut( float time );
 	void			Event_FadeIn( float time );
-
-// jmarshall
-	idList<idStr>	light_styles;
-	rvmLightStyleState_t lightStyleState;
-// jmarshall end
 };
 
 #endif /* !__GAME_LIGHT_H__ */

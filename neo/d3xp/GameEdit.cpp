@@ -622,10 +622,7 @@ void idEditEntities::DisplayEntities()
 			break;
 		case 2:
 			sit.typeInfo = &idSound::Type;
-			sit.textKey = "s_shader";
-			selectableEntityClasses.Append( sit );
-			sit.typeInfo = &idLight::Type;
-			sit.textKey = "texture";
+			sit.textKey = "s_shader|name";
 			selectableEntityClasses.Append( sit );
 			break;
 		case 3:
@@ -668,7 +665,6 @@ void idEditEntities::DisplayEntities()
 
 	for( ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() )
 	{
-
 		idVec4 color;
 
 		textKey = "";
@@ -812,7 +808,11 @@ void idGameEdit::ClearEntitySelection()
 	{
 		ent->fl.selected = false;
 	}
-	gameLocal.editEntities->ClearSelectedEntities();
+
+	if( gameLocal.editEntities )
+	{
+		gameLocal.editEntities->ClearSelectedEntities();
+	}
 }
 
 /*
@@ -822,7 +822,7 @@ idGameEdit::AddSelectedEntity
 */
 void idGameEdit::AddSelectedEntity( idEntity* ent )
 {
-	if( ent )
+	if( ent && gameLocal.editEntities )
 	{
 		gameLocal.editEntities->AddSelectedEntity( ent );
 	}
@@ -1201,42 +1201,6 @@ void idGameEdit::MapCopyDictToEntity( const char* name, const idDict* dict ) con
 		}
 	}
 }
-
-/*
-================
-RB idGameEdit::MapCopyDictToEntityAtOrigin
-================
-*/
-void idGameEdit::MapCopyDictToEntityAtOrigin( const idVec3& origin, const idDict* dict ) const
-{
-	idMapFile* mapFile = gameLocal.GetLevelMap();
-	if( mapFile )//&& name && *name )
-	{
-		idMapEntity* mapent = mapFile->FindEntityAtOrigin( origin );
-		if( mapent )
-		{
-			for( int i = 0; i < dict->GetNumKeyVals(); i++ )
-			{
-				const idKeyValue* kv = dict->GetKeyVal( i );
-				const char* key = kv->GetKey();
-				const char* val = kv->GetValue();
-
-				// DG: if val is "", delete key from the entity
-				//     => same behavior as EntityChangeSpawnArgs()
-				if( val[0] == '\0' )
-				{
-					mapent->epairs.Delete( key );
-				}
-				else
-				{
-					mapent->epairs.Set( key, val );
-				}
-				// DG end
-			}
-		}
-	}
-}
-
 
 /*
 ================

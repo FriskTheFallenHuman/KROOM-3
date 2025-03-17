@@ -67,7 +67,6 @@ public:
 	bool		castSpecular;
 	bool		hasCenter;
 	bool		isParallel;
-	int			lightStyle;
 
 	LightInfo();
 
@@ -94,13 +93,6 @@ private:
 	int currentTextureIndex;
 	idImage* currentTexture;
 	const idMaterial* currentTextureMaterial;
-
-	// RB: light style support
-	idList<idStr> styleNames;
-	int currentStyleIndex;
-
-	void LoadLightStyles();
-	static bool StyleItemsGetter( void* data, int idx, const char** out_text );
 
 	void Init( const idDict* dict, idEntity* light );
 	void Reset();

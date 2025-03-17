@@ -172,24 +172,14 @@ void idRenderProgManager::LoadShader( shader_t& shader )
 	idStr programUniforms;
 	if( ( glslFileLength <= 0 ) || ( hlslTimeStamp != FILE_NOT_FOUND_TIMESTAMP && hlslTimeStamp > glslTimeStamp ) || r_alwaysExportGLSL.GetBool() )
 	{
-		const char* hlslFileBuffer = NULL;
-		int len = 0;
-
 		if( hlslFileLength <= 0 )
 		{
 			// hlsl file doesn't even exist bail out
-			hlslFileBuffer = FindEmbeddedSourceShader( inFile.c_str() );
-			if( hlslFileBuffer == NULL )
-			{
-				return;
-			}
-			len = strlen( hlslFileBuffer );
-		}
-		else
-		{
-			len = fileSystem->ReadFile( inFile.c_str(), ( void** ) &hlslFileBuffer );
+			return;
 		}
 
+		void* hlslFileBuffer = NULL;
+		int len = fileSystem->ReadFile( inFile.c_str(), &hlslFileBuffer );
 		if( len <= 0 )
 		{
 			return;
@@ -217,7 +207,7 @@ void idRenderProgManager::LoadShader( shader_t& shader )
 			hasGPUSkinning = true;
 		}
 
-		idStr hlslCode( hlslFileBuffer );
+		idStr hlslCode( ( const char* ) hlslFileBuffer );
 		idStr programHLSL = StripDeadCode( hlslCode, inFile, compileMacros, shader.builtin );
 		programGLSL = ConvertCG2GLSL( programHLSL, inFile.c_str(), shader.stage, programUniforms, false, hasGPUSkinning, shader.vertexLayout );
 

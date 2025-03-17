@@ -5,7 +5,7 @@ Version 3
 "name" "env_probe_ingame_placed_0"
 "angle" "1.038208"
 "origin" "-460 5078 -22"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 1
 {
@@ -13,7 +13,7 @@ Version 3
 "name" "env_probe_ingame_placed_1"
 "angle" "5.114136"
 "origin" "-1015 4573 -9"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 2
 {
@@ -21,7 +21,7 @@ Version 3
 "name" "env_probe_ingame_placed_2"
 "angle" "205.751953"
 "origin" "-1601 4521 59"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 3
 {
@@ -29,7 +29,7 @@ Version 3
 "name" "env_probe_ingame_placed_3"
 "angle" "269.335327"
 "origin" "-818 4910 475"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 4
 {
@@ -37,7 +37,7 @@ Version 3
 "name" "env_probe_ingame_placed_4"
 "angle" "181.472168"
 "origin" "-1295 4683 512"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 5
 {
@@ -45,7 +45,7 @@ Version 3
 "name" "env_probe_ingame_placed_5"
 "angle" "168.711548"
 "origin" "-802 4297 420"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 6
 {
@@ -53,7 +53,7 @@ Version 3
 "name" "env_probe_ingame_placed_6"
 "angle" "105.902710"
 "origin" "-441 3654 395"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 7
 {
@@ -61,7 +61,7 @@ Version 3
 "name" "env_probe_ingame_placed_7"
 "angle" "2.938843"
 "origin" "-675 2808 385"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 8
 {
@@ -69,7 +69,7 @@ Version 3
 "name" "env_probe_ingame_placed_8"
 "angle" "104.573364"
 "origin" "-1009 2787 354"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 9
 {
@@ -77,7 +77,7 @@ Version 3
 "name" "env_probe_ingame_placed_9"
 "angle" "89.582520"
 "origin" "-1325 2497 255"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 10
 {
@@ -85,7 +85,7 @@ Version 3
 "name" "env_probe_ingame_placed_10"
 "angle" "90.488892"
 "origin" "-1328 2235 267"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 11
 {
@@ -93,7 +93,7 @@ Version 3
 "name" "env_probe_ingame_placed_11"
 "angle" "97.860718"
 "origin" "-1388 1450 302"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 12
 {
@@ -101,7 +101,7 @@ Version 3
 "name" "env_probe_ingame_placed_12"
 "angle" "175.957031"
 "origin" "-1271 1558 110"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 13
 {
@@ -109,7 +109,7 @@ Version 3
 "name" "env_probe_ingame_placed_13"
 "angle" "91.697388"
 "origin" "-1307 1144 143"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 14
 {
@@ -117,7 +117,7 @@ Version 3
 "name" "env_probe_ingame_placed_14"
 "angle" "93.784790"
 "origin" "-1303 825 155"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 15
 {
@@ -125,7 +125,7 @@ Version 3
 "name" "env_probe_ingame_placed_15"
 "angle" "267.588501"
 "origin" "-1263 421 144"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 16
 {
@@ -133,7 +133,7 @@ Version 3
 "name" "env_probe_ingame_placed_16"
 "angle" "179.703369"
 "origin" "-843 671 23"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 17
 {
@@ -141,7 +141,7 @@ Version 3
 "name" "env_probe_ingame_placed_17"
 "angle" "354.704590"
 "origin" "48 859 20"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 18
 {
@@ -149,231 +149,231 @@ Version 3
 "name" "env_probe_ingame_placed_18"
 "angle" "94.334106"
 "origin" "-899 2094 -6"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 19
 {
 "classname" "env_probe"
 "name" "env_probe_area_0_0"
 "origin" "2752 -3854 800"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 20
 {
 "classname" "env_probe"
 "name" "env_probe_area_1_0"
 "origin" "-128 4480 696"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 21
 {
 "classname" "env_probe"
 "name" "env_probe_area_2_0"
 "origin" "1900 1756 180"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 22
 {
 "classname" "env_probe"
 "name" "env_probe_area_3_0"
 "origin" "1984 1380 236"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 23
 {
 "classname" "env_probe"
 "name" "env_probe_area_4_0"
 "origin" "1984 960 320"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 24
 {
 "classname" "env_probe"
 "name" "env_probe_area_5_0"
 "origin" "2160 368 256"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 25
 {
 "classname" "env_probe"
 "name" "env_probe_area_6_0"
 "origin" "2176 -1006 412"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 26
 {
 "classname" "env_probe"
 "name" "env_probe_area_7_0"
 "origin" "1188 1760 252"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 27
 {
 "classname" "env_probe"
 "name" "env_probe_area_8_0"
 "origin" "1807 192 426"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 28
 {
 "classname" "env_probe"
 "name" "env_probe_area_9_0"
 "origin" "1792 7 426"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 29
 {
 "classname" "env_probe"
 "name" "env_probe_area_10_0"
 "origin" "1616 256 426"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 30
 {
 "classname" "env_probe"
 "name" "env_probe_area_11_0"
 "origin" "1696 64 426"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 31
 {
 "classname" "env_probe"
 "name" "env_probe_area_13_0"
 "origin" "191 5152 12"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 32
 {
 "classname" "env_probe"
 "name" "env_probe_area_14_0"
 "origin" "352 1960 178"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 33
 {
 "classname" "env_probe"
 "name" "env_probe_area_15_0"
 "origin" "8 2144 116"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 34
 {
 "classname" "env_probe"
 "name" "env_probe_area_16_0"
 "origin" "600 1760 180"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 35
 {
 "classname" "env_probe"
 "name" "env_probe_area_17_0"
 "origin" "32 996 50"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 36
 {
 "classname" "env_probe"
 "name" "env_probe_area_18_0"
 "origin" "-8 676 44"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 37
 {
 "classname" "env_probe"
 "name" "env_probe_area_19_0"
 "origin" "-384 3295 364"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 38
 {
 "classname" "env_probe"
 "name" "env_probe_area_20_0"
 "origin" "-452 2875 340"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 39
 {
 "classname" "env_probe"
 "name" "env_probe_area_21_0"
 "origin" "-632 2072 52"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 40
 {
 "classname" "env_probe"
 "name" "env_probe_area_22_0"
 "origin" "-1232 2653 312"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 41
 {
 "classname" "env_probe"
 "name" "env_probe_area_23_0"
 "origin" "-512 1604 108"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 42
 {
 "classname" "env_probe"
 "name" "env_probe_area_24_0"
 "origin" "-512 1128 50"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 43
 {
 "classname" "env_probe"
 "name" "env_probe_area_25_0"
 "origin" "-957 1584 124"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 44
 {
 "classname" "env_probe"
 "name" "env_probe_area_26_0"
 "origin" "-228 1088 50"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 45
 {
 "classname" "env_probe"
 "name" "env_probe_area_27_0"
 "origin" "-928 1184 132"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 46
 {
 "classname" "env_probe"
 "name" "env_probe_area_28_0"
 "origin" "-665 672 104"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 47
 {
 "classname" "env_probe"
 "name" "env_probe_area_29_0"
 "origin" "-361 672 104"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 48
 {
 "classname" "env_probe"
 "name" "env_probe_area_30_0"
 "origin" "-1176 633 114"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 49
 {
 "classname" "env_probe"
 "name" "env_probe_area_31_0"
 "origin" "-1360 2002 312"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 50
 {
 "classname" "env_probe"
 "name" "env_probe_area_32_0"
 "origin" "-1345 1334 200"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 51
 {
@@ -381,7 +381,7 @@ Version 3
 "name" "env_probe_ingame_placed_19"
 "angle" "177.275391"
 "origin" "-292 2146 4"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 52
 {
@@ -389,7 +389,7 @@ Version 3
 "name" "env_probe_ingame_placed_20"
 "angle" "98.404541"
 "origin" "353 2136 140"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 53
 {
@@ -397,7 +397,7 @@ Version 3
 "name" "env_probe_ingame_placed_21"
 "angle" "179.582520"
 "origin" "995 1758 190"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 54
 {
@@ -405,7 +405,7 @@ Version 3
 "name" "env_probe_ingame_placed_22"
 "angle" "270.521851"
 "origin" "1971 636 303"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 55
 {
@@ -413,7 +413,7 @@ Version 3
 "name" "env_probe_ingame_placed_23"
 "angle" "279.321899"
 "origin" "1942 378 348"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 56
 {
@@ -421,7 +421,7 @@ Version 3
 "name" "env_probe_ingame_placed_24"
 "angle" "89.483643"
 "origin" "1992 -769 341"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 57
 {
@@ -429,7 +429,7 @@ Version 3
 "name" "env_probe_ingame_placed_25"
 "angle" "89.703369"
 "origin" "1992 42 319"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 58
 {
@@ -437,7 +437,7 @@ Version 3
 "name" "env_probe_ingame_placed_26"
 "angle" "272.521362"
 "origin" "1975 -190 317"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 59
 {
@@ -445,7 +445,7 @@ Version 3
 "name" "env_probe_ingame_placed_27"
 "angle" "86.649170"
 "origin" "1984 -482 316"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 60
 {
@@ -453,7 +453,7 @@ Version 3
 "name" "env_probe_ingame_placed_28"
 "angle" "177.511597"
 "origin" "2285 -442 293"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 61
 {
@@ -461,7 +461,7 @@ Version 3
 "name" "env_probe_ingame_placed_29"
 "angle" "180.038452"
 "origin" "1755 -444 289"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 62
 {
@@ -469,7 +469,7 @@ Version 3
 "name" "env_probe_ingame_placed_30"
 "angle" "164.470825"
 "origin" "1784 -147 317"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 63
 {
@@ -477,7 +477,7 @@ Version 3
 "name" "env_probe_ingame_placed_31"
 "angle" "90.631714"
 "origin" "2746 -1572 326"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 64
 {
@@ -485,7 +485,7 @@ Version 3
 "name" "env_probe_ingame_placed_32"
 "angle" "90.076904"
 "origin" "2745 -2305 329"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 65
 {
@@ -493,7 +493,7 @@ Version 3
 "name" "env_probe_ingame_placed_33"
 "angle" "90.626221"
 "origin" "2750 -3234 329"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 66
 {
@@ -501,7 +501,7 @@ Version 3
 "name" "env_probe_ingame_placed_34"
 "angle" "90.076904"
 "origin" "2751 -4981 294"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 67
 {
@@ -509,7 +509,7 @@ Version 3
 "name" "env_probe_ingame_placed_35"
 "angle" "270.477905"
 "origin" "2742 -3696 343"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 68
 {
@@ -517,7 +517,7 @@ Version 3
 "name" "env_probe_ingame_placed_0"
 "angle" "273.048706"
 "origin" "2758 -357 349"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 69
 {
@@ -525,7 +525,7 @@ Version 3
 "name" "env_probe_ingame_placed_1"
 "angle" "298.674316"
 "origin" "2752 -744 320"
-"spawnclass" "EnvironmentProbe"
+"spawnclass" "idEnvProbes"
 }
 // entity 432
 {
