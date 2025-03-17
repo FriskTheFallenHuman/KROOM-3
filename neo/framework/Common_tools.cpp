@@ -31,6 +31,8 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "Common_local.h"
 
+#include "../tools/imgui/afeditor/AfEditor.h"
+
 int				com_editors;			// currently opened editor(s)
 bool			com_editorActive;		//  true if an editor has focus
 
@@ -79,7 +81,7 @@ bool FindEditor()
 idCommonLocal::InitTool
 =================
 */
-void idCommonLocal::InitTool( const toolFlag_t tool, const idDict* dict )
+void idCommonLocal::InitTool( const toolFlag_t tool, const idDict* dict, idEntity* ent )
 {
 #ifdef ID_ALLOW_TOOLS
 	if( tool & EDITOR_SOUND )
@@ -101,7 +103,12 @@ void idCommonLocal::InitTool( const toolFlag_t tool, const idDict* dict )
 #else
 	if( tool & EDITOR_LIGHT )
 	{
-		ImGuiTools::LightEditorInit( dict, /*entity*/ NULL );
+		ImGuiTools::LightEditorInit( dict, ent );
+	}
+
+	if( tool & EDITOR_AF )
+	{
+		ImGuiTools::AfEditorInit();
 	}
 #endif
 }
@@ -164,6 +171,49 @@ void idCommonLocal::CheckToolMode()
 	}
 }
 
+void Com_EditLights_f( const idCmdArgs& args )
+{
+	if( cvarSystem->GetCVarInteger( "g_editEntityMode" ) != 1 )
+	{
+		cvarSystem->SetCVarInteger( "g_editEntityMode", 1 );
+
+		// turn off com_smp multithreading so we can load and check light textures on main thread
+		com_editors |= EDITOR_LIGHT;
+	}
+	else
+	{
+		cvarSystem->SetCVarInteger( "g_editEntityMode", 0 );
+
+		com_editors &= ~EDITOR_LIGHT;
+
+		// turn off light debug drawing in the render backend
+		cvarSystem->SetCVarInteger( "r_singleLight", -1 );
+		cvarSystem->SetCVarInteger( "r_showLights", 0 );
+	}
+
+	cmdSystem->BufferCommandText( CMD_EXEC_NOW, "noclip" );
+}
+// RB end
+
+// SP begin
+void Com_EditAFs_f( const idCmdArgs& args )
+{
+	if( cvarSystem->GetCVarInteger( "g_editEntityMode" ) != 3 )
+	{
+		cvarSystem->SetCVarInteger( "g_editEntityMode", 3 );
+		com_editors |= EDITOR_AF;
+		ImGuiTools::AfEditor::Instance().Init();
+		ImGuiTools::AfEditor::Instance().ShowIt( true );
+	}
+	else
+	{
+		cvarSystem->SetCVarInteger( "g_editEntityMode", 0 );
+		com_editors &= ~EDITOR_AF;
+		ImGuiTools::AfEditor::Instance().ShowIt( false );
+	}
+}
+// SP end
+
 /*
 =================
 idCommonLocal::InitCommands
@@ -198,5 +248,8 @@ void idCommonLocal::InitCommands( void )
 
 	//BSM Nerve: Add support for the material editor
 	cmdSystem->AddCommand( "materialEditor", Com_MaterialEditor_f, CMD_FL_TOOL, "launches the Material Editor" );
+#else
+	cmdSystem->AddCommand( "editLights", Com_EditLights_f, CMD_FL_TOOL, "launches the in-game Light Editor" );
+	cmdSystem->AddCommand( "editAFs", Com_EditAFs_f, CMD_FL_TOOL, "launches the in-game Articulated Figure Editor" );
 #endif
 }

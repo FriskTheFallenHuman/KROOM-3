@@ -32,6 +32,7 @@ If you have questions concerning this license or the applicable additional terms
 #define __SND_LOCAL_H__
 
 #include "WaveFile.h"
+#include "OggFile.h"
 
 // Maximum number of voices we can have allocated
 #define MAX_HARDWARE_VOICES 48
@@ -46,36 +47,6 @@ If you have questions concerning this license or the applicable additional terms
 
 // Maximum number of channels in a sound sample
 #define MAX_CHANNELS_PER_VOICE	8
-
-/*
-========================
-MsecToSamples
-SamplesToMsec
-========================
-*/
-ID_INLINE_EXTERN uint32 MsecToSamples( uint32 msec, uint32 sampleRate )
-{
-	return ( msec * ( sampleRate / 100 ) ) / 10;
-}
-ID_INLINE_EXTERN uint32 SamplesToMsec( uint32 samples, uint32 sampleRate )
-{
-	return sampleRate < 100 ? 0 : ( samples * 10 ) / ( sampleRate / 100 );
-}
-
-/*
-========================
-DBtoLinear
-LinearToDB
-========================
-*/
-ID_INLINE_EXTERN float DBtoLinear( float db )
-{
-	return idMath::Pow( 2.0f, db * ( 1.0f / 6.0f ) );
-}
-ID_INLINE_EXTERN float LinearToDB( float linear )
-{
-	return ( linear > 0.0f ) ? ( idMath::Log( linear ) * ( 6.0f / 0.693147181f ) ) : -999.0f;
-}
 
 // demo sound commands
 typedef enum
@@ -103,9 +74,9 @@ typedef enum
 	#include <OpenAL/al.h>
 	#include <OpenAL/alc.h>
 #else
-	#include <AL/al.h>
-	#include <AL/alc.h>
-	#include <AL/alext.h>
+	#include <al.h>
+	#include <alc.h>
+	#include <alext.h>
 #endif
 
 #include "OpenAL/AL_SoundSample.h"
@@ -323,10 +294,6 @@ public:
 	}
 
 	virtual int				GetSoundTime();
-
-	// avidump
-	virtual void			AVIOpen( const char* path, const char* name );
-	virtual void			AVIClose();
 
 	// SaveGame Support
 	virtual void			WriteToSaveGame( idFile* savefile );

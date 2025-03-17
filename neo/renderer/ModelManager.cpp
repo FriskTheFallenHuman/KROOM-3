@@ -32,7 +32,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "Model_local.h"
 #include "RenderCommon.h"	// just for R_FreeWorldInteractions and R_CreateWorldInteractions
 
-idCVar binaryLoadRenderModels( "binaryLoadRenderModels", "1", 0, "enable binary load/write of render models" );
+idCVar binaryLoadRenderModels( "binaryLoadRenderModels", "1", CVAR_NEW, "enable binary load/write of render models" );
 idCVar preload_MapModels( "preload_MapModels", "1", CVAR_SYSTEM | CVAR_BOOL, "preload models during begin or end levelload" );
 
 class idRenderModelManagerLocal : public idRenderModelManager
@@ -215,7 +215,7 @@ void idRenderModelManagerLocal::WritePrecacheCommands( idFile* f )
 		}
 
 		char	str[1024];
-		sprintf( str, "touchModel %s\n", model->Name() );
+		idStr::snPrintf( str, sizeof( str ), "touchModel %s\n", model->Name() );
 		common->Printf( "%s", str );
 		f->Printf( "%s", str );
 	}
@@ -400,7 +400,6 @@ idRenderModel* idRenderModelManagerLocal::GetModel( const char* _modelName, bool
 	// Not one of the known formats
 	if( model == NULL )
 	{
-
 		if( extension.Length() )
 		{
 			common->Warning( "unknown model type '%s'", canonical.c_str() );
@@ -707,8 +706,6 @@ void idRenderModelManagerLocal::Preload( const idPreloadManifest& manifest )
 	}
 }
 
-
-
 /*
 =================
 idRenderModelManagerLocal::EndLevelLoad
@@ -732,7 +729,6 @@ void idRenderModelManagerLocal::EndLevelLoad()
 
 		if( !model->IsLevelLoadReferenced() && model->IsLoaded() && model->IsReloadable() )
 		{
-
 //			common->Printf( "purging %s\n", model->Name() );
 
 			purgeCount++;

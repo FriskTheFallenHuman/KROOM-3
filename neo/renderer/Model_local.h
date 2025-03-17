@@ -75,7 +75,7 @@ public:
 	virtual void				Print() const;
 	virtual void				List() const;
 	virtual int					Memory() const;
-	virtual ID_TIME_T				Timestamp() const;
+	virtual ID_TIME_T			Timestamp() const;
 	virtual int					NumSurfaces() const;
 	virtual int					NumBaseSurfaces() const;
 	virtual const modelSurface_t* Surface( int surfaceNum ) const;
@@ -254,6 +254,8 @@ struct md3Surface_s;
 class idRenderModelMD3 : public idRenderModelStatic
 {
 public:
+	idRenderModelMD3();
+
 	virtual void				InitFromFile( const char* fileName );
 	virtual bool				SupportsBinaryModel()
 	{
@@ -268,6 +270,7 @@ private:
 	int							dataSize;		// just for listing purposes
 	struct md3Header_s* 		md3;			// only if type == MOD_MESH
 	int							numLods;
+	idList<const idMaterial*>	shaders;		// DG: md3Shader_t::shaderIndex indexes into this array
 
 	void						LerpMeshVertexes( srfTriangles_t* tri, const struct md3Surface_s* surf, const float backlerp, const int frame, const int oldframe ) const;
 };

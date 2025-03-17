@@ -83,7 +83,7 @@ int idPacketProcessor::FinalizeRead( idBitMsg& inMsg, idBitMsg& outMsg, int& use
 	if( header.Type() == PACKET_TYPE_RELIABLE_ACK )
 	{
 		// Handle reliable ack
-		int reliableSequence = inMsg.ReadLong();
+		int reliableSequence = inMsg.ReadInt();
 		reliable.RemoveOlderThan( reliableSequence + 1 );
 		header.ReadFromMsg( inMsg );								// Read the new header, since the reliable ack sits on top the actual header of the message
 	}
@@ -297,7 +297,7 @@ bool idPacketProcessor::ProcessOutgoing( const int time, const idBitMsg& msg, bo
 	{
 		idInnerPacketHeader header( PACKET_TYPE_RELIABLE_ACK, 0 );
 		header.WriteToMsg( unsentMsg );
-		unsentMsg.WriteLong( queuedReliableAck );
+		unsentMsg.WriteInt( queuedReliableAck );
 		queuedReliableAck = -1;
 	}
 
@@ -427,7 +427,7 @@ bool idPacketProcessor::GetSendFragment( const int time, sessionId_t sessionID, 
 			header.WriteToMsg( outMsg );
 		}
 
-		outMsg.WriteLong( fragmentSequence );
+		outMsg.WriteInt( fragmentSequence );
 		outMsg.WriteData( unsentMsg.GetReadData() + unsentMsg.GetReadCount(), currentSize );
 		unsentMsg.ReadData( NULL, currentSize );
 
@@ -490,7 +490,7 @@ int idPacketProcessor::ProcessIncoming( int time, sessionId_t expectedSessionID,
 	}
 
 	// Decode fragmented packet
-	int readSequence = msg.ReadLong();	// Read sequence of fragment
+	int readSequence = msg.ReadInt();	// Read sequence of fragment
 
 	if( header.Value() == FRAGMENT_START )
 	{

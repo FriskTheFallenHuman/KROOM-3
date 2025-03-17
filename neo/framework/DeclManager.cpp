@@ -263,6 +263,7 @@ private:
 };
 
 idCVar idDeclManagerLocal::decl_show( "decl_show", "0", CVAR_SYSTEM, "set to 1 to print parses, 2 to also print references", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2> );
+idCVar decl_warn_duplicates( "decl_warn_duplicates", "0", CVAR_SYSTEM, "set to 1 to print warnings about duplicated entries", 0, 1, idCmdSystem::ArgCompletion_Integer<0, 1> );
 
 idDeclManagerLocal	declManagerLocal;
 idDeclManager* 		declManager = &declManagerLocal;
@@ -287,7 +288,7 @@ typedef struct huffmanNode_s
 
 typedef struct huffmanCode_s
 {
-	unsigned int			bits[8]; // DG: use int instead of long for 64bit compatibility
+	unsigned int			bits[8];
 	int						numBits;
 } huffmanCode_t;
 
@@ -807,8 +808,11 @@ int idDeclFile::LoadAndParse()
 			// update the existing copy
 			if( newDecl->sourceFile != this || newDecl->redefinedInReload )
 			{
-				src.Warning( "%s '%s' previously defined at %s:%i", declManagerLocal.GetDeclNameFromType( identifiedType ),
-							 name.c_str(), newDecl->sourceFile->fileName.c_str(), newDecl->sourceLine );
+				if( decl_warn_duplicates.GetBool() )
+				{
+					src.Warning( "%s '%s' previously defined at %s:%i", declManagerLocal.GetDeclNameFromType( identifiedType ),
+								 name.c_str(), newDecl->sourceFile->fileName.c_str(), newDecl->sourceLine );
+				}
 				continue;
 			}
 			if( newDecl->declState != DS_UNPARSED )
@@ -882,7 +886,6 @@ idDeclManagerLocal::Init
 */
 void idDeclManagerLocal::Init()
 {
-
 	common->Printf( "----- Initializing Decls -----\n" );
 
 	checksum = 0;
@@ -1282,15 +1285,14 @@ const idDecl* idDeclManagerLocal::FindType( declType_t type, const char* name, b
 		}
 #endif
 		decl->ParseLocal();
+
+		// SRS - set non-purgeable flag only after ParseLocal(), don't reset if declState is parsed or defaulted
+		decl->parsedOutsideLevelLoad = !insideLevelLoad;
 	}
 
 	// mark it as referenced
 	decl->referencedThisLevel = true;
 	decl->everReferenced = true;
-	if( insideLevelLoad )
-	{
-		decl->parsedOutsideLevelLoad = false;
-	}
 
 	return decl->self;
 }
@@ -1430,7 +1432,11 @@ void idDeclManagerLocal::ListType( const idCmdArgs& args, declType_t type )
 			continue;
 		}
 
-		if( decl->referencedThisLevel )
+		if( decl->parsedOutsideLevelLoad )
+		{
+			common->Printf( "!" );
+		}
+		else if( decl->referencedThisLevel )
 		{
 			common->Printf( "*" );
 		}
@@ -1736,7 +1742,7 @@ void idDeclManagerLocal::WritePrecacheCommands( idFile* f )
 			}
 
 			char	str[1024];
-			sprintf( str, "touch %s %s\n", declTypes[i]->typeName.c_str(), decl->GetName() );
+			idStr::snPrintf( str, sizeof( str ), "touch %s %s\n", declTypes[i]->typeName.c_str(), decl->GetName() );
 			common->Printf( "%s", str );
 			f->Printf( "%s", str );
 		}
@@ -2003,7 +2009,8 @@ idDeclLocal* idDeclManagerLocal::FindTypeWithoutParsing( declType_t type, const 
 	decl->sourceFile = &implicitDecls;
 	decl->referencedThisLevel = false;
 	decl->everReferenced = false;
-	decl->parsedOutsideLevelLoad = !insideLevelLoad;
+	// SRS - initialize to false, otherwise all decls will be set to non-purgeable during Init()
+	decl->parsedOutsideLevelLoad = false;	// !insideLevelLoad;
 
 	// add it to the linear list and hash table
 	decl->index = linearLists[typeIndex].Num();
@@ -2229,6 +2236,7 @@ idDeclLocal::idDeclLocal()
 	everReferenced = false;
 	redefinedInReload = false;
 	nextInFile = NULL;
+	self = NULL;
 }
 
 /*

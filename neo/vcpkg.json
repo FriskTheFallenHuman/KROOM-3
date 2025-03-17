@@ -1,0 +1,19 @@
+{
+  "name": "doom3bfg",
+  "version": "1.4.0",
+  "dependencies": [
+    "opengl",
+    "openal-soft",
+    {
+      "name": "sdl2",
+      "default-features": false,
+      "features": [
+        "ibus",
+        "x11",
+        "wayland"
+      ],
+      "platform": "linux"
+    },
+    "ffmpeg"
+  ]
+}

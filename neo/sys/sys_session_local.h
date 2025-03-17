@@ -346,6 +346,7 @@ public:
 	}
 	virtual sessionState_t	GetBackState();
 	virtual void			Cancel();
+
 	virtual void			FinishDisconnect();
 	virtual bool			ShouldShowMigratingDialog() const;	// Note this is not in sys_session.h
 	virtual bool			IsCurrentLobbyMigrating() const;

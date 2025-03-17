@@ -53,9 +53,9 @@ typedef struct tagTHREADNAME_INFO
 Sys_SetThreadName
 
 caedes: This should be seen as a helper-function for Sys_CreateThread() only.
-        (re)setting the name of a running thread seems like a bad idea and
-        currently (fresh d3 bfg source) isn't done anyway.
-        Furthermore SDL doesn't support it
+		(re)setting the name of a running thread seems like a bad idea and
+		currently (fresh d3 bfg source) isn't done anyway.
+		Furthermore SDL doesn't support it
 
 ========================
 */

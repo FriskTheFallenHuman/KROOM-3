@@ -152,8 +152,8 @@ public:
 	void			WriteByte( uint8 c );
 	void			WriteShort( int16 c );
 	void			WriteUShort( uint16 c );
-	void			WriteLong( int32 c );
-	void			WriteLongLong( int64 c );
+	void			WriteInt( int32 c );
+	void			WriteInt64( int64 c );
 	void			WriteFloat( float f );
 	void			WriteFloat( float f, int exponentBits, int mantissaBits );
 	void			WriteAngle8( float f );
@@ -192,9 +192,9 @@ public:
 	{
 		WriteUShort( newValue - oldValue );
 	}
-	void			WriteDeltaLong( int32 oldValue, int32 newValue )
+	void			WriteDeltaInt( int32 oldValue, int32 newValue )
 	{
-		WriteLong( newValue - oldValue );
+		WriteInt( newValue - oldValue );
 	}
 	void			WriteDeltaFloat( float oldValue, float newValue )
 	{
@@ -269,8 +269,8 @@ public:
 	int				ReadByte() const;
 	int				ReadShort() const;
 	int				ReadUShort() const;
-	int				ReadLong() const;
-	int64			ReadLongLong() const;
+	int				ReadInt() const;
+	int64			ReadInt64() const;
 	float			ReadFloat() const;
 	float			ReadFloat( int exponentBits, int mantissaBits ) const;
 	float			ReadAngle8() const;
@@ -312,7 +312,7 @@ public:
 	}
 	int32			ReadDeltaLong( int32 oldValue ) const
 	{
-		return oldValue + ReadLong();
+		return oldValue + ReadInt();
 	}
 	float			ReadDeltaFloat( float oldValue ) const
 	{
@@ -785,20 +785,20 @@ ID_INLINE void idBitMsg::WriteUShort( uint16 c )
 
 /*
 ========================
-idBitMsg::WriteLong
+idBitMsg::WriteInt
 ========================
 */
-ID_INLINE void idBitMsg::WriteLong( int32 c )
+ID_INLINE void idBitMsg::WriteInt( int32 c )
 {
 	WriteBits( c, 32 );
 }
 
 /*
 ========================
-idBitMsg::WriteLongLong
+idBitMsg::WriteInt64
 ========================
 */
-ID_INLINE void idBitMsg::WriteLongLong( int64 c )
+ID_INLINE void idBitMsg::WriteInt64( int64 c )
 {
 	int a = c;
 	int b = c >> 32;
@@ -933,20 +933,20 @@ ID_INLINE int idBitMsg::ReadUShort() const
 
 /*
 ========================
-idBitMsg::ReadLong
+idBitMsg::ReadInt
 ========================
 */
-ID_INLINE int idBitMsg::ReadLong() const
+ID_INLINE int idBitMsg::ReadInt() const
 {
 	return ReadBits( 32 );
 }
 
 /*
 ========================
-idBitMsg::ReadLongLong
+idBitMsg::ReadInt64
 ========================
 */
-ID_INLINE int64 idBitMsg::ReadLongLong() const
+ID_INLINE int64 idBitMsg::ReadInt64() const
 {
 	int64 a = ReadBits( 32 );
 	int64 b = ReadBits( 32 );

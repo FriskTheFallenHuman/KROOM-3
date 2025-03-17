@@ -57,6 +57,11 @@ void idSysLocal::DebugVPrintf( const char* fmt, va_list arg )
 	Sys_DebugVPrintf( fmt, arg );
 }
 
+unsigned int idSysLocal::GetMilliseconds()
+{
+	return Sys_Milliseconds();
+}
+
 double idSysLocal::GetClockTicks()
 {
 	return Sys_GetClockTicks();
@@ -107,17 +112,17 @@ bool idSysLocal::UnlockMemory( void* ptr, int bytes )
 	return Sys_UnlockMemory( ptr, bytes );
 }
 
-int idSysLocal::DLL_Load( const char* dllName )
+uintptr_t idSysLocal::DLL_Load( const char* dllName )
 {
 	return Sys_DLL_Load( dllName );
 }
 
-void* idSysLocal::DLL_GetProcAddress( int dllHandle, const char* procName )
+void* idSysLocal::DLL_GetProcAddress( uintptr_t dllHandle, const char* procName )
 {
 	return Sys_DLL_GetProcAddress( dllHandle, procName );
 }
 
-void idSysLocal::DLL_Unload( int dllHandle )
+void idSysLocal::DLL_Unload( uintptr_t dllHandle )
 {
 	Sys_DLL_Unload( dllHandle );
 }
@@ -248,15 +253,15 @@ const char* Sys_SecToStr( int sec )
 
 	if( weeks > 0 )
 	{
-		sprintf( timeString, "%dw, %dd, %d:%02d:%02d", weeks, days, hours, min, sec );
+		idStr::snPrintf( timeString, sizeof( timeString ), "%dw, %dd, %d:%02d:%02d", weeks, days, hours, min, sec );
 	}
 	else if( days > 0 )
 	{
-		sprintf( timeString, "%dd, %d:%02d:%02d", days, hours, min, sec );
+		idStr::snPrintf( timeString, sizeof( timeString ), "%dd, %d:%02d:%02d", days, hours, min, sec );
 	}
 	else
 	{
-		sprintf( timeString, "%d:%02d:%02d", hours, min, sec );
+		idStr::snPrintf( timeString, sizeof( timeString ), "%d:%02d:%02d", hours, min, sec );
 	}
 
 	return timeString;

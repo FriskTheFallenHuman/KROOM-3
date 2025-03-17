@@ -356,6 +356,8 @@ public:
 	idEntityPtr<idEntity>	lastGUIEnt;				// last entity with a GUI, used by Cmd_NextGUI_f
 	int						lastGUI;				// last GUI on the lastGUIEnt
 
+	int						editors;				// Mirrored editors flags from common to determine which editors are running
+
 	idEntityPtr<idPlayer>	playerActivateFragChamber;	// The player that activated the frag chamber
 
 	idEntityPtr<idEntity>	portalSkyEnt;
@@ -396,14 +398,14 @@ public:
 
 	virtual const idDict& 	GetPersistentPlayerInfo( int clientNum );
 	virtual void			SetPersistentPlayerInfo( int clientNum, const idDict& playerInfo );
-	virtual void			InitFromNewMap( const char* mapName, idRenderWorld* renderWorld, idSoundWorld* soundWorld, int gameType, int randSeed );
-	virtual bool			InitFromSaveGame( const char* mapName, idRenderWorld* renderWorld, idSoundWorld* soundWorld, idFile* saveGameFile, idFile* stringTableFile, int saveGameVersion );
+	virtual void			InitFromNewMap( const char* mapName, idRenderWorld* renderWorld, idSoundWorld* soundWorld, int gameType, int randSeed, int activeEditors );
+	virtual bool			InitFromSaveGame( const char* mapName, idRenderWorld* renderWorld, idSoundWorld* soundWorld, idFile* saveGameFile, idFile* stringTableFile, int saveGameVersion, int activeEditors );
 	virtual void			SaveGame( idFile* saveGameFile, idFile* stringTableFile );
 	virtual void			GetSaveGameDetails( idSaveGameDetails& gameDetails );
 	virtual void			MapShutdown();
 	virtual void			CacheDictionaryMedia( const idDict* dict );
 	virtual void			Preload( const idPreloadManifest& manifest );
-	virtual void			RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& gameReturn );
+	virtual void			RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& gameReturn, int activeEditors );
 	void					RunAllUserCmdsForPlayer( idUserCmdMgr& cmdMgr, const int playerNumber );
 	void					RunSingleUserCmd( usercmd_t& cmd, idPlayer& player );
 	void					RunEntityThink( idEntity& ent, idUserCmdMgr& userCmdMgr );
@@ -818,7 +820,6 @@ template< class type >
 ID_INLINE type* idEntityPtr<type>::GetEntity() const
 {
 	int entityNum = spawnId & ( ( 1 << GENTITYNUM_BITS ) - 1 );
-	// DG: removed extraneous parenthesis to shut up clang
 	if( gameLocal.spawnIds[ entityNum ] == ( spawnId >> GENTITYNUM_BITS ) )
 	{
 		return static_cast<type*>( gameLocal.entities[ entityNum ] );

@@ -1348,7 +1348,10 @@ void idParticleStage::ParticleOrigin( particleGen_t* g, idVec3& origin ) const
 				dir.Normalize();
 				dir[2] += directionParms[0];
 				break;
-			}
+				default:
+					common->Error( "idParticleStage::ParticleOrigin: bad direction" );
+					return;
+				}
 		}
 
 		// add speed
@@ -1467,6 +1470,8 @@ int	idParticleStage::ParticleVerts( particleGen_t* g, idVec3 origin, idDrawVert*
 		idVec3		stepLeft;
 		int			numTrails = idMath::Ftoi( orientationParms[0] );
 		float		trailTime = orientationParms[1];
+
+		stepLeft.Zero();
 
 		if( trailTime == 0 )
 		{

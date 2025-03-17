@@ -620,6 +620,12 @@ idSWFScriptVar idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings
 			{
 				return "#str_swf_disabled";
 			}
+			// SRS - Added support for displaying borderless modes
+			else if( fullscreen == -1 )
+			{
+				return "Borderless Window";
+			}
+			// SRS end
 			if( fullscreen < 0 || vidmode < 0 || vidmode >= modeList.Num() )
 			{
 				return "???";

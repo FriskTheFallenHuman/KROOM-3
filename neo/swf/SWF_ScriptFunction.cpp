@@ -1739,7 +1739,10 @@ void idSWFScriptFunction_Script::AddLine( const idStr& line )
 {
 	ActionBlock& block = currentBlock->blocks.Alloc();
 	block.parent = currentBlock;
-	block.line = line;
+
+	idStr stripped = line;
+	stripped.StripLeadingOnce( "_global." );
+	block.line = stripped;
 }
 
 void idSWFScriptFunction_Script::AddBlock( const idStr& line )
@@ -2997,7 +3000,7 @@ idStr idSWFScriptFunction_Script::ExportToScript( idSWFScriptObject* thisObject,
 finish:
 	idStr actionScript = BuildActionCode( actionBlocks, 0 );
 
-	idLib::Printf( "%s.Sprite%i script:\n%s\n", filename, characterID, actionScript.c_str() );
+	//idLib::Printf( "%s.Sprite%i script:\n%s\n", filename, characterID, actionScript.c_str() );
 
 	return actionScript;
 }

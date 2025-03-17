@@ -122,7 +122,7 @@ int idGameThread::Run()
 			SCOPED_PROFILE_EVENT( "GameTic" );
 			if( userCmdMgr )
 			{
-				game->RunFrame( *userCmdMgr, ret );
+				game->RunFrame( *userCmdMgr, ret, com_editors );
 			}
 			if( ret.syncNextGameFrame || ret.sessionCommand[0] != 0 )
 			{
@@ -314,6 +314,7 @@ void idCommonLocal::Draw()
 	else if( mapSpawned )
 	{
 		bool gameDraw = false;
+
 		// normal drawing for both single and multi player
 		if( !com_skipGameDraw.GetBool() && Game()->GetLocalClientNum() >= 0 )
 		{
@@ -348,6 +349,9 @@ void idCommonLocal::Draw()
 	{
 		SCOPED_PROFILE_EVENT( "Post-Draw" );
 
+		// draw Imgui before the console
+		ImGuiHook::Render();
+
 		// draw the wipe material on top of this if it hasn't completed yet
 		DrawWipeModel();
 
@@ -368,7 +372,7 @@ This is an out-of-sequence screen update, not the normal game rendering
 // DG: added possibility to *not* release mouse in UpdateScreen(), it fucks up the view angle for screenshots
 void idCommonLocal::UpdateScreen( bool captureToImage, bool releaseMouse )
 {
-	if( insideUpdateScreen )
+	if( insideUpdateScreen || com_shuttingDown )
 	{
 		return;
 	}
@@ -386,6 +390,7 @@ void idCommonLocal::UpdateScreen( bool captureToImage, bool releaseMouse )
 
 	// build all the draw commands without running a new game tic
 	Draw();
+	frameTiming.finishDrawTime = Sys_Microseconds();    // SRS - Added frame timing for out-of-sequence updates (e.g. used in timedemo "twice" mode)
 
 	// foresthale 2014-03-01: note: the only place that has captureToImage=true is idAutoRender::StartBackgroundAutoSwaps
 	if( captureToImage )
@@ -394,10 +399,12 @@ void idCommonLocal::UpdateScreen( bool captureToImage, bool releaseMouse )
 	}
 
 	// this should exit right after vsync, with the GPU idle and ready to draw
-	const emptyCommand_t* cmd = renderSystem->SwapCommandBuffers( &time_frontend, &time_backend, &time_shadows, &time_gpu, &stats_backend, &stats_frontend );
+	const emptyCommand_t* cmd = renderSystem->SwapCommandBuffers( &time_frontend, &time_backend, &time_shadows, &time_gpu, &time_moc, &stats_backend, &stats_frontend );
 
 	// get the GPU busy with new commands
+	frameTiming.startRenderTime = Sys_Microseconds();   // SRS - Added frame timing for out-of-sequence updates (e.g. used in timedemo "twice" mode)
 	renderSystem->RenderCommandBuffers( cmd );
+	frameTiming.finishRenderTime = Sys_Microseconds();  // SRS - Added frame timing for out-of-sequence updates (e.g. used in timedemo "twice" mode)
 
 	insideUpdateScreen = false;
 }
@@ -506,7 +513,7 @@ void idCommonLocal::Frame()
 		// DG: Add pause from com_pause cvar
 		if( com_pause.GetInteger() || console->Active() || Dialog().IsDialogActive() || session->IsSystemUIShowing()
 				|| ( game && game->InhibitControls() ) ||  ImGuiTools::ReleaseMouseForTools() )
-		// DG end
+			// DG end
 		{
 			// RB: don't release the mouse when opening a PDA or menu
 			// SRS - but always release at main menu after exiting game or demo
@@ -528,20 +535,6 @@ void idCommonLocal::Frame()
 									  && ( Dialog().IsDialogPausing() || session->IsSystemUIShowing()
 										   || ( game && game->Shell_IsActive() ) || com_pause.GetInteger() ) ) );
 
-		// save the screenshot and audio from the last draw if needed
-		if( aviCaptureMode )
-		{
-			idStr name;
-			name.Format( "demos/%s/%s_%05i", aviDemoShortName.c_str(), aviDemoShortName.c_str(), aviDemoFrameCount++ );
-			renderSystem->TakeScreenshot( com_aviDemoWidth.GetInteger(), com_aviDemoHeight.GetInteger(), name, com_aviDemoSamples.GetInteger(), NULL, TGA );
-
-			// remove any printed lines at the top before taking the screenshot
-			console->ClearNotifyLines();
-
-			// this will call Draw, possibly multiple times if com_aviDemoSamples is > 1
-			renderSystem->TakeScreenshot( com_aviDemoWidth.GetInteger(), com_aviDemoHeight.GetInteger(), name, com_aviDemoSamples.GetInteger(), NULL, TGA );
-		}
-
 		//--------------------------------------------
 		// wait for the GPU to finish drawing
 		//
@@ -557,7 +550,7 @@ void idCommonLocal::Frame()
 		// foresthale 2014-05-12: also check com_editors as many of them are not particularly thread-safe (editLights for example)
 		if( com_smp.GetInteger() > 0 && com_editors == 0 )
 		{
-			renderCommands = renderSystem->SwapCommandBuffers( &time_frontend, &time_backend, &time_shadows, &time_gpu, &stats_backend, &stats_frontend );
+			renderCommands = renderSystem->SwapCommandBuffers( &time_frontend, &time_backend, &time_shadows, &time_gpu, &time_moc, &stats_backend, &stats_frontend );
 		}
 		else if( com_smp.GetInteger() < 0 )
 		{
@@ -568,7 +561,7 @@ void idCommonLocal::Frame()
 		{
 			// the GPU will stay idle through command generation for minimal
 			// input latency
-			renderSystem->SwapCommandBuffers_FinishRendering( &time_frontend, &time_backend, &time_shadows, &time_gpu, &stats_backend, &stats_frontend );
+			renderSystem->SwapCommandBuffers_FinishRendering( &time_frontend, &time_backend, &time_shadows, &time_gpu, &time_moc, &stats_backend, &stats_frontend );
 		}
 		frameTiming.finishSyncTime = Sys_Microseconds();
 
@@ -707,7 +700,7 @@ void idCommonLocal::Frame()
 			// SRS - If in Doom 3 mode (com_smp = -1) on map change, must obey fence before returning to avoid command buffer sync issues
 			if( com_smp.GetInteger() < 0 )
 			{
-				renderSystem->SwapCommandBuffers_FinishRendering( &time_frontend, &time_backend, &time_shadows, &time_gpu, &stats_backend, &stats_frontend );
+				renderSystem->SwapCommandBuffers_FinishRendering( &time_frontend, &time_backend, &time_shadows, &time_gpu, &time_moc, &stats_backend, &stats_frontend );
 			}
 			return;
 		}
@@ -773,7 +766,7 @@ void idCommonLocal::Frame()
 		// Store server game time - don't let time go past last SS time in case we are extrapolating
 		if( IsClient() )
 		{
-			newCmd.serverGameMilliseconds = std::min( Game()->GetServerGameTimeMs(), Game()->GetSSEndTime() );
+			newCmd.serverGameMilliseconds = Min( Game()->GetServerGameTimeMs(), Game()->GetSSEndTime() );
 		}
 		else
 		{
@@ -820,7 +813,7 @@ void idCommonLocal::Frame()
 		if( com_smp.GetInteger() < 0 )
 		{
 			// RB: this is the same as Doom 3 renderSystem->EndFrame()
-			renderSystem->SwapCommandBuffers_FinishRendering( &time_frontend, &time_backend, &time_shadows, &time_gpu, &stats_backend, &stats_frontend );
+			renderSystem->SwapCommandBuffers_FinishRendering( &time_frontend, &time_backend, &time_shadows, &time_gpu, &time_moc, &stats_backend, &stats_frontend );
 		}
 		// SRS - Use finishSyncTime_EndFrame to record timing after sync for com_smp = -1, and just before gameThread.WaitForThread() for com_smp = 1
 		frameTiming.finishSyncTime_EndFrame = Sys_Microseconds();
@@ -843,16 +836,18 @@ void idCommonLocal::Frame()
 		{
 			soundWorld->Pause();
 			soundSystem->SetPlayingSoundWorld( menuSoundWorld );
+			soundSystem->SetMute( false );
 		}
 		else
 		{
 			soundWorld->UnPause();
 			soundSystem->SetPlayingSoundWorld( soundWorld );
+			soundSystem->SetMute( false );
 		}
-		// SRS - Play silence when dialog waiting or window not in focus
+		// SRS - Mute all sound output when dialog waiting or window not in focus (mutes Doom3, Classic, Cinematic Audio)
 		if( Dialog().IsDialogPausing() || session->IsSystemUIShowing() || com_pause.GetInteger() )
 		{
-			soundSystem->SetPlayingSoundWorld( NULL );
+			soundSystem->SetMute( true );
 		}
 
 		soundSystem->Render();

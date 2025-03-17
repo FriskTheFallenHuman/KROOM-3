@@ -99,10 +99,10 @@ public:
 	virtual void				SetPersistentPlayerInfo( int clientNum, const idDict& playerInfo ) = 0;
 
 	// Loads a map and spawns all the entities.
-	virtual void				InitFromNewMap( const char* mapName, idRenderWorld* renderWorld, idSoundWorld* soundWorld, int gameMode, int randseed ) = 0;
+	virtual void				InitFromNewMap( const char* mapName, idRenderWorld* renderWorld, idSoundWorld* soundWorld, int gameMode, int randseed, int activeEditors ) = 0;
 
 	// Loads a map from a savegame file.
-	virtual bool				InitFromSaveGame( const char* mapName, idRenderWorld* renderWorld, idSoundWorld* soundWorld, idFile* saveGameFile, idFile* stringTableFile, int saveGameVersion ) = 0;
+	virtual bool				InitFromSaveGame( const char* mapName, idRenderWorld* renderWorld, idSoundWorld* soundWorld, idFile* saveGameFile, idFile* stringTableFile, int saveGameVersion, int activeEditors ) = 0;
 
 	// Saves the current game state, common may have written some data to the file already.
 	virtual void				SaveGame( idFile* saveGameFile, idFile* stringTableFile ) = 0;
@@ -119,7 +119,7 @@ public:
 	virtual void				Preload( const idPreloadManifest& manifest ) = 0;
 
 	// Runs a game frame, may return a session command for level changing, etc
-	virtual void				RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& gameReturn ) = 0;
+	virtual void				RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& gameReturn, int activeEditors ) = 0;
 
 	// Makes rendering and sound system calls to display for a given clientNum.
 	virtual bool				Draw( int clientNum ) = 0;
@@ -300,6 +300,7 @@ public:
 	virtual void				PlayerGetAxis( idMat3& axis ) const;
 	virtual void				PlayerGetViewAngles( idAngles& angles ) const;
 	virtual void				PlayerGetEyePosition( idVec3& org ) const;
+	virtual bool				PlayerGetRenderView( renderView_t& rv ) const;
 
 	// In game map editing support.
 	virtual const idDict* 		MapGetEntityDict( const char* name ) const;

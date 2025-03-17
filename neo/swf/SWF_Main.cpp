@@ -34,11 +34,6 @@ If you have questions concerning this license or the applicable additional terms
 #pragma warning(disable: 4355) // 'this' : used in base member initializer list
 
 idCVar swf_loadBinary( "swf_loadBinary", "1", CVAR_INTEGER, "used to set whether to load binary swf from generated" );
-// RB begin
-idCVar postLoadExportFlashAtlas( "postLoadExportFlashAtlas", "0", CVAR_INTEGER, "" );
-idCVar postLoadExportFlashToSWF( "postLoadExportFlashToSWF", "0", CVAR_INTEGER, "" );
-idCVar postLoadExportFlashToJSON( "postLoadExportFlashToJSON", "0", CVAR_INTEGER, "" );
-// RB end
 
 int idSWF::mouseX = -1;
 int idSWF::mouseY = -1;
@@ -53,7 +48,7 @@ extern idCVar in_useJoystick;
 idSWF::idSWF
 ===================
 */
-idSWF::idSWF( const char* filename_, idSoundWorld* soundWorld_ )
+idSWF::idSWF( const char* filename_, idSoundWorld* soundWorld_, bool exportJSON, bool exportSWF )
 {
 
 	atlasMaterial = NULL;
@@ -179,7 +174,7 @@ idSWF::idSWF( const char* filename_, idSoundWorld* soundWorld_ )
 		}
 	}
 
-	if( postLoadExportFlashToJSON.GetBool() )
+	if( exportJSON )
 	{
 		idStr jsonFileName = "exported/";
 		jsonFileName += filename;
@@ -189,124 +184,152 @@ idSWF::idSWF( const char* filename_, idSoundWorld* soundWorld_ )
 	}
 
 	idStr atlasFileName = binaryFileName;
-	atlasFileName.SetFileExtension( ".tga" );
+	atlasFileName.SetFileExtension( ".png" );
 	atlasMaterial = declManager->FindMaterial( atlasFileName );
 
 	byte* atlasExportImageRGBA = NULL;
 	int atlasExportImageWidth = 0;
 	int atlasExportImageHeight = 0;
 
-	if( /*!loadedFromJSON &&*/ ( postLoadExportFlashToJSON.GetBool() || postLoadExportFlashAtlas.GetBool() || postLoadExportFlashToSWF.GetBool() ) )
+	if( /*!loadedFromJSON &&*/ ( exportJSON || exportSWF ) )
 	{
-		idStrStatic< MAX_OSPATH > generatedName = atlasFileName;
-		generatedName.StripFileExtension();
-		idImage::GetGeneratedName( generatedName, TD_DEFAULT, CF_2D );
+		// try loading the TGA first
+		ID_TIME_T timestamp;
+		//LoadTGA( atlasFileName.c_str(), &atlasExportImageRGBA, &atlasExportImageWidth, &atlasExportImageHeight, &timestamp );
+		LoadSTB_RGBA8( atlasFileName.c_str(), &atlasExportImageRGBA, &atlasExportImageWidth, &atlasExportImageHeight, &timestamp );
 
-		idBinaryImage im( generatedName );
-		ID_TIME_T binaryFileTime = im.LoadFromGeneratedFile( FILE_NOT_FOUND_TIMESTAMP );
-
-		if( binaryFileTime != FILE_NOT_FOUND_TIMESTAMP )
+		if( ( atlasExportImageRGBA == NULL ) || ( timestamp == FILE_NOT_FOUND_TIMESTAMP ) )
 		{
-			const bimageFile_t& imgHeader = im.GetFileHeader();
-			const bimageImage_t& img = im.GetImageHeader( 0 );
+			//idLib::Warning( "failed to load atlas '%s'", atlasFileName.c_str() );
 
-			const byte* data = im.GetImageData( 0 );
+			idStrStatic< MAX_OSPATH > generatedName = atlasFileName;
+			generatedName.StripFileExtension();
+			idImage::GetGeneratedName( generatedName, TD_DEFAULT, CF_2D );
 
-			//( img.level, 0, 0, img.destZ, img.width, img.height, data );
+			idBinaryImage im( generatedName );
+			ID_TIME_T binaryFileTime = im.LoadFromGeneratedFile( FILE_NOT_FOUND_TIMESTAMP );
 
-			idTempArray<byte> rgba( img.width * img.height * 4 );
-			memset( rgba.Ptr(), 255, rgba.Size() );
-
-			if( imgHeader.format == FMT_DXT1 )
+			if( binaryFileTime != FILE_NOT_FOUND_TIMESTAMP )
 			{
-				idDxtDecoder dxt;
-				dxt.DecompressImageDXT1( data, rgba.Ptr(), img.width, img.height );
-			}
-			else if( imgHeader.format == FMT_DXT5 )
-			{
-				idDxtDecoder dxt;
+				const bimageFile_t& imgHeader = im.GetFileHeader();
+				const bimageImage_t& img = im.GetImageHeader( 0 );
 
-				if( imgHeader.colorFormat == CFM_NORMAL_DXT5 )
+				const byte* data = im.GetImageData( 0 );
+
+				// RB: Images that are were DXT compressed and aren't multiples of 4 were padded out before compressing
+				// however the idBinaryImageData stores the original input width and height.
+				// We need multiples of 4 for the decompression routines
+
+				int	dxtWidth = img.width;
+				int	dxtHeight = img.height;
+				if( imgHeader.format == FMT_DXT5 || imgHeader.format == FMT_DXT1 )
 				{
-					dxt.DecompressNormalMapDXT5( data, rgba.Ptr(), img.width, img.height );
+					if( ( img.width & 3 ) || ( img.height & 3 ) )
+					{
+						dxtWidth = ( img.width + 3 ) & ~3;
+						dxtHeight = ( img.height + 3 ) & ~3;
+					}
 				}
-				else if( imgHeader.colorFormat == CFM_YCOCG_DXT5 )
+
+				idTempArray<byte> rgba( dxtWidth * dxtHeight * 4 );
+				memset( rgba.Ptr(), 255, rgba.Size() );
+
+				if( imgHeader.format == FMT_DXT1 )
 				{
-					dxt.DecompressYCoCgDXT5( data, rgba.Ptr(), img.width, img.height );
+					idDxtDecoder dxt;
+					dxt.DecompressImageDXT1( data, rgba.Ptr(), dxtWidth, dxtHeight );
+
+					for( int i = 0; i < ( dxtWidth * dxtHeight ); i++ )
+					{
+						rgba[i * 4 + 3] = 255;
+					}
+				}
+				else if( imgHeader.format == FMT_DXT5 )
+				{
+					idDxtDecoder dxt;
+
+					if( imgHeader.colorFormat == CFM_DEFAULT )
+					{
+						dxt.DecompressImageDXT5( data, rgba.Ptr(), dxtWidth, dxtHeight );
+
+						/*
+						for( int i = 0; i < ( dxtWidth * dxtHeight ); i++ )
+						{
+							rgba[i * 4 + 3] = 255;
+						}
+						*/
+					}
+				}
+				else if( imgHeader.format == FMT_LUM8 || imgHeader.format == FMT_INT8 )
+				{
+					// LUM8 and INT8 just read the red channel
+					byte* pic = rgba.Ptr();
+					for( int i = 0; i < img.dataSize; i++ )
+					{
+						pic[ i * 4 ] = data[ i ];
+					}
+				}
+				else if( imgHeader.format == FMT_ALPHA )
+				{
+					// ALPHA reads the alpha channel
+					byte* pic = rgba.Ptr();
+					for( int i = 0; i < img.dataSize; i++ )
+					{
+						pic[ i * 4 + 3 ] = data[ i ];
+					}
+				}
+				else if( imgHeader.format == FMT_L8A8 )
+				{
+					// L8A8 reads the alpha and red channels
+					byte* pic = rgba.Ptr();
+					for( int i = 0; i < img.dataSize / 2; i++ )
+					{
+						pic[ i * 4 + 0 ] = data[ i * 2 + 0 ];
+						pic[ i * 4 + 3 ] = data[ i * 2 + 1 ];
+					}
+				}
+				else if( imgHeader.format == FMT_RGB565 )
+				{
+					// FIXME
+					/*
+					byte* pic = rgba.Ptr();
+					for( int i = 0; i < img.dataSize / 2; i++ )
+					{
+						unsigned short color = ( ( pic[ i * 4 + 0 ] >> 3 ) << 11 ) | ( ( pic[ i * 4 + 1 ] >> 2 ) << 5 ) | ( pic[ i * 4 + 2 ] >> 3 );
+						img.data[ i * 2 + 0 ] = ( color >> 8 ) & 0xFF;
+						img.data[ i * 2 + 1 ] = color & 0xFF;
+					}
+					*/
 				}
 				else
 				{
+					byte* pic = rgba.Ptr();
+					for( int i = 0; i < img.dataSize; i++ )
+					{
+						pic[ i ] = data[ i ];
+					}
+				}
 
-					dxt.DecompressImageDXT5( data, rgba.Ptr(), img.width, img.height );
-				}
-			}
-			else if( imgHeader.format == FMT_LUM8 || imgHeader.format == FMT_INT8 )
-			{
-				// LUM8 and INT8 just read the red channel
-				byte* pic = rgba.Ptr();
-				for( int i = 0; i < img.dataSize; i++ )
-				{
-					pic[ i * 4 ] = data[ i ];
-				}
-			}
-			else if( imgHeader.format == FMT_ALPHA )
-			{
-				// ALPHA reads the alpha channel
-				byte* pic = rgba.Ptr();
-				for( int i = 0; i < img.dataSize; i++ )
-				{
-					pic[ i * 4 + 3 ] = data[ i ];
-				}
-			}
-			else if( imgHeader.format == FMT_L8A8 )
-			{
-				// L8A8 reads the alpha and red channels
-				byte* pic = rgba.Ptr();
-				for( int i = 0; i < img.dataSize / 2; i++ )
-				{
-					pic[ i * 4 + 0 ] = data[ i * 2 + 0 ];
-					pic[ i * 4 + 3 ] = data[ i * 2 + 1 ];
-				}
-			}
-			else if( imgHeader.format == FMT_RGB565 )
-			{
-				// FIXME
-				/*
-				byte* pic = rgba.Ptr();
-				for( int i = 0; i < img.dataSize / 2; i++ )
-				{
-					unsigned short color = ( ( pic[ i * 4 + 0 ] >> 3 ) << 11 ) | ( ( pic[ i * 4 + 1 ] >> 2 ) << 5 ) | ( pic[ i * 4 + 2 ] >> 3 );
-					img.data[ i * 2 + 0 ] = ( color >> 8 ) & 0xFF;
-					img.data[ i * 2 + 1 ] = color & 0xFF;
-				}
-				*/
-			}
-			else
-			{
-				byte* pic = rgba.Ptr();
-				for( int i = 0; i < img.dataSize; i++ )
-				{
-					pic[ i ] = data[ i ];
-				}
-			}
+				idStr atlasFileNameExport = atlasFileName;
+				atlasFileNameExport.Replace( "generated/", "exported/" );
+				atlasFileNameExport.SetFileExtension( ".png" );
 
-			idStr atlasFileNameExport = atlasFileName;
-			atlasFileNameExport.Replace( "generated/", "exported/" );
-			atlasFileNameExport.SetFileExtension( ".png" );
+				idLib::Printf( "Exporting image '%s'\n", atlasFileNameExport.c_str() );
 
-			R_WritePNG( atlasFileNameExport, rgba.Ptr(), 4, img.width, img.height, true, "fs_basepath" );
+				R_WritePNG( atlasFileNameExport, rgba.Ptr(), 4, img.width, img.height, "fs_basepath" );
 
-			if( postLoadExportFlashToSWF.GetBool() )
-			{
-				atlasExportImageWidth = img.width;
-				atlasExportImageHeight = img.height;
-				atlasExportImageRGBA = ( byte* ) Mem_Alloc( rgba.Size(), TAG_TEMP );
-				memcpy( atlasExportImageRGBA, rgba.Ptr(), rgba.Size() );
+				if( exportSWF )
+				{
+					atlasExportImageWidth = img.width;
+					atlasExportImageHeight = img.height;
+					atlasExportImageRGBA = ( byte* ) Mem_Alloc( rgba.Size(), TAG_TEMP );
+					memcpy( atlasExportImageRGBA, rgba.Ptr(), rgba.Size() );
+				}
 			}
 		}
 	}
 
-	if( postLoadExportFlashToSWF.GetBool() )
+	if( exportSWF )
 	{
 		idStr swfFileName = "exported/";
 		swfFileName += filename;
@@ -963,3 +986,51 @@ void idSWF::idSWFScriptNativeVar_crop::Set( idSWFScriptObject* object, const idS
 {
 	pThis->crop = value.ToBool();
 }
+
+// RB begin
+CONSOLE_COMMAND_SHIP( exportFlash, "Export all .bswf files to the exported/swf/ folder", NULL )
+{
+	bool exportSWF = false;
+
+	for( int i = 1; i < args.Argc(); i++ )
+	{
+		idStr option = args.Argv( i );
+		option.StripLeading( '-' );
+
+		if( option.Icmp( "swf" ) == 0 )
+		{
+			exportSWF = true;
+		}
+	}
+
+	idFileList* files = fileSystem->ListFilesTree( "generated", ".bswf", true );
+
+	for( int f = 0; f < files->GetList().Num(); f++ )
+	{
+		idStr bswfName = files->GetList()[ f ];
+
+#if 0
+		// only export hud for testing
+		if( idStr::Icmp( bswfName, "generated/swf/hud.bswf" ) != 0 )
+		{
+			continue;
+		}
+#endif
+
+		/*
+		idFileLocal bFile = fileSystem->OpenFileRead( bswfName );
+		if( bFile == NULL )
+		{
+			continue;
+		}
+		*/
+
+		bswfName.StripLeadingOnce( "generated/" );
+
+		idSWF* swf = new idSWF( bswfName, NULL, true, true ); //exportSWF );
+		delete swf;
+	}
+
+	fileSystem->FreeFileList( files );
+}
+// RB end

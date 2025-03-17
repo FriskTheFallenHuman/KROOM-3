@@ -57,6 +57,9 @@ void idRenderWorldLocal::FreeWorld()
 			R_StaticFree( portal );
 		}
 
+		// SRS - release the lightGridPoints idList or it will leak
+		area->lightGrid.lightGridPoints.Clear();
+
 		// there shouldn't be any remaining lightRefs or entityRefs
 		if( area->lightRefs.areaNext != &area->lightRefs )
 		{
@@ -566,13 +569,16 @@ void idRenderWorldLocal::ReadBinaryAreaPortals( idFile* file )
 		file->ReadBig( numPoints );
 		file->ReadBig( a1 );
 		file->ReadBig( a2 );
+
 		w = new( TAG_RENDER_WINDING ) idWinding( numPoints );
 		w->SetNumPoints( numPoints );
+
 		for( int j = 0; j < numPoints; j++ )
 		{
 			file->ReadBig( ( *w )[ j ][ 0 ] );
 			file->ReadBig( ( *w )[ j ][ 1 ] );
 			file->ReadBig( ( *w )[ j ][ 2 ] );
+
 			// no texture coordinates
 			( *w )[ j ][ 3 ] = 0;
 			( *w )[ j ][ 4 ] = 0;
@@ -927,7 +933,6 @@ bool idRenderWorldLocal::InitFromMap( const char* name )
 
 	if( !loaded )
 	{
-
 		src = new( TAG_RENDER ) idLexer( filename, LEXFL_NOSTRINGCONCAT | LEXFL_NODOLLARPRECOMPILE );
 		if( !src->IsLoaded() )
 		{
@@ -1120,7 +1125,8 @@ void idRenderWorldLocal::AddWorldModelEntities()
 		{
 			const modelSurface_t* surf = hModel->Surface( j );
 
-			if( surf->shader->GetName() == idStr( "textures/smf/portal_sky" ) )
+			if( surf->shader->GetName() == idStr( "textures/smf/portal_sky" ) ||
+					surf->shader->IsPortalSky() )
 			{
 				def->needsPortalSky = true;
 			}

@@ -155,7 +155,7 @@ TestGameAPI
 */
 void TestGameAPI()
 {
-	gameImport_t testImport;
+	gameImport_t testImport = {};
 	gameExport_t testExport;
 
 	testImport.sys						= ::sys;
@@ -470,7 +470,7 @@ void idGameLocal::SaveGame( idFile* f, idFile* strings )
 
 	idSaveGame savegame( f, strings, BUILD_NUMBER );
 
-	if( g_flushSave.GetBool( ) == true )
+	if( g_flushSave.GetBool() == true )
 	{
 		// force flushing with each write... for tracking down
 		// save game bugs.
@@ -960,7 +960,7 @@ void idGameLocal::LoadMap( const char* mapName, int randseed )
 	mapFileName = mapFile->GetName();
 
 	// load the collision map
-	collisionModelManager->LoadMap( mapFile );
+	collisionModelManager->LoadMap( mapFile, false );
 	collisionModelManager->Preload( mapName );
 
 	numClients = 0;
@@ -1096,7 +1096,7 @@ void idGameLocal::LoadMap( const char* mapName, int randseed )
 idGameLocal::LocalMapRestart
 ===================
 */
-void idGameLocal::LocalMapRestart( )
+void idGameLocal::LocalMapRestart()
 {
 	int i, latchSpawnCount;
 
@@ -1200,7 +1200,7 @@ void idGameLocal::MapRestart_f( const idCmdArgs& args )
 		return;
 	}
 
-	gameLocal.MapRestart( );
+	gameLocal.MapRestart();
 }
 
 /*
@@ -1313,7 +1313,7 @@ void idGameLocal::PopulateEnvironmentProbes()
 idGameLocal::InitFromNewMap
 ===================
 */
-void idGameLocal::InitFromNewMap( const char* mapName, idRenderWorld* renderWorld, idSoundWorld* soundWorld, int gameMode, int randseed )
+void idGameLocal::InitFromNewMap( const char* mapName, idRenderWorld* renderWorld, idSoundWorld* soundWorld, int gameMode, int randseed, int activeEditors )
 {
 
 	this->gameType = ( gameType_t )idMath::ClampInt( GAME_SP, GAME_COUNT - 1, gameMode );
@@ -1324,6 +1324,9 @@ void idGameLocal::InitFromNewMap( const char* mapName, idRenderWorld* renderWorl
 	}
 
 	Printf( "----------- Game Map Init ------------\n" );
+
+	//exposing editor flag so debugger does not miss any script calls during load/startup
+	editors = activeEditors;
 
 	gamestate = GAMESTATE_STARTUP;
 
@@ -1366,7 +1369,7 @@ void idGameLocal::InitFromNewMap( const char* mapName, idRenderWorld* renderWorl
 idGameLocal::InitFromSaveGame
 =================
 */
-bool idGameLocal::InitFromSaveGame( const char* mapName, idRenderWorld* renderWorld, idSoundWorld* soundWorld, idFile* saveGameFile, idFile* stringTableFile, int saveGameVersion )
+bool idGameLocal::InitFromSaveGame( const char* mapName, idRenderWorld* renderWorld, idSoundWorld* soundWorld, idFile* saveGameFile, idFile* stringTableFile, int saveGameVersion, int activeEditors )
 {
 	int i;
 	int num;
@@ -1379,6 +1382,9 @@ bool idGameLocal::InitFromSaveGame( const char* mapName, idRenderWorld* renderWo
 	}
 
 	Printf( "------- Game Map Init SaveGame -------\n" );
+
+	//exposing editor flag so debugger does not miss any script calls during load/startup
+	editors = activeEditors;
 
 	gamestate = GAMESTATE_STARTUP;
 
@@ -1697,6 +1703,18 @@ void idGameLocal::MapShutdown()
 		gameRenderWorld->DebugClearPolygons( 0 );
 	}
 
+	// RB: kill ingame editors to prevent crashes during shutdown
+	if( editors != 0 )
+	{
+		editors = 0;
+		g_editEntityMode.SetInteger( 0 );
+
+		// turn off light debug drawing in the render backend
+		cvarSystem->SetCVarInteger( "r_singleLight", -1 );
+		cvarSystem->SetCVarInteger( "r_showLights", 0 );
+	}
+	// RB end
+
 	// clear out camera if we're in a cinematic
 	if( inCinematic )
 	{
@@ -1876,7 +1894,7 @@ void idGameLocal::CacheDictionaryMedia( const idDict* dict )
 				renderModelManager->FindModel( kv->GetValue() );
 
 				// precache .cm files only
-				collisionModelManager->LoadModel( kv->GetValue() );
+				collisionModelManager->LoadModel( kv->GetValue(), true );
 			}
 		}
 		kv = dict->MatchPrefix( "model", kv );
@@ -2580,7 +2598,7 @@ idCVar g_recordTrace( "g_recordTrace", "0", CVAR_BOOL, "" );
 idGameLocal::RunFrame
 ================
 */
-void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
+void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret, int activeEditors )
 {
 	idEntity* 	ent;
 	int			num;
@@ -2598,6 +2616,9 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 			//idLib::Printf( "BeginTraceRecording: error %d\n", GetLastError() );
 		}
 	}
+
+	//exposing editor flag so debugger does not miss any script calls during load/startup
+	editors = activeEditors;
 
 #ifdef _DEBUG
 	if( common->IsMultiplayer() )
@@ -2816,7 +2837,7 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 			// see if a target_sessionCommand has forced a changelevel
 			if( sessionCommand.Length() )
 			{
-				strncpy( ret.sessionCommand, sessionCommand, sizeof( ret.sessionCommand ) );
+				idStr::Copynz( ret.sessionCommand, sessionCommand, sizeof( ret.sessionCommand ) );
 				break;
 			}
 
@@ -4253,7 +4274,21 @@ idEntity* idGameLocal::FindTraceEntity( idVec3 start, idVec3 end, const idTypeIn
 	bestScale = 1.0f;
 	for( ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() )
 	{
-		if( ent->IsType( c ) && ent != skip )
+		// RB: use edit origin for lights
+		if( ent->IsType( idLight::Type ) && ent->IsType( c ) && ent != skip )
+		{
+			b[0] = b[1] = ent->GetEditOrigin();
+			b = b.Expand( 16 );
+			if( b.RayIntersection( start, end - start, scale ) )
+			{
+				if( scale >= 0.0f && scale < bestScale )
+				{
+					bestEnt = ent;
+					bestScale = scale;
+				}
+			}
+		}
+		else if( ent->IsType( c ) && ent != skip )
 		{
 			b = ent->GetPhysics()->GetAbsBounds().Expand( 16 );
 			if( b.RayIntersection( start, end - start, scale ) )
@@ -4404,7 +4439,7 @@ void idGameLocal::AlertAI( idEntity* ent )
 	if( ent && ent->IsType( idActor::Type ) )
 	{
 		// alert them for the next frame
-		lastAIAlertTime = time + 1;
+		lastAIAlertTime = framenum + 1;
 		lastAIAlertEntity = static_cast<idActor*>( ent );
 	}
 }
@@ -4416,14 +4451,7 @@ idGameLocal::GetAlertEntity
 */
 idActor* idGameLocal::GetAlertEntity()
 {
-	int timeGroup = 0;
-	if( lastAIAlertTime && lastAIAlertEntity.GetEntity() )
-	{
-		timeGroup = lastAIAlertEntity.GetEntity()->timeGroup;
-	}
-	SetTimeState ts( timeGroup );
-
-	if( lastAIAlertTime >= time )
+	if( lastAIAlertTime >= framenum )
 	{
 		return lastAIAlertEntity.GetEntity();
 	}
@@ -4984,6 +5012,8 @@ bool idGameLocal::SkipCinematic()
 	{
 		skipCinematic = true;
 		cinematicMaxSkipTime = gameLocal.time + SEC2MS( g_cinematicMaxSkipTime.GetFloat() );
+		// SRS - Skip the remainder of the currently playing cinematic sound
+		soundSystem->GetPlayingSoundWorld()->Skip( cinematicMaxSkipTime );
 	}
 
 	return true;

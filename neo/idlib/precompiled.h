@@ -55,16 +55,14 @@ If you have questions concerning this license or the applicable additional terms
 #include "framework/CmdSystem.h"
 #include "framework/CVarSystem.h"
 #include "framework/Common.h"
-// DG: needed for idFile_InZip in File.h
 #include "framework/Unzip.h"
-// DG end
 #include "framework/File.h"
 #include "framework/File_Manifest.h"
 #include "framework/File_SaveGame.h"
 #include "framework/File_Resource.h"
+#include "framework/File_Zip.h"
 #include "framework/FileSystem.h"
 #include "framework/UsercmdGen.h"
-#include "framework/Serializer.h"
 #include "framework/PlayerProfile.h"
 
 // decls
@@ -111,6 +109,7 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 #include "renderer/ModelManager.h"
 #include "renderer/RenderSystem.h"
 #include "renderer/RenderWorld.h"
+#include "renderer/DeviceContext.h"
 
 // sound engine
 #include "sound/sound.h"

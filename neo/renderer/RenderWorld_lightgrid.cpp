@@ -31,6 +31,7 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "RenderCommon.h"
+#include "CmdlineProgressbar.h"
 #include "../framework/Common_local.h" // commonLocal.WaitGameThread();
 
 
@@ -486,7 +487,8 @@ void idRenderWorldLocal::WriteLightGrid( idFile* fp, const LightGrid& lightGrid 
 	{
 		const lightGridPoint_t* gridPoint = &lightGrid.lightGridPoints[i];
 
-		fp->WriteFloatString( "/* lgp %i */ %d ( %f %f %f )", i, ( int )gridPoint->valid, gridPoint->origin[0], gridPoint->origin[1], gridPoint->origin[2] );
+		//fp->WriteFloatString( "/* lgp %i */ %d ( %f %f %f )", i, ( int )gridPoint->valid, gridPoint->origin[0], gridPoint->origin[1], gridPoint->origin[2] );
+		fp->WriteFloatString( " %d ( %f %f %f )", ( int )gridPoint->valid, gridPoint->origin[0], gridPoint->origin[1], gridPoint->origin[2] );
 
 #if STORE_LIGHTGRID_SHDATA
 		// spherical harmonic
@@ -626,7 +628,7 @@ bool idRenderWorldLocal::LoadLightGridFile( const char* name )
 		//	return false;
 		//}
 
-		//crc = token.GetUnsignedLongValue();
+		//crc = token.GetUnsignedIntValue();
 		//if( mapFileCRC && crc != mapFileCRC )
 		//{
 		//	common->Printf( "%s is out of date\n", fileName.c_str() );
@@ -1024,7 +1026,7 @@ REGISTER_PARALLEL_JOB( CalculateLightGridPointJob, "CalculateLightGridPointJob" 
 
 
 
-CONSOLE_COMMAND( bakeLightGrids, "Bake irradiance/vis light grid data", NULL )
+CONSOLE_COMMAND_SHIP( bakeLightGrids, "Bake irradiance/vis light grid data", NULL )
 {
 	idStr			baseName;
 	idStr			filename;
@@ -1149,6 +1151,14 @@ CONSOLE_COMMAND( bakeLightGrids, "Bake irradiance/vis light grid data", NULL )
 		}
 	}
 
+	// turn vsync off for faster capturing of the probes
+	int oldVsync = r_swapInterval.GetInteger();
+	r_swapInterval.SetInteger( 0 );
+
+	// turn off clear in between views so we keep the progress bar visible
+	int oldClear = r_clear.GetInteger();
+	r_clear.SetInteger( 0 );
+
 	idLib::Printf( "----------------------------------\n" );
 	idLib::Printf( "Processing %i light probes in %i areas for %i bounces\n", totalProcessedProbes, totalProcessedAreas, bounces );
 	//common->Printf( "ETA %5.1f minutes\n\n", ( totalEnd - totalStart ) / ( 1000.0f * 60 ) );
@@ -1205,7 +1215,7 @@ CONSOLE_COMMAND( bakeLightGrids, "Bake irradiance/vis light grid data", NULL )
 			r_useParallelAddLights.SetBool( false );
 
 			// discard anything currently on the list (this triggers SwapBuffers)
-			tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
+			tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL, NULL );
 
 			tr.takingEnvprobe = true;
 
@@ -1258,19 +1268,19 @@ CONSOLE_COMMAND( bakeLightGrids, "Bake irradiance/vis light grid data", NULL )
 							byte* float16FRGB = ( byte* )R_StaticAlloc( bufferSize );
 
 							// discard anything currently on the list
-							tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
+							tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL, NULL );
 
 							// build commands to render the scene
 							tr.primaryWorld->RenderScene( &ref );
 
 							// finish off these commands
-							const emptyCommand_t* cmd = tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
+							const emptyCommand_t* cmd = tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL, NULL );
 
 							// issue the commands to the GPU
 							tr.RenderCommandBuffers( cmd );
 
 							// discard anything currently on the list (this triggers SwapBuffers)
-							tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
+							tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL, NULL );
 
 #if defined(USE_VULKAN)
 
@@ -1441,198 +1451,9 @@ CONSOLE_COMMAND( bakeLightGrids, "Bake irradiance/vis light grid data", NULL )
 	idLib::Printf( "----------------------------------\n" );
 	idLib::Printf( "Processed %i light probes in %i areas\n", totalProcessedProbes, totalProcessedAreas );
 	common->Printf( "Baked light grid irradiance in %5.1f minutes\n\n", ( totalEnd - totalStart ) / ( 1000.0f * 60 ) );
+
+	// restore vsync setting
+	r_swapInterval.SetInteger( oldVsync );
+	r_clear.SetInteger( oldClear );
 }
 
-#if 0
-// straight port of Quake 3 / XreaL
-void idRenderWorldLocal::SetupEntityGridLighting( idRenderEntityLocal* def )
-{
-	// lighting calculations
-#if 0
-	if( def->lightgridCalculated )
-	{
-		return;
-	}
-
-	def->lightgridCalculated = true;
-#endif
-
-	if( lightGridPoints.Num() > 0 )
-	{
-		idVec3          lightOrigin;
-		int             pos[3];
-		int             i, j;
-		int				gridPointIndex;
-		lightGridPoint_t*  gridPoint;
-		lightGridPoint_t*  gridPoint2;
-		float           frac[3];
-		int             gridStep[3];
-		idVec3          direction;
-		idVec3			direction2;
-		float			lattitude;
-		float			longitude;
-		float           totalFactor;
-
-#if 0
-		if( forcedOrigin )
-		{
-			VectorCopy( forcedOrigin, lightOrigin );
-		}
-		else
-		{
-			if( ent->e.renderfx & RF_LIGHTING_ORIGIN )
-			{
-				// seperate lightOrigins are needed so an object that is
-				// sinking into the ground can still be lit, and so
-				// multi-part models can be lit identically
-				VectorCopy( ent->e.lightingOrigin, lightOrigin );
-			}
-			else
-			{
-				VectorCopy( ent->e.origin, lightOrigin );
-			}
-		}
-#else
-		// some models, like empty particles have no volume
-#if 1
-		lightOrigin = def->parms.origin;
-#else
-		if( def->referenceBounds.IsCleared() )
-		{
-			lightOrigin = def->parms.origin;
-		}
-		else
-		{
-			lightOrigin = def->volumeMidPoint;
-		}
-#endif
-
-#endif
-
-		lightOrigin -= lightGridOrigin;
-		for( i = 0; i < 3; i++ )
-		{
-			float           v;
-
-			v = lightOrigin[i] * ( 1.0f / lightGridSize[i] );
-			pos[i] = floor( v );
-			frac[i] = v - pos[i];
-			if( pos[i] < 0 )
-			{
-				pos[i] = 0;
-			}
-			else if( pos[i] >= lightGridBounds[i] - 1 )
-			{
-				pos[i] = lightGridBounds[i] - 1;
-			}
-		}
-
-		def->ambientLight.Zero();
-		def->directedLight.Zero();
-		direction.Zero();
-
-		// trilerp the light value
-		gridStep[0] = 1;
-		gridStep[1] = lightGridBounds[0];
-		gridStep[2] = lightGridBounds[0] * lightGridBounds[1];
-
-		gridPointIndex = pos[0] * gridStep[0] + pos[1] * gridStep[1] + pos[2] * gridStep[2];
-		gridPoint = &lightGridPoints[ gridPointIndex ];
-
-		totalFactor = 0;
-		for( i = 0; i < 8; i++ )
-		{
-			float           factor;
-
-			factor = 1.0;
-			gridPoint2 = gridPoint;
-			for( int j = 0; j < 3; j++ )
-			{
-				if( i & ( 1 << j ) )
-				{
-					factor *= frac[j];
-
-#if 1
-					gridPointIndex2 += gridStep[j];
-					if( gridPointIndex2 < 0 || gridPointIndex2 >= area->lightGrid.lightGridPoints.Num() )
-					{
-						// ignore values outside lightgrid
-						continue;
-					}
-
-					gridPoint2 = &area->lightGrid.lightGridPoints[ gridPointIndex2 ];
-#else
-					if( pos[j] + 1 > area->lightGrid.lightGridBounds[j] - 1 )
-					{
-						// ignore values outside lightgrid
-						break;
-					}
-
-					gridPoint2 += gridStep[j];
-#endif
-				}
-				else
-				{
-					factor *= ( 1.0f - frac[j] );
-				}
-			}
-
-			if( !( gridPoint2->ambient[0] + gridPoint2->ambient[1] + gridPoint2->ambient[2] ) )
-			{
-				continue;			// ignore samples in walls
-			}
-
-			totalFactor += factor;
-
-			def->ambientLight[0] += factor * gridPoint2->ambient[0] * ( 1.0f / 255.0f );
-			def->ambientLight[1] += factor * gridPoint2->ambient[1] * ( 1.0f / 255.0f );
-			def->ambientLight[2] += factor * gridPoint2->ambient[2] * ( 1.0f / 255.0f );
-
-			def->directedLight[0] += factor * gridPoint2->directed[0] * ( 1.0f / 255.0f );
-			def->directedLight[1] += factor * gridPoint2->directed[1] * ( 1.0f / 255.0f );
-			def->directedLight[2] += factor * gridPoint2->directed[2] * ( 1.0f / 255.0f );
-
-			lattitude = DEG2RAD( gridPoint2->latLong[1] * ( 360.0f / 255.0f ) );
-			longitude = DEG2RAD( gridPoint2->latLong[0] * ( 360.0f / 255.0f ) );
-
-			direction2[0] = idMath::Cos( lattitude ) * idMath::Sin( longitude );
-			direction2[1] = idMath::Sin( lattitude ) * idMath::Sin( longitude );
-			direction2[2] = idMath::Cos( longitude );
-
-			direction += ( direction2 * factor );
-
-			//direction += ( gridPoint2->dir * factor );
-		}
-
-#if 1
-		if( totalFactor > 0 && totalFactor < 0.99 )
-		{
-			totalFactor = 1.0f / totalFactor;
-			def->ambientLight *= totalFactor;
-			def->directedLight *= totalFactor;
-		}
-#endif
-
-		def->ambientLight[0] = idMath::ClampFloat( 0, 1, def->ambientLight[0] );
-		def->ambientLight[1] = idMath::ClampFloat( 0, 1, def->ambientLight[1] );
-		def->ambientLight[2] = idMath::ClampFloat( 0, 1, def->ambientLight[2] );
-
-		def->directedLight[0] = idMath::ClampFloat( 0, 1, def->directedLight[0] );
-		def->directedLight[1] = idMath::ClampFloat( 0, 1, def->directedLight[1] );
-		def->directedLight[2] = idMath::ClampFloat( 0, 1, def->directedLight[2] );
-
-		def->lightDir = direction;
-		def->lightDir.Normalize();
-
-#if 0
-		if( VectorLength( ent->ambientLight ) < r_forceAmbient->value )
-		{
-			ent->ambientLight[0] = r_forceAmbient->value;
-			ent->ambientLight[1] = r_forceAmbient->value;
-			ent->ambientLight[2] = r_forceAmbient->value;
-		}
-#endif
-	}
-}
-
-#endif

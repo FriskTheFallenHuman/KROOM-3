@@ -3,6 +3,7 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 2016 Daniel Gibson
+Copyright (C) 2022 Stephen Pridham
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -32,24 +33,16 @@ If you have questions concerning this license or the applicable additional terms
 #include "../imgui/BFGimgui.h"
 #include "../idlib/CmdArgs.h"
 
+#include "afeditor/AfEditor.h"
 #include "lighteditor/LightEditor.h"
 
 
 extern idCVar g_editEntityMode;
 
 static bool releaseMouse = false;
-#if 0 // currently this doesn't make too much sense
-void ShowEditors_f( const idCmdArgs& args )
-{
-	showToolWindows = true;
-}
-#endif // 0
+
 
 namespace ImGuiTools
-{
-
-// things in impl need to be used in at least one other file, but should generally not be touched
-namespace impl
 {
 
 void SetReleaseToolMouse( bool doRelease )
@@ -57,36 +50,33 @@ void SetReleaseToolMouse( bool doRelease )
 	releaseMouse = doRelease;
 }
 
-} //namespace impl
-
 bool AreEditorsActive()
 {
 	// FIXME: this is not exactly clean and must be changed if we ever support game dlls
-	return g_editEntityMode.GetInteger() > 0;
+	return g_editEntityMode.GetInteger() > 0 || com_editors != 0;
 }
 
 bool ReleaseMouseForTools()
 {
-	return AreEditorsActive() && releaseMouse;
+	// RB: ignore everything as long right mouse button is pressed
+	return AreEditorsActive() && releaseMouse && !ImGuiHook::RightMouseActive();
 }
 
 void DrawToolWindows()
 {
-#if 0
-	ImGui::Begin( "Show Ingame Editors", &showToolWindows, 0 );
-
-	ImGui::Checkbox( "Light", &LightEditor::showIt );
-	ImGui::SameLine();
-	ImGui::Checkbox( "Particle", &showParticlesEditor );
-#endif // 0
-
-	if( LightEditor::showIt )
+	if( !AreEditorsActive() )
 	{
-		LightEditor::Draw();
+		return;
 	}
 
-	// TODO: other editor windows..
-	//ImGui::End();
+	if( LightEditor::Instance().IsShown() )
+	{
+		LightEditor::Instance().Draw();
+	}
+	else if( AfEditor::Instance().IsShown() )
+	{
+		AfEditor::Instance().Draw();
+	}
 }
 
 void LightEditorInit( const idDict* dict, idEntity* ent )
@@ -102,10 +92,16 @@ void LightEditorInit( const idDict* dict, idEntity* ent )
 			  && "LightEditorInit() must only be called with light entities or NULL!" );
 
 
-	LightEditor::showIt = true;
-	impl::SetReleaseToolMouse( true );
+	LightEditor::Instance().ShowIt( true );
+	SetReleaseToolMouse( true );
 
 	LightEditor::ReInit( dict, ent );
+}
+
+void AfEditorInit()
+{
+	AfEditor::Instance().ShowIt( true );
+	SetReleaseToolMouse( true );
 }
 
 } //namespace ImGuiTools

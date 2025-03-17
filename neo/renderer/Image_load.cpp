@@ -82,10 +82,14 @@ int BitsForFormat( textureFormat_t format )
 		// RB end
 		case FMT_DEPTH:
 			return 32;
+		case FMT_DEPTH_STENCIL:
+			return 32;
 		case FMT_X16:
 			return 16;
 		case FMT_Y16_X16:
 			return 32;
+		case FMT_R8:
+			return 4;
 		default:
 			assert( 0 );
 			return 0;
@@ -114,6 +118,12 @@ ID_INLINE void idImage::DeriveOpts()
 				opts.format = FMT_DEPTH;
 				break;
 
+			// SP begin
+			case TD_DEPTH_STENCIL:
+				opts.format = FMT_DEPTH_STENCIL;
+				break;
+			// SP end
+
 			case TD_SHADOW_ARRAY:
 				opts.format = FMT_SHADOW_ARRAY;
 				break;
@@ -134,6 +144,10 @@ ID_INLINE void idImage::DeriveOpts()
 				opts.format = FMT_R32F;
 				break;
 
+			case TD_R8F:
+				opts.format = FMT_R8;
+				break;
+
 			case TD_R11G11B10F:
 				opts.format = FMT_R11G11B10F;
 				break;
@@ -144,6 +158,7 @@ ID_INLINE void idImage::DeriveOpts()
 				opts.format = FMT_DXT5;
 				opts.colorFormat = CFM_YCOCG_DXT5;
 				break;
+
 			case TD_SPECULAR:
 				opts.gammaMips = true;
 				opts.format = FMT_DXT1;
@@ -167,16 +182,19 @@ ID_INLINE void idImage::DeriveOpts()
 				opts.format = FMT_DXT5;
 				opts.colorFormat = CFM_DEFAULT;
 				break;
+
 			case TD_BUMP:
 				opts.format = FMT_DXT5;
 				opts.colorFormat = CFM_NORMAL_DXT5;
 				break;
+
 			case TD_FONT:
 				opts.format = FMT_DXT1;
 				opts.colorFormat = CFM_GREEN_ALPHA;
 				opts.numLevels = 4; // We only support 4 levels because we align to 16 in the exporter
 				opts.gammaMips = true;
 				break;
+
 			case TD_LIGHT:
 				// RB: TODO check binary format version
 				// D3 BFG assets require RGB565 but it introduces color banding
@@ -184,16 +202,20 @@ ID_INLINE void idImage::DeriveOpts()
 				opts.format = FMT_RGB565; //FMT_RGBA8;
 				opts.gammaMips = true;
 				break;
+
 			case TD_LOOKUP_TABLE_MONO:
 				opts.format = FMT_INT8;
 				break;
+
 			case TD_LOOKUP_TABLE_ALPHA:
 				opts.format = FMT_ALPHA;
 				break;
+
 			case TD_LOOKUP_TABLE_RGB1:
 			case TD_LOOKUP_TABLE_RGBA:
 				opts.format = FMT_RGBA8;
 				break;
+
 			// motorsep 05-17-2015; added this for uncompressed cubemap/skybox textures
 			case TD_HIGHQUALITY_CUBE:
 				opts.colorFormat = CFM_DEFAULT;
@@ -205,6 +227,13 @@ ID_INLINE void idImage::DeriveOpts()
 				opts.format = FMT_DXT5;
 				opts.gammaMips = true;
 				break;
+			// motorsep end
+
+			case TD_HDRI:
+				opts.format = FMT_R11G11B10F;
+				//opts.numLevels = 1;
+				break;
+
 			default:
 				assert( false );
 				opts.format = FMT_RGBA8;
@@ -273,7 +302,6 @@ void idImage::GetGeneratedName( idStr& _name, const textureUsage_t& _usage, cons
 	}
 }
 
-
 /*
 ===============
 ActuallyLoadImage
@@ -300,9 +328,6 @@ void idImage::ActuallyLoadImage( bool fromBackEnd )
 	// RB: the following does not load the source images from disk because pic is NULL
 	// but it tries to get the timestamp to see if we have a newer file than the one in the compressed .bimage
 
-	// TODO also check for alternative names like .png suffices or _rmao.png or even _rmaod.png files
-	// to support the PBR code path
-
 	if( com_productionMode.GetInteger() != 0 )
 	{
 		sourceFileTime = FILE_NOT_FOUND_TIMESTAMP;
@@ -319,11 +344,11 @@ void idImage::ActuallyLoadImage( bool fromBackEnd )
 		{
 			opts.textureType = TT_2D_ARRAY;
 		}
-		else if( cubeFiles == CF_NATIVE || cubeFiles == CF_CAMERA )
+		else if( cubeFiles == CF_NATIVE || cubeFiles == CF_CAMERA || cubeFiles == CF_SINGLE || cubeFiles == CF_PANORAMA )
 		{
 			opts.textureType = TT_CUBIC;
 			repeat = TR_CLAMP;
-			R_LoadCubeImages( GetName(), cubeFiles, NULL, NULL, &sourceFileTime );
+			R_LoadCubeImages( GetName(), cubeFiles, NULL, NULL, &sourceFileTime, cubeMapSize );
 		}
 		else
 		{
@@ -335,9 +360,12 @@ void idImage::ActuallyLoadImage( bool fromBackEnd )
 	// RB: PBR HACK - RMAO maps should end with _rmao insted of _s
 	if( usage == TD_SPECULAR_PBR_RMAO )
 	{
-		if( imgName.StripTrailingOnce( "_s" ) )
+		idStr baseName = imgName;
+		baseName.StripFileExtension();
+
+		if( baseName.StripTrailingOnce( "_s" ) )
 		{
-			imgName += "_rmao";
+			imgName = baseName + "_rmao";
 		}
 	}
 	// RB end
@@ -399,7 +427,7 @@ void idImage::ActuallyLoadImage( bool fromBackEnd )
 
 	if( ( fileSystem->InProductionMode() && binaryFileTime != FILE_NOT_FOUND_TIMESTAMP ) || ( ( binaryFileTime != FILE_NOT_FOUND_TIMESTAMP )
 			&& ( header.colorFormat == opts.colorFormat )
-#if defined(__APPLE__) && defined(USE_VULKAN)
+#if defined( __APPLE__ ) && defined( USE_VULKAN )
 			// SRS - Handle case when image read is cached and RGB565 format conversion is already done
 			&& ( header.format == opts.format || ( header.format == FMT_RGB565 && opts.format == FMT_RGBA8 ) )
 #else
@@ -412,7 +440,7 @@ void idImage::ActuallyLoadImage( bool fromBackEnd )
 		opts.height = header.height;
 		opts.numLevels = header.numLevels;
 		opts.colorFormat = ( textureColor_t )header.colorFormat;
-#if defined(__APPLE__) && defined(USE_VULKAN)
+#if defined( __APPLE__ ) && defined( USE_VULKAN )
 		// SRS - Set in-memory format to FMT_RGBA8 for converted FMT_RGB565 image
 		if( header.format == FMT_RGB565 )
 		{
@@ -423,7 +451,9 @@ void idImage::ActuallyLoadImage( bool fromBackEnd )
 		{
 			opts.format = ( textureFormat_t )header.format;
 		}
+
 		opts.textureType = ( textureType_t )header.textureType;
+
 		if( cvarSystem->GetCVarBool( "fs_buildresources" ) )
 		{
 			// for resource gathering write this image to the preload file for this map
@@ -441,10 +471,6 @@ void idImage::ActuallyLoadImage( bool fromBackEnd )
 		}
 		else if( header.colorFormat != opts.colorFormat )
 		{
-			binarizeReason = va( "binarize: mismatch color format '%s'", generatedName.c_str() );
-		}
-		else if( header.colorFormat != opts.colorFormat )
-		{
 			binarizeReason = va( "binarize: mismatched color format '%s'", generatedName.c_str() );
 		}
 		else if( header.textureType != opts.textureType )
@@ -454,12 +480,12 @@ void idImage::ActuallyLoadImage( bool fromBackEnd )
 		//else if( toolUsage )
 		//	binarizeReason = va( "binarize: tool usage '%s'", generatedName.c_str() );
 
-		if( cubeFiles == CF_NATIVE || cubeFiles == CF_CAMERA )
+		if( cubeFiles == CF_NATIVE || cubeFiles == CF_CAMERA || cubeFiles == CF_SINGLE ||  cubeFiles == CF_PANORAMA )
 		{
 			int size;
 			byte* pics[6];
 
-			if( !R_LoadCubeImages( GetName(), cubeFiles, pics, &size, &sourceFileTime ) || size == 0 )
+			if( !R_LoadCubeImages( GetName(), cubeFiles, pics, &size, &sourceFileTime, cubeMapSize ) || size == 0 )
 			{
 				idLib::Warning( "Couldn't load cube image: %s", GetName() );
 				defaulted = true; // RB
@@ -518,6 +544,9 @@ void idImage::ActuallyLoadImage( bool fromBackEnd )
 				opts.numLevels = 1;
 				DeriveOpts();
 				AllocImage();
+
+				// default it again because it was unset by AllocImage().PurgeImage()
+				defaulted = true;
 
 				// clear the data so it's not left uninitialized
 				idTempArray<byte> clear( opts.width * opts.height * 4 );
@@ -602,20 +631,22 @@ StorageSize
 */
 int idImage::StorageSize() const
 {
-
 	if( !IsLoaded() )
 	{
 		return 0;
 	}
-	int baseSize = opts.width * opts.height;
-	if( opts.numLevels > 1 )
+
+	size_t baseSize = opts.width * opts.height;
+	if( opts.numLevels > 1 && !opts.isRenderTarget )
 	{
 		baseSize *= 4;
 		baseSize /= 3;
 	}
+
 	baseSize *= BitsForFormat( opts.format );
 	baseSize /= 8;
-	return baseSize;
+
+	return int( baseSize );
 }
 
 /*
@@ -678,9 +709,11 @@ void idImage::Print() const
 			NAME_FORMAT( RGBA16F );
 			NAME_FORMAT( RGBA32F );
 			NAME_FORMAT( R32F );
+			NAME_FORMAT( R8 );
 			NAME_FORMAT( R11G11B10F );
 			// RB end
 			NAME_FORMAT( DEPTH );
+			NAME_FORMAT( DEPTH_STENCIL );
 			NAME_FORMAT( X16 );
 			NAME_FORMAT( Y16_X16 );
 		default:
@@ -738,19 +771,39 @@ idImage::Reload
 */
 void idImage::Reload( bool force )
 {
+#if defined( USE_NVRHI )
+
 	// always regenerate functional images
 	if( generatorFunction )
 	{
-		common->DPrintf( "regenerating %s.\n", GetName() );
-		generatorFunction( this );
+		//common->DPrintf( "regenerating %s.\n", GetName() );
+		generatorFunction( this, commandList );
 		return;
 	}
+#else
+	// don't break render targets that have this image attached
+	if( opts.isRenderTarget )
+	{
+		return;
+	}
+
+	// always regenerate functional images
+	if( generatorFunction )
+	{
+		if( force )
+		{
+			common->DPrintf( "regenerating %s.\n", GetName() );
+			generatorFunction( this );
+		}
+		return;
+	}
+#endif
 
 	// check file times
 	if( !force )
 	{
 		ID_TIME_T current;
-		if( cubeFiles == CF_NATIVE || cubeFiles == CF_CAMERA )
+		if( cubeFiles == CF_NATIVE || cubeFiles == CF_CAMERA || cubeFiles == CF_SINGLE || cubeFiles == CF_PANORAMA )
 		{
 			R_LoadCubeImages( imgName, cubeFiles, NULL, NULL, &current );
 		}
@@ -778,7 +831,7 @@ void idImage::Reload( bool force )
 GenerateImage
 ================
 */
-void idImage::GenerateImage( const byte* pic, int width, int height, textureFilter_t filterParm, textureRepeat_t repeatParm, textureUsage_t usageParm, textureSamples_t samples, cubeFiles_t _cubeFiles )
+void idImage::GenerateImage( const byte* pic, int width, int height, textureFilter_t filterParm, textureRepeat_t repeatParm, textureUsage_t usageParm, textureSamples_t samples, cubeFiles_t _cubeFiles, bool isRenderTarget )
 {
 	PurgeImage();
 
@@ -792,6 +845,7 @@ void idImage::GenerateImage( const byte* pic, int width, int height, textureFilt
 	opts.height = height;
 	opts.numLevels = 0;
 	opts.samples = samples;
+	opts.isRenderTarget = isRenderTarget;
 
 	// RB
 	if( cubeFiles == CF_2D_PACKED_MIPCHAIN )
@@ -940,6 +994,8 @@ void idImage::GenerateShadowArray( int width, int height, textureFilter_t filter
 	opts.width = width;
 	opts.height = height;
 	opts.numLevels = 0;
+	opts.isRenderTarget = true;
+
 	DeriveOpts();
 
 	// if we don't have a rendering context, just return after we
@@ -980,6 +1036,7 @@ void idImage::UploadScratch( const byte* data, int cols, int rows )
 	{
 		rows /= 6;
 		const byte* pic[6];
+
 		for( int i = 0; i < 6; i++ )
 		{
 			pic[i] = data + cols * rows * 4 * i;
@@ -990,6 +1047,7 @@ void idImage::UploadScratch( const byte* data, int cols, int rows )
 			GenerateCubeImage( pic, cols, TF_LINEAR, TD_LOOKUP_TABLE_RGBA );
 			return;
 		}
+
 		if( opts.width != cols || opts.height != rows )
 		{
 			opts.width = cols;

@@ -445,6 +445,12 @@ public:
 
 	static float				LerpToWithScale( const float cur, const float dest, const float scale );
 
+	// KR: for sound system
+	static float				DBtoLinear( float db );
+	static float				LinearToDB( float linear );
+	static uint32_t				MsecToSamples( uint32_t msec, uint32_t sampleRate );
+	static uint32_t				SamplesToMsec( uint32_t samples, uint32_t sampleRate );
+
 	static const float			PI;							// pi
 	static const float			TWO_PI;						// pi * 2
 	static const float			HALF_PI;					// pi / 2
@@ -503,6 +509,27 @@ ID_INLINE byte CLAMP_BYTE( int x )
 {
 	return ( ( x ) < 0 ? ( 0 ) : ( ( x ) > 255 ? 255 : ( byte )( x ) ) );
 }
+
+/*
+========================
+RSqrt
+
+reciprocal square root, returns huge number when x == 0.0
+========================
+*/
+ID_INLINE float idMath::RSqrt( float x )
+{
+	int i;
+	float y, r;
+
+	y = x * 0.5f;
+	i = *reinterpret_cast<int*>( &x );
+	i = 0x5f3759df - ( i >> 1 );
+	r = *reinterpret_cast<float*>( &i );
+	r = r * ( 1.5f - r * r * y );
+	return r;
+}
+
 
 /*
 ========================
@@ -1597,22 +1624,32 @@ ID_INLINE float idMath::LerpToWithScale( const float cur, const float dest, cons
 
 /*
 ========================
-RSqrt
-
-reciprocal square root, returns huge number when x == 0.0
+DBtoLinear
+LinearToDB
 ========================
 */
-ID_INLINE float idMath::RSqrt( float x ) {
+ID_INLINE float DBtoLinear( float db )
+{
+	return idMath::Pow( 2.0f, db * ( 1.0f / 6.0f ) );
+}
+ID_INLINE float LinearToDB( float linear )
+{
+	return ( linear > 0.0f ) ? ( idMath::Log( linear ) * ( 6.0f / 0.693147181f ) ) : -999.0f;
+}
 
-	int i;
-	float y, r;
-
-	y = x * 0.5f;
-	i = *reinterpret_cast<int *>( &x );
-	i = 0x5f3759df - ( i >> 1 );
-	r = *reinterpret_cast<float *>( &i );
-	r = r * ( 1.5f - r * r * y );
-	return r;
+/*
+========================
+MsecToSamples
+SamplesToMsec
+========================
+*/
+ID_INLINE uint32_t MsecToSamples( uint32_t msec, uint32_t sampleRate )
+{
+	return ( msec * ( sampleRate / 100 ) ) / 10;
+}
+ID_INLINE uint32_t SamplesToMsec( uint32_t samples, uint32_t sampleRate )
+{
+	return sampleRate < 100 ? 0 : ( samples * 10 ) / ( sampleRate / 100 );
 }
 
 #endif /* !__MATH_MATH_H__ */

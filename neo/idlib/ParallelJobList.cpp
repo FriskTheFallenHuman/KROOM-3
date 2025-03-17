@@ -863,16 +863,6 @@ void idParallelJobList::AddJob( jobRun_t function, void* data )
 
 /*
 ========================
-idParallelJobList::AddJobSPURS
-========================
-*/
-CellSpursJob128* idParallelJobList::AddJobSPURS()
-{
-	return NULL;
-}
-
-/*
-========================
 idParallelJobList::InsertSyncPoint
 ========================
 */
@@ -1111,10 +1101,13 @@ void idJobThread::Start( core_t core, unsigned int threadNum )
 	// DG: change threadname from "JobListProcessor_%d" to "JLProc_%d", because Linux
 	// has a 15 (+ \0) char limit for threadnames.
 	// furthermore: va is not thread safe, use snPrintf instead
+	// RB: parallel jobs should not wait for the main or async threads
 	char name[16];
 	idStr::snPrintf( name, 16, "JLProc_%d", threadNum );
-	StartWorkerThread( name, core, THREAD_NORMAL, JOB_THREAD_STACK_SIZE );
+	//StartWorkerThread( name, core, THREAD_NORMAL, JOB_THREAD_STACK_SIZE );
+	StartWorkerThread( name, core, THREAD_ABOVE_NORMAL, JOB_THREAD_STACK_SIZE );
 	// DG end
+	// RB end
 }
 
 /*

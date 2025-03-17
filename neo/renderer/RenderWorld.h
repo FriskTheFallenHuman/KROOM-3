@@ -53,6 +53,8 @@ const int SHADERPARM_MODE			= 7;	// for selecting which shader passes to enable
 const int SHADERPARM_TIME_OF_DEATH	= 7;	// for the monster skin-burn-away effect enable and time offset
 
 // model parms
+const int SHADERPARM_MD5_SKINSCALE	= 8;	// for scaling vertex offsets on md5 models (jack skellington effect)
+
 const int SHADERPARM_MD3_FRAME		= 8;
 const int SHADERPARM_MD3_LASTFRAME	= 9;
 const int SHADERPARM_MD3_BACKLERP	= 10;

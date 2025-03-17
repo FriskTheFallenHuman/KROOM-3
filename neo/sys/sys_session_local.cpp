@@ -88,7 +88,7 @@ struct netVersion_s
 {
 	netVersion_s()
 	{
-		sprintf( string, "%s.%d", ENGINE_VERSION, BUILD_NUMBER );
+		idStr::snPrintf( string, sizeof( string ), "%s.%d", ENGINE_VERSION, BUILD_NUMBER );
 	}
 	char	string[256];
 } netVersion;
@@ -178,6 +178,7 @@ void idSessionLocal::InitBaseState()
 	//assert( mem.IsGlobalHeap() );
 
 	localState						= STATE_IDLE;
+
 	sessionOptions					= 0;
 	currentID						= 0;
 
@@ -477,7 +478,7 @@ idSessionLocal::sessionState_t idSessionLocal::GetBackState()
 		return IDLE;			// From here, go to idle if we aren't there yet
 	}
 
-	return IDLE;			// Otherwise, go back to idle
+	return IDLE;			// Otherwise, go to idle
 }
 
 /*
@@ -1751,7 +1752,7 @@ idSessionLocal::EndMatch
 this is for when the game is over before we go back to lobby. Need this incase the host leaves during this time
 ========================
 */
-void idSessionLocal::MatchFinished( )
+void idSessionLocal::MatchFinished()
 {
 	if( verify( GetActingGameStateLobby().IsHost() ) )
 	{
@@ -3210,7 +3211,7 @@ void idSessionLocal::WriteLeaderboardToMsg( idBitMsg& msg, const leaderboardDefi
 {
 	assert( Sys_FindLeaderboardDef( leaderboard->id ) == leaderboard );
 
-	msg.WriteLong( leaderboard->id );
+	msg.WriteInt( leaderboard->id );
 
 	for( int i = 0; i < leaderboard->numColumns; ++i )
 	{
@@ -3234,7 +3235,7 @@ idSessionLocal::ReadLeaderboardFromMsg
 */
 const leaderboardDefinition_t* idSessionLocal::ReadLeaderboardFromMsg( idBitMsg& msg, column_t* stats )
 {
-	int id = msg.ReadLong();
+	int id = msg.ReadInt();
 
 	const leaderboardDefinition_t* leaderboard = Sys_FindLeaderboardDef( id );
 
@@ -3938,7 +3939,7 @@ void idSessionLocal::UpdateMasterUserHeadsetState()
 	{
 		byte buffer[ idPacketProcessor::MAX_MSG_SIZE ];
 		idBitMsg msg( buffer, sizeof( buffer ) );
-		msg.WriteLong( 1 );
+		msg.WriteInt( 1 );
 		user->lobbyUserID.WriteToMsg( msg );
 		msg.WriteBool( voiceChat->GetHeadsetState( talkerIndex ) );
 
@@ -4611,7 +4612,7 @@ void idSessionLocal::ListServersCommon()
 
 	NET_VERBOSE_PRINT( "ListServers: Hash checksum: %u, broadcasting to: %s\n", localChecksum, address.ToString() );
 
-	msg.WriteLong( localChecksum );
+	msg.WriteInt( localChecksum );
 
 	GetPort();
 	// Send the query as a broadcast
@@ -4631,7 +4632,7 @@ void idSessionLocal::HandleDedicatedServerQueryRequest( lobbyAddress_t& remoteAd
 
 	// DG: use int instead of long for 64bit compatibility
 	const unsigned int localChecksum = NetGetVersionChecksum();
-	const unsigned int remoteChecksum = msg.ReadLong();
+	const unsigned int remoteChecksum = msg.ReadInt();
 	// DG end
 
 	if( remoteChecksum != localChecksum )

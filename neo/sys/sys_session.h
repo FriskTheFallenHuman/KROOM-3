@@ -28,7 +28,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __SYS_SESSION_H__
 #define __SYS_SESSION_H__
 
-#include "../framework/Serializer.h"
 #include "sys_localuser.h"
 
 typedef uint8 peerMask_t;

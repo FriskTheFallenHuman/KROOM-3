@@ -3,6 +3,7 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2017-2024 Robert Beckebans
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -150,7 +151,7 @@ idConsole* console = &localConsole;
 
 idCVar idConsoleLocal::con_speed( "con_speed", "3", CVAR_SYSTEM, "speed at which the console moves up and down" );
 idCVar idConsoleLocal::con_notifyTime( "con_notifyTime", "3", CVAR_SYSTEM, "time messages are displayed onscreen when console is pulled up" );
-#ifdef DEBUG
+#ifdef _DEBUG
 	idCVar idConsoleLocal::con_noPrint( "con_noPrint", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "print on the console but not onscreen when console is pulled up" );
 #else
 	idCVar idConsoleLocal::con_noPrint( "con_noPrint", "1", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "print on the console but not onscreen when console is pulled up" );
@@ -192,6 +193,10 @@ void idConsoleLocal::DrawTextRightAlign( float x, float& y, const char* text, ..
 	va_start( argptr, text );
 	int i = idStr::vsnPrintf( string, sizeof( string ), text, argptr );
 	va_end( argptr );
+	if( i < 0 )
+	{
+		i = sizeof( string ) - 1;
+	}
 	renderSystem->DrawSmallStringExt( x - i * SMALLCHAR_WIDTH, y + 2, string, colorWhite, true );
 	y += SMALLCHAR_HEIGHT + 4;
 }
@@ -212,7 +217,7 @@ float idConsoleLocal::DrawFPS( float y )
 
 	static float previousTimes[FPS_FRAMES];
 	static float previousTimesNormalized[FPS_FRAMES_HISTORY];
-	static int index;
+	static int index = 0;
 	static int previous;
 	static int valuesOffset = 0;
 
@@ -276,6 +281,7 @@ float idConsoleLocal::DrawFPS( float y )
 
 	const uint64 rendererBackEndTime = commonLocal.GetRendererBackEndMicroseconds();
 	const uint64 rendererShadowsTime = commonLocal.GetRendererShadowsMicroseconds();
+	const uint64 rendererMaskedOcclusionCullingTime = commonLocal.GetRendererMaskedOcclusionRasterizationMicroseconds();
 	// SRS - GPU idle time calculation depends on whether game is operating in smp mode or not
 	const uint64 rendererGPUIdleTime = commonLocal.GetRendererIdleMicroseconds() - ( com_smp.GetInteger() > 0 && com_editors == 0 ? 0 : gameThreadTotalTime );
 	const uint64 rendererGPUTime = commonLocal.GetRendererGPUMicroseconds();
@@ -293,23 +299,24 @@ float idConsoleLocal::DrawFPS( float y )
 	const uint64 rendererEndFrameSyncTime = commonLocal.GetRendererEndFrameSyncMicroseconds();
 
 	// SRS - Total CPU and Frame time calculations depend on whether game is operating in smp mode or not
-	const uint64 totalCPUTime = ( com_smp.GetInteger() > 0 && com_editors == 0 ? std::max( gameThreadTotalTime, rendererBackEndTime ) : gameThreadTotalTime + rendererBackEndTime );
-	const uint64 totalFrameTime = ( com_smp.GetInteger() > 0 && com_editors == 0 ? std::max( gameThreadTotalTime, rendererEndFrameSyncTime ) : gameThreadTotalTime + rendererEndFrameSyncTime ) + rendererStartFrameSyncTime;
-
-#if 1
+	const uint64 totalCPUTime = ( com_smp.GetInteger() > 0 && com_editors == 0 ? Max( gameThreadTotalTime, rendererBackEndTime ) : gameThreadTotalTime + rendererBackEndTime );
+	const uint64 totalFrameTime = ( com_smp.GetInteger() > 0 && com_editors == 0 ? Max( gameThreadTotalTime, rendererEndFrameSyncTime ) : gameThreadTotalTime + rendererEndFrameSyncTime ) + rendererStartFrameSyncTime;
 
 	// RB: use ImGui to show more detailed stats about the scene loads
 	if( ImGuiHook::IsReadyToRender() )
 	{
 		// start smaller
 		int32 statsWindowWidth = 320;
-		int32 statsWindowHeight = 260;
+		int32 statsWindowHeight = 280;
 
 		if( com_showFPS.GetInteger() > 2 )
 		{
-			statsWindowWidth = 550;
-			statsWindowHeight = 370;
+			statsWindowWidth += 230;
+			statsWindowHeight += 140;
 		}
+
+		ImGuiStyle& style = ImGui::GetStyle();
+		style.FramePadding = ImVec2( 0, 0 );
 
 		ImVec2 pos;
 		pos.x = renderSystem->GetWidth() - statsWindowWidth;
@@ -385,6 +392,13 @@ float idConsoleLocal::DrawFPS( float y )
 			//ImGui::Text( "Cull: %i box in %i box out\n",
 			//					commonLocal.stats_frontend.c_box_cull_in, commonLocal.stats_frontend.c_box_cull_out );
 
+			ImGui::TextColored( colorLtGrey, "MASKCULL: tests:%-3i lightCulls:%i surfCulls:%i verts:%i tris:%i",
+								commonLocal.stats_frontend.c_mocTests,
+								commonLocal.stats_frontend.c_mocCulledLights,
+								commonLocal.stats_frontend.c_mocCulledSurfaces,
+								commonLocal.stats_frontend.c_mocVerts,
+								commonLocal.stats_frontend.c_mocIndexes );
+
 			ImGui::TextColored( colorLtGrey, "ADDMODEL: callback:%-2i createInteractions:%i createShadowVolumes:%i",
 								commonLocal.stats_frontend.c_entityDefCallbacks,
 								commonLocal.stats_frontend.c_createInteractions,
@@ -424,6 +438,7 @@ float idConsoleLocal::DrawFPS( float y )
 		ImGui::TextColored( gameThreadRenderTime > maxTime ? colorRed : colorWhite,			"RF:      %5llu us   SSR:          %5llu us", gameThreadRenderTime, rendererGPU_SSRTime );
 		ImGui::TextColored( rendererBackEndTime > maxTime ? colorRed : colorWhite,			"RB:      %5llu us   AmbientPass:  %5llu us", rendererBackEndTime, rendererGPUAmbientPassTime );
 		ImGui::TextColored( rendererShadowsTime > maxTime ? colorRed : colorWhite,			"Shadows: %5llu us   Interactions: %5llu us", rendererShadowsTime, rendererGPUInteractionsTime );
+		ImGui::TextColored( rendererMaskedOcclusionCullingTime > maxTime ? colorRed : colorWhite,	"MOC:     %5llu us", rendererMaskedOcclusionCullingTime );
 		ImGui::TextColored( rendererGPUShaderPassesTime > maxTime ? colorRed : colorWhite,	"                    ShaderPass:   %5llu us", rendererGPUShaderPassesTime );
 		ImGui::TextColored( rendererGPUPostProcessingTime > maxTime ? colorRed : colorWhite, "                    PostFX:       %5llu us", rendererGPUPostProcessingTime );
 		ImGui::TextColored( totalCPUTime > maxTime || rendererGPUTime > maxTime ? colorRed : colorWhite,
@@ -434,52 +449,6 @@ float idConsoleLocal::DrawFPS( float y )
 	}
 
 	return y;
-#else
-
-	// print the resolution scale so we can tell when we are at reduced resolution
-	idStr resolutionText;
-	resolutionScale.GetConsoleText( resolutionText );
-	int w = resolutionText.Length() * BIGCHAR_WIDTH;
-	renderSystem->DrawBigStringExt( LOCALSAFE_RIGHT - w, idMath::Ftoi( y ) + 2, resolutionText.c_str(), colorWhite, true );
-
-	y += SMALLCHAR_HEIGHT + 4;
-	idStr timeStr;
-	timeStr.Format( "%sG+RF: %4d", gameThreadTotalTime > maxTime ? S_COLOR_RED : "", gameThreadTotalTime );
-	w = timeStr.LengthWithoutColors() * SMALLCHAR_WIDTH;
-	renderSystem->DrawSmallStringExt( LOCALSAFE_RIGHT - w, idMath::Ftoi( y ) + 2, timeStr.c_str(), colorWhite, false );
-	y += SMALLCHAR_HEIGHT + 4;
-
-	timeStr.Format( "%sG: %4d", gameThreadGameTime > maxTime ? S_COLOR_RED : "", gameThreadGameTime );
-	w = timeStr.LengthWithoutColors() * SMALLCHAR_WIDTH;
-	renderSystem->DrawSmallStringExt( LOCALSAFE_RIGHT - w, idMath::Ftoi( y ) + 2, timeStr.c_str(), colorWhite, false );
-	y += SMALLCHAR_HEIGHT + 4;
-
-	timeStr.Format( "%sRF: %4d", gameThreadRenderTime > maxTime ? S_COLOR_RED : "", gameThreadRenderTime );
-	w = timeStr.LengthWithoutColors() * SMALLCHAR_WIDTH;
-	renderSystem->DrawSmallStringExt( LOCALSAFE_RIGHT - w, idMath::Ftoi( y ) + 2, timeStr.c_str(), colorWhite, false );
-	y += SMALLCHAR_HEIGHT + 4;
-
-	timeStr.Format( "%sRB: %4.1f", rendererBackEndTime > maxTime * 1000 ? S_COLOR_RED : "", rendererBackEndTime / 1000.0f );
-	w = timeStr.LengthWithoutColors() * SMALLCHAR_WIDTH;
-	renderSystem->DrawSmallStringExt( LOCALSAFE_RIGHT - w, idMath::Ftoi( y ) + 2, timeStr.c_str(), colorWhite, false );
-	y += SMALLCHAR_HEIGHT + 4;
-
-	timeStr.Format( "%sSV: %4.1f", rendererShadowsTime > maxTime * 1000 ? S_COLOR_RED : "", rendererShadowsTime / 1000.0f );
-	w = timeStr.LengthWithoutColors() * SMALLCHAR_WIDTH;
-	renderSystem->DrawSmallStringExt( LOCALSAFE_RIGHT - w, idMath::Ftoi( y ) + 2, timeStr.c_str(), colorWhite, false );
-	y += SMALLCHAR_HEIGHT + 4;
-
-	timeStr.Format( "%sIDLE: %4.1f", rendererGPUIdleTime > maxTime * 1000 ? S_COLOR_RED : "", rendererGPUIdleTime / 1000.0f );
-	w = timeStr.LengthWithoutColors() * SMALLCHAR_WIDTH;
-	renderSystem->DrawSmallStringExt( LOCALSAFE_RIGHT - w, idMath::Ftoi( y ) + 2, timeStr.c_str(), colorWhite, false );
-	y += SMALLCHAR_HEIGHT + 4;
-
-	timeStr.Format( "%sGPU: %4.1f", rendererGPUTime > maxTime * 1000 ? S_COLOR_RED : "", rendererGPUTime / 1000.0f );
-	w = timeStr.LengthWithoutColors() * SMALLCHAR_WIDTH;
-	renderSystem->DrawSmallStringExt( LOCALSAFE_RIGHT - w, idMath::Ftoi( y ) + 2, timeStr.c_str(), colorWhite, false );
-
-	return y + BIGCHAR_HEIGHT + 4;
-#endif
 }
 
 /*
@@ -609,7 +578,7 @@ void	idConsoleLocal::Open()
 {
 	if( keyCatching )
 	{
-		return; // already open
+		return;    // already open
 	}
 
 	consoleField.ClearAutoComplete();
@@ -913,7 +882,7 @@ Scroll
 deals with scrolling text because we don't have key repeat
 ==============
 */
-void idConsoleLocal::Scroll( )
+void idConsoleLocal::Scroll()
 {
 	if( lastKeyEvent == -1 || ( lastKeyEvent + 200 ) > eventLoop->Milliseconds() )
 	{
@@ -1263,7 +1232,7 @@ void idConsoleLocal::DrawNotify()
 		return;
 	}
 
-	currentColor = idStr::ColorIndex( C_COLOR_WHITE );
+	currentColor = idStr::ColorIndex( C_COLOR_CYAN );
 	renderSystem->SetColor( idStr::ColorForIndex( currentColor ) );
 
 	v = 0;
@@ -1360,7 +1329,6 @@ void idConsoleLocal::DrawSolidConsole( float frac )
 
 	}
 
-
 	// draw the text
 	vislines = lines;
 	rows = ( lines - SMALLCHAR_WIDTH ) / SMALLCHAR_WIDTH;		// rows of text to draw
@@ -1387,7 +1355,7 @@ void idConsoleLocal::DrawSolidConsole( float frac )
 		row--;
 	}
 
-	currentColor = idStr::ColorIndex( C_COLOR_WHITE );
+	currentColor = idStr::ColorIndex( C_COLOR_CYAN );
 	renderSystem->SetColor( idStr::ColorForIndex( currentColor ) );
 
 	for( i = 0; i < rows; i++, y -= SMALLCHAR_HEIGHT, row-- )
@@ -1470,6 +1438,7 @@ void idConsoleLocal::Draw( bool forceFullScreen )
 	float lefty = LOCALSAFE_TOP;
 	float righty = LOCALSAFE_TOP;
 	float centery = LOCALSAFE_TOP;
+
 	if( com_showFPS.GetBool() )
 	{
 		righty = DrawFPS( righty );
@@ -1478,6 +1447,7 @@ void idConsoleLocal::Draw( bool forceFullScreen )
 	{
 		righty = DrawMemoryUsage( righty );
 	}
+
 	DrawOverlayText( lefty, righty, centery );
 	DrawDebugGraphs();
 }

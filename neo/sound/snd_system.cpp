@@ -155,8 +155,9 @@ void idSoundSystemLocal::Init()
 	if( !s_noSound.GetBool() )
 	{
 		hardware.Init();
-		InitStreamBuffers();
 	}
+
+	InitStreamBuffers();
 
 	cmdSystem->AddCommand( "testSound", TestSound_f, 0, "tests a sound", idCmdSystem::ArgCompletion_SoundName );
 	cmdSystem->AddCommand( "s_restart", RestartSound_f, 0, "restart sound system" );
@@ -327,12 +328,6 @@ idSoundSystemLocal::Render
 */
 void idSoundSystemLocal::Render()
 {
-
-	if( s_noSound.GetBool() )
-	{
-		return;
-	}
-
 	if( needsRestart )
 	{
 		needsRestart = false;
@@ -346,7 +341,10 @@ void idSoundSystemLocal::Render()
 		currentSoundWorld->Update();
 	}
 
-	hardware.Update();
+	if( !s_noSound.GetBool() )
+	{
+		hardware.Update();
+	}
 
 	// The sound system doesn't use game time or anything like that because the sounds are decoded in real time.
 	soundTime = Sys_Milliseconds();
@@ -380,7 +378,11 @@ void idSoundSystemLocal::StopAllSounds()
 			sw->StopAllSounds();
 		}
 	}
-	hardware.Update();
+
+	if( !s_noSound.GetBool() )
+	{
+		hardware.Update();
+	}
 }
 
 /*
@@ -532,6 +534,7 @@ cinData_t idSoundSystemLocal::ImageForTime( const int milliseconds, const bool w
 	cd.imageY = NULL;
 	cd.imageCr = NULL;
 	cd.imageCb = NULL;
+	cd.image = NULL;
 	cd.imageWidth = 0;
 	cd.imageHeight = 0;
 	cd.status = FMV_IDLE;

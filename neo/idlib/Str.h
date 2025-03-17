@@ -130,6 +130,7 @@ class idStr
 
 public:
 	idStr();
+	idStr( idStr&& text ) noexcept; // Admer: added move constructor
 	idStr( const idStr& text );
 	idStr( const idStr& text, int start, int end );
 	idStr( const char* text );
@@ -149,6 +150,7 @@ public:
 	char				operator[]( int index ) const;
 	char& 				operator[]( int index );
 
+	void				operator=( idStr&& text ) noexcept; // Admer: added move operator
 	void				operator=( const idStr& text );
 	void				operator=( const char* text );
 
@@ -260,6 +262,7 @@ public:
 	void				StripTrailing( const char c );					// strip char from end as many times as the char occurs
 	void				StripTrailing( const char* string );			// strip string from end as many times as the string occurs
 	bool				StripTrailingOnce( const char* string );		// strip string from end just once if it occurs
+	bool				IStripTrailingOnce( const char* string );		// RB: case insensitive, strip string from end just once if it occurs
 	void				Strip( const char c );							// strip char from front and end as many times as the char occurs
 	void				Strip( const char* string );					// strip string from front and end as many times as the string occurs
 	void				StripTrailingWhitespace();				// strip trailing white space characters
@@ -321,6 +324,10 @@ public:
 	static int			Hash( const char* string, int length );
 	static int			IHash( const char* string );					// case insensitive
 	static int			IHash( const char* string, int length );		// case insensitive
+
+	// std::string replacements
+	idList<idStr>		Split( const char* delimeter );
+	idStr				SubStr( int start, int end = -1 );
 
 	// character methods
 	static char			ToLower( char c );
@@ -477,6 +484,12 @@ ID_INLINE idStr::idStr()
 	Construct();
 }
 
+ID_INLINE idStr::idStr( idStr&& text ) noexcept
+{
+	Construct();
+	*this = std::move( text );
+}
+
 ID_INLINE idStr::idStr( const idStr& text )
 {
 	Construct();
@@ -531,9 +544,7 @@ ID_INLINE idStr::idStr( const char* text )
 
 	if( text )
 	{
-		// RB: 64 bit fixes,  conversion from 'size_t' to 'int', possible loss of data
-		l = ( int )strlen( text );
-		// RB end
+		l = strlen( text );
 		EnsureAlloced( l + 1 );
 		strcpy( data, text );
 		len = l;
@@ -544,9 +555,7 @@ ID_INLINE idStr::idStr( const char* text, int start, int end )
 {
 	Construct();
 	int i;
-	// RB: 64 bit fixes,  conversion from 'size_t' to 'int', possible loss of data
-	int l = ( int )strlen( text );
-	// RB end
+	int l = strlen( text );
 
 	if( end > l )
 	{
@@ -602,7 +611,7 @@ ID_INLINE idStr::idStr( const int i )
 	char text[ 64 ];
 	int l;
 
-	l = sprintf( text, "%d", i );
+	l = idStr::snPrintf( text, sizeof( text ), "%d", i );
 	EnsureAlloced( l + 1 );
 	strcpy( data, text );
 	len = l;
@@ -614,7 +623,7 @@ ID_INLINE idStr::idStr( const unsigned u )
 	char text[ 64 ];
 	int l;
 
-	l = sprintf( text, "%u", u );
+	l = idStr::snPrintf( text, sizeof( text ), "%u", u );
 	EnsureAlloced( l + 1 );
 	strcpy( data, text );
 	len = l;
@@ -665,6 +674,10 @@ ID_INLINE idStr::operator const char* () const
 	return c_str();
 }
 
+#pragma GCC diagnostic push
+// shut up GCC's stupid "warning: assuming signed overflow does not occur when assuming that
+// (X - c) > X is always false [-Wstrict-overflow]"
+#pragma GCC diagnostic ignored "-Wstrict-overflow"
 ID_INLINE char idStr::operator[]( int index ) const
 {
 	assert( ( index >= 0 ) && ( index <= len ) );
@@ -675,6 +688,29 @@ ID_INLINE char& idStr::operator[]( int index )
 {
 	assert( ( index >= 0 ) && ( index <= len ) );
 	return data[ index ];
+}
+#pragma GCC diagnostic pop
+
+ID_INLINE void idStr::operator=( idStr&& text ) noexcept
+{
+	Clear();
+
+	len = text.len;
+	allocedAndFlag = text.allocedAndFlag;
+	memcpy( baseBuffer, text.baseBuffer, sizeof( baseBuffer ) );
+
+	if( text.data == text.baseBuffer )
+	{
+		data = baseBuffer;
+	}
+	else
+	{
+		data = text.data;
+	}
+
+	text.len = 0;
+	text.allocedAndFlag = 0;
+	text.data = nullptr;
 }
 
 ID_INLINE void idStr::operator=( const idStr& text )
@@ -728,7 +764,7 @@ ID_INLINE idStr operator+( const idStr& a, const float b )
 	char	text[ 64 ];
 	idStr	result( a );
 
-	sprintf( text, "%f", b );
+	idStr::snPrintf( text, sizeof( text ), "%f", b );
 	result.Append( text );
 
 	return result;
@@ -739,7 +775,7 @@ ID_INLINE idStr operator+( const idStr& a, const int b )
 	char	text[ 64 ];
 	idStr	result( a );
 
-	sprintf( text, "%d", b );
+	idStr::snPrintf( text, sizeof( text ), "%d", b );
 	result.Append( text );
 
 	return result;
@@ -750,7 +786,7 @@ ID_INLINE idStr operator+( const idStr& a, const unsigned b )
 	char	text[ 64 ];
 	idStr	result( a );
 
-	sprintf( text, "%u", b );
+	idStr::snPrintf( text, sizeof( text ), "%u", b );
 	result.Append( text );
 
 	return result;
@@ -760,7 +796,7 @@ ID_INLINE idStr& idStr::operator+=( const float a )
 {
 	char text[ 64 ];
 
-	sprintf( text, "%f", a );
+	idStr::snPrintf( text, sizeof( text ), "%f", a );
 	Append( text );
 
 	return *this;
@@ -770,7 +806,7 @@ ID_INLINE idStr& idStr::operator+=( const int a )
 {
 	char text[ 64 ];
 
-	sprintf( text, "%d", a );
+	idStr::snPrintf( text, sizeof( text ), "%d", a );
 	Append( text );
 
 	return *this;
@@ -780,7 +816,7 @@ ID_INLINE idStr& idStr::operator+=( const unsigned a )
 {
 	char text[ 64 ];
 
-	sprintf( text, "%u", a );
+	idStr::snPrintf( text, sizeof( text ), "%u", a );
 	Append( text );
 
 	return *this;
@@ -857,9 +893,7 @@ ID_INLINE int idStr::Cmpn( const char* text, int n ) const
 ID_INLINE int idStr::CmpPrefix( const char* text ) const
 {
 	assert( text );
-	// RB: 64 bit fixes,  conversion from 'size_t' to 'int', possible loss of data
-	return idStr::Cmpn( data, text, ( int )strlen( text ) );
-	// RB end
+	return idStr::Cmpn( data, text, strlen( text ) );
 }
 
 ID_INLINE int idStr::Icmp( const char* text ) const
@@ -877,9 +911,7 @@ ID_INLINE int idStr::Icmpn( const char* text, int n ) const
 ID_INLINE int idStr::IcmpPrefix( const char* text ) const
 {
 	assert( text );
-	// RB: 64 bit fixes,  conversion from 'size_t' to 'int', possible loss of data
-	return idStr::Icmpn( data, text, ( int )strlen( text ) );
-	// RB end
+	return idStr::Icmpn( data, text, strlen( text ) );
 }
 
 ID_INLINE int idStr::IcmpNoColor( const char* text ) const
@@ -903,9 +935,7 @@ ID_INLINE int idStr::IcmpnPath( const char* text, int n ) const
 ID_INLINE int idStr::IcmpPrefixPath( const char* text ) const
 {
 	assert( text );
-	// RB: 64 bit fixes,  conversion from 'size_t' to 'int', possible loss of data
-	return idStr::IcmpnPath( data, text, ( int )strlen( text ) );
-	// RB end
+	return idStr::IcmpnPath( data, text, strlen( text ) );
 }
 
 ID_INLINE int idStr::Length() const
@@ -979,9 +1009,7 @@ ID_INLINE void idStr::Append( const char* text )
 
 	if( text )
 	{
-		// RB: 64 bit fixes,  conversion from 'size_t' to 'int', possible loss of data
-		newLen = len + ( int )strlen( text );
-		// RB end
+		newLen = len + strlen( text );
 		EnsureAlloced( newLen + 1 );
 		for( i = 0; text[ i ]; i++ )
 		{
@@ -1046,9 +1074,7 @@ ID_INLINE void idStr::Insert( const char* text, int index )
 		index = len;
 	}
 
-	// RB: 64 bit fixes,  conversion from 'size_t' to 'int', possible loss of data
-	l = ( int )strlen( text );
-	// RB end
+	l = strlen( text );
 	EnsureAlloced( len + l + 1 );
 	for( i = len; i >= index; i-- )
 	{
@@ -1232,6 +1258,10 @@ ID_INLINE idStr idStr::Left( int len ) const
 	return Mid( 0, len );
 }
 
+#pragma GCC diagnostic push
+// shut up GCC's stupid "warning: assuming signed overflow does not occur when assuming that
+// (X - c) > X is always false [-Wstrict-overflow]"
+#pragma GCC diagnostic ignored "-Wstrict-overflow"
 ID_INLINE idStr idStr::Right( int len ) const
 {
 	if( len >= Length() )
@@ -1240,6 +1270,7 @@ ID_INLINE idStr idStr::Right( int len ) const
 	}
 	return Mid( Length() - len, len );
 }
+#pragma GCC diagnostic pop
 
 ID_INLINE void idStr::Strip( const char c )
 {

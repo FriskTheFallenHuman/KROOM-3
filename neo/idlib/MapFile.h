@@ -3,7 +3,7 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
-Copyright (C) 2015-2021 Robert Beckebans
+Copyright (C) 2015-2023 Robert Beckebans
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -465,7 +465,7 @@ public:
 	bool					NeedsReload();
 
 	int						AddEntity( idMapEntity* mapentity );
-	idMapEntity* 			FindEntity( const char* name );
+	idMapEntity* 			FindEntity( const char* name ) const;
 	void					RemoveEntity( idMapEntity* mapEnt );
 	void					RemoveEntities( const char* classname );
 	void					RemoveAllEntities();

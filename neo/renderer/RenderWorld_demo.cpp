@@ -719,9 +719,9 @@ void	idRenderWorldLocal::WriteRenderLight( idDemoFile* f, qhandle_t handle, cons
 ReadRenderLight
 ================
 */
-void	idRenderWorldLocal::ReadRenderLight( )
+void	idRenderWorldLocal::ReadRenderLight()
 {
-	renderLight_t	light;
+	renderLight_t	light = {};
 	int				index, i;
 
 	common->ReadDemo()->ReadInt( index );

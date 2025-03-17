@@ -472,8 +472,6 @@ struct sysMemoryStats_t
 	int availExtendedVirtual;
 };
 
-// typedef unsigned long address_t; // DG: this isn't even used
-
 void			Sys_Init();
 void			Sys_Shutdown();
 void			Sys_Error( const char* error, ... );
@@ -562,12 +560,9 @@ bool			Sys_UnlockMemory( void* ptr, int bytes );
 void			Sys_SetPhysicalWorkMemory( int minBytes, int maxBytes );
 
 // DLL loading, the path should be a fully qualified OS path to the DLL file to be loaded
-
-// RB: 64 bit fixes, changed int to intptr_t
-intptr_t		Sys_DLL_Load( const char* dllName );
-void* 			Sys_DLL_GetProcAddress( intptr_t dllHandle, const char* procName );
-void			Sys_DLL_Unload( intptr_t dllHandle );
-// RB end
+uintptr_t		Sys_DLL_Load( const char* dllName );
+void* 			Sys_DLL_GetProcAddress( uintptr_t dllHandle, const char* procName );
+void			Sys_DLL_Unload( uintptr_t dllHandle );
 
 // event generation
 void			Sys_GenerateEvents();
@@ -806,6 +801,8 @@ public:
 	virtual void			DebugPrintf( VERIFY_FORMAT_STRING const char* fmt, ... ) = 0;
 	virtual void			DebugVPrintf( const char* fmt, va_list arg ) = 0;
 
+	virtual unsigned int	GetMilliseconds() = 0;
+
 	virtual double			GetClockTicks() = 0;
 	virtual double			ClockTicksPerSecond() = 0;
 	virtual cpuid_t			GetProcessorId() = 0;
@@ -820,9 +817,9 @@ public:
 	virtual bool			LockMemory( void* ptr, int bytes ) = 0;
 	virtual bool			UnlockMemory( void* ptr, int bytes ) = 0;
 
-	virtual int				DLL_Load( const char* dllName ) = 0;
-	virtual void* 			DLL_GetProcAddress( int dllHandle, const char* procName ) = 0;
-	virtual void			DLL_Unload( int dllHandle ) = 0;
+	virtual uintptr_t		DLL_Load( const char* dllName ) = 0;
+	virtual void* 			DLL_GetProcAddress( uintptr_t dllHandle, const char* procName ) = 0;
+	virtual void			DLL_Unload( uintptr_t dllHandle ) = 0;
 	virtual void			DLL_GetFileName( const char* baseName, char* dllName, int maxLength ) = 0;
 
 	virtual sysEvent_t		GenerateMouseButtonEvent( int button, bool down ) = 0;
@@ -833,9 +830,5 @@ public:
 };
 
 extern idSys* 				sys;
-
-bool Sys_LoadOpenAL();
-void Sys_FreeOpenAL();
-
 
 #endif /* !__SYS_PUBLIC__ */

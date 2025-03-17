@@ -799,8 +799,6 @@ void R_DeriveEnvprobeData( RenderEnvprobeLocal* probe )
 	// compute the probe projection matrix
 	// ------------------------------------
 
-
-
 	idMat3 axis;
 	axis.Identity();
 
@@ -873,12 +871,6 @@ void R_CreateEnvprobeRefs( RenderEnvprobeLocal* probe )
 
 void R_FreeEnvprobeDefDerivedData( RenderEnvprobeLocal* probe )
 {
-	// TODO free all the interactions
-	//while( ldef->firstInteraction != NULL )
-	//{
-	//	ldef->firstInteraction->UnlinkAndFree();
-	//}
-
 	// free all the references to the envprobe
 	areaReference_t* nextRef = NULL;
 	for( areaReference_t* lref = probe->references; lref != NULL; lref = nextRef )

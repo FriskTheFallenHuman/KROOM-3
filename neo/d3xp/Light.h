@@ -59,6 +59,7 @@ public:
 	virtual void	ClientThink( const int curTime, const float fraction, const bool predict );
 	virtual void	FreeLightDef();
 	virtual bool	GetPhysicsToSoundTransform( idVec3& origin, idMat3& axis );
+	virtual idVec3	GetEditOrigin() const;
 	void			Present();
 
 	void			SaveState( idDict* args );
@@ -94,6 +95,11 @@ public:
 	void			SetLightLevel();
 
 	virtual void	ShowEditingDialog();
+
+	const renderLight_t& GetRenderLight() const
+	{
+		return renderLight;
+	}
 
 	enum
 	{

@@ -30,15 +30,21 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "precompiled.h"
 #pragma hdrstop
+#if defined(_MSC_VER) && !defined(USE_OPENAL)
+	#include <sound/XAudio2/XA2_CinematicAudio.h>
+#else
+	#include <sound/OpenAL/AL_CinematicAudio.h>
+#endif
 
 
-extern idCVar s_noSound;
+// SRS - Add cvar to control whether cinematic audio is played: default is ON
+idCVar s_playCinematicAudio( "s_playCinematicAudio", "1", CVAR_BOOL | CVAR_NEW, "Play audio if available in cinematic video files" );
 
 // DG: get rid of libjpeg; as far as I can tell no roqs that actually use it exist
 //#define ID_USE_LIBJPEG 1
 #ifdef ID_USE_LIBJPEG
-#include <jpeglib.h>
-#include <jerror.h>
+	#include <jpeglib.h>
+	#include <jerror.h>
 #endif
 
 #include "RenderCommon.h"
@@ -65,7 +71,11 @@ extern "C"
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
+#include <libswresample/swresample.h>
+#include <libavutil/imgutils.h>
 }
+#include <queue>
+#define NUM_LAG_FRAMES 15	// SRS - Lag audio by 15 frames (~1/2 sec at 30 fps) for ffmpeg bik decoder AV sync
 #endif
 
 #ifdef USE_BINKDEC
@@ -92,24 +102,41 @@ public:
 	bool                    IsPlaying() const;
 	// RB end
 	virtual void			Close();
+	// SRS begin
+	virtual int             GetStartTime();
+	// SRS end
 	virtual void			ResetTime( int time );
 
 private:
 
 #if defined(USE_FFMPEG)
 	int						video_stream_index;
+	int						audio_stream_index; //GK: Make extra indexer for audio
 	AVFormatContext*		fmt_ctx;
 	AVFrame*				frame;
 	AVFrame*				frame2;
+	AVFrame*				frame3; //GK: make extra frame for audio
+#if LIBAVCODEC_VERSION_MAJOR > 58
+	const AVCodec*			dec;
+	const AVCodec*			dec2;	// SRS - Separate decoder for audio
+#else
 	AVCodec*				dec;
+	AVCodec*				dec2;	// SRS - Separate decoder for audio
+#endif
 	AVCodecContext*			dec_ctx;
+	AVCodecContext*			dec_ctx2;
 	SwsContext*				img_convert_ctx;
 	bool					hasFrame;
 	long					framePos;
-
+	AVSampleFormat			dst_smp;
+	bool					hasplanar;
+	SwrContext*				swr_ctx;
 	cinData_t				ImageForTimeFFMPEG( int milliseconds );
 	bool					InitFromFFMPEGFile( const char* qpath, bool looping );
 	void					FFMPEGReset();
+	std::queue<uint8_t*>	lagBuffer;
+	std::queue<int>			lagBufSize;
+	bool					skipLag;
 #endif
 #ifdef USE_BINKDEC
 	BinkHandle				binkHandle;
@@ -118,11 +145,15 @@ private:
 	void					BinkDecReset();
 
 	YUVbuffer				yuvBuffer;
+	bool                    hasFrame;
 	int						framePos;
 	int						numFrames;
 	idImage*				imgY;
 	idImage*				imgCr;
 	idImage*				imgCb;
+	uint32_t				audioTracks;
+	uint32_t				trackIndex;
+	AudioInfo				binkInfo;
 #endif
 	idImage*				img;
 	bool					isRoQ;
@@ -191,6 +222,9 @@ private:
 	void					RoQPrepMcomp( int xoff, int yoff );
 	void					RoQReset();
 	// RB end
+
+	//GK:Also init variables for XAudio2 or OpenAL (SRS - this must be an instance variable)
+	CinematicAudio*			cinematicAudio = NULL;
 };
 
 // Carl: ROQ files from original Doom 3
@@ -223,25 +257,19 @@ static unsigned short* 	vq2 = NULL;
 static unsigned short* 	vq4 = NULL;
 static unsigned short* 	vq8 = NULL;
 
+extern idCVar s_noSound;
 
 
 //===========================================
 
 /*
 ==============
-idCinematicLocal::InitCinematic
+idCinematic::InitCinematic
 ==============
 */
 // RB: 64 bit fixes, changed long to int
 void idCinematic::InitCinematic()
 {
-#if defined(USE_FFMPEG)
-	// Carl: ffmpeg for Bink and regular video files
-	//common->Warning( "Loading FFMPEG...\n" );
-	avcodec_register_all();
-	av_register_all();
-#endif
-
 	// Carl: Doom 3 ROQ:
 	float t_ub, t_vr, t_ug, t_vg;
 	int i;
@@ -271,7 +299,7 @@ void idCinematic::InitCinematic()
 
 /*
 ==============
-idCinematicLocal::ShutdownCinematic
+idCinematic::ShutdownCinematic
 ==============
 */
 void idCinematic::ShutdownCinematic()
@@ -302,7 +330,7 @@ idCinematic* idCinematic::Alloc()
 idCinematic::~idCinematic
 ==============
 */
-idCinematic::~idCinematic( )
+idCinematic::~idCinematic()
 {
 	Close();
 }
@@ -334,7 +362,7 @@ idCinematic::GetStartTime
 */
 int idCinematic::GetStartTime()
 {
-	return -1;
+	return -1;  // SRS - this is just the abstract virtual method
 }
 
 /*
@@ -389,12 +417,27 @@ void idCinematic::Close()
 }
 
 // RB begin
+/*
+==============
+idCinematic::IsPlaying
+==============
+*/
 bool idCinematic::IsPlaying() const
 {
 	return false;
 }
 // RB end
 
+// SRS begin
+/*
+==============
+CinematicAudio::~CinematicAudio
+==============
+*/
+CinematicAudio::~CinematicAudio()
+{
+}
+// SRS end
 
 //===========================================
 
@@ -408,29 +451,40 @@ idCinematicLocal::idCinematicLocal()
 	qStatus[0] = ( byte** )Mem_Alloc( 32768 * sizeof( byte* ), TAG_CINEMATIC );
 	qStatus[1] = ( byte** )Mem_Alloc( 32768 * sizeof( byte* ), TAG_CINEMATIC );
 
+	isRoQ = false;      // SRS - Initialize isRoQ for all cases, not just FFMPEG
 #if defined(USE_FFMPEG)
 	// Carl: ffmpeg stuff, for bink and normal video files:
-	isRoQ = false;
-//	fmt_ctx = avformat_alloc_context();
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(55,28,1)
 	frame = av_frame_alloc();
 	frame2 = av_frame_alloc();
+	frame3 = av_frame_alloc();
 #else
 	frame = avcodec_alloc_frame();
 	frame2 = avcodec_alloc_frame();
+	frame3 = avcodec_alloc_frame();
 #endif // LIBAVCODEC_VERSION_INT
 	dec_ctx = NULL;
+	dec_ctx2 = NULL;
 	fmt_ctx = NULL;
 	video_stream_index = -1;
+	audio_stream_index = -1;
+	hasplanar = false;
+	swr_ctx = NULL;
 	img_convert_ctx = NULL;
 	hasFrame = false;
+	framePos = -1;
+	skipLag = false;
 #endif
 
 #ifdef USE_BINKDEC
 	binkHandle.isValid = false;
 	binkHandle.instanceIndex = -1; // whatever this is, it now has a deterministic value
+	hasFrame = false;
 	framePos = -1;
 	numFrames = 0;
+	audioTracks = 0;
+	trackIndex = -1;
+	binkInfo = {};
 
 	imgY = globalImages->AllocStandaloneImage( "_cinematicY" );
 	imgCr = globalImages->AllocStandaloneImage( "_cinematicCr" );
@@ -474,7 +528,6 @@ idCinematicLocal::idCinematicLocal()
 		opts.numLevels = 1;
 		img->AllocImage( opts, TF_LINEAR, TR_REPEAT );
 	}
-
 }
 
 /*
@@ -496,31 +549,20 @@ idCinematicLocal::~idCinematicLocal()
 	// Carl: ffmpeg for bink and other video files:
 
 	// RB: TODO double check this. It seems we have different versions of ffmpeg on Kubuntu 13.10 and the win32 development files
-#if defined(_WIN32) || defined(_WIN64)
+//#if defined(_WIN32) || defined(_WIN64)
+	// SRS - Should use the same version criteria as when the frames are allocated in idCinematicLocal() above
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(55,28,1)
 	av_frame_free( &frame );
 	av_frame_free( &frame2 );
+	av_frame_free( &frame3 );
 #else
 	av_freep( &frame );
 	av_freep( &frame2 );
+	av_freep( &frame3 );
 #endif
-
-	if( fmt_ctx )
-	{
-		avformat_free_context( fmt_ctx );
-	}
-
-	if( img_convert_ctx )
-	{
-		sws_freeContext( img_convert_ctx );
-	}
 #endif
 
 #ifdef USE_BINKDEC
-	if( binkHandle.isValid )
-	{
-		Bink_Close( binkHandle );
-	}
-
 	delete imgY;
 	imgY = NULL;
 	delete imgCr;
@@ -531,6 +573,56 @@ idCinematicLocal::~idCinematicLocal()
 
 	delete img;
 	img = NULL;
+
+	// GK/SRS - Properly close and delete XAudio2 or OpenAL voice if instantiated
+	if( cinematicAudio )
+	{
+		cinematicAudio->ShutdownAudio();
+		delete cinematicAudio;
+		cinematicAudio = NULL;
+	}
+}
+
+#if defined(USE_FFMPEG)
+/*
+==============
+GetSampleFormat
+==============
+*/
+const char* GetSampleFormat( AVSampleFormat sample_fmt )
+{
+	switch( sample_fmt )
+	{
+		case AV_SAMPLE_FMT_U8:
+		case AV_SAMPLE_FMT_U8P:
+		{
+			return "8-bit";
+		}
+		case AV_SAMPLE_FMT_S16:
+		case AV_SAMPLE_FMT_S16P:
+		{
+			return "16-bit";
+		}
+		case AV_SAMPLE_FMT_S32:
+		case AV_SAMPLE_FMT_S32P:
+		{
+			return "32-bit";
+		}
+		case AV_SAMPLE_FMT_FLT:
+		case AV_SAMPLE_FMT_FLTP:
+		{
+			return "Float";
+		}
+		case AV_SAMPLE_FMT_DBL:
+		case AV_SAMPLE_FMT_DBLP:
+		{
+			return "Double";
+		}
+		default:
+		{
+			return "Unknown";
+		}
+	}
 }
 
 /*
@@ -538,10 +630,12 @@ idCinematicLocal::~idCinematicLocal()
 idCinematicLocal::InitFromFFMPEGFile
 ==============
 */
-#if defined(USE_FFMPEG)
 bool idCinematicLocal::InitFromFFMPEGFile( const char* qpath, bool amilooping )
 {
 	int ret;
+	int ret2;
+	int file_size;
+	char error[64];
 	looping = amilooping;
 	startTime = 0;
 	isRoQ = false;
@@ -553,6 +647,7 @@ bool idCinematicLocal::InitFromFFMPEGFile( const char* qpath, bool amilooping )
 	if( testFile )
 	{
 		fullpath = testFile->GetFullPath();
+		file_size = testFile->Length();
 		fileSystem->CloseFile( testFile );
 	}
 	// RB: case sensitivity HACK for Linux
@@ -565,6 +660,7 @@ bool idCinematicLocal::InitFromFFMPEGFile( const char* qpath, bool amilooping )
 		if( testFile )
 		{
 			fullpath = testFile->GetFullPath();
+			file_size = testFile->Length();
 			fileSystem->CloseFile( testFile );
 		}
 		else
@@ -578,8 +674,20 @@ bool idCinematicLocal::InitFromFFMPEGFile( const char* qpath, bool amilooping )
 
 	if( ( ret = avformat_open_input( &fmt_ctx, fullpath, NULL, NULL ) ) < 0 )
 	{
-		common->Warning( "idCinematic: Cannot open FFMPEG video file: '%s', %d\n", qpath, looping );
-		return false;
+		// SRS - another case sensitivity HACK for Linux, this time for ffmpeg and RoQ files
+		idStr ext;
+		fullpath.ExtractFileExtension( ext );
+		if( idStr::Cmp( ext.c_str(), "roq" ) == 0 )
+		{
+			// SRS - If ffmpeg can't open .roq file, then try again with .RoQ extension instead
+			fullpath.Replace( ".roq", ".RoQ" );
+			ret = avformat_open_input( &fmt_ctx, fullpath, NULL, NULL );
+		}
+		if( ret < 0 )
+		{
+			common->Warning( "idCinematic: Cannot open FFMPEG video file: '%s', %d\n", qpath, looping );
+			return false;
+		}
 	}
 	if( ( ret = avformat_find_stream_info( fmt_ctx, NULL ) ) < 0 )
 	{
@@ -594,14 +702,78 @@ bool idCinematicLocal::InitFromFFMPEGFile( const char* qpath, bool amilooping )
 		return false;
 	}
 	video_stream_index = ret;
-	dec_ctx = fmt_ctx->streams[video_stream_index]->codec;
+	dec_ctx = avcodec_alloc_context3( dec );
+	if( ( ret = avcodec_parameters_to_context( dec_ctx, fmt_ctx->streams[video_stream_index]->codecpar ) ) < 0 )
+	{
+		av_strerror( ret, error, sizeof( error ) );
+		common->Warning( "idCinematic: Failed to create video codec context from codec parameters with error: %s\n", error );
+	}
+	//dec_ctx->time_base = fmt_ctx->streams[video_stream_index]->time_base;			// SRS - decoder timebase is set by avcodec_open2()
+	dec_ctx->framerate = fmt_ctx->streams[video_stream_index]->avg_frame_rate;
+	dec_ctx->pkt_timebase = fmt_ctx->streams[video_stream_index]->time_base;		// SRS - packet timebase for frame->pts timestamps
 	/* init the video decoder */
 	if( ( ret = avcodec_open2( dec_ctx, dec, NULL ) ) < 0 )
 	{
-		common->Warning( "idCinematic: Cannot open video decoder for: '%s', %d\n", qpath, looping );
+		av_strerror( ret, error, sizeof( error ) );
+		common->Warning( "idCinematic: Cannot open video decoder for: '%s', %d, with error: %s\n", qpath, looping, error );
 		return false;
 	}
+	//GK:Begin
+	//After the video decoder is open then try to open audio decoder
+	ret2 = av_find_best_stream( fmt_ctx, AVMEDIA_TYPE_AUDIO, -1, -1, &dec2, 0 );
+	if( ret2 >= 0 && s_playCinematicAudio.GetBool() )  //Make audio optional (only intro video has audio no other)
+	{
+		audio_stream_index = ret2;
+		dec_ctx2 = avcodec_alloc_context3( dec2 );
+		if( ( ret2 = avcodec_parameters_to_context( dec_ctx2, fmt_ctx->streams[audio_stream_index]->codecpar ) ) < 0 )
+		{
+			av_strerror( ret2, error, sizeof( error ) );
+			common->Warning( "idCinematic: Failed to create audio codec context from codec parameters with error: %s\n", error );
+		}
+		//dec_ctx2->time_base = fmt_ctx->streams[audio_stream_index]->time_base;	// SRS - decoder timebase is set by avcodec_open2()
+		dec_ctx2->framerate = fmt_ctx->streams[audio_stream_index]->avg_frame_rate;
+		dec_ctx2->pkt_timebase = fmt_ctx->streams[audio_stream_index]->time_base;	// SRS - packet timebase for frame3->pts timestamps
+		if( ( ret2 = avcodec_open2( dec_ctx2, dec2, NULL ) ) < 0 )
+		{
+			common->Warning( "idCinematic: Cannot open audio decoder for: '%s', %d\n", qpath, looping );
+			//return false;
+		}
+		if( dec_ctx2->sample_fmt >= AV_SAMPLE_FMT_U8P )											// SRS - Planar formats start at AV_SAMPLE_FMT_U8P
+		{
+			dst_smp = static_cast<AVSampleFormat>( dec_ctx2->sample_fmt - AV_SAMPLE_FMT_U8P );	// SRS - Setup context to convert from planar to packed
+#if	LIBSWRESAMPLE_VERSION_INT >= AV_VERSION_INT(4,7,100)
+			if( ( ret2 = swr_alloc_set_opts2( &swr_ctx, &dec_ctx2->ch_layout, dst_smp, dec_ctx2->sample_rate, &dec_ctx2->ch_layout, dec_ctx2->sample_fmt, dec_ctx2->sample_rate, 0, NULL ) ) < 0 )
+			{
+				av_strerror( ret2, error, sizeof( error ) );
+				common->Warning( "idCinematic: Failed to create audio resample context with error: %s\n", error );
+			}
+#else
+			swr_ctx = swr_alloc_set_opts( NULL, dec_ctx2->channel_layout, dst_smp, dec_ctx2->sample_rate, dec_ctx2->channel_layout, dec_ctx2->sample_fmt, dec_ctx2->sample_rate, 0, NULL );
+#endif
+			ret2 = swr_init( swr_ctx );
+			hasplanar = true;
+		}
+		else
+		{
+			dst_smp = dec_ctx2->sample_fmt;														// SRS - Must always define the destination format
+			hasplanar = false;
+		}
+		common->Printf( "Cinematic audio stream found: Sample Rate=%d Hz, Channels=%d, Format=%s, Planar=%d\n", dec_ctx2->sample_rate,
+#if	LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59,37,100)
+						dec_ctx2->ch_layout.nb_channels,
+#else
+						dec_ctx2->channels,
+#endif
+						GetSampleFormat( dec_ctx2->sample_fmt ), hasplanar );
 
+#if defined(_MSC_VER) && !defined(USE_OPENAL)
+		cinematicAudio = new( TAG_AUDIO ) CinematicAudio_XAudio2;
+#else
+		cinematicAudio = new( TAG_AUDIO ) CinematicAudio_OpenAL;
+#endif
+		cinematicAudio->InitAudio( dec_ctx2 );
+	}
+	//GK:End
 	CIN_WIDTH = dec_ctx->width;
 	CIN_HEIGHT = dec_ctx->height;
 	/** Calculate Duration in seconds
@@ -612,36 +784,44 @@ bool idCinematicLocal::InitFromFFMPEGFile( const char* qpath, bool amilooping )
 	  * - encoding: MUST be set by user.
 	  * - decoding: Set by libavcodec.
 	  */
-	AVRational avr = dec_ctx->time_base;
-	/**
-	 * For some codecs, the time base is closer to the field rate than the frame rate.
-	 * Most notably, H.264 and MPEG-2 specify time_base as half of frame duration
-	 * if no telecine is used ...
-	 *
-	 * Set to time_base ticks per frame. Default 1, e.g., H.264/MPEG-2 set it to 2.
-	 */
-	int ticksPerFrame = dec_ctx->ticks_per_frame;
-	float durationSec = static_cast<double>( fmt_ctx->streams[video_stream_index]->duration ) * static_cast<double>( ticksPerFrame ) / static_cast<double>( avr.den );
+	// SRS - Must use consistent duration and timebase parameters in the durationSec calculation (don't mix fmt_ctx duration with dec_ctx timebase)
+	float durationSec = static_cast<double>( fmt_ctx->streams[video_stream_index]->duration ) * av_q2d( fmt_ctx->streams[video_stream_index]->time_base );
+	//GK: No duration is given. Check if we get at least bitrate to calculate the length, otherwise set it to a fixed 100 seconds (should it be lower ?)
+	if( durationSec < 0 )
+	{
+		// SRS - First check the file context bit rate and estimate duration using file size and overall bit rate
+		if( fmt_ctx->bit_rate > 0 )
+		{
+			durationSec = file_size * 8.0 / fmt_ctx->bit_rate;
+		}
+		// SRS - Likely an RoQ file, so use the video bit rate tolerance plus audio bit rate to estimate duration, then add 10% to correct for variable bit rate
+		else if( dec_ctx->bit_rate_tolerance > 0 )
+		{
+			durationSec = file_size * 8.0 / ( dec_ctx->bit_rate_tolerance + ( dec_ctx2 ? dec_ctx2->bit_rate : 0 ) ) * 1.1;
+		}
+		// SRS - Otherwise just set a large max duration
+		else
+		{
+			durationSec = 100.0;
+		}
+	}
 	animationLength = durationSec * 1000;
 	frameRate = av_q2d( fmt_ctx->streams[video_stream_index]->avg_frame_rate );
-	buf = NULL;
+	common->Printf( "Loaded FFMPEG file: '%s', looping=%d, %dx%d, %3.2f FPS, %4.1f sec\n", qpath, looping, CIN_WIDTH, CIN_HEIGHT, frameRate, durationSec );
+
+	// SRS - Get image buffer size (dimensions mod 32 for bik & webm codecs, subsumes mod 16 for mp4 codec), then allocate image and fill with correct parameters
+	int bufWidth = ( CIN_WIDTH + 31 ) & ~31;
+	int bufHeight = ( CIN_HEIGHT + 31 ) & ~31;
+	int img_bytes = av_image_get_buffer_size( AV_PIX_FMT_BGR32, bufWidth, bufHeight, 1 );
+	image = ( byte* )Mem_Alloc( img_bytes, TAG_CINEMATIC );
+	av_image_fill_arrays( frame2->data, frame2->linesize, image, AV_PIX_FMT_BGR32, CIN_WIDTH, CIN_HEIGHT, 1 ); //GK: Straight out of the FFMPEG source code
+	img_convert_ctx = sws_getContext( dec_ctx->width, dec_ctx->height, dec_ctx->pix_fmt, CIN_WIDTH, CIN_HEIGHT, AV_PIX_FMT_BGR32, SWS_BICUBIC, NULL, NULL, NULL );
+
+	status = FMV_PLAY;
 	hasFrame = false;
 	framePos = -1;
-	common->Printf( "Loaded FFMPEG file: '%s', looping=%d%dx%d, %f FPS, %f sec\n", qpath, looping, CIN_WIDTH, CIN_HEIGHT, frameRate, durationSec );
-	image = ( byte* )Mem_Alloc( CIN_WIDTH * CIN_HEIGHT * 4 * 2, TAG_CINEMATIC );
-	avpicture_fill( ( AVPicture* )frame2, image, AV_PIX_FMT_BGR32, CIN_WIDTH, CIN_HEIGHT );
-	if( img_convert_ctx )
-	{
-		sws_freeContext( img_convert_ctx );
-	}
-	img_convert_ctx = sws_getContext( dec_ctx->width, dec_ctx->height, dec_ctx->pix_fmt, CIN_WIDTH, CIN_HEIGHT, AV_PIX_FMT_BGR32, SWS_BICUBIC, NULL, NULL, NULL );
-	status = FMV_PLAY;
-
-	startTime = 0;
 	ImageForTime( 0 );
 	status = ( looping ) ? FMV_PLAY : FMV_IDLE;
-
-	//startTime = Sys_Milliseconds();
 
 	return true;
 }
@@ -660,10 +840,34 @@ void idCinematicLocal::FFMPEGReset()
 
 	framePos = -1;
 
-	if( av_seek_frame( fmt_ctx, video_stream_index, 0, 0 ) >= 0 )
+	// SRS - If we have cinematic audio, reset audio to release any stale buffers and avoid AV drift if looping
+	if( cinematicAudio )
+	{
+		cinematicAudio->ResetAudio();
+
+		while( !lagBuffer.empty() )
+		{
+			av_freep( &lagBuffer.front() );
+			lagBuffer.pop();
+			lagBufSize.pop();
+		}
+	}
+
+	// SRS - For non-RoQ (i.e. bik, mp4, webm, etc) files, use standard frame seek to rewind the stream
+	if( dec_ctx->codec_id != AV_CODEC_ID_ROQ && av_seek_frame( fmt_ctx, video_stream_index, 0, 0 ) >= 0 )
 	{
 		status = FMV_LOOPED;
 	}
+	// SRS - Special handling for RoQ files: only byte seek works and ffmpeg RoQ decoder needs reset
+	else if( dec_ctx->codec_id == AV_CODEC_ID_ROQ && av_seek_frame( fmt_ctx, video_stream_index, 0, AVSEEK_FLAG_BYTE ) >= 0 )
+	{
+		// Close and reopen the ffmpeg RoQ codec without clearing the context - this seems to reset the decoder properly
+		avcodec_close( dec_ctx );
+		avcodec_open2( dec_ctx, dec, NULL );
+
+		status = FMV_LOOPED;
+	}
+	// SRS - Can't rewind the stream so we really are at EOF
 	else
 	{
 		status = FMV_EOF;
@@ -671,6 +875,11 @@ void idCinematicLocal::FFMPEGReset()
 }
 #endif
 
+/*
+==============
+idCinematicLocal::InitFromBinkDecFile
+==============
+*/
 #ifdef USE_BINKDEC
 bool idCinematicLocal::InitFromBinkDecFile( const char* qpath, bool amilooping )
 {
@@ -701,7 +910,7 @@ bool idCinematicLocal::InitFromBinkDecFile( const char* qpath, bool amilooping )
 		}
 		else
 		{
-			common->Warning( "idCinematic: Cannot open BinkDec video file: '%s', %d\n", qpath, looping );
+			common->Warning( "idCinematic: Cannot open Bink video file: '%s', %d\n", qpath, looping );
 			return false;
 		}
 	}
@@ -709,7 +918,7 @@ bool idCinematicLocal::InitFromBinkDecFile( const char* qpath, bool amilooping )
 	binkHandle = Bink_Open( fullpath );
 	if( !binkHandle.isValid )
 	{
-		common->Warning( "idCinematic: Cannot open BinkDec video file: '%s', %d\n", qpath, looping );
+		common->Warning( "idCinematic: Cannot open Bink video file: '%s', %d\n", qpath, looping );
 		return false;
 	}
 
@@ -720,26 +929,53 @@ bool idCinematicLocal::InitFromBinkDecFile( const char* qpath, bool amilooping )
 		CIN_HEIGHT = h;
 	}
 
+	// SRS - Support Bink Audio for cinematic playback
+	audioTracks = Bink_GetNumAudioTracks( binkHandle );
+	if( audioTracks > 0 && s_playCinematicAudio.GetBool() )
+	{
+		trackIndex = 0;														// SRS - Use the first audio track - is this reasonable?
+		binkInfo = Bink_GetAudioTrackDetails( binkHandle, trackIndex );
+		common->Printf( "Cinematic audio stream found: Sample Rate=%d Hz, Channels=%d, Format=16-bit\n", binkInfo.sampleRate, binkInfo.nChannels );
+#if defined(_MSC_VER) && !defined(USE_OPENAL)
+		cinematicAudio = new( TAG_AUDIO ) CinematicAudio_XAudio2;
+#else
+		cinematicAudio = new( TAG_AUDIO ) CinematicAudio_OpenAL;
+#endif
+		cinematicAudio->InitAudio( &binkInfo );
+	}
+
 	frameRate = Bink_GetFrameRate( binkHandle );
 	numFrames = Bink_GetNumFrames( binkHandle );
-	float durationSec = frameRate * numFrames;
-	animationLength = durationSec;
-	buf = NULL;
+	float durationSec = numFrames / frameRate;      // SRS - fixed Bink durationSec calculation
+	animationLength = durationSec * 1000;           // SRS - animationLength is in milliseconds
+	common->Printf( "Loaded Bink file: '%s', looping=%d, %dx%d, %3.2f FPS, %4.1f sec\n", qpath, looping, CIN_WIDTH, CIN_HEIGHT, frameRate, durationSec );
 
-	common->Printf( "Loaded BinkDec file: '%s', looping=%d%dx%d, %f FPS, %f sec\n", qpath, looping, CIN_WIDTH, CIN_HEIGHT, frameRate, durationSec );
+	memset( yuvBuffer, 0, sizeof( yuvBuffer ) );
 
 	status = FMV_PLAY;
-
-	startTime = Sys_Milliseconds();
-	memset( yuvBuffer, 0, sizeof( yuvBuffer ) );
+	hasFrame = false;                               // SRS - Implemented hasFrame for BinkDec behaviour consistency with FFMPEG
 	framePos = -1;
+	ImageForTime( 0 );                              // SRS - Was missing initial call to ImageForTime() - fixes validation errors when using Vulkan renderer
+	status = ( looping ) ? FMV_PLAY : FMV_IDLE;     // SRS - Update status based on looping flag
 
 	return true;
 }
 
+/*
+==============
+idCinematicLocal::BinkDecReset
+==============
+*/
 void idCinematicLocal::BinkDecReset()
 {
 	framePos = -1;
+
+	// SRS - If we have cinematic audio, reset audio to release any stale buffers (even if looping)
+	if( cinematicAudio )
+	{
+		cinematicAudio->ResetAudio();
+	}
+
 	Bink_GotoFrame( binkHandle, 0 );
 	status = FMV_LOOPED;
 }
@@ -754,7 +990,8 @@ bool idCinematicLocal::InitFromFile( const char* qpath, bool amilooping )
 {
 	unsigned short RoQID;
 
-	Close();
+	// SRS - Don't need to call Close() here, all initialization is handled by constructor
+	//Close();
 
 	inMemory = 0;
 	animationLength = 100000;
@@ -769,32 +1006,87 @@ bool idCinematicLocal::InitFromFile( const char* qpath, bool amilooping )
 		sprintf( fileName, "%s", qpath );
 	}
 	// Carl: Look for original Doom 3 RoQ files first:
-	idStr ext;
-	fileName.ExtractFileExtension( ext );
-	fileName = fileName.StripFileExtension();
-	fileName = fileName + ".roq";
-	//if (fileName == "video\\loadvideo.roq") {
-	//	fileName = "video\\idlogo.roq";
-	//}
+	idStr temp, ext;
+	// SRS - Since loadvideo.bik is hardcoded, first check for legacy idlogo then later for mp4/webm mods
+	// If neither idlogo.roq nor loadvideo.mp4/.webm are found, then fall back to stock loadvideo.bik
+	if( fileName == "video\\loadvideo.bik" )
+	{
+		temp = "video\\idlogo.roq";							// Check for legacy idlogo.roq video
+	}
+	else
+	{
+		temp = fileName;
+	}
 
-	iFile = fileSystem->OpenFileRead( fileName );
+	temp.ExtractFileExtension( ext );
+	ext.ToLower();
+	if( ext == "roq" )
+	{
+		temp = temp.StripFileExtension() + ".roq";			// Force lower case .roq extension
+		iFile = fileSystem->OpenFileRead( temp );
+	}
+	else
+	{
+		iFile = NULL;
+	}
 
-	// Carl: If the RoQ file doesn't exist, try using ffmpeg instead:
+	// Carl: If the RoQ file doesn't exist, try using bik file extension instead:
 	if( !iFile )
 	{
+		//idLib::Warning( "Original Doom 3 RoQ Cinematic not found: '%s'\n", temp.c_str() );
 #if defined(USE_FFMPEG)
-		//idLib::Warning( "Original Doom 3 RoQ Cinematic not found: '%s'\n", fileName.c_str() );
-		idStr temp = fileName.StripFileExtension() + ".bik";
+		if( fileName == "video\\loadvideo.bik" )
+		{
+			temp = "video\\loadvideo";						// Check for loadvideo.xxx mod videos
+			if( ( iFile = fileSystem->OpenFileRead( temp + ".mp4" ) ) )
+			{
+				fileSystem->CloseFile( iFile );				// Close the mp4 file and reopen in ffmpeg
+				iFile = NULL;
+				temp = temp + ".mp4";
+				ext = "mp4";
+			}
+			else if( ( iFile = fileSystem->OpenFileRead( temp + ".webm" ) ) )
+			{
+				fileSystem->CloseFile( iFile );				// Close the webm file and reopen in ffmpeg
+				iFile = NULL;
+				temp = temp + ".webm";
+				ext = "webm";
+			}
+			else
+			{
+				temp = temp + ".bik";						// Fall back to bik if no mod videos found
+				ext = "bik";
+			}
+		}
+
+		if( ext == "roq" || ext == "bik" )					// Check for stock/legacy cinematic types
+		{
+			temp = fileName.StripFileExtension() + ".bik";
+			skipLag = false;			// SRS - Enable lag buffer for ffmpeg bik decoder AV sync
+		}
+		else												// Enable mp4/webm cinematic types for mods
+		{
+			skipLag = true;				// SRS - Disable lag buffer for ffmpeg mp4/webm decoder AV sync
+		}
+
+		// SRS - Support RoQ cinematic playback via ffmpeg decoder - better quality plus audio support
+	}
+	else
+	{
+		fileSystem->CloseFile( iFile );	// SRS - Close the RoQ file and let ffmpeg reopen it
+		iFile = NULL;
+		skipLag = true;					// SRS - Disable lag buffer for ffmpeg RoQ decoder AV sync
+	}
+	{
+		// SRS End
+
 		animationLength = 0;
-		hasFrame = false;
-		RoQShutdown();
 		fileName = temp;
 		//idLib::Warning( "New filename: '%s'\n", fileName.c_str() );
 		return InitFromFFMPEGFile( fileName.c_str(), amilooping );
 #elif defined(USE_BINKDEC)
-		idStr temp = fileName.StripFileExtension() + ".bik";
+		temp = fileName.StripFileExtension() + ".bik";
 		animationLength = 0;
-		RoQShutdown();
 		fileName = temp;
 		//idLib::Warning( "New filename: '%s'\n", fileName.c_str() );
 		return InitFromBinkDecFile( fileName.c_str(), amilooping );
@@ -805,6 +1097,7 @@ bool idCinematicLocal::InitFromFile( const char* qpath, bool amilooping )
 	}
 	// Carl: The rest of this function is for original Doom 3 RoQ files:
 	isRoQ = true;
+	fileName = temp;
 	ROQSize = iFile->Length();
 
 	looping = amilooping;
@@ -830,6 +1123,7 @@ bool idCinematicLocal::InitFromFile( const char* qpath, bool amilooping )
 		RoQ_init();
 		status = FMV_PLAY;
 		ImageForTime( 0 );
+		common->Printf( "Loaded RoQ file: '%s', looping=%d, %dx%d, %3.2f FPS\n", fileName.c_str(), looping, CIN_WIDTH, CIN_HEIGHT, frameRate );
 		status = ( looping ) ? FMV_PLAY : FMV_IDLE;
 		return true;
 	}
@@ -853,23 +1147,44 @@ void idCinematicLocal::Close()
 		status = FMV_EOF;
 	}
 
-	RoQShutdown();
-
+	if( isRoQ )
+	{
+		RoQShutdown();
+	}
 #if defined(USE_FFMPEG)
-	hasFrame = false;
-
-	if( !isRoQ )
+	else //if( !isRoQ )
 	{
 		if( img_convert_ctx )
 		{
 			sws_freeContext( img_convert_ctx );
+			img_convert_ctx = NULL;
 		}
 
-		img_convert_ctx = NULL;
+		// SRS - If we have cinematic audio, free audio codec context, resample context, and any lagged audio buffers
+		if( cinematicAudio )
+		{
+			if( dec_ctx2 )
+			{
+				avcodec_free_context( &dec_ctx2 );
+			}
+
+			// SRS - Free resample context if we were decoding planar audio
+			if( swr_ctx )
+			{
+				swr_free( &swr_ctx );
+			}
+
+			while( !lagBuffer.empty() )
+			{
+				av_freep( &lagBuffer.front() );
+				lagBuffer.pop();
+				lagBufSize.pop();
+			}
+		}
 
 		if( dec_ctx )
 		{
-			avcodec_close( dec_ctx );
+			avcodec_free_context( &dec_ctx );
 		}
 
 		if( fmt_ctx )
@@ -878,12 +1193,14 @@ void idCinematicLocal::Close()
 		}
 		status = FMV_EOF;
 	}
-#endif
-#ifdef USE_BINKDEC
-	if( !isRoQ && binkHandle.isValid )
+#elif defined(USE_BINKDEC)
+	else //if( !isRoQ )
 	{
-		memset( yuvBuffer, 0 , sizeof( yuvBuffer ) );
-		Bink_Close( binkHandle );
+		if( binkHandle.isValid )
+		{
+			memset( yuvBuffer, 0 , sizeof( yuvBuffer ) );
+			Bink_Close( binkHandle );
+		}
 		status = FMV_EOF;
 	}
 #endif
@@ -900,11 +1217,28 @@ int idCinematicLocal::AnimationLength()
 }
 
 // RB begin
+/*
+==============
+idCinematicLocal::IsPlaying
+==============
+*/
 bool idCinematicLocal::IsPlaying() const
 {
 	return ( status == FMV_PLAY );
 }
 // RB end
+
+// SRS - Implement virtual method to override abstract virtual method
+/*
+==============
+ idCinematicLocal::GetStartTime
+==============
+*/
+int idCinematicLocal::GetStartTime()
+{
+	return startTime;
+}
+// SRS end
 
 /*
 ==============
@@ -924,49 +1258,36 @@ idCinematicLocal::ImageForTime
 */
 cinData_t idCinematicLocal::ImageForTime( int thisTime )
 {
+	cinData_t	cinData;
+
+	if( thisTime <= 0 )
+	{
+		thisTime = Sys_Milliseconds();
+	}
+
+	memset( &cinData, 0, sizeof( cinData ) );
+	// SRS - also return if commandList is null, typically when called from within InitFromFile()
+	if( r_skipDynamicTextures.GetBool() || status == FMV_EOF || status == FMV_IDLE )
+	{
+		return cinData;
+	}
+
 #if defined(USE_FFMPEG)
 	// Carl: Handle BFG format BINK videos separately
 	if( !isRoQ )
 	{
 		return ImageForTimeFFMPEG( thisTime );
 	}
-#endif
-#ifdef USE_BINKDEC // DG: libbinkdec support
+#elif defined(USE_BINKDEC) // DG: libbinkdec support
 	if( !isRoQ )
 	{
 		return ImageForTimeBinkDec( thisTime );
 	}
 #endif
 
-	// Carl: Handle original Doom 3 RoQ video files
-	cinData_t	cinData;
-
-	if( thisTime == 0 )
-	{
-		thisTime = Sys_Milliseconds();
-	}
-
-	if( thisTime < 0 )
-	{
-		thisTime = 0;
-	}
-
-	memset( &cinData, 0, sizeof( cinData ) );
-
-//	if ( r_skipROQ.GetBool() ) {
-	if( r_skipDynamicTextures.GetBool() )
-	{
-		return cinData;
-	}
-
 	if( !iFile )
 	{
 		// RB: neither .bik or .roq found
-		return cinData;
-	}
-
-	if( status == FMV_EOF || status == FMV_IDLE )
-	{
 		return cinData;
 	}
 
@@ -986,7 +1307,8 @@ cinData_t idCinematicLocal::ImageForTime( int thisTime )
 		tfps = 0;
 	}
 
-	if( tfps < numQuads )
+	// SRS - Need to use numQuads - 1 for frame position (otherwise get into reset loop at start)
+	if( tfps < numQuads - 1 )
 	{
 		RoQReset();
 		buf = NULL;
@@ -995,6 +1317,7 @@ cinData_t idCinematicLocal::ImageForTime( int thisTime )
 
 	if( buf == NULL )
 	{
+		// SRS - This frame init loop is not really necessary, but leaving in to avoid breakage
 		while( buf == NULL )
 		{
 			RoQInterrupt();
@@ -1002,32 +1325,20 @@ cinData_t idCinematicLocal::ImageForTime( int thisTime )
 	}
 	else
 	{
-		while( ( tfps != numQuads && status == FMV_PLAY ) )
+		// SRS - This frame loop is really all we need and could handle the above case as well
+		while( ( numQuads - 1 < tfps && status == FMV_PLAY ) )
 		{
 			RoQInterrupt();
 		}
 	}
 
-	if( status == FMV_LOOPED )
-	{
-		status = FMV_PLAY;
-		while( buf == NULL && status == FMV_PLAY )
-		{
-			RoQInterrupt();
-		}
-		startTime = thisTime;
-	}
-
-	if( status == FMV_EOF )
+	if( status == FMV_LOOPED || status == FMV_EOF )
 	{
 		if( looping )
 		{
-			RoQReset();
+			//RoQReset();		// SRS - RoQReset() already called by RoQInterrupt() when looping
 			buf = NULL;
-			if( status == FMV_LOOPED )
-			{
-				status = FMV_PLAY;
-			}
+			status = FMV_PLAY;
 			while( buf == NULL && status == FMV_PLAY )
 			{
 				RoQInterrupt();
@@ -1036,8 +1347,10 @@ cinData_t idCinematicLocal::ImageForTime( int thisTime )
 		}
 		else
 		{
+			buf = NULL;
 			status = FMV_IDLE;
-			RoQShutdown();
+			//RoQShutdown();	//SRS - RoQShutdown() not needed on EOF, return null data instead
+			return cinData;
 		}
 	}
 
@@ -1059,18 +1372,12 @@ idCinematicLocal::ImageForTimeFFMPEG
 cinData_t idCinematicLocal::ImageForTimeFFMPEG( int thisTime )
 {
 	cinData_t	cinData;
-
-	if( thisTime <= 0 )
-	{
-		thisTime = Sys_Milliseconds();
-	}
+	char		error[64];
+	uint8_t*	audioBuffer = NULL;
+	int			num_bytes = 0;
+	bool		syncLost = false;
 
 	memset( &cinData, 0, sizeof( cinData ) );
-	if( r_skipDynamicTextures.GetBool() || status == FMV_EOF || status == FMV_IDLE )
-	{
-		return cinData;
-	}
-
 	if( !fmt_ctx )
 	{
 		// RB: .bik requested but not found
@@ -1095,6 +1402,8 @@ cinData_t idCinematicLocal::ImageForTimeFFMPEG( int thisTime )
 	if( desiredFrame < framePos )
 	{
 		FFMPEGReset();
+		hasFrame = false;
+		status = FMV_PLAY;
 	}
 
 	if( hasFrame && desiredFrame == framePos )
@@ -1109,10 +1418,11 @@ cinData_t idCinematicLocal::ImageForTimeFFMPEG( int thisTime )
 	AVPacket packet;
 	while( framePos < desiredFrame )
 	{
-		int frameFinished = 0;
+		int frameFinished = -1;
+		int res = 0;
 
 		// Do a single frame by getting packets until we have a full frame
-		while( !frameFinished )
+		while( frameFinished != 0 )
 		{
 			// if we got to the end or failed
 			if( av_read_frame( fmt_ctx, &packet ) < 0 )
@@ -1123,7 +1433,7 @@ cinData_t idCinematicLocal::ImageForTimeFFMPEG( int thisTime )
 				{
 					desiredFrame = 0;
 					FFMPEGReset();
-					framePos = -1;
+					hasFrame = false;
 					startTime = thisTime;
 					if( av_read_frame( fmt_ctx, &packet ) < 0 )
 					{
@@ -1134,6 +1444,7 @@ cinData_t idCinematicLocal::ImageForTimeFFMPEG( int thisTime )
 				}
 				else
 				{
+					hasFrame = false;
 					status = FMV_IDLE;
 					return cinData;
 				}
@@ -1142,10 +1453,129 @@ cinData_t idCinematicLocal::ImageForTimeFFMPEG( int thisTime )
 			if( packet.stream_index == video_stream_index )
 			{
 				// Decode video frame
-				avcodec_decode_video2( dec_ctx, frame, &frameFinished, &packet );
+				if( ( res = avcodec_send_packet( dec_ctx, &packet ) ) != 0 )
+				{
+					av_strerror( res, error, sizeof( error ) );
+					common->Warning( "idCinematic: Failed to send video packet for decoding with error: %s\n", error );
+				}
+				else
+				{
+					frameFinished = avcodec_receive_frame( dec_ctx, frame );
+					if( frameFinished != 0 && frameFinished != AVERROR( EAGAIN ) )
+					{
+						av_strerror( frameFinished, error, sizeof( error ) );
+						common->Warning( "idCinematic: Failed to receive video frame from decoding with error: %s\n", error );
+					}
+				}
 			}
+			//GK:Begin
+			else if( cinematicAudio && packet.stream_index == audio_stream_index ) //Check if it found any audio data
+			{
+				res = avcodec_send_packet( dec_ctx2, &packet );
+				if( res != 0 && res != AVERROR( EAGAIN ) )
+				{
+					av_strerror( res, error, sizeof( error ) );
+					common->Warning( "idCinematic: Failed to send audio packet for decoding with error: %s\n", error );
+				}
+				//SRS - Separate frame finisher for audio since there can be multiple audio frames per video frame (e.g. at bik startup)
+				int frameFinished1 = 0;
+				while( frameFinished1 == 0 )
+				{
+					if( ( frameFinished1 = avcodec_receive_frame( dec_ctx2, frame3 ) ) != 0 )
+					{
+						if( frameFinished1 != AVERROR( EAGAIN ) )
+						{
+							av_strerror( frameFinished1, error, sizeof( error ) );
+							common->Warning( "idCinematic: Failed to receive audio frame from decoding with error: %s\n", error );
+						}
+					}
+					// SRS - Allocate audio buffer, convert to packed format, save in queue, and play synced audio for desired frame
+					else
+					{
+						// SRS - Since destination sample format is packed (non-planar), returned bufflinesize equals num_bytes
+#if	LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59,37,100)
+						res = av_samples_alloc( &audioBuffer, &num_bytes, frame3->ch_layout.nb_channels, frame3->nb_samples, dst_smp, 0 );
+#else
+						res = av_samples_alloc( &audioBuffer, &num_bytes, frame3->channels, frame3->nb_samples, dst_smp, 0 );
+#endif
+						if( res < 0 || res != num_bytes )
+						{
+							common->Warning( "idCinematic: Failed to allocate audio buffer with result: %d\n", res );
+						}
+						if( hasplanar )
+						{
+							// SRS - Convert from planar to packed format keeping sample count the same
+							res = swr_convert( swr_ctx, &audioBuffer, frame3->nb_samples, ( const uint8_t** )frame3->extended_data, frame3->nb_samples );
+							if( res < 0 || res != frame3->nb_samples )
+							{
+								common->Warning( "idCinematic: Failed to convert planar audio data to packed format with result: %d\n", res );
+							}
+						}
+						else
+						{
+							// SRS - Since audio is already in packed format, just copy into audio buffer
+							if( num_bytes > 0 )
+							{
+								memcpy( audioBuffer, frame3->extended_data[0], num_bytes );
+							}
+						}
+
+						// SRS - If we have cinematic audio data, save the current frame onto the back of the queue
+						if( num_bytes > 0 )
+						{
+							// SRS - If queue is at max size we have lost a/v sync: drop frame and set syncLost flag
+							if( lagBuffer.size() == ( skipLag ? 1 : NUM_LAG_FRAMES ) )
+							{
+								av_freep( &lagBuffer.front() );
+								lagBuffer.pop();
+								lagBufSize.pop();
+
+								syncLost = true;
+							}
+
+							// SRS - Save the current (new) audio buffer and its size to play during the desired frame
+							lagBuffer.push( audioBuffer );
+							lagBufSize.push( num_bytes );
+						}
+						// SRS - Not sure if an audioBuffer can ever be allocated on failure, but check and free just in case
+						else if( audioBuffer )
+						{
+							av_freep( &audioBuffer );
+						}
+
+						// SRS - If we have any synced audio frames available for the desired frame, play now and drain queue
+						if( framePos + 1 == desiredFrame )
+						{
+							if( syncLost )
+							{
+								// SRS - If we have lost sync, reset / resync audio stream before starting to play again
+								cinematicAudio->ResetAudio();
+								syncLost = false;
+							}
+
+							while( !lagBuffer.empty() )
+							{
+								// SRS - Note that PlayAudio() is responsible for releasing any audio buffers sent to it
+								if( !s_noSound.GetBool() )
+								{
+									cinematicAudio->PlayAudio( lagBuffer.front(), lagBufSize.front() );
+								}
+								else
+								{
+									av_freep( &lagBuffer.front() );
+								}
+
+								lagBuffer.pop();
+								lagBufSize.pop();
+							}
+						}
+						//common->Printf( "idCinematic: video pts = %7.3f, audio pts = %7.3f, samples = %4d, num_bytes = %5d\n", static_cast<double>( frame->pts ) * av_q2d( dec_ctx->pkt_timebase ), static_cast<double>( frame3->pts ) * av_q2d( dec_ctx2->pkt_timebase ), frame3->nb_samples, num_bytes );
+					}
+				}
+			}
+			//GK:End
 			// Free the packet that was allocated by av_read_frame
-			av_free_packet( &packet );
+			av_packet_unref( &packet );
 		}
 
 		framePos++;
@@ -1166,30 +1596,32 @@ cinData_t idCinematicLocal::ImageForTimeFFMPEG( int thisTime )
 #endif
 
 
+/*
+==============
+idCinematicLocal::ImageForTimeBinkDec
+==============
+*/
 #ifdef USE_BINKDEC
 cinData_t idCinematicLocal::ImageForTimeBinkDec( int thisTime )
 {
-	cinData_t	cinData = {0};
+	cinData_t	cinData;
+	int16_t*	audioBuffer = NULL;
+	uint32_t	num_bytes = 0;
 
-	if( thisTime <= 0 )
-	{
-		thisTime = Sys_Milliseconds();
-	}
-
-	if( r_skipDynamicTextures.GetBool() || status == FMV_EOF || status == FMV_IDLE )
-	{
-		return cinData;
-	}
-
+	memset( &cinData, 0, sizeof( cinData ) );
 	if( !binkHandle.isValid )
 	{
 		// RB: .bik requested but not found
 		return cinData;
 	}
 
-	if( startTime == -1 )
+	// SRS - Implement hasFrame so BinkDec startTime is handled the same as with FFMPEG
+	if( ( !hasFrame ) || startTime == -1 )
 	{
-		BinkDecReset();
+		if( startTime == -1 )
+		{
+			BinkDecReset();
+		}
 		startTime = thisTime;
 	}
 
@@ -1199,25 +1631,16 @@ cinData_t idCinematicLocal::ImageForTimeBinkDec( int thisTime )
 		desiredFrame = 0;
 	}
 
-	if( desiredFrame >= numFrames )
+	// SRS - Enable video replay within PDAs
+	if( desiredFrame < framePos )
 	{
-		status = FMV_EOF;
-		if( looping )
-		{
-			desiredFrame = 0;
-			BinkDecReset();
-			framePos = -1;
-			startTime = thisTime;
-			status = FMV_PLAY;
-		}
-		else
-		{
-			status = FMV_IDLE;
-			return cinData;
-		}
+		BinkDecReset();
+		hasFrame = false;
+		status = FMV_PLAY;
 	}
+	// SRS end
 
-	if( desiredFrame == framePos )
+	if( hasFrame && desiredFrame == framePos )
 	{
 		cinData.imageWidth = CIN_WIDTH;
 		cinData.imageHeight = CIN_HEIGHT;
@@ -1227,6 +1650,25 @@ cinData_t idCinematicLocal::ImageForTimeBinkDec( int thisTime )
 		cinData.imageCr = imgCr;
 		cinData.imageCb = imgCb;
 		return cinData;
+	}
+
+	if( desiredFrame >= numFrames )
+	{
+		status = FMV_EOF;
+		if( looping )
+		{
+			desiredFrame = 0;
+			BinkDecReset();
+			hasFrame = false;
+			startTime = thisTime;
+			status = FMV_PLAY;
+		}
+		else
+		{
+			hasFrame = false;
+			status = FMV_IDLE;
+			return cinData;
+		}
 	}
 
 	// Bink_GotoFrame(binkHandle, desiredFrame);
@@ -1261,6 +1703,11 @@ cinData_t idCinematicLocal::ImageForTimeBinkDec( int thisTime )
 		}
 		else if( h < CIN_HEIGHT )
 		{
+#if defined(__APPLE__) && defined(USE_VULKAN)
+			// SRS - For U and V channels on OSX Vulkan use full height image to work around stall that occurs with half-height chroma planes
+			// when exiting levels or returning from demo playback - depends on OSX-specific logic inside Vulkan version of SubImageUpload()
+			h = CIN_HEIGHT;
+#else
 			// the U and V channels have a lower resolution than the Y channel
 			// (or the logical video resolution), so use the aspect ratio to
 			// calculate the real height
@@ -1269,6 +1716,7 @@ cinData_t idCinematicLocal::ImageForTimeBinkDec( int thisTime )
 			{
 				h = hExp;
 			}
+#endif
 		}
 
 		if( img->GetUploadWidth() != w || img->GetUploadHeight() != h )
@@ -1281,9 +1729,29 @@ cinData_t idCinematicLocal::ImageForTimeBinkDec( int thisTime )
 		img->SubImageUpload( 0, 0, 0, 0, w, h, yuvBuffer[i].data );
 	}
 
+	hasFrame = true;
 	cinData.imageY = imgY;
 	cinData.imageCr = imgCr;
 	cinData.imageCb = imgCb;
+
+	if( cinematicAudio )
+	{
+		audioBuffer = ( int16_t* )Mem_Alloc( binkInfo.idealBufferSize, TAG_AUDIO );
+		num_bytes = Bink_GetAudioData( binkHandle, trackIndex, audioBuffer );
+
+		// SRS - If we have cinematic audio data, start playing it now
+		if( num_bytes > 0 && !s_noSound.GetBool() )
+		{
+			// SRS - Note that PlayAudio() is responsible for releasing any audio buffers sent to it
+			cinematicAudio->PlayAudio( ( uint8_t* )audioBuffer, num_bytes );
+		}
+		else
+		{
+			// SRS - Even though we have no audio data to play, still need to free the audio buffer
+			Mem_Free( audioBuffer );
+			audioBuffer = NULL;
+		}
+	}
 
 	return cinData;
 }
@@ -1815,7 +2283,7 @@ void idCinematicLocal::blitVQQuad32fs( byte** status, unsigned char* data )
 }
 
 #define VQ2TO4(a,b,c,d) { \
-    	*c++ = a[0];	\
+		*c++ = a[0];	\
 	*d++ = a[0];	\
 	*d++ = a[0];	\
 	*c++ = a[1];	\
@@ -2338,12 +2806,12 @@ void idCinematicLocal::RoQReset()
 	status = FMV_LOOPED;
 }
 
-
 #ifdef ID_USE_LIBJPEG
-/* jpeg error handling */
-struct jpeg_error_mgr jerr;
+	/* jpeg error handling */
+	struct jpeg_error_mgr jerr;
 #endif
-int JPEGBlit( byte *wStatus, byte *data, int datasize )
+
+int JPEGBlit( byte* wStatus, byte* data, int datasize )
 {
 #ifndef ID_USE_LIBJPEG
 	// I don't think this code is actually used, because
@@ -2352,46 +2820,46 @@ int JPEGBlit( byte *wStatus, byte *data, int datasize )
 	common->Warning( "Contrary to Daniel's assumption, JPEGBlit() is actually called! Please report that as a dhewm3 bug!\n" );
 
 #else
-  /* This struct contains the JPEG decompression parameters and pointers to
-   * working space (which is allocated as needed by the JPEG library).
-   */
-  struct jpeg_decompress_struct cinfo;
-  /* We use our private extension JPEG error handler.
-   * Note that this struct must live as long as the main JPEG parameter
-   * struct, to avoid dangling-pointer problems.
-   */
-  /* More stuff */
-  JSAMPARRAY buffer;		/* Output row buffer */
-  int row_stride;		/* physical row width in output buffer */
+	/* This struct contains the JPEG decompression parameters and pointers to
+	 * working space (which is allocated as needed by the JPEG library).
+	 */
+	struct jpeg_decompress_struct cinfo;
+	/* We use our private extension JPEG error handler.
+	 * Note that this struct must live as long as the main JPEG parameter
+	 * struct, to avoid dangling-pointer problems.
+	 */
+	/* More stuff */
+	JSAMPARRAY buffer;		/* Output row buffer */
+	int row_stride;		/* physical row width in output buffer */
 
-  /* Step 1: allocate and initialize JPEG decompression object */
+	/* Step 1: allocate and initialize JPEG decompression object */
 
-  /* We set up the normal JPEG error routines, then override error_exit. */
-  cinfo.err = jpeg_std_error(&jerr);
+	/* We set up the normal JPEG error routines, then override error_exit. */
+	cinfo.err = jpeg_std_error( &jerr );
 
-  /* Now we can initialize the JPEG decompression object. */
-  jpeg_create_decompress(&cinfo);
+	/* Now we can initialize the JPEG decompression object. */
+	jpeg_create_decompress( &cinfo );
 
-  /* Step 2: specify data source (eg, a file) */
+	/* Step 2: specify data source (eg, a file) */
 
-  jpeg_mem_src(&cinfo, data, datasize);
+	jpeg_mem_src( &cinfo, data, datasize );
 
-  /* Step 3: read file parameters with jpeg_read_header() */
+	/* Step 3: read file parameters with jpeg_read_header() */
 
-  (void) jpeg_read_header(&cinfo, TRUE);
-  /* We can ignore the return value from jpeg_read_header since
-   *   (a) suspension is not possible with the stdio data source, and
-   *   (b) we passed TRUE to reject a tables-only JPEG file as an error.
-   * See libjpeg.doc for more info.
-   */
+	( void ) jpeg_read_header( &cinfo, TRUE );
+	/* We can ignore the return value from jpeg_read_header since
+	 *   (a) suspension is not possible with the stdio data source, and
+	 *   (b) we passed TRUE to reject a tables-only JPEG file as an error.
+	 * See libjpeg.doc for more info.
+	 */
 
-  /* Step 4: set parameters for decompression */
+	/* Step 4: set parameters for decompression */
 
-  /* In this example, we don't need to change any of the defaults set by
-   * jpeg_read_header(), so we do nothing here.
-   */
+	/* In this example, we don't need to change any of the defaults set by
+	 * jpeg_read_header(), so we do nothing here.
+	 */
 
-  /* Step 5: Start decompressor */
+	/* Step 5: Start decompressor */
 
 	cinfo.dct_method = JDCT_IFAST;
 	cinfo.dct_method = JDCT_FASTEST;
@@ -2399,75 +2867,76 @@ int JPEGBlit( byte *wStatus, byte *data, int datasize )
 	cinfo.do_fancy_upsampling = FALSE;
 //	cinfo.out_color_space = JCS_GRAYSCALE;
 
-  (void) jpeg_start_decompress(&cinfo);
-  /* We can ignore the return value since suspension is not possible
-   * with the stdio data source.
-   */
-
-  /* We may need to do some setup of our own at this point before reading
-   * the data.  After jpeg_start_decompress() we have the correct scaled
-   * output image dimensions available, as well as the output colormap
-   * if we asked for color quantization.
-   * In this example, we need to make an output work buffer of the right size.
-   */
-  /* JSAMPLEs per row in output buffer */
-  row_stride = cinfo.output_width * cinfo.output_components;
-
-  /* Make a one-row-high sample array that will go away when done with image */
-  buffer = (*cinfo.mem->alloc_sarray)
-		((j_common_ptr) &cinfo, JPOOL_IMAGE, row_stride, 1);
-
-  /* Step 6: while (scan lines remain to be read) */
-  /*           jpeg_read_scanlines(...); */
-
-  /* Here we use the library's state variable cinfo.output_scanline as the
-   * loop counter, so that we don't have to keep track ourselves.
-   */
-
-  wStatus += (cinfo.output_height-1)*row_stride;
-  while (cinfo.output_scanline < cinfo.output_height) {
-	/* jpeg_read_scanlines expects an array of pointers to scanlines.
-	 * Here the array is only one element long, but you could ask for
-	 * more than one scanline at a time if that's more convenient.
+	( void ) jpeg_start_decompress( &cinfo );
+	/* We can ignore the return value since suspension is not possible
+	 * with the stdio data source.
 	 */
-	(void) jpeg_read_scanlines(&cinfo, &buffer[0], 1);
 
-	/* Assume put_scanline_someplace wants a pointer and sample count. */
-	memcpy( wStatus, &buffer[0][0], row_stride );
-	/*
-	int x;
-	unsigned int *buf = (unsigned int *)&buffer[0][0];
-	unsigned int *out = (unsigned int *)wStatus;
-	for(x=0;x<cinfo.output_width;x++) {
-		unsigned int pixel = buf[x];
-		byte *roof = (byte *)&pixel;
-		byte temp = roof[0];
-		roof[0] = roof[2];
-		roof[2] = temp;
-		out[x] = pixel;
+	/* We may need to do some setup of our own at this point before reading
+	 * the data.  After jpeg_start_decompress() we have the correct scaled
+	 * output image dimensions available, as well as the output colormap
+	 * if we asked for color quantization.
+	 * In this example, we need to make an output work buffer of the right size.
+	 */
+	/* JSAMPLEs per row in output buffer */
+	row_stride = cinfo.output_width * cinfo.output_components;
+
+	/* Make a one-row-high sample array that will go away when done with image */
+	buffer = ( *cinfo.mem->alloc_sarray )
+			 ( ( j_common_ptr ) &cinfo, JPOOL_IMAGE, row_stride, 1 );
+
+	/* Step 6: while (scan lines remain to be read) */
+	/*           jpeg_read_scanlines(...); */
+
+	/* Here we use the library's state variable cinfo.output_scanline as the
+	 * loop counter, so that we don't have to keep track ourselves.
+	 */
+
+	wStatus += ( cinfo.output_height - 1 ) * row_stride;
+	while( cinfo.output_scanline < cinfo.output_height )
+	{
+		/* jpeg_read_scanlines expects an array of pointers to scanlines.
+		 * Here the array is only one element long, but you could ask for
+		 * more than one scanline at a time if that's more convenient.
+		 */
+		jpeg_read_scanlines( &cinfo, &buffer[0], 1 );
+
+		/* Assume put_scanline_someplace wants a pointer and sample count. */
+		memcpy( wStatus, &buffer[0][0], row_stride );
+		/*
+		int x;
+		unsigned int *buf = (unsigned int *)&buffer[0][0];
+		unsigned int *out = (unsigned int *)wStatus;
+		for(x=0;x<cinfo.output_width;x++) {
+			unsigned int pixel = buf[x];
+			byte *roof = (byte *)&pixel;
+			byte temp = roof[0];
+			roof[0] = roof[2];
+			roof[2] = temp;
+			out[x] = pixel;
+		}
+		*/
+		wStatus -= row_stride;
 	}
-	*/
-	wStatus -= row_stride;
-  }
 
-  /* Step 7: Finish decompression */
+	/* Step 7: Finish decompression */
 
-  (void) jpeg_finish_decompress(&cinfo);
-  /* We can ignore the return value since suspension is not possible
-   * with the stdio data source.
-   */
+	jpeg_finish_decompress( &cinfo );
+	/* We can ignore the return value since suspension is not possible
+	 * with the stdio data source.
+	 */
 
-  /* Step 8: Release JPEG decompression object */
+	/* Step 8: Release JPEG decompression object */
 
-  /* This is an important step since it will release a good deal of memory. */
-  jpeg_destroy_decompress(&cinfo);
+	/* This is an important step since it will release a good deal of memory. */
+	jpeg_destroy_decompress( &cinfo );
 
-  /* At this point you may want to check to see whether any corrupt-data
-   * warnings occurred (test whether jerr.pub.num_warnings is nonzero).
-   */
+	/* At this point you may want to check to see whether any corrupt-data
+	 * warnings occurred (test whether jerr.pub.num_warnings is nonzero).
+	 */
 #endif
-  /* And we're done! */
-  return 1;
+	/* And we're done! */
+	return 1;
 }
 
 /*
@@ -2563,7 +3032,7 @@ redump:
 //
 // read in next frame data
 //
-	if( RoQPlayed >= ROQSize )
+	if( RoQPlayed >= ROQSize || status == FMV_EOF )		// SRS - handle FMV_EOF case
 	{
 		if( looping )
 		{
@@ -2639,11 +3108,14 @@ idCinematicLocal::RoQShutdown
 */
 void idCinematicLocal::RoQShutdown()
 {
+	// SRS - Depending on status, this could prevent closing of iFile on shutdown, disable it
+	/*
 	if( status == FMV_IDLE )
 	{
 		return;
 	}
-	status = FMV_IDLE;
+	*/
+	status = FMV_EOF;	// SRS - Changed from FMV_IDLE to FMV_EOF for shutdown consistency
 
 	if( iFile )
 	{

@@ -46,6 +46,8 @@ extern idCVar g_demoMode;
 // This is for the dirty hack to get a dialog to show up before we capture the screen for autorender.
 const int NumScreenUpdatesToShowDialog = 25;
 
+
+
 /*
 ================
 idCommonLocal::StartWipe
@@ -540,7 +542,7 @@ void idCommonLocal::ExecuteMapChange()
 	// load and spawn all other entities ( from a savegame possibly )
 	if( mapSpawnData.savegameFile )
 	{
-		if( !game->InitFromSaveGame( fullMapName, renderWorld, soundWorld, mapSpawnData.savegameFile, mapSpawnData.stringTableFile, mapSpawnData.savegameVersion ) )
+		if( !game->InitFromSaveGame( fullMapName, renderWorld, soundWorld, mapSpawnData.savegameFile, mapSpawnData.stringTableFile, mapSpawnData.savegameVersion, com_editors ) )
 		{
 			// If the loadgame failed, end the session, which will force us to go back to the main menu
 			session->QuitMatchToTitle();
@@ -556,7 +558,7 @@ void idCommonLocal::ExecuteMapChange()
 			game->SetPersistentPlayerInfo( 0, mapSpawnData.persistentPlayerInfo );
 		}
 		game->SetServerInfo( matchParameters.serverInfo );
-		game->InitFromNewMap( fullMapName, renderWorld, soundWorld, matchParameters.gameMode, Sys_Milliseconds() );
+		game->InitFromNewMap( fullMapName, renderWorld, soundWorld, matchParameters.gameMode, Sys_Milliseconds(), com_editors );
 	}
 
 	game->Shell_CreateMenu( true );
@@ -594,7 +596,7 @@ void idCommonLocal::ExecuteMapChange()
 		}
 		else
 		{
-			game->RunFrame( emptyCommandManager, emptyGameReturn );
+			game->RunFrame( emptyCommandManager, emptyGameReturn, com_editors );
 		}
 	}
 
@@ -617,7 +619,7 @@ void idCommonLocal::ExecuteMapChange()
 			{
 				emptyCommandManager.PutUserCmdForPlayer( playerIndex, usercmd_t() );
 			}
-			game->RunFrame( emptyCommandManager, emptyGameReturn );
+			game->RunFrame( emptyCommandManager, emptyGameReturn, com_editors );
 		}
 
 		// kick off an auto-save of the game (so we can always continue in this map if we die before hitting an autosave)
@@ -940,7 +942,8 @@ bool idCommonLocal::SaveGame( const char* saveName )
 
 	bool autosave = idStr::Icmp( saveName, "autosave" ) != 0;
 
-	if ( autosave ) {
+	if( autosave )
+	{
 		soundWorld->Pause();
 		soundSystem->SetPlayingSoundWorld( menuSoundWorld );
 		soundSystem->Render();
@@ -953,10 +956,11 @@ bool idCommonLocal::SaveGame( const char* saveName )
 	}
 	else
 	{
-		if ( autosave ) {
+		if( autosave )
+		{
 			// Here make sure we pump the gui enough times to show the 'saving' dialog
 			const bool captureToImage = false;
-			for ( int i = 0; i < NumScreenUpdatesToShowDialog; ++i )
+			for( int i = 0; i < NumScreenUpdatesToShowDialog; ++i )
 			{
 				UpdateScreen( captureToImage );
 			}
@@ -1345,6 +1349,38 @@ Restart the server on a different map
 */
 CONSOLE_COMMAND_SHIP( map, "loads a map", idCmdSystem::ArgCompletion_MapName )
 {
+	idStr map, string;
+	findFile_t	ff;
+
+	map = args.Argv( 1 );
+	if( !map.Length() )
+	{
+		// DG: if the map command is called without any arguments, print the current map
+		// TODO: could check whether we're currently in a game, otherwise the last loaded
+		//       map is printed.. but OTOH, who cares
+		idMatchParameters matchParameters = idMatchParameters( session->GetPartyLobbyBase().GetMatchParms() );
+		const char* curmap = matchParameters.mapName;
+		if( curmap[0] != '\0' )
+		{
+			common->Printf( "Current Map: %s\n", curmap );
+		}
+		return;
+	}
+	map.StripFileExtension();
+
+	// make sure the level exists before trying to change, so that
+	// a typo at the server console won't end the game
+	sprintf( string, "maps/%s.map", map.c_str() );
+	ff = fileSystem->FindFile( string );
+	switch( ff )
+	{
+		case FIND_NO:
+			common->Printf( "Can't find map %s\n", string.c_str() );
+			return;
+		default:
+			break;
+	}
+
 	commonLocal.StartNewGame( args.Argv( 1 ), false, GAME_MODE_SINGLEPLAYER );
 }
 
@@ -1370,6 +1406,38 @@ Restart the server on a different map in developer mode
 */
 CONSOLE_COMMAND_SHIP( devmap, "loads a map in developer mode", idCmdSystem::ArgCompletion_MapName )
 {
+	idStr map, string;
+	findFile_t	ff;
+
+	map = args.Argv( 1 );
+	if( !map.Length() )
+	{
+		// DG: if the map command is called without any arguments, print the current map
+		// TODO: could check whether we're currently in a game, otherwise the last loaded
+		//       map is printed.. but OTOH, who cares
+		idMatchParameters matchParameters = idMatchParameters( session->GetPartyLobbyBase().GetMatchParms() );
+		const char* curmap = matchParameters.mapName;
+		if( curmap[0] != '\0' )
+		{
+			common->Printf( "Current Map: %s\n", curmap );
+		}
+		return;
+	}
+	map.StripFileExtension();
+
+	// make sure the level exists before trying to change, so that
+	// a typo at the server console won't end the game
+	sprintf( string, "maps/%s.map", map.c_str() );
+	ff = fileSystem->FindFile( string );
+	switch( ff )
+	{
+		case FIND_NO:
+			common->Printf( "Can't find map %s\n", string.c_str() );
+			return;
+		default:
+			break;
+	}
+
 	commonLocal.StartNewGame( args.Argv( 1 ), true, GAME_MODE_SINGLEPLAYER );
 }
 
@@ -1419,8 +1487,11 @@ CONSOLE_COMMAND( testmap, "tests a map", idCmdSystem::ArgCompletion_MapName )
 /*
 ==================
 Common_TestMap_f
+
+// TODO finish this
 ==================
 */
+#if 0
 CONSOLE_COMMAND( bakemap, "loads a map and bakes environment probes", idCmdSystem::ArgCompletion_MapName )
 {
 	idStr map, string;
@@ -1440,3 +1511,4 @@ CONSOLE_COMMAND( bakemap, "loads a map and bakes environment probes", idCmdSyste
 	sprintf( string, "bakeEnvironmentProbes" );
 	cmdSystem->BufferCommandText( CMD_EXEC_NOW, string );
 }
+#endif

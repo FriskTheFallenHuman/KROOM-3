@@ -563,12 +563,19 @@ void idRenderBackend::DBG_TestImage()
 	{
 		cinData_t	cin;
 
-		cin = tr.testVideo->ImageForTime( viewDef->renderView.time[1] - tr.testVideoStartTime );
+		// SRS - Don't need calibrated time for testing cinematics, so just call ImageForTime() with current system time
+		// This simplification allows cinematic test playback to work over both 2D and 3D background scenes
+		cin = tr.testVideo->ImageForTime( Sys_Milliseconds() /*viewDef->renderView.time[1] - tr.testVideoStartTime*/ );
 		if( cin.imageY != NULL )
 		{
 			image = cin.imageY;
 			imageCr = cin.imageCr;
 			imageCb = cin.imageCb;
+		}
+		// SRS - Also handle ffmpeg and original RoQ decoders for test videos (using cin.image)
+		else if( cin.image != NULL )
+		{
+			image = cin.image;
 		}
 		else
 		{
@@ -610,7 +617,7 @@ void idRenderBackend::DBG_TestImage()
 	scale[0] = w; // scale
 	scale[5] = h; // scale
 	scale[12] = halfScreenWidth - ( halfScreenWidth * w ); // translate
-	scale[13] = halfScreenHeight - ( halfScreenHeight * h ); // translate
+	scale[13] = halfScreenHeight / 2 - ( halfScreenHeight * h ); // translate (SRS - center of console dropdown)
 	scale[10] = 1.0f;
 	scale[15] = 1.0f;
 
@@ -646,7 +653,9 @@ void idRenderBackend::DBG_TestImage()
 		GL_SelectTexture( 2 );
 		imageCb->Bind();
 
-		renderProgManager.BindShader_Bink();
+		// SRS - Use Bink shader with no sRGB to linear conversion, otherwise cinematic colours may be wrong
+		// BindShader_BinkGUI() does not seem to work here - perhaps due to vertex shader input dependencies?
+		renderProgManager.BindShader_Bink_sRGB();
 	}
 	else
 	{

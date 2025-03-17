@@ -267,9 +267,7 @@ idDict::Checksum
 */
 int	idDict::Checksum() const
 {
-	// RB: 64 bit fixes, changed long to int
 	unsigned int ret;
-	// RB end
 	int i, n;
 
 	idList<idKeyValue> sorted = args;
@@ -642,6 +640,22 @@ void idDict::Delete( const char* key )
 		assert( FindKey( args[i].GetKey() ) != NULL );
 	}
 #endif
+}
+
+// RB
+void idDict::DeleteEmptyKeys()
+{
+	idList<idKeyValue> orig = args;
+
+	for( int i = 0; i < orig.Num(); i++ )
+	{
+		const idKeyValue& kv = orig[ i ];
+
+		if( kv.GetValue().Length() == 0 )
+		{
+			Delete( kv.GetKey() );
+		}
+	}
 }
 
 /*
@@ -1026,8 +1040,8 @@ idDict::ShowMemoryUsage_f
 */
 void idDict::ShowMemoryUsage_f( const idCmdArgs& args )
 {
-	idLib::common->Printf( "%5d KB in %d keys\n", globalKeys.Size() >> 10, globalKeys.Num() );
-	idLib::common->Printf( "%5d KB in %d values\n", globalValues.Size() >> 10, globalValues.Num() );
+	idLib::common->Printf( "%5zd KB in %d keys\n", globalKeys.Size() >> 10, globalKeys.Num() );
+	idLib::common->Printf( "%5zd KB in %d values\n", globalValues.Size() >> 10, globalValues.Num() );
 }
 
 /*

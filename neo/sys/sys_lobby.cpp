@@ -69,6 +69,7 @@ idLobby::idLobby()
 
 	localReadSS				= NULL;
 	objMemory				= NULL;
+	lzwData                 = NULL;
 	haveSubmittedSnaps		= false;
 
 	state					= STATE_IDLE;
@@ -115,6 +116,20 @@ idLobby::idLobby()
 
 	showHostLeftTheSession	= false;
 	connectIsFromInvite		= false;
+}
+
+/*
+========================
+idLobby::~idLobby
+========================
+*/
+idLobby::~idLobby()
+{
+	// SRS - cleanup any allocations made for multiplayer networking support
+	Mem_Free( objMemory );
+	objMemory = NULL;
+	Mem_Free( lzwData );
+	lzwData = NULL;
 }
 
 /*
@@ -284,51 +299,49 @@ void idLobby::Shutdown( bool retainMigrationInfo, bool skipGoodbye )
 		{
 			assert( peers[p].GetConnectionState() == CONNECTION_FREE );
 		}
-
-		state = STATE_IDLE;
-
-		return;
 	}
-
-	NET_VERBOSE_PRINT( "NET: ShutdownLobby (%s)\n", GetLobbyName() );
-
-	for( int p = 0; p < peers.Num(); p++ )
+	else
 	{
-		if( peers[p].GetConnectionState() != CONNECTION_FREE )
+		NET_VERBOSE_PRINT( "NET: ShutdownLobby (%s)\n", GetLobbyName() );
+
+		for( int p = 0; p < peers.Num(); p++ )
 		{
-			SetPeerConnectionState( p, CONNECTION_FREE, skipGoodbye );		// This will send goodbye's
+			if( peers[p].GetConnectionState() != CONNECTION_FREE )
+			{
+				SetPeerConnectionState( p, CONNECTION_FREE, skipGoodbye );		// This will send goodbye's
+			}
 		}
-	}
 
-	// Remove any users that weren't handled in ResetPeers
-	// (this will happen as a client, because we won't get the reliable msg from the server since we are severing the connection)
-	for( int i = 0; i < GetNumLobbyUsers(); i++ )
-	{
-		lobbyUser_t* user = GetLobbyUser( i );
-		UnregisterUser( user );
-	}
+		// Remove any users that weren't handled in ResetPeers
+		// (this will happen as a client, because we won't get the reliable msg from the server since we are severing the connection)
+		for( int i = 0; i < GetNumLobbyUsers(); i++ )
+		{
+			lobbyUser_t* user = GetLobbyUser( i );
+			UnregisterUser( user );
+		}
 
-	FreeAllUsers();
+		FreeAllUsers();
 
-	host					= -1;
-	peerIndexOnHost			= -1;
-	isHost					= false;
-	needToDisplayMigrateMsg	= false;
-	migrationDlg			= GDM_INVALID;
+		host					= -1;
+		peerIndexOnHost			= -1;
+		isHost					= false;
+		needToDisplayMigrateMsg	= false;
+		migrationDlg			= GDM_INVALID;
 
-	partyToken				= 0;		// Reset our party token so we recompute
-	loaded					= false;
-	respondToArbitrate		= false;
-	waitForPartyOk			= false;
-	startLoadingFromHost	= false;
+		partyToken				= 0;		// Reset our party token so we recompute
+		loaded					= false;
+		respondToArbitrate		= false;
+		waitForPartyOk			= false;
+		startLoadingFromHost	= false;
 
-	snapDeltaAckQueue.Clear();
+		snapDeltaAckQueue.Clear();
 
-	// Shutdown the lobbyBackend
-	if( !retainMigrationInfo )
-	{
-		sessionCB->DestroyLobbyBackend( lobbyBackend );
-		lobbyBackend = NULL;
+		// Shutdown the lobbyBackend
+		if( !retainMigrationInfo )
+		{
+			sessionCB->DestroyLobbyBackend( lobbyBackend );
+			lobbyBackend = NULL;
+		}
 	}
 
 	state = STATE_IDLE;
@@ -521,7 +534,7 @@ void idLobby::HandlePacket( lobbyAddress_t& remoteAddress, idBitMsg fragMsg, idP
 		}
 		else if( userData == OOB_BANDWIDTH_TEST )
 		{
-			int seqNum = msg.ReadLong();
+			int seqNum = msg.ReadInt();
 			// TODO: We should read the random data and verify the MD5 checksum
 
 			int time = Sys_Milliseconds();
@@ -635,7 +648,7 @@ void idLobby::HandlePacket( lobbyAddress_t& remoteAddress, idBitMsg fragMsg, idP
 						// When we aren't in the game, we need to send this as reliable msg's, since usercmds won't be taking care of it for us
 						byte ackbuffer[32];
 						idBitMsg ackmsg( ackbuffer, sizeof( ackbuffer ) );
-						ackmsg.WriteLong( seq );
+						ackmsg.WriteInt( seq );
 
 						// Add incoming BPS for QoS
 						float incomingBPS = peers[ peerNum ].receivedBps;
@@ -1578,7 +1591,7 @@ void idLobby::SendConnectionRequest()
 
 	NET_VERBOSE_PRINT( "NET: version = %u\n", localChecksum );
 
-	msg.WriteLong( localChecksum );
+	msg.WriteInt( localChecksum );
 	msg.WriteUShort( peers[host].sessionID );
 	msg.WriteBool( connectIsFromInvite );
 
@@ -1755,7 +1768,7 @@ idLobby::CheckVersion
 */
 bool idLobby::CheckVersion( idBitMsg& msg, lobbyAddress_t peerAddress )
 {
-	const unsigned int remoteChecksum = msg.ReadLong(); // DG: use int instead of long for 64bit compatibility
+	const unsigned int remoteChecksum = msg.ReadInt(); // DG: use int instead of long for 64bit compatibility
 
 	if( net_checkVersion.GetInteger() == 1 )
 	{
@@ -2022,12 +2035,12 @@ int idLobby::HandleInitialPeerConnection( idBitMsg& msg, const lobbyAddress_t& p
 
 	// Let them know their peer index on this host
 	// peerIndexOnHost (put this here so it shows up in search results when finding out where it's used/referenced)
-	outmsg.WriteLong( peerNum );
+	outmsg.WriteInt( peerNum );
 
 	// If they are connecting to our party lobby, let them know the party token
 	if( lobbyType == TYPE_PARTY )
 	{
-		outmsg.WriteLong( GetPartyTokenAsHost() );
+		outmsg.WriteInt( GetPartyTokenAsHost() );
 	}
 
 	if( lobbyType == TYPE_GAME || lobbyType == TYPE_GAME_STATE )
@@ -2493,12 +2506,12 @@ void idLobby::HandleHelloAck( int p, idBitMsg& msg )
 	SetPeerConnectionState( p, CONNECTION_ESTABLISHED );
 
 	// Obtain what our peer index is on the host is
-	peerIndexOnHost = msg.ReadLong();
+	peerIndexOnHost = msg.ReadInt();
 
 	// If we connected to a party lobby, get the party token from the lobby owner
 	if( lobbyType == TYPE_PARTY )
 	{
-		partyToken = msg.ReadLong();
+		partyToken = msg.ReadInt();
 	}
 
 	// Read match parms
@@ -2810,7 +2823,7 @@ void idLobby::HandleReliableMsg( int p, idBitMsg& msg, const lobbyAddress_t* rem
 		VERIFY_FROM_HOST( p, lobbyType, RELIABLE_PARTY_USER_CONNECT_DENIED );
 
 		// Remove this user from the sign-in manager, so we don't keep trying to add them
-		if( !sessionCB->GetSignInManager().RemoveLocalUserByHandle( localUserHandle_t( msg.ReadLong() ) ) )
+		if( !sessionCB->GetSignInManager().RemoveLocalUserByHandle( localUserHandle_t( msg.ReadInt() ) ) )
 		{
 			NET_VERBOSE_PRINT( "NET: RELIABLE_PARTY_USER_CONNECT_DENIED, local user not found\n" );
 			return;
@@ -2869,7 +2882,7 @@ void idLobby::HandleReliableMsg( int p, idBitMsg& msg, const lobbyAddress_t* rem
 		VERIFY_CONNECTED_PEER( p, actingGameStateLobbyType, RELIABLE_LOADING_DONE );
 
 		unsigned int networkChecksum = 0; // DG: use int instead of long for 64bit compatibility
-		networkChecksum = msg.ReadLong();
+		networkChecksum = msg.ReadInt();
 
 		peer.networkChecksum = networkChecksum;
 		peer.loaded = true;
@@ -2885,7 +2898,7 @@ void idLobby::HandleReliableMsg( int p, idBitMsg& msg, const lobbyAddress_t* rem
 		VERIFY_CONNECTED_PEER( p, actingGameStateLobbyType, RELIABLE_SNAPSHOT_ACK );
 
 		// update our base state for his last received snapshot
-		int snapNum = msg.ReadLong();
+		int snapNum = msg.ReadInt();
 		float receivedBps = msg.ReadQuantizedUFloat< BANDWIDTH_REPORTING_MAX, BANDWIDTH_REPORTING_BITS >();
 
 		// Update reported received bps
@@ -2909,7 +2922,7 @@ void idLobby::HandleReliableMsg( int p, idBitMsg& msg, const lobbyAddress_t* rem
 	else if( reliableType == RELIABLE_UPDATE_MATCH_PARMS )
 	{
 		VERIFY_CONNECTED_PEER( p, TYPE_GAME, RELIABLE_UPDATE_MATCH_PARMS );
-		int msgType = msg.ReadLong();
+		int msgType = msg.ReadInt();
 		sessionCB->HandlePeerMatchParamUpdate( p, msgType );
 
 	}
@@ -3710,7 +3723,7 @@ void idLobby::PingPeers()
 
 	byte packetCopy[ sizeof( packet ) ];
 	idBitMsg msg( packetCopy, sizeof( packetCopy ) );
-	msg.WriteLong( packet.timestamp );
+	msg.WriteInt( packet.timestamp );
 
 	for( int i = 0; i < peers.Num(); ++i )
 	{
@@ -3871,10 +3884,10 @@ void idLobby::ServerUpdateBandwidthTest()
 		byte buffer[ idPacketProcessor::MAX_OOB_MSG_SIZE ];		// <---- NOTE - When calling ProcessOutgoingMsg with true for oob, we can't go over this size
 		idBitMsg msg( buffer, sizeof( buffer ) );
 
-		msg.WriteLong( peer.bandwidthSequenceNum++ );
+		msg.WriteInt( peer.bandwidthSequenceNum++ );
 
 		unsigned int randomSize = Min( ( unsigned int )( sizeof( buffer ) - 12 ), ( unsigned int )session->GetTitleStorageInt( "net_bw_test_packetSizeBytes", net_bw_test_packetSizeBytes.GetInteger() ) );
-		msg.WriteLong( randomSize );
+		msg.WriteInt( randomSize );
 
 		for( unsigned int j = 0; j < randomSize; j++ )
 		{
@@ -3882,7 +3895,7 @@ void idLobby::ServerUpdateBandwidthTest()
 		}
 
 		unsigned int checksum = MD5_BlockChecksum( &buffer[8], randomSize );
-		msg.WriteLong( checksum );
+		msg.WriteInt( checksum );
 
 		NET_VERBOSE_PRINT( "Net: Sending bw challenge to peer %d time %d packet size %d\n", i, time, msg.GetSize() );
 
@@ -3970,16 +3983,16 @@ void idLobby::ClientUpdateBandwidthTest()
 	// (note, subtract net_bw_test_timeout to get 'last recevied bandwidth test packet')
 	// (^^ Note if the last packet is fragmented and we never get it, this is technically wrong!)
 	int totalTime = ( bandwidthChallengeEndTime - session->GetTitleStorageInt( "net_bw_test_timeout", net_bw_test_timeout.GetInteger() ) ) - bandwidthChallengeStartTime;
-	msg.WriteLong( totalTime );
+	msg.WriteInt( totalTime );
 
 	// Send total number of complete, in order packets we got
-	msg.WriteLong( bandwidthChallengeNumGoodSeq );
+	msg.WriteInt( bandwidthChallengeNumGoodSeq );
 
 	// Send the overall average bandwidth in KBS
 	// Note that sending the number of good packets is not enough. If the packets going out are fragmented, and we
 	// drop fragments, the number of good sequences will be lower than the bandwidth we actually received.
 	int totalIncomingBytes = peers[host].packetProc->GetIncomingBytes() - peers[host].bandwidthTestBytes;
-	msg.WriteLong( totalIncomingBytes );
+	msg.WriteInt( totalIncomingBytes );
 
 	idLib::Printf( "^3Finished Bandwidth test: \n" );
 	idLib::Printf( "  Total time: %d\n", totalTime );
@@ -4012,9 +4025,9 @@ void idLobby::HandleBandwidhTestValue( int p, idBitMsg& msg )
 		return;
 	}
 
-	int totalTime = msg.ReadLong();
-	int totalGoodSeq = msg.ReadLong();
-	int totalReceivedBytes = msg.ReadLong();
+	int totalTime = msg.ReadInt();
+	int totalGoodSeq = msg.ReadInt();
+	int totalReceivedBytes = msg.ReadInt();
 
 	// This is the % of complete packets we received. If the packets used in the BWC are big enough to fragment, then pctPackets
 	// will be lower than bytesPct (we will have received a larger PCT of overall bandwidth than PCT of full packets received).
@@ -4198,7 +4211,7 @@ void idLobby::HandleReliablePing( int p, idBitMsg& msg )
 		return;
 	}
 
-	ping.timestamp = msg.ReadLong();
+	ping.timestamp = msg.ReadInt();
 
 	if( IsHost() )
 	{

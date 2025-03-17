@@ -207,6 +207,12 @@ int R_TriSurfMemory( const srfTriangles_t* tri )
 	{
 		total += tri->numDupVerts * sizeof( tri->dupVerts[0] );
 	}
+	// RB: added MOC
+	if( tri->mocIndexes != NULL )
+	{
+		total += tri->numIndexes * sizeof( tri->mocIndexes[0] );
+	}
+	// RB end
 
 	total += sizeof( *tri );
 
@@ -251,6 +257,13 @@ void R_FreeStaticTriSurf( srfTriangles_t* tri )
 				Mem_Free( tri->verts );
 			}
 		}
+
+		// RB begin
+		if( tri->mocVerts != NULL )
+		{
+			Mem_Free( tri->mocVerts );
+		}
+		// RB end
 	}
 
 	if( !tri->facePlanes )
@@ -277,6 +290,12 @@ void R_FreeStaticTriSurf( srfTriangles_t* tri )
 		{
 			Mem_Free( tri->silEdges );
 		}
+		// RB begin
+		if( tri->mocIndexes != NULL )
+		{
+			Mem_Free( tri->mocIndexes );
+		}
+		// RB end
 		if( tri->dominantTris != NULL )
 		{
 			Mem_Free( tri->dominantTris );
@@ -428,6 +447,28 @@ void R_AllocStaticTriSurfDupVerts( srfTriangles_t* tri, int numDupVerts )
 
 /*
 =================
+R_AllocStaticTriSurfMocIndexes
+=================
+*/
+void R_AllocStaticTriSurfMocIndexes( srfTriangles_t* tri, int numIndexes )
+{
+	assert( tri->mocIndexes == NULL );
+	tri->mocIndexes = ( unsigned int* )Mem_Alloc16( numIndexes * sizeof( unsigned int ), TAG_TRI_MOC_VERT );
+}
+
+/*
+=================
+R_AllocStaticTriSurfMocVerts
+=================
+*/
+void R_AllocStaticTriSurfMocVerts( srfTriangles_t* tri, int numVerts )
+{
+	assert( tri->mocVerts == NULL );
+	tri->mocVerts = ( idVec4* )Mem_Alloc16( numVerts * sizeof( idVec4 ), TAG_TRI_MOC_VERT );
+}
+
+/*
+=================
 R_AllocStaticTriSurfSilEdges
 =================
 */
@@ -442,10 +483,11 @@ void R_AllocStaticTriSurfSilEdges( srfTriangles_t* tri, int numSilEdges )
 R_AllocStaticTriSurfPlanes
 =================
 */
-void R_AllocStaticTriSurfPlanes( srfTriangles_t *tri, int numIndexes ) {
+void R_AllocStaticTriSurfPlanes( srfTriangles_t* tri, int numIndexes )
+{
 	assert( tri->facePlanes == NULL );
 	//tri->facePlanes = new idPlane[tri->numIndexes / 3];
-	tri->facePlanes = (idPlane *)Mem_Alloc( tri->numIndexes / 3 * sizeof( idPlane ), TAG_TRI_PLANES );
+	tri->facePlanes = ( idPlane* )Mem_Alloc( tri->numIndexes / 3 * sizeof( idPlane ), TAG_TRI_PLANES );
 }
 
 /*
@@ -467,7 +509,7 @@ R_ResizeStaticTriSurfVerts
 void R_ResizeStaticTriSurfVerts( srfTriangles_t* tri, int numVerts )
 {
 	idDrawVert* newVerts = ( idDrawVert* )Mem_Alloc16( numVerts * sizeof( idDrawVert ), TAG_TRI_VERTS );
-	const int copy = std::min( numVerts, tri->numVerts );
+	const int copy = Min( numVerts, tri->numVerts );
 	memcpy( newVerts, tri->verts, copy * sizeof( idDrawVert ) );
 	Mem_Free( tri->verts );
 	tri->verts = newVerts;
@@ -2038,6 +2080,9 @@ void R_CleanupTriangles( srfTriangles_t* tri, bool createNormals, bool identifyS
 	{
 		R_DeriveTangents( tri );
 	}
+
+	// RB: duplicate data appropiate for MOC SIMD fetches
+	R_CreateMaskedOcclusionCullingTris( tri );
 }
 
 /*
@@ -2464,6 +2509,28 @@ idVec3 R_ClosestPointPointTriangle( const idVec3& point, const idVec3& vertex1, 
 	return result;
 }
 
+idVec3 R_ClosestPointOnLineSegment( const idVec3& point, const idVec3& lineStart, const idVec3& lineEnd, float& t )
+{
+	idVec3 lineDirection = lineEnd - lineStart;
+	float lineLengthSquared = lineDirection.LengthSqr();
+
+	if( lineLengthSquared == 0.0f )
+	{
+		// the line segment is actually a point
+		t = 0.0f;
+		return lineStart;
+	}
+
+	// calculate the projection of the point onto the line
+	t = ( ( point - lineStart ) * lineDirection ) / lineLengthSquared;
+
+	// clamp t to the range [0, 1] to ensure the closest point is on the line segment
+	t = idMath::ClampFloat( 0, 1, t );
+
+	// calculate the closest point on the line segment
+	return lineStart + t * lineDirection;
+}
+
 /*
 =====================
 R_DeriveFacePlanes
@@ -2471,10 +2538,12 @@ R_DeriveFacePlanes
 Writes the facePlanes values, overwriting existing ones if present
 =====================
 */
-void R_DeriveFacePlanes( srfTriangles_t *tri ) {
-	idPlane *	planes;
+void R_DeriveFacePlanes( srfTriangles_t* tri )
+{
+	idPlane* 	planes;
 
-	if ( !tri->facePlanes ) {
+	if( !tri->facePlanes )
+	{
 		R_AllocStaticTriSurfPlanes( tri, tri->numIndexes );
 	}
 	planes = tri->facePlanes;
@@ -2485,10 +2554,11 @@ void R_DeriveFacePlanes( srfTriangles_t *tri ) {
 
 #else
 
-	for ( int i = 0; i < tri->numIndexes; i+= 3, planes++ ) {
+	for( int i = 0; i < tri->numIndexes; i += 3, planes++ )
+	{
 		int		i1, i2, i3;
 		idVec3	d1, d2, normal;
-		idVec3	*v1, *v2, *v3;
+		idVec3*	v1, *v2, *v3;
 
 		i1 = tri->indexes[i + 0];
 		i2 = tri->indexes[i + 1];
@@ -2515,9 +2585,9 @@ void R_DeriveFacePlanes( srfTriangles_t *tri ) {
 		sqrLength = normal.x * normal.x + normal.y * normal.y + normal.z * normal.z;
 		invLength = idMath::RSqrt( sqrLength );
 
-		(*planes)[0] = normal[0] * invLength;
-		(*planes)[1] = normal[1] * invLength;
-		(*planes)[2] = normal[2] * invLength;
+		( *planes )[0] = normal[0] * invLength;
+		( *planes )[1] = normal[1] * invLength;
+		( *planes )[2] = normal[2] * invLength;
 
 		planes->FitThroughPoint( *v1 );
 	}
@@ -2526,3 +2596,29 @@ void R_DeriveFacePlanes( srfTriangles_t *tri ) {
 
 	tri->facePlanesCalculated = true;
 }
+
+void R_CreateMaskedOcclusionCullingTris( srfTriangles_t* tri )
+{
+	//assert( tri->mocVerts == NULL );
+	if( tri->mocVerts == NULL )
+	{
+		R_AllocStaticTriSurfMocVerts( tri, tri->numVerts );
+
+		for( int i = 0; i < tri->numVerts; i++ )
+		{
+			tri->mocVerts[i].ToVec3() = tri->verts[i].xyz;
+			tri->mocVerts[i].w = 1.0f;
+		}
+	}
+
+	if( tri->mocIndexes == NULL )
+	{
+		R_AllocStaticTriSurfMocIndexes( tri, tri->numIndexes );
+
+		for( int i = 0; i < tri->numIndexes; i++ )
+		{
+			tri->mocIndexes[i] = tri->indexes[i];
+		}
+	}
+}
+// RB end

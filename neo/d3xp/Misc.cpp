@@ -871,7 +871,7 @@ void idSpring::Restore( idRestoreGame* savefile )
 	savefile->ReadVec3( p1 );
 	savefile->ReadVec3( p2 );
 	spring.Restore( savefile );
-	Event_LinkSpring( );
+	Event_LinkSpring();
 }
 
 /*
@@ -1752,7 +1752,7 @@ idStaticEntity::ShowEditingDialog
 */
 void idStaticEntity::ShowEditingDialog()
 {
-	common->InitTool( EDITOR_PARTICLE, &spawnArgs );
+	common->InitTool( EDITOR_PARTICLE, &spawnArgs, this );
 }
 /*
 ================

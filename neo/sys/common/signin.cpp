@@ -111,33 +111,32 @@ void idSignInManagerWin::RegisterLocalUser( int inputDevice )
 		return;
 	}
 
-	static char machineName[128];
-	// DG: support for ui_name
-	const char* nameSource = ui_name.GetString();
+	static char s_userName[16];
+	const char* s_usernameSource = ui_name.GetString();	// DG: support for ui_name
 
-	if( idStr::Length( nameSource ) == 0 )
+	if( idStr::Length( s_userName ) == 0 )
 	{
-		// ui_name was empty => default to hostname
+		// ui_name was empty => default to user name
 #ifdef _WIN32
-		DWORD len = 128;
-		::GetComputerName( machineName, &len );
+		DWORD len = 16;
+		::GetUserName( s_userName, &len );
 #else
 		gethostname( machineName, sizeof( machineName ) );
 #endif
-		nameSource = machineName;
+		s_usernameSource = s_userName;
 	}
 	// DG end
 
-	idStr name( nameSource );
+	idStr name( s_usernameSource );
 	int nameLength = name.Length();
-	if( idStr::IsValidUTF8( nameSource, nameLength ) )
+	if( idStr::IsValidUTF8( s_usernameSource, nameLength ) )
 	{
 		int nameIndex = 0;
 		int numChars = 0;
 		name.Empty();
 		while( nameIndex < nameLength && numChars++ < idLocalUserWin::MAX_GAMERTAG_CHARS )
 		{
-			uint32 c = idStr::UTF8Char( nameSource, nameIndex );
+			uint32 c = idStr::UTF8Char( s_usernameSource, nameIndex );
 			name.AppendUTF8Char( c );
 		}
 	}

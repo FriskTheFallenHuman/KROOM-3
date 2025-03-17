@@ -672,9 +672,7 @@ int Sys_ListFiles( const char* directory, const char* extension, idStrList& list
 {
 	idStr		search;
 	struct _finddata_t findinfo;
-	// RB: 64 bit fixes, changed int to intptr_t
 	intptr_t	findhandle;
-	// RB end
 	int			flag;
 
 	if( !extension )
@@ -991,11 +989,62 @@ DLL Loading
 Sys_DLL_Load
 =====================
 */
-// RB: 64 bit fixes, changed int to intptr_t
-intptr_t Sys_DLL_Load( const char* dllName )
+uintptr_t Sys_DLL_Load( const char* dllName )
 {
-	HINSTANCE libHandle = LoadLibrary( dllName );
-	return ( intptr_t )libHandle;
+	HINSTANCE	libHandle;
+	libHandle = LoadLibrary( dllName );
+	if( libHandle )
+	{
+		// since we can't have LoadLibrary load only from the specified path, check it did the right thing
+		char loadedPath[ MAX_OSPATH ];
+		GetModuleFileName( libHandle, loadedPath, sizeof( loadedPath ) - 1 );
+		if( idStr::IcmpPath( dllName, loadedPath ) )
+		{
+			Sys_Printf( "ERROR: LoadLibrary '%s' wants to load '%s'\n", dllName, loadedPath );
+			Sys_DLL_Unload( ( uintptr_t )libHandle );
+			return 0;
+		}
+	}
+	else
+	{
+		DWORD e = GetLastError();
+
+		if( e ==  0x7E )
+		{
+			// 0x7E is "The specified module could not be found."
+			// don't print a warning for that error, it's expected
+			// when trying different possible paths for a DLL
+			return 0;
+		}
+
+		if( e == 0xC1 )
+		{
+			// "[193 (0xC1)] is not a valid Win32 application"
+			// probably going to be common. Lets try to be less cryptic.
+			common->Warning( "LoadLibrary( \"%s\" ) Failed ! [%i (0x%X)]\tprobably the DLL is of the wrong architecture, "
+							 "like x64 instead of x86 (this build of rbdoom3 bfg expects %s)",
+							 dllName, e, e, CPUSTRING );
+			return 0;
+		}
+
+		// for all other errors, print whatever FormatMessage() gives us
+		LPVOID msgBuf = NULL;
+
+		FormatMessage(
+			FORMAT_MESSAGE_ALLOCATE_BUFFER |
+			FORMAT_MESSAGE_FROM_SYSTEM |
+			FORMAT_MESSAGE_IGNORE_INSERTS,
+			NULL,
+			e,
+			MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),
+			( LPTSTR )&msgBuf,
+			0, NULL );
+
+		common->Warning( "LoadLibrary( \"%s\" ) Failed ! [%i (0x%X)]\t%s", dllName, e, e, msgBuf );
+
+		::LocalFree( msgBuf );
+	}
+	return ( uintptr_t )libHandle;
 }
 
 /*
@@ -1003,10 +1052,34 @@ intptr_t Sys_DLL_Load( const char* dllName )
 Sys_DLL_GetProcAddress
 =====================
 */
-void* Sys_DLL_GetProcAddress( intptr_t dllHandle, const char* procName )
+void* Sys_DLL_GetProcAddress( uintptr_t dllHandle, const char* procName )
 {
-	// RB: added missing cast
-	return ( void* ) GetProcAddress( ( HINSTANCE )dllHandle, procName );
+	void* adr = ( void* )GetProcAddress( ( HINSTANCE )dllHandle, procName );
+	if( !adr )
+	{
+		DWORD e = GetLastError();
+		LPVOID msgBuf = NULL;
+
+		FormatMessage(
+			FORMAT_MESSAGE_ALLOCATE_BUFFER |
+			FORMAT_MESSAGE_FROM_SYSTEM |
+			FORMAT_MESSAGE_IGNORE_INSERTS,
+			NULL,
+			e,
+			MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),
+			( LPTSTR )&msgBuf,
+			0, NULL );
+
+		idStr errorStr = va( "[%i (0x%X)]\t%s", e, e, msgBuf );
+
+		if( errorStr.Length() )
+		{
+			common->Warning( "GetProcAddress( %i %s) Failed ! %s", dllHandle, procName, errorStr.c_str() );
+		}
+
+		::LocalFree( msgBuf );
+	}
+	return adr;
 }
 
 /*
@@ -1014,13 +1087,12 @@ void* Sys_DLL_GetProcAddress( intptr_t dllHandle, const char* procName )
 Sys_DLL_Unload
 =====================
 */
-void Sys_DLL_Unload( intptr_t dllHandle )
+void Sys_DLL_Unload( uintptr_t dllHandle )
 {
 	if( !dllHandle )
 	{
 		return;
 	}
-
 	if( FreeLibrary( ( HINSTANCE )dllHandle ) == 0 )
 	{
 		int lastError = GetLastError();
@@ -1034,11 +1106,9 @@ void Sys_DLL_Unload( intptr_t dllHandle )
 			0,
 			NULL
 		);
-
 		Sys_Error( "Sys_DLL_Unload: FreeLibrary failed - %s (%d)", lpMsgBuf, lastError );
 	}
 }
-// RB end
 
 /*
 ========================================================================

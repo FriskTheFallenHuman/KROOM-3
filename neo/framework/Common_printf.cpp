@@ -125,11 +125,11 @@ void idCommonLocal::VPrintf( const char* fmt, va_list args )
 		int	t = Sys_Milliseconds();
 		if( com_timestampPrints.GetInteger() == 1 )
 		{
-			sprintf( msg, "[%5.2f]", t * 0.001f );
+			idStr::snPrintf( msg, sizeof( msg ), "[%5.2f]", t * 0.001f );
 		}
 		else
 		{
-			sprintf( msg, "[%i]", t );
+			idStr::snPrintf( msg, sizeof( msg ), "[%i]", t );
 		}
 	}
 	timeLength = strlen( msg );
@@ -242,6 +242,9 @@ void idCommonLocal::VPrintf( const char* fmt, va_list args )
 			time( &aclock );
 			struct tm* newtime = localtime( &aclock );
 			Printf( "log file '%s' opened on %s\n", fileName, asctime( newtime ) );
+
+			// print engine version
+			Printf( "%s\n", com_version.GetString() );
 		}
 		if( logFile )
 		{
@@ -262,12 +265,12 @@ void idCommonLocal::VPrintf( const char* fmt, va_list args )
 	}
 
 #ifdef _WIN32
-	if ( com_outputMsg )
+	if( com_outputMsg )
 	{
-		if ( com_msgID == -1 )
+		if( com_msgID == -1 )
 		{
 			com_msgID = ::RegisterWindowMessage( DMAP_MSGID );
-			if ( !FindEditor() )
+			if( !FindEditor() )
 			{
 				com_outputMsg = false;
 			}
@@ -276,10 +279,10 @@ void idCommonLocal::VPrintf( const char* fmt, va_list args )
 				Sys_ShowWindow( false );
 			}
 		}
-		if ( com_hwndMsg )
+		if( com_hwndMsg )
 		{
 			ATOM atom = ::GlobalAddAtom( msg );
-			::PostMessage( com_hwndMsg, com_msgID, 0, static_cast<LPARAM>(atom) );
+			::PostMessage( com_hwndMsg, com_msgID, 0, static_cast<LPARAM>( atom ) );
 		}
 	}
 #endif
@@ -413,11 +416,18 @@ void idCommonLocal::PrintWarnings()
 	{
 		if( warningList.Num() >= MAX_WARNING_LIST )
 		{
-			Printf( "more than %d warnings\n", MAX_WARNING_LIST );
+			Printf( "----- more than %d warnings -----\n", MAX_WARNING_LIST );
 		}
 		else
 		{
-			Printf( "%d warnings\n", warningList.Num() );
+			if( warningList.Num() > 1 )
+			{
+				Printf( "----- %d warnings -----\n", warningList.Num() );
+			}
+			else
+			{
+				Printf( "----- %d warning -----\n", warningList.Num() );
+			}
 		}
 	}
 }
@@ -461,11 +471,18 @@ void idCommonLocal::DumpWarnings()
 		}
 		if( warningList.Num() >= MAX_WARNING_LIST )
 		{
-			warningFile->Printf( "\nmore than %d warnings!\n", MAX_WARNING_LIST );
+			warningFile->Printf( "----- more than %d warnings -----\n", MAX_WARNING_LIST );
 		}
 		else
 		{
-			warningFile->Printf( "\n%d warnings.\n", warningList.Num() );
+			if( warningList.Num() > 1 )
+			{
+				warningFile->Printf( "----- %d warnings -----\n", warningList.Num() );
+			}
+			else
+			{
+				warningFile->Printf( "----- %d warning -----\n", warningList.Num() );
+			}
 		}
 
 		warningFile->Printf( "\n\n-------------- Errors ---------------\n\n" );
@@ -643,7 +660,7 @@ void idCommonLocal::FatalError( const char* fmt, ... )
 		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "vid_restart partial windowed\n" );
 	}
 
-	Sys_SetFatalError( errorMessage );
+	Sys_Printf( "shutting down: %s\n", errorMessage );
 
 	Sys_Error( "%s", errorMessage );
 

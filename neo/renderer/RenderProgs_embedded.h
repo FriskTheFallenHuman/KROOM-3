@@ -4319,7 +4319,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.texcoord0 = vertex.position.xyz - rpLocalViewOrigin.xyz;\n"
 		"\n"
-		"	result.color = ( swizzleColor( vertex.color ) * rpVertexColorModulate ) + rpVertexColorAdd;\n"
+		"	// RB: pass rpColor as intensity scaling factor for HDRI skies because the vertex color logic isn't used on skyboxes afaik\n"
+		"	//result.color = ( swizzleColor( vertex.color ) * rpVertexColorModulate ) + rpVertexColorAdd;\n"
+		"	result.color = rpColor;\n"
 		"}\n"
 		"\n"
 

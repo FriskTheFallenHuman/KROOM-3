@@ -40,7 +40,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "Framebuffer.h"
 
 
-
 // maximum texture units
 const int MAX_PROG_TEXTURE_PARMS	= 16;
 
@@ -93,6 +92,15 @@ SURFACES
 #include "ModelOverlay.h"
 #include "Interaction.h"
 
+// RB begin
+#define MOC_MULTITHREADED 0
+
+#if MOC_MULTITHREADED
+	class CullingThreadpool;
+#endif
+class MaskedOcclusionCulling;
+// RB end
+
 class idRenderWorldLocal;
 struct viewEntity_t;
 struct viewLight_t;
@@ -118,7 +126,7 @@ struct drawSurf_t
 	const idMaterial* 		material;			// may be NULL for shadow volumes
 	uint64					extraGLState;		// Extra GL state |'d with material->stage[].drawStateBits
 	float					sort;				// material->sort, modified by gui / entity sort offsets
-	const float* 				shaderRegisters;	// evaluated and adjusted for referenceShaders
+	const float* 			shaderRegisters;	// evaluated and adjusted for referenceShaders
 	drawSurf_t* 			nextOnLight;		// viewLight chains
 	drawSurf_t** 			linkChain;			// defer linking to lights to a serial section to avoid a mutex
 	idScreenRect			scissorRect;		// for scissor clipping, local inside renderView viewport
@@ -268,15 +276,11 @@ public:
 	bool						archived;				// for demo writing
 
 	// derived information
-	//idPlane						lightProject[4];		// old style light projection where Z and W are flipped and projected lights lightProject[3] is divided by ( zNear + zFar )
-	//idRenderMatrix				baseLightProject;		// global xyz1 to projected light strq
 	idRenderMatrix				inverseBaseProbeProject;// transforms the zero-to-one cube to exactly cover the light in world space
 
 	idBounds					globalProbeBounds;
 
 	areaReference_t* 			references;				// each area the light is present in will have a lightRef
-	//idInteraction* 			firstInteraction;		// doubly linked list
-	//idInteraction* 			lastInteraction;
 
 	idImage* 					irradianceImage;		// cubemap image used for diffuse IBL by backend
 	idImage* 					radianceImage;			// cubemap image used for specular IBL by backend
@@ -323,7 +327,6 @@ public:
 	int						dynamicModelFrameCount;	// continuously animating dynamic models will recreate
 	// dynamicModel if this doesn't == tr.viewCount
 	idRenderModel* 			cachedDynamicModel;
-
 
 	// the local bounds used to place entityRefs, either from parms for dynamic entities, or a model bounds
 	idBounds				localReferenceBounds;
@@ -510,7 +513,7 @@ struct calcEnvprobeParms_t
 	idStr							filename;
 
 	// output
-	halfFloat_t*					outBuffer;				// HDR R11G11B11F packed octahedron atlas
+	halfFloat_t*					outBuffer;				// HDR RGB16F packed octahedron atlas
 	int								time;					// execution time in milliseconds
 };
 
@@ -534,7 +537,7 @@ struct calcLightGridPointParms_t
 	SphericalHarmonicsT<idVec3, 4>	shRadiance;				// L4 Spherical Harmonics
 #endif
 
-	halfFloat_t*					outBuffer;				// HDR R11G11B11F octahedron LIGHTGRID_IRRADIANCE_SIZE^2
+	halfFloat_t*					outBuffer;				// HDR RGB16F octahedron LIGHTGRID_IRRADIANCE_SIZE^2
 	int								time;					// execution time in milliseconds
 };
 // RB end
@@ -606,6 +609,7 @@ struct viewDef_t
 	bool				isEditor;
 	bool				is2Dgui;
 
+	bool                isObliqueProjection;    // true if this view has an oblique projection
 	int					numClipPlanes;			// mirrors will often use a single clip plane
 	idPlane				clipPlanes[MAX_CLIP_PLANES];		// in world space, the positive side
 	// of the plane is the visible side
@@ -654,6 +658,8 @@ struct viewDef_t
 	idImage* 			irradianceImage;			// cubemap image used for diffuse IBL by backend
 	idImage* 			radianceImages[3];			// cubemap image used for specular IBL by backend
 	idVec4				radianceImageBlends;		// blending weights
+
+	Framebuffer*		targetRender;				// The framebuffer to render to
 };
 
 
@@ -803,9 +809,6 @@ const idMaterial* R_RemapShaderBySkin( const idMaterial* shader, const idDeclSki
 
 //====================================================
 
-
-
-
 enum vertexLayoutType_t
 {
 	LAYOUT_UNKNOWN = 0,	// RB: TODO -1
@@ -885,9 +888,9 @@ public:
 	virtual void			WriteDemoPics();
 	virtual void			WriteEndFrame();
 	virtual void			DrawDemoPics();
-	virtual const emptyCommand_t* 	SwapCommandBuffers( uint64* frontEndMicroSec, uint64* backEndMicroSec, uint64* shadowMicroSec, uint64* gpuMicroSec, backEndCounters_t* bc, performanceCounters_t* pc );
+	virtual const emptyCommand_t* 	SwapCommandBuffers( uint64* frontEndMicroSec, uint64* backEndMicroSec, uint64* shadowMicroSec, uint64* mocMicroSec, uint64* gpuMicroSec, backEndCounters_t* bc, performanceCounters_t* pc );
 
-	virtual void			SwapCommandBuffers_FinishRendering( uint64* frontEndMicroSec, uint64* backEndMicroSec, uint64* shadowMicroSec, uint64* gpuMicroSec, backEndCounters_t* bc, performanceCounters_t* pc );
+	virtual void			SwapCommandBuffers_FinishRendering( uint64* frontEndMicroSec, uint64* backEndMicroSec, uint64* shadowMicroSec, uint64* mocMicroSec, uint64* gpuMicroSec, backEndCounters_t* bc, performanceCounters_t* pc );
 	virtual const emptyCommand_t* 	SwapCommandBuffers_FinishCommandBuffers();
 
 	virtual void			RenderCommandBuffers( const emptyCommand_t* commandBuffers );
@@ -999,6 +1002,17 @@ public:
 	idList<calcLightGridPointParms_t*>	lightGridJobs;
 
 	idRenderBackend			backend;
+
+#if defined(USE_INTRINSICS_SSE)
+
+#if MOC_MULTITHREADED
+	CullingThreadpool*		maskedOcclusionThreaded;
+#endif
+	MaskedOcclusionCulling*	maskedOcclusionCulling;
+	idVec4					maskedUnitCubeVerts[8];
+	idVec4					maskedZeroOneCubeVerts[8];
+	unsigned int			maskedZeroOneCubeIndexes[36];
+#endif
 
 private:
 	bool					bInitialized;
@@ -1166,9 +1180,9 @@ extern idCVar r_debugRenderToTexture;
 extern idCVar stereoRender_enable;
 extern idCVar stereoRender_deGhost;			// subtract from opposite eye to reduce ghosting
 
+// RB begin
 extern idCVar r_useGPUSkinning;
 
-// RB begin
 extern idCVar r_shadowMapFrustumFOV;
 extern idCVar r_shadowMapSingleSide;
 extern idCVar r_shadowMapImageSize;
@@ -1187,6 +1201,7 @@ extern idCVar r_shadowMapRegularDepthBiasScale;
 extern idCVar r_shadowMapSunDepthBiasScale;
 
 extern idCVar r_hdrAutoExposure;
+extern idCVar r_hdrAdaptionRate;
 extern idCVar r_hdrMinLuminance;
 extern idCVar r_hdrMaxLuminance;
 extern idCVar r_hdrKey;
@@ -1219,6 +1234,8 @@ extern idCVar r_showLightGrid;				// show Quake 3 style light grid points
 extern idCVar r_useLightGrid;
 
 extern idCVar r_exposure;
+
+extern idCVar r_useMaskedOcclusionCulling;
 // RB end
 
 /*
@@ -1252,8 +1269,8 @@ struct vidMode_t
 	// RB begin
 	vidMode_t()
 	{
-		width = 640;
-		height = 480;
+		width = SCREEN_WIDTH;
+		height = SCREEN_HEIGHT;
 		displayHz = 60;
 	}
 
@@ -1287,14 +1304,12 @@ struct glimpParms_t
 
 // Eric: If on Linux using Vulkan use the sdl_vkimp.cpp methods
 // SRS - Generalized Vulkan SDL platform
-#if defined(VULKAN_USE_PLATFORM_SDL)
+#if defined( VULKAN_USE_PLATFORM_SDL )
 #include <vector>
 
 #define CLAMP(x, lo, hi)    ((x) < (lo) ? (lo) : (x) > (hi) ? (hi) : (x))
 // Helper function for using SDL2 and Vulkan on Linux.
-std::vector<const char*> get_required_extensions( const std::vector<const char*>& instanceExtensions, bool enableValidationLayers );
-
-const std::vector<const char*> sdlInstanceExtensions = {};
+std::vector<const char*> get_required_extensions();
 
 extern vulkanContext_t vkcontext;
 
@@ -1406,99 +1421,6 @@ void R_SampleCubeMapHDR16F( const idVec3& dir, int size, halfFloat_t* buffers[6]
 
 idVec2 NormalizedOctCoord( int x, int y, const int probeSideLength );
 
-class CommandlineProgressBar
-{
-private:
-	size_t tics = 0;
-	size_t nextTicCount = 0;
-	int	count = 0;
-	int expectedCount = 0;
-
-	int sysWidth = 1280;
-	int sysHeight = 720;
-
-public:
-	CommandlineProgressBar( int _expectedCount, int width, int height )
-	{
-		expectedCount = _expectedCount;
-		sysWidth = width;
-		sysHeight = height;
-	}
-
-	void Start()
-	{
-		// restore the original resolution, same as "vid_restart"
-		glConfig.nativeScreenWidth = sysWidth;
-		glConfig.nativeScreenHeight = sysHeight;
-		R_SetNewMode( false );
-
-		common->Printf( "0%%  10   20   30   40   50   60   70   80   90   100%%\n" );
-		common->Printf( "|----|----|----|----|----|----|----|----|----|----|\n" );
-
-		common->UpdateScreen( false );
-	}
-
-	void Increment( bool updateScreen )
-	{
-		if( ( count + 1 ) >= nextTicCount )
-		{
-			if( updateScreen )
-			{
-				// restore the original resolution, same as "vid_restart"
-				glConfig.nativeScreenWidth = sysWidth;
-				glConfig.nativeScreenHeight = sysHeight;
-				R_SetNewMode( false );
-
-				// resize frame buffers (this triggers SwapBuffers)
-				tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
-			}
-
-			size_t ticsNeeded = ( size_t )( ( ( double )( count + 1 ) / expectedCount ) * 50.0 );
-
-			do
-			{
-				common->Printf( "*" );
-			}
-			while( ++tics < ticsNeeded );
-
-			nextTicCount = ( size_t )( ( tics / 50.0 ) * expectedCount );
-			if( count == ( expectedCount - 1 ) )
-			{
-				if( tics < 51 )
-				{
-					common->Printf( "*" );
-				}
-				common->Printf( "\n" );
-			}
-
-			if( updateScreen )
-			{
-				common->UpdateScreen( false );
-
-				// swap front / back buffers
-				tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
-			}
-		}
-
-		count++;
-	}
-
-	void Reset()
-	{
-		count = 0;
-		tics = 0;
-		nextTicCount = 0;
-	}
-
-	void Reset( int expected )
-	{
-		expectedCount = expected;
-		count = 0;
-		tics = 0;
-		nextTicCount = 0;
-	}
-};
-
 /*
 ====================================================================
 
@@ -1559,6 +1481,16 @@ void R_LinkDrawSurfToView( drawSurf_t* drawSurf, viewDef_t* viewDef );
 void R_AddModels();
 
 /*
+============================================================
+
+TR_FRONTEND_MASKED_OCCLUSION_CULLING
+
+============================================================
+*/
+
+void R_FillMaskedOcclusionBufferWithModels( viewDef_t* viewDef );
+
+/*
 =============================================================
 
 TR_FRONTEND_DEFORM
@@ -1567,6 +1499,8 @@ TR_FRONTEND_DEFORM
 */
 
 drawSurf_t* R_DeformDrawSurf( drawSurf_t* drawSurf );
+
+drawSurf_t* R_DeformDrawSurf( drawSurf_t* drawSurf, deform_t deformType );
 
 /*
 =============================================================
@@ -1600,7 +1534,7 @@ TR_TRISURF
 
 srfTriangles_t* 	R_AllocStaticTriSurf();
 void				R_AllocStaticTriSurfVerts( srfTriangles_t* tri, int numVerts );
-void				R_AllocStaticTriSurfPlanes( srfTriangles_t *tri, int numIndexes );
+void				R_AllocStaticTriSurfPlanes( srfTriangles_t* tri, int numIndexes );
 void				R_AllocStaticTriSurfIndexes( srfTriangles_t* tri, int numIndexes );
 void				R_AllocStaticTriSurfPreLightShadowVerts( srfTriangles_t* tri, int numVerts );
 void				R_AllocStaticTriSurfSilIndexes( srfTriangles_t* tri, int numIndexes );
@@ -1608,6 +1542,11 @@ void				R_AllocStaticTriSurfDominantTris( srfTriangles_t* tri, int numVerts );
 void				R_AllocStaticTriSurfSilEdges( srfTriangles_t* tri, int numSilEdges );
 void				R_AllocStaticTriSurfMirroredVerts( srfTriangles_t* tri, int numMirroredVerts );
 void				R_AllocStaticTriSurfDupVerts( srfTriangles_t* tri, int numDupVerts );
+
+// RB begin
+void				R_AllocStaticTriSurfMocIndexes( srfTriangles_t* tri, int numIndexes );
+void				R_AllocStaticTriSurfMocVerts( srfTriangles_t* tri, int numVerts );
+// RB end
 
 srfTriangles_t* 	R_CopyStaticTriSurf( const srfTriangles_t* tri );
 
@@ -1625,11 +1564,12 @@ int					R_TriSurfMemory( const srfTriangles_t* tri );
 void				R_BoundTriSurf( srfTriangles_t* tri );
 void				R_RemoveDuplicatedTriangles( srfTriangles_t* tri );
 void				R_CreateSilIndexes( srfTriangles_t* tri );
+void				R_CreateMaskedOcclusionCullingTris( srfTriangles_t* tri ); // RB
 void				R_RemoveDegenerateTriangles( srfTriangles_t* tri );
 void				R_RemoveUnusedVerts( srfTriangles_t* tri );
 void				R_RangeCheckIndexes( const srfTriangles_t* tri );
 void				R_CreateVertexNormals( srfTriangles_t* tri );		// also called by dmap
-void				R_DeriveFacePlanes( srfTriangles_t *tri );		// also called by renderbump
+void				R_DeriveFacePlanes( srfTriangles_t* tri );		// also called by renderbump
 void				R_CleanupTriangles( srfTriangles_t* tri, bool createNormals, bool identifySilEdges, bool useUnsmoothedTangents, bool useMikktspace );
 void				R_ReverseTriangles( srfTriangles_t* tri );
 
@@ -1651,6 +1591,7 @@ void				R_CreateStaticBuffersForTri( srfTriangles_t& tri );
 
 // RB
 idVec3				R_ClosestPointPointTriangle( const idVec3& point, const idVec3& vertex1, const idVec3& vertex2, const idVec3& vertex3 );
+idVec3				R_ClosestPointOnLineSegment( const idVec3& point, const idVec3& lineStart, const idVec3& lineEnd, float& t );
 
 // deformable meshes precalculate as much as possible from a base frame, then generate
 // complete srfTriangles_t from just a new set of vertexes

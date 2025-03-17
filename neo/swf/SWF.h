@@ -50,6 +50,7 @@ public:
 	idSWFDictionaryEntry();
 	~idSWFDictionaryEntry();
 	idSWFDictionaryEntry& operator=( idSWFDictionaryEntry& other );
+	idSWFDictionaryEntry& operator=( idSWFDictionaryEntry&& other );
 
 	swfDictType_t		type;
 	const idMaterial* 	material;
@@ -85,7 +86,7 @@ This class handles loading and rendering SWF files
 class idSWF
 {
 public:
-	idSWF( const char* filename, idSoundWorld* soundWorld = NULL );
+	idSWF( const char* filename, idSoundWorld* soundWorld, bool exportJSON = false, bool exportSWF = false );
 	~idSWF();
 
 	bool	IsLoaded()
@@ -456,20 +457,7 @@ private:
 	// SWF_Image.cpp
 	//----------------------------------
 
-	class idDecompressJPEG
-	{
-	public:
-		idDecompressJPEG();
-		~idDecompressJPEG();
-
-		byte* Load( const byte* input, int inputSize, int& width, int& height );
-
-	private:
-		void* vinfo;
-	};
-
-	idDecompressJPEG	jpeg;
-
+	byte*			LoadImageSTB( const byte* input, int inputSize, int& width, int& height );
 	void			LoadImage( int characterID, const byte* imageData, int width, int height );
 
 	void			JPEGTables( idSWFBitStream& bitstream );

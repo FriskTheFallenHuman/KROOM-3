@@ -32,7 +32,7 @@ If you have questions concerning this license or the applicable additional terms
 #define PUNCTABLE
 
 //longer punctuations first
-punctuation_t default_punctuations[] =
+static const punctuation_t default_punctuations[] =
 {
 	//binary operators
 	{">>=", P_RSHIFT_ASSIGN},
@@ -247,7 +247,7 @@ void idLexer::Error( const char* str, ... )
 	}
 
 	va_start( ap, str );
-	vsprintf( text, str, ap );
+	idStr::vsnPrintf( text, sizeof( text ), str, ap );
 	va_end( ap );
 
 	if( idLexer::flags & LEXFL_NOFATALERRORS )
@@ -276,7 +276,7 @@ void idLexer::Warning( const char* str, ... )
 	}
 
 	va_start( ap, str );
-	vsprintf( text, str, ap );
+	idStr::vsnPrintf( text, sizeof( text ), str, ap );
 	va_end( ap );
 	idLib::common->Warning( "file %s, line %d: %s", idLexer::filename.c_str(), idLexer::line, text );
 }
@@ -1507,11 +1507,19 @@ Skips until a matching close brace is found.
 Internal brace depths are properly skipped.
 =================
 */
-int idLexer::SkipBracedSection( bool parseFirstBrace )
+int idLexer::SkipBracedSection( bool parseFirstBrace, braceSkipMode_t skipMode/* = BRSKIP_BRACE */, int* skipped /*= nullptr*/ )
 {
 	idToken token;
 	int depth;
+	idStr openTokens[2] = { "{" , "["   };
+	idStr closeTokens[2] = { "}" , "]" };
 
+	if( skipped != nullptr )
+	{
+		*skipped = 0;
+	}
+
+	int scopeCount = 0;
 	depth = parseFirstBrace ? 0 : 1;
 	do
 	{
@@ -1521,11 +1529,15 @@ int idLexer::SkipBracedSection( bool parseFirstBrace )
 		}
 		if( token.type == TT_PUNCTUATION )
 		{
-			if( token == "{" )
+			if( token == openTokens[skipMode] )
 			{
 				depth++;
+				if( skipped != nullptr )
+				{
+					( *skipped )++;
+				}
 			}
-			else if( token == "}" )
+			else if( token == closeTokens[skipMode] )
 			{
 				depth--;
 			}
@@ -1810,7 +1822,7 @@ const char* idLexer::ParseBracedSectionExact( idStr& out, int tabs )
 
 	if( !idLexer::ExpectTokenString( "{" ) )
 	{
-		return out.c_str( );
+		return out.c_str();
 	}
 
 	out = "{";
@@ -1861,6 +1873,92 @@ const char* idLexer::ParseBracedSectionExact( idStr& out, int tabs )
 		{
 			int i = tabs;
 			if( c == '{' )
+			{
+				i--;
+			}
+			skipWhite = false;
+			for( ; i > 0; i-- )
+			{
+				out += '\t';
+			}
+		}
+		out += c;
+	}
+	return out.c_str();
+}
+
+/*
+=================
+idParser::ParseBracedSection
+
+The next token should be an open brace.
+Parses until a matching close brace is found.
+Maintains exact characters between braces.
+
+  FIXME: this should use ReadToken and replace the token white space with correct indents and newlines
+=================
+*/
+const char* idLexer::ParseBracketSectionExact( idStr& out, int tabs )
+{
+	int		depth;
+	bool	doTabs;
+	bool	skipWhite;
+
+	out.Empty();
+
+	if( !idLexer::ExpectTokenString( "[" ) )
+	{
+		return out.c_str();
+	}
+
+	out = "[";
+	depth = 1;
+	skipWhite = false;
+	doTabs = tabs >= 0;
+
+	while( depth && *idLexer::script_p )
+	{
+		char c = *( idLexer::script_p++ );
+
+		switch( c )
+		{
+			case '\t':
+			case ' ':
+			{
+				if( skipWhite )
+				{
+					continue;
+				}
+				break;
+			}
+			case '\n':
+			{
+				if( doTabs )
+				{
+					skipWhite = true;
+					out += c;
+					continue;
+				}
+				break;
+			}
+			case '[':
+			{
+				depth++;
+				tabs++;
+				break;
+			}
+			case ']':
+			{
+				depth--;
+				tabs--;
+				break;
+			}
+		}
+
+		if( skipWhite )
+		{
+			int i = tabs;
+			if( c == '[' )
 			{
 				i--;
 			}
@@ -2055,8 +2153,9 @@ void idLexer::Reset()
 	// set if there's a token available in idLexer::token
 	idLexer::tokenavailable = 0;
 
-	idLexer::line = 1;
-	idLexer::lastline = 1;
+	idLexer::line = intialLine;
+	idLexer::lastline = intialLine;
+
 	// clear the saved token
 	idLexer::token = "";
 }
@@ -2138,6 +2237,7 @@ int idLexer::LoadFile( const char* filename, bool OSPath )
 
 	idLexer::tokenavailable = 0;
 	idLexer::line = 1;
+	idLexer::line = 1;
 	idLexer::lastline = 1;
 	idLexer::allocated = true;
 	idLexer::loaded = true;
@@ -2171,6 +2271,7 @@ int idLexer::LoadMemory( const char* ptr, int length, const char* name, int star
 	idLexer::tokenavailable = 0;
 	idLexer::line = startLine;
 	idLexer::lastline = startLine;
+	idLexer::intialLine = startLine;
 	idLexer::allocated = false;
 	idLexer::loaded = true;
 

@@ -90,11 +90,11 @@ public:
 		return &state;
 	}
 
-	const char* 				GetSourceFile() const
+	const char*					GetSourceFile() const
 	{
 		return source;
 	}
-	ID_TIME_T						GetTimeStamp() const
+	virtual ID_TIME_T			GetTimeStamp() const
 	{
 		return timeStamp;
 	}
@@ -143,6 +143,10 @@ public:
 		return returnCmd;
 	};
 
+	virtual idRectangle			GetScreenRect( void )
+	{
+		return desktop->drawRect;
+	}
 private:
 	bool						active;
 	bool						loading;
@@ -166,8 +170,6 @@ private:
 
 	int							refs;
 };
-
-
 
 class idUserInterfaceManagerLocal : public idUserInterfaceManager
 {

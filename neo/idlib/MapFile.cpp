@@ -48,10 +48,8 @@ StringCRC
 ID_INLINE unsigned int StringCRC( const char* str )
 {
 	unsigned int i, crc;
-	const unsigned char* ptr;
 
 	crc = 0;
-	ptr = reinterpret_cast<const unsigned char*>( str );
 	for( i = 0; str[i]; i++ )
 	{
 		crc ^= str[i] << ( i & 3 );
@@ -217,7 +215,6 @@ idMapPatch* idMapPatch::Parse( idLexer& src, const idVec3& origin, bool patchDef
 			return NULL;
 		}
 	}
-
 	if( !src.ExpectTokenString( ")" ) )
 	{
 		src.Error( "idMapPatch::Parse: unable to parse patch control points, no closure" );
@@ -477,8 +474,7 @@ idMapBrush::ParseQ3
 */
 idMapBrush* idMapBrush::ParseQ3( idLexer& src, const idVec3& origin )
 {
-	int i, shift[2], rotate;
-	float scale[2];
+	int i;
 	idVec3 planepts[3];
 	idToken token;
 	idList<idMapBrushSide*> sides;
@@ -522,12 +518,12 @@ idMapBrush* idMapBrush::ParseQ3( idLexer& src, const idVec3& origin )
 		// we have an implicit 'textures/' in the old format
 		side->material = "textures/" + token;
 
-		// read the texture shift, rotate and scale
-		shift[0] = src.ParseInt();
-		shift[1] = src.ParseInt();
-		rotate = src.ParseInt();
-		scale[0] = src.ParseFloat();
-		scale[1] = src.ParseFloat();
+		// skip the texture shift, rotate and scale
+		src.ParseInt();
+		src.ParseInt();
+		src.ParseInt();
+		src.ParseFloat();
+		src.ParseFloat();
 		side->texMat[0] = idVec3( 0.03125f, 0.0f, 0.0f );
 		side->texMat[1] = idVec3( 0.0f, 0.03125f, 0.0f );
 		side->origin = origin;
@@ -796,7 +792,7 @@ bool idMapEntity::Write( idFile* fp, int entityNum ) const
 			case idMapPrimitive::TYPE_MESH:
 				static_cast<MapPolygonMesh*>( mapPrim )->Write( fp, i, origin );
 				break;
-			// RB end
+				// RB end
 		}
 	}
 
@@ -822,12 +818,11 @@ idMapEntity::GetGeometryCRC
 */
 unsigned int idMapEntity::GetGeometryCRC() const
 {
-	int i;
 	unsigned int crc;
 	idMapPrimitive*	mapPrim;
 
 	crc = 0;
-	for( i = 0; i < GetNumPrimitives(); i++ )
+	for( int i = 0; i < GetNumPrimitives(); i++ )
 	{
 		mapPrim = GetPrimitive( i );
 
@@ -915,7 +910,6 @@ bool idMapFile::Parse( const char* filename, bool ignoreRegion, bool osPath )
 	// if the map has a worldspawn
 	if( entities.Num() )
 	{
-
 		// "removeEntities" "classname" can be set in the worldspawn to remove all entities with the given classname
 		const idKeyValue* removeEntities = entities[0]->epairs.MatchPrefix( "removeEntities", NULL );
 		while( removeEntities )
@@ -1023,13 +1017,6 @@ bool idMapFile::Parse( const char* filename, bool ignoreRegion, bool osPath )
 				mapEnt->epairs.Copy( extraEnt->epairs );
 			}
 		}
-
-#if 0
-		fullName = name;
-		fullName += "_extra_debug.map";
-
-		Write( fullName, ".map" );
-#endif
 	}
 
 	hasPrimitiveData = true;
@@ -1111,7 +1098,7 @@ int idMapFile::AddEntity( idMapEntity* mapEnt )
 idMapFile::FindEntity
 ===============
 */
-idMapEntity* idMapFile::FindEntity( const char* name )
+idMapEntity* idMapFile::FindEntity( const char* name ) const
 {
 	for( int i = 0; i < entities.Num(); i++ )
 	{
@@ -1603,21 +1590,22 @@ void MapPolygonMesh::SetContents()
 unsigned int MapPolygonMesh::GetGeometryCRC() const
 {
 	int i;
-	unsigned int crc;
-
-	crc = 0;
+	unsigned int crc = 0;
 	for( i = 0; i < verts.Num(); i++ )
 	{
-		crc ^= FloatCRC( verts[i].xyz.x );
-		crc ^= FloatCRC( verts[i].xyz.y );
-		crc ^= FloatCRC( verts[i].xyz.z );
+#if 0
+		crc ^= StringCRC( ( verts[i].xyz * ( i + 1 ) ).ToString() );
+#else
+		crc ^= FloatCRC( verts[i].xyz.x * ( i + 1 ) );
+		crc ^= FloatCRC( verts[i].xyz.y * ( i + 1 ) );
+		crc ^= FloatCRC( verts[i].xyz.z * ( i + 1 ) );
+#endif
 	}
 
 	for( i = 0; i < polygons.Num(); i++ )
 	{
 		const MapPolygon& poly = polygons[i];
-
-		crc ^= StringCRC( poly.GetMaterial() );
+		crc ^= StringCRC( poly.GetMaterial() + idStr( i ) );
 	}
 
 	return crc;

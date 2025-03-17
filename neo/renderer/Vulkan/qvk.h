@@ -41,7 +41,7 @@ If you have questions concerning this license or the applicable additional terms
 #include <vulkan/vulkan.h>
 
 #if defined( USE_AMD_ALLOCATOR )
-	#include "vma.h"
+	#include "extern/vma/vma.h"
 #endif
 
 #define ID_VK_CHECK( x ) { \

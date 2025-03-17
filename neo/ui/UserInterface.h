@@ -29,6 +29,8 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __USERINTERFACE_H__
 #define __USERINTERFACE_H__
 
+class idRectangle;
+
 /*
 ===============================================================================
 
@@ -112,6 +114,8 @@ public:
 	virtual void				SetCursor( float x, float y ) = 0;
 	virtual float				CursorX() = 0;
 	virtual float				CursorY() = 0;
+	virtual ID_TIME_T			GetTimeStamp() const = 0;
+	virtual idRectangle			GetScreenRect( void ) = 0;
 };
 
 

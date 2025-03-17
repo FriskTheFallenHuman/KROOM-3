@@ -3,8 +3,9 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
-Copyright (C) 2014-2016 Robert Beckebans
+Copyright (C) 2014-2024 Robert Beckebans
 Copyright (C) 2014-2016 Kot in Action Creative Artel
+Copyright (C) 2022 Stephen Pridham
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -89,6 +90,7 @@ void idMaterial::CommonInit()
 	surfaceFlags = SURFTYPE_NONE;
 	materialFlags = 0;
 	sort = SS_BAD;
+	subViewType = SUBVIEW_NONE;
 	stereoEye = 0;
 	coverage = MC_BAD;
 	cullType = CT_FRONT_SIDED;
@@ -186,6 +188,11 @@ void idMaterial::FreeData()
 				Mem_Free( stages[i].newStage );
 				stages[i].newStage = NULL;
 			}
+			if( stages[i].stencilStage != nullptr )
+			{
+				Mem_Free( stages[i].stencilStage );
+				stages[i].stencilStage = nullptr;
+			}
 		}
 		R_StaticFree( stages );
 		stages = NULL;
@@ -258,25 +265,6 @@ idImage* idMaterial::GetEditorImage() const
 	return editorImage;
 }
 
-// RB - just look for first stage and fallback to editor image like D3Radiant does
-idImage* idMaterial::GetLightEditorImage() const
-{
-	if( numStages && stages )
-	{
-		for( int i = 0; i < numStages; i++ )
-		{
-			idImage* image = stages[i].texture.image;
-			if( image )
-			{
-				return image;
-			}
-		}
-	}
-
-	return GetEditorImage();
-}
-// RB end
-
 // info parms
 typedef struct
 {
@@ -310,6 +298,7 @@ static infoParm_t	infoParms[] =
 	// because they represent discrete objects like gui shaders
 	// mirrors, or autosprites
 	{"noFragment",	0,	SURF_NOFRAGMENT,	0 },
+	{"occlusion",	0,	SURF_OCCLUSION,	0 },		// RB: surface becomes vis blocker in software depth buffer
 
 	{"slick",		0,	SURF_SLICK,		0 },
 	{"collision",	0,	SURF_COLLISION,	0 },
@@ -1243,6 +1232,22 @@ void idMaterial::ParseFragmentMap( idLexer& src, newShaderStage_t* newStage )
 			cubeMap = CF_CAMERA;
 			continue;
 		}
+		if( !token.Icmp( "cubeMapSingle" ) )
+		{
+			cubeMap = CF_SINGLE;
+			continue;
+		}
+		if( !token.Icmp( "panoramaMap" ) )
+		{
+			cubeMap = CF_PANORAMA;
+			continue;
+		}
+		if( !token.Icmp( "hdriMap" ) )
+		{
+			cubeMap = CF_PANORAMA;
+			td = TD_HDRI;
+			continue;
+		}
 		if( !token.Icmp( "nearest" ) )
 		{
 			tf = TF_NEAREST;
@@ -1301,6 +1306,207 @@ void idMaterial::ParseFragmentMap( idLexer& src, newShaderStage_t* newStage )
 	if( !newStage->fragmentProgramImages[unit] )
 	{
 		newStage->fragmentProgramImages[unit] = globalImages->defaultImage;
+	}
+}
+
+/*
+===============
+idMaterial::ParseStencilCompare
+===============
+*/
+void idMaterial::ParseStencilCompare( const idToken& token, stencilComp_t* stencilComp )
+{
+	if( !token.Icmp( "Greater" ) )
+	{
+		*stencilComp = STENCIL_COMP_GREATER;
+		return;
+	}
+
+	if( !token.Icmp( "GEqual" ) )
+	{
+		*stencilComp = STENCIL_COMP_GEQUAL;
+		return;
+	}
+
+	if( !token.Icmp( "Less" ) )
+	{
+		*stencilComp = STENCIL_COMP_LESS;
+		return;
+	}
+
+	if( !token.Icmp( "LEqual" ) )
+	{
+		*stencilComp = STENCIL_COMP_LEQUAL;
+		return;
+	}
+
+	if( !token.Icmp( "Equal" ) )
+	{
+		*stencilComp = STENCIL_COMP_EQUAL;
+		return;
+	}
+
+	if( !token.Icmp( "NotEqual" ) )
+	{
+		*stencilComp = STENCIL_COMP_NOTEQUAL;
+		return;
+	}
+
+	if( !token.Icmp( "Always" ) )
+	{
+		*stencilComp = STENCIL_COMP_ALWAYS;
+		return;
+	}
+
+	if( !token.Icmp( "Never" ) )
+	{
+		*stencilComp = STENCIL_COMP_NEVER;
+		return;
+	}
+
+	common->Warning( "Material %s expected a valid stencil comparison function. Got %s", GetName(), token.c_str() );
+}
+
+/*
+===============
+idMaterial::ParseStencilOperation
+===============
+*/
+void idMaterial::ParseStencilOperation( const idToken& token, stencilOperation_t* stencilOp )
+{
+	if( !token.Icmp( "Keep" ) )
+	{
+		*stencilOp = STENCIL_OP_KEEP;
+		return;
+	}
+
+	if( !token.Icmp( "Zero" ) )
+	{
+		*stencilOp = STENCIL_OP_ZERO;
+		return;
+	}
+
+	if( !token.Icmp( "Replace" ) )
+	{
+		*stencilOp = STENCIL_OP_REPLACE;
+		return;
+	}
+
+	if( !token.Icmp( "IncrSat" ) )
+	{
+		*stencilOp = STENCIL_OP_INCRSAT;
+		return;
+	}
+
+	if( !token.Icmp( "DecrSat" ) )
+	{
+		*stencilOp = STENCIL_OP_DECRSAT;
+		return;
+	}
+
+	if( !token.Icmp( "Invert" ) )
+	{
+		*stencilOp = STENCIL_OP_INVERT;
+		return;
+	}
+
+	if( !token.Icmp( "IncrWrap" ) )
+	{
+		*stencilOp = STENCIL_OP_INCRWRAP;
+		return;
+	}
+
+	if( !token.Icmp( "DecrWrap" ) )
+	{
+		*stencilOp = STENCIL_OP_DECRWRAP;
+		return;
+	}
+
+	common->Warning( "Material %s expected a valid stencil operation function. Got %s", GetName(), token.c_str() );
+}
+
+/*
+===============
+idMaterial::ParseStencil
+===============
+*/
+void idMaterial::ParseStencil( idLexer& src, stencilStage_t* stencilStage )
+{
+	idToken	token;
+	src.ReadToken( &token );
+	if( token.Icmp( "{" ) )
+	{
+		common->Warning( "Material %s Missing { after stencil", GetName() );
+		return;
+	}
+
+	while( 1 )
+	{
+		if( TestMaterialFlag( MF_DEFAULTED ) )  	// we have a parse error
+		{
+			return;
+		}
+
+		if( !src.ExpectAnyToken( &token ) )
+		{
+			SetMaterialFlag( MF_DEFAULTED );
+			return;
+		}
+
+		if( !token.Icmp( "}" ) )
+		{
+			break;
+		}
+
+		if( !token.Icmp( "Ref" ) )
+		{
+			src.ReadTokenOnLine( &token );
+
+			if( !token.IsNumeric() )
+			{
+				common->Warning( "Material %s expected number for stencil ref value. Got %s", GetName(), token.c_str() );
+				continue;
+			}
+
+			if( token.GetIntValue() > 255 || token.GetIntValue() < 0 )
+			{
+				common->Warning( "Material %s expected stencil ref value between 0 and 255. Got %s", GetName(), token.c_str() );
+				continue;
+			}
+
+			stencilStage->ref = token.GetIntValue();
+			continue;
+		}
+
+		if( !token.Icmp( "Comp" ) )
+		{
+			src.ReadTokenOnLine( &token );
+			ParseStencilCompare( token, &stencilStage->comp );
+			continue;
+		}
+
+		if( !token.Icmp( "Pass" ) )
+		{
+			src.ReadTokenOnLine( &token );
+			ParseStencilOperation( token, &stencilStage->pass );
+			continue;
+		}
+
+		if( !token.Icmp( "Fail" ) )
+		{
+			src.ReadTokenOnLine( &token );
+			ParseStencilOperation( token, &stencilStage->fail );
+			continue;
+		}
+
+		if( !token.Icmp( "ZFail" ) )
+		{
+			src.ReadTokenOnLine( &token );
+			ParseStencilOperation( token, &stencilStage->zFail );
+			continue;
+		}
+
+		common->Warning( "Material %s expected a valid stencil keyword. Got %s.", GetName(), token.c_str() );
 	}
 }
 
@@ -1375,10 +1581,12 @@ void idMaterial::ParseStage( idLexer& src, const textureRepeat_t trpDefault )
 	textureRepeat_t		trp;
 	textureUsage_t		td;
 	cubeFiles_t			cubeMap;
+	int                 cubeMapSize = 0; // SP: The size of the cubemap for subimage uploading to the cubemap targets.
 	char				imageName[MAX_IMAGE_NAME];
 	int					a, b;
 	int					matrix[2][3];
 	newShaderStage_t	newStage;
+	stencilStage_t      stencilStage; // SP
 
 	if( numStages >= MAX_SHADER_STAGES )
 	{
@@ -1465,6 +1673,30 @@ void idMaterial::ParseStage( idLexer& src, const textureRepeat_t trpDefault )
 			ts->texgen = TG_SCREEN;
 			continue;
 		}
+
+		if( !token.Icmp( "guiRenderMap" ) )
+		{
+			// Emit fullscreen view of the gui to this dynamically generated texture
+			ts->dynamic = DI_GUI_RENDER;
+			ts->width = src.ParseInt();
+			ts->height = src.ParseInt();
+			continue;
+		}
+
+#if 0
+		if( !token.Icmp( "renderTargetMap" ) )
+		{
+			// Emit fullscreen view of the gui to this dynamically generated texture
+			idToken otherMaterialToken;
+			ts->dynamic = DI_RENDER_TARGET;
+			src.ReadToken( &otherMaterialToken );
+			ts->renderTargetMaterial = declManager->FindMaterial( otherMaterialToken.c_str() );
+			ts->width = src.ParseInt();
+			ts->height = src.ParseInt();
+			continue;
+		}
+#endif
+
 		if( !token.Icmp( "screen" ) )
 		{
 			ts->texgen = TG_SCREEN;
@@ -1522,6 +1754,39 @@ void idMaterial::ParseStage( idLexer& src, const textureRepeat_t trpDefault )
 			str = R_ParsePastImageProgram( src );
 			idStr::Copynz( imageName, str, sizeof( imageName ) );
 			cubeMap = CF_NATIVE;
+			continue;
+		}
+
+		if( !token.Icmp( "cubeMapSingle" ) )
+		{
+			str = R_ParsePastImageProgram( src );
+			idStr::Copynz( imageName, str, sizeof( imageName ) );
+			cubeMap = CF_SINGLE;
+			td = TD_HIGHQUALITY_CUBE;
+			continue;
+		}
+
+		if( !token.Icmp( "panoramaMap" ) )
+		{
+			str = R_ParsePastImageProgram( src );
+			idStr::Copynz( imageName, str, sizeof( imageName ) );
+			cubeMap = CF_PANORAMA;
+			td = TD_HIGHQUALITY_CUBE;
+			continue;
+		}
+
+		if( !token.Icmp( "hdriMap" ) )
+		{
+			str = R_ParsePastImageProgram( src );
+			idStr::Copynz( imageName, str, sizeof( imageName ) );
+			cubeMap = CF_PANORAMA;
+			td = TD_HDRI;
+			continue;
+		}
+
+		if( !token.Icmp( "cubeMapSize" ) )
+		{
+			cubeMapSize = src.ParseInt();
 			continue;
 		}
 
@@ -1896,6 +2161,16 @@ void idMaterial::ParseStage( idLexer& src, const textureRepeat_t trpDefault )
 			continue;
 		}
 
+		// SP Begin
+		if( !token.Icmp( "stencil" ) )
+		{
+			ParseStencil( src, &stencilStage );
+			ss->stencilStage = ( stencilStage_t* )Mem_Alloc( sizeof( stencilStage_t ), TAG_MATERIAL );
+			*ss->stencilStage = stencilStage;
+			continue;
+		}
+		// SP End
+
 
 		common->Warning( "unknown token '%s' in material '%s'", token.c_str(), GetName() );
 		SetMaterialFlag( MF_DEFAULTED );
@@ -1965,7 +2240,7 @@ void idMaterial::ParseStage( idLexer& src, const textureRepeat_t trpDefault )
 		// now load the image with all the parms we parsed for the coverage stage
 		if( imageName[0] )
 		{
-			coverageTS->image = globalImages->ImageFromFile( imageName, tf, trp, TD_COVERAGE, cubeMap );
+			coverageTS->image = globalImages->ImageFromFile( imageName, tf, trp, TD_COVERAGE, cubeMap, cubeMapSize );
 			if( !coverageTS->image )
 			{
 				coverageTS->image = globalImages->defaultImage;
@@ -1981,7 +2256,7 @@ void idMaterial::ParseStage( idLexer& src, const textureRepeat_t trpDefault )
 	// now load the image with all the parms we parsed
 	if( imageName[0] )
 	{
-		ts->image = globalImages->ImageFromFile( imageName, tf, trp, td, cubeMap );
+		ts->image = globalImages->ImageFromFile( imageName, tf, trp, td, cubeMap, cubeMapSize );
 		if( !ts->image )
 		{
 			ts->image = globalImages->defaultImage;
@@ -2289,7 +2564,6 @@ void idMaterial::ParseMaterial( idLexer& src )
 			continue;
 		}
 
-
 		// polygonOffset
 		else if( !token.Icmp( "polygonOffset" ) )
 		{
@@ -2423,6 +2697,15 @@ void idMaterial::ParseMaterial( idLexer& src )
 		{
 			sort = SS_SUBVIEW;
 			coverage = MC_OPAQUE;
+			subViewType = SUBVIEW_MIRROR;
+			continue;
+		}
+		// direct portal
+		else if( !token.Icmp( "directPortal" ) )
+		{
+			sort = SS_SUBVIEW;
+			coverage = MC_OPAQUE;
+			subViewType = SUBVIEW_DIRECT_PORTAL;
 			continue;
 		}
 		// noFog
@@ -3538,3 +3821,463 @@ fail:
 	fastPathDiffuseImage = NULL;
 	fastPathSpecularImage = NULL;
 }
+
+// RB begin
+
+/*
+from Blender 4.1 Node Wrangler addon
+
+# Principled prefs
+class NWPrincipledPreferences(bpy.types.PropertyGroup):
+    base_color: StringProperty(
+        name='Base Color',
+        default='diffuse diff albedo base col color basecolor',
+        description='Naming Components for Base Color maps')
+    metallic: StringProperty(
+        name='Metallic',
+        default='metallic metalness metal mtl',
+        description='Naming Components for metallness maps')
+    specular: StringProperty(
+        name='Specular',
+        default='specularity specular spec spc',
+        description='Naming Components for Specular maps')
+    normal: StringProperty(
+        name='Normal',
+        default='normal nor nrm nrml norm',
+        description='Naming Components for Normal maps')
+    bump: StringProperty(
+        name='Bump',
+        default='bump bmp',
+        description='Naming Components for bump maps')
+    rough: StringProperty(
+        name='Roughness',
+        default='roughness rough rgh',
+        description='Naming Components for roughness maps')
+    gloss: StringProperty(
+        name='Gloss',
+        default='gloss glossy glossiness',
+        description='Naming Components for glossy maps')
+    displacement: StringProperty(
+        name='Displacement',
+        default='displacement displace disp dsp height heightmap',
+        description='Naming Components for displacement maps')
+    transmission: StringProperty(
+        name='Transmission',
+        default='transmission transparency',
+        description='Naming Components for transmission maps')
+    emission: StringProperty(
+        name='Emission',
+        default='emission emissive emit',
+        description='Naming Components for emission maps')
+    alpha: StringProperty(
+        name='Alpha',
+        default='alpha opacity',
+        description='Naming Components for alpha maps')
+    ambient_occlusion: StringProperty(
+        name='Ambient Occlusion',
+        default='ao ambient occlusion',
+        description='Naming Components for AO maps')
+*/
+
+// RB: completely rewritten from IcedTech1 and adjusted to generate PBR materials for typical asset store conventions
+// this also supports file suffices used by Blender's Node Wranger addon
+CONSOLE_COMMAND_SHIP( makeMaterials, "Make .mtr file from a models or textures folder using PBR conventions", idCmdSystem::ArgCompletion_ImageName )
+{
+	if( args.Argc() < 2 )
+	{
+		common->Printf( "Usage: makeMaterials <folder>\n" );
+		return;
+	}
+
+	bool ueMode = false;
+
+	idStr option;
+	for( int i = 1; i < args.Argc(); i++ )
+	{
+		option = args.Argv( i );
+		option.StripLeading( '-' );
+
+		if( option.IcmpPrefix( "Unreal" ) == 0 )
+		{
+			ueMode = true;
+		}
+	}
+
+	idStr folderName = args.Argv( args.Argc() - 1 );
+	idFileList* files = fileSystem->ListFilesTree( folderName, ".png|.tga|.jpg|.exr" );
+
+	idStr mtrBuffer;
+	mtrBuffer += va( "// generated by %s\n", ENGINE_VERSION );
+	mtrBuffer += "// NOTE: adjust this file as needed\n\n";
+
+	idStrList list = files->GetList();
+	for( int i = 0; i < files->GetNumFiles(); i++ )
+	{
+		idStr imageName = list[i];
+
+		if( idStr::FindText( imageName, "_orig", false ) != -1 )
+		{
+			continue;
+		}
+
+		if( idStr::FindText( imageName, "_diffuse", false ) != -1 ||
+				idStr::FindText( imageName, "_diff", false ) != -1 ||
+				idStr::FindText( imageName, "_albedo", false ) != -1 ||
+				idStr::FindText( imageName, "_basecolor", false ) != -1 ||
+				idStr::FindText( imageName, "_base", false ) != -1 ||
+				idStr::FindText( imageName, "_color", false ) != -1 ||
+				idStr::FindText( imageName, "_col", false ) != -1 )
+		{
+			imageName = imageName.StripFileExtension();
+
+			idStr baseName = imageName;
+			idStr resName;
+			if( baseName.IStripTrailingOnce( "_1k" ) )
+			{
+				resName = "_1k";
+			}
+			else if( baseName.IStripTrailingOnce( "_2k" ) )
+			{
+				resName = "_2k";
+			}
+			else if( baseName.IStripTrailingOnce( "_4k" ) )
+			{
+				resName = "_4k";
+			}
+			else if( baseName.IStripTrailingOnce( "_8k" ) )
+			{
+				resName = "_8k";
+			}
+
+			baseName.IStripTrailingOnce( "_diffuse" );
+			baseName.IStripTrailingOnce( "_diff" );
+			baseName.IStripTrailingOnce( "_albedo" );
+			baseName.IStripTrailingOnce( "_basecolor" );
+			baseName.IStripTrailingOnce( "_base" );
+			baseName.IStripTrailingOnce( "_color" );
+			baseName.IStripTrailingOnce( "_col" );
+
+			if( idStr::FindText( imageName, "FloorTiles2", false ) != -1 )
+			{
+				mtrBuffer += "\n// FoorTiles found \n";
+			}
+
+
+			idStr materialName = baseName;
+
+			if( idStr::FindText( baseName, "_inst_inst_inst_", false ) != -1 ||
+					idStr::FindText( baseName, "_inst_inst_", false ) != -1 ||
+					idStr::FindText( baseName, "_inst_", false ) != -1 )
+			{
+				materialName.CopyRange( baseName.c_str(), 0, baseName.Length() - 2 );
+			}
+
+			if( ueMode )
+			{
+				// strip folder from material name
+				idStr matName;
+				materialName.ExtractFileName( matName );
+				materialName = matName;
+			}
+
+			//mtrBuffer += va( "%s/%s\n", folderName, imageName.c_str() );
+			mtrBuffer += materialName.c_str();
+			mtrBuffer += "\n{\n";
+
+			// TODO qer_editorImage
+			//mtrBuffer += va( "\tqer_editorimage %s\n\n", imageName.c_str() );
+
+			// ===============================
+			// test opacity / transparency map
+			idStrList alphaNames = { "_opacity", "_alpha" };
+			bool foundAlpha = false;
+
+			for( auto& name : alphaNames )
+			{
+				ID_TIME_T testStamp;
+				idStr testName = baseName + name + resName;
+
+				R_LoadImage( testName, NULL, NULL, NULL, &testStamp, true, NULL );
+
+				if( testStamp != FILE_NOT_FOUND_TIMESTAMP )
+				{
+					// load opacity map and store values in the alpha channel of the base color image
+
+					byte* pic = NULL;
+					int width, height;
+					R_LoadImage( imageName, &pic, &width, &height, &testStamp, true, NULL );
+
+					byte* pic2 = NULL;
+					int width2, height2;
+					R_LoadImage( testName, &pic2, &width2, &height2, &testStamp, true, NULL );
+
+					if( width == width2 || height == height2 )
+					{
+						// merge images and save it to disk
+						int c = width * height * 4;
+
+						for( int j = 0 ; j < c ; j += 4 )
+						{
+							// just take the r channel of the alpha map
+							pic[j + 3] = pic2[j + 0];
+						}
+
+						// don't destroy the original image and save it as new one
+						idStr mergedName = baseName + "_rgba.png";
+						R_WritePNG( mergedName, static_cast<byte*>( pic ), 4, width, height, "fs_basepath" );
+
+						mtrBuffer += "\t{\n";
+						mtrBuffer += "\t\tblend basecolormap\n";
+						mtrBuffer += va( "\t\tmap %s\n", mergedName.c_str() );
+						mtrBuffer += "\t\talphaTest 0.5\n";
+						mtrBuffer += "\t}\n";
+					}
+					else
+					{
+						mtrBuffer += "\t{\n";
+						mtrBuffer += "\t\tblend basecolormap\n";
+						mtrBuffer += va( "\t\tmap %s\n", imageName.c_str() );
+						mtrBuffer += "\t\talphaTest 0.5\n";
+						mtrBuffer += "\t}\n";
+					}
+
+					if( pic )
+					{
+						R_StaticFree( pic );
+					}
+					if( pic2 )
+					{
+						R_StaticFree( pic2 );
+					}
+
+					foundAlpha = true;
+					break;
+				}
+			}
+
+			if( !foundAlpha )
+			{
+				mtrBuffer += va( "\tbasecolormap %s\n", imageName.c_str() );
+			}
+
+			// ===============================
+			// test normal map
+			idStrList normalNames = { "_normal", "_nor", "_nrm", "_nrml", "_norm", "_nor_dx", "_nor_gl", "_normal_directx", "_normal_opengl" };
+
+			for( auto& name : normalNames )
+			{
+				ID_TIME_T testStamp;
+				idStr testName = baseName + name + resName;
+
+				R_LoadImage( testName, NULL, NULL, NULL, &testStamp, true, NULL );
+
+				if( testStamp != FILE_NOT_FOUND_TIMESTAMP )
+				{
+					if( name.Cmp( "_nor_dx" ) == 0 || name.Cmp( "_normal_directx" ) == 0 || ueMode )
+					{
+						mtrBuffer += va( "\tnormalmap invertGreen( %s )\n", testName.c_str() );
+					}
+					else
+					{
+						mtrBuffer += va( "\tnormalmap %s\n", testName.c_str() );
+					}
+					break;
+				}
+			}
+
+			// ===============================
+			// test roughness map
+			idStrList roughNames = { "_roughness", "_rough", "_rgh" };
+			byte* roughPic = NULL;
+			int roughWidth = 0;
+			int roughHeight = 0;
+
+			for( auto& name : roughNames )
+			{
+				ID_TIME_T testStamp;
+				idStr testName = baseName + name + resName;
+
+				R_LoadImage( testName, &roughPic, &roughWidth, &roughHeight, &testStamp, true, NULL );
+				if( testStamp != FILE_NOT_FOUND_TIMESTAMP )
+				{
+					break;
+				}
+			}
+
+			// ===============================
+			// test metallic map
+			idStrList metalNames = { "_metallic", "_metalness", "_metal", "_mtl" };
+			byte* metalPic = NULL;
+			int metalWidth = 0;
+			int metalHeight = 0;
+
+			for( auto& name : metalNames )
+			{
+				ID_TIME_T testStamp;
+				idStr testName = baseName + name + resName;
+
+				R_LoadImage( testName, &metalPic, &metalWidth, &metalHeight, &testStamp, true, NULL );
+				if( testStamp != FILE_NOT_FOUND_TIMESTAMP )
+				{
+					break;
+				}
+			}
+
+			// ===============================
+			// test ambient occlusion map
+			idStrList aoNames = { "_ao", "_ambient", "_occlusion" };
+			byte* aoPic = NULL;
+			int aoWidth = 0;
+			int aoHeight = 0;
+
+			for( auto& name : aoNames )
+			{
+				ID_TIME_T testStamp;
+				idStr testName = baseName + name + resName;
+
+				R_LoadImage( testName, &aoPic, &aoWidth, &aoHeight, &testStamp, true, NULL );
+				if( testStamp != FILE_NOT_FOUND_TIMESTAMP )
+				{
+					break;
+				}
+			}
+
+			// expect at least roughness and metallic values or we skip the PBR material creation here
+			if( roughPic && metalPic )
+			{
+				if( roughWidth == metalWidth || roughHeight == metalHeight )
+				{
+					// merge images and save it to disk
+					int c = roughWidth * roughHeight * 4;
+
+					for( int j = 0 ; j < c ; j += 4 )
+					{
+						// put metallic into green channel
+						roughPic[j + 1] = metalPic[j + 0];
+
+						// put middle 0.5 value into alpha channel for the case we want to add displacement later
+						roughPic[j + 3] = 128;
+					}
+
+					if( roughWidth == aoWidth || roughHeight == aoHeight )
+					{
+						for( int i = 0 ; i < c ; i += 4 )
+						{
+							// put AO into blue channel
+							roughPic[i + 2] = aoPic[i + 0];
+						}
+					}
+					else
+					{
+						// reset AO channel to white
+						for( int i = 0 ; i < c ; i += 4 )
+						{
+							roughPic[i + 2] = 255;
+						}
+					}
+
+					// don't destroy the original image and save it as new one
+					idStr mergedName = baseName + "_rmao.png";
+					R_WritePNG( mergedName, static_cast<byte*>( roughPic ), 4, roughWidth, roughHeight, "fs_basepath" );
+
+					mergedName.StripFileExtension();
+					mtrBuffer += va( "\trmaomap %s\n", mergedName.c_str() );
+				}
+			}
+
+			if( ueMode )
+			{
+				// ===============================
+				// test UE4 specular map
+				idStrList specNames = { "_specular" };
+				byte* specPic = NULL;
+				int specWidth = 0;
+				int specHeight = 0;
+
+				for( auto& name : specNames )
+				{
+					ID_TIME_T testStamp;
+					idStr testName = baseName + name + resName;
+
+					R_LoadImage( testName, &specPic, &specWidth, &specHeight, &testStamp, true, NULL );
+					if( testStamp != FILE_NOT_FOUND_TIMESTAMP )
+					{
+						// swap bytes to RMAO order
+						int c = specWidth * specHeight * 4;
+
+						for( int j = 0 ; j < c ; j += 4 )
+						{
+							byte ao = specPic[j + 0];
+							byte roughness = specPic[j + 1];
+							byte metal = specPic[j + 2];
+
+							specPic[j + 0] = roughness;
+							specPic[j + 1] = metal;
+							specPic[j + 2] = ao;
+
+							// put middle 0.5 value into alpha channel for the case we want to add displacement later
+							specPic[j + 3] = 128;
+						}
+
+						idStr mergedName = baseName + "_rmao.png";
+						R_WritePNG( mergedName, static_cast<byte*>( specPic ), 4, specWidth, specHeight, "fs_basepath" );
+
+						mergedName.StripFileExtension();
+						mtrBuffer += va( "\trmaomap %s\n", mergedName.c_str() );
+
+						R_StaticFree( specPic );
+						break;
+					}
+				}
+			}
+
+			if( roughPic )
+			{
+				R_StaticFree( roughPic );
+			}
+			if( metalPic )
+			{
+				R_StaticFree( metalPic );
+			}
+			if( aoPic )
+			{
+				R_StaticFree( aoPic );
+			}
+
+			// ===============================
+			// test emmissive map
+			idStrList emmissiveName = { "_emission", "_emissive", "_emit" };
+
+			for( auto& name : emmissiveName )
+			{
+				ID_TIME_T testStamp;
+				idStr testName = baseName + name;
+
+				R_LoadImage( testName, NULL, NULL, NULL, &testStamp, true, NULL );
+
+				if( testStamp != FILE_NOT_FOUND_TIMESTAMP )
+				{
+					mtrBuffer += "\t{\n";
+					mtrBuffer += "\t\tblend add\n";
+					mtrBuffer += va( "\t\tmap %s\n", testName.c_str() );
+					mtrBuffer += "\t}\n";
+					break;
+				}
+			}
+
+			mtrBuffer += va( "}\n\n" );
+		}
+	}
+
+	fileSystem->FreeFileList( files );
+
+	folderName.ReplaceChar( '/', '_' );
+
+	idStr mtrName = "materials/";
+	mtrName += folderName;
+	mtrName.StripTrailing( '_' );
+	mtrName.DefaultFileExtension( ".mtr" );
+
+	fileSystem->WriteFile( mtrName.c_str(), mtrBuffer.c_str(), mtrBuffer.Length(), "fs_basepath" );
+}
+// RB end

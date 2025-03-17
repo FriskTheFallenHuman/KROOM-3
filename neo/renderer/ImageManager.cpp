@@ -29,7 +29,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
-
+#include "CmdlineProgressbar.h"
 #include "RenderCommon.h"
 
 // do this with a pointer, in case we want to make the actual manager
@@ -121,7 +121,7 @@ static int R_QsortImageName( const void* a, const void* b )
 R_ListImages_f
 ===============
 */
-void R_ListImages_f( const idCmdArgs& args )
+void idImageManager::R_ListImages_f( const idCmdArgs& args )
 {
 	int		i, partialSize;
 	idImage*	image;
@@ -327,7 +327,11 @@ idImage* idImageManager::ImageFromFunction( const char* _name, void ( *generator
 
 	// strip any .tga file extensions from anywhere in the _name
 	idStr name = _name;
-	name.Replace( ".tga", "" );
+	idStrList imageFormats = { ".tga", ".jpg", ".png", ".exr", ".hdr" };
+	for( auto& ext : imageFormats )
+	{
+		name.Replace( ext, "" );
+	}
 	name.BackSlashesToSlashes();
 
 	// see if the image already exists
@@ -366,7 +370,7 @@ Loading of the image may be deferred for dynamic loading.
 ==============
 */
 idImage*	idImageManager::ImageFromFile( const char* _name, textureFilter_t filter,
-		textureRepeat_t repeat, textureUsage_t usage, cubeFiles_t cubeMap )
+		textureRepeat_t repeat, textureUsage_t usage, cubeFiles_t cubeMap, int cubeMapSize )
 {
 
 	if( !_name || !_name[0] || idStr::Icmp( _name, "default" ) == 0 || idStr::Icmp( _name, "_default" ) == 0 )
@@ -385,7 +389,11 @@ idImage*	idImageManager::ImageFromFile( const char* _name, textureFilter_t filte
 
 	// strip any .tga file extensions from anywhere in the _name, including image program parameters
 	idStrStatic< MAX_OSPATH > name = _name;
-	name.Replace( ".tga", "" );
+	idStrList imageFormats = { ".tga", ".jpg", ".png", ".exr", ".hdr" };
+	for( auto& ext : imageFormats )
+	{
+		name.Replace( ext, "" );
+	}
 	name.BackSlashesToSlashes();
 
 	//
@@ -567,7 +575,6 @@ idImageManager::GetImage
 */
 idImage* idImageManager::GetImage( const char* _name ) const
 {
-
 	if( !_name || !_name[0] || idStr::Icmp( _name, "default" ) == 0 || idStr::Icmp( _name, "_default" ) == 0 )
 	{
 		declManager->MediaPrint( "DEFAULTED\n" );
@@ -576,7 +583,11 @@ idImage* idImageManager::GetImage( const char* _name ) const
 
 	// strip any .tga file extensions from anywhere in the _name, including image program parameters
 	idStr name = _name;
-	name.Replace( ".tga", "" );
+	idStrList imageFormats = { ".tga", ".jpg", ".png", ".exr", ".hdr" };
+	for( auto& ext : imageFormats )
+	{
+		name.Replace( ext, "" );
+	}
 	name.BackSlashesToSlashes();
 
 	//
@@ -651,7 +662,7 @@ void R_CombineCubeImages_f( const idCmdArgs& args )
 		int		orderRemap[6] = { 1, 3, 4, 2, 5, 6 };
 		for( side = 0 ; side < 6 ; side++ )
 		{
-			sprintf( filename, "%s%i%04i.tga", baseName.c_str(), orderRemap[side], frameNum );
+			idStr::snPrintf( filename, sizeof( filename ), "%s%i%04i.tga", baseName.c_str(), orderRemap[side], frameNum );
 
 			idLib::Printf( "reading %s\n", filename );
 			R_LoadImage( filename, &pics[side], &width, &height, NULL, true, NULL );
@@ -704,12 +715,62 @@ void R_CombineCubeImages_f( const idCmdArgs& args )
 			memcpy( combined + width * height * 4 * side, pics[side], width * height * 4 );
 			Mem_Free( pics[side] );
 		}
-		sprintf( filename, "%sCM%04i.tga", baseName.c_str(), frameNum );
+		idStr::snPrintf( filename, sizeof( filename ), "%sCM%04i.tga", baseName.c_str(), frameNum );
 
 		idLib::Printf( "writing %s\n", filename );
 		R_WriteTGA( filename, combined, width, height * 6 );
 	}
 	common->SetRefreshOnPrint( false );
+}
+
+/*
+===============
+CacheGlobalIlluminationData_f
+===============
+*/
+void idImageManager::CacheGlobalIlluminationData_f( const idCmdArgs& args )
+{
+	common->Printf( "Caching images to bimage files...\n" );
+
+	int	start = Sys_Milliseconds();
+	globalImages->preloadingMapImages = true;
+	//globalImages->cacheImages = true;
+
+	idFileList* files = fileSystem->ListFilesTree( "env/maps", "*.exr", true );
+	int numFiles = files->GetNumFiles();
+
+	CommandlineProgressBar progressBar( numFiles, renderSystem->GetWidth(), renderSystem->GetHeight() );
+	progressBar.Start();
+
+	for( int i = 0; i < files->GetNumFiles(); i++ )
+	{
+		const char* filename = files->GetFile( i );
+
+		if( idStr::FindText( filename, "envprobe" ) != -1 )
+		{
+			if( idStr::FindText( filename, "_spec" ) != -1 )
+			{
+				globalImages->ImageFromFile( filename, TF_DEFAULT, TR_CLAMP, TD_R11G11B10F, CF_2D_PACKED_MIPCHAIN );
+			}
+			else
+			{
+				globalImages->ImageFromFile( filename, TF_LINEAR, TR_CLAMP, TD_R11G11B10F, CF_2D_PACKED_MIPCHAIN );
+			}
+		}
+		else if( idStr::FindText( filename, "lightgrid" ) != -1 )
+		{
+			globalImages->ImageFromFile( filename, TF_LINEAR, TR_CLAMP, TD_R11G11B10F, CF_2D );
+		}
+
+		progressBar.Increment( true );
+	}
+	fileSystem->FreeFileList( files );
+
+	int	end = Sys_Milliseconds();
+	common->Printf( "%05d images cached in %5.1f seconds\n", numFiles, ( end - start ) * 0.001 );
+	common->Printf( "----------------------------------------\n" );
+	globalImages->preloadingMapImages = false;
+	//globalImages->cacheImages = false;
 }
 
 /*
@@ -726,6 +787,7 @@ void idImageManager::Init()
 
 	cmdSystem->AddCommand( "reloadImages", R_ReloadImages_f, CMD_FL_RENDERER, "reloads images" );
 	cmdSystem->AddCommand( "listImages", R_ListImages_f, CMD_FL_RENDERER, "lists images" );
+	cmdSystem->AddCommand( "cacheGlobalIlluminationData", CacheGlobalIlluminationData_f, CMD_FL_RENDERER, "turn env/maps/*.exr files into .bimage files" );
 	cmdSystem->AddCommand( "combineCubeImages", R_CombineCubeImages_f, CMD_FL_RENDERER, "combines six images for roq compression" );
 
 	// should forceLoadImages be here?
@@ -845,17 +907,18 @@ int idImageManager::LoadLevelImages( bool pacifier )
 	int	loadCount = 0;
 	for( int i = 0 ; i < images.Num() ; i++ )
 	{
+		idImage* image = images[ i ];
+
 		if( pacifier )
 		{
 			common->UpdateLevelLoadPacifier();
-
 		}
 
-		idImage*	image = images[ i ];
 		if( image->generatorFunction )
 		{
 			continue;
 		}
+
 		if( image->levelLoadReferenced && !image->IsLoaded() )
 		{
 			loadCount++;

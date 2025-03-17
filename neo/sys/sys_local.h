@@ -43,6 +43,8 @@ public:
 	virtual void			DebugPrintf( VERIFY_FORMAT_STRING const char* fmt, ... );
 	virtual void			DebugVPrintf( const char* fmt, va_list arg );
 
+	virtual unsigned int	GetMilliseconds();
+
 	virtual double			GetClockTicks();
 	virtual double			ClockTicksPerSecond();
 	virtual cpuid_t			GetProcessorId();
@@ -57,9 +59,9 @@ public:
 	virtual bool			LockMemory( void* ptr, int bytes );
 	virtual bool			UnlockMemory( void* ptr, int bytes );
 
-	virtual int				DLL_Load( const char* dllName );
-	virtual void* 			DLL_GetProcAddress( int dllHandle, const char* procName );
-	virtual void			DLL_Unload( int dllHandle );
+	virtual uintptr_t		DLL_Load( const char* dllName );
+	virtual void* 			DLL_GetProcAddress( uintptr_t dllHandle, const char* procName );
+	virtual void			DLL_Unload( uintptr_t dllHandle );
 	virtual void			DLL_GetFileName( const char* baseName, char* dllName, int maxLength );
 
 	virtual sysEvent_t		GenerateMouseButtonEvent( int button, bool down );

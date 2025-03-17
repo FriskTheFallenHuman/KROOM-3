@@ -282,6 +282,7 @@ public:
 // geometry
 #include "geometry/RenderMatrix.h"
 #include "geometry/JointTransform.h"
+#include "geometry/Rectangle.h"
 #include "geometry/DrawVert.h"
 #include "geometry/Winding.h"
 #include "geometry/Winding2D.h"
@@ -332,7 +333,8 @@ public:
 #include "Swap.h"
 #include "Callback.h"
 #include "ParallelJobList.h"
-
 #include "SoftwareCache.h"
+#include "Serializer.h"
+
 
 #endif	/* !__LIB_H__ */

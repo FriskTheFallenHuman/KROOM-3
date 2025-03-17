@@ -29,7 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
-#include "DeviceContext.h"
 #include "Window.h"
 #include "UserInterfaceLocal.h"
 #include "SliderWindow.h"
@@ -424,7 +423,7 @@ void idSliderWindow::Activate( bool activate, idStr& act )
 idSliderWindow::InitCvar
 ============
 */
-void idSliderWindow::InitCvar( )
+void idSliderWindow::InitCvar()
 {
 	if( cvarStr[0] == '\0' )
 	{

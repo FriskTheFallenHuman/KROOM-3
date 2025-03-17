@@ -618,13 +618,13 @@ const emptyCommand_t* idRenderSystemLocal::SwapCommandBuffers(
 	uint64* frontEndMicroSec,
 	uint64* backEndMicroSec,
 	uint64* shadowMicroSec,
+	uint64* mocMicroSec,
 	uint64* gpuMicroSec,
 	backEndCounters_t* bc,
 	performanceCounters_t* pc
 )
 {
-
-	SwapCommandBuffers_FinishRendering( frontEndMicroSec, backEndMicroSec, shadowMicroSec, gpuMicroSec, bc, pc );
+	SwapCommandBuffers_FinishRendering( frontEndMicroSec, backEndMicroSec, shadowMicroSec, mocMicroSec, gpuMicroSec, bc, pc );
 
 	return SwapCommandBuffers_FinishCommandBuffers();
 }
@@ -639,6 +639,7 @@ void idRenderSystemLocal::SwapCommandBuffers_FinishRendering(
 	uint64* frontEndMicroSec,
 	uint64* backEndMicroSec,
 	uint64* shadowMicroSec,
+	uint64* mocMicroSec,
 	uint64* gpuMicroSec,
 	backEndCounters_t* bc,
 	performanceCounters_t* pc
@@ -665,10 +666,6 @@ void idRenderSystemLocal::SwapCommandBuffers_FinishRendering(
 	// and only update the screen when we update the progress bar in the console
 	if( !takingEnvprobe )
 	{
-#if !IMGUI_BFGUI
-		ImGuiHook::Render();
-#endif
-
 		// wait for our fence to hit, which means the swap has actually happened
 		// We must do this before clearing any resources the GPU may be using
 		backend.GL_BlockingSwapBuffers();
@@ -819,6 +816,11 @@ void idRenderSystemLocal::SwapCommandBuffers_FinishRendering(
 		*shadowMicroSec = backend.pc.cpuShadowMicroSec;
 	}
 
+	if( mocMicroSec != NULL )
+	{
+		*mocMicroSec = this->pc.mocMicroSec;
+	}
+
 	// RB: TODO clean up the above and just pass entire backend and performance stats before they get cleared
 	if( bc != NULL )
 	{
@@ -855,12 +857,6 @@ const emptyCommand_t* idRenderSystemLocal::SwapCommandBuffers_FinishCommandBuffe
 	{
 		return NULL;
 	}
-
-	// RB: general GUI system path to treat ImGui surfaces in the renderer frontend like SWF
-	// this calls io.RenderDrawListsFn
-#if IMGUI_BFGUI
-	ImGuiHook::Render();
-#endif
 
 	// close any gui drawing
 	guiModel->EmitFullScreen();

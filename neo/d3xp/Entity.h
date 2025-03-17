@@ -368,6 +368,8 @@ public:
 	virtual bool			GetPhysicsToVisualTransform( idVec3& origin, idMat3& axis );
 	// retrieves the transformation going from the physics origin/axis to the sound origin/axis
 	virtual bool			GetPhysicsToSoundTransform( idVec3& origin, idMat3& axis );
+	// RB: used by idEditEntities
+	virtual idVec3			GetEditOrigin() const;
 	// called from the physics object when colliding, should return true if the physics simulation should stop
 	virtual bool			Collide( const trace_t& collision, const idVec3& velocity );
 	// retrieves impact information, 'ent' is the entity retrieving the info

@@ -42,6 +42,8 @@ If you have questions concerning this license or the applicable additional terms
 
 	#if defined(_WIN64)
 		#define	CPUSTRING						"x64"
+	#elif defined(__aarch64__) || defined(__ARM64__) || defined(_M_ARM64)
+		#define CPUSTRING 						"arm64"
 	#else
 		#define	CPUSTRING						"x86"
 	#endif
@@ -127,6 +129,8 @@ If you have questions concerning this license or the applicable additional terms
 			#define CPUSTRING						"sparc"
 		#elif defined(__loongarch64)
 			#define CPUSTRING						"loongarch64"
+		#elif defined(__arm__)
+			#define CPUSTRING						"arm"
 		#else
 			#error unknown CPU
 		#endif
@@ -185,7 +189,11 @@ Defines and macros usable in all code
 
 #define ALIGN( x, a ) ( ( ( x ) + ((a)-1) ) & ~((a)-1) )
 
+
 // RB: changed UINT_PTR to uintptr_t
+#if !defined(__APPLE__)
+	#include <malloc.h>
+#endif
 #define _alloca16( x )					((void *)ALIGN( (uintptr_t)_alloca( ALIGN( x, 16 ) + 16 ), 16 ) )
 #define _alloca128( x )					((void *)ALIGN( (uintptr_t)_alloca( ALIGN( x, 128 ) + 128 ), 128 ) )
 // RB end
@@ -235,6 +243,7 @@ bulk of the codebase, so it is the best place for analyze pragmas.
 
 	#pragma warning( disable: 4467 )	// .. Include\CodeAnalysis\SourceAnnotations.h(68): warning C4467: usage of ATL attributes is deprecated
 	#pragma warning( disable: 4595 )	// warning C4595: 'operator': non-member operator new or delete functions may not be declared inline
+	#pragma warning( disable: 4068 )	// warning C4068: unknown pragma 'GCC'
 
 	#if !defined(VERIFY_FORMAT_STRING)
 		// checking format strings catches a LOT of errors

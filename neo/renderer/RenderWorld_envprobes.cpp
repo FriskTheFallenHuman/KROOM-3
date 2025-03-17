@@ -1,4 +1,4 @@
-﻿/*
+/*
 ===========================================================================
 
 Doom 3 BFG Edition GPL Source Code
@@ -33,6 +33,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "mesa/format_r11g11b10f.h"
 
 #include "RenderCommon.h"
+#include "CmdlineProgressbar.h"
 #include "../framework/Common_local.h" // commonLocal.WaitGameThread();
 
 /*
@@ -916,7 +917,7 @@ void R_MakeAmbientMap( const char* baseName, byte* buffers[6], const char* suffi
 	}
 }
 
-CONSOLE_COMMAND( bakeEnvironmentProbes, "Bake environment probes", NULL )
+CONSOLE_COMMAND_SHIP( bakeEnvironmentProbes, "Bake environment probes", NULL )
 {
 	idStr			fullname;
 	idStr			baseName;
@@ -951,11 +952,19 @@ CONSOLE_COMMAND( bakeEnvironmentProbes, "Bake environment probes", NULL )
 	// CONVOLVE CUBEMAPS
 	//--------------------------------------------
 
+	glConfig.nativeScreenWidth = captureSize;
+	glConfig.nativeScreenHeight = captureSize;
+
 	// make sure the game / draw thread has completed
 	commonLocal.WaitGameThread();
 
-	glConfig.nativeScreenWidth = captureSize;
-	glConfig.nativeScreenHeight = captureSize;
+	// turn vsync off for faster capturing of the probes
+	int oldVsync = r_swapInterval.GetInteger();
+	r_swapInterval.SetInteger( 0 );
+
+	// turn off clear in between views so we keep the progress bar visible
+	int oldClear = r_clear.GetInteger();
+	r_clear.SetInteger( 0 );
 
 	// disable scissor, so we don't need to adjust all those rects
 	r_useScissor.SetBool( false );
@@ -970,7 +979,7 @@ CONSOLE_COMMAND( bakeEnvironmentProbes, "Bake environment probes", NULL )
 	r_useParallelAddLights.SetBool( false );
 
 	// discard anything currently on the list (this triggers SwapBuffers)
-	tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
+	tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL, NULL );
 
 	tr.takingEnvprobe = true;
 
@@ -1039,19 +1048,19 @@ CONSOLE_COMMAND( bakeEnvironmentProbes, "Bake environment probes", NULL )
 			byte* float16FRGB = ( byte* )R_StaticAlloc( bufferSize );
 
 			// discard anything currently on the list
-			tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
+			tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL, NULL );
 
 			// build commands to render the scene
 			tr.primaryWorld->RenderScene( &ref );
 
 			// finish off these commands
-			const emptyCommand_t* cmd = tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
+			const emptyCommand_t* cmd = tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL, NULL );
 
 			// issue the commands to the GPU
 			tr.RenderCommandBuffers( cmd );
 
 			// discard anything currently on the list (this triggers SwapBuffers)
-			tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
+			tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL, NULL );
 
 #if defined(USE_VULKAN)
 
@@ -1139,6 +1148,16 @@ CONSOLE_COMMAND( bakeEnvironmentProbes, "Bake environment probes", NULL )
 			}
 		}
 
+		// generate .bimage file
+		if( job->outHeight == RADIANCE_OCTAHEDRON_SIZE )
+		{
+			globalImages->ImageFromFile( job->filename, TF_DEFAULT, TR_CLAMP, TD_R11G11B10F, CF_2D_PACKED_MIPCHAIN );
+		}
+		else
+		{
+			globalImages->ImageFromFile( job->filename, TF_LINEAR, TR_CLAMP, TD_R11G11B10F, CF_2D_PACKED_MIPCHAIN );
+		}
+
 		Mem_Free( job->outBuffer );
 
 		delete job;
@@ -1165,7 +1184,11 @@ CONSOLE_COMMAND( bakeEnvironmentProbes, "Bake environment probes", NULL )
 
 	idLib::Printf( "----------------------------------\n" );
 	idLib::Printf( "Processed %i light probes\n", totalProcessedProbes );
-	common->Printf( "Baked SH irradiance and GGX mip maps in %5.1f seconds\n\n", ( totalEnd - totalStart ) / ( 1000.0f ) );
+	common->Printf( "Baked SH irradiance and GGX mip maps in %5.1f minutes\n\n", ( totalEnd - totalStart ) / ( 1000.0f * 60 ) );
+
+	// restore vsync setting
+	r_swapInterval.SetInteger( oldVsync );
+	r_clear.SetInteger( oldClear );
 }
 
 CONSOLE_COMMAND( makeBrdfLUT, "make a GGX BRDF lookup table", NULL )
@@ -1230,7 +1253,7 @@ CONSOLE_COMMAND( makeBrdfLUT, "make a GGX BRDF lookup table", NULL )
 	idStr fullname = "env/_brdfLut.png";
 	idLib::Printf( "writing %s\n", fullname.c_str() );
 
-	R_WritePNG( fullname, ldrBuffer, 4, outSize, outSize, true, "fs_basepath" );
+	R_WritePNG( fullname, ldrBuffer, 4, outSize, outSize, "fs_basepath" );
 	//R_WriteEXR( "env/_brdfLut.exr", hdrBuffer, 4, outSize, outSize, "fs_basepath" );
 
 
@@ -1279,91 +1302,4 @@ static const unsigned char brfLutTexBytes[] =
 
 	Mem_Free( ldrBuffer );
 	Mem_Free( hdrBuffer );
-}
-
-CONSOLE_COMMAND( makeImageHeader, "load an image and turn it into a .h file", NULL )
-{
-	byte*		buffer;
-	int			width = 0, height = 0;
-
-	if( args.Argc() < 2 )
-	{
-		common->Printf( "USAGE: makeImageHeader filename [exportname]\n" );
-		return;
-	}
-
-	idStr filename = args.Argv( 1 );
-
-	R_LoadImage( filename, &buffer, &width, &height, NULL, true, NULL );
-	if( !buffer )
-	{
-		common->Printf( "loading %s failed.\n", filename.c_str() );
-		return;
-	}
-
-	filename.StripFileExtension();
-
-	idStr exportname;
-
-	if( args.Argc() == 3 )
-	{
-		exportname.Format( "Image_%s.h", args.Argv( 2 ) );
-	}
-	else
-	{
-		exportname.Format( "Image_%s.h", filename.c_str() );
-	}
-
-	for( int i = 0; i < exportname.Length(); i++ )
-	{
-		if( exportname[ i ] == '/' )
-		{
-			exportname[ i ] = '_';
-		}
-	}
-
-	idFileLocal headerFile( fileSystem->OpenFileWrite( exportname, "fs_basepath" ) );
-
-	idStr uppername = exportname;
-	uppername.ToUpper();
-
-	for( int i = 0; i < uppername.Length(); i++ )
-	{
-		if( uppername[ i ] == '.' )
-		{
-			uppername[ i ] = '_';
-		}
-	}
-
-	headerFile->Printf( "#ifndef %s_TEX_H\n", uppername.c_str() );
-	headerFile->Printf( "#define %s_TEX_H\n\n", uppername.c_str() );
-
-	headerFile->Printf( "#define %s_TEX_WIDTH %i\n", uppername.c_str(), width );
-	headerFile->Printf( "#define %s_TEX_HEIGHT %i\n\n", uppername.c_str(), height );
-
-	headerFile->Printf( "static const unsigned char %s_Bytes[] = {\n", uppername.c_str() );
-
-	int bufferSize = width * height * 4;
-
-	for( int i = 0; i < bufferSize; i++ )
-	{
-		byte b = buffer[i];
-
-		if( i < ( bufferSize - 1 ) )
-		{
-			headerFile->Printf( "0x%02hhx, ", b );
-		}
-		else
-		{
-			headerFile->Printf( "0x%02hhx", b );
-		}
-
-		if( i % 12 == 0 )
-		{
-			headerFile->Printf( "\n" );
-		}
-	}
-	headerFile->Printf( "\n};\n#endif\n" );
-
-	Mem_Free( buffer );
 }

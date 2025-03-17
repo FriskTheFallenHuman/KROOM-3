@@ -592,7 +592,7 @@ void idLobby::SendPeersMicStatusToNewUsers( int peerNumber )
 		return;		// Nothing to do
 	}
 
-	outmsg.WriteLong( numUsersInMsg );
+	outmsg.WriteInt( numUsersInMsg );
 
 	for( int i = 0; i < GetNumLobbyUsers(); ++i )
 	{
@@ -887,7 +887,7 @@ idLobby::HandleHeadsetStateChange
 */
 void idLobby::HandleHeadsetStateChange( int fromPeer, idBitMsg& msg )
 {
-	int userCount = msg.ReadLong();
+	int userCount = msg.ReadInt();
 
 	for( int i = 0; i < userCount; ++i )
 	{
@@ -909,7 +909,7 @@ void idLobby::HandleHeadsetStateChange( int fromPeer, idBitMsg& msg )
 
 			byte buffer[ idPacketProcessor::MAX_MSG_SIZE ];
 			idBitMsg outMsg( buffer, sizeof( buffer ) );
-			outMsg.WriteLong( 1 );
+			outMsg.WriteInt( 1 );
 			lobbyUserID.WriteToMsg( outMsg );
 			outMsg.WriteBool( state );
 

@@ -250,7 +250,7 @@ const char* idAFVector::ToString( idStr& str, const int precision )
 		case idAFVector::VEC_COORDS:
 		{
 			char format[128];
-			sprintf( format, "( %%.%df, %%.%df, %%.%df )", precision, precision, precision );
+			idStr::snPrintf( format, sizeof( format ), "( %%.%df, %%.%df, %%.%df )", precision, precision, precision );
 			sprintf( str, format, vec.x, vec.y, vec.z );
 			break;
 		}
@@ -1099,7 +1099,6 @@ bool idDeclAF::ParseBody( idLexer& src )
 		else if( !token.Icmp( "clipMask" ) )
 		{
 			ParseContents( src, body->clipMask );
-			body->clipMask &= ~CONTENTS_CORPSE;		// never allow collisions against corpses
 		}
 		else if( !token.Icmp( "selfCollision" ) )
 		{
@@ -1770,7 +1769,6 @@ bool idDeclAF::ParseSettings( idLexer& src )
 		else if( !token.Icmp( "clipMask" ) )
 		{
 			ParseContents( src, clipMask );
-			clipMask &= ~CONTENTS_CORPSE;	// never allow collisions against corpses
 		}
 		else if( !token.Icmp( "selfCollision" ) )
 		{
@@ -1987,7 +1985,7 @@ void idDeclAF::FreeData()
 	maxMoveTime = -1.0f;
 	selfCollision = true;
 	contents = CONTENTS_CORPSE;
-	clipMask = CONTENTS_SOLID;
+	clipMask = CONTENTS_SOLID | CONTENTS_CORPSE;
 	bodies.DeleteContents( true );
 	constraints.DeleteContents( true );
 }

@@ -1,6 +1,12 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 2.6...3.22 FATAL_ERROR)
 
-set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "")
+if (EXISTS "${CMAKE_SOURCE_DIR}/../vcpkg/scripts/buildsystems/vcpkg.cmake")
+	set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/../vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain file")
+else()
+	message(FATAL_ERROR "Vcpkg wasn't not found, aborting, make sure to git clone this with all submodules!")
+endif()
+
+set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER  "")
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMakeModules")
@@ -12,9 +18,9 @@ option(COMPILE_COMMANDS "Generate compile_commands.json" OFF)
 option(USE_MFC_TOOLS "Compile the built-in MFC based tools" OFF)
 option(USE_PRECOMPILED_HEADERS "Use precompiled headers during build" ON)
 if(UNIX)
-option(SDL2 "Use SDL2 instead of SDL1.2" ON)
+	option(SDL2 "Use SDL2 instead of SDL1.2" ON)
 endif()
-option(OPENAL "Use OpenAL soft instead of XAudio2" OFF)
+option(OPENAL "Use OpenAL soft instead of XAudio2" ON)
 option(FFMPEG "Use FMPEG to render Bink videos" OFF)
 option(BINKDEC "Use included libbinkdec to render Bink videos" ON)
 option(USE_VULKAN "Use Vulkan instead of OpenGL" OFF)
@@ -26,16 +32,16 @@ option(WINDOWS10 "Build for Windows 10" ON)
 
 set(CPU_TYPE "" CACHE STRING "When set, passes this string as CPU-ID which will be embedded into the binary.")
 
-# SRS - Turn on optimization when cross-compiling from Apple arm64 to x86_64
+# SRS - Turn on compiler optimizations for x86 and also when cross-compiling from Apple arm64 to x86_64
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)" OR CMAKE_OSX_ARCHITECTURES MATCHES "x86_64")
-	set(CPU_OPTIMIZATION "-mmmx -msse -msse2" CACHE STRING "Which CPU specific optimitations should be used beside the compiler's default?")
+	set(CPU_OPTIMIZATION "-mmmx -msse -msse2" CACHE STRING "Which CPU-specific optimizations should be used besides the compiler's default?")
 endif()
 
-# SRS - Turn off MMX/SSE intrinsics when cross-compiling from Apple x86_64 to arm64
+# SRS - Turn on MMX/SSE intrinsics for x86 but not when cross-compiling from Apple x86_64 to arm64
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)|(e2k)|(E2K)" AND NOT CMAKE_OSX_ARCHITECTURES MATCHES "arm64")
-	option(USE_INTRINSICS_SSE "Compile using SSE intrinsics (e.g mmx, sse, msse2)" ON)
+	option(USE_INTRINSICS_SSE "Compile using x86 MMX/SSE intrinsics (e.g SSE SIMD instructions)" ON)
 else()
-	option(USE_INTRINSICS_SSE "Compile using SSE intrinsics (e.g mmx, sse, msse2)" OFF)
+	option(USE_INTRINSICS_SSE "Compile using x86 MMX/SSE intrinsics (e.g SSE SIMD instructions)" OFF)
 endif()
 
 if(FFMPEG AND BINKDEC)
@@ -46,18 +52,17 @@ if(UNIX)
 	set(OPENAL ON)
 
 	# SRS - Disable precompiled headers when cross-compiling on OSX, e.g. when creating universal binaries
-	if((CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "x86_64" AND CMAKE_OSX_ARCHITECTURES MATCHES "arm64" ) OR
-	   (CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "arm64"  AND CMAKE_OSX_ARCHITECTURES MATCHES "x86_64"))
+	#     - Also disable precompiled headers when using the Ninja Multi-Config generator on linux or macOS
+	if((CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64" AND CMAKE_OSX_ARCHITECTURES MATCHES "arm64" ) OR
+	   (CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "arm64"  AND CMAKE_OSX_ARCHITECTURES MATCHES "x86_64") OR
+	   (CMAKE_GENERATOR MATCHES "Ninja Multi-Config"))
 		set(USE_PRECOMPILED_HEADERS OFF)
 	endif()
 
-	if(USE_VULKAN)
-		SET(SDL2 ON)
-
-		# RB: disable precompiled headers on Linux with Vulkan because of error: POSIX thread support was disabled in PCH file but is currently enabled
-		if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
-			set(USE_PRECOMPILED_HEADERS OFF)
-		endif()
+	# SRS - For single-config dev builds, define NO_MULTI_CONFIG to search for basepath up 1 dir level vs 2
+	if((CMAKE_GENERATOR MATCHES "Unix Makefiles") OR
+	   (CMAKE_GENERATOR MATCHES "Ninja" AND NOT CMAKE_GENERATOR MATCHES "Multi-Config"))
+		add_definitions(-DNO_MULTI_CONFIG)
 	endif()
 endif()
 
@@ -90,49 +95,52 @@ endif()
 
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 
-	add_definitions(-pipe)
-	#add_definitions(-Wall)
-	add_definitions(-Werror=format-security)
-	add_definitions(-Werror=format)
+	add_compile_options(-pipe)
+	#add_compile_options(-Wall)
+	add_compile_options(-Werror=format-security)
+	add_compile_options(-Werror=format)
+	add_compile_options(-Wno-format-zero-length)
+	add_compile_options(-Wno-nonnull)
 
-	# Compiler check (needs -std=c++11 flag)
+	# Compiler check (needs -std=c++14 flag)
 	include(CheckCXXCompilerFlag)
-	CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
-	if(COMPILER_SUPPORTS_CXX11)
-		set(CMAKE_CXX_STANDARD 11)
+	CHECK_CXX_COMPILER_FLAG("-std=c++14" COMPILER_SUPPORTS_CXX14)
+	if(COMPILER_SUPPORTS_CXX14)
+		set(CMAKE_CXX_STANDARD 14)
 		set(CMAKE_CXX_STANDARD_REQUIRED ON)
 		set(CMAKE_CXX_EXTENSIONS OFF)
 	else()
-		message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+		message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++14 support. Please use a different C++ compiler.")
 	endif()
 
 	if(CPU_TYPE)
 		add_definitions(-DCPUSTRING="${CPU_TYPE}")
 	endif()
 	if (CPU_OPTIMIZATION)
-		add_definitions(${CPU_OPTIMIZATION})
+		SEPARATE_ARGUMENTS(CPU_OPTIMIZATION)
+		add_compile_options(${CPU_OPTIMIZATION})
 	endif()
 	if(WIN32)
 		# require msvcr70.dll or newer for _aligned_malloc etc
 		# I think it is from Visual C++ .NET 2002, so it should be available on any remotely modern system.
 		add_definitions(-D__MSVCRT_VERSION__=0x0700)
 
-		include_directories(libs/mingw-hacks)
+		include_directories(extern/mingw-hacks)
 	endif()
 
 	add_compile_options(-Wno-pragmas -Wno-unused-variable -Wno-switch -Wno-unused-value -Winvalid-pch -Wno-multichar)
 	if(CMAKE_C_COMPILER_ID MATCHES "Clang")
 		# add clang-specific settings for warnings (the second one make sure clang doesn't complain
 		# about unknown -W flags, like -Wno-unused-but-set-variable)
-		# SRS - Add -Wno-deprecated-register and -Wno-expansion-to-defined to list of warning settings
-		add_definitions(-Wno-local-type-template-args -Wno-unknown-warning-option -Wno-inline-new-delete -Wno-switch-enum -Wno-deprecated-register -Wno-expansion-to-defined)
+		# SRS - Add -Wno-expansion-to-defined, Wno-nullability-completeness and -Wno-shorten-64-to-32 to list of warning settings
+		add_compile_options(-Wno-local-type-template-args -Wno-unknown-warning-option -Wno-inline-new-delete -Wno-switch-enum -Wno-expansion-to-defined -Wno-nullability-completeness -Wno-shorten-64-to-32)
 	endif()
 
 	if(NOT CMAKE_CROSSCOMPILING AND ONATIVE)
 		if(CMAKE_SYSTEM_PROCESSOR MATCHES "((powerpc|ppc)64le)|(mips64)")
-			add_definitions(-mcpu=native)
+			add_compile_options(-mcpu=native)
 		else()
-			add_definitions(-march=native)
+			add_compile_options(-march=native)
 		endif()
 	endif()
 
@@ -141,13 +149,13 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 	# SRS - Make sure OSX can find system headers and add support for minimum OSX runtime version
 	if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 		# SRS - Also add -fasm-blocks otherwise Xcode complains and -Qunused-arguments to silence MMX/SSE unused arg warnings when compiling for Apple arm64
-		add_definitions(-fasm-blocks -Qunused-arguments)
+		add_compile_options(-fasm-blocks -Qunused-arguments)
 		if(CMAKE_OSX_SYSROOT)
-			add_definitions(-isysroot "${CMAKE_OSX_SYSROOT}")
+			add_compile_options(-isysroot ${CMAKE_OSX_SYSROOT})
 			message(STATUS "Using macOS sysroot: " ${CMAKE_OSX_SYSROOT})
 		endif()
 		if(CMAKE_OSX_DEPLOYMENT_TARGET)
-			add_definitions(-mmacosx-version-min="${CMAKE_OSX_DEPLOYMENT_TARGET}")
+			add_compile_options(-mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET})
 		endif()
 	endif()
 
@@ -165,7 +173,18 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_C_FLAGS_RELWITHDEBINFO})
 	set(CMAKE_CXX_FLAGS_MINSIZEREL ${CMAKE_C_FLAGS_MINSIZEREL})
 
+	if(NOT WIN32)
+		set(sys_libs pthread ${CMAKE_DL_LIBS})
+
+		if(NOT "${CMAKE_SYSTEM}" MATCHES "Darwin")
+			list(APPEND sys_libs rt)
+		endif()
+	endif()
+
 elseif(MSVC)
+
+	set(CMAKE_CXX_STANDARD 14)
+	set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /D _DEBUG /MP /MDd")
 	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MP /Oi /Oy /MD")
@@ -199,6 +218,21 @@ elseif(MSVC)
 		add_definitions(-D_USE_32BIT_TIME_T)
 	endif()
 
+	set(sys_libs dbghelp iphlpapi winmm wsock32 ${CMAKE_DL_LIBS})
+
+	if(MSVC)
+		if(WINDOWS10)
+			if(OPENAL)
+				list(APPEND sys_libs dinput8 dxguid Xinput)
+			else()
+				list(APPEND sys_libs dinput8 dsound dxguid Xinput xaudio2)
+			endif()
+		else()
+			find_package(DirectX REQUIRED)
+			include_directories(${DirectX_INCLUDE_DIR})
+		endif()
+	endif()
+
 	if(USE_MFC_TOOLS)
 		add_definitions(-D_AFXDLL)
 
@@ -217,7 +251,7 @@ if (USE_INTRINSICS_SSE)
 endif()
 
 macro(SET_OPTION option value)
-  set(${option} ${value} CACHE "" INTERNAL FORCE)
+  set(${option} ${value} CACHE STRING "" FORCE)
 endmacro()
 
 if(USE_VULKAN)
@@ -257,16 +291,20 @@ if(USE_VULKAN)
 		# options required by July 2020 release
 		SET_OPTION(ENABLE_PCH OFF)
 		SET_OPTION(ENABLE_CTEST OFF)
-		SET_OPTION(BUILD_EXTERNAL OFF)
+		#SET_OPTION(BUILD_EXTERNAL OFF)
 		SET_OPTION(SKIP_GLSLANG_INSTALL ON)
 
-		#add_definitions(-DGLSLANG_MINOR_VERSION=13)
-
 		set(GLSLANG_DIR ${CMAKE_CURRENT_SOURCE_DIR}/extern/glslang)
+
+		# requiered has a of 2024 version
+		find_package(Python REQUIRED COMPONENTS Interpreter)
+		execute_process(
+			COMMAND ${Python_EXECUTABLE} ${GLSLANG_DIR}/update_glslang_sources.py
+			WORKING_DIRECTORY ${GLSLANG_DIR})
+
+		#add_definitions(-DGLSLANG_MINOR_VERSION=13)
 		add_subdirectory(${GLSLANG_DIR})
-
 		include_directories(${GLSLANG_DIR})
-
 		#link_directories($ENV{VULKAN_SDK}/Lib)
 	endif()
 
@@ -304,6 +342,50 @@ if(USE_VULKAN)
 	endif()
 else()
 	add_definitions(-DGLEW_STATIC)
+endif()
+
+##################### Dependencies ###########################
+
+set(sys_thirdparty)
+
+if(FFMPEG)
+	find_package(FFMPEG REQUIRED)
+	include_directories(${FFMPEG_INCLUDE_DIRS})
+	add_definitions(-DUSE_FFMPEG)
+	list(APPEND sys_thirdparty ${FFMPEG_LIBRARIES})
+endif()
+
+if(OPENAL)
+	find_package(OpenAL REQUIRED)
+	include_directories(${OPENAL_INCLUDE_DIR})
+	add_definitions(-DUSE_OPENAL)
+	list(APPEND sys_thirdparty ${OPENAL_LIBRARY})
+endif()
+
+if(UNIX)
+	if(SDL2)
+		find_package(SDL2 REQUIRED)
+		include_directories(${SDL2_INCLUDE_DIRS})
+		list(APPEND sys_thirdparty ${SDL2_LIBRARIES})
+	else()
+		find_package(SDL REQUIRED)
+		include_directories(${SDL_INCLUDE_DIR})
+		list(APPEND sys_thirdparty ${SDL_LIBRARY})
+	endif()
+endif()
+
+if(NOT USE_VULKAN)
+	find_package(OpenGL REQUIRED)
+	include_directories(${OPENGL_INCLUDE_DIRS})
+	if(UNIX)
+		list(APPEND sys_thirdparty OpenGL::GL)
+	else()
+		list(APPEND sys_thirdparty OpenGL::GL OpenGL::GLU)
+	endif()
+endif()
+
+if(BINKDEC)
+	add_definitions(-DUSE_BINKDEC)
 endif()
 
 ##################### Core ###########################
@@ -349,12 +431,6 @@ source_group("Renderer\\Jobs\\PrelightShadowVolume" FILES ${src_renderer_jobs_pr
 file(GLOB src_renderer_jobs_staticshadowvolume renderer/jobs/staticshadowvolume/*.cpp renderer/jobs/staticshadowvolume/*.h)
 source_group("Renderer\\Jobs\\StaticShadowVolume" FILES ${src_renderer_jobs_staticshadowvolume})
 
-file(GLOB src_renderer_opengl renderer/OpenGL/*.cpp renderer/OpenGL/*.h)
-source_group("Renderer\\OpenGL" FILES ${src_renderer_opengl})
-
-file(GLOB src_renderer_vulkan renderer/Vulkan/*.cpp renderer/Vulkan/*.h)
-source_group("Renderer\\Vulkan" FILES ${src_renderer_vulkan})
-
 # These files are funny
 set_source_files_properties(
 	${CMAKE_CURRENT_SOURCE_DIR}/renderer/DXT/DXTDecoder.cpp
@@ -370,21 +446,8 @@ set_source_files_properties(
 
 #always_optimize_sourcefile(renderer/stblib_impls.c)
 
-if(BINKDEC)
-	add_definitions(-DUSE_BINKDEC)
-endif()
-
 file(GLOB src_sound sound/*.cpp sound/*.c sound/*.h)
 source_group("Sound" FILES ${src_sound})
-
-file(GLOB src_sound_xaudio2 sound/XAudio2/*.cpp sound/XAudio2/*.h)
-source_group("Sound\\XAudio2" FILES ${src_sound_xaudio2})
-
-file(GLOB src_sound_openal sound/OpenAL/*.cpp sound/OpenAL/*.h)
-source_group("Sound\\OpenAL" FILES ${src_sound_openal})
-
-file(GLOB src_sound_stub sound/stub/*.cpp sound/stub/*.h)
-source_group("Sound\\Stub" FILES ${src_sound_stub})
 
 #always_optimize_sourcefile(sound/stbvorbis_impl.c)
 
@@ -418,20 +481,6 @@ set(src_core
 	${src_sys}
 	${src_sys_common}
 	${src_ui})
-
-if(OPENAL)
-list(APPEND src_core ${src_sound_openal})
-elseif(WIN32)
-list(APPEND src_core ${src_sound_xaudio2})
-else()
-list(APPEND src_core ${src_sound_stub})
-endif()
-
-if(USE_VULKAN)
-list(APPEND src_core ${src_renderer_vulkan})
-else()
-list(APPEND src_core ${src_renderer_opengl})
-endif()
 
 ##################### Game-D3XP ###########################
 
@@ -508,12 +557,20 @@ list(APPEND src_core ${src_compilers})
 file(GLOB src_imgui_editor tools/imgui/*.cpp tools/imgui/*.h)
 source_group("Tools\\ImGUI" FILES ${src_imgui_editor})
 
+file(GLOB src_imgui_editor_utils tools/imgui/util/*.cpp tools/imgui/util/*.h)
+source_group("Tools\\ImGUI\\Util" FILES ${src_imgui_editor_utils})
+
 file(GLOB src_imgui_lighteditor tools/imgui/lighteditor/*.cpp tools/imgui/lighteditor/*.h)
 source_group("Tools\\ImGUI\\LightEditor" FILES ${src_imgui_lighteditor})
 
+file(GLOB src_imgui_afeditor tools/imgui/afeditor/*.cpp tools/imgui/afeditor/*.h)
+source_group("Tools\\ImGUI\\AfEditor" FILES ${src_imgui_afeditor})
+
 set(src_tools_imgui
 	${src_imgui_editor}
-	${src_imgui_lighteditor})
+	${src_imgui_editor_utils}
+	${src_imgui_lighteditor}
+	${src_imgui_afeditor})
 
 list(APPEND src_core ${src_tools_imgui})
 
@@ -581,81 +638,48 @@ include_directories(${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/
 
 add_subdirectory(idlib)
 add_subdirectory(extern)
+if(USE_INTRINSICS_SSE)
+add_subdirectory(extern/moc)
+list(APPEND sys_thirdparty MaskedOcclusionCulling)
+endif()
 
 add_definitions(-D__DOOM__)
 
 if(MSVC)
-	if(WINDOWS10)
-		set(DirectX_LIBRARIES
-			dinput8
-			dsound
-			dxguid
-			Xinput
-			xaudio2)
-	else()
-		find_package(DirectX REQUIRED)
-		include_directories(${DirectX_INCLUDE_DIR})
-	endif()
-
 	if(USE_VULKAN)
-		set(Vulkan_LIBRARIES ${Vulkan_LIBRARY})
+		list(APPEND sys_thirdparty ${Vulkan_LIBRARY})
 
 		if(SPIRV_SHADERC)
-			list(APPEND Vulkan_LIBRARIES shaderc_combined)
+			list(APPEND sys_thirdparty shaderc_combined)
 		else()
-			list(APPEND Vulkan_LIBRARIES glslang SPIRV)
+			list(APPEND sys_thirdparty glslang SPIRV)
 
 			if(ENABLE_GLSLANG_BINARIES)
-				list(APPEND Vulkan_LIBRARIES glslang-default-resource-limits)
+				list(APPEND sys_thirdparty glslang-default-resource-limits)
 			endif()
 		endif()
+
+		file(GLOB src_renderer_vulkan renderer/Vulkan/*.cpp renderer/Vulkan/*.h)
+		source_group("Renderer\\Vulkan" FILES ${src_renderer_vulkan})
+
+		list(APPEND src_core ${src_renderer_vulkan})
 	else()
-		set(OpenGL_LIBRARIES opengl32 glu32)
+		file(GLOB src_renderer_opengl renderer/OpenGL/*.cpp renderer/OpenGL/*.h)
+		source_group("Renderer\\OpenGL" FILES ${src_renderer_opengl})
+
+		list(APPEND src_core ${src_renderer_opengl})
 	endif()
 
 	if(OPENAL)
-		add_definitions(-DUSE_OPENAL)
+		file(GLOB src_sound_openal sound/OpenAL/*.cpp sound/OpenAL/*.h)
+		source_group("Sound\\OpenAL" FILES ${src_sound_openal})
 
-		include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/openal-soft/include)
+		list(APPEND src_core ${src_sound_openal})
+	else()
+		file(GLOB src_sound_xaudio2 sound/XAudio2/*.cpp sound/XAudio2/*.h)
+		source_group("Sound\\XAudio2" FILES ${src_sound_xaudio2})
 
-		if(CMAKE_CL_64)
-			link_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/openal-soft/lib/win64)
-		else()
-			link_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/openal-soft/lib/win32)
-		endif()
-
-		set(OpenAL_LIBRARIES OpenAL32)
-
-		if(CMAKE_CL_64)
-			install(FILES libs/openal-soft/lib/bin/win64/OpenAL32.dll DESTINATION .)
-		else()
-			install(FILES libs/openal-soft/lib/bin/win32/OpenAL32.dll DESTINATION .)
-			install(FILES libs/openal-soft/lib/bin/win32/OpenAL32.pdb DESTINATION .)
-		endif()
-	endif()
-
-	if(FFMPEG)
-		add_definitions(-DUSE_FFMPEG)
-
-		if(CMAKE_CL_64)
-			include_directories(libs/ffmpeg-win64/include)
-			include_directories(libs/ffmpeg-win64/include/libswscale)
-			include_directories(libs/ffmpeg-win64/include/libavformat)
-			include_directories(libs/ffmpeg-win64/include/libavdevice)
-			include_directories(libs/ffmpeg-win64/include/libavcodec)
-
-			link_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/ffmpeg-win64/lib)
-		else()
-			include_directories(libs/ffmpeg-win32/include)
-			include_directories(libs/ffmpeg-win32/include/libswscale)
-			include_directories(libs/ffmpeg-win32/include/libavformat)
-			include_directories(libs/ffmpeg-win32/include/libavdevice)
-			include_directories(libs/ffmpeg-win32/include/libavcodec)
-
-			link_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/ffmpeg-win32/lib)
-		endif()
-
-		set(FFmpeg_LIBRARIES avcodec avformat avutil swscale)
+		list(APPEND src_core ${src_sound_xaudio2})
 	endif()
 
 	if(USE_MFC_TOOLS)
@@ -679,101 +703,57 @@ if(MSVC)
 
 	list(APPEND src_core ${src_sys_win32} ${src_sys_win32_rc})
 
-	add_executable(RBDoom3BFG WIN32 ${src_core})
-
-	add_dependencies(RBDoom3BFG idLib external)
-	target_link_libraries(RBDoom3BFG
-		idLib
-		external
-		${DirectX_LIBRARIES}
-		dbghelp
-		iphlpapi
-		winmm
-		wsock32
-		${Vulkan_LIBRARIES}
-		${OpenGL_LIBRARIES}
-		${OpenAL_LIBRARIES}
-		${FFmpeg_LIBRARIES}
-		${CMAKE_DL_LIBS})
-
-	if(USE_PRECOMPILED_HEADERS)
-		target_precompile_headers(RBDoom3BFG PRIVATE ${CMAKE_SOURCE_DIR}/idlib/precompiled.h)
-	endif()
-
-	# set MSVC default debug directory on executable
-	if(CMAKE_MAJOR_VERSION EQUAL 3 AND CMAKE_MINOR_VERSION GREATER_EQUAL 8)
-		set_target_properties(RBDoom3BFG PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/..")
-		set_target_properties(RBDoom3BFG PROPERTIES VS_STARTUP_PROJECT RBDoom3BFG)	# set MSVC startup project
-	endif()
-
-	#CMAKE_BINARY_DIR
-	if(CMAKE_CL_64)
-		install(TARGETS RBDoom3BFG
-			RUNTIME DESTINATION .)
-	else()
-		install(TARGETS RBDoom3BFG
-			RUNTIME DESTINATION .)
-	endif()
-
 else()
 
-	list(APPEND RBDOOM3_SOURCES
-		${SYS_INCLUDES} ${SYS_SOURCES})
+	file(GLOB src_sys_posix sys/posix/*.cpp sys/posix/*.h)
+	list(REMOVE_ITEM src_sys_posix
+		${CMAKE_CURRENT_SOURCE_DIR}/sys/posix/platform_linux.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/sys/posix/platform_osx.cpp)
+	source_group("Sys//Posix" FILES ${src_sys_posix})
+
+	file(GLOB src_sys_sdl sys/sdl/*.cpp sys/sdl/*.h)
+	source_group("Sys//SDL" FILES ${src_sys_sdl})
 
 	if(UNIX)
-		if(FFMPEG)
-			find_package(FFMPEG REQUIRED)
-			add_definitions(-DUSE_FFMPEG)
-
-			include_directories(${FFMPEG_INCLUDE_DIR})
-			link_directories(${FFMPEG_LIBRARIES_DIRS})
-		endif()
-
-		if(SDL2)
-			find_package(SDL2 REQUIRED)
-			include_directories(${SDL2_INCLUDE_DIRS})
-			set(SDLx_LIBRARY ${SDL2_LIBRARIES})
+		# Eric: Utilize either the Vulkan or GL implementation of SDL
+		if(USE_VULKAN)
+			get_filename_component(sdl_glimp_cpp_full_path ${CMAKE_CURRENT_SOURCE_DIR}/sys/sdl/sdl_glimp.cpp ABSOLUTE)
+			list(REMOVE_ITEM src_sys_sdl "${sdl_glimp_cpp_full_path}")
 		else()
-			find_package(SDL REQUIRED)
-			include_directories(${SDL_INCLUDE_DIR})
-			set(SDLx_LIBRARY ${SDL_LIBRARY})
+			get_filename_component(sdl_vkimp_cpp_full_path ${CMAKE_CURRENT_SOURCE_DIR}/sys/sdl/sdl_vkimp.cpp ABSOLUTE)
+			list(REMOVE_ITEM src_sys_sdl "${sdl_vkimp_cpp_full_path}")
 		endif()
 
 		if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-			list(REMOVE_ITEM POSIX_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sys/posix/platform_linux.cpp)
+			list(APPEND src_sys_posix ${CMAKE_CURRENT_SOURCE_DIR}/sys/posix/platform_linux.cpp)
 		else()
-			list(REMOVE_ITEM POSIX_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sys/posix/platform_osx.cpp)
+			list(APPEND src_sys_posix ${CMAKE_CURRENT_SOURCE_DIR}/sys/posix/platform_osx.cpp)
 		endif()
+	endif()
 
-		list(APPEND RBDOOM3_SOURCES
-			${POSIX_INCLUDES} ${POSIX_SOURCES}
-			${SDL_INCLUDES} ${SDL_SOURCES})
+	list(APPEND src_core ${src_sys_posix} ${src_sys_sdl})
 
+	if(UNIX)
 		if(OPENAL)
-			find_package(OpenAL REQUIRED)
-			add_definitions(-DUSE_OPENAL)
-
 			# SRS - Added support for OpenAL Soft headers on OSX (vs default macOS SDK headers)
 			if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin" AND NOT OPENAL_INCLUDE_DIR MATCHES "SDKs/MacOSX.*\.sdk")
 				include_directories(${OPENAL_INCLUDE_DIR})
 				add_definitions(-DUSE_OPENAL_SOFT_INCLUDES)
 			endif()
 
-			list(APPEND RBDOOM3_INCLUDES ${OPENAL_INCLUDES})
-			list(APPEND RBDOOM3_SOURCES
-				${OPENAL_SOURCES})
+			file(GLOB src_sound_openal sound/OpenAL/*.cpp sound/OpenAL/*.h)
+			source_group("Sound\\OpenAL" FILES ${src_sound_openal})
+
+			list(APPEND src_core ${src_sound_openal})
 		else()
-			list(APPEND RBDOOM3_INCLUDES ${STUBAUDIO_INCLUDES})
-			list(APPEND RBDOOM3_SOURCES
-				${STUBAUDIO_SOURCES})
+			file(GLOB src_sound_stub sound/stub/*.cpp sound/stub/*.h)
+			source_group("Sound\\Stub" FILES ${src_sound_stub})
+
+			list(APPEND src_core ${src_sound_stub})
 		endif()
 
 		if(USE_VULKAN)
-			list(APPEND RBDOOM3_INCLUDES ${RENDERER_VULKAN_INCLUDES})
-			list(APPEND RBDOOM3_SOURCES ${RENDERER_VULKAN_SOURCES})
-
-			set(Vulkan_LIBRARIES
-				${Vulkan_LIBRARY})
+			set(Vulkan_LIBRARIES ${Vulkan_LIBRARY})
 
 			# SRS - Added UNIX/OSX support for shaderc
 			if(SPIRV_SHADERC)
@@ -786,109 +766,58 @@ else()
 				endif()
 			endif()
 
+			file(GLOB src_renderer_vulkan renderer/Vulkan/*.cpp renderer/Vulkan/*.h)
+			source_group("Renderer\\Vulkan" FILES ${src_renderer_vulkan})
+
+			list(APPEND src_core ${src_renderer_vulkan})
 		else()
-			find_package(OpenGL REQUIRED)
-			include_directories(${OPENGL_INCLUDE_DIRS})
+			file(GLOB src_renderer_opengl renderer/OpenGL/*.cpp renderer/OpenGL/*.h)
+			source_group("Renderer\\OpenGL" FILES ${src_renderer_opengl})
 
-			list(APPEND RBDOOM3_INCLUDES ${RENDERER_OPENGL_INCLUDES})
-			list(APPEND RBDOOM3_SOURCES ${RENDERER_OPENGL_SOURCES})
+			list(APPEND src_core ${src_renderer_opengl})
 		endif()
 
 	endif()
 
-	list(REMOVE_DUPLICATES RBDOOM3_SOURCES)
+	if(MACOSX_BUNDLE)
+		# define contents of macOS app bundle Resources folder
+		set(MACOS_RESOURCES sys/posix/res/Doom3BFG.icns ../base)
+		source_group("Resources" FILES ${MACOS_RESOURCES})
+		set_source_files_properties(${MACOS_RESOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 
-	if(USE_PRECOMPILED_HEADERS)
-		set(RBDOOM3_PRECOMPILED_SOURCES ${RBDOOM3_SOURCES})
-		list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/DXT/DXTDecoder.cpp)
-		list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/DXT/DXTEncoder.cpp)
-		list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/DXT/DXTEncoder_SSE2.cpp)
-		list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/jobs/dynamicshadowvolume/DynamicShadowVolume.cpp)
-		list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/jobs/prelightshadowvolume/PreLightShadowVolume.cpp)
-		list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/jobs/staticshadowvolume/StaticShadowVolume.cpp)
-		list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/jobs/ShadowShared.cpp)
-		list(REMOVE_ITEM RBDOOM3_PRECOMPILED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/renderer/RenderLog.cpp)
+		# enable Xcode to display the icons file properly
+		set_source_files_properties(sys/posix/res/Doom3BFG.icns PROPERTIES XCODE_EXPLICIT_FILE_TYPE .icns)
 
-		foreach( src_file ${RBDOOM3_PRECOMPILED_SOURCES} )
-			#message(STATUS "-include precompiled.h for ${src_file}")
-			set_source_files_properties(
-				${src_file}
-				PROPERTIES
-				COMPILE_FLAGS "-include ${CMAKE_CURRENT_SOURCE_DIR}/idlib/precompiled.h"
-				)
-		endforeach()
-
-		# precompiled magic for GCC/clang, adapted from https://gist.github.com/573926
-		STRING(TOUPPER "CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}" _flags_var_name)
-		SET(_compiler_FLAGS "${${_flags_var_name}} -std=c++${CMAKE_CXX_STANDARD}")
-		GET_DIRECTORY_PROPERTY(_directory_flags INCLUDE_DIRECTORIES)
-		FOREACH(item ${_directory_flags})
-			LIST(APPEND _compiler_FLAGS " -I${item}")
-		ENDFOREACH(item)
+		# add macOS bundle properties to executable
+		set(MACOSX_BUNDLE_BUNDLE_NAME RBDoom-3-BFG)
+		set(MACOSX_BUNDLE_BUNDLE_VERSION 1.6.0)
+		set(MACOSX_BUNDLE_SHORT_VERSION_STRING 1.6.0)
+		set(MACOSX_BUNDLE_ICON_FILE Doom3BFG.icns)
+		set(MACOSX_BUNDLE_INFO_STRING "")					# to be added by author if desired
+		set(MACOSX_BUNDLE_COPYRIGHT "")						# to be added by author if desired
 	endif()
+endif()
 
-	GET_DIRECTORY_PROPERTY(_directory_flags DEFINITIONS)
-	LIST(APPEND _compiler_FLAGS ${_directory_flags})
-	SEPARATE_ARGUMENTS(_compiler_FLAGS)
+add_executable(${CMAKE_PROJECT_NAME} MACOSX_BUNDLE WIN32 ${src_core})
+add_dependencies(${CMAKE_PROJECT_NAME} idLib external)
 
-	if(USE_PRECOMPILED_HEADERS)
-		# we need to recreate the precompiled header for RBDoom3BFG
-		# (i.e. can't use the one created for idlib before)
-		# because some definitions (e.g. -D__IDLIB__ -D__DOOM_DLL__) differ
-		add_custom_target(precomp_header_rbdoom3bfg ALL
-				COMMAND ${CMAKE_CXX_COMPILER} ${_compiler_FLAGS} -x c++-header idlib/precompiled.h -o idlib/precompiled.h.gch
-				WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-				COMMENT "Creating idlib/precompiled.h.gch for RBDoom3BFG"
-				)
-	endif()
+target_link_libraries(${CMAKE_PROJECT_NAME} idLib external ${sys_libs} ${sys_thirdparty})
+if(USE_PRECOMPILED_HEADERS)
+	target_precompile_headers(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/idlib/precompiled.h)
+endif()
 
-	if(WIN32)
-		set(remove_command "del")
+if(MSVC)
+	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES LINK_FLAGS "/MAP:\"${EXECUTABLE_OUTPUT_PATH}/${CMAKE_PROJECT_NAME}.map\"")
+
+	# set MSVC default debug directory on executable
+	set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${CMAKE_PROJECT_NAME}) # set MSVC startup project
+	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${EXECUTABLE_OUTPUT_PATH}")
+	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES VS_DEBUGGER_COMMAND_ARGUMENTS "+set r_fullscreen 0")
+
+	#CMAKE_BINARY_DIR
+	if(CMAKE_CL_64)
+		install(TARGETS ${CMAKE_PROJECT_NAME} RUNTIME DESTINATION .)
 	else()
-		set(remove_command "rm")
+		install(TARGETS ${CMAKE_PROJECT_NAME} RUNTIME DESTINATION .)
 	endif()
-
-	if (USE_PRECOMPILED_HEADERS)
-		# it's ugly enough that the precompiled header binary needs to be in the
-		# source directory (instead of the build directory), so let's at least
-		# delete it after build.
-		add_custom_target(rm_precomp_header ALL
-				COMMAND ${remove_command} "idlib/precompiled.h.gch"
-				WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-				COMMENT "remove idlib/precompiled.h.gch"
-				)
-
-		# make sure this is run after creating idlib
-		add_dependencies(precomp_header_rbdoom3bfg idlib)
-	endif()
-
-	add_executable(RBDoom3BFG WIN32 ${RBDOOM3_SOURCES})
-
-	if (USE_PRECOMPILED_HEADERS)
-		# make sure precompiled header is created before executable is compiled
-		add_dependencies(RBDoom3BFG precomp_header_rbdoom3bfg)
-
-		# make sure precompiled header is deleted after executable is compiled
-		add_dependencies(rm_precomp_header RBDoom3BFG)
-	endif()
-
-	if(NOT WIN32)
-		if(NOT "${CMAKE_SYSTEM}" MATCHES "Darwin")
-			set(RT_LIBRARY rt)
-		endif()
-
-		target_link_libraries(RBDoom3BFG
-			idLib
-			external
-			${Vulkan_LIBRARIES}
-			${OPENGL_LIBRARIES}
-			pthread
-			${RT_LIBRARY}
-			${SDLx_LIBRARY}
-			${OPENAL_LIBRARY}
-			${FFMPEG_LIBRARIES}
-			${CMAKE_DL_LIBS}
-			)
-	endif()
-
 endif()

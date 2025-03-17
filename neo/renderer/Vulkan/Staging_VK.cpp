@@ -33,8 +33,8 @@ If you have questions concerning this license or the applicable additional terms
 #include "../RenderBackend.h"
 #include "Staging_VK.h"
 
-idCVar r_vkUploadBufferSizeMB( "r_vkUploadBufferSizeMB", "64", CVAR_INTEGER | CVAR_INIT, "Size of gpu upload buffer." );
-idCVar r_vkStagingMaxCommands( "r_vkStagingMaxCommands", "-1", CVAR_INTEGER | CVAR_INIT, "Maximum amount of commands staged (-1 for no limit)" );
+idCVar r_vkUploadBufferSizeMB( "r_vkUploadBufferSizeMB", "64", CVAR_INTEGER | CVAR_INIT | CVAR_NEW, "Size of gpu upload buffer." );
+idCVar r_vkStagingMaxCommands( "r_vkStagingMaxCommands", "-1", CVAR_INTEGER | CVAR_INIT | CVAR_NEW, "Maximum amount of commands staged (-1 for no limit)" );
 
 /*
 ===========================================================================

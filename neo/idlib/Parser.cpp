@@ -367,11 +367,11 @@ void idParser::Error( const char* str, ... ) const
 	va_list ap;
 
 	va_start( ap, str );
-	vsprintf( text, str, ap );
+	idStr::vsnPrintf( text, sizeof( text ), str, ap );
 	va_end( ap );
 	if( idParser::scriptstack )
 	{
-		idParser::scriptstack->Error( text );
+		idParser::scriptstack->Error( "%s", text );
 	}
 }
 
@@ -386,11 +386,11 @@ void idParser::Warning( const char* str, ... ) const
 	va_list ap;
 
 	va_start( ap, str );
-	vsprintf( text, str, ap );
+	idStr::vsnPrintf( text, sizeof( text ), str, ap );
 	va_end( ap );
 	if( idParser::scriptstack )
 	{
-		idParser::scriptstack->Warning( text );
+		idParser::scriptstack->Warning( "%s", text );
 	}
 }
 
@@ -836,7 +836,7 @@ int idParser::ExpandBuiltinDefine( idToken* deftoken, define_t* define, idToken*
 	{
 		case BUILTIN_LINE:
 		{
-			sprintf( buf, "%d", deftoken->line );
+			idStr::snPrintf( buf, sizeof( buf ), "%d", deftoken->line );
 			( *token ) = buf;
 			token->intvalue = deftoken->line;
 			token->floatvalue = deftoken->line;
@@ -888,12 +888,14 @@ int idParser::ExpandBuiltinDefine( idToken* deftoken, define_t* define, idToken*
 		case BUILTIN_STDC:
 		{
 			idParser::Warning( "__STDC__ not supported\n" );
+			delete token; // DG: we probably shouldn't leak it, right?
 			*firsttoken = NULL;
 			*lasttoken = NULL;
 			break;
 		}
 		default:
 		{
+			delete token; // DG: we probably shouldn't leak it, right?
 			*firsttoken = NULL;
 			*lasttoken = NULL;
 			break;
@@ -1150,11 +1152,18 @@ int idParser::Directive_include( idToken* token, bool supressWarning )
 		// try relative to the current file
 		path = scriptstack->GetFileName();
 		path.StripFilename();
-		path += "/";
-		path += *token;
-		if( !script->LoadFile( path, OSPath ) )
+		// first remove any trailing path overlap with token
+		idStr token_path = *token;
+		if( !path.StripTrailingOnce( token_path.StripFilename() ) )
 		{
-			// try absolute path
+			// if no path overlap add separator before token
+			path += "/";
+		}
+		path += *token;
+		// try assuming a full os path from GetFileName()
+		if( !script->LoadFile( path, true ) )
+		{
+			// try from the token path
 			path = *token;
 			if( !script->LoadFile( path, OSPath ) )
 			{
@@ -1567,7 +1576,7 @@ typedef struct operator_s
 
 typedef struct value_s
 {
-	signed int intvalue; // DG: use int instead of long for 64bit compatibility
+	int intvalue;
 	double floatvalue;
 	int parentheses;
 	struct value_s* prev, *next;
@@ -1675,7 +1684,6 @@ int idParser::EvaluateTokens( idToken* tokens, signed int* intvalue, double* flo
 	int questmarkintvalue = 0;
 	double questmarkfloatvalue = 0;
 	int gotquestmarkvalue = false;
-	int lastoperatortype = 0;
 	//
 	operator_t operator_heap[MAX_OPERATORS];
 	int numoperators = 0;
@@ -2153,7 +2161,6 @@ int idParser::EvaluateTokens( idToken* tokens, signed int* intvalue, double* flo
 		{
 			break;
 		}
-		lastoperatortype = o->op;
 		//if not an operator with arity 1
 		if( o->op != P_LOGIC_NOT && o->op != P_BIN_NOT )
 		{
@@ -2245,7 +2252,7 @@ int idParser::EvaluateTokens( idToken* tokens, signed int* intvalue, double* flo
 idParser::Evaluate
 ================
 */
-int idParser::Evaluate( signed int* intvalue, double* floatvalue, int integer )
+int idParser::Evaluate( int* intvalue, double* floatvalue, int integer )
 {
 	idToken token, *firsttoken, *lasttoken;
 	idToken* t, *nexttoken;
@@ -2376,7 +2383,7 @@ int idParser::Evaluate( signed int* intvalue, double* floatvalue, int integer )
 idParser::DollarEvaluate
 ================
 */
-int idParser::DollarEvaluate( signed int* intvalue, double* floatvalue, int integer )
+int idParser::DollarEvaluate( int* intvalue, double* floatvalue, int integer )
 {
 	int indent, defined = false;
 	idToken token, *firsttoken, *lasttoken;
@@ -2527,7 +2534,7 @@ idParser::Directive_elif
 */
 int idParser::Directive_elif()
 {
-	signed int value; // DG: use int instead of long for 64bit compatibility
+	int value;
 	int type, skip;
 
 	idParser::PopIndent( &type, &skip );
@@ -2552,7 +2559,7 @@ idParser::Directive_if
 */
 int idParser::Directive_if()
 {
-	signed int value; // DG: use int instead of long for 64bit compatibility
+	int value;
 	int skip;
 
 	if( !idParser::Evaluate( &value, NULL, true ) )
@@ -2659,7 +2666,7 @@ idParser::Directive_eval
 */
 int idParser::Directive_eval()
 {
-	signed int value; // DG: use int instead of long for 64bit compatibility
+	int value;
 	idToken token;
 	char buf[128];
 
@@ -2673,7 +2680,7 @@ int idParser::Directive_eval()
 	token.whiteSpaceEnd_p = NULL;
 	token.linesCrossed = 0;
 	token.flags = 0;
-	sprintf( buf, "%d", abs( value ) );
+	idStr::snPrintf( buf, sizeof( buf ), "%d", abs( value ) );
 	token = buf;
 	token.type = TT_NUMBER;
 	token.subtype = TT_INTEGER | TT_LONG | TT_DECIMAL;
@@ -2706,7 +2713,7 @@ int idParser::Directive_evalfloat()
 	token.whiteSpaceEnd_p = NULL;
 	token.linesCrossed = 0;
 	token.flags = 0;
-	sprintf( buf, "%1.2f", idMath::Fabs( value ) );
+	idStr::snPrintf( buf, sizeof( buf ), "%1.2f", idMath::Fabs( value ) );
 	token = buf;
 	token.type = TT_NUMBER;
 	token.subtype = TT_FLOAT | TT_LONG | TT_DECIMAL;
@@ -2829,7 +2836,7 @@ idParser::DollarDirective_evalint
 */
 int idParser::DollarDirective_evalint()
 {
-	signed int value; // DG: use int instead of long for 64bit compatibility
+	int value;
 	idToken token;
 	char buf[128];
 
@@ -2843,7 +2850,7 @@ int idParser::DollarDirective_evalint()
 	token.whiteSpaceEnd_p = NULL;
 	token.linesCrossed = 0;
 	token.flags = 0;
-	sprintf( buf, "%d", abs( value ) );
+	idStr::snPrintf( buf, sizeof( buf ), "%d", abs( value ) );
 	token = buf;
 	token.type = TT_NUMBER;
 	token.subtype = TT_INTEGER | TT_LONG | TT_DECIMAL | TT_VALUESVALID;
@@ -2878,11 +2885,11 @@ int idParser::DollarDirective_evalfloat()
 	token.whiteSpaceEnd_p = NULL;
 	token.linesCrossed = 0;
 	token.flags = 0;
-	sprintf( buf, "%1.2f", fabs( value ) );
+	idStr::snPrintf( buf, sizeof( buf ), "%1.2f", fabs( value ) );
 	token = buf;
 	token.type = TT_NUMBER;
 	token.subtype = TT_FLOAT | TT_LONG | TT_DECIMAL | TT_VALUESVALID;
-	token.intvalue = ( unsigned int ) fabs( value ); // DG: use int instead of long for 64bit compatibility
+	token.intvalue = ( unsigned int ) fabs( value );
 	token.floatvalue = fabs( value );
 	idParser::UnreadSourceToken( &token );
 	if( value < 0 )

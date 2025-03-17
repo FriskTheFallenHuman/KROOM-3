@@ -771,8 +771,6 @@ void idWeapon::Clear()
 	memset( &renderEntity, 0, sizeof( renderEntity ) );
 	renderEntity.entityNum	= entityNumber;
 
-	renderEntity.noShadow		= true;
-	renderEntity.noSelfShadow	= true;
 	renderEntity.customSkin		= NULL;
 
 	// set default shader parms
@@ -3052,7 +3050,7 @@ const char* idWeapon::GetAmmoNameForNum( ammo_t ammonum )
 		return NULL;
 	}
 
-	sprintf( text, "%d", ammonum );
+	idStr::snPrintf( text, sizeof( text ), "%d", ammonum );
 
 	num = ammoDict->GetNumKeyVals();
 	for( i = 0; i < num; i++ )
@@ -3321,7 +3319,7 @@ bool idWeapon::ClientReceiveEvent( int event, int time, const idBitMsg& msg )
 		}
 		case EVENT_CHANGESKIN:
 		{
-			int index = gameLocal.ClientRemapDecl( DECL_SKIN, msg.ReadLong() );
+			int index = gameLocal.ClientRemapDecl( DECL_SKIN, msg.ReadInt() );
 			renderEntity.customSkin = ( index != -1 ) ? static_cast<const idDeclSkin*>( declManager->DeclByIndex( DECL_SKIN, index ) ) : NULL;
 			UpdateVisuals();
 			if( worldModel.GetEntity() )
@@ -3806,7 +3804,7 @@ void idWeapon::Event_SetSkin( const char* skinname )
 		byte				msgBuf[MAX_EVENT_PARAM_SIZE];
 
 		msg.InitWrite( msgBuf, sizeof( msgBuf ) );
-		msg.WriteLong( ( skinDecl != NULL ) ? gameLocal.ServerRemapDecl( -1, DECL_SKIN, skinDecl->Index() ) : -1 );
+		msg.WriteInt( ( skinDecl != NULL ) ? gameLocal.ServerRemapDecl( -1, DECL_SKIN, skinDecl->Index() ) : -1 );
 		ServerSendEvent( EVENT_CHANGESKIN, &msg, false );
 	}
 }

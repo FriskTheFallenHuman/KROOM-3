@@ -328,7 +328,7 @@ ID_INLINE idBTreeNode<objType, keyType>* idBTree<objType, keyType, maxChildrenPe
 		{
 			if( node->key == key )
 			{
-				return node;
+				return node->object;
 			}
 			else
 			{

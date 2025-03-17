@@ -3,7 +3,7 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
-Copyright (C) 2013-2014 Robert Beckebans
+Copyright (C) 2013-2024 Robert Beckebans
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -30,6 +30,14 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
+#if defined(USE_INTRINSICS_SSE)
+	#if MOC_MULTITHREADED
+		#include "CullingThreadPool.h"
+	#else
+		#include "extern/moc/MaskedOcclusionCulling.h"
+	#endif
+#endif
+
 #include "RenderCommon.h"
 
 extern idCVar r_useAreasConnectedForShadowCulling;
@@ -38,7 +46,7 @@ extern idCVar r_forceShadowCaps;
 extern idCVar r_useShadowPreciseInsideTest;
 
 idCVar r_useAreasConnectedForShadowCulling( "r_useAreasConnectedForShadowCulling", "2", CVAR_RENDERER | CVAR_INTEGER, "cull entities cut off by doors" );
-idCVar r_useParallelAddLights( "r_useParallelAddLights", "1", CVAR_RENDERER | CVAR_BOOL, "aadd all lights in parallel with jobs" );
+idCVar r_useParallelAddLights( "r_useParallelAddLights", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_NOCHEAT, "aadd all lights in parallel with jobs" );
 
 /*
 ============================
@@ -265,6 +273,111 @@ static void R_AddSingleLight( viewLight_t* vLight )
 		vLight->scissorRect.zmin = projected[0][2];
 		vLight->scissorRect.zmax = projected[1][2];
 
+		const bool viewInsideLight = !idRenderMatrix::CullPointToMVP( light->baseLightProject, viewDef->renderView.vieworg, true );
+
+		// RB: test surface visibility by drawing the triangles of the bounds
+#if defined(USE_INTRINSICS_SSE)
+
+		if( r_useMaskedOcclusionCulling.GetBool() && !viewInsideLight && !viewDef->isMirror && !viewDef->isSubview )
+		{
+			idVec4 triVerts[8];
+			unsigned int triIndices[] = { 0, 1, 2 };
+
+			tr.pc.c_mocIndexes += 36;
+			tr.pc.c_mocVerts += 8;
+
+			idRenderMatrix invProjectMVPMatrix;
+
+			// draw light volume 1 percentage bigger to avoid flickering
+			// right before entering the volume with the camera
+			const float mocLightScale = 0.99f;
+			idRenderMatrix scaledInverseBaseLightProject = light->inverseBaseLightProject;
+			scaledInverseBaseLightProject[0][0] *= mocLightScale;
+			scaledInverseBaseLightProject[0][1] *= mocLightScale;
+			scaledInverseBaseLightProject[0][2] *= mocLightScale;
+
+			scaledInverseBaseLightProject[1][0] *= mocLightScale;
+			scaledInverseBaseLightProject[1][1] *= mocLightScale;
+			scaledInverseBaseLightProject[1][2] *= mocLightScale;
+
+			scaledInverseBaseLightProject[2][0] *= mocLightScale;
+			scaledInverseBaseLightProject[2][1] *= mocLightScale;
+			scaledInverseBaseLightProject[2][2] *= mocLightScale;
+
+			idRenderMatrix::Multiply( viewDef->worldSpace.mvp, scaledInverseBaseLightProject, invProjectMVPMatrix );
+
+			tr.pc.c_mocTests += 1;
+
+			float wmin = idMath::INFINITUM;
+
+			// NOTE: zeroToOne cube is only for lights and models need the unit cube
+			idVec4* verts = tr.maskedZeroOneCubeVerts;
+			for( int i = 0; i < 8; i++ )
+			{
+				// transform to clip space
+				invProjectMVPMatrix.TransformPoint( verts[i], triVerts[i] );
+
+				float w = triVerts[i].w;
+				if( i == 0 )
+				{
+					wmin = w;
+				}
+				else if( w < wmin )
+				{
+					wmin = w;
+				}
+			}
+
+			if( vLight->pointLight || vLight->parallel )
+			{
+#if 1
+				// backface none so objects are still visible where we run into
+#if MOC_MULTITHREADED
+				tr.maskedOcclusionThreaded->SetMatrix( NULL );
+				MaskedOcclusionCulling::CullingResult result = tr.maskedOcclusionThreaded->TestTriangles( ( float* )triVerts, tr.maskedZeroOneCubeIndexes, 12, MaskedOcclusionCulling::BACKFACE_NONE );
+#else
+				MaskedOcclusionCulling::CullingResult result = tr.maskedOcclusionCulling->TestTriangles( ( float* )triVerts, tr.maskedZeroOneCubeIndexes, 12, NULL, MaskedOcclusionCulling::BACKFACE_NONE );
+#endif
+				if( result != MaskedOcclusionCulling::VISIBLE )
+				{
+					tr.pc.c_mocCulledLights += 1;
+					return;
+				}
+#else
+				// draw for debugging
+				tr.maskedOcclusionCulling->RenderTriangles( ( float* )triVerts, triIndices, 1, NULL, MaskedOcclusionCulling::BACKFACE_NONE );
+				maskVisible = true;
+#endif
+			}
+			else
+			{
+				// scissor test alternative
+
+				// source scissor rectangle has GL convention and starts in the lower left corner
+				// convert to NDC values
+				float x1 = -1.0f + ( float( vLight->scissorRect.x1 ) / screenWidth ) * 2.0f;
+				float x2 = -1.0f + ( float( vLight->scissorRect.x2 ) / screenWidth ) * 2.0f;
+				float y1 = -1.0f + ( float( vLight->scissorRect.y1 ) / screenHeight ) * 2.0f;
+				float y2 = -1.0f + ( float( vLight->scissorRect.y2 ) / screenHeight ) * 2.0f;
+
+				float zmin = vLight->scissorRect.zmin;
+				//zmin = 2.0f * zmin -1.0f;
+				zmin = 1.0 - zmin; // reverse depth
+				float wmin2 = ( 1.0 / zmin );
+				wmin2 *= wmin;
+				wmin2 = Max( wmin2, 0.0f );
+
+				MaskedOcclusionCulling::CullingResult result = tr.maskedOcclusionCulling->TestRect( x1, y1, x2, y2, wmin2 );
+				if( result != MaskedOcclusionCulling::VISIBLE )
+				{
+					tr.pc.c_mocCulledLights += 1;
+					return;
+				}
+			}
+		}
+#endif
+		// RB end
+
 		// RB: calculate shadow LOD similar to Q3A .md3 LOD code
 		vLight->shadowLOD = 0;
 
@@ -386,6 +499,8 @@ static void R_AddSingleLight( viewLight_t* vLight )
 			vLight->entityInteractionState[ edef->index ] = viewLight_t::INTERACTION_NO;
 
 			// The table is updated at interaction::AllocAndLink() and interaction::UnlinkAndFree()
+
+			// TODO(Stephen): interactionTableRow is null if renderDef is used in a gui.sub
 			const idInteraction* inter = interactionTableRow[ edef->index ];
 
 			const renderEntity_t& eParms = edef->parms;

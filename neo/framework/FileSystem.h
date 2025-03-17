@@ -29,6 +29,8 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __FILESYSTEM_H__
 #define __FILESYSTEM_H__
 
+#include <limits.h>
+
 /*
 ===============================================================================
 
@@ -50,8 +52,14 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
-static const ID_TIME_T	FILE_NOT_FOUND_TIMESTAMP	= ( ID_TIME_T ) - 1;
-static const int		MAX_OSPATH					= 256;
+// FIXME: DG: this assumes 32bit time_t, but it's 64bit now, at least on some platforms incl. Win32 in modern VS
+//            => change it (to -1?) or does that break anything?
+static const ID_TIME_T	FILE_NOT_FOUND_TIMESTAMP	= 0xFFFFFFFF;
+static const int		MAX_PURE_PAKS				= 128;
+// DG: https://www.gnu.org/software/libc/manual/html_node/Limits-for-Files.html says
+//     that FILENAME_MAX can be *really* big on some systems and thus is not suitable
+//     for buffer lengths. So limit it to prevent stack overflow/out of memory issues
+static const int		MAX_OSPATH					= ( FILENAME_MAX < 32000 ) ? FILENAME_MAX : 32000;
 
 // modes for OpenFileByMode
 typedef enum
@@ -98,36 +106,48 @@ class idFileSystem
 {
 public:
 	virtual					~idFileSystem() {}
+
 	// Initializes the file system.
 	virtual void			Init() = 0;
+
 	// Restarts the file system.
 	virtual void			Restart() = 0;
+
 	// Shutdown the file system.
 	virtual void			Shutdown( bool reloading ) = 0;
+
 	// Returns true if the file system is initialized.
 	virtual bool			IsInitialized() const = 0;
+
 	// Lists files with the given extension in the given directory.
 	// Directory should not have either a leading or trailing '/'
 	// The returned files will not include any directories or '/' unless fullRelativePath is set.
 	// The extension must include a leading dot and may not contain wildcards.
 	// If extension is "/", only subdirectories will be returned.
 	virtual idFileList* 	ListFiles( const char* relativePath, const char* extension, bool sort = false, bool fullRelativePath = false, const char* gamedir = NULL ) = 0;
+
 	// Lists files in the given directory and all subdirectories with the given extension.
 	// Directory should not have either a leading or trailing '/'
 	// The returned files include a full relative path.
 	// The extension must include a leading dot and may not contain wildcards.
 	virtual idFileList* 	ListFilesTree( const char* relativePath, const char* extension, bool sort = false, const char* gamedir = NULL ) = 0;
+
 	// Frees the given file list.
 	virtual void			FreeFileList( idFileList* fileList ) = 0;
+
 	// Converts a relative path to a full OS path.
 	virtual const char* 	OSPathToRelativePath( const char* OSPath ) = 0;
+
 	// Converts a full OS path to a relative path.
 	virtual const char* 	RelativePathToOSPath( const char* relativePath, const char* basePath = "fs_basepath" ) = 0;
+
 	// Builds a full OS path from the given components.
 	virtual const char* 	BuildOSPath( const char* base, const char* game, const char* relativePath ) = 0;
 	virtual const char* 	BuildOSPath( const char* base, const char* relativePath ) = 0;
+
 	// Creates the given OS path for as far as it doesn't exist already.
 	virtual void			CreateOSPath( const char* OSPath ) = 0;
+
 	// Reads a complete file.
 	// Returns the length of the file, or -1 on failure.
 	// A null buffer will just return the file length without loading.
@@ -136,35 +156,50 @@ public:
 	// A 0 byte will always be appended at the end, so string ops are safe.
 	// The buffer should be considered read-only, because it may be cached for other uses.
 	virtual int				ReadFile( const char* relativePath, void** buffer, ID_TIME_T* timestamp = NULL ) = 0;
+
 	// Frees the memory allocated by ReadFile.
 	virtual void			FreeFile( void* buffer ) = 0;
+
 	// Writes a complete file, will create any needed subdirectories.
 	// Returns the length of the file, or -1 on failure.
 	virtual int				WriteFile( const char* relativePath, const void* buffer, int size, const char* basePath = "fs_savepath" ) = 0;
+
 	// Removes the given file.
 	virtual void			RemoveFile( const char* relativePath ) = 0;
+
 	// Removes the specified directory.
 	virtual	bool			RemoveDir( const char* relativePath ) = 0;
+
 	// Renames a file, taken from idTech5 (minus the fsPath_t)
 	virtual bool			RenameFile( const char* relativePath, const char* newName, const char* basePath = "fs_savepath" ) = 0;
+
 	// Opens a file for reading.
 	virtual idFile* 		OpenFileRead( const char* relativePath, bool allowCopyFiles = true, const char* gamedir = NULL ) = 0;
+
 	// Opens a file for reading, reads the file completely in memory and returns an idFile_Memory obj.
 	virtual idFile* 		OpenFileReadMemory( const char* relativePath, bool allowCopyFiles = true, const char* gamedir = NULL ) = 0;
+
 	// Opens a file for writing, will create any needed subdirectories.
 	virtual idFile* 		OpenFileWrite( const char* relativePath, const char* basePath = "fs_savepath" ) = 0;
+
 	// Opens a file for writing at the end.
 	virtual idFile* 		OpenFileAppend( const char* filename, bool sync = false, const char* basePath = "fs_basepath" ) = 0;
+
 	// Opens a file for reading, writing, or appending depending on the value of mode.
 	virtual idFile* 		OpenFileByMode( const char* relativePath, fsMode_t mode ) = 0;
+
 	// Opens a file for reading from a full OS path.
 	virtual idFile* 		OpenExplicitFileRead( const char* OSPath ) = 0;
+
 	// Opens a file for writing to a full OS path.
 	virtual idFile* 		OpenExplicitFileWrite( const char* OSPath ) = 0;
+
 	// opens a zip container
 	virtual idFile_Cached* 		OpenExplicitPakFile( const char* OSPath ) = 0;
+
 	// Closes a file.
 	virtual void			CloseFile( idFile* f ) = 0;
+
 	// look for a dynamic module
 	virtual void			FindDLL( const char* basename, char dllPath[ MAX_OSPATH ] ) = 0;
 
@@ -201,6 +236,7 @@ public:
 	virtual void			EndLevelLoad() = 0;
 	virtual bool			InProductionMode() = 0;
 	virtual bool			UsingResourceFiles() = 0;
+	virtual bool			UsingZipFiles() = 0; // RB
 	virtual void			UnloadMapResources( const char* name ) = 0;
 	virtual void			UnloadResourceContainer( const char* name ) = 0;
 	virtual void			StartPreload( const idStrList& _preload ) = 0;

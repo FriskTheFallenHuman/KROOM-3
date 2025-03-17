@@ -84,305 +84,6 @@ static ID_INLINE void SetFragmentParm( renderParm_t rp, const float* value )
 }
 
 /*
-====================
-PrintState
-====================
-*/
-#if 0
-void PrintState( uint64 stateBits, uint64* stencilBits )
-{
-	if( renderLog.Active() == 0 )
-	{
-		return;
-	}
-
-	renderLog.OpenBlock( "GL_State" );
-
-	// culling
-	renderLog.Printf( "Culling: " );
-	switch( stateBits & GLS_CULL_BITS )
-	{
-		case GLS_CULL_FRONTSIDED:
-			renderLog.Printf_NoIndent( "FRONTSIDED -> BACK" );
-			break;
-		case GLS_CULL_BACKSIDED:
-			renderLog.Printf_NoIndent( "BACKSIDED -> FRONT" );
-			break;
-		case GLS_CULL_TWOSIDED:
-			renderLog.Printf_NoIndent( "TWOSIDED" );
-			break;
-		default:
-			renderLog.Printf_NoIndent( "NA" );
-			break;
-	}
-	renderLog.Printf_NoIndent( "\n" );
-
-	// polygon mode
-	renderLog.Printf( "PolygonMode: %s\n", ( stateBits & GLS_POLYMODE_LINE ) ? "LINE" : "FILL" );
-
-	// color mask
-	renderLog.Printf( "ColorMask: " );
-	renderLog.Printf_NoIndent( ( stateBits & GLS_REDMASK ) ? "_" : "R" );
-	renderLog.Printf_NoIndent( ( stateBits & GLS_GREENMASK ) ? "_" : "G" );
-	renderLog.Printf_NoIndent( ( stateBits & GLS_BLUEMASK ) ? "_" : "B" );
-	renderLog.Printf_NoIndent( ( stateBits & GLS_ALPHAMASK ) ? "_" : "A" );
-	renderLog.Printf_NoIndent( "\n" );
-
-	// blend
-	renderLog.Printf( "Blend: src=" );
-	switch( stateBits & GLS_SRCBLEND_BITS )
-	{
-		case GLS_SRCBLEND_ZERO:
-			renderLog.Printf_NoIndent( "ZERO" );
-			break;
-		case GLS_SRCBLEND_ONE:
-			renderLog.Printf_NoIndent( "ONE" );
-			break;
-		case GLS_SRCBLEND_DST_COLOR:
-			renderLog.Printf_NoIndent( "DST_COLOR" );
-			break;
-		case GLS_SRCBLEND_ONE_MINUS_DST_COLOR:
-			renderLog.Printf_NoIndent( "ONE_MINUS_DST_COLOR" );
-			break;
-		case GLS_SRCBLEND_SRC_ALPHA:
-			renderLog.Printf_NoIndent( "SRC_ALPHA" );
-			break;
-		case GLS_SRCBLEND_ONE_MINUS_SRC_ALPHA:
-			renderLog.Printf_NoIndent( "ONE_MINUS_SRC_ALPHA" );
-			break;
-		case GLS_SRCBLEND_DST_ALPHA:
-			renderLog.Printf_NoIndent( "DST_ALPHA" );
-			break;
-		case GLS_SRCBLEND_ONE_MINUS_DST_ALPHA:
-			renderLog.Printf_NoIndent( "ONE_MINUS_DST_ALPHA" );
-			break;
-		default:
-			renderLog.Printf_NoIndent( "NA" );
-			break;
-	}
-	renderLog.Printf_NoIndent( ", dst=" );
-	switch( stateBits & GLS_DSTBLEND_BITS )
-	{
-		case GLS_DSTBLEND_ZERO:
-			renderLog.Printf_NoIndent( "ZERO" );
-			break;
-		case GLS_DSTBLEND_ONE:
-			renderLog.Printf_NoIndent( "ONE" );
-			break;
-		case GLS_DSTBLEND_SRC_COLOR:
-			renderLog.Printf_NoIndent( "SRC_COLOR" );
-			break;
-		case GLS_DSTBLEND_ONE_MINUS_SRC_COLOR:
-			renderLog.Printf_NoIndent( "ONE_MINUS_SRC_COLOR" );
-			break;
-		case GLS_DSTBLEND_SRC_ALPHA:
-			renderLog.Printf_NoIndent( "SRC_ALPHA" );
-			break;
-		case GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA:
-			renderLog.Printf_NoIndent( "ONE_MINUS_SRC_ALPHA" );
-			break;
-		case GLS_DSTBLEND_DST_ALPHA:
-			renderLog.Printf_NoIndent( "DST_ALPHA" );
-			break;
-		case GLS_DSTBLEND_ONE_MINUS_DST_ALPHA:
-			renderLog.Printf_NoIndent( "ONE_MINUS_DST_ALPHA" );
-			break;
-		default:
-			renderLog.Printf_NoIndent( "NA" );
-	}
-	renderLog.Printf_NoIndent( "\n" );
-
-	// depth func
-	renderLog.Printf( "DepthFunc: " );
-	switch( stateBits & GLS_DEPTHFUNC_BITS )
-	{
-		case GLS_DEPTHFUNC_EQUAL:
-			renderLog.Printf_NoIndent( "EQUAL" );
-			break;
-		case GLS_DEPTHFUNC_ALWAYS:
-			renderLog.Printf_NoIndent( "ALWAYS" );
-			break;
-		case GLS_DEPTHFUNC_LESS:
-			renderLog.Printf_NoIndent( "LEQUAL" );
-			break;
-		case GLS_DEPTHFUNC_GREATER:
-			renderLog.Printf_NoIndent( "GEQUAL" );
-			break;
-		default:
-			renderLog.Printf_NoIndent( "NA" );
-			break;
-	}
-	renderLog.Printf_NoIndent( "\n" );
-
-	// depth mask
-	renderLog.Printf( "DepthWrite: %s\n", ( stateBits & GLS_DEPTHMASK ) ? "FALSE" : "TRUE" );
-
-	renderLog.Printf( "DepthBounds: %s\n", ( stateBits & GLS_DEPTH_TEST_MASK ) ? "TRUE" : "FALSE" );
-
-	// depth bias
-	renderLog.Printf( "DepthBias: %s\n", ( stateBits & GLS_POLYGON_OFFSET ) ? "TRUE" : "FALSE" );
-
-	// stencil
-	auto printStencil = [&]( stencilFace_t face, uint64 bits, uint64 mask, uint64 ref )
-	{
-		renderLog.Printf( "Stencil: %s, ", ( bits & ( GLS_STENCIL_FUNC_BITS | GLS_STENCIL_OP_BITS ) ) ? "ON" : "OFF" );
-		renderLog.Printf_NoIndent( "Face=" );
-		switch( face )
-		{
-			case STENCIL_FACE_FRONT:
-				renderLog.Printf_NoIndent( "FRONT" );
-				break;
-			case STENCIL_FACE_BACK:
-				renderLog.Printf_NoIndent( "BACK" );
-				break;
-			default:
-				renderLog.Printf_NoIndent( "BOTH" );
-				break;
-		}
-		renderLog.Printf_NoIndent( ", Func=" );
-		switch( bits & GLS_STENCIL_FUNC_BITS )
-		{
-			case GLS_STENCIL_FUNC_NEVER:
-				renderLog.Printf_NoIndent( "NEVER" );
-				break;
-			case GLS_STENCIL_FUNC_LESS:
-				renderLog.Printf_NoIndent( "LESS" );
-				break;
-			case GLS_STENCIL_FUNC_EQUAL:
-				renderLog.Printf_NoIndent( "EQUAL" );
-				break;
-			case GLS_STENCIL_FUNC_LEQUAL:
-				renderLog.Printf_NoIndent( "LEQUAL" );
-				break;
-			case GLS_STENCIL_FUNC_GREATER:
-				renderLog.Printf_NoIndent( "GREATER" );
-				break;
-			case GLS_STENCIL_FUNC_NOTEQUAL:
-				renderLog.Printf_NoIndent( "NOTEQUAL" );
-				break;
-			case GLS_STENCIL_FUNC_GEQUAL:
-				renderLog.Printf_NoIndent( "GEQUAL" );
-				break;
-			case GLS_STENCIL_FUNC_ALWAYS:
-				renderLog.Printf_NoIndent( "ALWAYS" );
-				break;
-			default:
-				renderLog.Printf_NoIndent( "NA" );
-				break;
-		}
-		renderLog.Printf_NoIndent( ", OpFail=" );
-		switch( bits & GLS_STENCIL_OP_FAIL_BITS )
-		{
-			case GLS_STENCIL_OP_FAIL_KEEP:
-				renderLog.Printf_NoIndent( "KEEP" );
-				break;
-			case GLS_STENCIL_OP_FAIL_ZERO:
-				renderLog.Printf_NoIndent( "ZERO" );
-				break;
-			case GLS_STENCIL_OP_FAIL_REPLACE:
-				renderLog.Printf_NoIndent( "REPLACE" );
-				break;
-			case GLS_STENCIL_OP_FAIL_INCR:
-				renderLog.Printf_NoIndent( "INCR" );
-				break;
-			case GLS_STENCIL_OP_FAIL_DECR:
-				renderLog.Printf_NoIndent( "DECR" );
-				break;
-			case GLS_STENCIL_OP_FAIL_INVERT:
-				renderLog.Printf_NoIndent( "INVERT" );
-				break;
-			case GLS_STENCIL_OP_FAIL_INCR_WRAP:
-				renderLog.Printf_NoIndent( "INCR_WRAP" );
-				break;
-			case GLS_STENCIL_OP_FAIL_DECR_WRAP:
-				renderLog.Printf_NoIndent( "DECR_WRAP" );
-				break;
-			default:
-				renderLog.Printf_NoIndent( "NA" );
-				break;
-		}
-		renderLog.Printf_NoIndent( ", ZFail=" );
-		switch( bits & GLS_STENCIL_OP_ZFAIL_BITS )
-		{
-			case GLS_STENCIL_OP_ZFAIL_KEEP:
-				renderLog.Printf_NoIndent( "KEEP" );
-				break;
-			case GLS_STENCIL_OP_ZFAIL_ZERO:
-				renderLog.Printf_NoIndent( "ZERO" );
-				break;
-			case GLS_STENCIL_OP_ZFAIL_REPLACE:
-				renderLog.Printf_NoIndent( "REPLACE" );
-				break;
-			case GLS_STENCIL_OP_ZFAIL_INCR:
-				renderLog.Printf_NoIndent( "INCR" );
-				break;
-			case GLS_STENCIL_OP_ZFAIL_DECR:
-				renderLog.Printf_NoIndent( "DECR" );
-				break;
-			case GLS_STENCIL_OP_ZFAIL_INVERT:
-				renderLog.Printf_NoIndent( "INVERT" );
-				break;
-			case GLS_STENCIL_OP_ZFAIL_INCR_WRAP:
-				renderLog.Printf_NoIndent( "INCR_WRAP" );
-				break;
-			case GLS_STENCIL_OP_ZFAIL_DECR_WRAP:
-				renderLog.Printf_NoIndent( "DECR_WRAP" );
-				break;
-			default:
-				renderLog.Printf_NoIndent( "NA" );
-				break;
-		}
-		renderLog.Printf_NoIndent( ", OpPass=" );
-		switch( bits & GLS_STENCIL_OP_PASS_BITS )
-		{
-			case GLS_STENCIL_OP_PASS_KEEP:
-				renderLog.Printf_NoIndent( "KEEP" );
-				break;
-			case GLS_STENCIL_OP_PASS_ZERO:
-				renderLog.Printf_NoIndent( "ZERO" );
-				break;
-			case GLS_STENCIL_OP_PASS_REPLACE:
-				renderLog.Printf_NoIndent( "REPLACE" );
-				break;
-			case GLS_STENCIL_OP_PASS_INCR:
-				renderLog.Printf_NoIndent( "INCR" );
-				break;
-			case GLS_STENCIL_OP_PASS_DECR:
-				renderLog.Printf_NoIndent( "DECR" );
-				break;
-			case GLS_STENCIL_OP_PASS_INVERT:
-				renderLog.Printf_NoIndent( "INVERT" );
-				break;
-			case GLS_STENCIL_OP_PASS_INCR_WRAP:
-				renderLog.Printf_NoIndent( "INCR_WRAP" );
-				break;
-			case GLS_STENCIL_OP_PASS_DECR_WRAP:
-				renderLog.Printf_NoIndent( "DECR_WRAP" );
-				break;
-			default:
-				renderLog.Printf_NoIndent( "NA" );
-				break;
-		}
-		renderLog.Printf_NoIndent( ", mask=%llu, ref=%llu\n", mask, ref );
-	};
-
-	uint32 mask = uint32( ( stateBits & GLS_STENCIL_FUNC_MASK_BITS ) >> GLS_STENCIL_FUNC_MASK_SHIFT );
-	uint32 ref = uint32( ( stateBits & GLS_STENCIL_FUNC_REF_BITS ) >> GLS_STENCIL_FUNC_REF_SHIFT );
-	if( stateBits & GLS_SEPARATE_STENCIL )
-	{
-		printStencil( STENCIL_FACE_FRONT, stencilBits[ 0 ], mask, ref );
-		printStencil( STENCIL_FACE_BACK, stencilBits[ 1 ], mask, ref );
-	}
-	else
-	{
-		printStencil( STENCIL_FACE_NUM, stateBits, mask, ref );
-	}
-
-	renderLog.CloseBlock();
-}
-#endif
-
-/*
 ================
 RB_SetMVP
 ================
@@ -602,8 +303,8 @@ void idRenderBackend::BindVariableStageImage( const textureStage_t* texture, con
 			GL_SelectTexture( 0 );
 			cin.image->Bind();
 
-			/*
-			if( backEnd.viewDef->is2Dgui )
+			// SRS - Reenable shaders so ffmpeg and RoQ decoder cinematics are rendered with correct colour
+			if( viewDef->is2Dgui )
 			{
 				renderProgManager.BindShader_TextureVertexColor_sRGB();
 			}
@@ -611,11 +312,11 @@ void idRenderBackend::BindVariableStageImage( const textureStage_t* texture, con
 			{
 				renderProgManager.BindShader_TextureVertexColor();
 			}
-			*/
 		}
 		else
 		{
 			globalImages->blackImage->Bind();
+
 			// because the shaders may have already been set - we need to make sure we are not using a bink shader which would
 			// display incorrectly.  We may want to get rid of RB_BindVariableStageImage and inline the code so that the
 			// SWF GUI case is handled better, too
@@ -624,10 +325,16 @@ void idRenderBackend::BindVariableStageImage( const textureStage_t* texture, con
 	}
 	else
 	{
-		// FIXME: see why image is invalid
 		if( texture->image != NULL )
 		{
-			texture->image->Bind();
+			if( texture->image->IsLoaded() && !texture->image->IsDefaulted() )
+			{
+				texture->image->Bind();
+			}
+			else
+			{
+				globalImages->defaultImage->Bind();
+			}
 		}
 	}
 }
@@ -647,7 +354,6 @@ void idRenderBackend::PrepareStageTexturing( const shaderStage_t* pStage,  const
 	// texgens
 	if( pStage->texture.texgen == TG_REFLECT_CUBE )
 	{
-
 		// see if there is also a bump map specified
 		const shaderStage_t* bumpStage = surf->material->GetBumpStage();
 		if( bumpStage != NULL )
@@ -688,7 +394,6 @@ void idRenderBackend::PrepareStageTexturing( const shaderStage_t* pStage,  const
 	}
 	else if( pStage->texture.texgen == TG_WOBBLESKY_CUBE )
 	{
-
 		const int* parms = surf->material->GetTexGenRegisters();
 
 		float wobbleDegrees = surf->shaderRegisters[ parms[0] ] * ( idMath::PI / 180.0f );
@@ -746,7 +451,6 @@ void idRenderBackend::PrepareStageTexturing( const shaderStage_t* pStage,  const
 	}
 	else if( ( pStage->texture.texgen == TG_SCREEN ) || ( pStage->texture.texgen == TG_SCREEN2 ) )
 	{
-
 		useTexGenParm[0] = 1.0f;
 		useTexGenParm[1] = 1.0f;
 		useTexGenParm[2] = 1.0f;
@@ -785,14 +489,12 @@ void idRenderBackend::PrepareStageTexturing( const shaderStage_t* pStage,  const
 	}
 	else if( pStage->texture.texgen == TG_DIFFUSE_CUBE )
 	{
-
 		// As far as I can tell, this is never used
 		idLib::Warning( "Using Diffuse Cube! Please contact Brian!" );
 
 	}
 	else if( pStage->texture.texgen == TG_GLASSWARP )
 	{
-
 		// As far as I can tell, this is never used
 		idLib::Warning( "Using GlassWarp! Please contact Brian!" );
 	}
@@ -826,6 +528,7 @@ void idRenderBackend::FinishStageTexturing( const shaderStage_t* pStage, const d
 		{
 			// per-pixel reflection mapping without bump mapping
 		}
+
 		renderProgManager.Unbind();
 	}
 }
@@ -890,6 +593,7 @@ void idRenderBackend::FillDepthBufferGeneric( const drawSurf_t* const* drawSurfs
 				break;
 			}
 		}
+
 		if( stage == shader->GetNumStages() )
 		{
 			continue;
@@ -1505,6 +1209,8 @@ void idRenderBackend::DrawSingleInteraction( drawInteraction_t* din, bool useFas
 	}
 	else if( setInteractionShader )
 	{
+		// TODO extra paths for foliage, terrain and skin
+
 		if( specUsage == TD_SPECULAR_PBR_RMAO || specUsage == TD_SPECULAR_PBR_RMAOD )
 		{
 			// PBR path with roughness, metal and AO
@@ -1752,7 +1458,7 @@ void idRenderBackend::RenderInteractions( const drawSurf_t* surfList, const view
 	// are added single-threaded, and there is only a negligable amount
 	// of benefit to trying to sort by materials.
 	//---------------------------------
-	static const int MAX_INTERACTIONS_PER_LIGHT = 1024;
+	static const int MAX_INTERACTIONS_PER_LIGHT = 2048; // 1024 in BFG
 	static const int MAX_COMPLEX_INTERACTIONS_PER_LIGHT = 256;
 	idStaticList< const drawSurf_t*, MAX_INTERACTIONS_PER_LIGHT > allSurfaces;
 	idStaticList< const drawSurf_t*, MAX_COMPLEX_INTERACTIONS_PER_LIGHT > complexSurfaces;
@@ -1863,10 +1569,12 @@ void idRenderBackend::RenderInteractions( const drawSurf_t* surfList, const view
 			lightRegs[ lightStage->color.registers[3] ] );
 
 		// apply the world-global overbright and the 2x factor for specular
-		const idVec4 diffuseColor = lightColor;
-// jmarshall
-		idVec4 specularColor = lightColor * 2.0f;
+		idVec4 diffuseColor = lightColor;
 
+		// RB: the BFG edition has exagerated specular lighting compared to vanilla Doom 3
+		// turn this back to 1.0
+		idVec4 specularColor = lightColor * 1.0f;
+// jmarshall
 		if( vLight->lightDef->parms.noSpecular )
 		{
 			specularColor.Zero();
@@ -2054,7 +1762,6 @@ void idRenderBackend::RenderInteractions( const drawSurf_t* surfList, const view
 						idRenderMatrix::Multiply( shadowP[0], modelToShadowMatrix, shadowClipMVP );
 
 						SetVertexParms( ( renderParm_t )( RENDERPARM_SHADOW_MATRIX_0_X ), shadowClipMVP[0], 4 );
-
 					}
 				}
 				// RB end
@@ -3406,7 +3113,6 @@ void idRenderBackend::ShadowMapPass( const drawSurf_t* drawSurfs, const viewLigh
 
 	GL_ViewportAndScissor( 0, 0, shadowMapResolutions[vLight->shadowLOD], shadowMapResolutions[vLight->shadowLOD] );
 
-
 	glClear( GL_DEPTH_BUFFER_BIT );
 #endif
 
@@ -4034,6 +3740,7 @@ int idRenderBackend::DrawShaderPasses( const drawSurf_t* const* const drawSurfs,
 
 			// see if we are a new-style stage
 			newShaderStage_t* newStage = pStage->newStage;
+
 			if( newStage != NULL )
 			{
 				//--------------------------
@@ -4204,6 +3911,7 @@ int idRenderBackend::DrawShaderPasses( const drawSurf_t* const* const drawSurfs,
 			// set privatePolygonOffset if necessary
 			if( pStage->privatePolygonOffset )
 			{
+				GL_PolygonOffset( r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * pStage->privatePolygonOffset );
 				stageGLState |= GLS_POLYGON_OFFSET;
 			}
 
@@ -4222,6 +3930,7 @@ int idRenderBackend::DrawShaderPasses( const drawSurf_t* const* const drawSurfs,
 			{
 				GL_PolygonOffset( r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * shader->GetPolygonOffset() );
 			}
+
 			renderLog.CloseBlock();
 		}
 
@@ -4804,9 +4513,13 @@ void idRenderBackend::Bloom( const viewDef_t* _viewDef )
 		return;
 	}
 
+	renderLog.OpenMainBlock( MRB_BLOOM );
+	renderLog.OpenBlock( "Render_Bloom", colorBlue );
+
 	RENDERLOG_PRINTF( "---------- RB_Bloom( avg = %f, max = %f, key = %f ) ----------\n", hdrAverageLuminance, hdrMaxLuminance, hdrKey );
 
 	// BRIGHTPASS
+	renderLog.OpenBlock( "Brightpass" );
 
 	//GL_CheckErrors();
 
@@ -4887,6 +4600,10 @@ void idRenderBackend::Bloom( const viewDef_t* _viewDef )
 	// Draw
 	DrawElementsWithCounters( &unitSquareSurface );
 
+	renderLog.CloseBlock(); // Brightpass
+
+	renderLog.OpenBlock( "Bloom Ping Pong" );
+
 	// BLOOM PING PONG rendering
 	renderProgManager.BindShader_HDRGlareChromatic();
 
@@ -4918,9 +4635,14 @@ void idRenderBackend::Bloom( const viewDef_t* _viewDef )
 
 	DrawElementsWithCounters( &unitSquareSurface );
 
+	renderLog.CloseBlock(); // Bloom Ping Pong
+
 	renderProgManager.Unbind();
 
 	GL_State( GLS_DEFAULT );
+
+	renderLog.CloseBlock(); // Render_Bloom
+	renderLog.CloseMainBlock(); // MRB_BLOOM
 }
 
 
@@ -5026,8 +4748,6 @@ void idRenderBackend::DrawScreenSpaceAmbientOcclusion( const viewDef_t* _viewDef
 
 	GL_Viewport( 0, 0, aoScreenWidth, aoScreenHeight );
 	GL_Scissor( 0, 0, aoScreenWidth, aoScreenHeight );
-
-
 
 	if( downModulateScreen )
 	{
@@ -5294,7 +5014,6 @@ void idRenderBackend::DrawScreenSpaceGlobalIllumination( const viewDef_t* _viewD
 		glClearColor( 0, 0, 0, 1 );
 
 		GL_SelectTexture( 0 );
-		//globalImages->currentDepthImage->Bind();
 
 		for( int i = 0; i < MAX_HIERARCHICAL_ZBUFFERS; i++ )
 		{
@@ -5709,7 +5428,7 @@ void idRenderBackend::DrawViewInternal( const viewDef_t* _viewDef, const int ste
 
 	//GL_CheckErrors();
 
-#if !defined(USE_VULKAN)
+#if !defined( USE_VULKAN ) && !defined( USE_NVRHI )
 	// bind one global Vertex Array Object (VAO)
 	glBindVertexArray( glConfig.global_vao );
 #endif

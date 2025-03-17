@@ -426,7 +426,7 @@ bool idGuiScript::Parse( idTokenParser* src )
 
 	if( handler == NULL )
 	{
-		src->Error( "Uknown script call %s", token.c_str() );
+		src->Error( "Unknown script call %s", token.c_str() );
 	}
 	// now read parms til ;
 	// all parms are read as idWinStr's but will be fixed up later
@@ -663,16 +663,16 @@ void idGuiScript::FixupParms( idWindow* win )
 						rect = *( dynamic_cast<idWinRectangle*>( dest ) );
 						ownerparent->ClientToScreen( &rect );
 						destparent->ScreenToClient( &rect );
-						*v4 = rect.ToVec4( );
+						*v4 = rect.ToVec4();
 					}
 					else
 					{
-						v4->Set( dest->c_str( ) );
+						v4->Set( dest->c_str() );
 					}
 				}
 				else
 				{
-					v4->Set( dest->c_str( ) );
+					v4->Set( dest->c_str() );
 				}
 			}
 			else

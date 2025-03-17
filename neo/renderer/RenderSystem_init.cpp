@@ -3,7 +3,7 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
-Copyright (C) 2014-2016 Robert Beckebans
+Copyright (C) 2014-2021 Robert Beckebans
 Copyright (C) 2014-2016 Kot in Action Creative Artel
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
@@ -32,6 +32,14 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "imgui/imgui.h"
+
+#if defined(USE_INTRINSICS_SSE)
+	#if MOC_MULTITHREADED
+		#include "CullingThreadPool.h"
+	#else
+		#include "extern/moc/MaskedOcclusionCulling.h"
+	#endif
+#endif
 
 #include "RenderCommon.h"
 
@@ -64,7 +72,7 @@ idCVar r_glDriver( "r_glDriver", "", CVAR_RENDERER, "\"opengl32\", etc." );
 	idCVar r_skipAMDWorkarounds( "r_skipAMDWorkarounds", "0", CVAR_RENDERER | CVAR_BOOL, "skip workarounds for AMD driver bugs" );
 #else
 	idCVar r_skipIntelWorkarounds( "r_skipIntelWorkarounds", "0", CVAR_RENDERER | CVAR_BOOL, "skip workarounds for Intel driver bugs" );
-	idCVar r_skipAMDWorkarounds( "r_skipAMDWorkarounds", "1", CVAR_RENDERER | CVAR_BOOL, "skip workarounds for AMD driver bugs" );
+	idCVar r_skipAMDWorkarounds( "r_skipAMDWorkarounds", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_NEW, "skip workarounds for AMD driver bugs" );
 #endif
 // SRS end
 // RB: disabled 16x MSAA
@@ -122,14 +130,14 @@ idCVar r_skipSuppress( "r_skipSuppress", "0", CVAR_RENDERER | CVAR_BOOL, "ignore
 #else
 	idCVar r_skipPostProcess( "r_skipPostProcess", "0", CVAR_RENDERER | CVAR_BOOL, "skip all post-process renderings except bloom" );
 #endif
-idCVar r_skipBloom( "r_skipBloom", "0", CVAR_RENDERER | CVAR_BOOL, "Skip bloom" );
+idCVar r_skipBloom( "r_skipBloom", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_NEW, "Skip bloom" );
 idCVar r_skipInteractions( "r_skipInteractions", "0", CVAR_RENDERER | CVAR_BOOL, "skip all light/surface interaction drawing" );
 idCVar r_skipDynamicTextures( "r_skipDynamicTextures", "0", CVAR_RENDERER | CVAR_BOOL, "don't dynamically create textures" );
 idCVar r_skipCopyTexture( "r_skipCopyTexture", "0", CVAR_RENDERER | CVAR_BOOL, "do all rendering, but don't actually copyTexSubImage2D" );
 idCVar r_skipBackEnd( "r_skipBackEnd", "0", CVAR_RENDERER | CVAR_BOOL, "don't draw anything" );
 idCVar r_skipRender( "r_skipRender", "0", CVAR_RENDERER | CVAR_BOOL, "skip 3D rendering, but pass 2D" );
 // RB begin
-idCVar r_skipRenderContext( "r_skipRenderContext", "0", CVAR_RENDERER | CVAR_BOOL, "DISABLED: NULL the rendering context during backend 3D rendering" );
+idCVar r_skipRenderContext( "r_skipRenderContext", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_NEW, "DISABLED: NULL the rendering context during backend 3D rendering" );
 // RB end
 idCVar r_skipTranslucent( "r_skipTranslucent", "0", CVAR_RENDERER | CVAR_BOOL, "skip the translucent interaction rendering" );
 idCVar r_skipAmbient( "r_skipAmbient", "0", CVAR_RENDERER | CVAR_BOOL, "bypasses all non-interaction drawing" );
@@ -154,16 +162,10 @@ idCVar r_useLightAreaCulling( "r_useLightAreaCulling", "1", CVAR_RENDERER | CVAR
 idCVar r_useLightScissors( "r_useLightScissors", "3", CVAR_RENDERER | CVAR_INTEGER, "0 = no scissor, 1 = non-clipped scissor, 2 = near-clipped scissor, 3 = fully-clipped scissor", 0, 3, idCmdSystem::ArgCompletion_Integer<0, 3> );
 idCVar r_useEntityPortalCulling( "r_useEntityPortalCulling", "1", CVAR_RENDERER | CVAR_INTEGER, "0 = none, 1 = cull frustum corners to plane, 2 = exact clip the frustum faces", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2> );
 idCVar r_logFile( "r_logFile", "0", CVAR_RENDERER | CVAR_INTEGER, "number of frames to emit GL logs" );
-idCVar r_clear( "r_clear", "2", CVAR_RENDERER, "force screen clear every frame, 1 = purple, 2 = black, 'r g b' = custom" );
+idCVar r_clear( "r_clear", "2", CVAR_RENDERER | CVAR_NOCHEAT, "force screen clear every frame, 1 = purple, 2 = black, 'r g b' = custom" );
 
 idCVar r_offsetFactor( "r_offsetfactor", "0", CVAR_RENDERER | CVAR_FLOAT, "polygon offset parameter" );
-// RB: offset factor was 0, and units were -600 which caused some very ugly polygon offsets on Android so I reverted the values to the same as in Q3A
-#if defined(__ANDROID__)
-	idCVar r_offsetUnits( "r_offsetunits", "-2", CVAR_RENDERER | CVAR_FLOAT, "polygon offset parameter" );
-#else
-	idCVar r_offsetUnits( "r_offsetunits", "-600", CVAR_RENDERER | CVAR_FLOAT, "polygon offset parameter" );
-#endif
-// RB end
+idCVar r_offsetUnits( "r_offsetunits", "-600", CVAR_RENDERER | CVAR_FLOAT, "polygon offset parameter" );
 
 idCVar r_shadowPolygonOffset( "r_shadowPolygonOffset", "-1", CVAR_RENDERER | CVAR_FLOAT, "bias value added to depth test for stencil shadow drawing" );
 idCVar r_shadowPolygonFactor( "r_shadowPolygonFactor", "0", CVAR_RENDERER | CVAR_FLOAT, "scale value for stencil shadow drawing" );
@@ -174,11 +176,11 @@ idCVar r_lightScale( "r_lightScale", "3", CVAR_ARCHIVE | CVAR_RENDERER | CVAR_FL
 idCVar r_flareSize( "r_flareSize", "1", CVAR_RENDERER | CVAR_FLOAT, "scale the flare deforms from the material def" );
 
 idCVar r_skipPrelightShadows( "r_skipPrelightShadows", "0", CVAR_RENDERER | CVAR_BOOL, "skip the dmap generated static shadow volumes" );
-idCVar r_useScissor( "r_useScissor", "1", CVAR_RENDERER | CVAR_BOOL, "scissor clip as portals and lights are processed" );
+idCVar r_useScissor( "r_useScissor", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_CHEAT, "scissor clip as portals and lights are processed" );
 idCVar r_useLightDepthBounds( "r_useLightDepthBounds", "1", CVAR_RENDERER | CVAR_BOOL, "use depth bounds test on lights to reduce both shadow and interaction fill" );
 idCVar r_useShadowDepthBounds( "r_useShadowDepthBounds", "1", CVAR_RENDERER | CVAR_BOOL, "use depth bounds test on individual shadow volumes to reduce shadow fill" );
 // RB begin
-idCVar r_useHalfLambertLighting( "r_useHalfLambertLighting", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "use Half-Lambert lighting instead of classic Lambert, requires reloadShaders" );
+idCVar r_useHalfLambertLighting( "r_useHalfLambertLighting", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE | CVAR_NEW, "use Half-Lambert lighting instead of classic Lambert, requires reloadShaders" );
 // RB end
 
 idCVar r_screenFraction( "r_screenFraction", "100", CVAR_RENDERER | CVAR_INTEGER, "for testing fill rate, the resolution of the entire screen can be changed" );
@@ -222,8 +224,8 @@ idCVar r_showDominantTri( "r_showDominantTri", "0", CVAR_RENDERER | CVAR_BOOL, "
 idCVar r_showTextureVectors( "r_showTextureVectors", "0", CVAR_RENDERER | CVAR_FLOAT, " if > 0 draw each triangles texture (tangent) vectors" );
 idCVar r_showOverDraw( "r_showOverDraw", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = geometry overdraw, 2 = light interaction overdraw, 3 = geometry and light interaction overdraw", 0, 3, idCmdSystem::ArgCompletion_Integer<0, 3> );
 // RB begin
-idCVar r_showShadowMaps( "r_showShadowMaps", "0", CVAR_RENDERER | CVAR_BOOL, "" );
-idCVar r_showShadowMapLODs( "r_showShadowMapLODs", "0", CVAR_RENDERER | CVAR_INTEGER, "" );
+idCVar r_showShadowMaps( "r_showShadowMaps", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_NEW, "" );
+idCVar r_showShadowMapLODs( "r_showShadowMapLODs", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_NEW, "" );
 // RB end
 
 idCVar r_useEntityCallbacks( "r_useEntityCallbacks", "1", CVAR_RENDERER | CVAR_BOOL, "if 0, issue the callback immediately at update time, rather than defering" );
@@ -248,77 +250,79 @@ idCVar stereoRender_deGhost( "stereoRender_deGhost", "0.05", CVAR_FLOAT | CVAR_A
 
 // RB: shadow mapping parameters
 #if defined( USE_VULKAN )
-	idCVar r_useShadowMapping( "r_useShadowMapping", "0", CVAR_RENDERER | CVAR_ROM | CVAR_STATIC | CVAR_INTEGER, "use shadow mapping instead of stencil shadows" );
+	idCVar r_useShadowMapping( "r_useShadowMapping", "0", CVAR_RENDERER | CVAR_ROM | CVAR_STATIC | CVAR_INTEGER | CVAR_NEW, "use shadow mapping instead of stencil shadows" );
 #else
-	idCVar r_useShadowMapping( "r_useShadowMapping", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "use shadow mapping instead of stencil shadows" );
+	idCVar r_useShadowMapping( "r_useShadowMapping", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NEW, "use shadow mapping instead of stencil shadows" );
 #endif
-idCVar r_shadowMapFrustumFOV( "r_shadowMapFrustumFOV", "92", CVAR_RENDERER | CVAR_FLOAT, "oversize FOV for point light side matching" );
-idCVar r_shadowMapSingleSide( "r_shadowMapSingleSide", "-1", CVAR_RENDERER | CVAR_INTEGER, "only draw a single side (0-5) of point lights" );
-idCVar r_shadowMapImageSize( "r_shadowMapImageSize", "1024", CVAR_RENDERER | CVAR_INTEGER, "", 128, 2048 );
-idCVar r_shadowMapJitterScale( "r_shadowMapJitterScale", "2.5", CVAR_RENDERER | CVAR_FLOAT, "scale factor for jitter offset" );
-idCVar r_shadowMapBiasScale( "r_shadowMapBiasScale", "0.0001", CVAR_RENDERER | CVAR_FLOAT, "scale factor for jitter bias" );
-idCVar r_shadowMapRandomizeJitter( "r_shadowMapRandomizeJitter", "1", CVAR_RENDERER | CVAR_BOOL, "randomly offset jitter texture each draw" );
-idCVar r_shadowMapSamples( "r_shadowMapSamples", "16", CVAR_RENDERER | CVAR_INTEGER, "1, 4, 12 or 16", 1, 64 );
-idCVar r_shadowMapSplits( "r_shadowMapSplits", "3", CVAR_RENDERER | CVAR_INTEGER, "number of splits for cascaded shadow mapping with parallel lights", 0, 4 );
-idCVar r_shadowMapSplitWeight( "r_shadowMapSplitWeight", "0.9", CVAR_RENDERER | CVAR_FLOAT, "" );
-idCVar r_shadowMapLodScale( "r_shadowMapLodScale", "1.4", CVAR_RENDERER | CVAR_FLOAT, "" );
-idCVar r_shadowMapLodBias( "r_shadowMapLodBias", "0", CVAR_RENDERER | CVAR_INTEGER, "" );
-idCVar r_shadowMapPolygonFactor( "r_shadowMapPolygonFactor", "2", CVAR_RENDERER | CVAR_FLOAT, "polygonOffset factor for drawing shadow buffer" );
-idCVar r_shadowMapPolygonOffset( "r_shadowMapPolygonOffset", "3000", CVAR_RENDERER | CVAR_FLOAT, "polygonOffset units for drawing shadow buffer" );
-idCVar r_shadowMapOccluderFacing( "r_shadowMapOccluderFacing", "2", CVAR_RENDERER | CVAR_INTEGER, "0 = front faces, 1 = back faces, 2 = twosided" );
-idCVar r_shadowMapRegularDepthBiasScale( "r_shadowMapRegularDepthBiasScale", "0.999", CVAR_RENDERER | CVAR_FLOAT, "shadowmap bias to fight shadow acne for point and spot lights" );
-idCVar r_shadowMapSunDepthBiasScale( "r_shadowMapSunDepthBiasScale", "0.999991", CVAR_RENDERER | CVAR_FLOAT, "shadowmap bias to fight shadow acne for cascaded shadow mapping with parallel lights" );
+idCVar r_shadowMapFrustumFOV( "r_shadowMapFrustumFOV", "92", CVAR_RENDERER | CVAR_FLOAT | CVAR_NEW, "oversize FOV for point light side matching" );
+idCVar r_shadowMapSingleSide( "r_shadowMapSingleSide", "-1", CVAR_RENDERER | CVAR_INTEGER | CVAR_NEW, "only draw a single side (0-5) of point lights" );
+idCVar r_shadowMapImageSize( "r_shadowMapImageSize", "1024", CVAR_RENDERER | CVAR_INTEGER | CVAR_NEW, "", 128, 2048 );
+idCVar r_shadowMapJitterScale( "r_shadowMapJitterScale", "2.5", CVAR_RENDERER | CVAR_FLOAT | CVAR_NEW, "scale factor for jitter offset" );
+idCVar r_shadowMapBiasScale( "r_shadowMapBiasScale", "0.0001", CVAR_RENDERER | CVAR_FLOAT | CVAR_NEW, "scale factor for jitter bias" );
+idCVar r_shadowMapRandomizeJitter( "r_shadowMapRandomizeJitter", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_NEW, "randomly offset jitter texture each draw" );
+idCVar r_shadowMapSamples( "r_shadowMapSamples", "16", CVAR_RENDERER | CVAR_INTEGER | CVAR_NEW, "1, 4, 12 or 16", 1, 64 );
+idCVar r_shadowMapSplits( "r_shadowMapSplits", "3", CVAR_RENDERER | CVAR_INTEGER | CVAR_NEW, "number of splits for cascaded shadow mapping with parallel lights", 0, 4 );
+idCVar r_shadowMapSplitWeight( "r_shadowMapSplitWeight", "0.9", CVAR_RENDERER | CVAR_FLOAT | CVAR_NEW, "" );
+idCVar r_shadowMapLodScale( "r_shadowMapLodScale", "1.4", CVAR_RENDERER | CVAR_FLOAT | CVAR_NEW, "" );
+idCVar r_shadowMapLodBias( "r_shadowMapLodBias", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_NEW, "" );
+idCVar r_shadowMapPolygonFactor( "r_shadowMapPolygonFactor", "2", CVAR_RENDERER | CVAR_FLOAT | CVAR_NEW, "polygonOffset factor for drawing shadow buffer" );
+idCVar r_shadowMapPolygonOffset( "r_shadowMapPolygonOffset", "3000", CVAR_RENDERER | CVAR_FLOAT | CVAR_NEW, "polygonOffset units for drawing shadow buffer" );
+idCVar r_shadowMapOccluderFacing( "r_shadowMapOccluderFacing", "2", CVAR_RENDERER | CVAR_INTEGER | CVAR_NEW, "0 = front faces, 1 = back faces, 2 = twosided" );
+idCVar r_shadowMapRegularDepthBiasScale( "r_shadowMapRegularDepthBiasScale", "0.999", CVAR_RENDERER | CVAR_FLOAT | CVAR_NEW, "shadowmap bias to fight shadow acne for point and spot lights" );
+idCVar r_shadowMapSunDepthBiasScale( "r_shadowMapSunDepthBiasScale", "0.999991", CVAR_RENDERER | CVAR_FLOAT | CVAR_NEW, "shadowmap bias to fight shadow acne for cascaded shadow mapping with parallel lights" );
 
 // RB: HDR parameters
 #if defined( USE_VULKAN )
-	idCVar r_useHDR( "r_useHDR", "0", CVAR_RENDERER | CVAR_ROM | CVAR_STATIC | CVAR_BOOL, "Can't be changed, is broken on Vulkan backend" );
+	idCVar r_useHDR( "r_useHDR", "0", CVAR_RENDERER | CVAR_ROM | CVAR_STATIC | CVAR_BOOL | CVAR_NEW, "Can't be changed, is broken on Vulkan backend" );
 #else
-	idCVar r_useHDR( "r_useHDR", "1", CVAR_RENDERER | CVAR_ROM | CVAR_STATIC | CVAR_BOOL, "Can't be changed: Use high dynamic range rendering" );
+	idCVar r_useHDR( "r_useHDR", "1", CVAR_RENDERER | CVAR_ROM | CVAR_STATIC | CVAR_BOOL | CVAR_NEW, "Can't be changed: Use high dynamic range rendering" );
 #endif
 
-idCVar r_hdrAutoExposure( "r_hdrAutoExposure", "0", CVAR_RENDERER | CVAR_BOOL, "EXPENSIVE: enables adapative HDR tone mapping otherwise the exposure is derived by r_exposure" );
-idCVar r_hdrMinLuminance( "r_hdrMinLuminance", "0.005", CVAR_RENDERER | CVAR_FLOAT, "" );
-idCVar r_hdrMaxLuminance( "r_hdrMaxLuminance", "300", CVAR_RENDERER | CVAR_FLOAT, "" );
-idCVar r_hdrKey( "r_hdrKey", "0.015", CVAR_RENDERER | CVAR_FLOAT, "magic exposure key that works well with Doom 3 maps" );
-idCVar r_hdrContrastDynamicThreshold( "r_hdrContrastDynamicThreshold", "2", CVAR_RENDERER | CVAR_FLOAT, "if auto exposure is on, all pixels brighter than this cause HDR bloom glares" );
-idCVar r_hdrContrastStaticThreshold( "r_hdrContrastStaticThreshold", "3", CVAR_RENDERER | CVAR_FLOAT, "if auto exposure is off, all pixels brighter than this cause HDR bloom glares" );
-idCVar r_hdrContrastOffset( "r_hdrContrastOffset", "100", CVAR_RENDERER | CVAR_FLOAT, "" );
-idCVar r_hdrGlarePasses( "r_hdrGlarePasses", "8", CVAR_RENDERER | CVAR_INTEGER, "how many times the bloom blur is rendered offscreen. number should be even" );
-idCVar r_hdrDebug( "r_hdrDebug", "0", CVAR_RENDERER | CVAR_FLOAT, "show scene luminance as heat map" );
+idCVar r_hdrAutoExposure( "r_hdrAutoExposure", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_NEW, "EXPENSIVE: enables adapative HDR tone mapping otherwise the exposure is derived by r_exposure" );
+idCVar r_hdrMinLuminance( "r_hdrMinLuminance", "0.005", CVAR_RENDERER | CVAR_FLOAT | CVAR_NEW, "" );
+idCVar r_hdrMaxLuminance( "r_hdrMaxLuminance", "300", CVAR_RENDERER | CVAR_FLOAT | CVAR_NEW, "" );
+idCVar r_hdrKey( "r_hdrKey", "0.015", CVAR_RENDERER | CVAR_FLOAT | CVAR_NEW, "magic exposure key that works well with Doom 3 maps" );
+idCVar r_hdrContrastDynamicThreshold( "r_hdrContrastDynamicThreshold", "2", CVAR_RENDERER | CVAR_FLOAT | CVAR_NEW, "if auto exposure is on, all pixels brighter than this cause HDR bloom glares" );
+idCVar r_hdrContrastStaticThreshold( "r_hdrContrastStaticThreshold", "3", CVAR_RENDERER | CVAR_FLOAT | CVAR_NEW, "if auto exposure is off, all pixels brighter than this cause HDR bloom glares" );
+idCVar r_hdrContrastOffset( "r_hdrContrastOffset", "100", CVAR_RENDERER | CVAR_FLOAT | CVAR_NEW, "" );
+idCVar r_hdrGlarePasses( "r_hdrGlarePasses", "8", CVAR_RENDERER | CVAR_INTEGER | CVAR_NEW, "how many times the bloom blur is rendered offscreen. number should be even" );
+idCVar r_hdrDebug( "r_hdrDebug", "0", CVAR_RENDERER | CVAR_FLOAT | CVAR_NEW, "show scene luminance as heat map" );
 
-idCVar r_ldrContrastThreshold( "r_ldrContrastThreshold", "1.1", CVAR_RENDERER | CVAR_FLOAT, "" );
-idCVar r_ldrContrastOffset( "r_ldrContrastOffset", "3", CVAR_RENDERER | CVAR_FLOAT, "" );
+idCVar r_ldrContrastThreshold( "r_ldrContrastThreshold", "1.1", CVAR_RENDERER | CVAR_FLOAT | CVAR_NEW, "" );
+idCVar r_ldrContrastOffset( "r_ldrContrastOffset", "3", CVAR_RENDERER | CVAR_FLOAT | CVAR_NEW, "" );
 
-idCVar r_useFilmicPostProcessing( "r_useFilmicPostProcessing", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "apply several post process effects to mimic a filmic look" );
+idCVar r_useFilmicPostProcessing( "r_useFilmicPostProcessing", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NEW, "apply several post process effects to mimic a filmic look" );
 
 #if defined( USE_VULKAN )
-	idCVar r_forceAmbient( "r_forceAmbient", "0.5", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "render additional ambient pass to make the game less dark", 0.0f, 0.75f );
+	idCVar r_forceAmbient( "r_forceAmbient", "0.5", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT | CVAR_NEW, "render additional ambient pass to make the game less dark", 0.0f, 0.75f );
 #else
-	idCVar r_forceAmbient( "r_forceAmbient", "0.5", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "render additional ambient pass to make the game less dark", 0.0f, 1.0f );
+	idCVar r_forceAmbient( "r_forceAmbient", "0.5", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT | CVAR_NEW, "render additional ambient pass to make the game less dark", 0.0f, 1.0f );
 #endif
 
-idCVar r_useSSGI( "r_useSSGI", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "use screen space global illumination and reflections" );
-idCVar r_ssgiDebug( "r_ssgiDebug", "0", CVAR_RENDERER | CVAR_INTEGER, "" );
-idCVar r_ssgiFiltering( "r_ssgiFiltering", "1", CVAR_RENDERER | CVAR_BOOL, "" );
+idCVar r_useSSGI( "r_useSSGI", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NEW, "use screen space global illumination and reflections" );
+idCVar r_ssgiDebug( "r_ssgiDebug", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_NEW, "" );
+idCVar r_ssgiFiltering( "r_ssgiFiltering", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_NEW, "" );
 
 #if defined( USE_VULKAN )
-	idCVar r_useSSAO( "r_useSSAO", "0", CVAR_RENDERER | CVAR_ROM | CVAR_STATIC | CVAR_BOOL, "use screen space ambient occlusion to darken corners" );
+	idCVar r_useSSAO( "r_useSSAO", "0", CVAR_RENDERER | CVAR_ROM | CVAR_STATIC | CVAR_BOOL | CVAR_NEW, "use screen space ambient occlusion to darken corners" );
 #else
-	idCVar r_useSSAO( "r_useSSAO", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "use screen space ambient occlusion to darken corners" );
+	idCVar r_useSSAO( "r_useSSAO", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NEW, "use screen space ambient occlusion to darken corners" );
 #endif
-idCVar r_ssaoDebug( "r_ssaoDebug", "0", CVAR_RENDERER | CVAR_INTEGER, "" );
-idCVar r_ssaoFiltering( "r_ssaoFiltering", "0", CVAR_RENDERER | CVAR_BOOL, "" );
-idCVar r_useHierarchicalDepthBuffer( "r_useHierarchicalDepthBuffer", "1", CVAR_RENDERER | CVAR_BOOL, "" );
+idCVar r_ssaoDebug( "r_ssaoDebug", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_NEW, "" );
+idCVar r_ssaoFiltering( "r_ssaoFiltering", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_NEW, "" );
+idCVar r_useHierarchicalDepthBuffer( "r_useHierarchicalDepthBuffer", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_NEW, "" );
 
 // RB: only change r_usePBR if you are a developer
-idCVar r_usePBR( "r_usePBR", "1", CVAR_RENDERER | CVAR_ROM | CVAR_STATIC | CVAR_BOOL, "use PBR and Image Based Lighting instead of old Quake 4 style ambient lighting" );
-idCVar r_pbrDebug( "r_pbrDebug", "0", CVAR_RENDERER | CVAR_INTEGER, "show which materials have PBR support (green = PBR, red = oldschool D3)" );
-idCVar r_showViewEnvprobes( "r_showViewEnvprobes", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = displays the bounding boxes of all view environment probes, 2 = show irradiance" );
-idCVar r_showLightGrid( "r_showLightGrid", "0", CVAR_RENDERER | CVAR_INTEGER, "show Quake 3 style light grid points" );
+idCVar r_usePBR( "r_usePBR", "1", CVAR_RENDERER | CVAR_ROM | CVAR_STATIC | CVAR_BOOL | CVAR_NEW, "use PBR and Image Based Lighting instead of old Quake 4 style ambient lighting" );
+idCVar r_pbrDebug( "r_pbrDebug", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_NEW, "show which materials have PBR support (green = PBR, red = oldschool D3)" );
+idCVar r_showViewEnvprobes( "r_showViewEnvprobes", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_NEW, "1 = displays the bounding boxes of all view environment probes, 2 = show irradiance" );
+idCVar r_showLightGrid( "r_showLightGrid", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_NEW, "show Quake 3 style light grid points" );
 
-idCVar r_useLightGrid( "r_useLightGrid", "1", CVAR_RENDERER | CVAR_BOOL, "" );
+idCVar r_useLightGrid( "r_useLightGrid", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_NEW, "" );
 
-idCVar r_exposure( "r_exposure", "0.5", CVAR_ARCHIVE | CVAR_RENDERER | CVAR_FLOAT, "HDR exposure or LDR brightness [0.0 .. 1.0]", 0.0f, 1.0f );
+idCVar r_exposure( "r_exposure", "0.5", CVAR_ARCHIVE | CVAR_RENDERER | CVAR_FLOAT | CVAR_NEW, "HDR exposure or LDR brightness [0.0 .. 1.0]", 0.0f, 1.0f );
+
+idCVar r_useMaskedOcclusionCulling( "r_useMaskedOcclusionCulling", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_NOCHEAT | CVAR_NEW, "SIMD optimized software culling by Intel" );
 // RB end
 
 const char* fileExten[4] = { "tga", "png", "jpg", "exr" };
@@ -616,7 +620,8 @@ void R_TestVideo_f( const idCmdArgs& args )
 
 	cinData_t	cin;
 	cin = tr.testVideo->ImageForTime( 0 );
-	if( cin.imageY == NULL )
+	// SRS - Also handle ffmpeg and original RoQ decoders for test videos (using cin.image)
+	if( cin.imageY == NULL && cin.image == NULL )
 	{
 		delete tr.testVideo;
 		tr.testVideo = NULL;
@@ -624,12 +629,11 @@ void R_TestVideo_f( const idCmdArgs& args )
 		return;
 	}
 
-	common->Printf( "%i x %i images\n", cin.imageWidth, cin.imageHeight );
+	// SRS - video info prinout is redundant, already handled by InitFromFile()
+	//common->Printf( "%i x %i images\n", cin.imageWidth, cin.imageHeight );
 
-	int	len = tr.testVideo->AnimationLength();
-	common->Printf( "%5.1f seconds of video\n", len * 0.001 );
-
-	tr.testVideoStartTime = tr.primaryRenderView.time[1];
+	//int	len = tr.testVideo->AnimationLength();
+	//common->Printf( "%5.1f seconds of video\n", len * 0.001 );
 
 	// try to play the matching wav file
 	idStr	wavString = args.Argv( ( args.Argc() == 2 ) ? 1 : 2 );
@@ -778,7 +782,7 @@ void R_ReadTiledPixels( int width, int height, byte* buffer, renderView_t* ref =
 	commonLocal.WaitGameThread();
 
 	// discard anything currently on the list
-	tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
+	tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL, NULL );
 
 	int originalNativeWidth = glConfig.nativeScreenWidth;
 	int originalNativeHeight = glConfig.nativeScreenHeight;
@@ -800,7 +804,7 @@ void R_ReadTiledPixels( int width, int height, byte* buffer, renderView_t* ref =
 			// foresthale 2014-03-01: fixed custom screenshot resolution by doing a more direct render path
 #ifdef BUGFIXEDSCREENSHOTRESOLUTION
 			// discard anything currently on the list
-			tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
+			tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL, NULL );
 			if( ref )
 			{
 				// ref is only used by envShot, Event_camShot, etc to grab screenshots of things in the world,
@@ -813,25 +817,25 @@ void R_ReadTiledPixels( int width, int height, byte* buffer, renderView_t* ref =
 				commonLocal.Draw();
 			}
 			// this should exit right after vsync, with the GPU idle and ready to draw
-			const emptyCommand_t* cmd = tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
+			const emptyCommand_t* cmd = tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL, NULL );
 
 			// get the GPU busy with new commands
 			tr.RenderCommandBuffers( cmd );
 
 			// discard anything currently on the list (this triggers SwapBuffers)
-			tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
+			tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL, NULL );
 #else
 			// foresthale 2014-03-01: note: ref is always NULL in every call path to this function
 			if( ref )
 			{
 				// discard anything currently on the list
-				tr.SwapCommandBuffers( NULL, NULL, NULL, NULL );
+				tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL );
 
 				// build commands to render the scene
 				tr.primaryWorld->RenderScene( ref );
 
 				// finish off these commands
-				const emptyCommand_t* cmd = tr.SwapCommandBuffers( NULL, NULL, NULL, NULL );
+				const emptyCommand_t* cmd = tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL );
 
 				// issue the commands to the GPU
 				tr.RenderCommandBuffers( cmd );
@@ -884,7 +888,7 @@ void R_ReadTiledPixels( int width, int height, byte* buffer, renderView_t* ref =
 	// foresthale 2014-03-01: fixed custom screenshot resolution by doing a more direct render path
 #ifdef BUGFIXEDSCREENSHOTRESOLUTION
 	// discard anything currently on the list
-	tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
+	tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL, NULL );
 
 	if( !ref || ( ref && !( ref->rdflags & RDF_IRRADIANCE ) ) )
 	{
@@ -1005,7 +1009,7 @@ void idRenderSystemLocal::TakeScreenshot( int width, int height, const char* fil
 	}
 	else if( exten == PNG )
 	{
-		R_WritePNG( finalFileName, buffer, 3, width, height, false, "fs_basepath" );
+		R_WritePNG( finalFileName, buffer, 3, width, height, "fs_basepath" );
 	}
 	else
 	{
@@ -1615,10 +1619,8 @@ void R_InitMaterials()
 	// RB: create implicit material
 	tr.imgGuiMaterial = declManager->FindMaterial( "_imguiFont", true );
 
-#if IMGUI_BFGUI
 	ImGuiIO& io = ImGui::GetIO();
 	io.Fonts->TexID = ( void* )( intptr_t )tr.imgGuiMaterial;
-#endif
 }
 
 
@@ -1751,24 +1753,32 @@ void idRenderSystemLocal::Clear()
 
 	if( unitSquareTriangles != NULL )
 	{
+		Mem_Free( unitSquareTriangles->verts );
+		Mem_Free( unitSquareTriangles->indexes );
 		Mem_Free( unitSquareTriangles );
 		unitSquareTriangles = NULL;
 	}
 
 	if( zeroOneCubeTriangles != NULL )
 	{
+		Mem_Free( zeroOneCubeTriangles->verts );
+		Mem_Free( zeroOneCubeTriangles->indexes );
 		Mem_Free( zeroOneCubeTriangles );
 		zeroOneCubeTriangles = NULL;
 	}
 
 	if( zeroOneSphereTriangles != NULL )
 	{
+		Mem_Free( zeroOneSphereTriangles->verts );
+		Mem_Free( zeroOneSphereTriangles->indexes );
 		Mem_Free( zeroOneSphereTriangles );
 		zeroOneSphereTriangles = NULL;
 	}
 
 	if( testImageTriangles != NULL )
 	{
+		Mem_Free( testImageTriangles->verts );
+		Mem_Free( testImageTriangles->indexes );
 		Mem_Free( testImageTriangles );
 		testImageTriangles = NULL;
 	}
@@ -1779,6 +1789,20 @@ void idRenderSystemLocal::Clear()
 	envprobeJobList = NULL;
 	envprobeJobs.Clear();
 	lightGridJobs.Clear();
+
+#if defined(USE_INTRINSICS_SSE)
+	// destroy occlusion culling object and free hierarchical z-buffer
+	if( maskedOcclusionCulling != NULL )
+	{
+#if MOC_MULTITHREADED
+		delete maskedOcclusionThreaded;
+		maskedOcclusionThreaded = NULL;
+#endif
+		MaskedOcclusionCulling::Destroy( maskedOcclusionCulling );
+
+		maskedOcclusionCulling = NULL;
+	}
+#endif
 }
 
 /*
@@ -1926,6 +1950,121 @@ static srfTriangles_t* R_MakeZeroOneCubeTris()
 }
 
 // RB begin
+#if defined(USE_INTRINSICS_SSE)
+static void R_MakeZeroOneCubeTrisForMaskedOcclusionCulling()
+{
+	const float low = 0.0f;
+	const float high = 1.0f;
+
+	idVec3 center( 0.0f );
+	idVec3 mx( low, 0.0f, 0.0f );
+	idVec3 px( high, 0.0f, 0.0f );
+	idVec3 my( 0.0f,  low, 0.0f );
+	idVec3 py( 0.0f, high, 0.0f );
+	idVec3 mz( 0.0f, 0.0f,  low );
+	idVec3 pz( 0.0f, 0.0f, high );
+
+	idVec4* verts = tr.maskedZeroOneCubeVerts;
+
+	verts[0].ToVec3() = center + mx + my + mz;
+	verts[1].ToVec3() = center + px + my + mz;
+	verts[2].ToVec3() = center + px + py + mz;
+	verts[3].ToVec3() = center + mx + py + mz;
+	verts[4].ToVec3() = center + mx + my + pz;
+	verts[5].ToVec3() = center + px + my + pz;
+	verts[6].ToVec3() = center + px + py + pz;
+	verts[7].ToVec3() = center + mx + py + pz;
+
+	verts[0].w = 1;
+	verts[1].w = 1;
+	verts[2].w = 1;
+	verts[3].w = 1;
+	verts[4].w = 1;
+	verts[5].w = 1;
+	verts[6].w = 1;
+	verts[7].w = 1;
+
+	unsigned int* indexes = tr.maskedZeroOneCubeIndexes;
+
+	// bottom
+	indexes[ 0 * 3 + 0] = 2;
+	indexes[ 0 * 3 + 1] = 3;
+	indexes[ 0 * 3 + 2] = 0;
+	indexes[ 1 * 3 + 0] = 1;
+	indexes[ 1 * 3 + 1] = 2;
+	indexes[ 1 * 3 + 2] = 0;
+	// back
+	indexes[ 2 * 3 + 0] = 5;
+	indexes[ 2 * 3 + 1] = 1;
+	indexes[ 2 * 3 + 2] = 0;
+	indexes[ 3 * 3 + 0] = 4;
+	indexes[ 3 * 3 + 1] = 5;
+	indexes[ 3 * 3 + 2] = 0;
+	// left
+	indexes[ 4 * 3 + 0] = 7;
+	indexes[ 4 * 3 + 1] = 4;
+	indexes[ 4 * 3 + 2] = 0;
+	indexes[ 5 * 3 + 0] = 3;
+	indexes[ 5 * 3 + 1] = 7;
+	indexes[ 5 * 3 + 2] = 0;
+	// right
+	indexes[ 6 * 3 + 0] = 1;
+	indexes[ 6 * 3 + 1] = 5;
+	indexes[ 6 * 3 + 2] = 6;
+	indexes[ 7 * 3 + 0] = 2;
+	indexes[ 7 * 3 + 1] = 1;
+	indexes[ 7 * 3 + 2] = 6;
+	// front
+	indexes[ 8 * 3 + 0] = 3;
+	indexes[ 8 * 3 + 1] = 2;
+	indexes[ 8 * 3 + 2] = 6;
+	indexes[ 9 * 3 + 0] = 7;
+	indexes[ 9 * 3 + 1] = 3;
+	indexes[ 9 * 3 + 2] = 6;
+	// top
+	indexes[10 * 3 + 0] = 4;
+	indexes[10 * 3 + 1] = 7;
+	indexes[10 * 3 + 2] = 6;
+	indexes[11 * 3 + 0] = 5;
+	indexes[11 * 3 + 1] = 4;
+	indexes[11 * 3 + 2] = 6;
+}
+
+static void R_MakeUnitCubeTrisForMaskedOcclusionCulling()
+{
+	const float low = -1.0f;
+	const float high = 1.0f;
+
+	idVec3 center( 0.0f );
+	idVec3 mx( low, 0.0f, 0.0f );
+	idVec3 px( high, 0.0f, 0.0f );
+	idVec3 my( 0.0f,  low, 0.0f );
+	idVec3 py( 0.0f, high, 0.0f );
+	idVec3 mz( 0.0f, 0.0f,  low );
+	idVec3 pz( 0.0f, 0.0f, high );
+
+	idVec4* verts = tr.maskedUnitCubeVerts;
+
+	verts[0].ToVec3() = center + mx + my + mz;
+	verts[1].ToVec3() = center + px + my + mz;
+	verts[2].ToVec3() = center + px + py + mz;
+	verts[3].ToVec3() = center + mx + py + mz;
+	verts[4].ToVec3() = center + mx + my + pz;
+	verts[5].ToVec3() = center + px + my + pz;
+	verts[6].ToVec3() = center + px + py + pz;
+	verts[7].ToVec3() = center + mx + py + pz;
+
+	verts[0].w = 1;
+	verts[1].w = 1;
+	verts[2].w = 1;
+	verts[3].w = 1;
+	verts[4].w = 1;
+	verts[5].w = 1;
+	verts[6].w = 1;
+	verts[7].w = 1;
+}
+#endif
+
 static srfTriangles_t* R_MakeZeroOneSphereTris()
 {
 	srfTriangles_t* tri = ( srfTriangles_t* )Mem_ClearedAlloc( sizeof( *tri ), TAG_RENDER_TOOLS );
@@ -2157,8 +2296,24 @@ void idRenderSystemLocal::Init()
 
 	bInitialized = true;
 
+#if defined(USE_INTRINSICS_SSE)
+	// Flush denorms to zero to avoid performance issues with small values
+	_mm_setcsr( _mm_getcsr() | 0x8040 );
+
+	maskedOcclusionCulling = MaskedOcclusionCulling::Create();
+
+#if MOC_MULTITHREADED
+	maskedOcclusionThreaded = new CullingThreadpool( 2, 10, 6, 128 );
+	maskedOcclusionThreaded->SetBuffer( maskedOcclusionCulling );
+	maskedOcclusionThreaded->WakeThreads();
+#endif
+
+	R_MakeZeroOneCubeTrisForMaskedOcclusionCulling();
+	R_MakeUnitCubeTrisForMaskedOcclusionCulling();
+#endif
+
 	// make sure the command buffers are ready to accept the first screen update
-	SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
+	SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL, NULL );
 
 	common->Printf( "renderSystem initialized.\n" );
 	common->Printf( "--------------------------------------\n" );
@@ -2171,6 +2326,8 @@ idRenderSystemLocal::Shutdown
 */
 void idRenderSystemLocal::Shutdown()
 {
+	extern idCVar com_smp;
+
 	common->Printf( "idRenderSystem::Shutdown()\n" );
 
 	fonts.DeleteContents();
@@ -2181,6 +2338,13 @@ void idRenderSystemLocal::Shutdown()
 	}
 
 	renderModelManager->Shutdown();
+
+	// SRS - if testVideo is currently playing, make sure cinematic is deleted before ShutdownCinematic()
+	if( tr.testVideo )
+	{
+		delete tr.testVideo;
+		tr.testVideo = NULL;
+	}
 
 	idCinematic::ShutdownCinematic();
 
@@ -2196,7 +2360,11 @@ void idRenderSystemLocal::Shutdown()
 	UnbindBufferObjects();
 
 	// SRS - wait for fence to hit before freeing any resources the GPU may be using, otherwise get Vulkan validation layer errors on shutdown
-	backend.GL_BlockingSwapBuffers();
+	// SRS - skip this step if we are in Doom 3 mode (com_smp = -1) which has already finished and presented
+	if( com_smp.GetInteger() != -1 )
+	{
+		backend.GL_BlockingSwapBuffers();
+	}
 
 	// free the vertex cache, which should have nothing allocated now
 	vertexCache.Shutdown();
@@ -2205,6 +2373,7 @@ void idRenderSystemLocal::Shutdown()
 
 	delete guiModel;
 
+	parallelJobManager->FreeJobList( envprobeJobList );
 	parallelJobManager->FreeJobList( frontEndJobList );
 
 	Clear();

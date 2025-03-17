@@ -238,4 +238,3 @@ const char* const* idCmdArgs::GetArgs( int* _argc )
 	*_argc = argc;
 	return ( const char** )&argv[0];
 }
-

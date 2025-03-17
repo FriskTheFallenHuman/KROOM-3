@@ -29,6 +29,8 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
+#ifndef USE_VULKAN
+
 #ifdef WIN32
 	#include <windows.h>
 	#include <GL/gl.h>
@@ -1585,7 +1587,7 @@ void RenderBumpFlat_f( const idCmdArgs& args )
 	glMatrixMode( GL_PROJECTION );
 	glLoadIdentity();
 	glOrtho( bounds[0][0], bounds[1][0], bounds[0][2],
-			  bounds[1][2], -( bounds[0][1] - 1 ), -( bounds[1][1] + 1 ) );
+			 bounds[1][2], -( bounds[0][1] - 1 ), -( bounds[1][1] + 1 ) );
 
 	glMatrixMode( GL_MODELVIEW );
 	glLoadIdentity();
@@ -1818,3 +1820,26 @@ void RenderBumpFlat_f( const idCmdArgs& args )
 
 	common->Error( "Completed." );
 }
+#else
+/*
+==============
+RenderBumpFlat_f
+
+==============
+*/
+void RenderBumpFlat_f( const idCmdArgs& args )
+{
+	common->Error( "Renderbump is disable in vulkan builds for now." );
+}
+
+/*
+==============
+RenderBumpFlat_f
+
+==============
+*/
+void RenderBump_f( const idCmdArgs& args )
+{
+	common->Error( "Renderbump is disable in vulkan builds for now." );
+}
+#endif

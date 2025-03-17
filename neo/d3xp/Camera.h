@@ -67,7 +67,7 @@ public:
 	void					Save( idSaveGame* savefile ) const;				// archives object for save game file
 	void					Restore( idRestoreGame* savefile );				// unarchives object from save game file
 
-	void					Spawn( );
+	void					Spawn();
 	virtual void			GetViewParms( renderView_t* view );
 	virtual void			Stop();
 
@@ -127,6 +127,9 @@ private:
 	void					Think();
 
 	void					LoadAnim();
+	bool					LoadBinary( idFile* file, ID_TIME_T sourceTimeStamp );
+	void					WriteBinary( idFile* file, ID_TIME_T sourceTimeStamp );
+
 	void					Event_Start();
 	void					Event_Stop();
 	void					Event_SetCallback();

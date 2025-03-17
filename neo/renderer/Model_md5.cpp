@@ -44,7 +44,7 @@ static const char* MD5_SnapshotName = "_MD5_Snapshot_";
 static const byte MD5B_VERSION = 106;
 static const unsigned int MD5B_MAGIC = ( '5' << 24 ) | ( 'D' << 16 ) | ( 'M' << 8 ) | MD5B_VERSION;
 
-idCVar r_useGPUSkinning( "r_useGPUSkinning", "1", CVAR_INTEGER, "animate normals and tangents instead of deriving" );
+idCVar r_useGPUSkinning( "r_useGPUSkinning", "1", CVAR_INTEGER | CVAR_NOCHEAT, "animate normals and tangents instead of deriving" );
 
 /***********************************************************************
 
@@ -719,7 +719,6 @@ idRenderModelMD5::LoadBinaryModel
 */
 bool idRenderModelMD5::LoadBinaryModel( idFile* file, const ID_TIME_T sourceTimeStamp )
 {
-
 	if( !idRenderModelStatic::LoadBinaryModel( file, sourceTimeStamp ) )
 	{
 		return false;

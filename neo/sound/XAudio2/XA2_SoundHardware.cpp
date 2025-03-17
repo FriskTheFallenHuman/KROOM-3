@@ -431,7 +431,7 @@ void idSoundHardware_XAudio2::Init()
 			pMasterVoice->GetChannelMask( &win8_channelMask );
 
 			channelMask = ( unsigned int )win8_channelMask;
-			idLib::Printf( "Using device %S\n", selectedDevice.name );
+			idLib::Printf( "Using device: %S\n", selectedDevice.name.c_str() );
 		}
 		else
 		{
@@ -614,7 +614,7 @@ void idSoundHardware_XAudio2::Shutdown()
 	{
 		XAUDIO2_PERFORMANCE_DATA perfData;
 		pXAudio2->GetPerformanceData( &perfData );
-		idLib::Printf( "Final pXAudio2 performanceData: Voices: %d/%d CPU: %.2f%% Mem: %dkb\n", perfData.ActiveSourceVoiceCount, perfData.TotalSourceVoiceCount, perfData.AudioCyclesSinceLastQuery / ( float )perfData.TotalCyclesSinceLastQuery, perfData.MemoryUsageInBytes / 1024 );
+		//idLib::Printf( "Final pXAudio2 performanceData: Voices: %d/%d CPU: %.2f%% Mem: %dkb\n", perfData.ActiveSourceVoiceCount, perfData.TotalSourceVoiceCount, perfData.AudioCyclesSinceLastQuery / ( float )perfData.TotalCyclesSinceLastQuery, perfData.MemoryUsageInBytes / 1024 );
 		pXAudio2->Release();
 		pXAudio2 = NULL;
 	}

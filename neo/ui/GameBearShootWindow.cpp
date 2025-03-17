@@ -28,7 +28,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
-#include "DeviceContext.h"
 #include "Window.h"
 #include "UserInterfaceLocal.h"
 #include "GameBearShootWindow.h"
@@ -573,16 +572,6 @@ void idGameBearShootWindow::Draw( int time, float x, float y )
 	{
 		entities[i]->Draw();
 	}
-}
-
-/*
-=============================
-idGameBearShootWindow::Activate
-=============================
-*/
-const char* idGameBearShootWindow::Activate( bool activate )
-{
-	return "";
 }
 
 /*

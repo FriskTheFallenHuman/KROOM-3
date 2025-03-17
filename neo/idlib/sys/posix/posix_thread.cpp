@@ -27,8 +27,9 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
+
+#include "precompiled.h"
 #pragma hdrstop
-#include "../../precompiled.h"
 
 #ifndef _WIN32
 	#include <sched.h>
@@ -52,9 +53,9 @@ typedef void* ( *pthread_function_t )( void* );
 Sys_SetThreadName
 
 caedes: This should be seen as a helper-function for Sys_CreateThread() only.
-        (re)setting the name of a running thread seems like a bad idea and
-        currently (fresh d3 bfg source) isn't done anyway.
-        Furthermore SDL doesn't support it
+		(re)setting the name of a running thread seems like a bad idea and
+		currently (fresh d3 bfg source) isn't done anyway.
+		Furthermore SDL doesn't support it
 
 ========================
 */
@@ -146,75 +147,6 @@ uintptr_t Sys_CreateThread( xthread_t function, void* parms, xthreadPriority pri
 
 	pthread_attr_destroy( &attr );
 
-
-#if 0
-	// RB: realtime policies require root privileges
-
-	// all Linux threads have one of the following scheduling policies:
-
-	// SCHED_OTHER or SCHED_NORMAL: the default policy,  priority: [-20..0..19], default 0
-
-	// SCHED_FIFO: first in/first out realtime policy
-
-	// SCHED_RR: round-robin realtime policy
-
-	// SCHED_BATCH: similar to SCHED_OTHER, but with a throughput orientation
-
-	// SCHED_IDLE: lower priority than SCHED_OTHER
-
-	int schedulePolicy = SCHED_OTHER;
-	struct sched_param scheduleParam;
-
-	int error = pthread_getschedparam( handle, &schedulePolicy, &scheduleParam );
-	if( error != 0 )
-	{
-		idLib::common->FatalError( "ERROR: pthread_getschedparam %s failed: %s\n", name, strerror( error ) );
-		return ( uintptr_t )0;
-	}
-
-	schedulePolicy = SCHED_FIFO;
-
-	int minPriority = sched_get_priority_min( schedulePolicy );
-	int maxPriority = sched_get_priority_max( schedulePolicy );
-
-	if( priority == THREAD_HIGHEST )
-	{
-		//  we better sleep enough to do this
-		scheduleParam.__sched_priority = maxPriority;
-	}
-	else if( priority == THREAD_ABOVE_NORMAL )
-	{
-		scheduleParam.__sched_priority = Lerp( minPriority, maxPriority, 0.75f );
-	}
-	else if( priority == THREAD_NORMAL )
-	{
-		scheduleParam.__sched_priority = Lerp( minPriority, maxPriority, 0.5f );
-	}
-	else if( priority == THREAD_BELOW_NORMAL )
-	{
-		scheduleParam.__sched_priority = Lerp( minPriority, maxPriority, 0.25f );
-	}
-	else if( priority == THREAD_LOWEST )
-	{
-		scheduleParam.__sched_priority = minPriority;
-	}
-
-	// set new priority
-	error = pthread_setschedparam( handle, schedulePolicy, &scheduleParam );
-	if( error != 0 )
-	{
-		idLib::common->FatalError( "ERROR: pthread_setschedparam( name = %s, policy = %i, priority = %i ) failed: %s\n", name, schedulePolicy, scheduleParam.__sched_priority, strerror( error ) );
-		return ( uintptr_t )0;
-	}
-
-	pthread_getschedparam( handle, &schedulePolicy, &scheduleParam );
-	if( error != 0 )
-	{
-		idLib::common->FatalError( "ERROR: pthread_getschedparam %s failed: %s\n", name, strerror( error ) );
-		return ( uintptr_t )0;
-	}
-#endif
-
 	// Under Linux, we don't set the thread affinity and let the OS deal with scheduling
 
 	return ( uintptr_t )handle;
@@ -277,11 +209,12 @@ Sys_Yield
 */
 void Sys_Yield()
 {
-#if defined(__ANDROID__) || defined(__APPLE__)
+// SRS - pthread_yield() is deprecated on linux
+//#if defined(__ANDROID__) || defined(__APPLE__)
 	sched_yield();
-#else
-	pthread_yield();
-#endif
+//#else
+//	pthread_yield();
+//#endif
 }
 
 /*

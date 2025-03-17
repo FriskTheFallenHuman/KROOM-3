@@ -5,6 +5,7 @@ Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
 Copyright (C) 2013-2021 Robert Beckebans
 Copyright (C) 2016-2017 Dustin Land
+Copyright (C) 2022 Stephen Pridham
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -28,6 +29,9 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
+#ifndef IMAGE_H_
+#define IMAGE_H_
+
 enum textureType_t
 {
 	TT_DISABLED,
@@ -35,7 +39,7 @@ enum textureType_t
 	TT_CUBIC,
 	// RB begin
 	TT_2D_ARRAY,
-	TT_2D_MULTISAMPLE
+	TT_2D_MULTISAMPLE,
 	// RB end
 };
 
@@ -101,6 +105,8 @@ enum textureFormat_t
 	FMT_RGBA32F,		// 128 bpp
 	FMT_R32F,			// 32 bpp
 	FMT_R11G11B10F,		// 32 bpp
+	FMT_R8,
+	FMT_DEPTH_STENCIL,  // 32 bpp
 	// RB end
 };
 
@@ -157,6 +163,7 @@ public:
 	int					numLevels;		// if 0, will be 1 for NEAREST / LINEAR filters, otherwise based on size
 	bool				gammaMips;		// if true, mips will be generated with gamma correction
 	bool				readback;		// 360 specific - cpu reads back from this texture, so allocate with cached memory
+	bool				isRenderTarget;
 };
 
 /*
@@ -175,8 +182,8 @@ ID_INLINE idImageOpts::idImageOpts()
 	textureType		= TT_2D;
 	gammaMips		= false;
 	readback		= false;
-
-};
+	isRenderTarget	= false;
+}
 
 /*
 ========================
@@ -203,6 +210,8 @@ No texture is ever used that does not have a corresponding idImage.
 static const int	MAX_TEXTURE_LEVELS = 14;
 
 // How is this texture used?  Determines the storage and color format
+// NOTE: be very careful when editing these because it might break older .bimage files or the lookup name
+// Only add new entries at the bottom
 typedef enum
 {
 	TD_SPECULAR,			// may be compressed, and always zeros the alpha channel
@@ -223,22 +232,30 @@ typedef enum
 	TD_HIGHQUALITY_CUBE,	// motorsep - Uncompressed cubemap texture (RGB colorspace)
 	TD_LOWQUALITY_CUBE,		// motorsep - Compressed cubemap texture (RGB colorspace DXT5)
 	TD_SHADOW_ARRAY,		// 2D depth buffer array for shadow mapping
-	TD_RG16F,
-	TD_RGBA16F,
-	TD_RGBA32F,
-	TD_R32F,
+	TD_RG16F,				// BRDF lookup table
+	TD_RGBA16F,				// RT = render target format only, not written to disk
+	TD_RGBA32F,				// RT only
 	TD_R11G11B10F,			// memory efficient HDR RGB format with only 32bpp
+	// ^-- used up until RBDOOM-3-BFG 1.3
+	TD_HDRI,				// RB: R11G11B10F or BC6
 	// RB end
+	TD_R32F,				// RT only
+	TD_R8F,					// SP: RT only, added for ambient occlusion
+	TD_DEPTH_STENCIL,       // SP: RT only, depth buffer and stencil buffer
 } textureUsage_t;
 
+// NOTE: be very careful when editing these because it might break older .bimage files or the lookup name
+// Only add new entries at the bottom
 typedef enum
 {
 	CF_2D,			// not a cube map
 	CF_NATIVE,		// _px, _nx, _py, etc, directly sent to GL
 	CF_CAMERA,		// _forward, _back, etc, rotated and flipped as needed before sending to GL
-	CF_PANORAMA,	// TODO latlong encoded HDRI panorama typically used by Substance or Blender
+	CF_PANORAMA,	// RB: latlong encoded HDRI panorama typically used by Substance or Blender
 	CF_2D_ARRAY,	// not a cube map but not a single 2d texture either
-	CF_2D_PACKED_MIPCHAIN // usually 2d but can be an octahedron, packed mipmaps into single 2d texture atlas and limited to dim^2
+	CF_2D_PACKED_MIPCHAIN, // usually 2d but can be an octahedron, packed mipmaps into single 2d texture atlas and limited to dim^2
+	// ^-- used up until RBDOOM-3-BFG 1.3
+	CF_SINGLE,      // SP: A single texture cubemap. All six sides in one image.
 } cubeFiles_t;
 
 enum imageFileType_t
@@ -266,7 +283,7 @@ public:
 		return imgName;
 	}
 
-	// Makes this image active on the current GL texture unit.
+	// Makes this image active on the current texture unit.
 	// automatically enables or disables cube mapping
 	// May perform file loading if the image was not preloaded.
 	void		Bind();
@@ -324,6 +341,9 @@ public:
 	}
 	void		ActuallyLoadImage( bool fromBackEnd );
 
+	// Removes the image from the list of images to load on the main thread to the gpu.
+	void		DeferredPurgeImage();
+
 	//---------------------------------------------
 	// Platform specific implementations
 	//---------------------------------------------
@@ -365,12 +385,6 @@ public:
 								int width, int height, const void* data,
 								int pixelPitch = 0 );
 
-	// SetPixel is assumed to be a fast memory write on consoles, degenerating to a
-	// SubImageUpload on PCs.  Used to update the page mapping images.
-	// We could remove this now, because the consoles don't use the intermediate page mapping
-	// textures now that they can pack everything into the virtual page table images.
-	void		SetPixel( int mipLevel, int x, int y, const void* data, int dataSize );
-
 	// some scratch images are dynamically resized based on the display window size.  This
 	// simply purges the image and recreates it if the sizes are different, so it should not be
 	// done under any normal circumstances, and probably not at all on consoles.
@@ -405,7 +419,9 @@ public:
 							   textureFilter_t filter,
 							   textureRepeat_t repeat,
 							   textureUsage_t usage,
-							   textureSamples_t samples = SAMPLE_1, cubeFiles_t cubeFiles = CF_2D );
+							   textureSamples_t samples = SAMPLE_1,
+							   cubeFiles_t cubeFiles = CF_2D,
+							   bool isRenderTarget = false );
 
 	void		GenerateCubeImage( const byte* pic[6], int size,
 								   textureFilter_t filter, textureUsage_t usage );
@@ -433,13 +449,14 @@ public:
 private:
 	friend class idImageManager;
 
-	void		DeriveOpts();
-	void		AllocImage();
-	void		SetSamplerState( textureFilter_t tf, textureRepeat_t tr );
+	void				DeriveOpts();
+	void				AllocImage();
+	void				SetSamplerState( textureFilter_t tf, textureRepeat_t tr );
 
 	// parameters that define this image
 	idStr				imgName;				// game path, including extension (except for cube maps), may be an image program
 	cubeFiles_t			cubeFiles;				// If this is a cube map, and if so, what kind
+	int                 cubeMapSize;
 	void	( *generatorFunction )( idImage* image );	// NULL for files
 	textureUsage_t		usage;					// Used to determine the type of compression to use
 	idImageOpts			opts;					// Parameters that determine the storage method
@@ -494,16 +511,21 @@ private:
 };
 
 // data is RGBA
+void	LoadSTB_RGBA8( const char* name, byte** pic, int* width, int* height, ID_TIME_T* timestamp );
+
+void	LoadTGA( const char* name, byte** pic, int* width, int* height, ID_TIME_T* timestamp );
 void	R_WriteTGA( const char* filename, const byte* data, int width, int height, bool flipVertical = false, const char* basePath = "fs_savepath" );
 // data is in top-to-bottom raster order unless flipVertical is set
 
 // RB begin
-void	R_WritePNG( const char* filename, const byte* data, int bytesPerPixel, int width, int height, bool flipVertical = false, const char* basePath = "fs_savepath" );
+void	R_WritePNG( const char* filename, const byte* data, int bytesPerPixel, int width, int height, const char* basePath = "fs_savepath" );
 void	R_WriteEXR( const char* filename, const void* data, int channelsPerPixel, int width, int height, const char* basePath = "fs_savepath" );
 // RB end
 
 class idImageManager
 {
+	friend class idImage;
+
 public:
 
 	idImageManager()
@@ -523,7 +545,7 @@ public:
 	// grid pattern.
 	// Will automatically execute image programs if needed.
 	idImage* 			ImageFromFile( const char* name,
-									   textureFilter_t filter, textureRepeat_t repeat, textureUsage_t usage, cubeFiles_t cubeMap = CF_2D );
+									   textureFilter_t filter, textureRepeat_t repeat, textureUsage_t usage, cubeFiles_t cubeMap = CF_2D, int cubeMapSize = 0 );
 
 	// look for a loaded image, whatever the parameters
 	idImage* 			GetImage( const char* name ) const;
@@ -623,7 +645,11 @@ public:
 	bool				ExcludePreloadImage( const char* name );
 
 	idList<idImage*, TAG_IDLIB_LIST_IMAGE>	images;
+private:
 	idHashIndex			imageHash;
+
+	static void			CacheGlobalIlluminationData_f( const idCmdArgs& args ); // RB
+	static void			R_ListImages_f( const idCmdArgs& args );
 
 	bool				insideLevelLoad;			// don't actually load images now
 	bool				preloadingMapImages;		// unless this is set
@@ -645,6 +671,7 @@ byte* R_ResampleTexture( const byte* in, int inwidth, int inheight, int outwidth
 byte* R_MipMapWithAlphaSpecularity( const byte* in, int width, int height );
 byte* R_MipMapWithGamma( const byte* in, int width, int height );
 byte* R_MipMap( const byte* in, int width, int height );
+byte* R_MipMapR11G11B10F( const byte* in, int width, int height );
 
 // these operate in-place on the provided pixels
 void R_BlendOverTexture( byte* data, int pixelCount, const byte blend[4] );
@@ -653,6 +680,13 @@ void R_VerticalFlip( byte* data, int width, int height );
 void R_VerticalFlipRGB16F( byte* data, int width, int height );
 void R_RotatePic( byte* data, int width );
 void R_ApplyCubeMapTransforms( int i, byte* data, int size );
+// SP begin
+// This method takes in a cubemap from a single image. Depending on the side (0-5),
+// the image will be extracted from data and returned. The dimensions will be size x size.
+byte* R_GenerateCubeMapSideFromSingleImage( const byte* in, int srcWidth, int srcHeight, int size, int side );
+// SP end
+// RB
+byte* R_GenerateCubeMapSideFromPanoramaImage( const byte* in, int srcWidth, int srcHeight, int size, int side );
 
 idVec4 R_CalculateMipRect( uint dimensions, uint mip );
 int R_CalculateUsedAtlasPixels( int dimensions );
@@ -669,7 +703,7 @@ IMAGEFILES
 void R_LoadImage( const char* name, byte** pic, int* width, int* height, ID_TIME_T* timestamp, bool makePowerOf2, textureUsage_t* usage );
 
 // pic is in top to bottom raster format
-bool R_LoadCubeImages( const char* cname, cubeFiles_t extensions, byte* pic[6], int* size, ID_TIME_T* timestamp );
+bool R_LoadCubeImages( const char* cname, cubeFiles_t extensions, byte* pic[6], int* size, ID_TIME_T* timestamp, int cubeMapSize = 0 );
 
 /*
 ====================================================================
@@ -682,3 +716,4 @@ IMAGEPROGRAM
 void R_LoadImageProgram( const char* name, byte** pic, int* width, int* height, ID_TIME_T* timestamp, textureUsage_t* usage = NULL );
 const char* R_ParsePastImageProgram( idLexer& src );
 
+#endif

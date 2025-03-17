@@ -252,30 +252,30 @@ public:
 
 	void	StartFrame();
 
-	void	SetRenderParm( renderParm_t rp, const float* value );
-	void	SetRenderParms( renderParm_t rp, const float* values, int numValues );
+	void	SetRenderParm( renderParm_t rp, const float value[4] );
+	void	SetRenderParms( renderParm_t rp, const float values[], int numValues );
 
 	int		FindShader( const char* name, rpStage_t stage, const char* nameOutSuffix, uint32 features, bool builtin, vertexLayoutType_t vertexLayout = LAYOUT_DRAW_VERT );
 
 	void	BindProgram( int progIndex );
 
-	void	BindShader_GUI( )
+	void	BindShader_GUI()
 	{
 		BindShader_Builtin( BUILTIN_GUI );
 	}
 
-	void	BindShader_Color( )
+	void	BindShader_Color()
 	{
 		BindShader_Builtin( BUILTIN_COLOR );
 	}
 
 	// RB begin
-	void	BindShader_ColorSkinned( )
+	void	BindShader_ColorSkinned()
 	{
 		BindShader_Builtin( BUILTIN_COLOR_SKINNED );
 	}
 
-	void	BindShader_VertexColor( )
+	void	BindShader_VertexColor()
 	{
 		BindShader_Builtin( BUILTIN_VERTEX_COLOR );
 	}
@@ -343,7 +343,7 @@ public:
 	}
 	// RB end
 
-	void	BindShader_Texture( )
+	void	BindShader_Texture()
 	{
 		BindShader_Builtin( BUILTIN_TEXTURED );
 	}
@@ -693,6 +693,12 @@ public:
 		BindShader_Builtin( BUILTIN_BINK );
 	}
 
+	// SRS - Added Bink shader without sRGB to linear conversion for testVideo cmd
+	void	BindShader_Bink_sRGB()
+	{
+		BindShader_Builtin( BUILTIN_BINK_SRGB );
+	}
+
 	void	BindShader_BinkGUI()
 	{
 		BindShader_Builtin( BUILTIN_BINK_GUI );
@@ -734,7 +740,7 @@ public:
 	static const int	MAX_GLSL_USER_PARMS = 8;
 	const char*	GetGLSLParmName( int rp ) const;
 
-	void		SetUniformValue( const renderParm_t rp, const float* value );
+	void		SetUniformValue( const renderParm_t rp, const float value[4] );
 	void		CommitUniforms( uint64 stateBits );
 	void		CachePipeline( uint64 stateBits );
 	int			FindGLSLProgram( const char* name, int vIndex, int fIndex );
@@ -854,6 +860,7 @@ private:
 		BUILTIN_STEREO_DEGHOST,
 		BUILTIN_STEREO_WARP,
 		BUILTIN_BINK,
+		BUILTIN_BINK_SRGB,	// SRS - Added Bink shader without sRGB to linear conversion for testVideo cmd
 		BUILTIN_BINK_GUI,
 		BUILTIN_STEREO_INTERLACE,
 		BUILTIN_MOTION_BLUR,

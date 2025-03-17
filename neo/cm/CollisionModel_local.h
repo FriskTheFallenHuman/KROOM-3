@@ -84,10 +84,8 @@ typedef struct cm_vertex_s
 {
 	idVec3					p;					// vertex point
 	int						checkcount;			// for multi-check avoidance
-	// DG: use int instead of long for 64bit compatibility
 	unsigned int			side;				// each bit tells at which side this vertex passes one of the trace model edges
 	unsigned int			sideSet;			// each bit tells if sidedness for the trace model edge has been calculated yet
-	// DG end
 } cm_vertex_t;
 
 typedef struct cm_edge_s
@@ -95,10 +93,8 @@ typedef struct cm_edge_s
 	int						checkcount;			// for multi-check avoidance
 	unsigned short			internal;			// a trace model can never collide with internal edges
 	unsigned short			numUsers;			// number of polygons using this edge
-	// DG: use int instead of long for 64bit compatibility
 	unsigned int			side;				// each bit tells at which side of this edge one of the trace model vertices passes
 	unsigned int			sideSet;			// each bit tells if sidedness for the trace model vertex has been calculated yet
-	// DG end
 	int						vertexNum[2];		// start and end point of edge
 	idVec3					normal;				// edge normal
 } cm_edge_t;
@@ -326,17 +322,19 @@ class idCollisionModelManagerLocal : public idCollisionModelManager
 {
 public:
 	// load collision models from a map file
-	void			LoadMap( const idMapFile* mapFile );
+	void			LoadMap( const idMapFile* mapFile, bool ignoreOldCollisionFile );
 	// frees all the collision models
 	void			FreeMap();
 
 	void			Preload( const char* mapName );
 	// get clip handle for model
-	cmHandle_t		LoadModel( const char* modelName );
+	cmHandle_t		LoadModel( const char* modelName, const bool precache );
 	// sets up a trace model for collision with other trace models
 	cmHandle_t		SetupTrmModel( const idTraceModel& trm, const idMaterial* material );
 	// create trace model from a collision model, returns true if succesfull
 	bool			TrmFromModel( const char* modelName, idTraceModel& trm );
+
+	virtual int		PointContents( const idVec3 p, cmHandle_t model );
 
 	// name of the model
 	const char* 	GetModelName( cmHandle_t model ) const;
@@ -421,7 +419,6 @@ private:			// CollisionMap_contents.cpp
 	bool			TestTrmVertsInBrush( cm_traceWork_t* tw, cm_brush_t* b );
 	bool			TestTrmInPolygon( cm_traceWork_t* tw, cm_polygon_t* p );
 	cm_node_t* 		PointNode( const idVec3& p, cm_model_t* model );
-	int				PointContents( const idVec3 p, cmHandle_t model );
 	int				TransformedPointContents( const idVec3& p, cmHandle_t model, const idVec3& origin, const idMat3& modelAxis );
 	int				ContentsTrm( trace_t* results, const idVec3& start,
 								 const idTraceModel* trm, const idMat3& trmAxis, int contentMask,
@@ -502,7 +499,7 @@ private:			// CollisionMap_load.cpp
 	void			RemapEdges( cm_node_t* node, int* edgeRemap );
 	void			OptimizeArrays( cm_model_t* model );
 	void			FinishModel( cm_model_t* model );
-	void			BuildModels( const idMapFile* mapFile );
+	void			BuildModels( const idMapFile* mapFile, bool ignoreOldCollisionFile );
 	cmHandle_t		FindModel( const char* name );
 	cm_model_t* 	CollisionModelForMapEntity( const idMapEntity* mapEnt );	// brush/patch model from .map
 	cm_model_t* 	LoadRenderModel( const char* fileName );					// ASE/LWO models

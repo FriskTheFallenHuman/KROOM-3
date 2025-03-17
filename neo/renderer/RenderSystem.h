@@ -83,7 +83,8 @@ enum graphicsVendor_t
 {
 	VENDOR_NVIDIA,
 	VENDOR_AMD,
-	VENDOR_INTEL
+	VENDOR_INTEL,
+	VENDOR_APPLE                            // SRS - Added support for Apple GPUs
 };
 
 // RB: similar to Q3A - allow separate codepaths between OpenGL 3.x, OpenGL ES versions
@@ -134,7 +135,13 @@ struct performanceCounters_t
 	int		c_entityReferences;
 	int		c_lightReferences;
 	int		c_guiSurfs;
+	int		c_mocVerts;
+	int		c_mocIndexes;
+	int		c_mocTests;
+	int		c_mocCulledSurfaces;
+	int		c_mocCulledLights;
 
+	uint64	mocMicroSec;
 	uint64	frontEndMicroSec;	// sum of time in all RE_RenderScene's in a frame
 };
 
@@ -386,11 +393,11 @@ public:
 	//
 	// After this is called, new command buffers can be built up in parallel
 	// with the rendering of the closed off command buffers by RenderCommandBuffers()
-	virtual const emptyCommand_t* 	SwapCommandBuffers( uint64* frontEndMicroSec, uint64* backEndMicroSec, uint64* shadowMicroSec, uint64* gpuMicroSec, backEndCounters_t* bc, performanceCounters_t* pc ) = 0;
+	virtual const emptyCommand_t* 	SwapCommandBuffers( uint64* frontEndMicroSec, uint64* backEndMicroSec, uint64* shadowMicroSec, uint64* mocMicroSec, uint64* gpuMicroSec, backEndCounters_t* bc, performanceCounters_t* pc ) = 0;
 
 	// SwapCommandBuffers operation can be split in two parts for non-smp rendering
 	// where the GPU is idled intentionally for minimal latency.
-	virtual void			SwapCommandBuffers_FinishRendering( uint64* frontEndMicroSec, uint64* backEndMicroSec, uint64* shadowMicroSec, uint64* gpuMicroSec, backEndCounters_t* bc, performanceCounters_t* pc ) = 0;
+	virtual void			SwapCommandBuffers_FinishRendering( uint64* frontEndMicroSec, uint64* backEndMicroSec, uint64* shadowMicroSec, uint64* mocMicroSec, uint64* gpuMicroSec, backEndCounters_t* bc, performanceCounters_t* pc ) = 0;
 	virtual const emptyCommand_t* 	SwapCommandBuffers_FinishCommandBuffers() = 0;
 
 	// issues GPU commands to render a built up list of command buffers returned

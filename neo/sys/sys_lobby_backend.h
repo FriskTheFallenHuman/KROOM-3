@@ -146,9 +146,9 @@ struct lobbyUser_t
 	{
 		address.WriteToMsg( msg );
 		lobbyUserID.WriteToMsg( msg );
-		msg.WriteLong( peerIndex );
+		msg.WriteInt( peerIndex );
 		msg.WriteShort( pingMs );
-		msg.WriteLong( partyToken );
+		msg.WriteInt( partyToken );
 		msg.WriteString( gamertag, MAX_GAMERTAG, false );
 		WriteClientMutableData( msg );
 	}
@@ -157,9 +157,9 @@ struct lobbyUser_t
 	{
 		address.ReadFromMsg( msg );
 		lobbyUserID.ReadFromMsg( msg );
-		peerIndex = msg.ReadLong();
+		peerIndex = msg.ReadInt();
 		pingMs = msg.ReadShort();
-		partyToken = msg.ReadLong();
+		partyToken = msg.ReadInt();
 		msg.ReadString( gamertag, MAX_GAMERTAG );
 		ReadClientMutableData( msg );
 	}
@@ -335,4 +335,4 @@ public:
 	// Ugh, hate having to ifdef these, but we're doing some fairly platform specific callbacks
 };
 
-#endif	// __SYS_LOBBY_BACKEND_H__
+#endif	// __SYS_LOBBY_BACKEND_H__ 

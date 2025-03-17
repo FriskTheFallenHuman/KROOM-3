@@ -34,8 +34,8 @@ If you have questions concerning this license or the applicable additional terms
 #include "../RenderCommon.h"
 
 
-idCVar r_displayGLSLCompilerMessages( "r_displayGLSLCompilerMessages", "1", CVAR_BOOL | CVAR_ARCHIVE, "Show info messages the GPU driver outputs when compiling the shaders" );
-idCVar r_alwaysExportGLSL( "r_alwaysExportGLSL", "1", CVAR_BOOL, "" );
+idCVar r_displayGLSLCompilerMessages( "r_displayGLSLCompilerMessages", "1", CVAR_BOOL | CVAR_ARCHIVE | CVAR_NEW, "Show info messages the GPU driver outputs when compiling the shaders" );
+idCVar r_alwaysExportGLSL( "r_alwaysExportGLSL", "1", CVAR_BOOL | CVAR_NEW, "" );
 
 /*
 ========================
@@ -210,7 +210,6 @@ void idRenderProgManager::LoadShader( shader_t& shader )
 		idStr hlslCode( ( const char* ) hlslFileBuffer );
 		idStr programHLSL = StripDeadCode( hlslCode, inFile, compileMacros, shader.builtin );
 		programGLSL = ConvertCG2GLSL( programHLSL, inFile.c_str(), shader.stage, programUniforms, false, hasGPUSkinning, shader.vertexLayout );
-
 		fileSystem->WriteFile( outFileHLSL, programHLSL.c_str(), programHLSL.Length(), "fs_savepath" );
 		fileSystem->WriteFile( outFileGLSL, programGLSL.c_str(), programGLSL.Length(), "fs_savepath" );
 		fileSystem->WriteFile( outFileUniforms, programUniforms.c_str(), programUniforms.Length(), "fs_savepath" );

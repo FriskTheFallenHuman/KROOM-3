@@ -4,7 +4,7 @@
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
 Copyright (C) 2014-2016 Kot in Action Creative Artel
-Copyright (C) 2012-2021 Robert Beckebans
+Copyright (C) 2012-2024 Robert Beckebans
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -44,7 +44,11 @@ idCVar idRenderModelStatic::r_slopVertex( "r_slopVertex", "0.01", CVAR_RENDERER,
 idCVar idRenderModelStatic::r_slopTexCoord( "r_slopTexCoord", "0.001", CVAR_RENDERER, "merge texture coordinates this far apart" );
 idCVar idRenderModelStatic::r_slopNormal( "r_slopNormal", "0.02", CVAR_RENDERER, "merge normals that dot less than this" );
 
-static const byte BRM_VERSION = 108;
+static const byte BRM_VERSION_BFG = 108;
+static const byte BRM_VERSION_MOC_DATA = 109;
+static const byte BRM_VERSION = BRM_VERSION_MOC_DATA;
+
+static const unsigned int BRM_MAGIC_BFG = ( 'B' << 24 ) | ( 'R' << 16 ) | ( 'M' << 8 ) | BRM_VERSION_BFG;
 static const unsigned int BRM_MAGIC = ( 'B' << 24 ) | ( 'R' << 16 ) | ( 'M' << 8 ) | BRM_VERSION;
 
 /*
@@ -177,7 +181,7 @@ void idRenderModelStatic::List() const
 		totalTris += surf->geometry->numIndexes / 3;
 		totalVerts += surf->geometry->numVerts;
 	}
-	common->Printf( "%c%4ik %3i %4i %4i %s", closed, totalBytes / 1024, NumSurfaces(), totalVerts, totalTris, Name() );
+	common->Printf( "%c%4ik %3i %4i %4i '%s'", closed, totalBytes / 1024, NumSurfaces(), totalVerts, totalTris, Name() );
 
 	if( IsDynamicModel() == DM_CACHED )
 	{
@@ -309,8 +313,6 @@ void idRenderModelStatic::InitFromFile( const char* fileName )
 
 	InitEmpty( fileName );
 
-	// FIXME: load new .proc map format
-
 	ID_TIME_T sourceTimeStamp;
 
 	name.ExtractFileExtension( extension );
@@ -382,7 +384,7 @@ bool idRenderModelStatic::LoadBinaryModel( idFile* file, const ID_TIME_T sourceT
 
 	unsigned int magic = 0;
 	file->ReadBig( magic );
-	if( magic != BRM_MAGIC )
+	if( magic != BRM_MAGIC_BFG && magic != BRM_MAGIC )
 	{
 		return false;
 	}
@@ -430,8 +432,11 @@ bool idRenderModelStatic::LoadBinaryModel( idFile* file, const ID_TIME_T sourceT
 			file->ReadVec3( tri.bounds[0] );
 			file->ReadVec3( tri.bounds[1] );
 
-			int ambientViewCount = 0;	// FIXME: remove
-			file->ReadBig( ambientViewCount );
+			if( magic == BRM_MAGIC_BFG )
+			{
+				int ambientViewCount = 0;
+				file->ReadBig( ambientViewCount );
+			}
 			file->ReadBig( tri.generateNormals );
 			file->ReadBig( tri.tangentsCalculated );
 			file->ReadBig( tri.perfectHull );
@@ -536,6 +541,29 @@ bool idRenderModelStatic::LoadBinaryModel( idFile* file, const ID_TIME_T sourceT
 			file->ReadBig( tri.numShadowIndexesNoCaps );
 			file->ReadBig( tri.shadowCapPlaneBits );
 
+			// RB: read MOC data
+			if( magic == BRM_MAGIC )
+			{
+				tri.mocVerts = NULL;
+				tri.mocIndexes = NULL;
+
+				if( tri.numVerts > 0 )
+				{
+					R_AllocStaticTriSurfMocVerts( &tri, tri.numVerts );
+					for( int j = 0; j < tri.numVerts; j++ )
+					{
+						file->ReadVec4( tri.mocVerts[j] );
+					}
+				}
+
+				if( tri.numIndexes > 0 )
+				{
+					R_AllocStaticTriSurfMocIndexes( &tri, tri.numIndexes );
+					file->ReadBigArray( tri.mocIndexes, tri.numIndexes );
+				}
+			}
+			// RB end
+
 			tri.ambientSurface = NULL;
 			tri.nextDeferredFree = NULL;
 			tri.indexCache = 0;
@@ -609,8 +637,6 @@ void idRenderModelStatic::WriteBinaryModel( idFile* file, ID_TIME_T* _timeStamp 
 			file->WriteVec3( tri.bounds[0] );
 			file->WriteVec3( tri.bounds[1] );
 
-			int ambientViewCount = 0;	// FIXME: remove
-			file->WriteBig( ambientViewCount );
 			file->WriteBig( tri.generateNormals );
 			file->WriteBig( tri.tangentsCalculated );
 			file->WriteBig( tri.perfectHull );
@@ -710,6 +736,21 @@ void idRenderModelStatic::WriteBinaryModel( idFile* file, ID_TIME_T* _timeStamp 
 					file->WriteFloat( tri.dominantTris[j].normalizationScale[2] );
 				}
 			}
+
+			// RB: write Masked Occlusion data
+			if( tri.numVerts > 0 && tri.mocVerts != NULL )
+			{
+				for( int j = 0; j < tri.numVerts; j++ )
+				{
+					file->WriteVec4( tri.mocVerts[ j ] );
+				}
+			}
+
+			if( tri.numIndexes > 0 && tri.mocIndexes != NULL )
+			{
+				file->WriteBigArray( tri.mocIndexes, tri.numIndexes );
+			}
+			// RB end
 
 			file->WriteBig( tri.numShadowIndexesNoFrontCaps );
 			file->WriteBig( tri.numShadowIndexesNoCaps );

@@ -206,10 +206,13 @@ void idSoundVoice_OpenAL::DestroyInternal()
 			idLib::Printf( "%dms: %i destroyed\n", Sys_Milliseconds(), openalSource );
 		}
 
+		// SRS - Make sure the source is stopped before detaching buffers
+		alSourceStop( openalSource );
+		alSourcei( openalSource, AL_BUFFER, 0 );
+
+		// SRS - Delete source only after detaching buffers above
 		alDeleteSources( 1, &openalSource );
 		openalSource = 0;
-
-		alSourcei( openalSource, AL_BUFFER, 0 );
 
 		if( openalStreamingBuffer[0] && openalStreamingBuffer[1] && openalStreamingBuffer[2] )
 		{
@@ -376,7 +379,10 @@ int idSoundVoice_OpenAL::SubmitBuffer( idSoundSample_OpenAL* sample, int bufferN
 
 	if( sample->openalBuffer != 0 )
 	{
-		alSourcei( openalSource, AL_BUFFER, sample->openalBuffer );
+		if( alIsBuffer( sample->openalBuffer ) )
+		{
+			alSourcei( openalSource, AL_BUFFER, sample->openalBuffer );
+		}
 		alSourcei( openalSource, AL_LOOPING, ( sample == loopingSample && loopingSample != NULL ? AL_TRUE : AL_FALSE ) );
 
 		return sample->totalBufferSize;
@@ -440,14 +446,20 @@ int idSoundVoice_OpenAL::SubmitBuffer( idSoundSample_OpenAL* sample, int bufferN
 
 
 
-			alBufferData( openalStreamingBuffer[j], format, sample->buffers[bufferNumber].buffer, sample->buffers[bufferNumber].bufferSize, rate );
+			if( openalStreamingBuffer[j] )
+			{
+				alBufferData( openalStreamingBuffer[j], format, sample->buffers[bufferNumber].buffer, sample->buffers[bufferNumber].bufferSize, rate );
+			}
 			//openalStreamingOffset += MIXBUFFER_SAMPLES;
 		}
 
 		if( finishedbuffers > 0 )
 		{
 			//alSourceQueueBuffers( openalSource, finishedbuffers, &buffers[0] );
-			alSourceQueueBuffers( openalSource, 1, &openalStreamingBuffer[0] );
+			if( openalStreamingBuffer[0] )
+			{
+				alSourceQueueBuffers( openalSource, 1, &openalStreamingBuffer[0] );
+			}
 
 			if( bufferNumber == 0 )
 			{

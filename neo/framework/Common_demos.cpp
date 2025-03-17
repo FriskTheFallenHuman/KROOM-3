@@ -32,6 +32,7 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "Common_local.h"
+#include "renderer/RenderCommon.h"
 
 /*
 ================
@@ -167,9 +168,10 @@ void idCommonLocal::StopPlayingRenderDemo()
 	// Record the stop time before doing anything that could be time consuming
 	int timeDemoStopTime = Sys_Milliseconds();
 
-	EndAVICapture();
-
 	readDemo->Close();
+
+	// SRS - free entity joints allocated by demo playback, otherwise will leak
+	R_FreeDerivedData();
 
 	soundWorld->StopAllSounds();
 	soundSystem->SetPlayingSoundWorld( menuSoundWorld );
@@ -312,6 +314,7 @@ idCommonLocal::TimeRenderDemo
 */
 void idCommonLocal::TimeRenderDemo( const char* demoName, bool twice, bool quit )
 {
+	extern idCVar com_smp;
 	idStr demo = demoName;
 
 	StartPlayingRenderDemo( demo );
@@ -320,14 +323,28 @@ void idCommonLocal::TimeRenderDemo( const char* demoName, bool twice, bool quit 
 	{
 		timeDemo = TD_YES;                      // SRS - Set timeDemo to TD_YES to disable time demo playback pause when window not in focus
 
+		int smp_mode = com_smp.GetInteger();
+		com_smp.SetInteger( 0 );                // SRS - First pass of timedemo is effectively in com_smp == 0 mode, so set this for ImGui timings to be correct
+
 		while( readDemo )
 		{
-//          const bool captureToImage = false;
-//          UpdateScreen( captureToImage );
-			BusyWait();                         // SRS - Call BusyWait() vs. UpdateScreen() to avoid Pump() timeout messages in console
-			AdvanceRenderDemo( true );
-			eventLoop->RunEventLoop();          // SRS - Run event loop to allow keyboard escape to cancel first pass of the demo
+			BusyWait();                         // SRS - BusyWait() calls UpdateScreen() which draws and renders out-of-sequence but still supports frame timing
+			commonLocal.frameTiming.finishSyncTime_EndFrame = Sys_Microseconds();
+			commonLocal.mainFrameTiming = commonLocal.frameTiming;
+			// ** End of current logical frame **
+
+			// ** Start of next logical frame **
+			commonLocal.frameTiming.startSyncTime = Sys_Microseconds();
+			commonLocal.frameTiming.finishSyncTime = commonLocal.frameTiming.startSyncTime;
+			commonLocal.frameTiming.startGameTime = commonLocal.frameTiming.finishSyncTime;
+
+			AdvanceRenderDemo( true );          // SRS - Advance demo commands to manually run the next game frame during first pass of the timedemo
+			commonLocal.frameTiming.finishGameTime = Sys_Microseconds();
+
+			eventLoop->RunEventLoop( false );   // SRS - Run event loop (with no commands) to allow keyboard escape to cancel first pass of the timedemo
 		}
+
+		com_smp.SetInteger( smp_mode );         // SRS - Restore original com_smp mode before second pass of timedemo which runs within normal rendering loop
 
 		StartPlayingRenderDemo( demo );
 	}
@@ -348,106 +365,6 @@ void idCommonLocal::TimeRenderDemo( const char* demoName, bool twice, bool quit 
 	{
 		timeDemo = TD_YES;
 	}
-}
-
-
-/*
-================
-idCommonLocal::BeginAVICapture
-================
-*/
-void idCommonLocal::BeginAVICapture( const char* demoName )
-{
-	idStr name = demoName;
-	name.ExtractFileBase( aviDemoShortName );
-	aviCaptureMode = true;
-	aviDemoFrameCount = 0;
-	soundWorld->AVIOpen( va( "demos/%s/", aviDemoShortName.c_str() ), aviDemoShortName.c_str() );
-}
-
-/*
-================
-idCommonLocal::EndAVICapture
-================
-*/
-void idCommonLocal::EndAVICapture()
-{
-	if( !aviCaptureMode )
-	{
-		return;
-	}
-
-	soundWorld->AVIClose();
-
-	// write a .roqParam file so the demo can be converted to a roq file
-	idFile* f = fileSystem->OpenFileWrite( va( "demos/%s/%s.roqParam",
-										   aviDemoShortName.c_str(), aviDemoShortName.c_str() ) );
-	f->Printf( "INPUT_DIR demos/%s\n", aviDemoShortName.c_str() );
-	f->Printf( "FILENAME demos/%s/%s.RoQ\n", aviDemoShortName.c_str(), aviDemoShortName.c_str() );
-	f->Printf( "\nINPUT\n" );
-	f->Printf( "%s_*.tga [00000-%05i]\n", aviDemoShortName.c_str(), ( int )( aviDemoFrameCount - 1 ) );
-	f->Printf( "END_INPUT\n" );
-	delete f;
-
-	common->Printf( "captured %i frames for %s.\n", ( int )aviDemoFrameCount, aviDemoShortName.c_str() );
-
-	aviCaptureMode = false;
-}
-
-
-/*
-================
-idCommonLocal::AVIRenderDemo
-================
-*/
-void idCommonLocal::AVIRenderDemo( const char* _demoName )
-{
-	idStr	demoName = _demoName;	// copy off from va() buffer
-
-	StartPlayingRenderDemo( demoName );
-	if( !readDemo )
-	{
-		return;
-	}
-
-	BeginAVICapture( demoName.c_str() ) ;
-
-	// I don't understand why I need to do this twice, something
-	// strange with the nvidia swapbuffers?
-	const bool captureToImage = false;
-	UpdateScreen( captureToImage );
-}
-
-/*
-================
-idCommonLocal::AVIGame
-
-Start AVI recording the current game session
-================
-*/
-void idCommonLocal::AVIGame( const char* demoName )
-{
-	if( aviCaptureMode )
-	{
-		EndAVICapture();
-		return;
-	}
-
-	if( !mapSpawned )
-	{
-		common->Printf( "No map spawned.\n" );
-	}
-
-	if( !demoName || !demoName[0] )
-	{
-		idStr filename = FindUnusedFileName( "demos/game%03i.game" );
-		demoName = filename.c_str();
-
-		// write a one byte stub .game file just so the FindUnusedFileName works,
-		fileSystem->WriteFile( demoName, demoName, 1 );
-	}
-
-	BeginAVICapture( demoName ) ;
 }
 
 /*
@@ -655,24 +572,4 @@ Common_TimeDemoQuit_f
 CONSOLE_COMMAND_SHIP( timeDemoQuit, "times a demo and quits", idCmdSystem::ArgCompletion_DemoName )
 {
 	commonLocal.TimeRenderDemo( va( "demos/%s", args.Argv( 1 ) ), ( args.Argc() > 2 ), true );    // SRS - fixed missing "twice" argument
-}
-
-/*
-================
-Common_AVIDemo_f
-================
-*/
-CONSOLE_COMMAND_SHIP( aviDemo, "writes AVIs for a demo", idCmdSystem::ArgCompletion_DemoName )
-{
-	commonLocal.AVIRenderDemo( va( "demos/%s", args.Argv( 1 ) ) );
-}
-
-/*
-================
-Common_AVIGame_f
-================
-*/
-CONSOLE_COMMAND_SHIP( aviGame, "writes AVIs for the current game", NULL )
-{
-	commonLocal.AVIGame( args.Argv( 1 ) );
 }

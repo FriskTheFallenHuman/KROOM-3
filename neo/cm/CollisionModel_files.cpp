@@ -546,7 +546,6 @@ cm_model_t* idCollisionModelManagerLocal::ParseCollisionModel( idLexer* src )
 	src->ExpectTokenString( "{" );
 	while( !src->CheckTokenString( "}" ) )
 	{
-
 		src->ReadToken( &token );
 
 		if( token == "vertices" )
@@ -702,7 +701,7 @@ bool idCollisionModelManagerLocal::LoadCollisionModelFile( const char* name, uns
 			return false;
 		}
 
-		crc = token.GetUnsignedLongValue();
+		crc = token.GetUnsignedIntValue();
 		if( mapFileCRC && crc != mapFileCRC )
 		{
 			common->Printf( "%s is out of date\n", fileName.c_str() );

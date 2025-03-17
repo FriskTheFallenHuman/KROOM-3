@@ -97,9 +97,6 @@ void idStr::ReAllocate( int amount, bool keepold )
 
 #ifdef USE_STRING_DATA_ALLOCATOR
 	newbuffer = stringDataAllocator.Alloc( GetAlloced() );
-#else
-	newbuffer = new( TAG_STRING ) char[ GetAlloced() ];
-#endif
 	if( keepold && data )
 	{
 		data[ len ] = '\0';
@@ -108,14 +105,30 @@ void idStr::ReAllocate( int amount, bool keepold )
 
 	if( data && data != baseBuffer )
 	{
-#ifdef USE_STRING_DATA_ALLOCATOR
 		stringDataAllocator.Free( data );
-#else
-		delete [] data;
-#endif
 	}
 
 	data = newbuffer;
+#else
+	if( data && data != baseBuffer )
+	{
+		data = ( char* )realloc( data, newsize );
+	}
+	else
+	{
+		newbuffer = ( char* )malloc( newsize );
+		if( data && keepold )
+		{
+			memcpy( newbuffer, data, len );
+			newbuffer[ len ] = '\0';
+		}
+		else
+		{
+			newbuffer[ 0 ] = '\0';
+		}
+		data = newbuffer;
+	}
+#endif
 }
 
 /*
@@ -135,7 +148,7 @@ void idStr::FreeData()
 #ifdef USE_STRING_DATA_ALLOCATOR
 		stringDataAllocator.Free( data );
 #else
-		delete[] data;
+		free( data );
 #endif
 		data = baseBuffer;
 	}
@@ -185,9 +198,7 @@ void idStr::operator=( const char* text )
 		return;
 	}
 
-	// RB: 64 bit fixes,  conversion from 'size_t' to 'int', possible loss of data
-	l = ( int )strlen( text );
-	// RB end
+	l = strlen( text );
 	EnsureAlloced( l + 1, false );
 	strcpy( data, text );
 	len = l;
@@ -206,9 +217,7 @@ int idStr::FindChar( const char* str, const char c, int start, int end )
 
 	if( end == -1 )
 	{
-		// RB: 64 bit fixes,  conversion from 'size_t' to 'int', possible loss of data
-		end = ( int )strlen( str ) - 1;
-		// RB end
+		end = strlen( str ) - 1;
 	}
 	for( i = start; i <= end; i++ )
 	{
@@ -231,14 +240,11 @@ int idStr::FindText( const char* str, const char* text, bool casesensitive, int 
 {
 	int l, i, j;
 
-	// RB: 64 bit fixes,  conversion from 'size_t' to 'int', possible loss of data
 	if( end == -1 )
 	{
-		end = ( int )strlen( str );
+		end = strlen( str );
 	}
-	l = end - ( int )strlen( text );
-	// RB end
-
+	l = end - strlen( text );
 	for( i = start; i <= l; i++ )
 	{
 		if( casesensitive )
@@ -279,7 +285,7 @@ Several metacharacter may be used in the filter.
 *          match any string of zero or more characters
 ?          match any single character
 [abc...]   match any of the enclosed characters; a hyphen can
-           be used to specify a range (e.g. a-z, A-Z, 0-9)
+		   be used to specify a range (e.g. a-z, A-Z, 0-9)
 
 ============
 */
@@ -734,11 +740,11 @@ void idStr::Format( const char* fmt, ... )
 	char text[MAX_PRINT_MSG];
 
 	va_start( argptr, fmt );
-	int len = idStr::vsnPrintf( text, sizeof( text ) - 1, fmt, argptr );
+	// SRS - using idStr::vsnPrintf() guarantees size and null termination
+	int len = idStr::vsnPrintf( text, sizeof( text ), fmt, argptr );
 	va_end( argptr );
-	text[ sizeof( text ) - 1 ] = '\0';
 
-	if( ( size_t )len >= sizeof( text ) - 1 )
+	if( len < 0 )
 	{
 		idLib::common->FatalError( "Tried to set a large buffer using %s", fmt );
 	}
@@ -796,9 +802,7 @@ void idStr::StripLeading( const char* string )
 {
 	int l;
 
-	// RB: 64 bit fixes,  conversion from 'size_t' to 'int', possible loss of data
-	l = ( int )strlen( string );
-	// RB end
+	l = strlen( string );
 	if( l > 0 )
 	{
 		while( !Cmpn( string, l ) )
@@ -818,9 +822,7 @@ bool idStr::StripLeadingOnce( const char* string )
 {
 	int l;
 
-	// RB: 64 bit fixes,  conversion from 'size_t' to 'int', possible loss of data
-	l = ( int )strlen( string );
-	// RB end
+	l = strlen( string );
 	if( ( l > 0 ) && !Cmpn( string, l ) )
 	{
 		memmove( data, data + l, len - l + 1 );
@@ -855,9 +857,7 @@ void idStr::StripTrailing( const char* string )
 {
 	int l;
 
-	// RB: 64 bit fixes,  conversion from 'size_t' to 'int', possible loss of data
-	l = ( int )strlen( string );
-	// RB end
+	l = strlen( string );
 	if( l > 0 )
 	{
 		while( ( len >= l ) && !Cmpn( string, data + len - l, l ) )
@@ -877,10 +877,29 @@ bool idStr::StripTrailingOnce( const char* string )
 {
 	int l;
 
+	l = strlen( string );
+	if( ( l > 0 ) && ( len >= l ) && !Cmpn( string, data + len - l, l ) )
+	{
+		len -= l;
+		data[len] = '\0';
+		return true;
+	}
+	return false;
+}
+
+/*
+============
+idStr::IStripTrailingOnce
+============
+*/
+bool idStr::IStripTrailingOnce( const char* string )
+{
+	int l;
+
 	// RB: 64 bit fixes,  conversion from 'size_t' to 'int', possible loss of data
 	l = ( int )strlen( string );
 	// RB end
-	if( ( l > 0 ) && ( len >= l ) && !Cmpn( string, data + len - l, l ) )
+	if( ( l > 0 ) && ( len >= l ) && !Icmpn( string, data + len - l, l ) )
 	{
 		len -= l;
 		data[len] = '\0';
@@ -954,9 +973,7 @@ bool idStr::Replace( const char* old, const char* nw )
 			}
 		}
 		data[j] = 0;
-		// RB: 64 bit fixes,  conversion from 'size_t' to 'int', possible loss of data
-		len = ( int )strlen( data );
-		// RB end
+		len = strlen( data );
 		return true;
 	}
 	return false;
@@ -1075,7 +1092,7 @@ idStr::FileNameHash
 int idStr::FileNameHash() const
 {
 	int		i;
-	int		hash; // DG: use int instead of long for 64bit compatibility
+	int		hash;
 	char	letter;
 
 	hash = 0;
@@ -1091,7 +1108,7 @@ int idStr::FileNameHash() const
 		{
 			letter = '/';
 		}
-		hash += ( long )( letter ) * ( i + 119 ); // DG: use int instead of long for 64bit compatibility
+		hash += ( int )( letter ) * ( i + 119 );
 		i++;
 	}
 	hash &= ( FILE_HASH_SIZE - 1 );
@@ -1152,6 +1169,24 @@ idStr& idStr::SetFileExtension( const char* extension )
 	return *this;
 }
 
+// DG: helper-function that returns true if the character c is a directory separator
+//     on the current platform
+static ID_INLINE bool isDirSeparator( int c )
+{
+	if( c == '/' )
+	{
+		return true;
+	}
+#ifdef _WIN32
+	if( c == '\\' )
+	{
+		return true;
+	}
+#endif
+	return false;
+}
+// DG end
+
 /*
 ============
 idStr::StripFileExtension
@@ -1163,6 +1198,11 @@ idStr& idStr::StripFileExtension()
 
 	for( i = len - 1; i >= 0; i-- )
 	{
+		// DG: we're at a directory separator, nothing to strip at filename
+		if( isDirSeparator( data[i] ) )
+		{
+			break;
+		} // DG end
 		if( data[i] == '.' )
 		{
 			data[i] = '\0';
@@ -1181,7 +1221,9 @@ idStr::StripAbsoluteFileExtension
 idStr& idStr::StripAbsoluteFileExtension()
 {
 	int i;
-
+	// FIXME DG: seems like this is unused, but it probably doesn't do what's expected
+	//           (if you wanna strip .tar.gz this will fail with dots in path,
+	//            if you indeed wanna strip the first dot in *path* (even in some directory) this is right)
 	for( i = 0; i < len; i++ )
 	{
 		if( data[i] == '.' )
@@ -1207,6 +1249,11 @@ idStr& idStr::DefaultFileExtension( const char* extension )
 	// do nothing if the string already has an extension
 	for( i = len - 1; i >= 0; i-- )
 	{
+		// DG: we're at a directory separator, there was no file extension
+		if( isDirSeparator( data[i] ) )
+		{
+			break;
+		} // DG end
 		if( data[i] == '.' )
 		{
 			return *this;
@@ -1227,7 +1274,7 @@ idStr::DefaultPath
 */
 idStr& idStr::DefaultPath( const char* basepath )
 {
-	if( ( ( *this )[ 0 ] == '/' ) || ( ( *this )[ 0 ] == '\\' ) )
+	if( isDirSeparator( ( *this )[ 0 ] ) )
 	{
 		// absolute path location
 		return *this;
@@ -1250,18 +1297,17 @@ void idStr::AppendPath( const char* text )
 	if( text && text[i] )
 	{
 		pos = len;
-		// RB: 64 bit fixes,  conversion from 'size_t' to 'int', possible loss of data
-		EnsureAlloced( len + ( int )strlen( text ) + 2 );
-		// RB end
+		EnsureAlloced( len + strlen( text ) + 2 );
 
 		if( pos )
 		{
-			if( data[ pos - 1 ] != '/' )
+			if( !isDirSeparator( data[ pos - 1 ] ) )
 			{
 				data[ pos++ ] = '/';
 			}
 		}
-		if( text[i] == '/' )
+
+		if( isDirSeparator( text[ i ] ) )
 		{
 			i++;
 		}
@@ -1292,7 +1338,7 @@ idStr& idStr::StripFilename()
 	int pos;
 
 	pos = Length() - 1;
-	while( ( pos > 0 ) && ( ( *this )[ pos ] != '/' ) && ( ( *this )[ pos ] != '\\' ) )
+	while( ( pos > 0 ) && !isDirSeparator( ( *this )[ pos ] ) )
 	{
 		pos--;
 	}
@@ -1316,7 +1362,7 @@ idStr& idStr::StripPath()
 	int pos;
 
 	pos = Length();
-	while( ( pos > 0 ) && ( ( *this )[ pos - 1 ] != '/' ) && ( ( *this )[ pos - 1 ] != '\\' ) )
+	while( ( pos > 0 ) && !isDirSeparator( ( *this )[ pos - 1 ] ) )
 	{
 		pos--;
 	}
@@ -1338,7 +1384,7 @@ void idStr::ExtractFilePath( idStr& dest ) const
 	// back up until a \ or the start
 	//
 	pos = Length();
-	while( ( pos > 0 ) && ( ( *this )[ pos - 1 ] != '/' ) && ( ( *this )[ pos - 1 ] != '\\' ) )
+	while( ( pos > 0 ) &&  !isDirSeparator( ( *this )[ pos - 1 ] ) )
 	{
 		pos--;
 	}
@@ -1359,7 +1405,7 @@ void idStr::ExtractFileName( idStr& dest ) const
 	// back up until a \ or the start
 	//
 	pos = Length() - 1;
-	while( ( pos > 0 ) && ( ( *this )[ pos - 1 ] != '/' ) && ( ( *this )[ pos - 1 ] != '\\' ) )
+	while( ( pos > 0 ) && !isDirSeparator( ( *this )[ pos - 1 ] ) )
 	{
 		pos--;
 	}
@@ -1381,7 +1427,7 @@ void idStr::ExtractFileBase( idStr& dest ) const
 	// back up until a \ or the start
 	//
 	pos = Length() - 1;
-	while( ( pos > 0 ) && ( ( *this )[ pos - 1 ] != '/' ) && ( ( *this )[ pos - 1 ] != '\\' ) )
+	while( ( pos > 0 ) && !isDirSeparator( ( *this )[ pos - 1 ] ) )
 	{
 		pos--;
 	}
@@ -1411,6 +1457,11 @@ void idStr::ExtractFileExtension( idStr& dest ) const
 	while( ( pos > 0 ) && ( ( *this )[ pos - 1 ] != '.' ) )
 	{
 		pos--;
+		if( isDirSeparator( ( *this )[ pos ] ) )   // DG: check for directory separator
+		{
+			// no extension in the whole filename
+			dest.Empty();
+		} // DG end
 	}
 
 	if( !pos )
@@ -1917,7 +1968,8 @@ void idStr::Copynz( char* dest, const char* src, int destsize )
 		return;
 	}
 
-	strncpy( dest, src, destsize - 1 );
+	// SRS - added size_t cast for 64-bit type consistency
+	strncpy( dest, src, ( size_t )destsize - 1 );
 	dest[destsize - 1] = 0;
 }
 
@@ -1932,9 +1984,7 @@ void idStr::Append( char* dest, int size, const char* src )
 {
 	int		l1;
 
-	// RB: 64 bit fixes,  conversion from 'size_t' to 'int', possible loss of data
-	l1 = ( int )strlen( dest );
-	// RB end
+	l1 = strlen( dest );
 	if( l1 >= size )
 	{
 		idLib::common->Error( "idStr::Append: already overflowed" );
@@ -2247,21 +2297,16 @@ int idStr::snPrintf( char* dest, int size, const char* fmt, ... )
 {
 	int len;
 	va_list argptr;
-	char buffer[32000];	// big, but small enough to fit in PPC stack
 
 	va_start( argptr, fmt );
-	len = vsprintf( buffer, fmt, argptr );
+	// SRS - using idStr::vsnPrintf() guarantees size and null termination
+	len = idStr::vsnPrintf( dest, size, fmt, argptr );
 	va_end( argptr );
-	if( len >= sizeof( buffer ) )
+	if( len < 0 )
 	{
-		idLib::common->Error( "idStr::snPrintf: overflowed buffer" );
+		idLib::common->Warning( "idStr::snPrintf: overflow of %i in %i\n", len, size - 1 );
+		len = size - 1;
 	}
-	if( len >= size )
-	{
-		idLib::common->Warning( "idStr::snPrintf: overflow of %i in %i\n", len, size );
-		len = size;
-	}
-	idStr::Copynz( dest, buffer, size );
 	return len;
 }
 
@@ -2290,7 +2335,8 @@ int idStr::vsnPrintf( char* dest, int size, const char* fmt, va_list argptr )
 // RB begin
 #ifdef _WIN32
 #undef _vsnprintf
-	ret = _vsnprintf( dest, size - 1, fmt, argptr );
+	// SRS - added size_t cast for 64-bit type consistency
+	ret = _vsnprintf( dest, ( size_t )size - 1, fmt, argptr );
 #define _vsnprintf	use_idStr_vsnPrintf
 #else
 #undef vsnprintf
@@ -2321,9 +2367,13 @@ int sprintf( idStr& string, const char* fmt, ... )
 	char buffer[32000];
 
 	va_start( argptr, fmt );
-	l = idStr::vsnPrintf( buffer, sizeof( buffer ) - 1, fmt, argptr );
+	// SRS - using idStr::vsnPrintf() guarantees size and null termination
+	l = idStr::vsnPrintf( buffer, sizeof( buffer ), fmt, argptr );
 	va_end( argptr );
-	buffer[sizeof( buffer ) - 1] = '\0';
+	if( l < 0 )
+	{
+		l = sizeof( buffer ) - 1;
+	}
 
 	string = buffer;
 	return l;
@@ -2341,8 +2391,12 @@ int vsprintf( idStr& string, const char* fmt, va_list argptr )
 	int l;
 	char buffer[32000];
 
-	l = idStr::vsnPrintf( buffer, sizeof( buffer ) - 1, fmt, argptr );
-	buffer[sizeof( buffer ) - 1] = '\0';
+	// SRS - using idStr::vsnPrintf() guarantees size and null termination
+	l = idStr::vsnPrintf( buffer, sizeof( buffer ), fmt, argptr );
+	if( l < 0 )
+	{
+		l = sizeof( buffer ) - 1;
+	}
 
 	string = buffer;
 	return l;
@@ -2364,11 +2418,13 @@ char* va( const char* fmt, ... )
 	char* buf;
 
 	buf = string[index];
-	index = ( index + 1 ) & 3;
 
 	va_start( argptr, fmt );
-	vsprintf( buf, fmt, argptr );
+	// SRS - using idStr::vsnPrintf() guarantees size and null termination
+	idStr::vsnPrintf( buf, sizeof( string[index] ), fmt, argptr );
 	va_end( argptr );
+
+	index = ( index + 1 ) & 3;
 
 	return buf;
 }
@@ -2555,6 +2611,63 @@ idStr idStr::FormatNumber( int number )
 	}
 
 	return string;
+}
+
+/*
+================
+idStr::Split
+================
+*/
+idList<idStr> idStr::Split( const char* delimiter )
+{
+	int pos = 0;
+	int oldPos = -1;
+	idList<idStr> strings;
+	//For some reason calling the Find inside the while statement
+	//caused pos to return incorect value
+	//So put it inside the loop
+	while( pos > -1 )
+	{
+		//Always check + 1 otherwise it will get the previous delimiter
+		pos = Find( delimiter, false, oldPos + 1 );
+		idStr token = SubStr( oldPos + 1, pos );
+		if( token.Length() > 0 )
+		{
+			oldPos = pos;
+			strings.Append( token );
+		}
+	}
+	//in case the split didn't work don't return empty handed. Return the original String.
+	if( strings.Num() == 0 )
+	{
+		strings.AddUnique( *this );
+	}
+	return strings;
+}
+
+/*
+================
+idStr::SubStr
+================
+*/
+idStr idStr::SubStr( int start, int end )
+{
+	if( end == -1 )
+	{
+		end = Length();
+	}
+	if( start < 0 || start > Length() || end > Length() || end < start )
+	{
+		idLib::common->Error( "idStr::SubStr: Trying to get Sub String with invalid range" );
+		return *this;
+	}
+	//This is how many characters we want to take (+1 for null termination)
+	int tmpLen = end - start;
+	char tmpBuffer[256];
+	strncpy( tmpBuffer, data + start, tmpLen );
+	tmpBuffer[tmpLen] = '\0';
+	return va( "%s", tmpBuffer );
+
 }
 
 CONSOLE_COMMAND( testStrId, "prints a localized string", 0 )

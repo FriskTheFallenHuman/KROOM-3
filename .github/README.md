@@ -129,14 +129,16 @@ Very certain short term goals are to port and extend some improvements from Just
 * Native C++ AI & monsters code
 * Quake 3 gladiator multiplayer bot
 
+Other short term goals:
+* DX12/Vulkan renderer backend using the [NVIDIA Rendering Hardware Interface](https://github.com/NVIDIAGameWorks/nvrhi) by Stephen Pridham which will lead the path to advanced Ray Tracing techniques
+* Optional RmlUI support as an alternative to Flash
+
 ---
 # May or may not ".plan" <a name="plan2"></a>
 * Scrap expensive multipass forward shading with a faster forward+ solution
 * Add [Volumetric Lighting](http://www.alexandre-pestana.com/volumetric-lights/)
-* Add a DX12 Ultimate renderer backend
 * Explore Screen Space Global Illumination with Christoph Schieds' A-SVGF realtime denoising because A-SVGF works really well in Q2RTX
 * Update texture compression based on [Basis Universal GPU Texture and Texture Video Compression Codec](https://github.com/binomialLLC/basis_universal)
-* Rip & Tear renderer backend with modern approaches by [The-Forge](https://github.com/ConfettiFX/The-Forge)
 * Replace collision detection and physics with PhysX 4.1
 
 ---
@@ -687,9 +689,6 @@ exportFGD `[nomodels]`                 | Command: Exports all entity defs to exp
 exportEntityDefsToBlender              | Command: Exports all entity and model defs to exported/entities.json for usage in Blender
 postLoadExportModels                   | Cvar: Export models after loading to OBJ model format. Set it to 1 before loading a map.
 exportMapToOBJ                         | Command: Convert .map file to .obj/.mtl
-postLoadExportFlashAtlas               | Cvar: Set to 1 at startup to dump the Flash images to exported/swf/
-postLoadExportFlashToSWF               | Cvar: Set to 1 at startup to dump the Flash .bswf files as .swf (WIP)
-postLoadExportFlashToJSON              | Cvar: Set to 1 at startup to dump the Flash .bswf files as .json. Can be reimported into the engine and imported into Blender for inspection
 swf_show                               | Cvar: Draws the bounding box of instanced Flash sprites in red and their names
 
 convertMapToJSON mapfile               | Command: Convert .map file to new .json map format with polygons instead of brushes. This was easy because the original .map format is only an array of entities and each entity has a simple dictionary for its values. This JSON format contains all level data and can be imported and exported to Blender without loosing any data. The new DMap can also compile map files with the .json suffix like regular maps.
@@ -703,7 +702,6 @@ convertMapToJSON mapfile               | Command: Convert .map file to new .json
 
 * Some lights cause shadow acne with shadow mapping
 * Some shadows might almost disappear due to the shadow filtering or look off ("Peter panning" problem)
-* [HDR] HDR does not work with old-school stencil shadows
 * [HDR] MSAA anti-aliasing modes don't work with HDR: Use SMAA with r_antiAliasing 1
 * [Vulkan] **Vulkan backend is unfinished in general**
 * [Vulkan] Shadow Mapping is not supported yet

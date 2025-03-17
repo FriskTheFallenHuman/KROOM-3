@@ -162,7 +162,7 @@ public:
 //	virtual void				UpdateLevelLoadPacifier( bool Secondary );
 //	virtual void				UpdateLevelLoadPacifier( bool updateSecondary, int mProgress );
 	virtual void				StartupVariable( const char* match );
-	virtual void				InitTool( const toolFlag_t tool, const idDict *dict );
+	virtual void				InitTool( const toolFlag_t tool, const idDict* dict, idEntity* ent );
 	virtual void				ActivateTool( bool active );
 	virtual void				WriteConfigToFile( const char* filename );
 	virtual void				BeginRedirect( char* buffer, int buffersize, void ( *flush )( const char* ) );
@@ -314,6 +314,11 @@ public:
 		return time_shadows;
 	}
 
+	uint64		GetRendererMaskedOcclusionRasterizationMicroseconds() const
+	{
+		return time_moc;
+	}
+
 	uint64 	GetRendererIdleMicroseconds() const
 	{
 		return mainFrameTiming.startRenderTime - mainFrameTiming.finishSyncTime;
@@ -407,8 +412,6 @@ public:	// These are public because they are called directly by static functions
 	void	StopPlayingRenderDemo();
 	void	CompressDemoFile( const char* scheme, const char* name );
 	void	TimeRenderDemo( const char* name, bool twice = false, bool quit = false );
-	void	AVIRenderDemo( const char* name );
-	void	AVIGame( const char* name );
 
 	// localization
 	void	InitLanguageDict();
@@ -539,10 +542,6 @@ private:
 	double				gameTimeResidual;	// left over msec from the last game frame
 	bool				syncNextGameFrame;
 
-	bool				aviCaptureMode;		// if true, screenshots will be taken and sound captured
-	idStr				aviDemoShortName;	//
-	int					aviDemoFrameCount;
-
 	enum timeDemo_t
 	{
 		TD_NO,
@@ -586,6 +585,7 @@ private:
 	uint64				time_frontend;			// renderer frontend time
 	uint64				time_backend;			// renderer backend time
 	uint64				time_shadows;			// renderer backend waiting for shadow volumes to be created
+	uint64				time_moc;				// renderer frontend masked software rasterization time
 	uint64				time_gpu;				// total gpu time, at least for PC
 
 	// RB: r_speeds counters
@@ -634,9 +634,6 @@ private:
 
 	void	StartMenu( bool playIntro = false );
 	void	GuiFrameEvents();
-
-	void	BeginAVICapture( const char* name );
-	void	EndAVICapture();
 
 	void	AdvanceRenderDemo( bool singleFrameOnly );
 

@@ -29,8 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __WINVAR_H__
 #define __WINVAR_H__
 
-#include "Rectangle.h"
-
 static const char* VAR_GUIPREFIX = "gui::";
 static const int VAR_GUIPREFIX_LEN = strlen( VAR_GUIPREFIX );
 
@@ -56,7 +54,7 @@ public:
 	}
 	void SetName( const char* _name )
 	{
-		delete []name;
+		delete[] name;
 		name = NULL;
 		if( _name )
 		{

@@ -229,7 +229,7 @@ static void R_DepthImage( idImage* image )
 #else
 	int msaaSamples = 0;
 #endif
-	image->GenerateImage( NULL, renderSystem->GetWidth(), renderSystem->GetHeight(), TF_NEAREST, TR_CLAMP, TD_DEPTH );//, msaaSamples );
+	image->GenerateImage( NULL, renderSystem->GetWidth(), renderSystem->GetHeight(), TF_NEAREST, TR_CLAMP, TD_DEPTH_STENCIL );//, msaaSamples );
 	// RB end
 }
 
@@ -272,7 +272,7 @@ static void R_EnvprobeImage_HDR( idImage* image )
 
 static void R_EnvprobeImage_Depth( idImage* image )
 {
-	image->GenerateImage( NULL, ENVPROBE_CAPTURE_SIZE, ENVPROBE_CAPTURE_SIZE, TF_NEAREST, TR_CLAMP, TD_DEPTH );
+	image->GenerateImage( NULL, ENVPROBE_CAPTURE_SIZE, ENVPROBE_CAPTURE_SIZE, TF_NEAREST, TR_CLAMP, TD_DEPTH_STENCIL );
 }
 
 static void R_SMAAImage_ResNative( idImage* image )
@@ -294,7 +294,23 @@ static void R_HierarchicalZBufferImage_ResNative( idImage* image )
 {
 	image->GenerateImage( NULL, renderSystem->GetWidth(), renderSystem->GetHeight(), TF_NEAREST_MIPMAP, TR_CLAMP, TD_R32F );
 }
+
+static void R_R8Image_ResNative_Linear( idImage* image )
+{
+	image->GenerateImage( NULL, renderSystem->GetWidth(), renderSystem->GetHeight(), TF_LINEAR, TR_CLAMP, TD_LOOKUP_TABLE_MONO );
+}
 // RB end
+
+static void R_HDR_RGBA8Image_ResNative( idImage* image )
+{
+	// FIXME
+#if defined(USE_HDR_MSAA)
+	int msaaSamples = glConfig.multisamples;
+#else
+	int msaaSamples = 0;
+#endif
+	image->GenerateImage( NULL, renderSystem->GetWidth(), renderSystem->GetHeight(), TF_NEAREST, TR_CLAMP, TD_LOOKUP_TABLE_RGBA ); //, msaaSamples );
+}
 
 static void R_AlphaNotchImage( idImage* image )
 {
@@ -922,18 +938,11 @@ static void R_CreateImGuiFontImage( idImage* image )
 	int width, height;
 	io.Fonts->GetTexDataAsRGBA32( &pixels, &width, &height ); // Load as RGBA 32-bits for OpenGL3 demo because it is more likely to be compatible with user's existing shader.
 
-	/*
-	glGenTextures( 1, &g_FontTexture );
-	glBindTexture( GL_TEXTURE_2D, g_FontTexture );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels );
-	*/
-
 	image->GenerateImage( ( byte* )pixels, width, height, TF_LINEAR, TR_CLAMP, TD_LOOKUP_TABLE_RGBA );
 
 	// Store our identifier
-	io.Fonts->TexID = ( void* )( intptr_t )image->GetImGuiTextureID();
+	//io.Fonts->TexID = ( void* )( intptr_t )image->GetImGuiTextureID();
+	io.Fonts->TexID = ( void* )( intptr_t )declManager->FindMaterial( "_imguiFont" );
 
 	// Cleanup (don't clear the input data if you want to append new fonts later)
 	//io.Fonts->ClearInputData();
@@ -1057,4 +1066,91 @@ void idImageManager::CreateIntrinsicImages()
 
 	release_assert( loadingIconImage->referencedOutsideLevelLoad );
 	release_assert( hellLoadingIconImage->referencedOutsideLevelLoad );
+}
+
+CONSOLE_COMMAND( makeImageHeader, "load an image and turn it into a .h file", NULL )
+{
+	byte*		buffer;
+	int			width = 0, height = 0;
+
+	if( args.Argc() < 2 )
+	{
+		common->Printf( "USAGE: makeImageHeader filename [exportname]\n" );
+		return;
+	}
+
+	idStr filename = args.Argv( 1 );
+
+	R_LoadImage( filename, &buffer, &width, &height, NULL, true, NULL );
+	if( !buffer )
+	{
+		common->Printf( "loading %s failed.\n", filename.c_str() );
+		return;
+	}
+
+	filename.StripFileExtension();
+
+	idStr exportname;
+
+	if( args.Argc() == 3 )
+	{
+		exportname.Format( "Image_%s.h", args.Argv( 2 ) );
+	}
+	else
+	{
+		exportname.Format( "Image_%s.h", filename.c_str() );
+	}
+
+	for( int i = 0; i < exportname.Length(); i++ )
+	{
+		if( exportname[ i ] == '/' )
+		{
+			exportname[ i ] = '_';
+		}
+	}
+
+	idFileLocal headerFile( fileSystem->OpenFileWrite( exportname, "fs_basepath" ) );
+
+	idStr uppername = exportname;
+	uppername.ToUpper();
+
+	for( int i = 0; i < uppername.Length(); i++ )
+	{
+		if( uppername[ i ] == '.' )
+		{
+			uppername[ i ] = '_';
+		}
+	}
+
+	headerFile->Printf( "#ifndef %s_TEX_H\n", uppername.c_str() );
+	headerFile->Printf( "#define %s_TEX_H\n\n", uppername.c_str() );
+
+	headerFile->Printf( "#define %s_TEX_WIDTH %i\n", uppername.c_str(), width );
+	headerFile->Printf( "#define %s_TEX_HEIGHT %i\n\n", uppername.c_str(), height );
+
+	headerFile->Printf( "static const unsigned char %s_Bytes[] = {\n", uppername.c_str() );
+
+	int bufferSize = width * height * 4;
+
+	for( int i = 0; i < bufferSize; i++ )
+	{
+		byte b = buffer[i];
+
+		if( i < ( bufferSize - 1 ) )
+		{
+			headerFile->Printf( "0x%02hhx, ", b );
+		}
+		else
+		{
+			headerFile->Printf( "0x%02hhx", b );
+		}
+
+		if( i % 12 == 0 )
+		{
+			headerFile->Printf( "\n" );
+		}
+	}
+	headerFile->Printf( "\n};\n#endif\n" );
+
+	Mem_Free( buffer );
 }

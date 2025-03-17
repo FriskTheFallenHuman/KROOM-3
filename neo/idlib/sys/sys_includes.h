@@ -119,7 +119,14 @@ If you have questions concerning this license or the applicable additional terms
 // RB end
 
 #include <stdlib.h>							// no malloc.h on mac or unix
-#undef FindText								// fix namespace pollution
+// stupid namespace polluting Microsoft monkeys
+#undef FindText
+#undef IsMinimized
+#undef DrawText
+#undef CopyFile
+#undef LoadImage
+#undef AddJob
+#undef PlaySound
 
 
 /*
@@ -150,6 +157,7 @@ If you have questions concerning this license or the applicable additional terms
 #include <stdint.h>
 #include <stddef.h>
 #include <vector>
+#include <atomic>
 
 //-----------------------------------------------------
 

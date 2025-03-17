@@ -28,7 +28,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
-#include "DeviceContext.h"
 #include "Window.h"
 #include "UserInterfaceLocal.h"
 #include "GameSSDWindow.h"
@@ -300,8 +299,6 @@ void SSDEntity::Draw()
 	idBounds screenBounds = WorldToScreen( bounds );
 	persize.x = idMath::Fabs( screenBounds[1].x - screenBounds[0].x );
 	persize.y = idMath::Fabs( screenBounds[1].y - screenBounds[0].y );
-
-	idVec3 center = screenBounds.GetCenter();
 
 	x = screenBounds[0].x;
 	y = screenBounds[1].y;
@@ -1136,12 +1133,12 @@ void SSDProjectile::ReadProjectiles( idFile* savefile, idGameSSDWindow* _game )
 
 const char* powerupMaterials[][2] =
 {
-	"game/SSD/powerupHealthClosed",			"game/SSD/powerupHealthOpen",
-	"game/SSD/powerupSuperBlasterClosed",	"game/SSD/powerupSuperBlasterOpen",
-	"game/SSD/powerupNukeClosed",			"game/SSD/powerupNukeOpen",
-	"game/SSD/powerupRescueClosed",			"game/SSD/powerupRescueOpen",
-	"game/SSD/powerupBonusPointsClosed",	"game/SSD/powerupBonusPointsOpen",
-	"game/SSD/powerupDamageClosed",			"game/SSD/powerupDamageOpen",
+	{ "game/SSD/powerupHealthClosed",			"game/SSD/powerupHealthOpen" },
+	{ "game/SSD/powerupSuperBlasterClosed",	"game/SSD/powerupSuperBlasterOpen" },
+	{ "game/SSD/powerupNukeClosed",			"game/SSD/powerupNukeOpen" },
+	{ "game/SSD/powerupRescueClosed",			"game/SSD/powerupRescueOpen" },
+	{ "game/SSD/powerupBonusPointsClosed",	"game/SSD/powerupBonusPointsOpen" },
+	{ "game/SSD/powerupDamageClosed",			"game/SSD/powerupDamageOpen" },
 };
 
 #define POWERUP_MATERIAL_COUNT 6

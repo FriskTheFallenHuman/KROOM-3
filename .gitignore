@@ -1,5 +1,6 @@
 build*
 eclipse*
+xcode*
 neo/ipch
 *~
 *.gch
@@ -7,9 +8,11 @@ neo/ipch
 *.exe
 *.7z
 *.zip
+.DS_Store
 imgui.ini
 
 Doom3BFG.exe
+bin/
 base/_common.crc
 base/_common.resources
 base/_ordered.crc
@@ -35,6 +38,12 @@ base/sound/
 base/strings/
 base/video/
 base/wads/
+base/renderprogs2/
+base/generated/
+base/env/
+base/screenshots/
+base/_tb/*.obj
+base/_tb/*.mtl
 
 GPATH
 GRTAGS
@@ -45,3 +54,5 @@ neo/.kdev4
 neo/neo.kdev4
 neo/.idea/
 neo/cmake-build-*/
+neo/bin/
+tools/

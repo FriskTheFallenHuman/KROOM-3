@@ -1060,6 +1060,7 @@ void idSoundEmitterLocal::ModifySound( const s_channelType channel, const soundS
 		{
 			continue;
 		}
+
 		if( s_showStartSound.GetBool() )
 		{
 			idLib::Printf( "%dms: ModifySound(%d:%d): %s\n", soundWorld->GetSoundTime(), index, channel, chan->soundShader->GetName() );

@@ -143,17 +143,18 @@ extern idCVar		com_showFPS;
 extern idCVar		com_showMemoryUsage;
 extern idCVar		com_updateLoadSize;
 extern idCVar		com_productionMode;
+
 extern int			com_editors;			// current active editor(s)
 extern bool			com_editorActive;		// true if an editor has focus
 
 #ifdef _WIN32
-const char			DMAP_MSGID[] = "DMAPOutput";
-const char			DMAP_DONE[] = "DMAPDone";
-extern HWND			com_hwndMsg;
-extern bool			com_outputMsg;
-extern unsigned int	com_msgID;
+	const char			DMAP_MSGID[] = "DMAPOutput";
+	const char			DMAP_DONE[] = "DMAPDone";
+	extern HWND			com_hwndMsg;
+	extern bool			com_outputMsg;
+	extern unsigned int	com_msgID;
 
-bool FindEditor();
+	bool FindEditor();
 #endif
 
 struct MemInfo_t
@@ -178,6 +179,7 @@ struct MemInfo_t
 
 struct mpMap_t
 {
+	mpMap_t& operator=( mpMap_t&& src ) = default;
 
 	void operator=( const mpMap_t& src )
 	{
@@ -235,7 +237,7 @@ public:
 	virtual void				StartupVariable( const char* match ) = 0;
 
 	// Initializes a tool with the given dictionary.
-	virtual void				InitTool( const toolFlag_t tool, const idDict *dict ) = 0;
+	virtual void				InitTool( const toolFlag_t tool, const idDict* dict, idEntity* ent ) = 0;
 
 	// Activates or deactivates a tool.
 	virtual void				ActivateTool( bool active ) = 0;

@@ -2190,7 +2190,7 @@ static int CM_FindSplitter( const cm_node_t* node, const idBounds& bounds, int* 
 						continue;
 					}
 					// find the most centered splitter
-					t = abs( ( bounds[1][type] - dist ) - ( dist - bounds[0][type] ) );
+					t = idMath::Fabs( ( bounds[1][type] - dist ) - ( dist - bounds[0][type] ) );
 					if( t < bestt )
 					{
 						bestt = t;
@@ -2215,7 +2215,7 @@ static int CM_FindSplitter( const cm_node_t* node, const idBounds& bounds, int* 
 						continue;
 					}
 					// find the most centered splitter
-					t = abs( ( bounds[1][type] - dist ) - ( dist - bounds[0][type] ) );
+					t = idMath::Fabs( ( bounds[1][type] - dist ) - ( dist - bounds[0][type] ) );
 					if( t < bestt )
 					{
 						bestt = t;
@@ -2362,8 +2362,8 @@ idCollisionModelManagerLocal::R_CreateAxialBSPTree
 */
 cm_node_t* idCollisionModelManagerLocal::R_CreateAxialBSPTree( cm_model_t* model, cm_node_t* node, const idBounds& bounds )
 {
-	int planeType;
-	float planeDist;
+	int planeType = 0;
+	float planeDist = 0.0f;
 	cm_polygonRef_t* pref, *nextpref, *prevpref;
 	cm_brushRef_t* bref, *nextbref, *prevbref;
 	cm_node_t* frontNode, *backNode, *n;
@@ -3549,11 +3549,15 @@ cm_model_t* idCollisionModelManagerLocal::LoadBinaryModelFromFile( idFile* file,
 	}
 
 	file->ReadBig( model->polygonMemory );
+	// SRS - Boost polygonMemory to handle in-memory (ptr) vs. on-disk (int) size for cm_polygon_t.material, otherwise AllocPolygon() leaks
+	model->polygonMemory += ( sizeof( idMaterial* ) - sizeof( int ) ) * model->numPolygons;
 	model->polygonBlock = ( cm_polygonBlock_t* ) Mem_ClearedAlloc( sizeof( cm_polygonBlock_t ) + model->polygonMemory, TAG_COLLISION );
 	model->polygonBlock->bytesRemaining = model->polygonMemory;
 	model->polygonBlock->next = ( ( byte* ) model->polygonBlock ) + sizeof( cm_polygonBlock_t );
 
 	file->ReadBig( model->brushMemory );
+	// SRS - Boost brushMemory to handle in-memory (ptr) vs. on-disk (int) size for cm_brush_t.material, otherwise AllocBrush() leaks
+	model->brushMemory += ( sizeof( idMaterial* ) - sizeof( int ) ) * model->numBrushes;
 	model->brushBlock = ( cm_brushBlock_t* ) Mem_ClearedAlloc( sizeof( cm_brushBlock_t ) + model->brushMemory, TAG_COLLISION );
 	model->brushBlock->bytesRemaining = model->brushMemory;
 	model->brushBlock->next = ( ( byte* ) model->brushBlock ) + sizeof( cm_brushBlock_t );
@@ -3707,6 +3711,7 @@ void idCollisionModelManagerLocal::WriteBinaryModelToFile( cm_model_t* model, id
 	file->WriteBig( model->numSharpEdges );
 	file->WriteBig( model->numRemovedPolys );
 	file->WriteBig( model->numMergedPolys );
+
 	for( int i = 0; i < model->numVertices; i++ )
 	{
 		file->WriteBig( model->vertices[i].p );
@@ -4150,13 +4155,13 @@ idCollisionModelManagerLocal::PrintModelInfo
 */
 void idCollisionModelManagerLocal::PrintModelInfo( const cm_model_t* model )
 {
-	common->Printf( "%6i vertices (%i KB)\n", model->numVertices, ( model->numVertices * sizeof( cm_vertex_t ) ) >> 10 );
-	common->Printf( "%6i edges (%i KB)\n", model->numEdges, ( model->numEdges * sizeof( cm_edge_t ) ) >> 10 );
+	common->Printf( "%6i vertices (%zu KB)\n", model->numVertices, ( model->numVertices * sizeof( cm_vertex_t ) ) >> 10 );
+	common->Printf( "%6i edges (%zu KB)\n", model->numEdges, ( model->numEdges * sizeof( cm_edge_t ) ) >> 10 );
 	common->Printf( "%6i polygons (%i KB)\n", model->numPolygons, model->polygonMemory >> 10 );
 	common->Printf( "%6i brushes (%i KB)\n", model->numBrushes, model->brushMemory >> 10 );
-	common->Printf( "%6i nodes (%i KB)\n", model->numNodes, ( model->numNodes * sizeof( cm_node_t ) ) >> 10 );
-	common->Printf( "%6i polygon refs (%i KB)\n", model->numPolygonRefs, ( model->numPolygonRefs * sizeof( cm_polygonRef_t ) ) >> 10 );
-	common->Printf( "%6i brush refs (%i KB)\n", model->numBrushRefs, ( model->numBrushRefs * sizeof( cm_brushRef_t ) ) >> 10 );
+	common->Printf( "%6i nodes (%zu KB)\n", model->numNodes, ( model->numNodes * sizeof( cm_node_t ) ) >> 10 );
+	common->Printf( "%6i polygon refs (%zu KB)\n", model->numPolygonRefs, ( model->numPolygonRefs * sizeof( cm_polygonRef_t ) ) >> 10 );
+	common->Printf( "%6i brush refs (%zu KB)\n", model->numBrushRefs, ( model->numBrushRefs * sizeof( cm_brushRef_t ) ) >> 10 );
 	common->Printf( "%6i internal edges\n", model->numInternalEdges );
 	common->Printf( "%6i sharp edges\n", model->numSharpEdges );
 	common->Printf( "%6i contained polygons removed\n", model->numRemovedPolys );
@@ -4246,7 +4251,7 @@ void idCollisionModelManagerLocal::ListModels()
 idCollisionModelManagerLocal::BuildModels
 ================
 */
-void idCollisionModelManagerLocal::BuildModels( const idMapFile* mapFile )
+void idCollisionModelManagerLocal::BuildModels( const idMapFile* mapFile, bool ignoreOldCollisionFile )
 {
 	int i;
 	const idMapEntity* mapEnt;
@@ -4254,9 +4259,8 @@ void idCollisionModelManagerLocal::BuildModels( const idMapFile* mapFile )
 	idTimer timer;
 	timer.Start();
 
-	if( !LoadCollisionModelFile( mapFile->GetName(), mapFile->GetGeometryCRC() ) )
+	if( ignoreOldCollisionFile || !LoadCollisionModelFile( mapFile->GetName(), mapFile->GetGeometryCRC() ) )
 	{
-
 		if( !mapFile->GetNumEntities() )
 		{
 			return;
@@ -4298,7 +4302,7 @@ void idCollisionModelManagerLocal::BuildModels( const idMapFile* mapFile )
 	common->Printf( "collision data:\n" );
 	common->Printf( "%6i models\n", numModels );
 	PrintModelInfo( &model );
-	common->Printf( "%.0f msec to load collision data.\n", timer.Milliseconds() );
+	common->Printf( "%u msec to load collision data.\n", timer.Milliseconds() );
 }
 
 
@@ -4330,7 +4334,7 @@ void idCollisionModelManagerLocal::Preload( const char* mapName )
 			const preloadEntry_s& p = manifest.GetPreloadByIndex( i );
 			if( p.resType == PRELOAD_COLLISION )
 			{
-				LoadModel( p.resourceName );
+				LoadModel( p.resourceName, false );
 				numLoaded++;
 			}
 		}
@@ -4345,7 +4349,7 @@ void idCollisionModelManagerLocal::Preload( const char* mapName )
 idCollisionModelManagerLocal::LoadMap
 ================
 */
-void idCollisionModelManagerLocal::LoadMap( const idMapFile* mapFile )
+void idCollisionModelManagerLocal::LoadMap( const idMapFile* mapFile, bool ignoreOldCollisionFile )
 {
 
 	if( mapFile == NULL )
@@ -4388,7 +4392,7 @@ void idCollisionModelManagerLocal::LoadMap( const idMapFile* mapFile )
 	common->UpdateLevelLoadPacifier();
 
 	// build collision models
-	BuildModels( mapFile );
+	BuildModels( mapFile, ignoreOldCollisionFile );
 
 	common->UpdateLevelLoadPacifier();
 
@@ -4509,6 +4513,11 @@ idCollisionModelManagerLocal::GetModelPolygon
 */
 bool idCollisionModelManagerLocal::GetModelPolygon( cmHandle_t model, int polygonNum, idFixedWinding& winding ) const
 {
+
+	assert( 0 && "if this is ever called, it must be fixed first!" ); // DG: see below
+	return false;
+
+#if 0
 	int i, edgeNum;
 	cm_polygon_t* poly;
 
@@ -4518,6 +4527,9 @@ bool idCollisionModelManagerLocal::GetModelPolygon( cmHandle_t model, int polygo
 		return false;
 	}
 
+	// FIXME: DG: WTF is this, casting an int to a pointer?! we're lucky this is unused..
+	//   (it's called by idClip::GetModelContactFeature() which is called by
+	//    idClip()::DrawModelContactFeatuer(), but that is never called)
 	poly = *reinterpret_cast<cm_polygon_t**>( &polygonNum );
 	winding.Clear();
 	for( i = 0; i < poly->numEdges; i++ )
@@ -4527,6 +4539,7 @@ bool idCollisionModelManagerLocal::GetModelPolygon( cmHandle_t model, int polygo
 	}
 
 	return true;
+#endif // 0
 }
 
 /*
@@ -4534,7 +4547,7 @@ bool idCollisionModelManagerLocal::GetModelPolygon( cmHandle_t model, int polygo
 idCollisionModelManagerLocal::LoadModel
 ==================
 */
-cmHandle_t idCollisionModelManagerLocal::LoadModel( const char* modelName )
+cmHandle_t idCollisionModelManagerLocal::LoadModel( const char* modelName, const bool precache )
 {
 	int handle;
 
@@ -4590,6 +4603,12 @@ cmHandle_t idCollisionModelManagerLocal::LoadModel( const char* modelName )
 		{
 			common->Warning( "idCollisionModelManagerLocal::LoadModel: collision file for '%s' contains different model", modelName );
 		}
+	}
+
+	// if only precaching .cm files do not waste memory converting render models
+	if( precache )
+	{
+		return 0;
 	}
 
 	// try to load a .ASE or .LWO model and convert it to a collision model
@@ -4771,7 +4790,7 @@ bool idCollisionModelManagerLocal::TrmFromModel( const char* modelName, idTraceM
 {
 	cmHandle_t handle;
 
-	handle = LoadModel( modelName );
+	handle = LoadModel( modelName, false );
 	if( !handle )
 	{
 		common->Printf( "idCollisionModelManagerLocal::TrmFromModel: model %s not found.\n", modelName );

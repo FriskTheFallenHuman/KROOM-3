@@ -30,7 +30,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "../renderer/Image.h"
 
-#include "DeviceContext.h"
 #include "Window.h"
 #include "UserInterfaceLocal.h"
 #include "GameBustOutWindow.h"
@@ -868,17 +867,6 @@ void idGameBustOutWindow::Draw( int time, float x, float y )
 		entities[i]->Draw();
 	}
 }
-
-/*
-=============================
-idGameBustOutWindow::Activate
-=============================
-*/
-const char* idGameBustOutWindow::Activate( bool activate )
-{
-	return "";
-}
-
 
 /*
 =============================

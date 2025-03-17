@@ -1288,7 +1288,7 @@ void idExplodingBarrel::Killed( idEntity* inflictor, idEntity* attacker, int dam
 			byte		msgBuf[MAX_EVENT_PARAM_SIZE];
 
 			msg.InitWrite( msgBuf, sizeof( msgBuf ) );
-			msg.WriteLong( gameLocal.time );
+			msg.WriteInt( gameLocal.time );
 			ServerSendEvent( EVENT_EXPLODE, &msg, false );
 		}
 	}
@@ -1303,7 +1303,7 @@ void idExplodingBarrel::Killed( idEntity* inflictor, idEntity* attacker, int dam
 		gameLocal.RadiusDamage( GetPhysics()->GetOrigin(), this, attacker, this, this, splash );
 	}
 
-	ExplodingEffects( );
+	ExplodingEffects();
 
 	//FIXME: need to precache all the debris stuff here and in the projectiles
 	const idKeyValue* kv = spawnArgs.MatchPrefix( "def_debris" );
@@ -1518,9 +1518,9 @@ bool idExplodingBarrel::ClientReceiveEvent( int event, int time, const idBitMsg&
 	{
 		case EVENT_EXPLODE:
 		{
-			if( gameLocal.realClientTime - msg.ReadLong() < spawnArgs.GetInt( "explode_lapse", "1000" ) )
+			if( gameLocal.realClientTime - msg.ReadInt() < spawnArgs.GetInt( "explode_lapse", "1000" ) )
 			{
-				ExplodingEffects( );
+				ExplodingEffects();
 			}
 			return true;
 		}

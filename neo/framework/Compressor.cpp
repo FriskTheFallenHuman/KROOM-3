@@ -1726,9 +1726,7 @@ idCompressor_Arithmetic::GetCurrentCount
 */
 int idCompressor_Arithmetic::GetCurrentCount()
 {
-	// DG: use int instead of long for 64bit compatibility
 	return ( unsigned int )( ( ( ( ( int ) code - low ) + 1 ) * scale - 1 ) / ( ( ( int ) high - low ) + 1 ) );
-	// DG end
 }
 
 /*
@@ -1807,11 +1805,9 @@ idCompressor_Arithmetic::RemoveSymbolFromStream
 */
 void idCompressor_Arithmetic::RemoveSymbolFromStream( acSymbol_t* symbol )
 {
-	// DG: use int instead of long for 64bit compatibility
 	int range;
 
 	range	= ( int )( high - low ) + 1;
-	// DG end
 	high	= low + ( unsigned short )( ( range * symbol->high ) / scale - 1 );
 	low		= low + ( unsigned short )( ( range * symbol->low ) / scale );
 

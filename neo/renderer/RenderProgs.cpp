@@ -213,6 +213,9 @@ void idRenderProgManager::Init()
 		{ BUILTIN_STEREO_DEGHOST, "builtin/VR/stereoDeGhost", "", 0, false, SHADER_STAGE_DEFAULT, LAYOUT_DRAW_VERT },
 		{ BUILTIN_STEREO_WARP, "builtin/VR/stereoWarp", "", 0, false, SHADER_STAGE_DEFAULT, LAYOUT_DRAW_VERT },
 		{ BUILTIN_BINK, "builtin/video/bink", "",  0, false, SHADER_STAGE_DEFAULT, LAYOUT_DRAW_VERT },
+		// SRS - Added Bink shader without sRGB to linear conversion for testVideo cmd
+		{ BUILTIN_BINK_SRGB, "builtin/video/bink", "_sRGB", BIT( USE_SRGB ), false, SHADER_STAGE_DEFAULT, LAYOUT_DRAW_VERT },
+		// SRS end
 		{ BUILTIN_BINK_GUI, "builtin/video/bink_gui", "", 0, false, SHADER_STAGE_DEFAULT, LAYOUT_DRAW_VERT },
 		{ BUILTIN_STEREO_INTERLACE, "builtin/VR/stereoInterlace", "", 0, false, SHADER_STAGE_DEFAULT, LAYOUT_DRAW_VERT },
 		{ BUILTIN_MOTION_BLUR, "builtin/post/motionBlur", "", 0, false, SHADER_STAGE_DEFAULT, LAYOUT_DRAW_VERT },
@@ -413,11 +416,11 @@ bool idRenderProgManager::IsShaderBound() const
 idRenderProgManager::SetRenderParms
 ================================================================================================
 */
-void idRenderProgManager::SetRenderParms( renderParm_t rp, const float* value, int num )
+void idRenderProgManager::SetRenderParms( renderParm_t rp, const float values[], int num )
 {
 	for( int i = 0; i < num; i++ )
 	{
-		SetRenderParm( ( renderParm_t )( rp + i ), value + ( i * 4 ) );
+		SetRenderParm( ( renderParm_t )( rp + i ), values + ( i * 4 ) );
 	}
 }
 
@@ -426,7 +429,7 @@ void idRenderProgManager::SetRenderParms( renderParm_t rp, const float* value, i
 idRenderProgManager::SetRenderParm
 ================================================================================================
 */
-void idRenderProgManager::SetRenderParm( renderParm_t rp, const float* value )
+void idRenderProgManager::SetRenderParm( renderParm_t rp, const float value[4] )
 {
 	SetUniformValue( rp, value );
 }

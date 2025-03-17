@@ -58,13 +58,11 @@ public:
 ===============================================================================
 */
 
-// RB begin
 #ifdef _WIN32
 	#define VPCALL __fastcall
 #else
 	#define VPCALL
 #endif
-// RB end
 
 class idVec2;
 class idVec3;

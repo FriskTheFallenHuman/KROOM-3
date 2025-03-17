@@ -80,6 +80,8 @@ static idHashIndex				traceModelHash;
 static idHashIndex				traceModelHash_Unsaved;
 const static int				TRACE_MODEL_SAVED = BIT( 16 );
 
+// SRS - statically define the default trace model used for the default clip model
+const static idTraceModel		defaultTraceModel = idBounds( idVec3( 0, 0, 0 ) ).Expand( 8 );
 
 /*
 ===============
@@ -305,6 +307,9 @@ void idClipModel::RestoreTraceModels( idRestoreGame* savefile )
 		traceModelCache[i] = entry;
 		traceModelHash.Add( GetTraceModelHashKey( entry->trm ), i );
 	}
+
+	// SRS - find or allocate default trace model here since it's not referenced by objects
+	gameLocal.clip.DefaultClipModel()->traceModelIndex = AllocTraceModel( defaultTraceModel );
 }
 
 
@@ -329,7 +334,7 @@ bool idClipModel::LoadModel( const char* name )
 		FreeTraceModel( traceModelIndex );
 		traceModelIndex = -1;
 	}
-	collisionModelHandle = collisionModelManager->LoadModel( name );
+	collisionModelHandle = collisionModelManager->LoadModel( name, false );
 	if( collisionModelHandle )
 	{
 		collisionModelManager->GetModelBounds( collisionModelHandle, bounds );
@@ -560,7 +565,7 @@ void idClipModel::Restore( idRestoreGame* savefile )
 	savefile->ReadString( collisionModelName );
 	if( collisionModelName.Length() )
 	{
-		collisionModelHandle = collisionModelManager->LoadModel( collisionModelName );
+		collisionModelHandle = collisionModelManager->LoadModel( collisionModelName, false );
 	}
 	else
 	{
@@ -788,7 +793,7 @@ idClipModel::CheckModel
 */
 cmHandle_t idClipModel::CheckModel( const char* name )
 {
-	return collisionModelManager->LoadModel( name );
+	return collisionModelManager->LoadModel( name, false );
 }
 
 
@@ -887,9 +892,11 @@ void idClip::Init()
 	memset( clipSectors, 0, MAX_SECTORS * sizeof( clipSector_t ) );
 	numClipSectors = 0;
 	touchCount = -1;
+
 	// get world map bounds
-	h = collisionModelManager->LoadModel( "worldMap" );
+	h = collisionModelManager->LoadModel( "worldMap", false );
 	collisionModelManager->GetModelBounds( h, worldBounds );
+
 	// create world sectors
 	CreateClipSectors_r( 0, worldBounds, maxSector );
 
@@ -898,7 +905,7 @@ void idClip::Init()
 	gameLocal.Printf( "max clip sector is (%1.1f, %1.1f, %1.1f)\n", maxSector[0], maxSector[1], maxSector[2] );
 
 	// initialize a default clip model
-	defaultClipModel.LoadModel( idTraceModel( idBounds( idVec3( 0, 0, 0 ) ).Expand( 8 ) ) );
+	defaultClipModel.LoadModel( defaultTraceModel );
 
 	// set counters to zero
 	numRotations = numTranslations = numMotions = numRenderModelTraces = numContents = numContacts = 0;

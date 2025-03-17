@@ -75,15 +75,17 @@ static SDL_Window* window = nullptr;
 
 // Eric: Integrate this into RBDoom3BFG's source code ecosystem.
 // Helper function for using SDL2 and Vulkan on Linux.
-std::vector<const char*> get_required_extensions( const std::vector<const char*>& instanceExtensions, bool enableValidationLayers )
+std::vector<const char*> get_required_extensions()
 {
 	uint32_t                 sdlCount = 0;
-	std::vector<const char*> sdlInstanceExtensions;
+	std::vector<const char*> sdlInstanceExtensions = {};
 
 	SDL_Vulkan_GetInstanceExtensions( nullptr, &sdlCount, nullptr );
 	sdlInstanceExtensions.resize( sdlCount );
 	SDL_Vulkan_GetInstanceExtensions( nullptr, &sdlCount, sdlInstanceExtensions.data() );
 
+	// SRS - Report enabled instance extensions in CreateVulkanInstance() vs. doing it here
+	/*
 	if( enableValidationLayers )
 	{
 		idLib::Printf( "\nNumber of availiable instance extensions\t%i\n", sdlCount );
@@ -93,6 +95,7 @@ std::vector<const char*> get_required_extensions( const std::vector<const char*>
 			idLib::Printf( "\t%s\n", ext );
 		}
 	}
+	*/
 
 	// SRS - needed for MoltenVK portability implementation and optionally for MoltenVK configuration on OSX
 #if defined(__APPLE__)
@@ -102,6 +105,8 @@ std::vector<const char*> get_required_extensions( const std::vector<const char*>
 #endif
 #endif
 
+	// SRS - Add debug instance extensions in CreateVulkanInstance() vs. hardcoding them here
+	/*
 	if( enableValidationLayers )
 	{
 		sdlInstanceExtensions.push_back( "VK_EXT_debug_report" );
@@ -114,6 +119,7 @@ std::vector<const char*> get_required_extensions( const std::vector<const char*>
 			idLib::Printf( "\t%s\n", ext );
 		}
 	}
+	*/
 
 	return sdlInstanceExtensions;
 }
@@ -318,7 +324,7 @@ bool VKimp_Init( glimpParms_t parms )
 		return false;
 	}
 
-#if defined(__APPLE__) && SDL_VERSION_ATLEAST(2, 0, 2)
+#if defined(__APPLE__)
 	// SRS - On OSX enable SDL2 relative mouse mode warping to capture mouse properly if outside of window
 	SDL_SetHintWithPriority( SDL_HINT_MOUSE_RELATIVE_MODE_WARP, "1", SDL_HINT_OVERRIDE );
 #endif
@@ -483,6 +489,10 @@ void VKimp_Shutdown()
 		window = nullptr;
 	}
 
+	if( SDL_WasInit( 0 ) )
+	{
+		SDL_Quit();
+	}
 }
 
 /* Eric: Is this needed/used for Vulkan?
@@ -499,12 +509,10 @@ void VKimp_SetGamma( unsigned short red[256], unsigned short green[256], unsigne
 		return;
 	}
 
-#if SDL_VERSION_ATLEAST(2, 0, 0)
 	if( SDL_SetWindowGammaRamp( window, red, green, blue ) )
-#else
-	if( SDL_SetGammaRamp( red, green, blue ) )
-#endif
+	{
 		common->Warning( "Couldn't set gamma ramp: %s", SDL_GetError() );
+	}
 #endif
 }
 

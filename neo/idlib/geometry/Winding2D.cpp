@@ -94,7 +94,7 @@ void idWinding2D::ExpandForAxialBox( const idVec2 bounds[2] )
 			continue;
 		}
 		plane = Plane2DFromPoints( p[i], p[j], true );
-		if( i )
+		if( numPlanes > 0 )
 		{
 			if( GetAxialBevel( planes[numPlanes - 1], plane, p[i], bevel ) )
 			{
@@ -104,7 +104,13 @@ void idWinding2D::ExpandForAxialBox( const idVec2 bounds[2] )
 		assert( numPlanes < MAX_POINTS_ON_WINDING_2D );
 		planes[numPlanes++] = plane;
 	}
-	assert( numPlanes < MAX_POINTS_ON_WINDING_2D && numPlanes > 0 );
+
+	// DG: make sure planes[] isn't used uninitialized and with index -1 below
+	if( numPlanes == 0 )
+	{
+		return;
+	}
+
 	if( GetAxialBevel( planes[numPlanes - 1], planes[0], p[0], bevel ) )
 	{
 		planes[numPlanes++] = bevel;
@@ -170,7 +176,6 @@ int idWinding2D::Split( const idVec3& plane, const float epsilon, idWinding2D** 
 	idVec2			mid;
 	idWinding2D* 	f;
 	idWinding2D* 	b;
-	int				maxpts;
 
 	counts[0] = counts[1] = counts[2] = 0;
 
@@ -209,8 +214,6 @@ int idWinding2D::Split( const idVec3& plane, const float epsilon, idWinding2D** 
 		*front = Copy();
 		return SIDE_FRONT;
 	}
-
-	maxpts = numPoints + 4;	// cant use counts[0]+2 because of fp grouping errors
 
 	*front = f = new( TAG_IDLIB_WINDING ) idWinding2D;
 	*back = b = new( TAG_IDLIB_WINDING ) idWinding2D;
@@ -311,6 +314,12 @@ bool idWinding2D::ClipInPlace( const idVec3& plane, const float epsilon, const b
 	int sides[MAX_POINTS_ON_WINDING_2D + 1], counts[3];
 	float dot, dists[MAX_POINTS_ON_WINDING_2D + 1];
 	idVec2* p1, *p2, mid, newPoints[MAX_POINTS_ON_WINDING_2D + 4];
+
+	// DG: avoid all kinds of unitialized usages below
+	if( numPoints == 0 )
+	{
+		return false;
+	}
 
 	counts[SIDE_FRONT] = counts[SIDE_BACK] = counts[SIDE_ON] = 0;
 

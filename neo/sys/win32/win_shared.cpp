@@ -52,8 +52,6 @@ If you have questions concerning this license or the applicable additional terms
 	// RB: no <atlbase.h> with Visual C++ 2010 Express
 	#if defined(USE_MFC_TOOLS)
 		#include <atlbase.h>
-	#else
-		#include "win_nanoafx.h"
 	#endif
 
 #endif // #if !defined(__MINGW32__)

@@ -30,7 +30,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
-#include "DeviceContext.h"
 #include "Window.h"
 #include "UserInterfaceLocal.h"
 #include "SimpleWindow.h"
@@ -137,6 +136,10 @@ idSimpleWindow::~idSimpleWindow()
 
 void idSimpleWindow::StateChanged( bool redraw )
 {
+	if( redraw && background && background->CinematicLength() )
+	{
+		background->UpdateCinematic( gui->GetTime() );
+	}
 }
 
 void idSimpleWindow::SetupTransforms( float x, float y )
@@ -289,46 +292,44 @@ void idSimpleWindow::Redraw( float x, float y )
 	textRect.Offset( -x, -y );
 }
 
-int idSimpleWindow::GetWinVarOffset( idWinVar* wv, drawWin_t* owner )
+intptr_t idSimpleWindow::GetWinVarOffset( idWinVar* wv, drawWin_t* owner )
 {
-	int ret = -1;
+	intptr_t ret = -1;
 
-	// RB: 64 bit fixes, changed oldschool offsets using ptrdiff_t
 	if( wv == &rect )
 	{
-		ret = ( ptrdiff_t )&rect - ( ptrdiff_t )this;
+		ret = ( ptrdiff_t )&this->rect - ( ptrdiff_t )this;
 	}
 
 	if( wv == &backColor )
 	{
-		ret = ( ptrdiff_t )&backColor - ( ptrdiff_t )this;
+		ret = ( ptrdiff_t )&this->backColor - ( ptrdiff_t )this;
 	}
 
 	if( wv == &matColor )
 	{
-		ret = ( ptrdiff_t )&matColor - ( ptrdiff_t )this;
+		ret = ( ptrdiff_t )&this->matColor - ( ptrdiff_t )this;
 	}
 
 	if( wv == &foreColor )
 	{
-		ret = ( ptrdiff_t )&foreColor - ( ptrdiff_t )this;
+		ret = ( ptrdiff_t )&this->foreColor - ( ptrdiff_t )this;
 	}
 
 	if( wv == &borderColor )
 	{
-		ret = ( ptrdiff_t )&borderColor - ( ptrdiff_t )this;
+		ret = ( ptrdiff_t )&this->borderColor - ( ptrdiff_t )this;
 	}
 
 	if( wv == &textScale )
 	{
-		ret = ( ptrdiff_t )&textScale - ( ptrdiff_t )this;
+		ret = ( ptrdiff_t )&this->textScale - ( ptrdiff_t )this;
 	}
 
 	if( wv == &rotate )
 	{
-		ret = ( ptrdiff_t )&rotate - ( ptrdiff_t )this;
+		ret = ( ptrdiff_t )&this->rotate - ( ptrdiff_t )this;
 	}
-	// RB end
 
 	if( ret != -1 )
 	{

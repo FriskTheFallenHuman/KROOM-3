@@ -169,7 +169,7 @@ ID_INLINE int idCollisionModelManagerLocal::TranslateEdgeThroughEdge( idVec3& cr
 
 	t = -l1.PermutedInnerProduct( l2 );
 	// if the lines cross each other to begin with
-	if( fabs( t ) < idMath::FLT_SMALLEST_NON_DENORMAL )
+	if( idMath::Fabs( t ) < idMath::FLT_SMALLEST_NON_DENORMAL )
 	{
 		*fraction = 0.0f;
 		return true;
@@ -806,10 +806,6 @@ void idCollisionModelManagerLocal::SetupTranslationHeartPlanes( cm_traceWork_t* 
 idCollisionModelManagerLocal::Translation
 ================
 */
-#ifdef _DEBUG
-	static int entered = 0;
-#endif
-
 void idCollisionModelManagerLocal::Translation( trace_t* results, const idVec3& start, const idVec3& end,
 		const idTraceModel* trm, const idMat3& trmAxis, int contentMask,
 		cmHandle_t model, const idVec3& modelOrigin, const idMat3& modelAxis )
@@ -849,29 +845,13 @@ void idCollisionModelManagerLocal::Translation( trace_t* results, const idVec3& 
 		return;
 	}
 
-#ifdef _DEBUG
-	bool startsolid = false;
-	// test whether or not stuck to begin with
-	if( cm_debugCollision.GetBool() )
-	{
-		if( !entered && !idCollisionModelManagerLocal::getContacts )
-		{
-			entered = 1;
-			// if already messed up to begin with
-			if( idCollisionModelManagerLocal::Contents( start, trm, trmAxis, -1, model, modelOrigin, modelAxis ) & contentMask )
-			{
-				startsolid = true;
-			}
-			entered = 0;
-		}
-	}
-#endif
-
 	idCollisionModelManagerLocal::checkCount++;
 
 	tw.trace.fraction = 1.0f;
 	tw.trace.c.contents = 0;
 	tw.trace.c.type = CONTACT_NONE;
+	tw.trace.c.material = NULL;
+	tw.trace.c.id = 0;
 	tw.contents = contentMask;
 	tw.isConvex = true;
 	tw.rotation = false;
@@ -969,7 +949,8 @@ void idCollisionModelManagerLocal::Translation( trace_t* results, const idVec3& 
 		{
 			common->RW()->DebugArrow( colorRed, start, end, 1 );
 		}
-		common->Printf( "idCollisionModelManagerLocal::Translation: huge translation\n" );
+		common->Printf( "idCollisionModelManagerLocal::Translation: huge translation from (%.2f %.2f %.2f) to (%.2f %.2f %.2f)\n",
+						start.x, start.y, start.z, end.x, end.y, end.z );
 		return;
 	}
 
@@ -1211,12 +1192,11 @@ void idCollisionModelManagerLocal::Translation( trace_t* results, const idVec3& 
 	}
 
 #ifdef _DEBUG
-	// test for missed collisions
+	// test for collisions
 	if( cm_debugCollision.GetBool() )
 	{
-		if( !entered && !idCollisionModelManagerLocal::getContacts )
+		if( !idCollisionModelManagerLocal::getContacts )
 		{
-			entered = 1;
 			// if the trm is stuck in the model
 			if( idCollisionModelManagerLocal::Contents( results->endpos, trm, trmAxis, -1, model, modelOrigin, modelAxis ) & contentMask )
 			{
@@ -1227,7 +1207,6 @@ void idCollisionModelManagerLocal::Translation( trace_t* results, const idVec3& 
 				// re-run collision detection to find out where it failed
 				idCollisionModelManagerLocal::Translation( &tr, start, end, trm, trmAxis, contentMask, model, modelOrigin, modelAxis );
 			}
-			entered = 0;
 		}
 	}
 #endif

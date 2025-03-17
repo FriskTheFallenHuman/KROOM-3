@@ -29,7 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
-#include "DeviceContext.h"
 #include "Window.h"
 #include "UserInterfaceLocal.h"
 #include "ChoiceWindow.h"
@@ -39,7 +38,7 @@ If you have questions concerning this license or the applicable additional terms
 idChoiceWindow::InitVars
 ============
 */
-void idChoiceWindow::InitVars( )
+void idChoiceWindow::InitVars()
 {
 	if( cvarStr.Length() )
 	{
@@ -475,7 +474,10 @@ void idChoiceWindow::Draw( int time, float x, float y )
 		color = hoverColor;
 	}
 
-	dc->DrawText( choices[currentChoice], textScale, textAlign, color, textRect, false, -1 );
+	if( choices.Num() > 0 )
+	{
+		dc->DrawText( choices[currentChoice], textScale, textAlign, color, textRect, false, -1 );
+	}
 }
 
 void idChoiceWindow::Activate( bool activate, idStr& act )

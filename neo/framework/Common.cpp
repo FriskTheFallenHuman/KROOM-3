@@ -50,7 +50,7 @@ struct version_s
 {
 	version_s()
 	{
-		sprintf( string, "%s.%d%s %s %s %s", ENGINE_VERSION, BUILD_NUMBER, BUILD_DEBUG, BUILD_STRING, __DATE__, __TIME__ );
+		idStr::snPrintf( string, sizeof( string ), "%s.%d%s %s %s %s", ENGINE_VERSION, BUILD_NUMBER, BUILD_DEBUG, BUILD_STRING, __DATE__, __TIME__ );
 	}
 	char	string[256];
 } version;
@@ -58,7 +58,8 @@ struct version_s
 idCVar com_version( "si_version", version.string, CVAR_SYSTEM | CVAR_ROM | CVAR_SERVERINFO, "engine version" );
 idCVar com_forceGenericSIMD( "com_forceGenericSIMD", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "force generic platform independent SIMD" );
 
-#ifdef ID_RETAIL
+// RB: not allowing the console is a bit harsh for shipping builds
+#if 0 //def ID_RETAIL
 	idCVar com_allowConsole( "com_allowConsole", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_INIT, "allow toggling console with the tilde key" );
 #else
 	idCVar com_allowConsole( "com_allowConsole", "1", CVAR_BOOL | CVAR_SYSTEM | CVAR_INIT, "allow toggling console with the tilde key" );
@@ -99,8 +100,11 @@ int64 com_engineHz_denominator = 100LL * 60LL;
 idCommonLocal	commonLocal;
 idCommon* 		common = &commonLocal;
 
-// RB: defaulted this to 1 because we don't have a sound for the intro .bik video
-idCVar com_skipIntroVideos( "com_skipIntroVideos", "1", CVAR_BOOL , "skips intro videos" );
+#if defined( ID_RETAIL )
+	idCVar com_skipIntroVideos( "com_skipIntroVideos", "0", CVAR_BOOL , "skips intro videos" );
+#else
+	idCVar com_skipIntroVideos( "com_skipIntroVideos", "1", CVAR_BOOL , "skips intro videos" );
+#endif
 
 /*
 ==================
@@ -158,7 +162,6 @@ idCommonLocal::idCommonLocal() :
 	mapSpawnData.savegameFile = NULL;
 
 	currentMapName.Clear();
-	aviDemoShortName.Clear();
 
 	renderWorld = NULL;
 	soundWorld = NULL;
@@ -170,7 +173,6 @@ idCommonLocal::idCommonLocal() :
 	gameTimeResidual = 0;
 	syncNextGameFrame = true;
 	mapSpawned = false;
-	aviCaptureMode = false;
 	timeDemo = TD_NO;
 
 	nextSnapshotSendTime = 0;
@@ -191,7 +193,6 @@ idCommonLocal::Quit
 */
 void idCommonLocal::Quit()
 {
-
 	// don't try to shutdown if we are in a recursive error
 	if( !com_errorEntered )
 	{
@@ -592,7 +593,7 @@ Com_WriteConfig_f
 Write the config file to a specific name
 ===============
 */
-CONSOLE_COMMAND( writeConfig, "writes a config file", NULL )
+CONSOLE_COMMAND_SHIP( writeConfig, "writes a config file", NULL )
 {
 	idStr	filename;
 
@@ -814,11 +815,6 @@ idCommonLocal::RenderSplash
 */
 void idCommonLocal::RenderSplash()
 {
-	//const emptyCommand_t* renderCommands = NULL;
-
-	// RB: this is the same as Doom 3 renderSystem->BeginFrame()
-	//renderCommands = renderSystem->SwapCommandBuffers_FinishCommandBuffers();
-
 	const float sysWidth = renderSystem->GetWidth() * renderSystem->GetPixelAspect();
 	const float sysHeight = renderSystem->GetHeight();
 	const float sysAspect = sysWidth / sysHeight;
@@ -841,11 +837,8 @@ void idCommonLocal::RenderSplash()
 	renderSystem->SetColor4( 1, 1, 1, 1 );
 	renderSystem->DrawStretchPic( barWidth, barHeight, SCREEN_WIDTH - barWidth * 2.0f, SCREEN_HEIGHT - barHeight * 2.0f, 0, 0, 1, 1, splashScreen );
 
-	const emptyCommand_t* cmd = renderSystem->SwapCommandBuffers( &time_frontend, &time_backend, &time_shadows, &time_gpu, &stats_backend, &stats_frontend );
+	const emptyCommand_t* cmd = renderSystem->SwapCommandBuffers( &time_frontend, &time_backend, &time_shadows, &time_gpu, &time_moc, &stats_backend, &stats_frontend );
 	renderSystem->RenderCommandBuffers( cmd );
-
-	// RB: this is the same as Doom 3 renderSystem->EndFrame()
-	//renderSystem->SwapCommandBuffers_FinishRendering( &time_frontend, &time_backend, &time_shadows, &time_gpu );
 }
 
 /*
@@ -866,18 +859,19 @@ void idCommonLocal::RenderBink( const char* path )
 	materialText.Format( "{ translucent { videoMap %s } }", path );
 
 	idMaterial* material = const_cast<idMaterial*>( declManager->FindMaterial( "splashbink" ) );
+	material->FreeData();	// SRS - always free data before parsing, otherwise leaks occur
 	material->Parse( materialText.c_str(), materialText.Length(), false );
 	material->ResetCinematicTime( Sys_Milliseconds() );
 
-	// RB: FFmpeg might return the wrong play length so I changed the intro video to play max 30 seconds until finished
-	int cinematicLength = 30000; //material->CinematicLength();
+	// SRS - Restored original calculation after implementing idCinematicLocal::GetStartTime() and fixing animationLength in idCinematicLocal::InitFromBinkDecFile()
+	int cinematicLength = material->CinematicLength();
 	int	mouseEvents[MAX_MOUSE_EVENTS][2];
 
 	bool escapeEvent = false;
 	while( ( Sys_Milliseconds() <= ( material->GetCinematicStartTime() + cinematicLength ) ) && material->CinematicIsPlaying() )
 	{
 		renderSystem->DrawStretchPic( chop, 0, imageWidth, SCREEN_HEIGHT, 0, 0, 1, 1, material );
-		const emptyCommand_t* cmd = renderSystem->SwapCommandBuffers( &time_frontend, &time_backend, &time_shadows, &time_gpu, &stats_backend, &stats_frontend );
+		const emptyCommand_t* cmd = renderSystem->SwapCommandBuffers( &time_frontend, &time_backend, &time_shadows, &time_gpu, &time_moc, &stats_backend, &stats_frontend );
 		renderSystem->RenderCommandBuffers( cmd );
 
 		Sys_GenerateEvents();
@@ -994,7 +988,7 @@ void idCommonLocal::LoadGameDLL()
 	gameExport_t	gameExport;
 	GetGameAPI_t	GetGameAPI;
 
-	fileSystem->FindDLL( "game", dllPath, true );
+	fileSystem->FindDLL( "game", dllPath );
 
 	if( !dllPath[ 0 ] )
 	{
@@ -1286,7 +1280,6 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 			RenderSplash();
 		}
 
-
 		int legalStartTime = Sys_Milliseconds();
 		declManager->Init2();
 
@@ -1443,12 +1436,6 @@ void idCommonLocal::Shutdown()
 	// shutdown the script debugger
 	// DebuggerServerShutdown();
 
-	if( aviCaptureMode )
-	{
-		printf( "EndAVICapture();\n" );
-		EndAVICapture();
-	}
-
 	printf( "Stop();\n" );
 	Stop();
 
@@ -1494,10 +1481,6 @@ void idCommonLocal::Shutdown()
 	printf( "uiManager->Shutdown();\n" );
 	uiManager->Shutdown();
 
-	// shut down the sound system
-	printf( "soundSystem->Shutdown();\n" );
-	soundSystem->Shutdown();
-
 	// shut down the user command input code
 	printf( "usercmdGen->Shutdown();\n" );
 	usercmdGen->Shutdown();
@@ -1507,12 +1490,20 @@ void idCommonLocal::Shutdown()
 	eventLoop->Shutdown();
 
 	// shutdown the decl manager
+	// SRS - Note this also shuts down all cinematic resources, including cinematic audio voices
 	printf( "declManager->Shutdown();\n" );
 	declManager->Shutdown();
 
 	// shut down the renderSystem
+	// SRS - Note this also shuts down any testVideo resources, including cinematic audio voices
 	printf( "renderSystem->Shutdown();\n" );
 	renderSystem->Shutdown();
+
+	// shut down the sound system
+	// SRS - Shut down sound system after decl manager and render system so cinematic audio voices are destroyed first
+	// Important for XAudio2 where the mastering voice cannot be destroyed if any other voices exist
+	printf( "soundSystem->Shutdown();\n" );
+	soundSystem->Shutdown();
 
 	printf( "commonDialog.Shutdown();\n" );
 	commonDialog.Shutdown();
@@ -1681,20 +1672,17 @@ idCommonLocal::LeaveGame
 */
 void idCommonLocal::LeaveGame()
 {
-
 	const bool captureToImage = false;
+
 	UpdateScreen( captureToImage );
 
 	ResetNetworkingState();
-
 
 	Stop( false );
 
 	CreateMainMenu();
 
 	StartMenu();
-
-
 }
 
 /*
@@ -1710,7 +1698,7 @@ bool idCommonLocal::ProcessEvent( const sysEvent_t* event )
 	{
 		if( event->evType == SE_KEY && event->evValue2 == 1 && ( event->evValue == K_ESCAPE || event->evValue == K_JOY9 ) )
 		{
-			if( game->CheckInCinematic() == true )
+			if( game->CheckInCinematic() )
 			{
 				game->SkipCinematicScene();
 			}
@@ -1718,7 +1706,6 @@ bool idCommonLocal::ProcessEvent( const sysEvent_t* event )
 			{
 				if( !game->Shell_IsActive() )
 				{
-
 					// menus / etc
 					if( MenuEvent( event ) )
 					{
