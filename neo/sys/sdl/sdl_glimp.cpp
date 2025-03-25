@@ -225,8 +225,6 @@ bool GLimp_Init( glimpParms_t parms )
 			SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE, channelcolorbits );
 		}
 
-		SDL_GL_SetAttribute( SDL_GL_STEREO, parms.stereo ? 1 : 0 );
-
 		SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, parms.multiSamples ? 1 : 0 );
 		SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, parms.multiSamples );
 
@@ -335,12 +333,7 @@ bool GLimp_Init( glimpParms_t parms )
 
 		// RB begin
 		glConfig.displayFrequency = 60;
-		glConfig.isStereoPixelFormat = parms.stereo;
 		glConfig.multisamples = parms.multiSamples;
-
-		glConfig.pixelAspect = 1.0f;	// FIXME: some monitor modes may be distorted
-		// should side-by-side stereo modes be consider aspect 0.5?
-
 		// RB end
 
 		break;
@@ -547,14 +540,10 @@ bool GLimp_SetScreenParms( glimpParms_t parms )
 	}
 #endif // SDL_VERSION_ATLEAST(2, 0, 0)
 
-	// Note: the following stuff would also work with SDL1.2
-	SDL_GL_SetAttribute( SDL_GL_STEREO, parms.stereo ? 1 : 0 );
-
 	SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, parms.multiSamples ? 1 : 0 );
 	SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, parms.multiSamples );
 
 	glConfig.isFullscreen = parms.fullScreen;
-	glConfig.isStereoPixelFormat = parms.stereo;
 	glConfig.nativeScreenWidth = parms.width;
 	glConfig.nativeScreenHeight = parms.height;
 	glConfig.displayFrequency = parms.displayHz;

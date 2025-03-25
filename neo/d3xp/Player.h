@@ -285,9 +285,6 @@ public:
 
 	class idPlayerView		playerView;			// handles damage kicks and effects
 
-	renderEntity_t			laserSightRenderEntity;	// replace crosshair for 3DTV
-	qhandle_t				laserSightHandle;
-
 	bool					noclip;
 	bool					godmode;
 
@@ -295,7 +292,6 @@ public:
 	idAngles				spawnAngles;
 	idAngles				viewAngles;			// player view angles
 	idAngles				cmdAngles;			// player cmd angles
-	float					independentWeaponPitchAngle;	// viewAngles[PITCH} when head tracking is active
 
 	// For interpolating angles between snapshots
 	idQuat					previousViewQuat;
@@ -445,8 +441,6 @@ public:
 
 	void					Spawn();
 	void					Think();
-
-	void					UpdateLaserSight();
 
 	// save games
 	void					Save( idSaveGame* savefile ) const;					// archives object for save game file

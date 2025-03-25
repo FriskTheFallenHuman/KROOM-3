@@ -849,15 +849,8 @@ public:
 	virtual void			ShutdownOpenGL();
 	virtual bool			IsOpenGLRunning() const;
 	virtual bool			IsFullScreen() const;
-	virtual stereo3DMode_t	GetStereo3DMode() const;
-	virtual bool			HasQuadBufferSupport() const;
-	virtual bool			IsStereoScopicRenderingSupported() const;
-	virtual stereo3DMode_t	GetStereoScopicRenderingMode() const;
-	virtual void			EnableStereoScopicRendering( const stereo3DMode_t mode ) const;
 	virtual int				GetWidth() const;
 	virtual int				GetHeight() const;
-	virtual float			GetPixelAspect() const;
-	virtual float			GetPhysicalScreenWidthInCentimeters() const;
 	virtual idRenderWorld* 	AllocRenderWorld();
 	virtual void			FreeRenderWorld( idRenderWorld* rw );
 	virtual void			BeginLevelLoad();
@@ -879,7 +872,7 @@ public:
 	virtual void			DrawStretchPic( float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial* material );
 	virtual void			DrawStretchPic( const idVec4& topLeft, const idVec4& topRight, const idVec4& bottomRight, const idVec4& bottomLeft, const idMaterial* material );
 	virtual void			DrawStretchTri( const idVec2& p1, const idVec2& p2, const idVec2& p3, const idVec2& t1, const idVec2& t2, const idVec2& t3, const idMaterial* material );
-	virtual idDrawVert* 	AllocTris( int numVerts, const triIndex_t* indexes, int numIndexes, const idMaterial* material, const stereoDepthType_t stereoType = STEREO_DEPTH_TYPE_NONE );
+	virtual idDrawVert* 	AllocTris( int numVerts, const triIndex_t* indexes, int numIndexes, const idMaterial* material );
 	virtual void			DrawSmallChar( int x, int y, int ch );
 	virtual void			DrawSmallStringExt( int x, int y, const char* string, const idVec4& setColor, bool forceColor );
 	virtual void			DrawBigChar( int x, int y, int ch );
@@ -913,8 +906,6 @@ public:
 	// internal functions
 	idRenderSystemLocal();
 	~idRenderSystemLocal();
-
-	void					UpdateStereo3DMode();
 
 	void					Clear();
 	void					GetCroppedViewport( idScreenRect* viewport );
@@ -1177,9 +1168,6 @@ extern idCVar r_materialOverride;			// override all materials
 
 extern idCVar r_debugRenderToTexture;
 
-extern idCVar stereoRender_enable;
-extern idCVar stereoRender_deGhost;			// subtract from opposite eye to reduce ghosting
-
 // RB begin
 extern idCVar r_useGPUSkinning;
 
@@ -1296,8 +1284,6 @@ struct glimpParms_t
 	int			width;
 	int			height;
 	int			fullScreen;		// 0 = windowed, otherwise 1 based monitor number to go full screen on
-	// -1 = borderless window for spanning multiple displays
-	bool		stereo;
 	int			displayHz;
 	int			multiSamples;
 };

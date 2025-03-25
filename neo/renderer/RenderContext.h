@@ -29,17 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __RENDERCONTEXT_H__
 #define __RENDERCONTEXT_H__
 
-// This is for "official" HDMI 3D support with with the left eye above the right and a guard band in the middle
-// Some displays which don't support this can still do stereo 3D by packing 2 eyes into a single (mono-sized) buffer
-enum hdmi3DState_t
-{
-	HDMI3D_NOT_SUPPORTED,	// The TV doesn't support it
-	HDMI3D_NOT_ENABLED,		// The TV supports it, but the user disabled it
-	HDMI3D_NOT_ACTIVE,		// The TV supports it, and the user enabled it, but it's not active
-	HDMI3D_ACTIVE
-};
-
-
 //================================================================================================
 // class idRenderContext
 //================================================================================================
@@ -54,9 +43,6 @@ public:
 	void			PrepareSwap();
 	void			SwapBuffers( bool forceVsync = false );
 	void			SetGamma( unsigned short red[256], unsigned short green[256], unsigned short blue[256] );
-
-	hdmi3DState_t	GetHDMI3DState();
-	void			EnableHDMI3D( const bool enable );
 
 	// Back End Rendering
 	void			ExecuteBackendCommands( const emptyCommand_t* cmds );

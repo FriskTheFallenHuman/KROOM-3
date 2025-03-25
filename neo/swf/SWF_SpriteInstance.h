@@ -132,10 +132,6 @@ public:
 	{
 		return isPlaying;
 	}
-	int GetStereoDepth()
-	{
-		return stereoDepth;
-	}
 
 	// Removing the private access control statement due to cl 214702
 	// Apparently MS's C++ compiler supports the newer C++ standard, and GCC supports C++03
@@ -175,8 +171,6 @@ public:
 	float moveToXScale;
 	float moveToYScale;
 	float moveToSpeed;
-
-	int stereoDepth;
 
 	idSWFScriptObject* scriptObject;
 
@@ -292,7 +286,6 @@ public:
 	SWF_NATIVE_VAR_DECLARE_READONLY( _mousex );
 	SWF_NATIVE_VAR_DECLARE_READONLY( _mousey );
 
-	SWF_NATIVE_VAR_DECLARE( _stereoDepth );
 	SWF_NATIVE_VAR_DECLARE( _itemindex );
 
 	SWF_NATIVE_VAR_DECLARE( material );

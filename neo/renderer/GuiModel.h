@@ -27,13 +27,15 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
+#ifndef __GUIMODEL_H__
+#define __GUIMODEL_H__
+
 struct guiModelSurface_t
 {
 	const idMaterial* 	material;
 	uint64				glState;
 	int					firstIndex;
 	int					numIndexes;
-	stereoDepthType_t		stereoType;
 };
 
 class idRenderMatrix;
@@ -65,20 +67,16 @@ public:
 	// the returned pointer will be in write-combined memory, so only make contiguous
 	// 32 bit writes and never read from it.
 	idDrawVert* AllocTris( int numVerts, const triIndex_t* indexes, int numIndexes, const idMaterial* material,
-						   const uint64 glState, const stereoDepthType_t stereoType );
+						   const uint64 glState );
 
 	//---------------------------
 private:
 	void		AdvanceSurf();
-	void		EmitSurfaces( float modelMatrix[16], float modelViewMatrix[16], bool depthHack, bool allowFullScreenStereoDepth, bool linkAsEntity );
+	void		EmitSurfaces( float modelMatrix[16], float modelViewMatrix[16], bool depthHack, bool linkAsEntity );
 
 	guiModelSurface_t* 			surf;
 
 	float						shaderParms[ MAX_ENTITY_SHADER_PARMS ];
-
-	static const float STEREO_DEPTH_NEAR;
-	static const float STEREO_DEPTH_MID;
-	static const float STEREO_DEPTH_FAR;
 
 	// if we exceed these limits we stop rendering GUI surfaces
 	static const int MAX_INDEXES = ( 20000 * 6 );
@@ -95,3 +93,4 @@ private:
 	idList<guiModelSurface_t, TAG_MODEL>	surfaces;
 };
 
+#endif /* !__GUIMODEL_H__ */

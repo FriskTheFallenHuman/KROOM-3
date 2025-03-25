@@ -261,7 +261,6 @@ public:
 	void				Shutdown();
 
 	void				ExecuteBackEndCommands( const emptyCommand_t* cmds );
-	void				StereoRenderExecuteBackEndCommands( const emptyCommand_t* const allCmds );
 	void				GL_BlockingSwapBuffers();
 
 	void				Print();
@@ -280,8 +279,8 @@ private:
 	void				SetColorMappings();
 	void				ResizeImages();
 
-	void				DrawViewInternal( const viewDef_t* viewDef, const int stereoEye );
-	void				DrawView( const void* data, const int stereoEye );
+	void				DrawViewInternal( const viewDef_t* viewDef );
+	void				DrawView( const void* data );
 	void				CopyRender( const void* data );
 
 	void				BindVariableStageImage( const textureStage_t* texture, const float* shaderRegisters );
@@ -304,8 +303,7 @@ private:
 
 	void				DrawInteractions( const viewDef_t* _viewDef );
 	void				DrawSingleInteraction( drawInteraction_t* din, bool useFastPath, bool useIBL, bool setInteractionShader );
-	int					DrawShaderPasses( const drawSurf_t* const* const drawSurfs, const int numDrawSurfs,
-										  const float guiStereoScreenOffset, const int stereoEye );
+	int					DrawShaderPasses( const drawSurf_t* const* const drawSurfs, const int numDrawSurfs );
 
 	void				RenderInteractions( const drawSurf_t* surfList, const viewLight_t* vLight, int depthFunc, bool performStencilTest, bool useLightDepthBounds );
 

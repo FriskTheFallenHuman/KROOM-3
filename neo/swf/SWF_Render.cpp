@@ -136,13 +136,11 @@ void idSWF::Render( idRenderSystem* gui, int time, bool isSplitscreen )
 		}
 	}
 
-	const float pixelAspect = renderSystem->GetPixelAspect();
-	const float sysWidth = renderSystem->GetWidth() * ( pixelAspect > 1.0f ? pixelAspect : 1.0f );
-	const float sysHeight = renderSystem->GetHeight() / ( pixelAspect < 1.0f ? pixelAspect : 1.0f );
+	const float sysWidth = renderSystem->GetWidth();
+	const float sysHeight = renderSystem->GetHeight();
 	float scale = swfScale * sysHeight / ( float )frameHeight;
 
 	swfRenderState_t renderState;
-	renderState.stereoDepth = ( stereoDepthType_t )mainspriteInstance->GetStereoDepth();
 	renderState.matrix.xx = scale;
 	renderState.matrix.yy = scale;
 	renderState.matrix.tx = 0.5f * ( sysWidth - ( frameWidth * scale ) );
@@ -200,7 +198,6 @@ idSWF::RenderMask
 void idSWF::RenderMask( idRenderSystem* gui, const swfDisplayEntry_t* mask, const swfRenderState_t& renderState, const int stencilMode )
 {
 	swfRenderState_t renderState2;
-	renderState2.stereoDepth = renderState.stereoDepth;
 	renderState2.matrix = mask->matrix.Multiply( renderState.matrix );
 	renderState2.cxf = mask->cxf.Multiply( renderState.cxf );
 	renderState2.ratio = mask->ratio;
@@ -268,16 +265,6 @@ void idSWF::RenderSprite( idRenderSystem* gui, idSWFSpriteInstance* spriteInstan
 		}
 
 		swfRenderState_t renderState2;
-
-		if( spriteInstance->stereoDepth != STEREO_DEPTH_TYPE_NONE )
-		{
-			renderState2.stereoDepth = ( stereoDepthType_t )spriteInstance->stereoDepth;
-		}
-		else if( renderState.stereoDepth != STEREO_DEPTH_TYPE_NONE )
-		{
-			renderState2.stereoDepth = renderState.stereoDepth;
-		}
-
 		renderState2.matrix = display.matrix.Multiply( renderState.matrix );
 		renderState2.cxf = display.cxf.Multiply( renderState.cxf );
 		renderState2.ratio = display.ratio;
@@ -324,9 +311,8 @@ void idSWF::RenderSprite( idRenderSystem* gui, idSWFSpriteInstance* spriteInstan
 				float widthAdj = swf_titleSafe.GetFloat() * frameWidth;
 				float heightAdj = swf_titleSafe.GetFloat() * frameHeight;
 
-				const float pixelAspect = renderSystem->GetPixelAspect();
-				const float sysWidth = renderSystem->GetWidth() * ( pixelAspect > 1.0f ? pixelAspect : 1.0f );
-				const float sysHeight = renderSystem->GetHeight() / ( pixelAspect < 1.0f ? pixelAspect : 1.0f );
+				const float sysWidth = renderSystem->GetWidth();
+				const float sysHeight = renderSystem->GetHeight();
 
 				if( display.spriteInstance->name.Icmp( "_fullScreen" ) == 0 )
 				{
@@ -625,7 +611,7 @@ void idSWF::RenderMorphShape( idRenderSystem* gui, const idSWFShape* shape, cons
 
 		gui->SetGLState( GLStateForRenderState( renderState ) );
 
-		idDrawVert* verts = gui->AllocTris( fill.startVerts.Num(), fill.indices.Ptr(), fill.indices.Num(), material, renderState.stereoDepth );
+		idDrawVert* verts = gui->AllocTris( fill.startVerts.Num(), fill.indices.Ptr(), fill.indices.Num(), material );
 		if( verts == NULL )
 		{
 			continue;
@@ -761,7 +747,7 @@ void idSWF::RenderShape( idRenderSystem* gui, const idSWFShape* shape, const swf
 
 		gui->SetGLState( GLStateForRenderState( renderState ) );
 
-		idDrawVert* verts = gui->AllocTris( fill.startVerts.Num(), fill.indices.Ptr(), fill.indices.Num(), material, renderState.stereoDepth );
+		idDrawVert* verts = gui->AllocTris( fill.startVerts.Num(), fill.indices.Ptr(), fill.indices.Num(), material );
 		if( verts == NULL )
 		{
 			continue;
@@ -836,7 +822,7 @@ void idSWF::RenderShape( idRenderSystem* gui, const idSWFShape* shape, const swf
 
 			gui->SetGLState( GLStateForRenderState( renderState ) | GLS_POLYMODE_LINE );
 
-			idDrawVert* verts = gui->AllocTris( line.startVerts.Num(), line.indices.Ptr(), line.indices.Num(), white, renderState.stereoDepth );
+			idDrawVert* verts = gui->AllocTris( line.startVerts.Num(), line.indices.Ptr(), line.indices.Num(), white );
 			if( verts == NULL )
 			{
 				continue;
@@ -2096,7 +2082,7 @@ int idSWF::DrawText( idRenderSystem* gui, float x, float y, float scale, idVec4 
 		float xOffset = 0;
 		float yOffset = 0;
 
-		//idDrawVert* verts = gui->AllocTris( fill.startVerts.Num(), fill.indices.Ptr(), fill.indices.Num(), material, renderState.stereoDepth );
+		//idDrawVert* verts = gui->AllocTris( fill.startVerts.Num(), fill.indices.Ptr(), fill.indices.Num(), material );
 
 		//if( !ClippedCoords( &drawX, &drawY, &w, &h, &s, &t, &s2, &t2 ) )
 		{
@@ -2104,7 +2090,7 @@ int idSWF::DrawText( idRenderSystem* gui, float x, float y, float scale, idVec4 
 			float x2 = xOffset + ( drawX + w ) * scaleToVirtual.x;
 			float y1 = yOffset + drawY * scaleToVirtual.y;
 			float y2 = yOffset + ( drawY + h ) * scaleToVirtual.y;
-			idDrawVert* verts = gui->AllocTris( 4, quadPicIndexes, 6, glyphInfo.material, STEREO_DEPTH_TYPE_NONE );
+			idDrawVert* verts = gui->AllocTris( 4, quadPicIndexes, 6, glyphInfo.material );
 			if( verts != NULL )
 			{
 				verts[0].xyz[0] = x1;

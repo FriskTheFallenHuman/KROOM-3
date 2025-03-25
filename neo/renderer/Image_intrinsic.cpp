@@ -1047,10 +1047,6 @@ void idImageManager::CreateIntrinsicImages()
 	currentRenderImage = ImageFromFunction( "_currentRender", R_RGBA8Image );
 	currentDepthImage = ImageFromFunction( "_currentDepth", R_DepthImage );
 
-	// save a copy of this for material comparison, because currentRenderImage may get
-	// reassigned during stereo rendering
-	originalCurrentRenderImage = currentRenderImage;
-
 	loadingIconImage = ImageFromFile( "textures/loadingicon2", TF_DEFAULT, TR_CLAMP, TD_DEFAULT, CF_2D );
 	hellLoadingIconImage = ImageFromFile( "textures/loadingicon3", TF_DEFAULT, TR_CLAMP, TD_DEFAULT, CF_2D );
 

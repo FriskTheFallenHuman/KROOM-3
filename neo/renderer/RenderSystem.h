@@ -39,29 +39,6 @@ If you have questions concerning this license or the applicable additional terms
 
 ===============================================================================
 */
-enum stereo3DMode_t
-{
-	STEREO3D_OFF,
-
-	// half-resolution, non-square pixel views
-	STEREO3D_SIDE_BY_SIDE_COMPRESSED,
-	STEREO3D_TOP_AND_BOTTOM_COMPRESSED,
-
-	// two full resolution views side by side, as for a dual cable display
-	STEREO3D_SIDE_BY_SIDE,
-
-	STEREO3D_INTERLACED,
-
-	// OpenGL quad buffer
-	STEREO3D_QUAD_BUFFER,
-
-	// two full resolution views stacked with a 30 pixel guard band
-	// On the PC this can be configured as a custom video timing, but
-	// it definitely isn't a consumer level task.  The quad_buffer
-	// support can handle 720P-3D with apropriate driver support.
-	STEREO3D_HDMI_720
-};
-
 typedef enum
 {
 	AUTORENDER_DEFAULTICON = 0,
@@ -69,15 +46,6 @@ typedef enum
 	AUTORENDER_DIALOGICON,
 	AUTORENDER_MAX
 } autoRenderIconType_t ;
-
-enum stereoDepthType_t
-{
-	STEREO_DEPTH_TYPE_NONE,
-	STEREO_DEPTH_TYPE_NEAR,
-	STEREO_DEPTH_TYPE_MID,
-	STEREO_DEPTH_TYPE_FAR
-};
-
 
 enum graphicsVendor_t
 {
@@ -236,23 +204,13 @@ struct glconfig_t
 	bool				gpuSkinningAvailable;
 	// RB end
 
-	stereo3DMode_t		stereo3Dmode;
 	int					nativeScreenWidth; // this is the native screen width resolution of the renderer
 	int					nativeScreenHeight; // this is the native screen height resolution of the renderer
 
 	int					displayFrequency;
 
 	int					isFullscreen;					// monitor number
-	bool				isStereoPixelFormat;
-	bool				stereoPixelFormatAvailable;
 	int					multisamples;
-
-	// Screen separation for stereoscopic rendering is set based on this.
-	// PC vid code sets this, converting from diagonals / inches / whatever as needed.
-	// If the value can't be determined, set something reasonable, like 50cm.
-	float				physicalScreenWidthInCentimeters;
-
-	float				pixelAspect;
 
 	// RB begin
 #if !defined(__ANDROID__) && !defined(USE_VULKAN)
@@ -312,22 +270,6 @@ public:
 	virtual int				GetWidth() const = 0;
 	virtual int				GetHeight() const = 0;
 
-	// return w/h of a single pixel. This will be 1.0 for normal cases.
-	// A side-by-side stereo 3D frame will have a pixel aspect of 0.5.
-	// A top-and-bottom stereo 3D frame will have a pixel aspect of 2.0
-	virtual float			GetPixelAspect() const = 0;
-
-	// This is used to calculate stereoscopic screen offset for a given interocular distance.
-	virtual float			GetPhysicalScreenWidthInCentimeters() const = 0;
-
-	// GetWidth() / GetHeight() return the size of a single eye
-	// view, which may be replicated twice in a stereo display
-	virtual stereo3DMode_t	GetStereo3DMode() const = 0;
-	virtual bool			IsStereoScopicRenderingSupported() const = 0;
-	virtual stereo3DMode_t	GetStereoScopicRenderingMode() const = 0;
-	virtual void			EnableStereoScopicRendering( const stereo3DMode_t mode ) const = 0;
-	virtual bool			HasQuadBufferSupport() const = 0;
-
 	// allocate a renderWorld to be used for drawing
 	virtual idRenderWorld* 	AllocRenderWorld() = 0;
 	virtual	void			FreeRenderWorld( idRenderWorld* rw ) = 0;
@@ -367,7 +309,7 @@ public:
 	}
 	virtual void			DrawStretchPic( const idVec4& topLeft, const idVec4& topRight, const idVec4& bottomRight, const idVec4& bottomLeft, const idMaterial* material ) = 0;
 	virtual void			DrawStretchTri( const idVec2& p1, const idVec2& p2, const idVec2& p3, const idVec2& t1, const idVec2& t2, const idVec2& t3, const idMaterial* material ) = 0;
-	virtual idDrawVert* 	AllocTris( int numVerts, const triIndex_t* indexes, int numIndexes, const idMaterial* material, const stereoDepthType_t stereoType = STEREO_DEPTH_TYPE_NONE ) = 0;
+	virtual idDrawVert* 	AllocTris( int numVerts, const triIndex_t* indexes, int numIndexes, const idMaterial* material ) = 0;
 
 	virtual void			PrintMemInfo( MemInfo_t* mi ) = 0;
 
@@ -438,7 +380,7 @@ public:
 	// returns false if the image wasn't found
 	virtual bool			UploadImage( const char* imageName, const byte* data, int width, int height ) = 0;
 
-	// consoles switch stereo 3D eye views each 60 hz frame
+	// get the number of frames currently
 	virtual int				GetFrameCount() const = 0;
 
 	virtual void			OnFrame() = 0;

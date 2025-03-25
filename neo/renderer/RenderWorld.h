@@ -240,8 +240,7 @@ typedef struct renderView_s
 	int						viewID;
 
 	float					fov_x, fov_y;		// in degrees
-	idVec3					vieworg;			// has already been adjusted for stereo world seperation
-	idVec3					vieworg_weapon;		// has already been adjusted for stereo world seperation
+	idVec3					vieworg;
 	idMat3					viewaxis;			// transformation matrix, view looks down the positive X axis
 
 	bool					cramZNear;			// for cinematics, we want to set ZNear much lower
@@ -252,10 +251,6 @@ typedef struct renderView_s
 	int						time[2];
 	float					shaderParms[MAX_GLOBAL_SHADER_PARMS];		// can be used in any way by shader
 	const idMaterial*		globalMaterial;							// used to override everything draw
-
-	// the viewEyeBuffer may be of a different polarity than stereoScreenSeparation if the eyes have been swapped
-	int						viewEyeBuffer;				// -1 = left eye, 1 = right eye, 0 = monoscopic view or GUI
-	float					stereoScreenSeparation;		// projection matrix horizontal offset, positive or negative based on camera eye
 
 	int						rdflags;			// RB: RDF_NOSHADOWS, etc
 } renderView_t;

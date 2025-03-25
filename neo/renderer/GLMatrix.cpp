@@ -507,7 +507,6 @@ void R_SetupProjectionMatrix( viewDef_t* viewDef )
 
 	jitterx = jitterx * width / viewWidth;
 	jitterx += r_centerX.GetFloat();
-	jitterx += viewDef->renderView.stereoScreenSeparation;
 	xmin += jitterx * width;
 	xmax += jitterx * width;
 
@@ -586,7 +585,6 @@ void R_SetupProjectionMatrix2( const viewDef_t* viewDef, const float zNear, cons
 	jittery = 0.0f;
 	jitterx = jitterx * width / viewWidth;
 	jitterx += r_centerX.GetFloat();
-	jitterx += viewDef->renderView.stereoScreenSeparation;
 	xmin += jitterx * width;
 	xmax += jitterx * width;
 

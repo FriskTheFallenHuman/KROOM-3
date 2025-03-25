@@ -53,7 +53,6 @@ PFN_vkCmdInsertDebugUtilsLabelEXT	qvkCmdInsertDebugUtilsLabelEXT = VK_NULL_HANDL
 //#include "../../framework/Common_local.h"
 
 idCVar r_drawFlickerBox( "r_drawFlickerBox", "0", CVAR_RENDERER | CVAR_BOOL, "visual test for dropping frames" );
-idCVar stereoRender_warp( "stereoRender_warp", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "use the optical warping renderprog instead of stereoDeGhost" );
 
 idCVar r_showSwapBuffers( "r_showSwapBuffers", "0", CVAR_BOOL, "Show timings from GL_BlockingSwapBuffers" );
 idCVar r_syncEveryFrame( "r_syncEveryFrame", "1", CVAR_BOOL, "Don't let the GPU buffer execution past swapbuffers" );
@@ -2790,22 +2789,6 @@ void idRenderBackend::SetBuffer( const void* data )
 			GL_Clear( true, false, false, 0, 0.4f, 0.0f, 0.25f, 1.0f, true );
 		}
 	}
-}
-
-
-
-
-
-/*
-====================
-idRenderBackend::StereoRenderExecuteBackEndCommands
-
-Renders the draw list twice, with slight modifications for left eye / right eye
-====================
-*/
-void idRenderBackend::StereoRenderExecuteBackEndCommands( const emptyCommand_t* const allCmds )
-{
-	// RB: TODO ?
 }
 
 /*

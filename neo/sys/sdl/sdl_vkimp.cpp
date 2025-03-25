@@ -307,12 +307,7 @@ bool VKimp_Init( glimpParms_t parms )
 
 		// RB begin
 		glConfig.displayFrequency = 60;
-		glConfig.isStereoPixelFormat = parms.stereo;
 		glConfig.multisamples = parms.multiSamples;
-
-		glConfig.pixelAspect = 1.0f;	// FIXME: some monitor modes may be distorted
-		// should side-by-side stereo modes be consider aspect 0.5?
-
 		// RB end
 
 		break;

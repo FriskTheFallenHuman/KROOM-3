@@ -633,7 +633,6 @@ public:
 	idImage* 			accumImage;
 	idImage* 			currentRenderImage;				// for SS_POST_PROCESS shaders
 	idImage* 			currentDepthImage;				// for motion blur
-	idImage* 			originalCurrentRenderImage;		// currentRenderImage before any changes for stereo rendering
 	idImage* 			loadingIconImage;				// loading icon must exist always
 	idImage* 			hellLoadingIconImage;			// loading icon must exist always
 

@@ -3030,18 +3030,7 @@ void idRenderBackend::DBG_ShowLines()
 	}
 
 	glEnable( GL_SCISSOR_TEST );
-	if( viewDef->renderView.viewEyeBuffer == 0 )
-	{
-		glClearColor( 1, 0, 0, 1 );
-	}
-	else if( viewDef->renderView.viewEyeBuffer == 1 )
-	{
-		glClearColor( 0, 1, 0, 1 );
-	}
-	else
-	{
-		glClearColor( 0, 0, 1, 1 );
-	}
+	glClearColor( 0, 0, 1, 1 );
 
 	const int start = ( r_showLines.GetInteger() > 2 );	// 1,3 = horizontal, 2,4 = vertical
 	if( r_showLines.GetInteger() == 1 || r_showLines.GetInteger() == 3 )

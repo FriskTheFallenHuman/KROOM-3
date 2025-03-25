@@ -55,9 +55,6 @@ void	ConvertCbCr_YToRGB( byte* dst, const byte* src, int width, int height );
 void	ConvertRGBToYCbCr420( byte* dst, const byte* src, int width, int height );
 void	ConvertYCbCr420ToRGB( byte* dst, const byte* src, int width, int height );
 
-void	ConvertNormalMapToStereographicHeightMap( byte* heightMap, const byte* normalMap, int width, int height, float& scale );
-void	ConvertStereographicHeightMapToNormalMap( byte* normalMap, const byte* heightMap, int width, int height, float scale );
-
 void	ConvertRGBToMonochrome( byte* mono, const byte* rgb, int width, int height );
 void	ConvertMonochromeToRGB( byte* rgb, const byte* mono, int width, int height );
 };

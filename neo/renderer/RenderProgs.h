@@ -576,21 +576,6 @@ public:
 		BindShader_Builtin( BUILTIN_WOBBLESKY );
 	}
 
-	void	BindShader_StereoDeGhost()
-	{
-		BindShader_Builtin( BUILTIN_STEREO_DEGHOST );
-	}
-
-	void	BindShader_StereoWarp()
-	{
-		BindShader_Builtin( BUILTIN_STEREO_WARP );
-	}
-
-	void	BindShader_StereoInterlace()
-	{
-		BindShader_Builtin( BUILTIN_STEREO_INTERLACE );
-	}
-
 	void	BindShader_PostProcess()
 	{
 		BindShader_Builtin( BUILTIN_POSTPROCESS );
@@ -857,12 +842,9 @@ private:
 		BUILTIN_DEEP_GBUFFER_RADIOSITY_BLUR,
 		BUILTIN_DEEP_GBUFFER_RADIOSITY_BLUR_AND_OUTPUT,
 		// RB end
-		BUILTIN_STEREO_DEGHOST,
-		BUILTIN_STEREO_WARP,
 		BUILTIN_BINK,
 		BUILTIN_BINK_SRGB,	// SRS - Added Bink shader without sRGB to linear conversion for testVideo cmd
 		BUILTIN_BINK_GUI,
-		BUILTIN_STEREO_INTERLACE,
 		BUILTIN_MOTION_BLUR,
 
 		BUILTIN_DEBUG_SHADOWMAP,

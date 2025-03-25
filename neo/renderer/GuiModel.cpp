@@ -33,10 +33,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "RenderCommon.h"
 #include "imgui/imgui.h"
 
-const float idGuiModel::STEREO_DEPTH_NEAR = 0.0f;
-const float idGuiModel::STEREO_DEPTH_MID  = 0.5f;
-const float idGuiModel::STEREO_DEPTH_FAR  = 1.0f;
-
 /*
 ================
 idGuiModel::idGuiModel
@@ -98,16 +94,15 @@ void idGuiModel::BeginFrame()
 	Clear();
 }
 
-idCVar	stereoRender_defaultGuiDepth( "stereoRender_defaultGuiDepth", "0", CVAR_RENDERER, "Fraction of separation when not specified" );
 /*
 ================
 EmitSurfaces
 
-For full screen GUIs, we can add in per-surface stereoscopic depth effects
+For full screen GUIs
 ================
 */
 void idGuiModel::EmitSurfaces( float modelMatrix[16], float modelViewMatrix[16],
-							   bool depthHack, bool allowFullScreenStereoDepth, bool linkAsEntity )
+							   bool depthHack, bool linkAsEntity )
 {
 
 	viewEntity_t* guiSpace = ( viewEntity_t* )R_ClearedFrameAlloc( sizeof( *guiSpace ), FRAME_ALLOC_VIEW_ENTITY );
@@ -134,13 +129,6 @@ void idGuiModel::EmitSurfaces( float modelMatrix[16], float modelViewMatrix[16],
 	{
 		idRenderMatrix::ApplyDepthHack( guiSpace->mvp );
 	}
-
-	// to allow 3D-TV effects in the menu system, we define surface flags to set
-	// depth fractions between 0=screen and 1=infinity, which directly modulate the
-	// screenSeparation parameter for an X offset.
-	// The value is stored in the drawSurf sort value, which adjusts the matrix in the
-	// backend.
-	float defaultStereoDepth = stereoRender_defaultGuiDepth.GetFloat();	// default to at-screen
 
 	// add the surfaces to this view
 	for( int i = 0; i < surfaces.Num(); i++ )
@@ -182,28 +170,6 @@ void idGuiModel::EmitSurfaces( float modelMatrix[16], float modelViewMatrix[16],
 		}
 
 		R_LinkDrawSurfToView( drawSurf, tr.viewDef );
-		if( allowFullScreenStereoDepth )
-		{
-			// override sort with the stereoDepth
-			//drawSurf->sort = stereoDepth;
-
-			switch( guiSurf.stereoType )
-			{
-				case STEREO_DEPTH_TYPE_NEAR:
-					drawSurf->sort = STEREO_DEPTH_NEAR;
-					break;
-				case STEREO_DEPTH_TYPE_MID:
-					drawSurf->sort = STEREO_DEPTH_MID;
-					break;
-				case STEREO_DEPTH_TYPE_FAR:
-					drawSurf->sort = STEREO_DEPTH_FAR;
-					break;
-				case STEREO_DEPTH_TYPE_NONE:
-				default:
-					drawSurf->sort = defaultStereoDepth;
-					break;
-			}
-		}
 	}
 }
 
@@ -218,14 +184,8 @@ void idGuiModel::EmitToCurrentView( float modelMatrix[16], bool depthHack )
 
 	R_MatrixMultiply( modelMatrix, tr.viewDef->worldSpace.modelViewMatrix, modelViewMatrix );
 
-	EmitSurfaces( modelMatrix, modelViewMatrix, depthHack, false /* stereoDepthSort */, true /* link as entity */ );
+	EmitSurfaces( modelMatrix, modelViewMatrix, depthHack, true /* link as entity */ );
 }
-
-// DG: move function declaration here (=> out of EmitFullScreen() method) because it confused clang
-// (and possibly other compilers that just didn't complain and silently made it a float variable
-// initialized to something, probably 0.0f)
-float GetScreenSeparationForGuis();
-// DG end
 
 /*
 ================
@@ -246,22 +206,6 @@ void idGuiModel::EmitFullScreen()
 	viewDef_t* viewDef = ( viewDef_t* )R_ClearedFrameAlloc( sizeof( *viewDef ), FRAME_ALLOC_VIEW_DEF );
 	viewDef->is2Dgui = true;
 	tr.GetCroppedViewport( &viewDef->viewport );
-
-	bool stereoEnabled = ( renderSystem->GetStereo3DMode() != STEREO3D_OFF );
-	if( stereoEnabled )
-	{
-		const float screenSeparation = GetScreenSeparationForGuis();
-
-		// this will be negated on the alternate eyes, both rendered each frame
-		viewDef->renderView.stereoScreenSeparation = screenSeparation;
-
-		extern idCVar stereoRender_swapEyes;
-		viewDef->renderView.viewEyeBuffer = 0;	// render to both buffers
-		if( stereoRender_swapEyes.GetBool() )
-		{
-			viewDef->renderView.stereoScreenSeparation = -screenSeparation;
-		}
-	}
 
 	viewDef->scissor.x1 = 0;
 	viewDef->scissor.y1 = 0;
@@ -326,7 +270,7 @@ void idGuiModel::EmitFullScreen()
 	tr.viewDef = viewDef;
 
 	EmitSurfaces( viewDef->worldSpace.modelMatrix, viewDef->worldSpace.modelViewMatrix,
-				  false /* depthHack */ , stereoEnabled /* stereoDepthSort */, false /* link as entity */ );
+				  false /* depthHack */ , false /* link as entity */ );
 
 	tr.viewDef = oldViewDef;
 
@@ -370,7 +314,7 @@ void idGuiModel::EmitImGui( ImDrawData* drawData )
 				mat = ( const idMaterial* )pcmd->TextureId;
 			}
 
-			idDrawVert* verts = renderSystem->AllocTris( numVerts, indexBufferOffset, numIndexes, mat, STEREO_DEPTH_TYPE_NONE );
+			idDrawVert* verts = renderSystem->AllocTris( numVerts, indexBufferOffset, numIndexes, mat );
 			if( verts == NULL )
 			{
 				continue;
@@ -439,7 +383,7 @@ void idGuiModel::AdvanceSurf()
 AllocTris
 =============
 */
-idDrawVert* idGuiModel::AllocTris( int vertCount, const triIndex_t* tempIndexes, int indexCount, const idMaterial* material, const uint64 glState, const stereoDepthType_t stereoType )
+idDrawVert* idGuiModel::AllocTris( int vertCount, const triIndex_t* tempIndexes, int indexCount, const idMaterial* material, const uint64 glState )
 {
 	if( material == NULL )
 	{
@@ -468,7 +412,7 @@ idDrawVert* idGuiModel::AllocTris( int vertCount, const triIndex_t* tempIndexes,
 
 	// break the current surface if we are changing to a new material or we can't
 	// fit the data into our allocated block
-	if( material != surf->material || glState != surf->glState || stereoType != surf->stereoType )
+	if( material != surf->material || glState != surf->glState )
 	{
 		if( surf->numIndexes )
 		{
@@ -476,7 +420,6 @@ idDrawVert* idGuiModel::AllocTris( int vertCount, const triIndex_t* tempIndexes,
 		}
 		surf->material = material;
 		surf->glState = glState;
-		surf->stereoType = stereoType;
 	}
 
 	int startVert = numVerts;

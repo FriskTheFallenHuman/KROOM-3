@@ -741,31 +741,6 @@ void idRenderMatrix::CreateProjectionMatrix( float xMin, float xMax, float yMin,
 
 /*
 ========================
-idRenderMatrix::CreateProjectionMatrixFov
-
-xOffset and yOffset should be in the -1 to 1 range for sub-pixel accumulation jitter.
-xOffset can also be used for eye separation when rendering stereo.
-========================
-*/
-void idRenderMatrix::CreateProjectionMatrixFov( float xFovDegrees, float yFovDegrees, float zNear, float zFar, float xOffset, float yOffset, idRenderMatrix& out )
-{
-	float xMax = zNear * idMath::Tan( DEG2RAD( xFovDegrees ) * 0.5f );
-	float xMin = -xMax;
-
-	float yMax = zNear * idMath::Tan( DEG2RAD( yFovDegrees ) * 0.5f );
-	float yMin = -yMax;
-
-	xMin += xOffset;
-	xMax += xOffset;
-
-	yMin += yOffset;
-	yMax += yOffset;
-
-	CreateProjectionMatrix( xMin, xMax, yMin, yMax, zNear, zFar, out );
-}
-
-/*
-========================
 idRenderMatrix::OffsetScaleForBounds
 
 Add the offset to the center of the bounds and scale for the width of the bounds.

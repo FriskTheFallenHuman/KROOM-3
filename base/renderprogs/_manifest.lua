@@ -93,13 +93,6 @@ return
 	"builtin/video/bink_gui.ps.hlsl",
 	"builtin/video/bink_gui.vs.hlsl",
 	
-	"builtin/VR/stereoDeGhost.ps.hlsl",
-	"builtin/VR/stereoDeGhost.vs.hlsl",
-	"builtin/VR/stereoInterlace.ps.hlsl",
-	"builtin/VR/stereoInterlace.vs.hlsl",
-	"builtin/VR/stereoWarp.ps.hlsl",
-	"builtin/VR/stereoWarp.vs.hlsl",
-	
 	"builtin/color.ps.hlsl",
 	"builtin/color.vs.hlsl",
 	

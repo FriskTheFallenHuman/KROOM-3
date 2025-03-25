@@ -53,8 +53,7 @@ idSWFSpriteInstance::idSWFSpriteInstance() :
 	yOffset( 0.0f ),
 	moveToXScale( 1.0f ),
 	moveToYScale( 1.0f ),
-	moveToSpeed( 1.0f ),
-	stereoDepth( 0 )
+	moveToSpeed( 1.0f )
 {
 }
 
@@ -1057,7 +1056,6 @@ idSWFScriptObject_SpriteInstancePrototype::idSWFScriptObject_SpriteInstanceProto
 	SWF_SPRITE_NATIVE_VAR_SET( _mousex );
 	SWF_SPRITE_NATIVE_VAR_SET( _mousey );
 
-	SWF_SPRITE_NATIVE_VAR_SET( _stereoDepth );
 	SWF_SPRITE_NATIVE_VAR_SET( _itemindex );
 	SWF_SPRITE_NATIVE_VAR_SET( material );
 	SWF_SPRITE_NATIVE_VAR_SET( materialWidth );
@@ -1556,18 +1554,6 @@ SWF_SPRITE_NATIVE_VAR_DEFINE_SET( _itemindex )
 {
 	SWF_SPRITE_PTHIS_SET( "_itemindex" );
 	pThis->itemIndex = value.ToInteger();
-}
-
-SWF_SPRITE_NATIVE_VAR_DEFINE_SET( _stereoDepth )
-{
-	SWF_SPRITE_PTHIS_SET( "_stereoDepth" );
-	pThis->stereoDepth = value.ToInteger();
-}
-
-SWF_SPRITE_NATIVE_VAR_DEFINE_GET( _stereoDepth )
-{
-	SWF_SPRITE_PTHIS_GET( "_stereoDepth" );
-	return pThis->stereoDepth;
 }
 
 SWF_SPRITE_NATIVE_VAR_DEFINE_GET( material )
