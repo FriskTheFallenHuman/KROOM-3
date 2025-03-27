@@ -464,8 +464,6 @@ void idCommonLocal::ProcessGameReturn( const gameReturn_t& ret )
 
 extern idCVar com_forceGenericSIMD;
 
-extern idCVar com_pause;
-
 /*
 =================
 idCommonLocal::Frame
@@ -510,10 +508,8 @@ void idCommonLocal::Frame()
 		// if the console or another gui is down, we don't need to hold the mouse cursor
 		bool chatting = false;
 
-		// DG: Add pause from com_pause cvar
-		if( com_pause.GetInteger() || console->Active() || Dialog().IsDialogActive() || session->IsSystemUIShowing()
+		if( IsPaused() || console->Active() || Dialog().IsDialogActive() || session->IsSystemUIShowing()
 				|| ( game && game->InhibitControls() ) ||  ImGuiTools::ReleaseMouseForTools() )
-			// DG end
 		{
 			// RB: don't release the mouse when opening a PDA or menu
 			// SRS - but always release at main menu after exiting game or demo
@@ -533,7 +529,7 @@ void idCommonLocal::Frame()
 		const bool pauseGame = ( !mapSpawned
 								 || ( !IsMultiplayer()
 									  && ( Dialog().IsDialogPausing() || session->IsSystemUIShowing()
-										   || ( game && game->Shell_IsActive() ) || com_pause.GetInteger() ) ) );
+										   || ( game && game->Shell_IsActive() ) || IsPaused() ) ) );
 
 		//--------------------------------------------
 		// wait for the GPU to finish drawing
@@ -564,6 +560,21 @@ void idCommonLocal::Frame()
 			renderSystem->SwapCommandBuffers_FinishRendering( &time_frontend, &time_backend, &time_shadows, &time_gpu, &time_moc, &stats_backend, &stats_frontend );
 		}
 		frameTiming.finishSyncTime = Sys_Microseconds();
+
+		// RB: slow down engine in background so it does not eat up so many resources along other 3D tools
+		if( !IsFocused() && !IsServer() )
+		{
+			const float backgroundEngineHz = 15.0f;
+			com_engineHz_denominator = 100LL * backgroundEngineHz;
+			com_engineHz_latched = backgroundEngineHz;
+		}
+		else
+		{
+			// allow com_engineHz to be changed between map loads
+			com_engineHz_denominator = 100LL * com_engineHz.GetFloat();
+			com_engineHz_latched = com_engineHz.GetFloat();
+		}
+		// RB end
 
 		//--------------------------------------------
 		// Determine how many game tics we are going to run,
@@ -606,16 +617,6 @@ void idCommonLocal::Frame()
 			const int clampedDeltaMilliseconds = Min( deltaMilliseconds, com_deltaTimeClamp.GetInteger() );
 
 			gameTimeResidual += clampedDeltaMilliseconds * timescale.GetFloat();
-
-			// don't run any frames when paused
-			// jpcy: the game is paused when playing a demo, but playDemo should wait like the game does
-			// SRS - don't wait if window not in focus and playDemo itself paused
-			if( pauseGame && ( !( readDemo && !timeDemo ) || session->IsSystemUIShowing() || com_pause.GetInteger() ) )
-			{
-				gameFrame++;
-				gameTimeResidual = 0;
-				break;
-			}
 
 			// debug cvar to force multiple game tics
 			if( com_fixedTic.GetInteger() > 0 )
@@ -680,6 +681,16 @@ void idCommonLocal::Frame()
 			numGameFrames = 0;
 		}
 
+		// don't run any frames when paused
+		// RB: reset numGameFrames here so we use the sleep above
+		// and don't run as many frames as possible on the GPU
+		// jpcy: the game is paused when playing a demo, but playDemo should wait like the game does
+		// SRS - don't wait if window not in focus and playDemo itself paused
+		if( pauseGame && ( !( readDemo && !timeDemo ) || session->IsSystemUIShowing() || IsPaused() ) )
+		{
+			numGameFrames = 0;
+		}
+
 		//--------------------------------------------
 		// It would be better to push as much of this as possible
 		// either before or after the renderSystem->SwapCommandBuffers(),
@@ -727,7 +738,7 @@ void idCommonLocal::Frame()
 
 		// SRS - Advance demos inside Frame() vs. Draw() to support smp mode playback
 		// SRS - Pause playDemo (but not timeDemo) when window not in focus
-		if( readDemo && ( !( session->IsSystemUIShowing() || com_pause.GetInteger() ) || timeDemo ) )
+		if( readDemo && ( !( session->IsSystemUIShowing() || IsPaused() ) || timeDemo ) )
 		{
 			AdvanceRenderDemo( true );
 			if( !readDemo )
@@ -845,7 +856,7 @@ void idCommonLocal::Frame()
 			soundSystem->SetMute( false );
 		}
 		// SRS - Mute all sound output when dialog waiting or window not in focus (mutes Doom3, Classic, Cinematic Audio)
-		if( Dialog().IsDialogPausing() || session->IsSystemUIShowing() || com_pause.GetInteger() )
+		if( Dialog().IsDialogPausing() || session->IsSystemUIShowing() || IsPaused() )
 		{
 			soundSystem->SetMute( true );
 		}

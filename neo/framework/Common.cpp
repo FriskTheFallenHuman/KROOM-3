@@ -3,7 +3,7 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
-Copyright (C) 2012-2014 Robert Beckebans
+Copyright (C) 2012-2025 Robert Beckebans
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -34,9 +34,9 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "ConsoleHistory.h"
 
-#include "../sound/sound.h"
+#include "sound/sound.h"
 
-#include "../sys/sys_savegame.h"
+#include "sys/sys_savegame.h"
 
 
 
@@ -81,15 +81,11 @@ idCVar preload_CommonAssets( "preload_CommonAssets", "1", CVAR_SYSTEM | CVAR_BOO
 
 idCVar net_inviteOnly( "net_inviteOnly", "1", CVAR_BOOL | CVAR_ARCHIVE, "whether or not the private server you create allows friends to join or invite only" );
 
-// DG: add cvar for pause
-idCVar com_pause( "com_pause", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "set to 1 to pause game, to 0 to unpause again" );
-// DG end
-
 extern idCVar g_demoMode;
 
 idCVar com_engineHz( "com_engineHz", "60", CVAR_FLOAT | CVAR_ARCHIVE, "Frames per second the engine runs at", 10.0f, 1024.0f );
 float com_engineHz_latched = 60.0f; // Latched version of cvar, updated between map loads
-int64 com_engineHz_numerator = 100LL * 1000LL;
+const int64 com_engineHz_numerator = 100LL * 1000LL;
 int64 com_engineHz_denominator = 100LL * 60LL;
 
 #ifdef __DOOM_DLL__
@@ -136,6 +132,8 @@ idCommonLocal::idCommonLocal() :
 	com_refreshOnPrint = false;
 	com_errorEntered = ERP_NONE;
 	com_shuttingDown = false;
+	com_paused = false;
+	com_focuslost = false;
 	com_isJapaneseSKU = false;
 
 	logFile = NULL;

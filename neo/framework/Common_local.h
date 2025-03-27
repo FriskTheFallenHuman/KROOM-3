@@ -280,6 +280,26 @@ public:
 		showShellRequested = true;
 	}
 
+	// Return true if the main windows has lost focus, this is like pause but its mainly use to trotle down the fps
+	virtual void				SetFocus( bool bstate )
+	{
+		com_focuslost = bstate;
+	}
+	virtual bool				IsFocused()
+	{
+		return com_focuslost;
+	}
+
+	// Return true if the game is paused (either by focus lost or on deman)
+	virtual void				SetPaused( bool bstate )
+	{
+		com_paused = bstate;
+	}
+	virtual bool				IsPaused()
+	{
+		return com_paused;
+	}
+
 public:
 	void	Draw();			// called by gameThread
 
@@ -429,6 +449,8 @@ private:
 	bool						com_refreshOnPrint;		// update the screen every print for dmap
 	errorParm_t					com_errorEntered;
 	bool						com_shuttingDown;
+	bool						com_focuslost;
+	bool						com_paused;		// tell the engine/game we are paused
 	bool						com_isJapaneseSKU;
 
 	idFile* 					logFile;
