@@ -471,6 +471,8 @@ void idPlayerView::SingleView( const renderView_t* view, idMenuHandler_HUD* hudM
 		return;
 	}
 
+	player->DrawHUD( hudManager );
+
 	// draw screen blobs
 	if( !pm_thirdPerson.GetBool() && !g_skipViewEffects.GetBool() )
 	{
@@ -516,10 +518,6 @@ void idPlayerView::SingleView( const renderView_t* view, idMenuHandler_HUD* hudM
 
 
 		// tunnel vision
-		/*
-		RB: disabled tunnel vision because the renderer converts colors set by SetColor4 to bytes which are clamped to [0,255]
-		so materials that want to access float values greater than 1 with parm0 - parm3 are always broken
-
 		float health = 0.0f;
 		if( g_testHealthVision.GetFloat() != 0.0f )
 		{
@@ -544,8 +542,6 @@ void idPlayerView::SingleView( const renderView_t* view, idMenuHandler_HUD* hudM
 			renderSystem->SetColor4( ( player->health <= 0.0f ) ? MS2SEC( gameLocal.slow.time ) : lastDamageTime, 1.0f, 1.0f, ( player->health <= 0.0f ) ? 0.0f : alpha );
 			renderSystem->DrawStretchPic( 0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0f, 0.0f, 1.0f, 1.0f, tunnelMaterial );
 		}
-		RB end
-		*/
 
 		if( bfgVision )
 		{

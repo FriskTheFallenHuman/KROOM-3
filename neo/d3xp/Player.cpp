@@ -8992,22 +8992,13 @@ void idPlayer::Think()
 		}
 	}
 
-	if( common->IsMultiplayer() || g_showPlayerShadow.GetBool() )
+	// Cast a nice looking shadow
+	renderEntity.suppressShadowInViewID	= 0;
+	if( headRenderEnt )
 	{
-		renderEntity.suppressShadowInViewID	= 0;
-		if( headRenderEnt )
-		{
-			headRenderEnt->suppressShadowInViewID = 0;
-		}
+		headRenderEnt->suppressShadowInViewID = 0;
 	}
-	else
-	{
-		renderEntity.suppressShadowInViewID	= entityNumber + 1;
-		if( headRenderEnt )
-		{
-			headRenderEnt->suppressShadowInViewID = entityNumber + 1;
-		}
-	}
+
 	// never cast shadows from our first-person muzzle flashes
 	renderEntity.suppressShadowInLightID = LIGHTID_VIEW_MUZZLE_FLASH + entityNumber;
 	if( headRenderEnt )
@@ -11398,22 +11389,13 @@ void idPlayer::ClientThink( const int curTime, const float fraction, const bool 
 		}
 	}
 
-	if( common->IsMultiplayer() || g_showPlayerShadow.GetBool() )
+	// Cast a nice looking shadow
+	renderEntity.suppressShadowInViewID	= 0;
+	if( headRenderEnt )
 	{
-		renderEntity.suppressShadowInViewID	= 0;
-		if( headRenderEnt )
-		{
-			headRenderEnt->suppressShadowInViewID = 0;
-		}
+		headRenderEnt->suppressShadowInViewID = 0;
 	}
-	else
-	{
-		renderEntity.suppressShadowInViewID	= entityNumber + 1;
-		if( headRenderEnt )
-		{
-			headRenderEnt->suppressShadowInViewID = entityNumber + 1;
-		}
-	}
+
 	// never cast shadows from our first-person muzzle flashes
 	renderEntity.suppressShadowInLightID = LIGHTID_VIEW_MUZZLE_FLASH + entityNumber;
 	if( headRenderEnt )
