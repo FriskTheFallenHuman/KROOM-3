@@ -78,7 +78,7 @@ endif ()
 configure_file("${CMAKE_SOURCE_DIR}/config.h.in" "${CMAKE_BINARY_DIR}/config.h")
 
 # Set the output directory
-set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/../bin)
+set(OUTPUT_FOLDER ${CMAKE_SOURCE_DIR}/../bin)
 
 if(MSVC)
 	message(STATUS "Root: ${CMAKE_ROOT}")
@@ -829,12 +829,14 @@ if(USE_PRECOMPILED_HEADERS)
 	target_precompile_headers(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/idlib/precompiled.h)
 endif()
 
+set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY $<1:>${OUTPUT_FOLDER})
+
 if(MSVC)
-	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES LINK_FLAGS "/MAP:\"${EXECUTABLE_OUTPUT_PATH}/${CMAKE_PROJECT_NAME}.map\"")
+	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES LINK_FLAGS "/MAP:\"${OUTPUT_FOLDER}/${CMAKE_PROJECT_NAME}.map\"")
 
 	# set MSVC default debug directory on executable
 	set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${CMAKE_PROJECT_NAME}) # set MSVC startup project
-	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${EXECUTABLE_OUTPUT_PATH}")
+	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${OUTPUT_FOLDER}")
 	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES VS_DEBUGGER_COMMAND_ARGUMENTS "+set r_fullscreen 0 +set win_viewlog 1 +set developter 1")
 
 	#CMAKE_BINARY_DIR
