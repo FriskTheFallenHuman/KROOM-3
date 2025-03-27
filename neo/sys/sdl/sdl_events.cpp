@@ -43,7 +43,11 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "renderer/RenderCommon.h"
 #include "sdl_local.h"
-#include "../posix/posix_public.h"
+#ifdef _WIN32
+	#include "../win32/win_local.h"
+#else
+	#include "../posix/posix_public.h"
+#endif
 
 // DG: those are needed for moving/resizing windows
 extern idCVar r_windowX;
@@ -506,7 +510,7 @@ sysEvent_t Sys_GetEvent()
 					}
 					cvarSystem->SetCVarInteger( "r_fullscreen", fullscreen );
 					// DG end
-					PushConsoleEvent( "vid_restart" );
+					cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "vid_restart\n" );
 					continue; // handle next event
 				}
 
@@ -720,6 +724,7 @@ sysEvent_t Sys_GetEvent()
 			}
 			case SDL_CONTROLLERBUTTONDOWN:
 			case SDL_CONTROLLERBUTTONUP:
+			{
 				static int controllerButtonRemap[][2] =
 				{
 					{K_JOY1, J_ACTION1},	// A
@@ -746,7 +751,7 @@ sysEvent_t Sys_GetEvent()
 
 				joystick_polls.Append( joystick_poll_t( res.evValue, res.evValue2 ) );
 				return res;
-
+			}
 			case SDL_CONTROLLERDEVICEADDED:
 			case SDL_CONTROLLERDEVICEREMOVED:
 			case SDL_CONTROLLERDEVICEREMAPPED:
@@ -813,7 +818,11 @@ Sys_GenerateEvents
 */
 void Sys_GenerateEvents()
 {
+#ifdef _WIN32
+	char* s = Sys_ConsoleInput();
+#else
 	char* s = Posix_ConsoleInput();
+#endif
 
 	if( s )
 	{

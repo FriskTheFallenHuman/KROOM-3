@@ -61,7 +61,7 @@ idSIMD::InitProcessor
 */
 void idSIMD::InitProcessor( const char* module, bool forceGeneric )
 {
-	cpuid_t cpuid;
+	int cpuid;
 	idSIMDProcessor* newProcessor;
 
 	cpuid = idLib::sys->GetProcessorId();
@@ -99,16 +99,10 @@ void idSIMD::InitProcessor( const char* module, bool forceGeneric )
 		idLib::common->Printf( "%s using %s for SIMD processing\n", module, SIMDProcessor->GetName() );
 	}
 
-	if( cpuid & CPUID_FTZ )
+	if( cpuid & CPUID_SSE )
 	{
 		idLib::sys->FPU_SetFTZ( true );
-		idLib::common->Printf( "enabled Flush-To-Zero mode\n" );
-	}
-
-	if( cpuid & CPUID_DAZ )
-	{
 		idLib::sys->FPU_SetDAZ( true );
-		idLib::common->Printf( "enabled Denormals-Are-Zero mode\n" );
 	}
 }
 
@@ -1384,7 +1378,7 @@ void idSIMD::Test_f( const idCmdArgs& args )
 
 	if( idStr::Length( args.Argv( 1 ) ) != 0 )
 	{
-		cpuid_t cpuid = idLib::sys->GetProcessorId();
+		int cpuid = idLib::sys->GetProcessorId();
 		idStr argString = args.Args();
 
 		argString.Replace( " ", "" );

@@ -203,7 +203,7 @@ public:
 	// Initialize everything.
 	// if the OS allows, pass argc/argv directly (without executable name)
 	// otherwise pass the command line in a single string (without executable name)
-	virtual void				Init( int argc, const char* const* argv, const char* cmdline ) = 0;
+	virtual void				Init( int argc, char* const* argv ) = 0;
 
 	// Shuts down everything.
 	virtual void				Shutdown() = 0;

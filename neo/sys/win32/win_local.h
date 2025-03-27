@@ -37,41 +37,30 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 // RB end
 
-#include "win_input.h"
-
+#ifndef USE_SDL
+	#include "win_input.h"
+#endif
 
 #define	WINDOW_STYLE	(WS_OVERLAPPED|WS_BORDER|WS_CAPTION|WS_VISIBLE | WS_THICKFRAME)
 
-void	Sys_QueEvent( sysEventType_t type, int value, int value2, int ptrLength, void* ptr, int inputDeviceNum );
-
-void	Sys_CreateConsole();
-void	Sys_DestroyConsole();
-
-char*	Sys_ConsoleInput();
-char*	Sys_GetCurrentUser();
+#ifndef USE_SDL
+	void	Sys_QueEvent( sysEventType_t type, int value, int value2, int ptrLength, void* ptr, int inputDeviceNum );
+#endif
 
 void	Win_SetErrorText( const char* text );
 
-cpuid_t	Sys_GetCPUId();
+#ifndef USE_SDL
+	// add additional non keyboard / non mouse movement on top of the keyboard move cmd
 
-// Input subsystem
+	void	IN_DeactivateMouseIfWindowed();
+	void	IN_DeactivateMouse();
+	void	IN_ActivateMouse();
 
-void	IN_Init();
-void	IN_Shutdown();
-// add additional non keyboard / non mouse movement on top of the keyboard move cmd
+	void	IN_Frame();
 
-void	IN_DeactivateMouseIfWindowed();
-void	IN_DeactivateMouse();
-void	IN_ActivateMouse();
-
-void	IN_Frame();
-
-void	DisableTaskKeys( BOOL bDisable, BOOL bBeep, BOOL bTaskMgr );
-
-uint64 Sys_Microseconds();
-
-// window procedure
-LONG WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
+	// window procedure
+	LONG WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
+#endif
 
 void Conbuf_AppendText( const char* msg );
 
@@ -86,8 +75,6 @@ struct Win32Vars_t
 	bool			mouseGrabbed;		// current state of grab and hide
 
 	OSVERSIONINFOEX	osversion;
-
-	cpuid_t			cpuid;
 
 	// when we get a windows message, we store the time off so keyboard processing
 	// can know the exact time of an event (not really needed now that we use async direct input)
@@ -114,26 +101,21 @@ struct Win32Vars_t
 	unsigned short	oldHardwareGamma[3][256];
 	// desktop gamma is saved here for restoration at exit
 
-	static idCVar	sys_arch;
-	static idCVar	sys_cpustring;
 	static idCVar	in_mouse;
-	static idCVar	win_allowAltTab;
-	static idCVar	win_notaskkeys;
-	static idCVar	win_username;
 	static idCVar	win_outputEditString;
 	static idCVar	win_viewlog;
 	static idCVar	win_timerUpdate;
-	static idCVar	win_allowMultipleInstances;
 
 	CRITICAL_SECTION criticalSections[MAX_CRITICAL_SECTIONS];
 
+#ifndef USE_SDL
 	HINSTANCE		hInstDI;			// direct input
 
 	LPDIRECTINPUT8			g_pdi;
 	LPDIRECTINPUTDEVICE8	g_pMouse;
 	LPDIRECTINPUTDEVICE8	g_pKeyboard;
 	idJoystickWin32			g_Joystick;
-
+#endif
 };
 
 extern Win32Vars_t	win32;

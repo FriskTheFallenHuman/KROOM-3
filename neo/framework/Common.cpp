@@ -50,7 +50,7 @@ struct version_s
 {
 	version_s()
 	{
-		idStr::snPrintf( string, sizeof( string ), "%s.%d%s %s %s %s", ENGINE_VERSION, BUILD_NUMBER, BUILD_DEBUG, BUILD_STRING, __DATE__, __TIME__ );
+		idStr::snPrintf( string, sizeof( string ), "%s.%d%s %s %s %s", ENGINE_VERSION, BUILD_NUMBER, BUILD_DEBUG, BUILD_STRING, ID__DATE__, ID__TIME__ );
 	}
 	char	string[256];
 } version;
@@ -224,7 +224,7 @@ doom set test blah + map test
 idCommonLocal::ParseCommandLine
 ==================
 */
-void idCommonLocal::ParseCommandLine( int argc, const char* const* argv )
+void idCommonLocal::ParseCommandLine( int argc, char* const* argv )
 {
 	int i, current_count;
 
@@ -1108,7 +1108,7 @@ bool idCommonLocal::IsInitialized() const
 idCommonLocal::Init
 =================
 */
-void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline )
+void idCommonLocal::Init( int argc, char* const* argv )
 {
 	try
 	{
@@ -1124,16 +1124,6 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 		// clear warning buffer
 		ClearWarnings( GAME_NAME " initialization" );
 
-		idLib::Printf( "Command line: %s\n", cmdline );
-		//::MessageBox( NULL, cmdline, "blah", MB_OK );
-		// parse command line options
-		idCmdArgs args;
-		if( cmdline )
-		{
-			// tokenize if the OS doesn't do it for us
-			args.TokenizeString( cmdline, true );
-			argv = args.GetArgs( &argc );
-		}
 		ParseCommandLine( argc, argv );
 
 		// init console command system
@@ -1167,10 +1157,8 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 
 		consoleUsed = com_allowConsole.GetBool();
 
-		if( Sys_AlreadyRunning() )
-		{
-			Sys_Quit();
-		}
+		// set fpu double extended precision
+		Sys_FPU_SetPrecision();
 
 		// initialize processor specific SIMD implementation
 		InitSIMD();

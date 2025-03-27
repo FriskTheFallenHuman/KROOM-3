@@ -43,47 +43,9 @@ If you have questions concerning this license or the applicable additional terms
 enum cpuid_t
 {
 	CPUID_NONE							= 0x00000,
-	CPUID_UNSUPPORTED					= 0x00001,	// unsupported (386/486)
-	CPUID_GENERIC						= 0x00002,	// unrecognized processor
-	CPUID_INTEL							= 0x00004,	// Intel
-	CPUID_AMD							= 0x00008,	// AMD
-	CPUID_MMX							= 0x00010,	// Multi Media Extensions
-	CPUID_3DNOW							= 0x00020,	// 3DNow!
-	CPUID_SSE							= 0x00040,	// Streaming SIMD Extensions
-	CPUID_SSE2							= 0x00080,	// Streaming SIMD Extensions 2
-	CPUID_SSE3							= 0x00100,	// Streaming SIMD Extentions 3 aka Prescott's New Instructions
-	CPUID_ALTIVEC						= 0x00200,	// AltiVec
-	CPUID_HTT							= 0x01000,	// Hyper-Threading Technology
-	CPUID_CMOV							= 0x02000,	// Conditional Move (CMOV) and fast floating point comparison (FCOMI) instructions
-	CPUID_FTZ							= 0x04000,	// Flush-To-Zero mode (denormal results are flushed to zero)
-	CPUID_DAZ							= 0x08000,	// Denormals-Are-Zero mode (denormal source operands are set to zero)
-	CPUID_XENON							= 0x10000,	// Xbox 360
-	CPUID_CELL							= 0x20000	// PS3
-};
-
-enum fpuExceptions_t
-{
-	FPU_EXCEPTION_INVALID_OPERATION		= 1,
-	FPU_EXCEPTION_DENORMALIZED_OPERAND	= 2,
-	FPU_EXCEPTION_DIVIDE_BY_ZERO		= 4,
-	FPU_EXCEPTION_NUMERIC_OVERFLOW		= 8,
-	FPU_EXCEPTION_NUMERIC_UNDERFLOW		= 16,
-	FPU_EXCEPTION_INEXACT_RESULT		= 32
-};
-
-enum fpuPrecision_t
-{
-	FPU_PRECISION_SINGLE				= 0,
-	FPU_PRECISION_DOUBLE				= 1,
-	FPU_PRECISION_DOUBLE_EXTENDED		= 2
-};
-
-enum fpuRounding_t
-{
-	FPU_ROUNDING_TO_NEAREST				= 0,
-	FPU_ROUNDING_DOWN					= 1,
-	FPU_ROUNDING_UP						= 2,
-	FPU_ROUNDING_TO_ZERO				= 3
+	CPUID_GENERIC						= 0x00001,	// unrecognized processor
+	CPUID_MMX							= 0x00002,	// Multi Media Extensions
+	CPUID_SSE							= 0x00010	// Streaming SIMD Extensions
 };
 
 enum joystickAxis_t
@@ -476,19 +438,20 @@ void			Sys_Init();
 void			Sys_Shutdown();
 void			Sys_Error( const char* error, ... );
 const char* 	Sys_GetCmdLine();
-// DG: Sys_ReLaunch() doesn't need any options (and the old way is painful for POSIX systems)
-void			Sys_ReLaunch();
-// DG end
+void			Sys_ReLaunch();	// DG: Sys_ReLaunch() doesn't need any options (and the old way is painful for POSIX systems)
 void			Sys_Launch( const char* path, idCmdArgs& args,  void* launchData, unsigned int launchDataSize );
 void			Sys_SetLanguageFromSystem();
 const char* 	Sys_DefaultLanguage();
 void			Sys_Quit();
 
-bool			Sys_AlreadyRunning();
-
 // note that this isn't journaled...
 char* 			Sys_GetClipboardData();
 void			Sys_SetClipboardData( const char* string );
+
+// Console creation and deletion
+void	Sys_CreateConsole();
+void	Sys_DestroyConsole();
+char*	Sys_ConsoleInput();
 
 // will go to the various text consoles
 // NOT thread safe - never use in the async paths
@@ -507,34 +470,14 @@ void			Sys_Sleep( int msec );
 
 // Sys_Milliseconds should only be used for profiling purposes,
 // any game related timing information should come from event timestamps
-int				Sys_Milliseconds();
+unsigned int	Sys_Milliseconds();
 uint64			Sys_Microseconds();
 
-// for accurate performance testing
-double			Sys_GetClockTicks();
-double			Sys_ClockTicksPerSecond();
-
 // returns a selection of the CPUID_* flags
-cpuid_t			Sys_GetProcessorId();
-const char* 	Sys_GetProcessorString();
-
-// returns true if the FPU stack is empty
-bool			Sys_FPU_StackIsEmpty();
-
-// empties the FPU stack
-void			Sys_FPU_ClearStack();
-
-// returns the FPU state as a string
-const char* 	Sys_FPU_GetState();
-
-// enables the given FPU exceptions
-void			Sys_FPU_EnableExceptions( int exceptions );
+int				Sys_GetProcessorId();
 
 // sets the FPU precision
-void			Sys_FPU_SetPrecision( int precision );
-
-// sets the FPU rounding mode
-void			Sys_FPU_SetRounding( int rounding );
+void			Sys_FPU_SetPrecision();
 
 // sets Flush-To-Zero mode (only available when CPUID_FTZ is set)
 void			Sys_FPU_SetFTZ( bool enable );
@@ -547,10 +490,6 @@ int				Sys_GetDriveFreeSpace( const char* path );
 
 // returns amount of drive space in path in bytes
 int64			Sys_GetDriveFreeSpaceInBytes( const char* path );
-
-// returns memory stats
-void			Sys_GetCurrentMemoryStatus( sysMemoryStats_t& stats );
-void			Sys_GetExeLaunchMemoryStatus( sysMemoryStats_t& stats );
 
 // lock and unlock memory
 bool			Sys_LockMemory( void* ptr, int bytes );
@@ -803,16 +742,10 @@ public:
 
 	virtual unsigned int	GetMilliseconds() = 0;
 
-	virtual double			GetClockTicks() = 0;
-	virtual double			ClockTicksPerSecond() = 0;
-	virtual cpuid_t			GetProcessorId() = 0;
-	virtual const char* 	GetProcessorString() = 0;
-	virtual const char* 	FPU_GetState() = 0;
-	virtual bool			FPU_StackIsEmpty() = 0;
+	virtual int				GetProcessorId() = 0;
+
 	virtual void			FPU_SetFTZ( bool enable ) = 0;
 	virtual void			FPU_SetDAZ( bool enable ) = 0;
-
-	virtual void			FPU_EnableExceptions( int exceptions ) = 0;
 
 	virtual bool			LockMemory( void* ptr, int bytes ) = 0;
 	virtual bool			UnlockMemory( void* ptr, int bytes ) = 0;

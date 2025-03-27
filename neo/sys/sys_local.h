@@ -45,16 +45,10 @@ public:
 
 	virtual unsigned int	GetMilliseconds();
 
-	virtual double			GetClockTicks();
-	virtual double			ClockTicksPerSecond();
-	virtual cpuid_t			GetProcessorId();
-	virtual const char* 	GetProcessorString();
-	virtual const char* 	FPU_GetState();
-	virtual bool			FPU_StackIsEmpty();
+	virtual int				GetProcessorId();
+
 	virtual void			FPU_SetFTZ( bool enable );
 	virtual void			FPU_SetDAZ( bool enable );
-
-	virtual void			FPU_EnableExceptions( int exceptions );
 
 	virtual bool			LockMemory( void* ptr, int bytes );
 	virtual bool			UnlockMemory( void* ptr, int bytes );

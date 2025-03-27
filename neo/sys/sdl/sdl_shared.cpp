@@ -3,7 +3,6 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
-Copyright (C) 2012 Robert Beckebans
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -30,67 +29,68 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
-// DG: SDL_*.h somehow needs the following functions, so #undef those silly
+// DG: SDL.h somehow needs the following functions, so #undef those silly
 //     "don't use" #defines from Str.h
-#undef strcasecmp
 #undef strncmp
+#undef strcasecmp
 #undef vsnprintf
 // DG end
 
-#include <SDL_cpuinfo.h>
+#include <SDL.h>
+#include <SDL_timer.h>
 
 /*
-==============================================================
-
-	CPU Count
-
-==============================================================
+================
+Sys_Milliseconds
+================
 */
-
-/*
-========================
-Sys_CPUCount
-
-numLogicalCPUCores	- the number of logical CPU per core
-numPhysicalCPUCores	- the total number of cores per package
-numCPUPackages		- the total number of packages (physical processors)
-========================
-*/
-void Sys_CPUCount( int& numLogicalCPUCores, int& numPhysicalCPUCores, int& numCPUPackages )
+unsigned int Sys_Milliseconds()
 {
-	numPhysicalCPUCores = 1;
-	numLogicalCPUCores = SDL_GetCPUCount();
-	numCPUPackages = 1;
+	return SDL_GetTicks();
 }
 
 /*
-==============================================================
-
-	CPU UID
-
-==============================================================
+========================
+Sys_Microseconds
+========================
 */
+uint64_t Sys_Microseconds()
+{
+	static uint64_t frequency = SDL_GetPerformanceFrequency(); // Frequency of the high-resolution counter
+	uint64_t counter = SDL_GetPerformanceCounter();           // Current counter value
+	return ( counter * 1000000 ) / frequency;                 // Convert to microseconds
+}
 
 /*
-================
-SDL_GetProcessorId
-================
+========================
+Sys_SDLIcon
+========================
 */
-int SDL_GetProcessorId()
+void Sys_SDLIcon( SDL_Window* window )
 {
-	int flags = CPUID_GENERIC;
+	Uint32 rmask, gmask, bmask, amask;
 
-	// check for Multi Media Extensions
-	if( SDL_HasMMX() )
-	{
-		flags |= CPUID_MMX;
-	}
+	// ok, the following is pretty stupid.. SDL_CreateRGBSurfaceFrom() pretends to use a void* for the data,
+	// but it's really treated as endian-specific Uint32* ...
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+	rmask = 0xff000000;
+	gmask = 0x00ff0000;
+	bmask = 0x0000ff00;
+	amask = 0x000000ff;
+#else
+	rmask = 0x000000ff;
+	gmask = 0x0000ff00;
+	bmask = 0x00ff0000;
+	amask = 0xff000000;
+#endif
 
-	// check for Streaming SIMD Extensions
-	if( SDL_HasSSE() )
-	{
-		flags |= CPUID_SSE;
-	}
+#include "doom_ico.h" // contains the struct doom_icon
 
-	return flags;
+	SDL_Surface* icon = SDL_CreateRGBSurfaceFrom( ( void* )doom_icon.pixel_data, doom_icon.width, doom_icon.height,
+						doom_icon.bytes_per_pixel * 8, doom_icon.bytes_per_pixel * doom_icon.width,
+						rmask, gmask, bmask, amask );
+
+	SDL_SetWindowIcon( window, icon );
+
+	SDL_FreeSurface( icon );
 }

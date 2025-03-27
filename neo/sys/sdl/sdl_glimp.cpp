@@ -68,16 +68,8 @@ idCVar r_waylandcompat( "r_waylandcompat", "0", CVAR_SYSTEM | CVAR_NOCHEAT | CVA
 // RB end
 
 static bool grabbed = false;
-
-#if SDL_VERSION_ATLEAST(2, 0, 0)
-	static SDL_Window* window = NULL;
-	static SDL_GLContext context = NULL;
-#else
-	static SDL_Surface* window = NULL;
-	#define SDL_WINDOW_OPENGL SDL_OPENGL
-	#define SDL_WINDOW_FULLSCREEN SDL_FULLSCREEN
-	#define SDL_WINDOW_RESIZABLE SDL_RESIZABLE
-#endif
+static SDL_Window* window = NULL;
+static SDL_GLContext context = NULL;
 
 /*
 ===================
@@ -107,16 +99,13 @@ GLimp_Init
 */
 bool GLimp_Init( glimpParms_t parms )
 {
-#ifdef USE_VULKAN
-	return true;
-#endif
 
 	common->Printf( "Initializing OpenGL subsystem\n" );
 
 	GLimp_PreInit(); // DG: make sure SDL is initialized
 
 	// DG: make window resizable
-	Uint32 flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE;
+	Uint32 flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
 	// DG end
 
 	if( parms.fullScreen )
@@ -234,8 +223,6 @@ bool GLimp_Init( glimpParms_t parms )
 		SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, parms.multiSamples ? 1 : 0 );
 		SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, parms.multiSamples );
 
-#if SDL_VERSION_ATLEAST(2, 0, 0)
-
 		// RB begin
 		if( r_useOpenGL32.GetInteger() > 0 )
 		{
@@ -301,34 +288,13 @@ bool GLimp_Init( glimpParms_t parms )
 			common->Warning( "SDL_GL_SWAP_CONTROL not supported" );
 		}
 
+		Sys_SDLIcon( window );
+
 		// RB begin
 		SDL_GetWindowSize( window, &glConfig.nativeScreenWidth, &glConfig.nativeScreenHeight );
 		// RB end
 
 		glConfig.isFullscreen = ( SDL_GetWindowFlags( window ) & SDL_WINDOW_FULLSCREEN ) == SDL_WINDOW_FULLSCREEN;
-#else
-		glConfig.driverType = GLDRV_OPENGL3X;
-
-		SDL_WM_SetCaption( GAME_NAME, GAME_NAME );
-
-		if( SDL_GL_SetAttribute( SDL_GL_SWAP_CONTROL, r_swapInterval.GetInteger() ) < 0 )
-		{
-			common->Warning( "SDL_GL_SWAP_CONTROL not supported" );
-		}
-
-		window = SDL_SetVideoMode( parms.width, parms.height, colorbits, flags );
-		if( !window )
-		{
-			common->DPrintf( "Couldn't set GL mode %d/%d/%d: %s",
-							 channelcolorbits, tdepthbits, tstencilbits, SDL_GetError() );
-			continue;
-		}
-
-		glConfig.nativeScreenWidth = window->w;
-		glConfig.nativeScreenHeight = window->h;
-
-		glConfig.isFullscreen = ( window->flags & SDL_FULLSCREEN ) == SDL_FULLSCREEN;
-#endif
 
 		common->Printf( "Using %d color bits, %d depth, %d stencil display\n",
 						channelcolorbits, tdepthbits, tstencilbits );
@@ -366,7 +332,7 @@ bool GLimp_Init( glimpParms_t parms )
 		common->Printf( "Using GLEW %s\n", glewGetString( GLEW_VERSION ) );
 	}
 
-#if defined(__APPLE__) && SDL_VERSION_ATLEAST(2, 0, 2)
+#if defined(__APPLE__)
 	// SRS - On OSX enable SDL2 relative mouse mode warping to capture mouse properly if outside of window
 	SDL_SetHintWithPriority( SDL_HINT_MOUSE_RELATIVE_MODE_WARP, "1", SDL_HINT_OVERRIDE );
 #endif
@@ -382,10 +348,6 @@ bool GLimp_Init( glimpParms_t parms )
  Helper functions for GLimp_SetScreenParms()
 ===================
 */
-
-#if SDL_VERSION_ATLEAST(2, 0, 0)
-// SDL1 doesn't support multiple displays, so the source is much shorter and doesn't need separate functions
-// makes sure the window will be full-screened on the right display and returns the SDL display index
 static int ScreenParmsHandleDisplayIndex( glimpParms_t parms )
 {
 	int displayIdx;
@@ -479,7 +441,6 @@ static bool SetScreenParmsWindowed( glimpParms_t parms )
 	}
 	return true;
 }
-#endif // SDL_VERSION_ATLEAST(2, 0, 0)
 
 /*
 ===================
@@ -488,11 +449,6 @@ GLimp_SetScreenParms
 */
 bool GLimp_SetScreenParms( glimpParms_t parms )
 {
-#ifdef USE_VULKAN
-	return true;
-#endif
-
-#if SDL_VERSION_ATLEAST(2, 0, 0)
 	if( parms.fullScreen > 0 || parms.fullScreen == -2 )
 	{
 		if( !SetScreenParmsFullscreen( parms ) )
@@ -512,39 +468,6 @@ bool GLimp_SetScreenParms( glimpParms_t parms )
 		common->Warning( "GLimp_SetScreenParms: fullScreen -1 (borderless window for multiple displays) currently unsupported!" );
 		return false;
 	}
-#else // SDL 1.2 - so much shorter, but doesn't handle multiple displays
-	SDL_Surface* s = SDL_GetVideoSurface();
-	if( s == NULL )
-	{
-		common->Warning( "GLimp_SetScreenParms: Couldn't get video information, reason: %s", SDL_GetError() );
-		return false;
-	}
-
-
-	int bitsperpixel = 24;
-	if( s->format )
-	{
-		bitsperpixel = s->format->BitsPerPixel;
-	}
-
-	Uint32 flags = s->flags;
-
-	if( parms.fullScreen )
-	{
-		flags |= SDL_FULLSCREEN;
-	}
-	else
-	{
-		flags &= ~SDL_FULLSCREEN;
-	}
-
-	s = SDL_SetVideoMode( parms.width, parms.height, bitsperpixel, flags );
-	if( s == NULL )
-	{
-		common->Warning( "GLimp_SetScreenParms: Couldn't set video information, reason: %s", SDL_GetError() );
-		return false;
-	}
-#endif // SDL_VERSION_ATLEAST(2, 0, 0)
 
 	SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, parms.multiSamples ? 1 : 0 );
 	SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, parms.multiSamples );
@@ -565,14 +488,8 @@ GLimp_Shutdown
 */
 void GLimp_Shutdown()
 {
-#ifdef USE_VULKAN
-	common->Printf( "Shutting down Vulkan subsystem\n" );
-	return;
-#else
 	common->Printf( "Shutting down OpenGL subsystem\n" );
-#endif
 
-#if SDL_VERSION_ATLEAST(2, 0, 0)
 	if( context )
 	{
 		SDL_GL_DeleteContext( context );
@@ -584,7 +501,6 @@ void GLimp_Shutdown()
 		SDL_DestroyWindow( window );
 		window = NULL;
 	}
-#endif
 }
 
 /*
@@ -592,16 +508,10 @@ void GLimp_Shutdown()
 GLimp_SwapBuffers
 ===================
 */
-#ifndef USE_VULKAN
 void GLimp_SwapBuffers()
 {
-#if SDL_VERSION_ATLEAST(2, 0, 0)
 	SDL_GL_SwapWindow( window );
-#else
-	SDL_GL_SwapBuffers();
-#endif
 }
-#endif
 
 /*
 =================
@@ -610,35 +520,23 @@ GLimp_SetGamma
 */
 void GLimp_SetGamma( unsigned short red[256], unsigned short green[256], unsigned short blue[256] )
 {
-#ifndef USE_VULKAN
 	if( !window )
 	{
 		common->Warning( "GLimp_SetGamma called without window" );
 		return;
 	}
 
-#if SDL_VERSION_ATLEAST(2, 0, 0)
 	if( SDL_SetWindowGammaRamp( window, red, green, blue ) )
-#else
-	if( SDL_SetGammaRamp( red, green, blue ) )
-#endif
+	{
 		common->Warning( "Couldn't set gamma ramp: %s", SDL_GetError() );
-#endif
+	}
 }
 
 /*
 ===================
-GLimp_ExtensionPointer
+GLimp_GrabInput
 ===================
 */
-/*
-GLExtension_t GLimp_ExtensionPointer(const char *name) {
-	assert(SDL_WasInit(SDL_INIT_VIDEO));
-
-	return (GLExtension_t)SDL_GL_GetProcAddress(name);
-}
-*/
-
 void GLimp_GrabInput( int flags )
 {
 	bool grab = flags & GRAB_ENABLE;
@@ -664,184 +562,9 @@ void GLimp_GrabInput( int flags )
 		return;
 	}
 
-#if SDL_VERSION_ATLEAST(2, 0, 0)
 	// DG: disabling the cursor is now done once in GLimp_Init() because it should always be disabled
 
 	// DG: check for GRAB_ENABLE instead of GRAB_HIDECURSOR because we always wanna hide it
 	SDL_SetRelativeMouseMode( flags & GRAB_ENABLE ? SDL_TRUE : SDL_FALSE );
 	SDL_SetWindowGrab( window, grab ? SDL_TRUE : SDL_FALSE );
-#else
-	// DG end
-	SDL_WM_GrabInput( grab ? SDL_GRAB_ON : SDL_GRAB_OFF );
-#endif
-}
-
-/*
-====================
-DumpAllDisplayDevices
-====================
-*/
-void DumpAllDisplayDevices()
-{
-	common->DPrintf( "TODO: DumpAllDisplayDevices\n" );
-}
-
-
-
-class idSort_VidMode : public idSort_Quick< vidMode_t, idSort_VidMode >
-{
-public:
-	int Compare( const vidMode_t& a, const vidMode_t& b ) const
-	{
-		int wd = a.width - b.width;
-		int hd = a.height - b.height;
-		int fd = a.displayHz - b.displayHz;
-		return ( hd != 0 ) ? hd : ( wd != 0 ) ? wd : fd;
-	}
-};
-
-// RB: resolutions supported by XreaL
-static void FillStaticVidModes( idList<vidMode_t>& modeList )
-{
-	modeList.AddUnique( vidMode_t( 320,   240, 60 ) );
-	modeList.AddUnique( vidMode_t( 400,   300, 60 ) );
-	modeList.AddUnique( vidMode_t( 512,   384, 60 ) );
-	modeList.AddUnique( vidMode_t( 640,   480, 60 ) );
-	modeList.AddUnique( vidMode_t( 800,   600, 60 ) );
-	modeList.AddUnique( vidMode_t( 960,   720, 60 ) );
-	modeList.AddUnique( vidMode_t( 1024,  768, 60 ) );
-	modeList.AddUnique( vidMode_t( 1152,  864, 60 ) );
-	modeList.AddUnique( vidMode_t( 1280,  720, 60 ) );
-	modeList.AddUnique( vidMode_t( 1280,  768, 60 ) );
-	modeList.AddUnique( vidMode_t( 1280,  800, 60 ) );
-	modeList.AddUnique( vidMode_t( 1280, 1024, 60 ) );
-	modeList.AddUnique( vidMode_t( 1360,  768, 60 ) );
-	modeList.AddUnique( vidMode_t( 1440,  900, 60 ) );
-	modeList.AddUnique( vidMode_t( 1680, 1050, 60 ) );
-	modeList.AddUnique( vidMode_t( 1600, 1200, 60 ) );
-	modeList.AddUnique( vidMode_t( 1920, 1080, 60 ) );
-	modeList.AddUnique( vidMode_t( 1920, 1200, 60 ) );
-	modeList.AddUnique( vidMode_t( 2048, 1536, 60 ) );
-	modeList.AddUnique( vidMode_t( 2560, 1600, 60 ) );
-
-	modeList.SortWithTemplate( idSort_VidMode() );
-}
-
-/*
-====================
-R_GetModeListForDisplay
-====================
-*/
-bool R_GetModeListForDisplay( const int requestedDisplayNum, idList<vidMode_t>& modeList )
-{
-	assert( requestedDisplayNum >= 0 );
-
-	modeList.Clear();
-#if SDL_VERSION_ATLEAST(2, 0, 0)
-	// DG: SDL2 implementation
-	if( requestedDisplayNum >= SDL_GetNumVideoDisplays() )
-	{
-		// requested invalid displaynum
-		return false;
-	}
-
-	int numModes = SDL_GetNumDisplayModes( requestedDisplayNum );
-	if( numModes > 0 )
-	{
-		for( int i = 0; i < numModes; i++ )
-		{
-			SDL_DisplayMode m;
-			int ret = SDL_GetDisplayMode( requestedDisplayNum, i, &m );
-			if( ret != 0 )
-			{
-				common->Warning( "Can't get video mode no %i, because of %s\n", i, SDL_GetError() );
-				continue;
-			}
-
-			vidMode_t mode;
-			mode.width = m.w;
-			mode.height = m.h;
-			mode.displayHz = m.refresh_rate ? m.refresh_rate : 60; // default to 60 if unknown (0)
-			modeList.AddUnique( mode );
-		}
-
-		if( modeList.Num() < 1 )
-		{
-			common->Warning( "Couldn't get a single video mode for display %i, using default ones..!\n", requestedDisplayNum );
-			FillStaticVidModes( modeList );
-		}
-
-		// sort with lowest resolution first
-		modeList.SortWithTemplate( idSort_VidMode() );
-	}
-	else
-	{
-		common->Warning( "Can't get Video Info, using default modes...\n" );
-		if( numModes < 0 )
-		{
-			common->Warning( "Reason was: %s\n", SDL_GetError() );
-		}
-		FillStaticVidModes( modeList );
-	}
-
-	return true;
-	// DG end
-
-#else // SDL 1
-
-	// DG: SDL1 only knows of one display - some functions rely on
-	// R_GetModeListForDisplay() returning false for invalid displaynum to iterate all displays
-	if( requestedDisplayNum >= 1 )
-	{
-		return false;
-	}
-	// DG end
-
-	const SDL_VideoInfo* videoInfo = SDL_GetVideoInfo();
-	if( videoInfo == NULL )
-	{
-		// DG: yes, this can actually fail, e.g. if SDL_Init( SDL_INIT_VIDEO ) wasn't called
-		common->Warning( "Can't get Video Info, using default modes...\n" );
-		FillStaticVidModes( modeList );
-		return true;
-	}
-
-	SDL_Rect** modes = SDL_ListModes( videoInfo->vfmt, SDL_OPENGL | SDL_FULLSCREEN );
-
-	if( !modes )
-	{
-		common->Warning( "Can't get list of available modes, using default ones...\n" );
-		FillStaticVidModes( modeList );
-		return true;
-	}
-
-	if( modes == ( SDL_Rect** ) - 1 )
-	{
-		common->Printf( "Display supports any resolution\n" );
-		FillStaticVidModes( modeList );
-		return true;
-	}
-
-	int numModes;
-	for( numModes = 0; modes[numModes]; numModes++ );
-
-	if( numModes > 1 )
-	{
-		for( int i = 0; i < numModes; i++ )
-		{
-			vidMode_t mode;
-			mode.width =  modes[i]->w;
-			mode.height =  modes[i]->h;
-			mode.displayHz = 60; // FIXME;
-			modeList.AddUnique( mode );
-		}
-
-		// sort with lowest resolution first
-		modeList.SortWithTemplate( idSort_VidMode() );
-
-		return true;
-	}
-
-	return false;
-#endif
 }

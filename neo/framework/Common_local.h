@@ -148,7 +148,7 @@ class idCommonLocal : public idCommon
 public:
 	idCommonLocal();
 
-	virtual void				Init( int argc, const char* const* argv, const char* cmdline );
+	virtual void				Init( int argc, char* const* argv );
 	virtual void				Shutdown();
 	virtual	void				CreateMainMenu();
 	virtual void				Quit();
@@ -615,7 +615,7 @@ private:
 	void	InitCommands();
 	void	InitSIMD();
 	void	AddStartupCommands();
-	void	ParseCommandLine( int argc, const char* const* argv );
+	void	ParseCommandLine( int argc, char* const* argv );
 	bool	SafeMode();
 	void	CheckToolMode();
 	void	CloseLogFile();

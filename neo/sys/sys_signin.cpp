@@ -255,7 +255,7 @@ localUserHandle_t idSignInManagerBase::GetUniqueLocalUserHandle( const char* nam
 {
 	MD5_CTX			ctx;
 	unsigned char	digest[16];
-	int64			clockTicks = Sys_GetClockTicks();
+	int64			clockTicks = Sys_Microseconds();
 
 	MD5_Init( &ctx );
 	MD5_Update( &ctx, ( const unsigned char* )name, idStr::Length( name ) );
