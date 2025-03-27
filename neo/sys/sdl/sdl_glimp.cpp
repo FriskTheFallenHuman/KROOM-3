@@ -29,8 +29,14 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "../../idlib/precompiled.h"
-#include <GL/glew.h>
+#include "precompiled.h"
+#pragma hdrstop
+
+#ifdef _WIN32
+	#include "glew/include/GL/glew.h"
+#else
+	#include <GL/glew.h>
+#endif
 
 // DG: SDL.h somehow needs the following functions, so #undef those silly
 //     "don't use" #defines from Str.h

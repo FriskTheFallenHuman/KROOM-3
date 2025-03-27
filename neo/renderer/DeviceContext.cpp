@@ -1248,7 +1248,7 @@ int idDeviceContextOptimized::DrawText( float x, float y, float scale, idVec4 co
 			float x2 = xOffset + ( drawX + w ) * xScale;
 			float y1 = yOffset + drawY * yScale;
 			float y2 = yOffset + ( drawY + h ) * yScale;
-			idDrawVert* verts = tr_guiModel->AllocTris( 4, quadPicIndexes, 6, glyphInfo.material, 0, STEREO_DEPTH_TYPE_NONE );
+			idDrawVert* verts = tr_guiModel->AllocTris( 4, quadPicIndexes, 6, glyphInfo.material, 0 );
 			if( verts != NULL )
 			{
 				verts[0].xyz[0] = x1;

@@ -36,6 +36,11 @@ If you have questions concerning this license or the applicable additional terms
 #include <direct.h>
 #include <io.h>
 #include <conio.h>
+#include <uxtheme.h>
+#include <commctrl.h>
+
+#pragma comment(lib, "uxtheme.lib")
+#pragma comment(lib, "comctl32.lib")
 
 #include "win_local.h"
 #include "rc/doom_resource.h"
@@ -81,7 +86,7 @@ typedef struct
 	bool		quitOnClose;
 	int			windowWidth, windowHeight;
 
-	WNDPROC		SysInputLineWndProc;
+	LONG_PTR	SysInputLineWndProc;
 
 	idEditField	historyEditLines[COMMAND_HISTORY];
 
@@ -95,10 +100,8 @@ typedef struct
 
 static WinConData s_wcd;
 
-// SRS - use LRESULT vs LONG for type consistency with 64-bit and 32-bit
-static LRESULT WINAPI ConWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
+static LRESULT CALLBACK ConWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
-	char* cmdString;
 	static bool s_timePolarity;
 
 	switch( uMsg )
@@ -125,7 +128,6 @@ static LRESULT WINAPI ConWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 			{
 				SetBkColor( ( HDC ) wParam, RGB( 0x00, 0x00, 0x80 ) );
 				SetTextColor( ( HDC ) wParam, RGB( 0xff, 0xff, 0x00 ) );
-				// SRS - use LRESULT vs long for type consistency with 64-bit and 32-bit
 				return ( LRESULT ) s_wcd.hbrEditBackground;
 			}
 			else if( ( HWND ) lParam == s_wcd.hwndErrorBox )
@@ -140,7 +142,6 @@ static LRESULT WINAPI ConWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 					SetBkColor( ( HDC ) wParam, RGB( 0x80, 0x80, 0x80 ) );
 					SetTextColor( ( HDC ) wParam, RGB( 0x00, 0x0, 0x00 ) );
 				}
-				// SRS - use LRESULT vs long for type consistency with 64-bit and 32-bit
 				return ( LRESULT ) s_wcd.hbrErrorBackground;
 			}
 			break;
@@ -164,8 +165,7 @@ static LRESULT WINAPI ConWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 				}
 				else
 				{
-					cmdString = Mem_CopyString( "quit" );
-					Sys_QueEvent( SE_CONSOLE, 0, 0, strlen( cmdString ) + 1, cmdString, 0 );
+					cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "quit\n" );
 				}
 			}
 			else if( wParam == CLEAR_ID )
@@ -215,8 +215,7 @@ static LRESULT WINAPI ConWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 	return DefWindowProc( hWnd, uMsg, wParam, lParam );
 }
 
-// SRS - use LRESULT vs LONG for type consistency with 64-bit and 32-bit
-LRESULT WINAPI InputLineWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
+LONG WINAPI InputLineWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
 	int key, cursor;
 	switch( uMsg )
@@ -308,7 +307,7 @@ LRESULT WINAPI InputLineWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 			break;
 	}
 
-	return CallWindowProc( s_wcd.SysInputLineWndProc, hWnd, uMsg, wParam, lParam );
+	return CallWindowProc( ( WNDPROC )s_wcd.SysInputLineWndProc, hWnd, uMsg, wParam, lParam );
 }
 
 /*
@@ -374,13 +373,26 @@ void Sys_CreateConsole()
 		return;
 	}
 
+	// InitCommonControlsEx() is required on Windows XP if an application
+	// manifest specifies use of ComCtl32.dll version 6 or later to enable
+	// visual styles.  Otherwise, any window creation will fail.
+	INITCOMMONCONTROLSEX InitCtrls;
+	InitCtrls.dwSize = sizeof( InitCtrls );
+	// Set this to include all the common control classes you want to use
+	// in your application.
+	InitCtrls.dwICC = ICC_WIN95_CLASSES;
+	InitCommonControlsEx( &InitCtrls );
+
+	SetWindowTheme( s_wcd.hWnd, L"Explorer", NULL );
+
 	//
 	// create fonts
 	//
 	hDC = GetDC( s_wcd.hWnd );
 	nHeight = -MulDiv( 8, GetDeviceCaps( hDC, LOGPIXELSY ), 72 );
 
-	s_wcd.hfBufferFont = CreateFont( nHeight, 0, 0, 0, FW_LIGHT, 0, 0, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_MODERN | FIXED_PITCH, "Courier New" );
+	s_wcd.hfButtonFont = CreateFont( nHeight, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, OUT_OUTLINE_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH, "MS Shell Dlg" );
+	s_wcd.hfBufferFont = CreateFont( nHeight, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, OUT_OUTLINE_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH, "Cascadia Mono" );
 
 	ReleaseDC( s_wcd.hWnd, hDC );
 
@@ -402,6 +414,7 @@ void Sys_CreateConsole()
 										 s_wcd.hWnd,
 										 ( HMENU ) COPY_ID,	// child window ID
 										 win32.hInstance, NULL );
+	SendMessage( s_wcd.hwndButtonCopy, WM_SETFONT, ( WPARAM )s_wcd.hfButtonFont, TRUE );
 	SendMessage( s_wcd.hwndButtonCopy, WM_SETTEXT, 0, ( LPARAM ) "copy" );
 
 	s_wcd.hwndButtonClear = CreateWindow( "button", NULL, BS_PUSHBUTTON | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
@@ -409,6 +422,7 @@ void Sys_CreateConsole()
 										  s_wcd.hWnd,
 										  ( HMENU ) CLEAR_ID,	// child window ID
 										  win32.hInstance, NULL );
+	SendMessage( s_wcd.hwndButtonClear, WM_SETFONT, ( WPARAM )s_wcd.hfButtonFont, TRUE );
 	SendMessage( s_wcd.hwndButtonClear, WM_SETTEXT, 0, ( LPARAM ) "clear" );
 
 	s_wcd.hwndButtonQuit = CreateWindow( "button", NULL, BS_PUSHBUTTON | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
@@ -416,6 +430,7 @@ void Sys_CreateConsole()
 										 s_wcd.hWnd,
 										 ( HMENU ) QUIT_ID,	// child window ID
 										 win32.hInstance, NULL );
+	SendMessage( s_wcd.hwndButtonQuit, WM_SETFONT, ( WPARAM )s_wcd.hfButtonFont, TRUE );
 	SendMessage( s_wcd.hwndButtonQuit, WM_SETTEXT, 0, ( LPARAM ) "quit" );
 
 
@@ -430,13 +445,7 @@ void Sys_CreateConsole()
 									 win32.hInstance, NULL );
 	SendMessage( s_wcd.hwndBuffer, WM_SETFONT, ( WPARAM ) s_wcd.hfBufferFont, 0 );
 
-	// RB begin, SRS - use SetWindowLongPtr() for 64-bit
-#if defined(_WIN64)
-	s_wcd.SysInputLineWndProc = ( WNDPROC ) SetWindowLongPtr( s_wcd.hwndInputLine, GWLP_WNDPROC, ( LONG_PTR ) InputLineWndProc );
-#else
-	s_wcd.SysInputLineWndProc = ( WNDPROC ) SetWindowLong( s_wcd.hwndInputLine, GWL_WNDPROC, ( LONG ) InputLineWndProc );
-#endif
-	// RB end
+	s_wcd.SysInputLineWndProc = ( LONG_PTR ) SetWindowLongPtr( s_wcd.hwndInputLine, GWLP_WNDPROC, ( LONG_PTR ) InputLineWndProc );
 	SendMessage( s_wcd.hwndInputLine, WM_SETFONT, ( WPARAM ) s_wcd.hfBufferFont, 0 );
 
 // don't show it now that we have a splash screen up

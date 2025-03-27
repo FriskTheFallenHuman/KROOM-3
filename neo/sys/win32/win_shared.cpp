@@ -47,13 +47,6 @@ If you have questions concerning this license or the applicable additional terms
 	#include <comdef.h>
 	#include <comutil.h>
 	#include <Wbemidl.h>
-
-
-	// RB: no <atlbase.h> with Visual C++ 2010 Express
-	#if defined(USE_MFC_TOOLS)
-		#include <atlbase.h>
-	#endif
-
 #endif // #if !defined(__MINGW32__)
 // RB end
 

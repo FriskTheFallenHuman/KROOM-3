@@ -4,58 +4,32 @@ EXCLUDED CODE:  The code described below and contained in the Doom 3 BFG Edition
 is not part of the Program covered by the GPL and is expressly excluded from its terms. 
 You are solely responsible for obtaining from the copyright holder a license for such code and complying with the applicable license terms.
 
-
-JPEG library
------------------------------------------------------------------------------
-neo/libs/jpeg-6/*
-
-Copyright (C) 1991-1995, Thomas G. Lane
-
-Permission is hereby granted to use, copy, modify, and distribute this
-software (or portions thereof) for any purpose, without fee, subject to these
-conditions:
-(1) If any part of the source code for this software is distributed, then this
-README file must be included, with this copyright and no-warranty notice
-unaltered; and any additions, deletions, or changes to the original files
-must be clearly indicated in accompanying documentation.
-(2) If only executable code is distributed, then the accompanying
-documentation must state that "this software is based in part on the work of
-the Independent JPEG Group".
-(3) Permission for use of this software is granted only if the user accepts
-full responsibility for any undesirable consequences; the authors accept
-NO LIABILITY for damages of any kind.
-
-These conditions apply to any software derived from or based on the IJG code,
-not just to the unmodified library.  If you use our work, you ought to
-acknowledge us.
-
-NOTE: unfortunately the README that came with our copy of the library has
-been lost, so the one from release 6b is included instead. There are a few
-'glue type' modifications to the library to make it easier to use from
-the engine, but otherwise the dependency can be easily cleaned up to a
-better release of the library.
-
-zlib library
+miniz: Single C source file zlib-replacement library
 ---------------------------------------------------------------------------
-neo/libs/zlib/*
+neo/extern/miniz/*
 
-Copyright (C) 1995-2012 Jean-loup Gailly and Mark Adler
+Copyright 2013-2014 RAD Game Tools and Valve Software
+Copyright 2010-2014 Rich Geldreich and Tenacious Software LLC
 
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
+All Rights Reserved.
 
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-1. The origin of this software must not be misrepresented; you must not
- claim that you wrote the original software. If you use this software
- in a product, an acknowledgment in the product documentation would be
- appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
- misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
 
 Base64 implementation
 ---------------------------------------------------------------------------
@@ -92,7 +66,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 IO for (un)compress .zip files using zlib
 ---------------------------------------------------------------------------
-neo/libs/zlib/minizip/*
+neo/extern/minizip/*
 
 Copyright (C) 1998-2010 Gilles Vollant (minizip) ( http://www.winimage.com/zLibDll/minizip.html )
 
@@ -121,6 +95,7 @@ freely, subject to the following restrictions:
 MD4 Message-Digest Algorithm
 -----------------------------------------------------------------------------
 neo/idlib/hashing/MD4.cpp
+
 Copyright (C) 1991-2, RSA Data Security, Inc. Created 1991. All
 rights reserved.
 
@@ -145,6 +120,7 @@ documentation and/or software.
 MD5 Message-Digest Algorithm
 -----------------------------------------------------------------------------
 neo/idlib/hashing/MD5.cpp
+
 This code implements the MD5 message-digest algorithm.
 The algorithm is due to Ron Rivest.  This code was
 written by Colin Plumb in 1993, no copyright is claimed.
@@ -153,6 +129,7 @@ This code is in the public domain; do with it what you wish.
 CRC32 Checksum
 -----------------------------------------------------------------------------
 neo/idlib/hashing/CRC32.cpp
+
 Copyright (C) 1995-1998 Mark Adler
 
 The OpenGL Extension Wrangler Library (GLEW)
@@ -230,23 +207,9 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
 
-Timidity
----------------------------------------------------------------------------
-neo/libs/timidity/*
-
-Copyright (c) 1995 Tuukka Toivonen 
-
-From http://www.cgs.fi/~tt/discontinued.html :
-
-If you'd like to continue hacking on TiMidity, feel free. I'm
-hereby extending the TiMidity license agreement: you can now 
-select the most convenient license for your needs from (1) the
-GNU GPL, (2) the GNU LGPL, or (3) the Perl Artistic License.  
-
-
 libbinkdec
 ---------------------------------------------------------------------------
-neo/libs/libbinkdec/*
+neo/extern/libbinkdec/*
 
 Copyright (C) 2011 Barry Duncan
 
@@ -276,10 +239,12 @@ libbinkdec and (the used parts of) FFmpeg are released under LGPL v2.1:
  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 (You can find the whole license text on https://www.gnu.org/licenses/lgpl-2.1.html
- or in neo/libs/libbinkdec/COPYING)
+ or in neo/extern/libbinkdec/COPYING)
 
 ImGui
 ---------------------------------------------------------------------------
+neo/extern/imgui/*
+
 The MIT License (MIT)
 
 Copyright (c) 2014-2019 Omar Cornut
@@ -302,10 +267,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-
 RapidJSON
 ---------------------------------------------------------------------------
-neo/libs/rapidjson/*
+neo/extern/rapidjson/*
 
 Tencent is pleased to support the open source community by making RapidJSON available. 
  
@@ -365,40 +329,9 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-
-
-Irrlicht XML Parser
----------------------------------------------------------------------------
-neo/libs/irrxml/*
-
-The irrXML license is based on the zlib license. Basicly, this means you can do with
-irrXML whatever you want:
-
-Copyright (C) 2002-2005 Nikolaus Gebhardt
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-	claim that you wrote the original software. If you use this software
-	in a product, an acknowledgment in the product documentation would be
-	appreciated but is not required.
-
-2. Altered source versions must be plainly marked as such, and must not be
-	misrepresented as being the original software.
-
-3. This notice may not be removed or altered from any source distribution.
-
-
-
 TinyEXR
 ---------------------------------------------------------------------------
-neo/libs/tinyexr/*
+neo/extern/tinyexr/*
 
 Copyright (c) 2014 - 2020, Syoyo Fujita and many contributors.
 All rights reserved.
@@ -460,127 +393,9 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
-PNG library
------------------------------------------------------------------------------
-neo/libs/png/*
-
-This copy of the libpng notices is provided for your convenience.  In case of
-any discrepancy between this copy and the notices in the file png.h that is
-included in the libpng distribution, the latter shall prevail.
-
-COPYRIGHT NOTICE, DISCLAIMER, and LICENSE:
-
-If you modify libpng you may insert additional notices immediately following
-this sentence.
-
-This code is released under the libpng license.
-
-libpng versions 1.2.6, August 15, 2004, through 1.2.49, March 29, 2012, are
-Copyright (c) 2004, 2006-2009 Glenn Randers-Pehrson, and are
-distributed according to the same disclaimer and license as libpng-1.2.5
-with the following individual added to the list of Contributing Authors
-
-   Cosmin Truta
-
-libpng versions 1.0.7, July 1, 2000, through 1.2.5 - October 3, 2002, are
-Copyright (c) 2000-2002 Glenn Randers-Pehrson, and are
-distributed according to the same disclaimer and license as libpng-1.0.6
-with the following individuals added to the list of Contributing Authors
-
-   Simon-Pierre Cadieux
-   Eric S. Raymond
-   Gilles Vollant
-
-and with the following additions to the disclaimer:
-
-   There is no warranty against interference with your enjoyment of the
-   library or against infringement.  There is no warranty that our
-   efforts or the library will fulfill any of your particular purposes
-   or needs.  This library is provided with all faults, and the entire
-   risk of satisfactory quality, performance, accuracy, and effort is with
-   the user.
-
-libpng versions 0.97, January 1998, through 1.0.6, March 20, 2000, are
-Copyright (c) 1998, 1999 Glenn Randers-Pehrson, and are
-distributed according to the same disclaimer and license as libpng-0.96,
-with the following individuals added to the list of Contributing Authors:
-
-   Tom Lane
-   Glenn Randers-Pehrson
-   Willem van Schaik
-
-libpng versions 0.89, June 1996, through 0.96, May 1997, are
-Copyright (c) 1996, 1997 Andreas Dilger
-Distributed according to the same disclaimer and license as libpng-0.88,
-with the following individuals added to the list of Contributing Authors:
-
-   John Bowler
-   Kevin Bracey
-   Sam Bushell
-   Magnus Holmgren
-   Greg Roelofs
-   Tom Tanner
-
-libpng versions 0.5, May 1995, through 0.88, January 1996, are
-Copyright (c) 1995, 1996 Guy Eric Schalnat, Group 42, Inc.
-
-For the purposes of this copyright and license, "Contributing Authors"
-is defined as the following set of individuals:
-
-   Andreas Dilger
-   Dave Martindale
-   Guy Eric Schalnat
-   Paul Schmidt
-   Tim Wegner
-
-The PNG Reference Library is supplied "AS IS".  The Contributing Authors
-and Group 42, Inc. disclaim all warranties, expressed or implied,
-including, without limitation, the warranties of merchantability and of
-fitness for any purpose.  The Contributing Authors and Group 42, Inc.
-assume no liability for direct, indirect, incidental, special, exemplary,
-or consequential damages, which may result from the use of the PNG
-Reference Library, even if advised of the possibility of such damage.
-
-Permission is hereby granted to use, copy, modify, and distribute this
-source code, or portions hereof, for any purpose, without fee, subject
-to the following restrictions:
-
-1. The origin of this source code must not be misrepresented.
-
-2. Altered versions must be plainly marked as such and must not
-   be misrepresented as being the original source.
-
-3. This Copyright notice may not be removed or altered from any
-   source or altered source distribution.
-
-The Contributing Authors and Group 42, Inc. specifically permit, without
-fee, and encourage the use of this source code as a component to
-supporting the PNG file format in commercial products.  If you use this
-source code in a product, acknowledgment is not required but would be
-appreciated.
-
-
-A "png_get_copyright" function is available, for convenient use in "about"
-boxes and the like:
-
-   printf("%s",png_get_copyright(NULL));
-
-Also, the PNG logo (in PNG format, of course) is supplied in the
-files "pngbar.png" and "pngbar.jpg (88x31) and "pngnow.png" (98x31).
-
-Libpng is OSI Certified Open Source Software.  OSI Certified Open Source is a
-certification mark of the Open Source Initiative.
-
-Glenn Randers-Pehrson
-glennrp at users.sourceforge.net
-March 29, 2012
-
-
-
 Mesa R11G11B10 utility functions
 -----------------------------------------------------------------------------
-neo/libs/mesa/format_r11g11b10f.h
+neo/extern/mesa/format_r11g11b10f.h
 
 /*
  * Copyright (C) 2011 Marek Olšák <maraeo@gmail.com>
@@ -614,7 +429,7 @@ neo/libs/mesa/format_r11g11b10f.h
 
 Mikkelsen Tangent Space library
 -----------------------------------------------------------------------------
-neo/libs/mikktspace/*
+neo/extern/mikktspace/*
 
 Copyright (C) 2011 by Morten S. Mikkelsen
 
@@ -634,10 +449,27 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 
+Intel Masked Software Occlusion Culling
+-----------------------------------------------------------------------------
+neo/extern/moc/*
+
+Copyright 2017 Intel Corporation
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License.  You may obtain a copy
+of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+License for the specific language governing permissions and limitations
+under the License.
 
 STB single header libraries
 -----------------------------------------------------------------------------
-neo/libs/stb/*
+neo/extern/stb/*
 
 These libraries are in the public domain. You can do anything you want with them.
 You have no legal obligation to do anything else, although I appreciate attribution.
@@ -645,6 +477,29 @@ You have no legal obligation to do anything else, although I appreciate attribut
 They are also licensed under the MIT open source license, if you have lawyers who are unhappy with public domain. 
 Every source file includes an explicit dual-license for you to choose from.
 
+AMD Vulkan Memory Allocator
+-----------------------------------------------------------------------------
+neo/extern/vma/*
+
+Copyright (c) 2017-2022 Advanced Micro Devices, Inc. All rights reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
 
 Research Samples by Morgan McGuire
 -----------------------------------------------------------------------------

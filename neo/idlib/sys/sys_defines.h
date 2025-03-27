@@ -39,16 +39,34 @@ If you have questions concerning this license or the applicable additional terms
 
 // Win32
 #if defined(WIN32) || defined(_WIN32)
+	// Setting CPUSTRING for VisualC++ from CMake doesn't work when using VS integrated CMake
+	// so set it in code instead
+	#ifdef _MSC_VER
+		#ifdef CPUSTRING
+			#undef CPUSTRING
+		#endif // CPUSTRING
 
-	#if defined(_WIN64)
-		#define	CPUSTRING						"x64"
-	#elif defined(__aarch64__) || defined(__ARM64__) || defined(_M_ARM64)
-		#define CPUSTRING 						"arm64"
-	#else
-		#define	CPUSTRING						"x86"
-	#endif
+		#ifdef _M_X64
+			// this matches AMD64 and ARM64EC (but not regular ARM64), but they're supposed to be binary-compatible somehow, so whatever
+			#define CPUSTRING "x86_64"
+		#elif defined(_M_ARM64)
+			#define CPUSTRING "arm64"
+		#elif defined(_M_ARM)
+			#define CPUSTRING "arm"
+		#elif defined(_M_IX86)
+			#define CPUSTRING "x86"
+		#else
+			// if you're not targeting one of the aforementioned architectures,
+			// check https://learn.microsoft.com/en-us/cpp/preprocessor/predefined-macros
+			// to find out how to detect yours and add it here - and please send a patch :)
+			#error "Unknown CPU architecture!"
+			// (for a quick and dirty solution, comment out the previous line, but keep in mind
+			//  that savegames may not be compatible with other builds of dhewm3)
+			#define CPUSTRING "UNKNOWN"
+		#endif // _M_X64 etc
+	#endif // _MSC_VER
 
-	#define	BUILD_STRING					"win-" CPUSTRING
+	#define	BUILD_STRING					OSTYPESTRING "-" CPUSTRING
 
 	#ifdef _MSC_VER
 		#define ALIGN16( x )					__declspec(align(16)) x
@@ -110,41 +128,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #elif defined(__linux__) || defined(__FreeBSD__) || defined(__APPLE__) || defined(__GNUC__) || defined(__clang__)
 
-	#ifndef CPUSTRING
-		#if defined(__i386__)
-			#define	CPUSTRING						"x86"
-		#elif defined(__x86_64__)
-			#define CPUSTRING						"x86_64"
-		#elif defined(__e2k__)
-			#define CPUSTRING						"e2k"
-		#elif defined(__aarch64__) || defined(__ARM64__) || defined(_M_ARM64)
-			#define CPUSTRING 						"aarch64"
-		#elif defined(__powerpc64__) || defined(__PPC64__)
-			#define CPUSTRING						"ppc64"
-		#elif defined(__mips64) || defined(__mips64_)
-			#define CPUSTRING						"mips64"
-		#elif defined(__riscv__) || defined(__riscv)
-			#define CPUSTRING						"riscv"
-		#elif defined(__sparc__) || defined(__sparc)
-			#define CPUSTRING						"sparc"
-		#elif defined(__loongarch64)
-			#define CPUSTRING						"loongarch64"
-		#elif defined(__arm__)
-			#define CPUSTRING						"arm"
-		#else
-			#error unknown CPU
-		#endif
-	#endif
-
-	#if defined(__FreeBSD__)
-		#define	BUILD_STRING					"freebsd-" CPUSTRING
-	#elif defined(__linux__)
-		#define	BUILD_STRING					"linux-" CPUSTRING
-	#elif defined(__APPLE__)
-		#define BUILD_STRING					"osx-" CPUSTRING
-	#else
-		#define BUILD_STRING					"other-" CPUSTRING
-	#endif
+	#define	BUILD_STRING					OSTYPESTRING"-" CPUSTRING
 
 	#define _alloca							alloca
 
@@ -296,21 +280,16 @@ extern volatile int ignoredReturnValue;
 
 #endif
 
-
 /*
- * Macros for format conversion specifications for integer arguments of type
- * size_t or ssize_t.
- */
-#ifdef _MSV_VER
-
+* Macros for format conversion specifications for integer arguments of type
+* size_t or ssize_t.
+*/
+#ifdef _MSC_VER
 	#define PRIiSIZE "Ii"
 	#define PRIuSIZE "Iu"
 	#define PRIxSIZE "Ix"
-
-#else // ifdef _MSV_VER
-
+#else
 	#define PRIiSIZE "zi"
 	#define PRIuSIZE "zu"
 	#define PRIxSIZE "zx"
-
-#endif // ifdef _MSV_VER
+#endif /* !_MSC_VER */

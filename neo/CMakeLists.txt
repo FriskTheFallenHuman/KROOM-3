@@ -11,38 +11,29 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMakeModules")
 
-project(RBDoom3BFG C CXX)
+project(Kroom3BFG
+		VERSION "1.2.0"
+		DESCRIPTION "Fork of RBDOOM3-BFG v1.3.0 source port aims to modernize DOOM 3 BFG"
+		HOMEPAGE_URL "https://github.com/FriskTheFallenHuman/KROOM-3"
+		LANGUAGES C CXX)
 
 option(FORCE_COLOR_OUTPUT "Always produce ANSI-colored output (GNU/Clang only)." OFF)
 option(COMPILE_COMMANDS "Generate compile_commands.json" OFF)
-option(USE_MFC_TOOLS "Compile the built-in MFC based tools" OFF)
+option(TOOLS "Compile the built-in MFC based tools" OFF)
 option(USE_PRECOMPILED_HEADERS "Use precompiled headers during build" ON)
-if(UNIX)
-	option(SDL2 "Use SDL2 instead of SDL1.2" ON)
-endif()
-option(OPENAL "Use OpenAL soft instead of XAudio2" ON)
+option(SDL2 "Use SDL2 instead of platform specific implementations" OFF)
+option(OPENAL "Use OpenAL soft instead of XAudio2" OFF)
 option(FFMPEG "Use FMPEG to render Bink videos" OFF)
 option(BINKDEC "Use included libbinkdec to render Bink videos" ON)
 option(USE_VULKAN "Use Vulkan instead of OpenGL" OFF)
 option(SPIRV_SHADERC "Compile SPIR-V shader byte code using shaderc instead of using Glslang directly" OFF)
 option(USE_MoltenVK	"Use MoltenVK library directly instead of Vulkan loader on macOS" OFF)
 option(ONATIVE "Optimize for the host CPU" OFF)
+option(REPRODUCIBLE_BUILD "Replace __DATE__ and __TIME__ by hardcoded values for reproducible builds." OFF)
 option(WINRT "Build for Windows RT" OFF)
 option(WINDOWS10 "Build for Windows 10" ON)
 
-set(CPU_TYPE "" CACHE STRING "When set, passes this string as CPU-ID which will be embedded into the binary.")
-
-# SRS - Turn on compiler optimizations for x86 and also when cross-compiling from Apple arm64 to x86_64
-if (CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)" OR CMAKE_OSX_ARCHITECTURES MATCHES "x86_64")
-	set(CPU_OPTIMIZATION "-mmmx -msse -msse2" CACHE STRING "Which CPU-specific optimizations should be used besides the compiler's default?")
-endif()
-
-# SRS - Turn on MMX/SSE intrinsics for x86 but not when cross-compiling from Apple x86_64 to arm64
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)|(e2k)|(E2K)" AND NOT CMAKE_OSX_ARCHITECTURES MATCHES "arm64")
-	option(USE_INTRINSICS_SSE "Compile using x86 MMX/SSE intrinsics (e.g SSE SIMD instructions)" ON)
-else()
-	option(USE_INTRINSICS_SSE "Compile using x86 MMX/SSE intrinsics (e.g SSE SIMD instructions)" OFF)
-endif()
+include(CPUDefine)
 
 if(FFMPEG AND BINKDEC)
 	message(FATAL_ERROR "Only one of FFMPEG and BINKDEC (or neither) can be enabled at a time")
@@ -50,6 +41,7 @@ endif()
 
 if(UNIX)
 	set(OPENAL ON)
+	set(FFMPEG ON)
 
 	# SRS - Disable precompiled headers when cross-compiling on OSX, e.g. when creating universal binaries
 	#     - Also disable precompiled headers when using the Ninja Multi-Config generator on linux or macOS
@@ -66,6 +58,11 @@ if(UNIX)
 	endif()
 endif()
 
+if(REPRODUCIBLE_BUILD)
+	# don't use __DATE__ and __TIME__ macros so builds are reproducible
+	add_definitions(-DID_REPRODUCIBLE_BUILD)
+endif()
+
 if(COMPILE_COMMANDS)
 	set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 endif()
@@ -77,6 +74,8 @@ if (FORCE_COLOR_OUTPUT)
 		add_compile_options(-fcolor-diagnostics)
 	endif ()
 endif ()
+
+configure_file("${CMAKE_SOURCE_DIR}/config.h.in" "${CMAKE_BINARY_DIR}/config.h")
 
 if(MSVC)
 	if (CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -113,13 +112,11 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 		message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++14 support. Please use a different C++ compiler.")
 	endif()
 
-	if(CPU_TYPE)
-		add_definitions(-DCPUSTRING="${CPU_TYPE}")
-	endif()
 	if (CPU_OPTIMIZATION)
 		SEPARATE_ARGUMENTS(CPU_OPTIMIZATION)
 		add_compile_options(${CPU_OPTIMIZATION})
 	endif()
+
 	if(WIN32)
 		# require msvcr70.dll or newer for _aligned_malloc etc
 		# I think it is from Visual C++ .NET 2002, so it should be available on any remotely modern system.
@@ -223,9 +220,13 @@ elseif(MSVC)
 	if(MSVC)
 		if(WINDOWS10)
 			if(OPENAL)
-				list(APPEND sys_libs dinput8 dxguid Xinput)
+				list(APPEND sys_libs dxguid)
 			else()
-				list(APPEND sys_libs dinput8 dsound dxguid Xinput xaudio2)
+				list(APPEND sys_libs dsound dxguid xaudio2)
+			endif()
+
+			if (NOT SDL2 )
+				list(APPEND sys_libs dinput8 Xinput)
 			endif()
 		else()
 			find_package(DirectX REQUIRED)
@@ -233,7 +234,7 @@ elseif(MSVC)
 		endif()
 	endif()
 
-	if(USE_MFC_TOOLS)
+	if(TOOLS)
 		add_definitions(-D_AFXDLL)
 
 		# 0: Use Standard Windows Libraries
@@ -333,9 +334,10 @@ if(USE_VULKAN)
 		message(STATUS "Using Vulkan: " ${Vulkan_LIBRARY})
 	endif()
 
-	# Eric: For use with SDL2/Vulkan
-	if(UNIX)
+	# Eric: For use with SDL2/Vulkan and/or for vulkan
+	if(UNIX OR SDL2)
 		# SRS - For UNIX-like target OSs use the generic SDL Vulkan platform
+		# Or for when we build SDL2
 		add_definitions(-DVULKAN_USE_PLATFORM_SDL)
 	elseif(WIN32)
 		add_definitions(-DVK_USE_PLATFORM_WIN32_KHR)
@@ -362,15 +364,14 @@ if(OPENAL)
 	list(APPEND sys_thirdparty ${OPENAL_LIBRARY})
 endif()
 
-if(UNIX)
-	if(SDL2)
-		find_package(SDL2 REQUIRED)
-		include_directories(${SDL2_INCLUDE_DIRS})
-		list(APPEND sys_thirdparty ${SDL2_LIBRARIES})
+if(SDL2)
+	find_package(SDL2 REQUIRED)
+	include_directories(${SDL2_INCLUDE_DIRS})
+	add_definitions(-DUSE_SDL)
+	if(WIN32)
+		list(APPEND sys_thirdparty SDL2::SDL2 SDL2::SDL2main)
 	else()
-		find_package(SDL REQUIRED)
-		include_directories(${SDL_INCLUDE_DIR})
-		list(APPEND sys_thirdparty ${SDL_LIBRARY})
+		list(APPEND sys_thirdparty ${SDL2_LIBRARIES})
 	endif()
 endif()
 
@@ -460,6 +461,28 @@ source_group("Sys" FILES ${src_sys})
 file(GLOB src_sys_common sys/common/*.cpp sys/common/*.h)
 source_group("Sys\\Common" FILES ${src_sys_common})
 
+if(SDL2)
+	file(GLOB src_sys_sdl sys/sdl/*.cpp sys/sdl/*.h)
+	source_group("Sys//SDL" FILES ${src_sys_sdl})
+
+	#if(WIN32)
+	#	get_filename_component(sdl_events_cpp_full_path ${CMAKE_CURRENT_SOURCE_DIR}/sys/sdl/sdl_events.cpp ABSOLUTE)
+	#	list(REMOVE_ITEM src_sys_sdl "${sdl_events_cpp_full_path}")
+
+	#	get_filename_component(sdl2_scancode_mappings_h_full_path ${CMAKE_CURRENT_SOURCE_DIR}/sys/sdl/sdl2_scancode_mappings.h ABSOLUTE)
+	#	list(REMOVE_ITEM src_sys_sdl "${sdl2_scancode_mappings_h_full_path}")
+	#endif()
+
+	# Eric: Utilize either the Vulkan or GL implementation of SDL
+	if(USE_VULKAN)
+		get_filename_component(sdl_glimp_cpp_full_path ${CMAKE_CURRENT_SOURCE_DIR}/sys/sdl/sdl_glimp.cpp ABSOLUTE)
+		list(REMOVE_ITEM src_sys_sdl "${sdl_glimp_cpp_full_path}")
+	else()
+		get_filename_component(sdl_vkimp_cpp_full_path ${CMAKE_CURRENT_SOURCE_DIR}/sys/sdl/sdl_vkimp.cpp ABSOLUTE)
+		list(REMOVE_ITEM src_sys_sdl "${sdl_vkimp_cpp_full_path}")
+	endif()
+endif()
+
 file(GLOB src_ui ui/*.cpp ui/*.h)
 list(REMOVE_ITEM src_ui ${CMAKE_CURRENT_SOURCE_DIR}/ui/GameWindow.cpp)
 source_group("UI" FILES ${src_ui})
@@ -479,6 +502,7 @@ set(src_core
 	${src_sound}
 	${src_swf}
 	${src_sys}
+	${src_sys_sdl}
 	${src_sys_common}
 	${src_ui})
 
@@ -682,7 +706,7 @@ if(MSVC)
 		list(APPEND src_core ${src_sound_xaudio2})
 	endif()
 
-	if(USE_MFC_TOOLS)
+	if(TOOLS)
 		list(APPEND src_core ${src_tools})
 	endif()
 
@@ -693,6 +717,20 @@ if(MSVC)
 		${CMAKE_CURRENT_SOURCE_DIR}/sys/win32/win_stats.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/sys/win32/win_stats.h)
 	source_group("Sys//Win32" FILES ${src_sys_win32})
+
+	if(SDL2)
+		get_filename_component(win_input_cpp_full_path ${CMAKE_CURRENT_SOURCE_DIR}/sys/win32/win_input.cpp ABSOLUTE)
+		list(REMOVE_ITEM src_sys_win32 "${win_input_cpp_full_path}")
+
+		get_filename_component(win_input_h_full_path ${CMAKE_CURRENT_SOURCE_DIR}/sys/win32/win_input.h ABSOLUTE)
+		list(REMOVE_ITEM src_sys_win32 "${win_input_h_full_path}")
+
+		get_filename_component(win_glimp_cpp_full_path ${CMAKE_CURRENT_SOURCE_DIR}/sys/win32/win_glimp.cpp ABSOLUTE)
+		list(REMOVE_ITEM src_sys_win32 "${win_glimp_cpp_full_path}")
+
+		get_filename_component(win_wndproc_cpp_full_path ${CMAKE_CURRENT_SOURCE_DIR}/sys/win32/win_wndproc.cpp ABSOLUTE)
+		list(REMOVE_ITEM src_sys_win32 "${win_wndproc_cpp_full_path}")
+	endif()
 
 	if(NOT MSVC)
 		list(REMOVE_ITEM src_sys_win32 ${CMAKE_SOURCE_DIR}/sys/win32/win_cpu.cpp)
@@ -711,19 +749,7 @@ else()
 		${CMAKE_CURRENT_SOURCE_DIR}/sys/posix/platform_osx.cpp)
 	source_group("Sys//Posix" FILES ${src_sys_posix})
 
-	file(GLOB src_sys_sdl sys/sdl/*.cpp sys/sdl/*.h)
-	source_group("Sys//SDL" FILES ${src_sys_sdl})
-
 	if(UNIX)
-		# Eric: Utilize either the Vulkan or GL implementation of SDL
-		if(USE_VULKAN)
-			get_filename_component(sdl_glimp_cpp_full_path ${CMAKE_CURRENT_SOURCE_DIR}/sys/sdl/sdl_glimp.cpp ABSOLUTE)
-			list(REMOVE_ITEM src_sys_sdl "${sdl_glimp_cpp_full_path}")
-		else()
-			get_filename_component(sdl_vkimp_cpp_full_path ${CMAKE_CURRENT_SOURCE_DIR}/sys/sdl/sdl_vkimp.cpp ABSOLUTE)
-			list(REMOVE_ITEM src_sys_sdl "${sdl_vkimp_cpp_full_path}")
-		endif()
-
 		if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 			list(APPEND src_sys_posix ${CMAKE_CURRENT_SOURCE_DIR}/sys/posix/platform_linux.cpp)
 		else()
@@ -731,7 +757,7 @@ else()
 		endif()
 	endif()
 
-	list(APPEND src_core ${src_sys_posix} ${src_sys_sdl})
+	list(APPEND src_core ${src_sys_posix})
 
 	if(UNIX)
 		if(OPENAL)
@@ -789,11 +815,11 @@ else()
 		set_source_files_properties(sys/posix/res/Doom3BFG.icns PROPERTIES XCODE_EXPLICIT_FILE_TYPE .icns)
 
 		# add macOS bundle properties to executable
-		set(MACOSX_BUNDLE_BUNDLE_NAME RBDoom-3-BFG)
-		set(MACOSX_BUNDLE_BUNDLE_VERSION 1.6.0)
-		set(MACOSX_BUNDLE_SHORT_VERSION_STRING 1.6.0)
+		set(MACOSX_BUNDLE_BUNDLE_NAME ${CMAKE_PROJECT_NAME})
+		set(MACOSX_BUNDLE_BUNDLE_VERSION ${CMAKE_PROJECT_VERSION})
+		set(MACOSX_BUNDLE_SHORT_VERSION_STRING ${CMAKE_PROJECT_VERSION})
 		set(MACOSX_BUNDLE_ICON_FILE Doom3BFG.icns)
-		set(MACOSX_BUNDLE_INFO_STRING "")					# to be added by author if desired
+		set(MACOSX_BUNDLE_INFO_STRING "${CMAKE_PROJECT_DESCRIPTION}")
 		set(MACOSX_BUNDLE_COPYRIGHT "")						# to be added by author if desired
 	endif()
 endif()
@@ -812,7 +838,7 @@ if(MSVC)
 	# set MSVC default debug directory on executable
 	set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${CMAKE_PROJECT_NAME}) # set MSVC startup project
 	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${EXECUTABLE_OUTPUT_PATH}")
-	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES VS_DEBUGGER_COMMAND_ARGUMENTS "+set r_fullscreen 0")
+	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES VS_DEBUGGER_COMMAND_ARGUMENTS "+set r_fullscreen 0 +set win_viewlog 1 +set developter 1")
 
 	#CMAKE_BINARY_DIR
 	if(CMAKE_CL_64)

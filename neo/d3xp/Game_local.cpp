@@ -1516,19 +1516,11 @@ bool idGameLocal::InitFromSaveGame( const char* mapName, idRenderWorld* renderWo
 
 	// FIXME: save smoke particles
 
-	if( saveGameVersion > BUILD_NUMBER_SAVE_VERSION_BEFORE_SKIP_CINEMATIC )
-	{
-		savegame.ReadInt( cinematicSkipTime );
-		savegame.ReadInt( cinematicStopTime );
-		savegame.ReadInt( cinematicMaxSkipTime );
-	}
-
+	savegame.ReadInt( cinematicSkipTime );
+	savegame.ReadInt( cinematicStopTime );
+	savegame.ReadInt( cinematicMaxSkipTime );
 	savegame.ReadBool( inCinematic );
-
-	if( saveGameVersion > BUILD_NUMBER_SAVE_VERSION_BEFORE_SKIP_CINEMATIC )
-	{
-		savegame.ReadBool( skipCinematic );
-	}
+	savegame.ReadBool( skipCinematic );
 
 	savegame.ReadInt( ( int& )gameType );
 

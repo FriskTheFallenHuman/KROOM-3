@@ -35,17 +35,33 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
-#define GAME_NAME						"DOOM 3: BFG Edition"		// appears on window titles and errors
+#define GAME_NAME						"KROOM 3: BFG"		// appears on window titles and errors
+#define SAVE_PATH						"\\id Software\\KROOM 3 BFG"
+#define ENGINE_VERSION					"KROOM 3: BFG"	// printed in console, used for window title
 
-// RB: changed home folder so we don't break the savegame of the original game
-#define SAVE_PATH						"\\id Software\\RBDOOM 3 BFG"
+#ifdef ID_REPRODUCIBLE_BUILD
+	// for reproducible builds we hardcode values that would otherwise come from __DATE__ and __TIME__
+	// NOTE: remember to update esp. the date for (pre-) releases and RCs and the like
+	#define ID__DATE__  "Aug 15 2024"
+	#define ID__TIME__  "13:37:42"
 
-#define ENGINE_VERSION					"RBDOOM 3 BFG"	// printed in console
-// RB end
+#else // not reproducible build, use __DATE__ and __TIME__ macros
+	#define ID__DATE__  __DATE__
+	#define ID__TIME__  __TIME__
+#endif
 
+// paths
 #define	BASE_GAMEDIR					"base"
 
-#define CONFIG_FILE						"D3BFGConfig.cfg"
+// filenames
+#ifndef CONFIG_FILE
+	#define CONFIG_FILE					"kroom3.cfg"
+#endif
+
+// default network server port
+#ifndef PORT_SERVER
+	#define	PORT_SERVER					"27015"
+#endif
 
 // <= Doom v1.1: 1. no DS_VERSION token ( default )
 // Doom v1.2:  2
@@ -65,9 +81,9 @@ If you have questions concerning this license or the applicable additional terms
 // RB begin
 // Default base path (used only if none could be found)
 #ifdef __APPLE__
-#define DEFAULT_BASEPATH				"/Applications/RBDoom3BFG.app/Contents/Resources"
+	#define DEFAULT_BASEPATH				"/Applications/RBDoom3BFG.app/Contents/Resources"
 #else
-#define DEFAULT_BASEPATH				"/usr/share/games/doom3bfg"
+	#define DEFAULT_BASEPATH				"/usr/share/games/doom3bfg"
 #endif
 // RB end
 

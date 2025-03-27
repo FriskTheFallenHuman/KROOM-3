@@ -43,14 +43,14 @@ All game cvars should be defined here.
 */
 
 struct gameVersion_s {
-	gameVersion_s() { idStr::snPrintf( string, sizeof( string ), "%s.%d%s %s %s %s", ENGINE_VERSION, BUILD_NUMBER, BUILD_DEBUG, BUILD_STRING, __DATE__, __TIME__ ); }
+	gameVersion_s() { idStr::snPrintf( string, sizeof( string ), "%s.%d%s %s %s %s", ENGINE_VERSION, BUILD_NUMBER, BUILD_DEBUG, BUILD_STRING, ID__DATE__, ID__TIME__ ); }
 	char	string[256];
 } gameVersion;
 
 
 // noset vars
 idCVar gamename(					"gamename",					GAME_VERSION,	CVAR_GAME | CVAR_ROM, "" );
-idCVar gamedate(					"gamedate",					__DATE__,		CVAR_GAME | CVAR_ROM, "" );
+idCVar gamedate(					"gamedate",					ID__DATE__,		CVAR_GAME | CVAR_ROM, "" );
 
 idCVar si_map(						"si_map",					"-1",			CVAR_GAME | CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_INTEGER, "default map choice for profile" );
 idCVar si_mode(						"si_mode",					"-1",			CVAR_GAME | CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_INTEGER, "default mode choice for profile", -1, GAME_COUNT - 1 );
@@ -65,6 +65,8 @@ idCVar si_midnight(                 "si_midnight",              "0",            
 
 // change anytime vars
 idCVar developer(					"developer",				"0",			CVAR_GAME | CVAR_BOOL, "" );
+
+idCVar r_aspectRatio(				"r_aspectRatio",			"-1",			CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "aspect ratio of view:\n0 = 4:3\n1 = 16:9\n2 = 16:10\n-1 = auto (guess from resolution)", -1, 2 );
 
 idCVar g_cinematic(					"g_cinematic",				"1",			CVAR_GAME | CVAR_BOOL, "skips updating entities that aren't marked 'cinematic' '1' during cinematics" );
 idCVar g_cinematicMaxSkipTime(		"g_cinematicMaxSkipTime",	"600",			CVAR_GAME | CVAR_FLOAT, "# of seconds to allow game to run when skipping cinematic.  prevents lock-up when cinematic doesn't end.", 0, 3600 );

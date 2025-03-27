@@ -1,6 +1,6 @@
 {
-  "name": "doom3bfg",
-  "version": "1.4.0",
+  "name": "kroom3",
+  "version": "1.2.0",
   "dependencies": [
     "opengl",
     "openal-soft",

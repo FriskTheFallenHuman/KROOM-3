@@ -29,7 +29,8 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "../../idlib/precompiled.h"
+#include "precompiled.h"
+#pragma hdrstop
 
 // DG: SDL.h somehow needs the following functions, so #undef those silly
 //     "don't use" #defines from Str.h
@@ -51,21 +52,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "sdl_local.h"
 
 idCVar in_nograb( "in_nograb", "0", CVAR_SYSTEM | CVAR_NOCHEAT, "prevents input grabbing" );
-
-// RB: FIXME this shit. We need the OpenGL alpha channel for advanced rendering effects
-idCVar r_waylandcompat( "r_waylandcompat", "0", CVAR_SYSTEM | CVAR_NOCHEAT | CVAR_ARCHIVE, "wayland compatible framebuffer" );
-
-// RB: only relevant if using SDL 2.0
-#if defined(__APPLE__)
-	// only core profile is supported on OS X
-	idCVar r_useOpenGL32( "r_useOpenGL32", "2", CVAR_INTEGER, "0 = OpenGL 3.x, 1 = OpenGL 3.2 compatibility profile, 2 = OpenGL 3.2 core profile", 0, 2 );
-#elif defined(__linux__)
-	// Linux open source drivers suck
-	idCVar r_useOpenGL32( "r_useOpenGL32", "0", CVAR_INTEGER, "0 = OpenGL 3.x, 1 = OpenGL 3.2 compatibility profile, 2 = OpenGL 3.2 core profile", 0, 2 );
-#else
-	idCVar r_useOpenGL32( "r_useOpenGL32", "1", CVAR_INTEGER, "0 = OpenGL 3.x, 1 = OpenGL 3.2 compatibility profile, 2 = OpenGL 3.2 core profile", 0, 2 );
-#endif
-// RB end
 
 static bool grabbed = false;
 
@@ -460,7 +446,6 @@ bool VKimp_SetScreenParms( glimpParms_t parms )
 	}
 
 	glConfig.isFullscreen = parms.fullScreen;
-	glConfig.isStereoPixelFormat = parms.stereo;
 	glConfig.nativeScreenWidth = parms.width;
 	glConfig.nativeScreenHeight = parms.height;
 	glConfig.displayFrequency = parms.displayHz;

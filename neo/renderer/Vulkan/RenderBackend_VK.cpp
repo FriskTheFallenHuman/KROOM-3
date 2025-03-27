@@ -28,8 +28,8 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#pragma hdrstop
 #include "precompiled.h"
+#pragma hdrstop
 
 // VK_EXT_debug_marker
 PFN_vkDebugMarkerSetObjectTagEXT	qvkDebugMarkerSetObjectTagEXT = VK_NULL_HANDLE;
@@ -60,7 +60,7 @@ idCVar r_syncEveryFrame( "r_syncEveryFrame", "1", CVAR_BOOL, "Don't let the GPU 
 
 // NEW VULKAN STUFF
 
-idCVar r_vkEnableValidationLayers( "r_vkEnableValidationLayers", "0", CVAR_BOOL | CVAR_INIT, "" );
+idCVar r_vkEnableValidationLayers( "r_vkEnableValidationLayers", "0", CVAR_BOOL | CVAR_INIT | CVAR_NEW, "" );
 
 vulkanContext_t vkcontext;
 
@@ -1645,9 +1645,7 @@ void idRenderBackend::Init()
 	CreateVulkanInstance();
 
 	// create the windowing interface
-//#ifdef _WIN32
 	CreateSurface();
-//#endif
 
 	// Enumerate physical devices and get their properties
 	idLib::Printf( "Enumerating physical devices and their properties...\n" );
