@@ -1,0 +1,50 @@
+name: Windows Build
+on: push
+
+jobs:
+  job:
+    name: ${{ matrix.os }}-build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Get latest CMake if possible
+        uses: lukka/get-cmake@latest
+
+      - name: Restore from cache and setup vcpkg executable and data files.
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgDirectory: '${{github.workspace}}/vcpkg'
+          runVcpkgInstall: true
+          vcpkgJsonGlob: '**/neo/vcpkg.json'
+
+      - name: Run CMake+vcpkg+Ninja to build the engine.
+        uses: lukka/run-cmake@v10
+        with:
+          cmakeListsTxtPath: '${{github.workspace}}/neo/CMakeLists.txt'
+          configurePreset: 'ninja-multi-vcpkg'
+          buildPreset: 'ninja-vcpkg-release'
+
+      - name: Copy base files to bin/
+        shell: pwsh
+        run: |
+          cd ${{github.workspace}}
+          Copy-Item -Path "base" -Destination "bin/base" -Recurse
+          Copy-Item -Path ".github/RELEASE-NOTES.md" -Destination "bin"
+          Copy-Item -Path ".github/LICENSE_EXCEPTIONS.md" -Destination "bin"
+          Copy-Item -Path ".github/LICENSE.md" -Destination "bin"
+          Copy-Item -Path ".github/logo.png" -Destination "bin"
+          Copy-Item -Path ".github/README.md" -Destination "bin"
+
+      - name: Artifacts for Windows
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: kroom3bfg-windows
+          path: bin/
