@@ -77,13 +77,10 @@ endif ()
 
 configure_file("${CMAKE_SOURCE_DIR}/config.h.in" "${CMAKE_BINARY_DIR}/config.h")
 
-if(MSVC)
-	if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-		set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/../bin/x86_64)
-	else()
-		set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/../bin/x86)
-	endif()
+# Set the output directory
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/../bin)
 
+if(MSVC)
 	message(STATUS "Root: ${CMAKE_ROOT}")
 	message(STATUS "Output Path: ${EXECUTABLE_OUTPUT_PATH}")
 	message(STATUS "Project Binary Path: ${PROJECT_BINARY_DIR}")

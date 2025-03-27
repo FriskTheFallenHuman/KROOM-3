@@ -269,18 +269,6 @@ void Sys_ShutdownInput()
 }
 
 /*
-===========
-Sys_InitScanTable
-===========
-*/
-// Windows has its own version due to the tools
-#ifndef _WIN32
-void Sys_InitScanTable()
-{
-}
-#endif
-
-/*
 ===============
 Sys_GetConsoleKey
 ===============
@@ -676,8 +664,6 @@ sysEvent_t Sys_GetEvent()
 			case SDL_JOYDEVICEADDED:
 			case SDL_JOYDEVICEREMOVED:
 			case SDL_JOYBATTERYUPDATED:
-			case SDL_CONTROLLERDEVICEADDED:
-			case SDL_CONTROLLERDEVICEREMOVED:
 				// Avoid 'unknown event' spam
 				continue;
 
