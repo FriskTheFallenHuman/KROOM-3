@@ -567,6 +567,7 @@ private:
 	idStaticList<int, LOAD_TIP_COUNT>	loadTipList;
 
 	const idMaterial* 	splashScreen;
+	const idMaterial*	photsensitivityScreen;
 
 	const idMaterial* 	whiteMaterial;
 
@@ -625,7 +626,7 @@ private:
 	void	UnloadGameDLL();
 	void	CleanupShell();
 	void	RenderBink( const char* path );
-	void	RenderSplash();
+	void	RenderSplash( bool photsensitivity = false );
 	void	FilterLangList( idStrList* list, idStr lang );
 	void	CheckStartupStorageRequirements();
 
