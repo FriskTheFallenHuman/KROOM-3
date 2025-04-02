@@ -811,7 +811,7 @@ CONSOLE_COMMAND( finishBuild, "finishes the build process", NULL )
 idCommonLocal::RenderSplash
 =================
 */
-void idCommonLocal::RenderSplash()
+void idCommonLocal::RenderSplash( bool photsensitivity )
 {
 	const float sysWidth = renderSystem->GetWidth();
 	const float sysHeight = renderSystem->GetHeight();
@@ -833,7 +833,7 @@ void idCommonLocal::RenderSplash()
 		renderSystem->DrawStretchPic( SCREEN_WIDTH - barWidth, 0, barWidth, SCREEN_HEIGHT, 0, 0, 1, 1, whiteMaterial );
 	}
 	renderSystem->SetColor4( 1, 1, 1, 1 );
-	renderSystem->DrawStretchPic( barWidth, barHeight, SCREEN_WIDTH - barWidth * 2.0f, SCREEN_HEIGHT - barHeight * 2.0f, 0, 0, 1, 1, splashScreen );
+	renderSystem->DrawStretchPic( barWidth, barHeight, SCREEN_WIDTH - barWidth * 2.0f, SCREEN_HEIGHT - barHeight * 2.0f, 0, 0, 1, 1, photsensitivity ? photsensitivityScreen : splashScreen );
 
 	const emptyCommand_t* cmd = renderSystem->SwapCommandBuffers( &time_frontend, &time_backend, &time_shadows, &time_gpu, &time_moc, &stats_backend, &stats_frontend );
 	renderSystem->RenderCommandBuffers( cmd );
@@ -1232,37 +1232,41 @@ void idCommonLocal::Init( int argc, char* const* argv )
 
 		whiteMaterial = declManager->FindMaterial( "_white" );
 
-		if( idStr::Icmp( sys_lang.GetString(), ID_LANG_FRENCH ) == 0 )
+		// Depending on the user's selected language, we setup the splash
+		// Screen base on the value of sys_lang
+		idStrStatic< MAX_OSPATH > lang = sys_lang.GetString();
+
+		// use english splash in cases where we have not found a propper splash screen
+		idStrStatic< MAX_OSPATH > matName = "guis/assets/splash/";
+		matName.Append( "legal_" );
+#if defined(USE_FFMPEG)
+		matName.Append( "ffmpeg_" );
+#endif
+		matName.Append( lang );
+		const idMaterial* mat = declManager->FindMaterial( matName );
+		if( !mat )
 		{
-			// If the user specified french, we show french no matter what SKU
-			splashScreen = declManager->FindMaterial( "guis/assets/splash/legal_french" );
-		}
-		else if( idStr::Icmp( defaultLang, ID_LANG_FRENCH ) == 0 )
-		{
-			// If the lead sku is french (ie: europe), display figs
-			splashScreen = declManager->FindMaterial( "guis/assets/splash/legal_figs" );
-		}
-		else
-		{
-			// Otherwise show it in english
 			splashScreen = declManager->FindMaterial( "guis/assets/splash/legal_english" );
 		}
+		splashScreen = mat;
 
-		const int legalMinTime = 4000;
+		photsensitivityScreen = declManager->FindMaterial( "guis/assets/splash/legal_photosensitivity" );
+
+		const int legalMinTime = 8000;
 		const bool showVideo = ( !com_skipIntroVideos.GetBool() && fileSystem->UsingResourceFiles() );
+		const bool showSplash = true;
 		if( showVideo )
 		{
 			RenderBink( "video\\loadvideo.bik" );
 			RenderSplash();
 			RenderSplash();
 		}
-		else
+		else if( showSplash )
 		{
 			idLib::Printf( "Skipping Intro Videos!\n" );
 			// display the legal splash screen
 			// No clue why we have to render this twice to show up...
 			RenderSplash();
-			// SRS - OSX needs this for some OpenGL drivers, otherwise renders leftover image before splash
 			RenderSplash();
 		}
 
@@ -1296,9 +1300,25 @@ void idCommonLocal::Init( int argc, char* const* argv )
 		// On the PC touch them all so they get included in the resource build
 		if( !fileSystem->UsingResourceFiles() )
 		{
-			declManager->FindMaterial( "guis/assets/splash/legal_english" );
-			declManager->FindMaterial( "guis/assets/splash/legal_french" );
-			declManager->FindMaterial( "guis/assets/splash/legal_figs" );
+			// Depending on the user's selected language, we setup the splash
+			// Screen base on the value of sys_lang
+			idStrStatic< MAX_OSPATH > lang = sys_lang.GetString();
+
+			// use english splash in cases where we have not found a propper splash screen
+			idStrStatic< MAX_OSPATH > matName = "guis/assets/splash/";
+			matName.Append( "legal_" );
+#if defined(USE_FFMPEG)
+			matName.Append( "ffmpeg_" );
+#endif
+			matName.Append( lang );
+			const idMaterial* mat = declManager->FindMaterial( matName );
+			if( !mat )
+			{
+				declManager->FindMaterial( "guis/assets/splash/legal_english" );
+			}
+
+			declManager->FindMaterial( "guis/assets/splash/legal_photosensitivity" );
+
 			// register the japanese font so it gets included
 			renderSystem->RegisterFont( "DFPHeiseiGothicW7" );
 			// Make sure all videos get touched because you can bring videos from one map to another, they need to be included in all maps
@@ -1345,10 +1365,17 @@ void idCommonLocal::Init( int argc, char* const* argv )
 #ifdef ID_RETAIL
 		while( Sys_Milliseconds() - legalStartTime < legalMinTime )
 		{
-			RenderSplash();
+			if( ( Sys_Milliseconds() - legalStartTime ) >= legalMinTime / 2.0 )
+			{
+				RenderSplash( true );
+			}
+			else
+			{
+				RenderSplash();
+			}
 			Sys_GenerateEvents();
 			Sys_Sleep( 10 );
-		};
+		}
 #endif
 
 		// print all warnings queued during initialization
@@ -1382,6 +1409,19 @@ void idCommonLocal::Init( int argc, char* const* argv )
 				if( image != NULL )
 				{
 					image->PurgeImage();
+				}
+			}
+		}
+
+		// We also no longer need the photo sensitivity splash screen
+		if( photsensitivityScreen != NULL )
+		{
+			for( int i = 0; i < photsensitivityScreen->GetNumStages(); i++ )
+			{
+				idImage* image2 = photsensitivityScreen->GetStage( i )->texture.image;
+				if( image2 != NULL )
+				{
+					image2->PurgeImage();
 				}
 			}
 		}
