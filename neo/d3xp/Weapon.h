@@ -58,6 +58,7 @@ class idPlayer;
 
 static const int LIGHTID_WORLD_MUZZLE_FLASH = 1;
 static const int LIGHTID_VIEW_MUZZLE_FLASH = 100;
+static const int LIGHTID_FLASH_LIGHT = 200;
 
 class idMoveableItem;
 
@@ -96,7 +97,6 @@ public:
 	void					SetOwner( idPlayer* owner );
 	idPlayer*				GetOwner();
 	virtual bool			ShouldConstructScriptObjectAtSpawn() const;
-	void					SetFlashlightOwner( idPlayer* owner );
 
 	static void				CacheWeapon( const char* weaponName );
 
@@ -166,10 +166,7 @@ public:
 	void					GetWeaponAngleOffsets( int* average, float* scale, float* max );
 	void					GetWeaponTimeOffsets( float* time, float* scale );
 	bool					BloodSplat( float size );
-	void					SetIsPlayerFlashlight( bool bl )
-	{
-		isPlayerFlashlight = bl;
-	}
+
 	void					FlashlightOn();
 	void					FlashlightOff();
 
@@ -208,7 +205,13 @@ public:
 	virtual void			ClientPredictionThink();
 	virtual void			ClientThink( const int curTime, const float fraction, const bool predict );
 	void					MuzzleFlashLight();
-	void					RemoveMuzzleFlashlight();
+
+	void					FlashLight();
+	void					RemoveFlashlight();
+	bool					IsFlashLightOn()
+	{
+		return flashlightOn;
+	}
 
 	void					GetProjectileLaunchOriginAndAxis( idVec3& origin, idMat3& axis );
 
@@ -234,7 +237,6 @@ private:
 	int						animBlendFrames;
 	int						animDoneTime;
 	bool					isLinked;
-	bool					isPlayerFlashlight;
 
 	// precreated projectile
 	idEntity*				projectileEnt;
@@ -292,6 +294,9 @@ private:
 	renderLight_t			muzzleFlash;		// positioned on view weapon bone
 	int						muzzleFlashHandle;
 
+	renderLight_t			flashLight;		// positioned on view weapon bone
+	int						flashLightHandle;
+
 	renderLight_t			worldMuzzleFlash;	// positioned on world weapon bone
 	int						worldMuzzleFlashHandle;
 
@@ -299,9 +304,11 @@ private:
 	float					fraccos2;
 
 	idVec3					flashColor;
+	idVec3					flashLightColor;
 	int						muzzleFlashEnd;
 	int						flashTime;
 	bool					lightOn;
+	bool					flashlightOn;
 	bool					silent_fire;
 	bool					allowDrop;
 
@@ -384,7 +391,8 @@ private:
 	void					InitWorldModel( const idDeclEntityDef* def );
 	void					MuzzleRise( idVec3& origin, idMat3& axis );
 	void					UpdateNozzleFx();
-	void					UpdateFlashPosition();
+	void					UpdateMuzzleFlashPosition();
+	void					UpdateFlashlightPosition();
 
 	// script events
 	void					Event_Clear();
@@ -410,6 +418,7 @@ private:
 	void					Event_GetBlendFrames( int channel );
 	void					Event_Next();
 	void					Event_SetSkin( const char* skinname );
+	void					Event_MuzzleFlashlight( int enable );
 	void					Event_Flashlight( int enable );
 	void					Event_GetLightParm( int parmnum );
 	void					Event_SetLightParm( int parmnum, float value );

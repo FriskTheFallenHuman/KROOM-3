@@ -1,0 +1,139 @@
+/***********************************************************************
+
+weapon_base_flashlight.script
+
+Base object for weapons that has an attached light on it.  inheriths from weapon_base.
+
+***********************************************************************/
+
+object weapon_base_flashlight : weapon_base {
+	boolean		on;
+	boolean		onBeforeCinematic;
+
+	float		intensity;
+
+	void		SetLight( boolean lightOn );
+	void		ToggleOnOff();
+	void		TurnOn();
+	void		TurnOff();
+	void		updateLightIntensity();
+
+				// called by the game
+	void		init();
+	void		UpdateSkin();
+	void		EnterCinematic();
+	void		ExitCinematic();
+};
+
+/*
+=====================
+weapon_base_flashlight::init
+=====================
+*/
+void weapon_base_flashlight::init() {
+	global_flashlight_intensity = 1.0;
+	intensity = 1.0;
+	setLightParm( 3, 1.0 );
+	setShaderParm( 3, 1.0 );
+}
+
+/*
+=====================
+weapon_base_flashlight::updateLightIntensity
+=====================
+*/
+void weapon_base_flashlight::updateLightIntensity() {
+	if ( global_flashlight_intensity != intensity ) {
+		intensity = global_flashlight_intensity;
+		setLightParm( 3, intensity );
+		setShaderParm( 3, intensity );
+		UpdateSkin();
+	}
+}
+
+/*
+=====================
+weapon_base_flashlight::SetLight
+=====================
+*/
+void weapon_base_flashlight::SetLight( boolean lightOn ) {
+	on = lightOn;
+	UpdateSkin();
+	flashlight( on );
+}
+
+/*
+=====================
+weapon_base_flashlight::ToggleOnOff
+
+Required by game code.  Implemented in subclasses.
+=====================
+*/
+void weapon_base_flashlight::ToggleOnOff() {
+}
+
+/*
+=====================
+weapon_base_flashlight::TurnOff
+=====================
+*/
+void weapon_base_flashlight::TurnOn() {
+	SetLight( true );
+}
+
+/*
+=====================
+weapon_base_flashlight::TurnOff
+=====================
+*/
+void weapon_base_flashlight::TurnOff() {
+	SetLight( false );
+}
+
+/*
+=====================
+weapon_base_flashlight::EnterCinematic
+=====================
+*/
+void weapon_base_flashlight::EnterCinematic() {
+	onBeforeCinematic = on;
+	SetLight( false );
+}
+
+/*
+=====================
+weapon_base_flashlight::ExitCinematic
+=====================
+*/
+void weapon_base_flashlight::ExitCinematic() {
+	SetLight( onBeforeCinematic );
+	intensity = 1.0;
+	updateLightIntensity();
+}
+
+/*
+=====================
+weapon_base_flashlight::UpdateSkin
+=====================
+*/
+void weapon_base_flashlight::UpdateSkin() {
+	if ( isInvisible() ) {
+		setSkin( getKey( "skin_invisible" ) );
+	} else {
+		setSkin( "" );
+	}
+	
+	if ( on && ( global_flashlight_intensity > 0 ) ) {
+		if ( !isInvisible() ) {
+			setSkin( getKey( "skin_on" ) );
+		} else {
+			setSkin( getKey( "skin_on_invis" ) );
+		}
+	} else {
+		if ( !isInvisible() ) {
+			setSkin( getKey( "skin_off" ) );
+		} else {
+			setSkin( getKey( "skin_off_invis" ) );
+		}
+	}
+}
