@@ -407,6 +407,7 @@ public:
 	virtual bool			ShouldConstructScriptObjectAtSpawn() const;
 	virtual idThread* 		ConstructScriptObject();
 	virtual void			DeconstructScriptObject();
+	virtual bool			GetFunction( const char* function );
 	void					SetSignal( signalNum_t signalnum, idThread* thread, const function_t* function );
 	void					ClearSignal( idThread* thread, signalNum_t signalnum );
 	void					ClearSignalThread( signalNum_t signalnum, idThread* thread );

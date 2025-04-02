@@ -3925,6 +3925,33 @@ void idEntity::DeconstructScriptObject()
 
 /*
 ================
+idEntity::GetFunction
+================
+*/
+bool idEntity::GetFunction( const char* function )
+{
+	bool bret;
+
+	const function_t* func;
+
+	func = scriptObject.GetFunction( function );
+	if( !func )
+	{
+		common->Warning( "Can't find function '%s' in object '%s'", function, scriptObject.GetTypeName() );
+		bret = false;
+	}
+	else
+	{
+		// Have we found it?
+		bret = true;
+	}
+
+	return bret;
+}
+
+
+/*
+================
 idEntity::HasSignal
 ================
 */

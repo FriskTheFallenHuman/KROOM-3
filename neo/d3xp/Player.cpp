@@ -1719,8 +1719,6 @@ void idPlayer::SetupWeaponEntity()
 		currentWeapon = -1;
 
 		// flashlight
-		flashlight = static_cast<idWeapon*>( gameLocal.SpawnEntityType( idWeapon::Type, NULL ) );
-		flashlight.GetEntity()->SetFlashlightOwner( this );
 		//FlashlightOff();
 	}
 
@@ -2277,9 +2275,6 @@ idPlayer::~idPlayer()
 	delete weapon.GetEntity();
 	weapon = NULL;
 
-	delete flashlight.GetEntity();
-	flashlight = NULL;
-
 	if( enviroSuitLight.IsValid() )
 	{
 		enviroSuitLight.GetEntity()->ProcessEvent( &EV_Remove );
@@ -2342,7 +2337,6 @@ void idPlayer::Save( idSaveGame* savefile ) const
 	savefile->WriteInt( weapon_soulcube );
 	savefile->WriteInt( weapon_pda );
 	savefile->WriteInt( weapon_fists );
-	savefile->WriteInt( weapon_flashlight );
 	savefile->WriteInt( weapon_chainsaw );
 	savefile->WriteInt( weapon_bloodstone );
 	savefile->WriteInt( weapon_bloodstone_active1 );
@@ -2540,7 +2534,6 @@ void idPlayer::Save( idSaveGame* savefile ) const
 	savefile->WriteFloat( bloomSpeed );
 	savefile->WriteFloat( bloomIntensity );
 
-	savefile->WriteObject( flashlight.GetEntity() );
 	savefile->WriteInt( flashlightBattery );
 
 	achievementManager.Save( savefile );
@@ -2636,7 +2629,6 @@ void idPlayer::Restore( idRestoreGame* savefile )
 	savefile->ReadInt( weapon_soulcube );
 	savefile->ReadInt( weapon_pda );
 	savefile->ReadInt( weapon_fists );
-	savefile->ReadInt( weapon_flashlight );
 	savefile->ReadInt( weapon_chainsaw );
 	savefile->ReadInt( weapon_bloodstone );
 	savefile->ReadInt( weapon_bloodstone_active1 );
@@ -2875,10 +2867,6 @@ void idPlayer::Restore( idRestoreGame* savefile )
 	savefile->ReadFloat( bloomIntensity );
 
 	// flashlight
-	idWeapon* tempWeapon;
-	savefile->ReadObject( reinterpret_cast<idClass*&>( tempWeapon ) );
-	tempWeapon->SetIsPlayerFlashlight( true );
-	flashlight = tempWeapon;
 	savefile->ReadInt( flashlightBattery );
 
 	achievementManager.Restore( savefile );
@@ -2968,7 +2956,6 @@ void idPlayer::Restart()
 		// Make sure the weapon spawnId gets re-linked on the next snapshot.
 		// Otherwise, its owner might not be set after the map restart, which causes asserts and crashes.
 		weapon = NULL;
-		flashlight = NULL;
 		enviroSuitLight = NULL;
 		Init();
 	}
@@ -3648,10 +3635,6 @@ void idPlayer::EnterCinematic()
 	{
 		weapon.GetEntity()->EnterCinematic();
 	}
-	if( flashlight.GetEntity() )
-	{
-		flashlight.GetEntity()->EnterCinematic();
-	}
 
 	AI_FORWARD		= false;
 	AI_BACKWARD		= false;
@@ -3687,10 +3670,6 @@ void idPlayer::ExitCinematic()
 	if( weaponEnabled && weapon.GetEntity() )
 	{
 		weapon.GetEntity()->ExitCinematic();
-	}
-	if( flashlight.GetEntity() )
-	{
-		flashlight.GetEntity()->ExitCinematic();
 	}
 
 	// long cinematics would have surpassed the healthTakeTime, causing the player to take damage
@@ -4097,17 +4076,6 @@ bool idPlayer::GiveItem( idItem* item, unsigned int giveFlags )
 		return false;
 	}
 
-	if( idStr::FindText( item->GetName(), "weapon_flashlight_new" ) > -1 )
-	{
-		return false;
-	}
-
-	if( idStr::FindText( item->GetName(), "weapon_flashlight" ) > -1 )
-	{
-		// don't allow flashlight weapon unless classic mode is enabled
-		return false;
-	}
-
 	item->GetAttributes( attr );
 
 	gave = false;
@@ -4294,10 +4262,6 @@ bool idPlayer::GivePowerUp( int powerup, int time, unsigned int giveFlags )
 					{
 						weapon.GetEntity()->UpdateSkin();
 					}
-					if( flashlight.GetEntity() )
-					{
-						flashlight.GetEntity()->UpdateSkin();
-					}
 				}
 
 				/*				if ( spawnArgs.GetString( "snd_invisibility", "", &sound ) ) {
@@ -4457,10 +4421,6 @@ void idPlayer::ClearPowerup( int i )
 			if( weapon.GetEntity() )
 			{
 				weapon.GetEntity()->UpdateSkin();
-			}
-			if( flashlight.GetEntity() )
-			{
-				flashlight.GetEntity()->UpdateSkin();
 			}
 			break;
 		}
@@ -5075,10 +5035,7 @@ void idPlayer::NextBestWeapon()
 	while( w > 0 )
 	{
 		w--;
-		if( w == weapon_flashlight )
-		{
-			continue;
-		}
+
 		weap = spawnArgs.GetString( va( "def_weapon%d", w ) );
 		if( !weap[ 0 ] || ( ( inventory.weapons & ( 1 << w ) ) == 0 ) || ( !inventory.HasAmmo( weap, true, this ) ) )
 		{
@@ -5238,11 +5195,6 @@ void idPlayer::SelectWeapon( int num, bool force )
 	}
 
 	if( ( num < 0 ) || ( num >= MAX_WEAPONS ) )
-	{
-		return;
-	}
-
-	if( num == weapon_flashlight )
 	{
 		return;
 	}
@@ -5851,6 +5803,8 @@ void idPlayer::UpdateWeapon()
 		weapon.GetEntity()->LowerWeapon();
 	}
 
+	UpdateFlashlight();
+
 	// update weapon state, particles, dlights, etc
 	weapon.GetEntity()->PresentWeapon( CanShowWeaponViewmodel() );
 }
@@ -5862,36 +5816,16 @@ idPlayer::UpdateFlashLight
 */
 void idPlayer::UpdateFlashlight()
 {
-	if( idealWeapon == weapon_flashlight )
-	{
-		// force classic flashlight to go away
-		NextWeapon();
-	}
-
-	if( !flashlight.IsValid() )
+	// Don't update the flashlight if dead.
+	if( health < 0 )
 	{
 		return;
-	}
-
-	if( !flashlight.GetEntity()->GetOwner() )
-	{
-		return;
-	}
-
-	// Don't update the flashlight if dead in MP.
-	// Otherwise you can see a floating flashlight worldmodel near player's skeletons.
-	if( common->IsMultiplayer() )
-	{
-		if( health < 0 )
-		{
-			return;
-		}
 	}
 
 	// Flashlight has an infinite battery in multiplayer.
 	if( !common->IsMultiplayer() )
 	{
-		if( flashlight.GetEntity()->lightOn )
+		if( weapon.GetEntity()->IsFlashLightOn() )
 		{
 			if( flashlight_batteryDrainTimeMS.GetInteger() > 0 )
 			{
@@ -5921,63 +5855,16 @@ void idPlayer::UpdateFlashlight()
 		hud->UpdateFlashlight( this );
 	}
 
-	if( common->IsClient() )
-	{
-		// clients need to wait till the weapon and it's world model entity
-		// are present and synchronized ( weapon.worldModel idEntityPtr to idAnimatedEntity )
-		if( !flashlight.GetEntity()->IsWorldModelReady() )
-		{
-			return;
-		}
-	}
-
-	// always make sure the weapon is correctly setup before accessing it
-	if( !flashlight.GetEntity()->IsLinked() )
-	{
-		flashlight.GetEntity()->GetWeaponDef( "weapon_flashlight_new", 0 );
-		flashlight.GetEntity()->SetIsPlayerFlashlight( true );
-
-		// adjust position / orientation of flashlight
-		idAnimatedEntity* worldModel = flashlight.GetEntity()->GetWorldModel();
-		worldModel->BindToJoint( this, "Chest", true );
-		// Don't interpolate the flashlight world model in mp, let it bind like normal.
-		worldModel->SetUseClientInterpolation( false );
-
-		assert( flashlight.GetEntity()->IsLinked() );
-	}
-
-	// this positions the third person flashlight model! (as seen in the mirror)
-	idAnimatedEntity* worldModel = flashlight.GetEntity()->GetWorldModel();
-	static const idVec3 fl_pos = idVec3( 3.0f, 9.0f, 2.0f );
-	worldModel->GetPhysics()->SetOrigin( fl_pos );
-	static float fl_pitch = 0.0f;
-	static float fl_yaw = 0.0f;
-	static float fl_roll = 0.0f;
-	static idAngles ang = ang_zero;
-	ang.Set( fl_pitch, fl_yaw, fl_roll );
-	worldModel->GetPhysics()->SetAxis( ang.ToMat3() );
-
-	if( flashlight.GetEntity()->lightOn )
+	if( weapon.GetEntity()->IsFlashLightOn() )
 	{
 		if( ( flashlightBattery < flashlight_batteryChargeTimeMS.GetInteger() / 2 ) && ( gameLocal.random.RandomFloat() < flashlight_batteryFlickerPercent.GetFloat() ) )
 		{
-			flashlight.GetEntity()->RemoveMuzzleFlashlight();
+			weapon.GetEntity()->RemoveFlashlight();
 		}
 		else
 		{
-			flashlight.GetEntity()->MuzzleFlashLight();
+			weapon.GetEntity()->FlashLight();
 		}
-	}
-
-	flashlight.GetEntity()->PresentWeapon( true );
-
-	if( gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) || gameLocal.inCinematic || spectating || fl.hidden )
-	{
-		worldModel->Hide();
-	}
-	else
-	{
-		worldModel->Show();
 	}
 }
 
@@ -5988,10 +5875,6 @@ idPlayer::FlashlightOn
 */
 void idPlayer::FlashlightOn()
 {
-	if( !flashlight.IsValid() )
-	{
-		return;
-	}
 	if( flashlightBattery < idMath::Ftoi( flashlight_minActivatePercent.GetFloat() * flashlight_batteryDrainTimeMS.GetFloat() ) )
 	{
 		return;
@@ -6000,7 +5883,7 @@ void idPlayer::FlashlightOn()
 	{
 		return;
 	}
-	if( flashlight.GetEntity()->lightOn )
+	if( weapon.GetEntity()->IsFlashLightOn() )
 	{
 		return;
 	}
@@ -6013,7 +5896,7 @@ void idPlayer::FlashlightOn()
 		return;
 	}
 
-	flashlight->FlashlightOn();
+	weapon->FlashlightOn();
 }
 
 /*
@@ -6023,15 +5906,11 @@ idPlayer::FlashlightOff
 */
 void idPlayer::FlashlightOff()
 {
-	if( !flashlight.IsValid() )
+	if( !weapon.GetEntity()->IsFlashLightOn() )
 	{
 		return;
 	}
-	if( !flashlight.GetEntity()->lightOn )
-	{
-		return;
-	}
-	flashlight->FlashlightOff();
+	weapon->FlashlightOff();
 }
 
 /*
@@ -7600,16 +7479,27 @@ void idPlayer::PerformImpulse( int impulse )
 		}
 		case IMPULSE_16:
 		{
-			if( flashlight.IsValid() )
+			if( weapon.IsValid() )
 			{
-				if( flashlight.GetEntity()->lightOn )
+				if( weapon.GetEntity()->GetFunction( "TurnOn" ) ) // Hacky
 				{
-					FlashlightOff();
+					if( weapon.GetEntity()->IsFlashLightOn() )
+					{
+						FlashlightOff();
+					}
+					else if( !spectating && weaponEnabled && !hiddenWeapon && !gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) )
+					{
+						FlashlightOn();
+					}
 				}
-				else if( !spectating && weaponEnabled && !hiddenWeapon && !gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) )
+				else
 				{
-					FlashlightOn();
+					if( weapon_flashlight >= 0 )
+					{
+						SelectWeapon( weapon_flashlight, true );
+					}
 				}
+
 			}
 			break;
 		}
@@ -9396,10 +9286,6 @@ void idPlayer::Killed( idEntity* inflictor, idEntity* attacker, int damage, cons
 	if( common->IsMultiplayer() )
 	{
 		FlashlightOff();
-		if( flashlight.GetEntity() )
-		{
-			flashlight.GetEntity()->OwnerDied();
-		}
 	}
 
 	// drop the weapon as an item
@@ -11600,7 +11486,6 @@ void idPlayer::WriteToSnapshot( idBitMsg& msg ) const
 	msg.WriteBits( idealWeapon.Get(), idMath::BitsForInteger( MAX_WEAPONS ) );
 	msg.WriteBits( inventory.weapons, MAX_WEAPONS );
 	msg.WriteBits( weapon.GetSpawnId(), 32 );
-	msg.WriteBits( flashlight.GetSpawnId(), 32 );
 	msg.WriteBits( spectator, idMath::BitsForInteger( MAX_CLIENTS ) );
 	msg.WriteBits( lastHitToggle, 1 );
 	msg.WriteBits( weaponGone, 1 );
@@ -11720,14 +11605,6 @@ void idPlayer::ReadFromSnapshot( const idBitMsg& msg )
 		currentWeapon = -1;
 	}
 
-	if( flashlight.SetSpawnId( flashlightSpawnId ) )
-	{
-		if( flashlight.GetEntity() )
-		{
-			flashlight.GetEntity()->SetFlashlightOwner( this );
-		}
-	}
-
 	/*
 	// if not a local client
 	if ( !IsLocallyControlled() ) {
@@ -11767,14 +11644,9 @@ void idPlayer::ReadFromSnapshot( const idBitMsg& msg )
 		}
 		if( weapon.GetEntity() )
 		{
+			FlashlightOff();
 			weapon.GetEntity()->OwnerDied();
 		}
-		if( flashlight.GetEntity() )
-		{
-			FlashlightOff();
-			flashlight.GetEntity()->OwnerDied();
-		}
-
 		if( IsLocallyControlled() )
 		{
 			ControllerShakeFromDamage( oldHealth - health );
@@ -11830,10 +11702,6 @@ void idPlayer::ReadFromSnapshot( const idBitMsg& msg )
 		physicsObj.SnapToNextState();
 		physicsObj.EnableClip();
 		SetCombatContents( true );
-		if( flashlight.GetEntity() )
-		{
-			flashlight.GetEntity()->Show();
-		}
 		Respawn_Shared();
 	}
 
@@ -12016,11 +11884,6 @@ void idPlayer::Hide()
 	{
 		weap->HideWorldModel();
 	}
-	idWeapon* flash = flashlight.GetEntity();
-	if( flash )
-	{
-		flash->HideWorldModel();
-	}
 }
 
 /*
@@ -12037,11 +11900,6 @@ void idPlayer::Show()
 	if( weap )
 	{
 		weap->ShowWorldModel();
-	}
-	idWeapon* flash = flashlight.GetEntity();
-	if( flash )
-	{
-		flash->ShowWorldModel();
 	}
 }
 
@@ -12177,7 +12035,7 @@ void idPlayer::RemoveAllButEssentialWeapons()
 	{
 		// This list probably ought to be placed int the player's def
 		if( kv->GetValue() == "weapon_fists" || kv->GetValue() == "weapon_soulcube" || kv->GetValue() == "weapon_pda"
-				|| kv->GetValue() == "weapon_flashlight" || kv->GetValue() == "weapon_flashlight_new" )
+				|| kv->GetValue() == "weapon_flashlight" )
 		{
 			continue;
 		}

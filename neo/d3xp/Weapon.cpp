@@ -57,6 +57,7 @@ const idEventDef EV_Weapon_WeaponReloading( "weaponReloading" );
 const idEventDef EV_Weapon_WeaponHolstered( "weaponHolstered" );
 const idEventDef EV_Weapon_WeaponRising( "weaponRising" );
 const idEventDef EV_Weapon_WeaponLowering( "weaponLowering" );
+const idEventDef EV_Weapon_MuzzleFlashlight( "muzzleFlashLight", "d" );
 const idEventDef EV_Weapon_Flashlight( "flashlight", "d" );
 const idEventDef EV_Weapon_LaunchProjectiles( "launchProjectiles", "dffff" );
 const idEventDef EV_Weapon_CreateProjectile( "createProjectile", NULL, 'e' );
@@ -106,6 +107,7 @@ EVENT( AI_GetBlendFrames,					idWeapon::Event_GetBlendFrames )
 EVENT( AI_AnimDone,							idWeapon::Event_AnimDone )
 EVENT( EV_Weapon_Next,						idWeapon::Event_Next )
 EVENT( EV_SetSkin,							idWeapon::Event_SetSkin )
+EVENT( EV_Weapon_MuzzleFlashlight,			idWeapon::Event_MuzzleFlashlight )
 EVENT( EV_Weapon_Flashlight,				idWeapon::Event_Flashlight )
 EVENT( EV_Light_GetLightParm,				idWeapon::Event_GetLightParm )
 EVENT( EV_Light_SetLightParm,				idWeapon::Event_SetLightParm )
@@ -136,10 +138,6 @@ END_CLASS
 
 idCVar cg_projectile_clientAuthoritative_maxCatchup( "cg_projectile_clientAuthoritative_maxCatchup", "500", CVAR_INTEGER, "" );
 
-idCVar g_useWeaponDepthHack( "g_useWeaponDepthHack", "1", CVAR_BOOL, "Crunch z depth on weapons" );
-
-idCVar g_weaponShadows( "g_weaponShadows", "0", CVAR_BOOL | CVAR_ARCHIVE, "Cast shadows from weapons" );
-
 extern idCVar cg_predictedSpawn_debug;
 
 /***********************************************************************
@@ -161,12 +159,14 @@ idWeapon::idWeapon()
 	thread					= NULL;
 
 	memset( &guiLight, 0, sizeof( guiLight ) );
+	memset( &flashLight, 0, sizeof( flashLight ) );
 	memset( &muzzleFlash, 0, sizeof( muzzleFlash ) );
 	memset( &worldMuzzleFlash, 0, sizeof( worldMuzzleFlash ) );
 	memset( &nozzleGlow, 0, sizeof( nozzleGlow ) );
 
 	muzzleFlashEnd			= 0;
 	flashColor				= vec3_origin;
+	flashLightColor				= vec3_origin;
 	muzzleFlashHandle		= -1;
 	worldMuzzleFlashHandle	= -1;
 	guiLightHandle			= -1;
@@ -178,7 +178,6 @@ idWeapon::idWeapon()
 	brassDelay				= 0;
 
 	allowDrop				= true;
-	isPlayerFlashlight		= false;
 
 	fraccos = 0.0f;
 	fraccos2 = 0.0f;
@@ -240,25 +239,6 @@ void idWeapon::SetOwner( idPlayer* _owner )
 	if( worldModel.GetEntity() )
 	{
 		worldModel.GetEntity()->SetName( va( "%s_weapon_worldmodel", owner->name.c_str() ) );
-	}
-}
-
-/*
-================
-idWeapon::SetFlashlightOwner
-
-Only called at player spawn time, not each weapon switch
-================
-*/
-void idWeapon::SetFlashlightOwner( idPlayer* _owner )
-{
-	assert( !owner );
-	owner = _owner;
-	SetName( va( "%s_weapon_flashlight", owner->name.c_str() ) );
-
-	if( worldModel.GetEntity() )
-	{
-		worldModel.GetEntity()->SetName( va( "%s_weapon_flashlight_worldmodel", owner->name.c_str() ) );
 	}
 }
 
@@ -371,6 +351,9 @@ void idWeapon::Save( idSaveGame* savefile ) const
 	savefile->WriteInt( guiLightHandle );
 	savefile->WriteRenderLight( guiLight );
 
+	savefile->WriteInt( flashLightHandle );
+	savefile->WriteRenderLight( flashLight );
+
 	savefile->WriteInt( muzzleFlashHandle );
 	savefile->WriteRenderLight( muzzleFlash );
 
@@ -378,10 +361,12 @@ void idWeapon::Save( idSaveGame* savefile ) const
 	savefile->WriteRenderLight( worldMuzzleFlash );
 
 	savefile->WriteVec3( flashColor );
+	savefile->WriteVec3( flashLightColor );
 	savefile->WriteInt( muzzleFlashEnd );
 	savefile->WriteInt( flashTime );
 
 	savefile->WriteBool( lightOn );
+	savefile->WriteBool( flashlightOn );
 	savefile->WriteBool( silent_fire );
 
 	savefile->WriteInt( kick_endtime );
@@ -570,6 +555,13 @@ void idWeapon::Restore( idRestoreGame* savefile )
 		guiLightHandle = gameRenderWorld->AddLightDef( &guiLight );
 	}
 
+	savefile->ReadInt( flashLightHandle );
+	savefile->ReadRenderLight( flashLight );
+	if( flashLightHandle >= 0 )
+	{
+		flashLightHandle = gameRenderWorld->AddLightDef( &flashLight );
+	}
+
 	savefile->ReadInt( muzzleFlashHandle );
 	savefile->ReadRenderLight( muzzleFlash );
 	if( muzzleFlashHandle >= 0 )
@@ -585,10 +577,12 @@ void idWeapon::Restore( idRestoreGame* savefile )
 	}
 
 	savefile->ReadVec3( flashColor );
+	savefile->ReadVec3( flashLightColor );
 	savefile->ReadInt( muzzleFlashEnd );
 	savefile->ReadInt( flashTime );
 
 	savefile->ReadBool( lightOn );
+	savefile->ReadBool( flashlightOn );
 	savefile->ReadBool( silent_fire );
 
 	savefile->ReadInt( kick_endtime );
@@ -747,6 +741,11 @@ void idWeapon::Clear()
 	WEAPON_RAISEWEAPON.Unlink();
 	WEAPON_LOWERWEAPON.Unlink();
 
+	if( flashLightHandle != -1 )
+	{
+		gameRenderWorld->FreeLightDef( flashLightHandle );
+		flashLightHandle = -1;
+	}
 	if( muzzleFlashHandle != -1 )
 	{
 		gameRenderWorld->FreeLightDef( muzzleFlashHandle );
@@ -851,6 +850,7 @@ void idWeapon::Clear()
 
 	flashTime		= 250;
 	lightOn			= false;
+	flashlightOn	= false;
 	silent_fire		= false;
 
 	grabberState	= -1;
@@ -1138,22 +1138,15 @@ void idWeapon::GetWeaponDef( const char* objectname, int ammoinclip )
 	}
 
 	// set up muzzleflash render light
-	const idMaterial* flashShader;
-	idVec3			flashTarget;
-	idVec3			flashUp;
-	idVec3			flashRight;
-	float			flashRadius;
-	bool			flashPointLight;
-
 	weaponDef->dict.GetString( "mtr_flashShader", "", &shader );
-	flashShader = declManager->FindMaterial( shader, false );
-	flashPointLight = weaponDef->dict.GetBool( "flashPointLight", "1" );
+	const idMaterial* flashShader = declManager->FindMaterial( shader, false );
+	bool flashPointLight = weaponDef->dict.GetBool( "flashPointLight", "1" );
 	weaponDef->dict.GetVector( "flashColor", "0 0 0", flashColor );
-	flashRadius		= ( float )weaponDef->dict.GetInt( "flashRadius" );	// if 0, no light will spawn
+	float flashRadius		= ( float )weaponDef->dict.GetInt( "flashRadius" );	// if 0, no light will spawn
 	flashTime		= SEC2MS( weaponDef->dict.GetFloat( "flashTime", "0.25" ) );
-	flashTarget		= weaponDef->dict.GetVector( "flashTarget" );
-	flashUp			= weaponDef->dict.GetVector( "flashUp" );
-	flashRight		= weaponDef->dict.GetVector( "flashRight" );
+	idVec3 flashTarget		= weaponDef->dict.GetVector( "flashTarget" );
+	idVec3 flashUp			= weaponDef->dict.GetVector( "flashUp" );
+	idVec3 flashRight		= weaponDef->dict.GetVector( "flashRight" );
 
 	memset( &muzzleFlash, 0, sizeof( muzzleFlash ) );
 	muzzleFlash.lightId = LIGHTID_VIEW_MUZZLE_FLASH + owner->entityNumber;
@@ -1187,6 +1180,41 @@ void idWeapon::GetWeaponDef( const char* objectname, int ammoinclip )
 	worldMuzzleFlash.suppressLightInViewID = owner->entityNumber + 1;
 	worldMuzzleFlash.allowLightInViewID = 0;
 	worldMuzzleFlash.lightId = LIGHTID_WORLD_MUZZLE_FLASH + owner->entityNumber;
+
+	//-----------------------------------
+
+	// set up flash light render light
+	weaponDef->dict.GetString( "mtr_flashLightShader", "", &shader );
+	const idMaterial* flashLightShader = declManager->FindMaterial( shader, false );
+	bool flashLightPointLight = weaponDef->dict.GetBool( "flashLightPointLight", "1" );
+	weaponDef->dict.GetVector( "flashLightColor", "0 0 0", flashLightColor );
+	float flashLightRadius		= ( float )weaponDef->dict.GetInt( "flashLightRadius" );	// if 0, no light will spawn
+	idVec3 flashLightTarget		= weaponDef->dict.GetVector( "flashLightTarget" );
+	idVec3 flashLightUp			= weaponDef->dict.GetVector( "flashLightUp" );
+	idVec3 flashLightRight		= weaponDef->dict.GetVector( "flashLightRight" );
+
+	memset( &flashLight, 0, sizeof( flashLight ) );
+	flashLight.lightId = LIGHTID_FLASH_LIGHT + owner->entityNumber;
+	flashLight.allowLightInViewID = owner->entityNumber + 1;
+
+	flashLight.pointLight								= flashLightPointLight;
+	flashLight.shader									= flashLightShader;
+	flashLight.shaderParms[ SHADERPARM_RED ]			= flashLightColor[0];
+	flashLight.shaderParms[ SHADERPARM_GREEN ]			= flashLightColor[1];
+	flashLight.shaderParms[ SHADERPARM_BLUE ]			= flashLightColor[2];
+	flashLight.shaderParms[ SHADERPARM_TIMESCALE ]		= 1.0f;
+
+	flashLight.lightRadius[0]							= flashLightRadius;
+	flashLight.lightRadius[1]							= flashLightRadius;
+	flashLight.lightRadius[2]							= flashLightRadius;
+
+	if( !flashLightPointLight )
+	{
+		flashLight.target								= flashLightTarget;
+		flashLight.up									= flashLightUp;
+		flashLight.right								= flashLightRight;
+		flashLight.end									= flashLightTarget;
+	}
 
 	//-----------------------------------
 
@@ -1506,50 +1534,54 @@ void idWeapon::UpdateGUI()
 
 /***********************************************************************
 
-	Model and muzzleflash
+	Model and muzzleflash/flashlight
 
 ***********************************************************************/
 
 /*
 ================
-idWeapon::UpdateFlashPosition
+idWeapon::UpdateMuzzleFlashPosition
 ================
 */
-void idWeapon::UpdateFlashPosition()
+void idWeapon::UpdateMuzzleFlashPosition()
 {
 	// the flash has an explicit joint for locating it
 	GetGlobalJointTransform( true, flashJointView, muzzleFlash.origin, muzzleFlash.axis );
-
-	if( isPlayerFlashlight )
-	{
-		static float pscale = 2.0f;
-		static float yscale = 0.25f;
-
-// 		static idVec3 baseAdjustPos = vec3_zero;	//idVec3( 0.0f, 10.0f, 0.0f );
-// 		idVec3 adjustPos = baseAdjustPos;
-//		muzzleFlash.origin += adjustPos.x * muzzleFlash.axis[1] + adjustPos.y * muzzleFlash.axis[0] + adjustPos.z * muzzleFlash.axis[2];
-		muzzleFlash.origin += owner->GetViewBob();
-
-//		static idAngles baseAdjustAng = ang_zero;	//idAngles( 0.0f, 10.0f, 0.0f );
-		idAngles adjustAng = /*baseAdjustAng +*/ idAngles( fraccos * yscale, 0.0f, fraccos2 * pscale );
-		idAngles bobAngles = owner->GetViewBobAngles();
-		SwapValues( bobAngles.pitch, bobAngles.roll );
-		adjustAng += bobAngles * 3.0f;
-		muzzleFlash.axis = adjustAng.ToMat3() * muzzleFlash.axis /** adjustAng.ToMat3()*/;
-	}
 
 	// if the desired point is inside or very close to a wall, back it up until it is clear
 	idVec3	start = muzzleFlash.origin - playerViewAxis[0] * 16;
 	idVec3	end = muzzleFlash.origin + playerViewAxis[0] * 8;
 	trace_t	tr;
 	gameLocal.clip.TracePoint( tr, start, end, MASK_SHOT_RENDERMODEL, owner );
+
 	// be at least 8 units away from a solid
 	muzzleFlash.origin = tr.endpos - playerViewAxis[0] * 8;
 
-	muzzleFlash.noShadows = !g_weaponShadows.GetBool();
-
 	// put the world muzzle flash on the end of the joint, no matter what
 	GetGlobalJointTransform( false, flashJointWorld, worldMuzzleFlash.origin, worldMuzzleFlash.axis );
+}
+
+/*
+================
+idWeapon::UpdateFlashlightPosition
+================
+*/
+void idWeapon::UpdateFlashlightPosition()
+{
+	// the flash has an explicit joint for locating it
+	GetGlobalJointTransform( true, flashJointView, flashLight.origin, flashLight.axis );
+
+	// if the desired point is inside or very close to a wall, back it up until it is clear
+	idVec3	start = flashLight.origin - playerViewAxis[0] * 16;
+	idVec3	end = flashLight.origin + playerViewAxis[0] * 8;
+	trace_t	tr;
+	gameLocal.clip.TracePoint( tr, start, end, MASK_SHOT_RENDERMODEL, owner );
+
+	// be at least 8 units away from a solid
+	flashLight.origin = tr.endpos - playerViewAxis[0] * 8;
+
+	// dont cast shadows, it causes weird geo issues with weapons like the flashlight
+	flashLight.noShadows = true;
 }
 
 /*
@@ -1570,7 +1602,7 @@ void idWeapon::MuzzleFlashLight()
 		return;
 	}
 
-	UpdateFlashPosition();
+	UpdateMuzzleFlashPosition();
 
 	// these will be different each fire
 	muzzleFlash.shaderParms[ SHADERPARM_TIMEOFFSET ]	= -MS2SEC( gameLocal.time );
@@ -1591,6 +1623,39 @@ void idWeapon::MuzzleFlashLight()
 	{
 		muzzleFlashHandle = gameRenderWorld->AddLightDef( &muzzleFlash );
 		worldMuzzleFlashHandle = gameRenderWorld->AddLightDef( &worldMuzzleFlash );
+	}
+}
+
+/*
+================
+idWeapon::FlashLight
+================
+*/
+void idWeapon::FlashLight()
+{
+
+	if( !flashlightOn && !flashLight.lightRadius[0] )
+	{
+		return;
+	}
+
+	if( flashJointView == INVALID_JOINT )
+	{
+		return;
+	}
+
+	UpdateFlashlightPosition();
+
+	// the light will be removed at this time
+	//muzzleFlashEnd = gameLocal.time + flashTime;
+
+	if( flashLightHandle != -1 )
+	{
+		gameRenderWorld->UpdateLightDef( flashLightHandle, &flashLight );
+	}
+	else
+	{
+		flashLightHandle = gameRenderWorld->AddLightDef( &flashLight );
 	}
 }
 
@@ -1892,6 +1957,10 @@ void idWeapon::ShowWeapon()
 	if( lightOn )
 	{
 		MuzzleFlashLight();
+	}
+	if( flashlightOn )
+	{
+		FlashLight();
 	}
 }
 
@@ -2596,63 +2665,37 @@ void idWeapon::PresentWeapon( bool showViewModel )
 	playerViewOrigin = owner->firstPersonViewOrigin;
 	playerViewAxis = owner->firstPersonViewAxis;
 
-	if( isPlayerFlashlight )
+	// calculate weapon position based on player movement bobbing
+	owner->CalculateViewWeaponPos( viewWeaponOrigin, viewWeaponAxis );
+
+	// hide offset is for dropping the gun when approaching a GUI or NPC
+	// This is simpler to manage than doing the weapon put-away animation
+	if( gameLocal.time - hideStartTime < hideTime )
 	{
-		viewWeaponOrigin = playerViewOrigin;
-		viewWeaponAxis = playerViewAxis;
-
-		fraccos = cos( ( gameLocal.framenum & 255 ) / 127.0f * idMath::PI );
-
-		static unsigned int divisor = 32;
-		unsigned int val = ( gameLocal.framenum + gameLocal.framenum / divisor ) & 255;
-		fraccos2 = cos( val / 127.0f * idMath::PI );
-
-		static idVec3 baseAdjustPos = idVec3( -8.0f, -20.0f, -10.0f );		// rt, fwd, up
-		static float pscale = 0.5f;
-		static float yscale = 0.125f;
-		idVec3 adjustPos = baseAdjustPos;// + ( idVec3( fraccos, 0.0f, fraccos2 ) * scale );
-		viewWeaponOrigin += adjustPos.x * viewWeaponAxis[1] + adjustPos.y * viewWeaponAxis[0] + adjustPos.z * viewWeaponAxis[2];
-//		viewWeaponOrigin += owner->viewBob;
-
-		static idAngles baseAdjustAng = idAngles( 88.0f, 10.0f, 0.0f );		//
-		idAngles adjustAng = baseAdjustAng + idAngles( fraccos * pscale, fraccos2 * yscale, 0.0f );
-//		adjustAng += owner->GetViewBobAngles();
-		viewWeaponAxis = adjustAng.ToMat3() * viewWeaponAxis;
-	}
-	else
-	{
-		// calculate weapon position based on player movement bobbing
-		owner->CalculateViewWeaponPos( viewWeaponOrigin, viewWeaponAxis );
-
-		// hide offset is for dropping the gun when approaching a GUI or NPC
-		// This is simpler to manage than doing the weapon put-away animation
-		if( gameLocal.time - hideStartTime < hideTime )
+		float frac = ( float )( gameLocal.time - hideStartTime ) / ( float )hideTime;
+		if( hideStart < hideEnd )
 		{
-			float frac = ( float )( gameLocal.time - hideStartTime ) / ( float )hideTime;
-			if( hideStart < hideEnd )
-			{
-				frac = 1.0f - frac;
-				frac = 1.0f - frac * frac;
-			}
-			else
-			{
-				frac = frac * frac;
-			}
-			hideOffset = hideStart + ( hideEnd - hideStart ) * frac;
+			frac = 1.0f - frac;
+			frac = 1.0f - frac * frac;
 		}
 		else
 		{
-			hideOffset = hideEnd;
-			if( hide && disabled )
-			{
-				Hide();
-			}
+			frac = frac * frac;
 		}
-		viewWeaponOrigin += hideOffset * viewWeaponAxis[ 2 ];
-
-		// kick up based on repeat firing
-		MuzzleRise( viewWeaponOrigin, viewWeaponAxis );
+		hideOffset = hideStart + ( hideEnd - hideStart ) * frac;
 	}
+	else
+	{
+		hideOffset = hideEnd;
+		if( hide && disabled )
+		{
+			Hide();
+		}
+	}
+	viewWeaponOrigin += hideOffset * viewWeaponAxis[ 2 ];
+
+	// kick up based on repeat firing
+	MuzzleRise( viewWeaponOrigin, viewWeaponAxis );
 
 	// set the physics position and orientation
 	GetPhysics()->SetOrigin( viewWeaponOrigin );
@@ -2671,7 +2714,7 @@ void idWeapon::PresentWeapon( bool showViewModel )
 	renderEntity.allowSurfaceInViewID = owner->entityNumber + 1;
 
 	// crunch the depth range so it never pokes into walls this breaks the machine gun gui
-	renderEntity.weaponDepthHack = g_useWeaponDepthHack.GetBool();
+	renderEntity.weaponDepthHack = true;
 
 	// present the model
 	if( showViewModel )
@@ -2823,15 +2866,32 @@ void idWeapon::PresentWeapon( bool showViewModel )
 		}
 	}
 
+	// remove the flash light when it's done
+	if( !flashlightOn || IsHidden() )
+	{
+		if( flashLightHandle != -1 )
+		{
+			gameRenderWorld->FreeLightDef( flashLightHandle );
+			flashLightHandle = -1;
+		}
+	}
+
 	// update the muzzle flash light, so it moves with the gun
 	if( muzzleFlashHandle != -1 )
 	{
-		UpdateFlashPosition();
+		UpdateMuzzleFlashPosition();
 		gameRenderWorld->UpdateLightDef( muzzleFlashHandle, &muzzleFlash );
 		gameRenderWorld->UpdateLightDef( worldMuzzleFlashHandle, &worldMuzzleFlash );
+	}
+
+	// update the flash light, so it moves with the gun
+	if( flashLightHandle != -1 )
+	{
+		UpdateFlashlightPosition();
+		gameRenderWorld->UpdateLightDef( flashLightHandle, &flashLight );
 
 		// wake up monsters with the flashlight
-		if( !common->IsMultiplayer() && lightOn && !owner->fl.notarget )
+		if( !common->IsMultiplayer() && flashlightOn && !owner->fl.notarget )
 		{
 			AlertMonsters();
 		}
@@ -2873,20 +2933,15 @@ void idWeapon::PresentWeapon( bool showViewModel )
 
 /*
 ================
-idWeapon::RemoveMuzzleFlashlight
+idWeapon::RemoveFlashlight
 ================
 */
-void idWeapon::RemoveMuzzleFlashlight()
+void idWeapon::RemoveFlashlight()
 {
-	if( muzzleFlashHandle != -1 )
+	if( flashLightHandle != -1 )
 	{
-		gameRenderWorld->FreeLightDef( muzzleFlashHandle );
-		muzzleFlashHandle = -1;
-	}
-	if( worldMuzzleFlashHandle != -1 )
-	{
-		gameRenderWorld->FreeLightDef( worldMuzzleFlashHandle );
-		worldMuzzleFlashHandle = -1;
+		gameRenderWorld->FreeLightDef( flashLightHandle );
+		flashLightHandle = -1;
 	}
 }
 
@@ -3228,6 +3283,7 @@ void idWeapon::WriteToSnapshot( idBitMsg& msg ) const
 	msg.WriteBits( ammoClip.Get(), ASYNC_PLAYER_INV_CLIP_BITS );
 	msg.WriteBits( worldModel.GetSpawnId(), 32 );
 	msg.WriteBits( lightOn, 1 );
+	msg.WriteBits( flashlightOn, 2 );
 	msg.WriteBits( isFiring ? 1 : 0, 1 );
 }
 
@@ -3240,7 +3296,7 @@ void idWeapon::ReadFromSnapshot( const idBitMsg& msg )
 {
 	const int snapshotAmmoClip = msg.ReadBits( ASYNC_PLAYER_INV_CLIP_BITS );
 	worldModel.SetSpawnId( msg.ReadBits( 32 ) );
-	const bool snapshotLightOn = msg.ReadBits( 1 ) != 0;
+	const bool snapshotLightOn = msg.ReadBits( 2 ) != 0;
 	isFiring = msg.ReadBits( 1 ) != 0;
 
 	// Local clients predict the ammo in the clip. Only use the ammo cpunt from the snapshot for local clients
@@ -3272,7 +3328,7 @@ void idWeapon::ReadFromSnapshot( const idBitMsg& msg )
 
 	// Only update the flashlight state if it has changed, and if this isn't the local player.
 	// The local player sets their flashlight immediately for responsiveness.
-	if( owner != NULL && !owner->IsLocallyControlled() && lightOn != snapshotLightOn )
+	if( owner != NULL && !owner->IsLocallyControlled() && flashlightOn != snapshotLightOn )
 	{
 		if( snapshotLightOn )
 		{
@@ -3797,8 +3853,7 @@ void idWeapon::Event_SetSkin( const char* skinname )
 		worldModel.GetEntity()->SetSkin( skinDecl );
 	}
 
-	// Hack, don't send message if flashlight, because clients process the flashlight instantly.
-	if( common->IsServer() && !isPlayerFlashlight )
+	if( common->IsServer() )
 	{
 		idBitMsg			msg;
 		byte				msgBuf[MAX_EVENT_PARAM_SIZE];
@@ -3811,10 +3866,29 @@ void idWeapon::Event_SetSkin( const char* skinname )
 
 /*
 ================
-idWeapon::Event_Flashlight
+idWeapon::Event_MuzzleFlashlight
 ================
 */
 void idWeapon::Event_Flashlight( int enable )
+{
+	if( enable )
+	{
+		flashlightOn = true;
+		FlashLight();
+	}
+	else
+	{
+		flashlightOn = false;
+		//muzzleFlashEnd = 0;
+	}
+}
+
+/*
+================
+idWeapon::Event_Flashlight
+================
+*/
+void idWeapon::Event_MuzzleFlashlight( int enable )
 {
 	if( enable )
 	{

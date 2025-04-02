@@ -782,6 +782,7 @@ scriptEvent	void 	weaponReloading();
 scriptEvent	void 	weaponHolstered();
 scriptEvent	void 	weaponRising();
 scriptEvent	void 	weaponLowering();
+scriptEvent	void 	muzzleFlashLight( float enable );
 scriptEvent	void 	flashlight( float enable );
 scriptEvent	void 	launchProjectiles( float num_projectiles, float spread, float fuseOffset, float launchPower, float dmgPower );
 scriptEvent entity  createProjectile();
