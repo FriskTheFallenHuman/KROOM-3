@@ -537,7 +537,7 @@ bool idRenderWorldLocal::LoadLightGridFile( const char* name )
 		file->ReadBig( magic );
 		file->ReadBig( storedTimeStamp );
 		file->ReadBig( numEntries );
-		if( ( magic == BLGRID_MAGIC ) && ( sourceTimeStamp == storedTimeStamp ) && ( numEntries > 0 ) )
+		if( ( magic == BLGRID_MAGIC ) && ( sourceTimeStamp == storedTimeStamp || sourceTimeStamp == 0 ) && ( numEntries > 0 ) )
 		{
 			loaded = true;
 
