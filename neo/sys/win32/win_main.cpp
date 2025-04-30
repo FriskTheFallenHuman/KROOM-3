@@ -3,7 +3,7 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
-Copyright (C) 2012 Robert Beckebans
+Copyright (C) 2012-2025 Robert Beckebans
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -39,6 +39,7 @@ If you have questions concerning this license or the applicable additional terms
 #include <mapi.h>
 #include <shellapi.h>
 #include <shlobj.h>
+#include <shlwapi.h>  // for PathMatchSpecW
 
 #ifndef __MRC__
 	#include <sys/types.h>
@@ -327,6 +328,48 @@ bool Sys_IsWindowVisible()
 	return ( ::IsWindowVisible( win32.hWnd ) != 0 );
 }
 
+// RB: Converts UTF-8 path to wchar_t* with \\?\ prefix for long path support
+wchar_t* MakeWindowsLongPathW( const char* utf8Path )
+{
+	int utf16Len = MultiByteToWideChar( CP_UTF8, 0, utf8Path, -1, NULL, 0 );
+	if( utf16Len == 0 )
+	{
+		return NULL;
+	}
+
+	// +4 for \\?\ prefix, +1 for null terminator
+	wchar_t* wPath = ( wchar_t* )malloc( ( utf16Len + 4 ) * sizeof( wchar_t ) );
+	if( !wPath )
+	{
+		return NULL;
+	}
+
+	wPath[0] = L'\\';
+	wPath[1] = L'\\';
+	wPath[2] = L'?';
+	wPath[3] = L'\\';
+
+	// Convert UTF-8 to UTF-16 after the prefix
+	if( MultiByteToWideChar( CP_UTF8, 0, utf8Path, -1, wPath + 4, utf16Len ) == 0 )
+	{
+		free( wPath );
+		return NULL;
+	}
+
+	// Replace forward slashes with backslashes
+	for( int i = 4; wPath[i]; i++ )
+	{
+		if( wPath[i] == L'/' )
+		{
+			wPath[i] = L'\\';
+		}
+	}
+
+	return wPath;
+}
+// RB end
+
+
 /*
 ==============
 Sys_Mkdir
@@ -334,7 +377,34 @@ Sys_Mkdir
 */
 void Sys_Mkdir( const char* path )
 {
-	_mkdir( path );
+	// RB: support paths longer than 260 characters
+
+	// ignore pure drive-letter paths like "C:"
+	if( strlen( path ) == 2 && path[1] == ':' && isalpha( path[0] ) )
+	{
+		return;
+	}
+
+	wchar_t* wPath = MakeWindowsLongPathW( path );
+	if( !wPath )
+	{
+		common->FatalError( "Failed to convert path to wide string: '%s'", path );
+		return;
+	}
+
+	if( !CreateDirectoryW( wPath, NULL ) )
+	{
+		DWORD err = GetLastError();
+
+		// don't fatal if directory already exists
+		if( err != ERROR_ALREADY_EXISTS )
+		{
+			common->FatalError( "CreateDirectoryW failed (error %lu)", err );
+		}
+	}
+
+	free( wPath );
+	// RB end
 }
 
 /*
@@ -385,7 +455,23 @@ Sys_Rmdir
 */
 bool Sys_Rmdir( const char* path )
 {
-	return _rmdir( path ) == 0;
+	// RB: support paths longer than 260 characters
+	wchar_t* wPath = MakeWindowsLongPathW( path );
+	if( !wPath )
+	{
+		common->FatalError( "Failed to convert path to wide string: '%s'", path );
+		return false;
+	}
+
+	BOOL success = RemoveDirectoryW( wPath );
+	if( success == 0 )
+	{
+		DWORD err = GetLastError();
+		common->FatalError( "RemoveDirectoryW failed (error %lu)", err );
+	}
+
+	free( wPath );
+	return success != 0;
 }
 
 /*
@@ -410,8 +496,17 @@ Sys_IsFolder
 */
 sysFolder_t Sys_IsFolder( const char* path )
 {
+	wchar_t* wPath = MakeWindowsLongPathW( path );
+	if( !wPath )
+	{
+		return FOLDER_ERROR;
+	}
+
 	struct _stat buffer;
-	if( _stat( path, &buffer ) < 0 )
+	int result = _wstat( wPath, &buffer );
+	free( wPath );
+
+	if( result < 0 )
 	{
 		return FOLDER_ERROR;
 	}
@@ -425,11 +520,25 @@ Sys_Cwd
 */
 const char* Sys_Cwd()
 {
+	// RB: returns the current working directory as a UTF-8 string (static buffer) using the Windows wide-character API
 	static char cwd[MAX_OSPATH];
+	wchar_t wbuf[MAX_OSPATH];
 
-	_getcwd( cwd, sizeof( cwd ) - 1 );
-	cwd[MAX_OSPATH - 1] = 0;
+	DWORD len = GetCurrentDirectoryW( MAX_OSPATH, wbuf );
+	if( len == 0 || len >= MAX_OSPATH )
+	{
+		common->FatalError( "GetCurrentDirectoryW failed (error %lu)", GetLastError() );
+		return NULL;
+	}
 
+	int result = WideCharToMultiByte( CP_UTF8, 0, wbuf, -1, cwd, sizeof( cwd ), NULL, NULL );
+	if( result == 0 )
+	{
+		common->FatalError( "WideCharToMultiByte failed (error %lu)", GetLastError() );
+		return NULL;
+	}
+
+	cwd[MAX_OSPATH - 1] = 0; // Ensure null termination
 	return cwd;
 }
 
@@ -523,6 +632,7 @@ Sys_ListFiles
 */
 int Sys_ListFiles( const char* directory, const char* extension, idStrList& list )
 {
+#if 1
 	idStr		search;
 	struct _finddata_t findinfo;
 	// RB: 64 bit fixes, changed int to intptr_t
@@ -569,6 +679,76 @@ int Sys_ListFiles( const char* directory, const char* extension, idStrList& list
 	_findclose( findhandle );
 
 	return list.Num();
+#else
+	// RB: TODO support paths longer than 260 characters
+	wchar_t* wDir = MakeWindowsLongPathW( directory );
+	if( !wDir )
+	{
+		common->FatalError( "Failed to convert path to wide string: '%s'", directory );
+		return -1;
+	}
+
+	// Default to "*"
+	const char* extPattern = ( extension && extension[0] ) ? extension : "*";
+
+	// Combine directory + \* to find everything, filtering manually via PathMatchSpecW
+	size_t dirLen = wcslen( wDir );
+	wchar_t* wSearchPath = ( wchar_t* )malloc( ( dirLen + 5 ) * sizeof( wchar_t ) ); // \* + null
+	if( !wSearchPath )
+	{
+		free( wDir );
+		return -1;
+	}
+	swprintf( wSearchPath, dirLen + 5, L"%s\\*", wDir );
+
+	// Convert extension pattern to wide string
+	int extLen = MultiByteToWideChar( CP_UTF8, 0, extPattern, -1, NULL, 0 );
+	wchar_t* wPattern = ( wchar_t* )malloc( extLen * sizeof( wchar_t ) );
+	if( !wPattern )
+	{
+		free( wSearchPath );
+		free( wDir );
+		return -1;
+	}
+	MultiByteToWideChar( CP_UTF8, 0, extPattern, -1, wPattern, extLen );
+
+	WIN32_FIND_DATAW findData;
+	HANDLE hFind = FindFirstFileW( wSearchPath, &findData );
+	if( hFind == INVALID_HANDLE_VALUE )
+	{
+		free( wSearchPath );
+		free( wDir );
+		free( wPattern );
+		return -1;
+	}
+
+	list.Clear();
+
+	bool listDirsOnly = ( strcmp( extPattern, "/" ) == 0 );
+	do
+	{
+		bool isDir = ( findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) != 0;
+		bool match = listDirsOnly ? isDir : ( !isDir && PathMatchSpecW( findData.cFileName, wPattern ) );
+
+		if( match && wcscmp( findData.cFileName, L"." ) != 0 && wcscmp( findData.cFileName, L".." ) != 0 )
+		{
+			char utf8Name[MAX_PATH];
+			int len = WideCharToMultiByte( CP_UTF8, 0, findData.cFileName, -1, utf8Name, sizeof( utf8Name ), NULL, NULL );
+			if( len > 0 )
+			{
+				list.Append( utf8Name );
+			}
+		}
+	}
+	while( FindNextFileW( hFind, &findData ) );
+
+	FindClose( hFind );
+	free( wSearchPath );
+	free( wDir );
+	free( wPattern );
+	return list.Num();
+	// RB end
+#endif
 }
 
 #ifndef USE_SDL
