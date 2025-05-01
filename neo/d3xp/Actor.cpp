@@ -403,6 +403,10 @@ const idEventDef EV_SetDamageCap( "setDamageCap", "f" );
 const idEventDef EV_SetWaitState( "setWaitState" , "s" );
 const idEventDef EV_GetWaitState( "getWaitState", NULL, 's' );
 
+// This is stupid
+const idEventDef AI_Vagary_ChooseObjectToThrow( "vagary_ChooseObjectToThrow", "vvfff", 'e' );
+const idEventDef AI_Vagary_ThrowObjectAtEnemy( "vagary_ThrowObjectAtEnemy", "ef" );
+
 CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 EVENT( AI_EnableEyeFocus,			idActor::Event_EnableEyeFocus )
 EVENT( AI_DisableEyeFocus,			idActor::Event_DisableEyeFocus )

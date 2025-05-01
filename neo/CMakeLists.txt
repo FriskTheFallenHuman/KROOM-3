@@ -496,42 +496,6 @@ set(src_core
 	${src_sys_common}
 	${src_ui})
 
-##################### Game-D3XP ###########################
-
-file(GLOB src_d3xp_base d3xp/*.cpp d3xp/*.h d3xp/game.def)
-list(REMOVE_ITEM src_d3xp_base ${CMAKE_SOURCE_DIR}/d3xp/precompiled.cpp ${CMAKE_SOURCE_DIR}/d3xp/EndLevel.cpp ${CMAKE_SOURCE_DIR}/d3xp/EndLevel.h)
-source_group("Game-D3XP" FILES ${src_d3xp_base})
-
-file(GLOB src_d3xp_ai d3xp/ai/*.cpp d3xp/ai/*.h)
-source_group("Game-D3XP\\AI" FILES ${src_d3xp_ai})
-
-file(GLOB src_d3xp_anim d3xp/anim/*.cpp d3xp/anim/*.h)
-source_group("Game-D3XP\\Anim" FILES ${src_d3xp_anim})
-
-file(GLOB src_d3xp_gamesys d3xp/gamesys/*.cpp d3xp/gamesys/*.h)
-list(REMOVE_ITEM src_d3xp_gamesys ${CMAKE_SOURCE_DIR}/d3xp/gamesys/Callbacks.cpp)
-source_group("Game-D3XP\\GameSys" FILES ${src_d3xp_gamesys})
-
-file(GLOB src_d3xp_physics d3xp/physics/*.cpp d3xp/physics/*.h)
-source_group("Game-D3XP\\Physics" FILES ${src_d3xp_physics})
-
-file(GLOB src_d3xp_script d3xp/script/*.cpp d3xp/script/*.h)
-source_group("Game-D3XP\\Script" FILES ${src_d3xp_script})
-
-file(GLOB src_d3xp_menus d3xp/menus/*.cpp d3xp/menus/*.h)
-source_group("Game-D3XP\\Menus" FILES ${src_d3xp_menus})
-
-set(src_d3xp
-	${src_d3xp_base}
-	${src_d3xp_ai}
-	${src_d3xp_anim}
-	${src_d3xp_gamesys}
-	${src_d3xp_physics}
-	${src_d3xp_script}
-	${src_d3xp_menus})
-
-list(APPEND src_core ${src_d3xp})
-
 ##################### Compilers ###########################
 
 file(GLOB src_tools_compilers tools/compilers/*.h)
@@ -650,6 +614,7 @@ set(src_tools
 
 include_directories(${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/idlib ${CMAKE_SOURCE_DIR}/extern)
 
+add_subdirectory(d3xp)
 add_subdirectory(idlib)
 add_subdirectory(extern)
 
@@ -811,9 +776,9 @@ else()
 endif()
 
 add_executable(${CMAKE_PROJECT_NAME} MACOSX_BUNDLE WIN32 ${src_core})
-add_dependencies(${CMAKE_PROJECT_NAME} idLib external)
+add_dependencies(${CMAKE_PROJECT_NAME} idLib Game-D3XP external)
 
-target_link_libraries(${CMAKE_PROJECT_NAME} idLib external ${sys_libs} ${sys_thirdparty})
+target_link_libraries(${CMAKE_PROJECT_NAME} idLib Game-D3XP external ${sys_libs} ${sys_thirdparty})
 if(USE_PRECOMPILED_HEADERS)
 	target_precompile_headers(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/idlib/precompiled.h)
 endif()

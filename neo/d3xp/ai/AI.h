@@ -715,6 +715,19 @@ protected:
 	void					Event_StopEmitter( const char* name );
 };
 
+extern const idEventDef AI_Vagary_ChooseObjectToThrow;
+extern const idEventDef AI_Vagary_ThrowObjectAtEnemy;
+
+class idAI_Vagary : public idAI
+{
+public:
+	CLASS_PROTOTYPE( idAI_Vagary );
+
+private:
+	void					Event_ChooseObjectToThrow( const idVec3& mins, const idVec3& maxs, float speed, float minDist, float offset );
+	void					Event_ThrowObjectAtEnemy( idEntity* ent, float speed );
+};
+
 class idCombatNode : public idEntity
 {
 public:
