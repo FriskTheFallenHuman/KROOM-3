@@ -57,7 +57,7 @@ static const ID_TIME_T	FILE_NOT_FOUND_TIMESTAMP	= ( ID_TIME_T ) - 1;
 // Windows: 260 chars (default), up to 32,767 with "\\?\" prefix and Unicode APIs
 // Linux:   Typically 4096 chars (PATH_MAX), 255 per component (NAME_MAX)
 // macOS:   1024–4096 chars depending on file system, 255 per component
-static const int		MAX_OSPATH					= 1020;		// was 256 in BFG
+static const int		MAX_OSPATH					= 1024;		// was 256 in BFG
 // RB end
 
 // modes for OpenFileByMode

@@ -338,7 +338,7 @@ wchar_t* MakeWindowsLongPathW( const char* utf8Path )
 	}
 
 	// +4 for \\?\ prefix, +1 for null terminator
-	wchar_t* wPath = ( wchar_t* )malloc( ( utf16Len + 4 ) * sizeof( wchar_t ) );
+	wchar_t* wPath = ( wchar_t* )malloc( ( utf16Len + 5 ) * sizeof( wchar_t ) );
 	if( !wPath )
 	{
 		return NULL;
@@ -630,9 +630,53 @@ const char* Sys_EXEPath()
 Sys_ListFiles
 ==============
 */
+static void ListFilesRecursive( const wchar_t* baseDir, const wchar_t* pattern, idStrList& list, size_t baseLen )
+{
+	wchar_t searchPath[MAX_OSPATH];
+	swprintf( searchPath, MAX_OSPATH, L"%s\\*", baseDir );
+
+	WIN32_FIND_DATAW findData;
+	HANDLE hFind = FindFirstFileW( searchPath, &findData );
+	if( hFind == INVALID_HANDLE_VALUE )
+	{
+		return;
+	}
+
+	do
+	{
+		if( wcscmp( findData.cFileName, L"." ) == 0 || wcscmp( findData.cFileName, L".." ) == 0 )
+		{
+			continue;
+		}
+
+		wchar_t fullPath[MAX_OSPATH];
+		swprintf( fullPath, MAX_OSPATH, L"%s\\%s", baseDir, findData.cFileName );
+
+		bool isDir = ( findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) != 0;
+
+		if( isDir )
+		{
+			ListFilesRecursive( fullPath, pattern, list, baseLen );
+		}
+		else if( PathMatchSpecW( findData.cFileName, pattern ) )
+		{
+			char utf8Name[MAX_OSPATH];
+			int len = WideCharToMultiByte( CP_UTF8, 0, fullPath + baseLen, -1, utf8Name, sizeof( utf8Name ), NULL, NULL );
+			if( len > 0 )
+			{
+				list.Append( utf8Name );
+			}
+		}
+	}
+	while( FindNextFileW( hFind, &findData ) );
+
+	FindClose( hFind );
+}
+
+
 int Sys_ListFiles( const char* directory, const char* extension, idStrList& list )
 {
-#if 1
+#if 0
 	idStr		search;
 	struct _finddata_t findinfo;
 	// RB: 64 bit fixes, changed int to intptr_t
@@ -680,7 +724,7 @@ int Sys_ListFiles( const char* directory, const char* extension, idStrList& list
 
 	return list.Num();
 #else
-	// RB: TODO support paths longer than 260 characters
+	// RB: support paths longer than 260 characters
 	wchar_t* wDir = MakeWindowsLongPathW( directory );
 	if( !wDir )
 	{
@@ -688,62 +732,33 @@ int Sys_ListFiles( const char* directory, const char* extension, idStrList& list
 		return -1;
 	}
 
-	// Default to "*"
-	const char* extPattern = ( extension && extension[0] ) ? extension : "*";
-
-	// Combine directory + \* to find everything, filtering manually via PathMatchSpecW
-	size_t dirLen = wcslen( wDir );
-	wchar_t* wSearchPath = ( wchar_t* )malloc( ( dirLen + 5 ) * sizeof( wchar_t ) ); // \* + null
-	if( !wSearchPath )
+	idStr extPattern = "*";
+	if( extension && extension[0] )
 	{
-		free( wDir );
-		return -1;
+		extPattern += extension;
 	}
-	swprintf( wSearchPath, dirLen + 5, L"%s\\*", wDir );
 
-	// Convert extension pattern to wide string
-	int extLen = MultiByteToWideChar( CP_UTF8, 0, extPattern, -1, NULL, 0 );
+	// convert extension pattern to wide string
+	int extLen = MultiByteToWideChar( CP_UTF8, 0, extPattern.c_str(), -1, NULL, 0 );
 	wchar_t* wPattern = ( wchar_t* )malloc( extLen * sizeof( wchar_t ) );
 	if( !wPattern )
 	{
-		free( wSearchPath );
 		free( wDir );
 		return -1;
 	}
-	MultiByteToWideChar( CP_UTF8, 0, extPattern, -1, wPattern, extLen );
+	MultiByteToWideChar( CP_UTF8, 0, extPattern.c_str(), -1, wPattern, extLen );
 
-	WIN32_FIND_DATAW findData;
-	HANDLE hFind = FindFirstFileW( wSearchPath, &findData );
-	if( hFind == INVALID_HANDLE_VALUE )
+	idStrList tempList;
+	size_t baseLen = wcslen( wDir );
+	ListFilesRecursive( wDir, wPattern, tempList, baseLen + 1 ); // +1 to skip path separator
+
+	// convert to forward slashes to tab completion works
+	for( auto& s : tempList )
 	{
-		free( wSearchPath );
-		free( wDir );
-		free( wPattern );
-		return -1;
+		s.BackSlashesToSlashes();
+		list.Append( s.c_str() );
 	}
 
-	list.Clear();
-
-	bool listDirsOnly = ( strcmp( extPattern, "/" ) == 0 );
-	do
-	{
-		bool isDir = ( findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) != 0;
-		bool match = listDirsOnly ? isDir : ( !isDir && PathMatchSpecW( findData.cFileName, wPattern ) );
-
-		if( match && wcscmp( findData.cFileName, L"." ) != 0 && wcscmp( findData.cFileName, L".." ) != 0 )
-		{
-			char utf8Name[MAX_PATH];
-			int len = WideCharToMultiByte( CP_UTF8, 0, findData.cFileName, -1, utf8Name, sizeof( utf8Name ), NULL, NULL );
-			if( len > 0 )
-			{
-				list.Append( utf8Name );
-			}
-		}
-	}
-	while( FindNextFileW( hFind, &findData ) );
-
-	FindClose( hFind );
-	free( wSearchPath );
 	free( wDir );
 	free( wPattern );
 	return list.Num();
