@@ -671,7 +671,7 @@ bool FloodEntities( tree_t* tree )
 
 	c_floodedleafs = 0;
 	bool errorShown = false;
-	for( i = 1 ; i < dmapGlobals.num_entities ; i++ )
+	for( i = 1 ; i < dmapGlobals.numEntities ; i++ )
 	{
 		idMapEntity*	mapEnt;
 

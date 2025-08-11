@@ -707,7 +707,7 @@ void WriteOutputFile()
 	procFile->WriteFloatString( "%s\n\n", PROC_FILE_ID );
 
 	// write the entity models and information, writing entities first
-	for( i = dmapGlobals.num_entities - 1 ; i >= 0 ; i-- )
+	for( i = dmapGlobals.numEntities - 1 ; i >= 0 ; i-- )
 	{
 		entity = &dmapGlobals.uEntities[i];
 

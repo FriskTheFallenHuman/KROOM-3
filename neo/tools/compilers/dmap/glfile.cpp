@@ -542,7 +542,7 @@ void WriteGLView( tree_t* tree, const char* source, int entityNum, bool force )
 }
 
 
-void WriteGLView( bspface_t* list, const char* source )
+void WriteGLView( bspFace_t* list, const char* source )
 {
 	if( dmapGlobals.entityNum != 0 )
 	{
@@ -558,7 +558,7 @@ void WriteGLView( bspface_t* list, const char* source )
 
 	idList<OBJFace> faces;
 
-	for( bspface_t*	face = list ; face ; face = face->next )
+	for( bspFace_t*	face = list ; face ; face = face->next )
 	{
 		OBJFace& objFace = faces.Alloc();
 

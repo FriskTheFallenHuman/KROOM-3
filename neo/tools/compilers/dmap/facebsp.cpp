@@ -169,11 +169,11 @@ void PrintTree_r( node_t* node, int depth )
 AllocBspFace
 ================
 */
-bspface_t*	AllocBspFace()
+bspFace_t*	AllocBspFace()
 {
-	bspface_t*	f;
+	bspFace_t*	f;
 
-	f = ( bspface_t* )Mem_Alloc( sizeof( *f ), TAG_TOOLS );
+	f = ( bspFace_t* )Mem_Alloc( sizeof( *f ), TAG_TOOLS );
 	memset( f, 0, sizeof( *f ) );
 
 	return f;
@@ -184,7 +184,7 @@ bspface_t*	AllocBspFace()
 FreeBspFace
 ================
 */
-void	FreeBspFace( bspface_t* f )
+void	FreeBspFace( bspFace_t* f )
 {
 	if( f->w )
 	{
@@ -200,11 +200,11 @@ SelectSplitPlaneNum
 ================
 */
 #define	BLOCK_SIZE	1024
-int SelectSplitPlaneNum( node_t* node, bspface_t* list )
+int SelectSplitPlaneNum( node_t* node, bspFace_t* list )
 {
-	bspface_t*	split;
-	bspface_t*	check;
-	bspface_t*	bestSplit;
+	bspFace_t*	split;
+	bspFace_t*	check;
+	bspFace_t*	bestSplit;
 	int			splits, facing, front, back;
 	int			side;
 	idPlane*		mapPlane;
@@ -320,13 +320,13 @@ int SelectSplitPlaneNum( node_t* node, bspface_t* list )
 BuildFaceTree_r
 ================
 */
-void	BuildFaceTree_r( node_t* node, bspface_t* list )
+void	BuildFaceTree_r( node_t* node, bspFace_t* list )
 {
-	bspface_t*	split;
-	bspface_t*	next;
+	bspFace_t*	split;
+	bspFace_t*	next;
 	int			side;
-	bspface_t*	newFace;
-	bspface_t*	childLists[2];
+	bspFace_t*	newFace;
+	bspFace_t*	childLists[2];
 	idWinding*	frontWinding, *backWinding;
 	int			i;
 	int			splitPlaneNum;
@@ -424,10 +424,10 @@ FaceBSP
 List will be freed before returning
 ================
 */
-tree_t* FaceBSP( bspface_t* list )
+tree_t* FaceBSP( bspFace_t* list )
 {
 	tree_t*		tree;
-	bspface_t*	face;
+	bspFace_t*	face;
 	int			i;
 	int			count;
 	int			start, end;
@@ -472,20 +472,20 @@ tree_t* FaceBSP( bspface_t* list )
 MakeStructuralBspFaceList
 =================
 */
-bspface_t*	MakeStructuralBspFaceList( primitive_t* list )
+bspFace_t*	MakeStructuralBspFaceList( primitive_t* list )
 {
 	uBrush_t*	b;
 	int			i;
 	side_t*		s;
 	idWinding*	w;
-	bspface_t*	f, *flist;
+	bspFace_t*	f, *flist;
 	mapTri_t*	tri;
 
 	flist = NULL;
 	for( ; list ; list = list->next )
 	{
 		// RB: support polygons instead of brushes
-		tri = list->bsptris;
+		tri = list->polyTris;
 		if( tri )
 		{
 			for( ; tri ; tri = tri->next )
@@ -537,7 +537,7 @@ bspface_t*	MakeStructuralBspFaceList( primitive_t* list )
 			continue;
 		}
 
-		for( i = 0 ; i < b->numsides ; i++ )
+		for( i = 0; i < b->numsides; i++ )
 		{
 			s = &b->sides[i];
 			w = s->winding;
@@ -564,53 +564,5 @@ bspface_t*	MakeStructuralBspFaceList( primitive_t* list )
 	return flist;
 }
 
-/*
-=================
-MakeVisibleBspFaceList
-=================
-*/
-/*
-bspface_t*	MakeVisibleBspFaceList( primitive_t* list )
-{
-	uBrush_t*	b;
-	int			i;
-	side_t*		s;
-	idWinding*	w;
-	bspface_t*	f, *flist;
 
-	flist = NULL;
-	for( ; list ; list = list->next )
-	{
-		b = list->brush;
-		if( !b )
-		{
-			continue;
-		}
-		if( !b->opaque && !( b->contents & CONTENTS_AREAPORTAL ) )
-		{
-			continue;
-		}
-		for( i = 0 ; i < b->numsides ; i++ )
-		{
-			s = &b->sides[i];
-			w = s->visibleHull;
-			if( !w )
-			{
-				continue;
-			}
-			f = AllocBspFace();
-			if( s->material->GetContentFlags() & CONTENTS_AREAPORTAL )
-			{
-				f->portal = true;
-			}
-			f->w = w->Copy();
-			f->planenum = s->planenum & ~1;
-			f->next = flist;
-			flist = f;
-		}
-	}
-
-	return flist;
-}
-*/
 

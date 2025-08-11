@@ -41,7 +41,7 @@ ProcessModel
 */
 bool ProcessModel( uEntity_t* e, bool floodFill )
 {
-	bspface_t*	faces;
+	bspFace_t*	faces;
 
 	// build a bsp tree using all of the sides
 	// of all of the structural brushes
@@ -208,7 +208,7 @@ void ResetDmapGlobals()
 	dmapGlobals.mapFileBase[0] = '\0';
 	dmapGlobals.dmapFile = NULL;
 	dmapGlobals.mapPlanes.Clear();
-	dmapGlobals.num_entities = 0;
+	dmapGlobals.numEntities = 0;
 	dmapGlobals.uEntities = NULL;
 	dmapGlobals.entityNum = 0;
 	dmapGlobals.mapLights.Clear();

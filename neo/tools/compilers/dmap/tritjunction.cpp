@@ -660,7 +660,7 @@ void	FixGlobalTjunctions( uEntity_t* e )
 	// optionally inline some of the func_static models
 	if( dmapGlobals.entityNum == 0 )
 	{
-		for( int eNum = 1 ; eNum < dmapGlobals.num_entities ; eNum++ )
+		for( int eNum = 1 ; eNum < dmapGlobals.numEntities ; eNum++ )
 		{
 			uEntity_t* entity = &dmapGlobals.uEntities[eNum];
 			const char* className = entity->mapEntity->epairs.GetString( "classname" );

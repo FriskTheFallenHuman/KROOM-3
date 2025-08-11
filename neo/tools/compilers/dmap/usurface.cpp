@@ -282,6 +282,7 @@ mapTri_t* TriListForSide( const side_t* s, const idWinding* w )
 				dv = tri->v + j;
 				dv->xyz = *vec;
 
+				// calculate texture s/t from brush primitive texture matrix
 				idVec2 st;
 				st.x = ( dv->xyz * s->texVec.v[0].ToVec3() ) + s->texVec.v[0][3];
 				st.y = ( dv->xyz * s->texVec.v[1].ToVec3() ) + s->texVec.v[1][3];
@@ -711,13 +712,13 @@ void PutPrimitivesInAreas( uEntity_t* e )
 		if( !b )
 		{
 			// add curve triangles
-			for( tri = prim->tris ; tri ; tri = tri->next )
+			for( tri = prim->curveTris ; tri ; tri = tri->next )
 			{
 				AddMapTriToAreas( tri, e );
 			}
 
 			// RB: add new polygon mesh
-			for( tri = prim->bsptris ; tri ; tri = tri->next )
+			for( tri = prim->polyTris ; tri ; tri = tri->next )
 			{
 #if 1
 				// FIXME reverse vertex order for drawing
@@ -750,7 +751,7 @@ void PutPrimitivesInAreas( uEntity_t* e )
 	{
 		bool inlineAll = dmapGlobals.uEntities[0].mapEntity->epairs.GetBool( "inlineAllStatics" );
 
-		for( int eNum = 1 ; eNum < dmapGlobals.num_entities ; eNum++ )
+		for( int eNum = 1 ; eNum < dmapGlobals.numEntities ; eNum++ )
 		{
 			uEntity_t* entity = &dmapGlobals.uEntities[eNum];
 			const char* className = entity->mapEntity->epairs.GetString( "classname" );
@@ -896,7 +897,7 @@ void FilterMeshesIntoTree( uEntity_t* e )
 		if( !b )
 		{
 			// add BSP triangles
-			for( tri = prim->bsptris ; tri ; tri = tri->next )
+			for( tri = prim->polyTris ; tri ; tri = tri->next )
 			{
 				idWinding* w = WindingForTri( tri );
 

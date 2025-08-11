@@ -35,9 +35,9 @@ typedef struct primitive_s
 	struct primitive_s* next;
 
 	// only one of these will be non-NULL
-	struct bspbrush_s* 	brush;
-	struct mapTri_s* 	tris;
-	struct mapTri_s*	bsptris;
+	struct bspBrush_s* 	brush;
+	struct mapTri_s* 	curveTris;
+	struct mapTri_s*	polyTris;
 } primitive_t;
 
 
@@ -102,15 +102,15 @@ typedef struct parseMesh_s
 	const idMaterial* 	material;
 } parseMesh_t;
 
-typedef struct bspface_s
+typedef struct bspFace_s
 {
-	struct bspface_s* 	next;
+	struct bspFace_s* 	next;
 	int					planenum;
 	bool				portal;			// all portals will be selected before
 	// any non-portals
 	bool				checked;		// used by SelectSplitPlaneNum()
 	idWinding* 			w;
-} bspface_t;
+} bspFace_t;
 
 typedef struct
 {
@@ -129,10 +129,10 @@ typedef struct side_s
 } side_t;
 
 
-typedef struct bspbrush_s
+typedef struct bspBrush_s
 {
-	struct bspbrush_s* 	next;
-	struct bspbrush_s* 	original;	// chopped up brushes will reference the originals
+	struct bspBrush_s* 	next;
+	struct bspBrush_s* 	original;	// chopped up brushes will reference the originals
 
 	int					entitynum;			// editor numbering for messages
 	int					brushnum;			// editor numbering for messages
@@ -269,7 +269,7 @@ typedef struct
 
 	idPlaneSet	mapPlanes;
 
-	int			num_entities;
+	int			numEntities;
 	uEntity_t*	uEntities;
 
 	int			entityNum;
@@ -393,7 +393,7 @@ void FreePortal( uPortal_t* p );
 void OutputWinding( idWinding* w, idFile* glview );
 
 void WriteGLView( tree_t* tree, const char* source, int entityNum, bool force = false );
-void WriteGLView( bspface_t* list, const char* source );
+void WriteGLView( bspFace_t* list, const char* source );
 
 //=============================================================================
 
@@ -413,9 +413,9 @@ void FreeTree_r( node_t* node );
 void FreeTreePortals_r( node_t* node );
 
 
-bspface_t*	MakeStructuralBspFaceList( primitive_t* list );
+bspFace_t*	MakeStructuralBspFaceList( primitive_t* list );
 //bspface_t*	MakeVisibleBspFaceList( primitive_t* list );
-tree_t*		FaceBSP( bspface_t* list );
+tree_t*		FaceBSP( bspFace_t* list );
 
 node_t*		NodeForPoint( node_t* node, const idVec3& origin );
 
