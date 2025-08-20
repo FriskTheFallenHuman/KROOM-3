@@ -285,15 +285,16 @@ typedef struct
 	bool	fullCarve;
 	bool	noModelBrushes;
 	bool	noTJunc;
-	bool	nomerge;
+	bool	noMerge;
 	bool	noFlood;
 	bool	noClipSides;		// don't cut sides by solid leafs, use the entire thing
 	bool	noLightCarve;		// extra triangle subdivision by light frustums
-	shadowOptLevel_t	shadowOptLevel;
-	bool	noShadow;			// don't create optimized shadow volumes
 
 	idBounds	drawBounds;
 	bool	drawflag;
+
+	bool	bspAlternateSplitWeights;
+	idVec3	blockSize;					// size of the blocks used for splitting
 
 	int		totalShadowTriangles;
 	int		totalShadowVerts;

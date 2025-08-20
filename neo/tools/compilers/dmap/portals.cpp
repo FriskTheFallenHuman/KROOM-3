@@ -902,7 +902,7 @@ void FloodAreas_r( node_t* node )
 
 	if( node->area != -1 )
 	{
-		return;		// allready got it
+		return;		// already got it
 	}
 	if( node->opaque )
 	{
@@ -964,7 +964,7 @@ void FindAreas_r( node_t* node )
 
 	if( node->area != -1 )
 	{
-		return;		// allready got it
+		return;		// already got it
 	}
 
 	c_areaFloods = 0;

@@ -84,18 +84,21 @@ int PortalVisibleSides( uPortal_t* p )
 
 void OutputWinding( idWinding* w, OBJGroup& group )
 {
-	static	int	level = 128;
-	float		light;
-	int			i;
+	// give every surface a different color
+	static idVec4 colors[] = { colorRed, colorGreen, colorBlue, colorYellow, colorMagenta, colorCyan, colorWhite, colorPurple, colorGold };
+	static int colorIndex = 0;
+	colorIndex++;
+	dword color = PackColor( colors[colorIndex % 9] );
 
-	level += 28;
-	light = ( level & 255 ) / 255.0;
+	//static	int	level = 128;
+	//float		light;
+	//level += 28;
+	//light = ( level & 255 ) / 255.0;
 
 	OBJFace& face = group.faces.Alloc();
 
 	//for( i = 0; i < w->GetNumPoints(); i++ )
-
-	for( i = w->GetNumPoints() - 1; i >= 0; i-- )
+	for( int i = w->GetNumPoints() - 1; i >= 0; i-- )
 	{
 		idDrawVert& dv = face.verts.Alloc();
 
@@ -103,58 +106,49 @@ void OutputWinding( idWinding* w, OBJGroup& group )
 		dv.xyz.y = ( *w )[i][1];
 		dv.xyz.z = ( *w )[i][2];
 
-		dv.SetColor( level & 255 );
+		dv.SetColor( color );
 
 		//dv.SetNormal( w->GetPlane() )
 	}
 }
-
-/*
-void OutputWinding( const idFixedWinding& w, OBJGroup& group )
-{
-	static	int	level = 128;
-	float		light;
-	int			i;
-
-	level += 28;
-	light = ( level & 255 ) / 255.0;
-
-	OBJFace& face = group.faces.Alloc();
-
-	//for( i = 0; i < w->GetNumPoints(); i++ )
-
-	for( i = w.GetNumPoints() - 1; i >= 0; i-- )
-	{
-		idDrawVert& dv = face.verts.Alloc();
-
-		dv.xyz.x = ( w )[i][0];
-		dv.xyz.y = ( w )[i][1];
-		dv.xyz.z = ( w )[i][2];
-
-		dv.SetColor( level & 255 );
-
-		//dv.SetNormal( w->GetPlane() )
-	}
-}
-*/
 
 /*
 =============
 OutputPortal
 =============
 */
-void OutputPortal( uPortal_t* p, OBJGroup& group )
+void OutputPortal( uPortal_t* p, OBJGroup& group, bool touchingVoid )
 {
 	idWinding*	w;
 	int		sides;
 
 	sides = PortalVisibleSides( p );
+
+	if( touchingVoid )
+	{
+		node_t* n0 = p->nodes[0];
+		node_t* n1 = p->nodes[1];
+		int a0 = n0->area;
+		int a1 = n1->area;
+
+		// only portals between an area (area != -1) and the void (area == -1)
+		bool goingVoid = ( a0 != -1 && a1 == -1 ) || ( a0 == -1 && a1 != -1 );
+
+		bool outside = !sides;
+		bool passable = !p->nodes[0]->opaque && !p->nodes[1]->opaque;
+		if( outside && !passable && goingVoid )
+		{
+			w = p->winding;
+			OutputWinding( w, group );
+		}
+
+		return;
+	}
+
 	if( !sides )
 	{
 		return;
 	}
-
-	//c_glfaces++;
 
 	w = p->winding;
 
@@ -173,14 +167,14 @@ void OutputPortal( uPortal_t* p, OBJGroup& group )
 
 
 
-void CollectPortals_r( node_t* node, OBJGroup& group )
+void CollectPortals_r( node_t* node, OBJGroup& group, bool touchingOutside )
 {
 	uPortal_t*	p, *nextp;
 
 	if( node->planenum != PLANENUM_LEAF )
 	{
-		CollectPortals_r( node->children[0], group );
-		CollectPortals_r( node->children[1], group );
+		CollectPortals_r( node->children[0], group, touchingOutside );
+		CollectPortals_r( node->children[1], group, touchingOutside );
 		return;
 	}
 
@@ -189,7 +183,7 @@ void CollectPortals_r( node_t* node, OBJGroup& group )
 	{
 		if( p->nodes[0] == node )
 		{
-			OutputPortal( p, group );
+			OutputPortal( p, group, touchingOutside );
 			nextp = p->next[0];
 		}
 		else
@@ -240,12 +234,16 @@ void OutputNode( const node_t* node, idList<OBJGroup>& groups )
 
 	if( node->planenum == PLANENUM_LEAF )
 	{
+#if 1
+		/*
 		if( node->occupied )
 		{
 			group = &groups.Alloc();
 			group->name.Format( "area%i_leaf_occupied.%i", node->area, node->nodeNumber );
 		}
-		else if( node->opaque )
+		else
+		*/
+		if( !node->occupied && node->opaque )
 		{
 			group = &groups.Alloc();
 
@@ -260,18 +258,21 @@ void OutputNode( const node_t* node, idList<OBJGroup>& groups )
 
 			reverse = true;
 		}
-		else
+		//else
+#endif
 		{
-			group = &groups.Alloc();
-
+#if 0
 			if( node->area != -1 )
 			{
+				group = &groups.Alloc();
 				group->name.Format( "area%i_leaf.%i", node->area, node->nodeNumber );
 			}
 			else
 			{
+				group = &groups.Alloc();
 				group->name.Format( "void_leaf.%i", node->nodeNumber );
 			}
+#endif
 		}
 	}
 	else
@@ -394,9 +395,8 @@ void OutputAreaPortalTriangles( const node_t* node, idList<OBJGroup>& groups )
 
 void CollectNodes_r( node_t* node, idList<OBJGroup>& groups )
 {
-	OutputNode( node, groups );
 	OutputSplitPlane( node, groups );
-	OutputAreaPortalTriangles( node, groups );
+	//OutputAreaPortalTriangles( node, groups );
 
 	if( node->planenum != PLANENUM_LEAF )
 	{
@@ -404,6 +404,8 @@ void CollectNodes_r( node_t* node, idList<OBJGroup>& groups )
 		CollectNodes_r( node->children[1], groups );
 		return;
 	}
+
+	//OutputNode( node, groups );
 }
 
 
@@ -423,7 +425,7 @@ int NumberNodes_r( node_t* node, int nextNode, int& nextLeaf )
 	return nextNode;
 }
 
-void OutputAreaPortals( idList<OBJGroup>& groups )
+void CollectAreaPortals( idList<OBJGroup>& groups )
 {
 	int			i;
 	interAreaPortal_t*	iap;
@@ -473,23 +475,29 @@ void WriteGLView( tree_t* tree, const char* source, int entityNum, bool force )
 	idList<OBJGroup> groups;
 
 	OBJGroup& portals = groups.Alloc();
-	portals.name = "portals";
+	portals.name = "face_portals";
 
-	CollectPortals_r( tree->headnode, portals );
+	CollectPortals_r( tree->headnode, portals, false );
 
 	common->Printf( "%5i c_glfaces\n", portals.faces.Num() );
+
+	OBJGroup& portals2 = groups.Alloc();
+	portals2.name = "void_portals";
+
+	CollectPortals_r( tree->headnode, portals2, true );
 
 	int numLeafs = 0;
 	int numNodes = NumberNodes_r( tree->headnode, 0, numLeafs );
 
-	CollectNodes_r( tree->headnode, groups );
+	//CollectNodes_r( tree->headnode, groups );
 
 	if( entityNum == 0 )
 	{
-		OutputAreaPortals( groups );
+		CollectAreaPortals( groups );
 	}
 
 	int numVerts = 0;
+	//const float oneOver255( 1.0f / 255.0f );
 
 	for( int g = 0; g < groups.Num(); g++ )
 	{
@@ -505,7 +513,13 @@ void WriteGLView( tree_t* tree, const char* source, int entityNum, bool force )
 			{
 				const idVec3& v = face.verts[j].xyz;
 
-				objFile->Printf( "v %1.6f %1.6f %1.6f\n", v.x, v.y, v.z );
+				idVec3 c;
+				UnpackColor( *reinterpret_cast<const dword*>( face.verts[j].color ), c );
+
+				//objFile->Printf( "v %1.6f %1.6f %1.6f\n", v.x, v.y, v.z );
+				objFile->Printf( "v %1.6f %1.6f %1.6f %1.6f %1.6f %1.6f\n",
+								 v.x, v.y, v.z, c.x, c.y, c.z );
+				//c.x * oneOver255, c[1] * oneOver255, c[2] * oneOver255 );
 			}
 
 			/*
@@ -575,9 +589,10 @@ void WriteGLView( bspFace_t* list, const char* source )
 		}
 	}
 
-	//common->Printf( "%5i c_glfaces\n", faces.Num() );
-
 	int numVerts = 0;
+
+	// give every surface a different color
+	static idVec4 colors[] = { colorRed, colorGreen, colorBlue, colorYellow, colorMagenta, colorCyan, colorWhite, colorPurple };
 
 	for( int i = 0; i < faces.Num(); i++ )
 	{
@@ -586,8 +601,11 @@ void WriteGLView( bspFace_t* list, const char* source )
 		for( int j = 0; j < face.verts.Num(); j++ )
 		{
 			const idVec3& v = face.verts[j].xyz;
+			idVec4 c = colors[i & 7];
 
-			objFile->Printf( "v %1.6f %1.6f %1.6f\n", v.x, v.y, v.z );
+			objFile->Printf( "v %1.6f %1.6f %1.6f %1.6f %1.6f %1.6f\n",
+							 v.x, v.y, v.z,
+							 c[0], c[1], c[2] );
 		}
 
 		objFile->Printf( "f " );

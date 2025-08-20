@@ -1148,7 +1148,7 @@ void Prelight( uEntity_t* e )
 		return;
 	}
 
-	if( dmapGlobals.shadowOptLevel > 0 )
+	if( !dmapGlobals.noMerge )
 	{
 		DMAP_VERBOSITY( "----- BuildLightShadows -----\n" );
 		start = Sys_Milliseconds();

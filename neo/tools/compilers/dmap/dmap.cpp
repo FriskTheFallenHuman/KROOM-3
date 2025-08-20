@@ -90,6 +90,7 @@ bool ProcessModel( uEntity_t* e, bool floodFill )
 			common->Warning( "******* leaked *******" );
 			common->Printf( "**********************\n" );
 			LeakFile( e->tree );
+			WriteGLView( e->tree, "leaked", 0, true );
 			// bail out here.  If someone really wants to
 			// process a map that leaks, they should use
 			// -noFlood
@@ -220,14 +221,14 @@ void ResetDmapGlobals()
 	dmapGlobals.fullCarve = false;
 	dmapGlobals.noModelBrushes = false;
 	dmapGlobals.noTJunc = false;
-	dmapGlobals.nomerge = false;
+	dmapGlobals.noMerge = false;
 	dmapGlobals.noFlood = false;
 	dmapGlobals.noClipSides = false;
 	dmapGlobals.noLightCarve = false;
-	dmapGlobals.noShadow = false;
-	dmapGlobals.shadowOptLevel = SO_NONE;
 	dmapGlobals.drawBounds.Clear();
 	dmapGlobals.drawflag = false;
+	dmapGlobals.bspAlternateSplitWeights = false;
+	dmapGlobals.blockSize = idVec3( 1024.0f, 1024.0f, 1024.0f );	// default block size for splitting
 	dmapGlobals.totalShadowTriangles = 0;
 	dmapGlobals.totalShadowVerts = 0;
 }
@@ -258,11 +259,6 @@ void Dmap( const idCmdArgs& args )
 	common->Printf( "---- dmap ----\n" );
 
 	dmapGlobals.fullCarve = true;
-	dmapGlobals.shadowOptLevel = SO_MERGE_SURFACES;		// create shadows by merging all surfaces, but no super optimization
-//	dmapGlobals.shadowOptLevel = SO_CLIP_OCCLUDERS;		// remove occluders that are completely covered
-//	dmapGlobals.shadowOptLevel = SO_SIL_OPTIMIZE;
-//	dmapGlobals.shadowOptLevel = SO_CULL_OCCLUDED;
-
 	dmapGlobals.noLightCarve = true;
 
 	for( i = 1 ; i < args.Argc() ; i++ )
@@ -290,8 +286,30 @@ void Dmap( const idCmdArgs& args )
 		}
 		else if( !idStr::Icmp( s, "draw" ) )
 		{
-			common->Printf( "drawflag = true\n" );
+			common->Printf( "draw = true\n" );
 			dmapGlobals.drawflag = true;
+		}
+		else if( !idStr::Icmp( s, "altsplit" ) )
+		{
+			common->Printf( "bspAlternateSplitWeights = true\n" );
+			dmapGlobals.bspAlternateSplitWeights = true;
+		}
+		else if( !idStr::Icmp( s, "blockSize" ) )
+		{
+			if( i + 3 >= args.Argc() )
+			{
+				common->Error( "usage: dmap blockSize <x> <y> <z>" );
+			}
+			dmapGlobals.blockSize[0] = atof( args.Argv( i + 1 ) );
+			dmapGlobals.blockSize[1] = atof( args.Argv( i + 2 ) );
+			dmapGlobals.blockSize[2] = atof( args.Argv( i + 3 ) );
+			common->Printf( "blockSize = %f %f %f\n", dmapGlobals.blockSize[0], dmapGlobals.blockSize[1], dmapGlobals.blockSize[2] );
+			i += 3;
+		}
+		else if( !idStr::Icmp( s, "noMerge" ) )
+		{
+			common->Printf( "noMerge = true\n" );
+			dmapGlobals.noMerge = true;
 		}
 		else if( !idStr::Icmp( s, "noFlood" ) )
 		{
@@ -337,12 +355,6 @@ void Dmap( const idCmdArgs& args )
 		{
 			common->Printf( "noCarve = true\n" );
 			dmapGlobals.fullCarve = false;
-		}
-		else if( !idStr::Icmp( s, "shadowOpt" ) )
-		{
-			dmapGlobals.shadowOptLevel = ( shadowOptLevel_t )atoi( args.Argv( i + 1 ) );
-			common->Printf( "shadowOpt = %i\n", dmapGlobals.shadowOptLevel );
-			i += 1;
 		}
 		else if( !idStr::Icmp( s, "noTjunc" ) )
 		{
