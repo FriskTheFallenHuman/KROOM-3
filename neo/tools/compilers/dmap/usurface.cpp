@@ -720,12 +720,10 @@ void PutPrimitivesInAreas( uEntity_t* e )
 			// RB: add new polygon mesh
 			for( tri = prim->polyTris ; tri ; tri = tri->next )
 			{
-#if 1
-				// FIXME reverse vertex order for drawing
+				// reverse vertex order for drawing
 				idDrawVert tmp = tri->v[0];
 				tri->v[0] = tri->v[2];
 				tri->v[2] = tmp;
-#endif
 
 				AddMapTriToAreas( tri, e );
 			}
@@ -755,19 +753,23 @@ void PutPrimitivesInAreas( uEntity_t* e )
 		{
 			uEntity_t* entity = &dmapGlobals.uEntities[eNum];
 			const char* className = entity->mapEntity->epairs.GetString( "classname" );
+
 			if( idStr::Icmp( className, "func_static" ) )
 			{
 				continue;
 			}
+
 			if( !entity->mapEntity->epairs.GetBool( "inline" ) && !inlineAll )
 			{
 				continue;
 			}
+
 			const char* modelName = entity->mapEntity->epairs.GetString( "model" );
 			if( !modelName )
 			{
 				continue;
 			}
+
 			idRenderModel*	model = renderModelManager->FindModel( modelName );
 
 			common->Printf( "inlining %s.\n", entity->mapEntity->epairs.GetString( "name" ) );

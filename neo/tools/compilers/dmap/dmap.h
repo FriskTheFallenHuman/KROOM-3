@@ -268,6 +268,7 @@ typedef struct
 	idMapFile*	dmapFile;
 
 	idPlaneSet	mapPlanes;
+	idHashTableT<int, int>	splitPlanesCounter;
 
 	int			numEntities;
 	uEntity_t*	uEntities;

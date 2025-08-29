@@ -516,15 +516,21 @@ int SelectSplitPlaneNum( node_t* node, bspFace_t* list )
 			// original idea by 27 of the Urban Terror team
 
 			float sizeBias = split->w->GetArea();
+			int planeCounter = 0;
+
+			int* value;
+			if( dmapGlobals.splitPlanesCounter.Get( split->planenum, &value ) && value != NULL )
+			{
+				planeCounter = *value;
+			}
+
 			score = numFaces * 10;
-			score -= ( abs( statsFront - statsBack ) );
+			//score = 20000;								// balanced base value
+			score -= ( abs( statsFront - statsBack ) ); 	// prefer centered planes
+			score -= planeCounter * 1;						// avoid reusing the same splitting plane
 			score -= statsFacing;
 			score -= statsSplits * 5;
 			score += ( int )( sizeBias * areaBiasScale );
-			if( mapPlane->Type() < PLANETYPE_TRUEAXIAL )
-			{
-				score += 5;
-			}
 		}
 		else
 #endif
@@ -572,6 +578,7 @@ void	BuildFaceTree_r( node_t* node, bspFace_t* list )
 	int			splitPlaneNum;
 
 	splitPlaneNum = SelectSplitPlaneNum( node, list );
+
 	// if we don't have any more faces, this is a node
 	if( splitPlaneNum == -1 )
 	{
@@ -579,6 +586,18 @@ void	BuildFaceTree_r( node_t* node, bspFace_t* list )
 		c_faceLeafs++;
 		return;
 	}
+
+	// RB: increase split plane counter
+	int* value;
+	if( dmapGlobals.splitPlanesCounter.Get( splitPlaneNum, &value ) && value != NULL )
+	{
+		( *value )++;
+	}
+	else
+	{
+		dmapGlobals.splitPlanesCounter.Set( splitPlaneNum, 1 );
+	}
+	// RB end
 
 	// partition the list
 	node->planenum = splitPlaneNum;
@@ -676,6 +695,9 @@ tree_t* FaceBSP( bspFace_t* list )
 
 	DMAP_VERBOSITY( "--- FaceBSP ---\n" );
 
+	// RB: every model gets its own split plane usage counter
+	dmapGlobals.splitPlanesCounter.Clear();
+
 	tree = AllocTree();
 
 	count = 0;
@@ -696,12 +718,28 @@ tree_t* FaceBSP( bspFace_t* list )
 
 	BuildFaceTree_r( tree->headnode, list );
 
-	int depth = log2f( c_faceLeafs + 1 );
-	DMAP_VERBOSITY( "BSP depth = %i and %5i leafs\n", depth, c_faceLeafs );
-
 	end = Sys_Milliseconds();
 
 	DMAP_VERBOSITY( "%5.1f seconds faceBsp\n", ( end - start ) / 1000.0 );
+
+	if( dmapGlobals.entityNum == 0 )
+	{
+		int depth = log2f( c_faceLeafs + 1 );
+		common->Printf( "BSP depth = %i and %5i leafs\n", depth, c_faceLeafs );
+		common->Printf( "%5i split counters\n", dmapGlobals.splitPlanesCounter.Num() );
+
+		if( dmapGlobals.bspAlternateSplitWeights )
+		{
+			for( int i = 0; i < dmapGlobals.splitPlanesCounter.Num(); i++ )
+			{
+				int key;
+				dmapGlobals.splitPlanesCounter.GetIndexKey( i, key );
+				int* value = dmapGlobals.splitPlanesCounter.GetIndex( i );
+
+				idLib::Printf( "%d\t%d\n", key, *value );
+			}
+		}
+	}
 
 	//PrintTree_r(tree->headnode, depth );
 

@@ -209,6 +209,7 @@ void ResetDmapGlobals()
 	dmapGlobals.mapFileBase[0] = '\0';
 	dmapGlobals.dmapFile = NULL;
 	dmapGlobals.mapPlanes.Clear();
+	dmapGlobals.splitPlanesCounter.Clear();
 	dmapGlobals.numEntities = 0;
 	dmapGlobals.uEntities = NULL;
 	dmapGlobals.entityNum = 0;
@@ -440,15 +441,6 @@ void Dmap( const idCmdArgs& args )
 	if( ProcessModels() )
 	{
 		WriteOutputFile();
-
-		// RB: dump BSP after nodes being pruned and optimized
-		if( dmapGlobals.glview )
-		{
-			uEntity_t* world = &dmapGlobals.uEntities[0];
-
-			WriteGLView( world->tree, "pruned", 0, true );
-		}
-		// RB end
 	}
 	else
 	{
