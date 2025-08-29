@@ -295,10 +295,10 @@ typedef struct
 	bool	drawflag;
 
 	bool	bspAlternateSplitWeights;
-	idVec3	blockSize;					// size of the blocks used for splitting
+	idVec3	blockSize;			// size of the blocks used for splitting
 
-	int		totalShadowTriangles;
-	int		totalShadowVerts;
+	bool	inlineStatics;		// dev option: inline static models into the areas
+	int		totalInlinedModels;
 } dmapGlobals_t;
 
 extern dmapGlobals_t dmapGlobals;

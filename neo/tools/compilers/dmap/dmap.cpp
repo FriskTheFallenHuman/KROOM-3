@@ -230,8 +230,8 @@ void ResetDmapGlobals()
 	dmapGlobals.drawflag = false;
 	dmapGlobals.bspAlternateSplitWeights = false;
 	dmapGlobals.blockSize = idVec3( 1024.0f, 1024.0f, 1024.0f );	// default block size for splitting
-	dmapGlobals.totalShadowTriangles = 0;
-	dmapGlobals.totalShadowVerts = 0;
+	dmapGlobals.inlineStatics = false;
+	dmapGlobals.totalInlinedModels = 0;
 }
 
 /*
@@ -306,6 +306,11 @@ void Dmap( const idCmdArgs& args )
 			dmapGlobals.blockSize[2] = atof( args.Argv( i + 3 ) );
 			common->Printf( "blockSize = %f %f %f\n", dmapGlobals.blockSize[0], dmapGlobals.blockSize[1], dmapGlobals.blockSize[2] );
 			i += 3;
+		}
+		else if( !idStr::Icmp( s, "inlineAll" ) )
+		{
+			common->Printf( "inlineAll = true\n" );
+			dmapGlobals.inlineStatics = true;
 		}
 		else if( !idStr::Icmp( s, "noMerge" ) )
 		{
@@ -449,8 +454,7 @@ void Dmap( const idCmdArgs& args )
 
 	FreeDMapFile();
 
-	common->Printf( "%i total shadow triangles\n", dmapGlobals.totalShadowTriangles );
-	common->Printf( "%i total shadow verts\n", dmapGlobals.totalShadowVerts );
+	common->Printf( "%i static models merged\n", dmapGlobals.totalInlinedModels );
 
 	end = Sys_Milliseconds();
 	common->Printf( "-----------------------\n" );
