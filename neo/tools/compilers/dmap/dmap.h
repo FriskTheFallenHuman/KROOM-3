@@ -324,7 +324,6 @@ uBrush_t* AllocBrush( int numsides );
 void FreeBrush( uBrush_t* brushes );
 void FreeBrushList( uBrush_t* brushes );
 uBrush_t* CopyBrush( uBrush_t* brush );
-void DrawBrushList( uBrush_t* brush );
 void PrintBrush( uBrush_t* brush );
 bool BoundBrush( uBrush_t* brush );
 bool CreateBrushWindings( uBrush_t* brush );
@@ -345,23 +344,6 @@ node_t* AllocNode();
 bool 		LoadDMapFile( const char* filename );
 void		FreeOptimizeGroupList( optimizeGroup_t* groups );
 void		FreeDMapFile();
-
-//=============================================================================
-
-// draw.cpp -- draw debug views either directly, or through glserv.exe
-
-void Draw_ClearWindow();
-void DrawWinding( const idWinding* w );
-void DrawAuxWinding( const idWinding* w );
-
-void DrawLine( idVec3 v1, idVec3 v2, int color );
-
-void GLS_BeginScene();
-void GLS_Winding( const idWinding* w, int code );
-void GLS_Triangle( const mapTri_t* tri, int code );
-void GLS_EndScene();
-
-
 
 //=============================================================================
 
@@ -510,7 +492,6 @@ mapTri_t*	CopyMapTri( const mapTri_t* tri );
 float		MapTriArea( const mapTri_t* tri );
 mapTri_t*	RemoveBadTris( const mapTri_t* tri );
 void		BoundTriList( const mapTri_t* list, idBounds& b );
-void		DrawTri( const mapTri_t* tri );
 void		FlipTriList( mapTri_t* tris );
 void		TriVertsFromOriginal( mapTri_t* tri, const mapTri_t* original );
 void		PlaneForTri( const mapTri_t* tri, idPlane& plane );
