@@ -861,9 +861,12 @@ void idCinematicLocal::FFMPEGReset()
 	// SRS - Special handling for RoQ files: only byte seek works and ffmpeg RoQ decoder needs reset
 	else if( dec_ctx->codec_id == AV_CODEC_ID_ROQ && av_seek_frame( fmt_ctx, video_stream_index, 0, AVSEEK_FLAG_BYTE ) >= 0 )
 	{
+#if LIBAVCODEC_VERSION_MAJOR <= 61
 		// Close and reopen the ffmpeg RoQ codec without clearing the context - this seems to reset the decoder properly
+		// Note avcodec_close( dec_ctx ) is deprecated and removed as of ffmpeg version 8 or LIBAVCODEC_VERSION_MAJOR 62
 		avcodec_close( dec_ctx );
 		avcodec_open2( dec_ctx, dec, NULL );
+#endif
 
 		status = FMV_LOOPED;
 	}
