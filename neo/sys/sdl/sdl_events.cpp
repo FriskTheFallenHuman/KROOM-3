@@ -1416,13 +1416,19 @@ sysEvent_t Sys_GetEvent()
 				continue; // just handle next event
 
 			// Avoid 'unknown event' spam
+			case SDL_DISPLAYEVENT:
 			case SDL_TEXTEDITING:
 			case SDL_KEYMAPCHANGED:
 			case SDL_CLIPBOARDUPDATE:
 				continue; // just handle next event
 
 			default:
-				common->Warning( "unknown event %u", ev.type );
+				// SRS - Suppress warnings for redundant SDL3 display / window events leaking in from sdl2-compat
+				//     - This is likely a defect in sdl2-compat but suppress since unknown event spam is annoying
+				if( !( ev.type > SDL_DISPLAYEVENT && ev.type < SDL_WINDOWEVENT ) && !( ev.type > SDL_SYSWMEVENT && ev.type < SDL_KEYDOWN ) )
+				{
+					common->Warning( "unknown event %u = %#x", ev.type, ev.type );
+				}
 				continue; // just handle next event
 		}
 	}
