@@ -2353,29 +2353,33 @@ int vsprintf( idStr& string, const char* fmt, va_list argptr )
 
 /*
 ============
-va
+va_ptr
 
 does a varargs printf into a temp buffer
-NOTE: not thread safe
+NOTE: now thread safe by using unique_ptr to manage temp buffer lifecycle
+NOTE: va() macro (Str.h) converts to va_ptr().get() for char* return type
 ============
 */
-char* va( const char* fmt, ... )
+std::unique_ptr< const char[] > va_ptr( const char* fmt, ... )
 {
 	va_list argptr;
-	static int index = 0;
-	static char string[4][16384];	// in case called by nested functions
-	char* buf;
 
-	buf = string[index];
+	va_start( argptr, fmt );
+	// SRS - using vsnprintf() determines size, add 1 for null termination
+	#undef vsnprintf
+	int buf_size = vsnprintf( NULL, 0, fmt, argptr ) + 1;
+	assert( buf_size > 0 );
+	va_end( argptr );
+
+	auto buf_ptr = std::make_unique< char[] >( buf_size );
 
 	va_start( argptr, fmt );
 	// SRS - using idStr::vsnPrintf() guarantees size and null termination
-	idStr::vsnPrintf( buf, sizeof( string[index] ), fmt, argptr );
+	int ret = idStr::vsnPrintf( buf_ptr.get(), buf_size, fmt, argptr );
+	assert( ret == buf_size - 1 );
 	va_end( argptr );
 
-	index = ( index + 1 ) & 3;
-
-	return buf;
+	return buf_ptr;
 }
 
 

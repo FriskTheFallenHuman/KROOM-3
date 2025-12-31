@@ -1022,7 +1022,8 @@ void Cmd_TestLight_f( const idCmdArgs& args )
 {
 	int			i;
 	idStr		filename;
-	const char* key = NULL, *value = NULL, *name = NULL;
+	const char* key = NULL, *value = NULL;
+	idStr		name;
 	idPlayer* 	player = NULL;
 	idDict		dict;
 
@@ -1085,7 +1086,8 @@ Cmd_TestPointLight_f
 */
 void Cmd_TestPointLight_f( const idCmdArgs& args )
 {
-	const char* key = NULL, *value = NULL, *name = NULL;
+	const char* key = NULL, *value = NULL;
+	idStr		name;
 	int			i;
 	idPlayer*	player = NULL;
 	idDict		dict;
@@ -1789,7 +1791,7 @@ static void Cmd_SaveSelected_f( const idCmdArgs& args )
 	idMapFile* mapFile = gameLocal.GetLevelMap();
 	idDict dict;
 	idStr mapName;
-	const char* name = NULL;
+	idStr name;
 
 	player = gameLocal.GetLocalPlayer();
 	if( !player || !gameLocal.CheatsOk() )
@@ -1885,7 +1887,7 @@ static void Cmd_SaveMoveables_f( const idCmdArgs& args )
 	idMapEntity* mapEnt = NULL;
 	idMapFile* mapFile = gameLocal.GetLevelMap();
 	idStr mapName;
-	const char* name = NULL;
+	idStr name;
 
 	if( !gameLocal.CheatsOk() )
 	{
@@ -1983,7 +1985,7 @@ static void Cmd_SaveRagdolls_f( const idCmdArgs& args )
 	idMapFile* mapFile = gameLocal.GetLevelMap();
 	idDict dict;
 	idStr mapName;
-	const char* name = NULL;
+	idStr name;
 
 	if( !gameLocal.CheatsOk() )
 	{
@@ -2119,7 +2121,7 @@ static void Cmd_SaveLights_f( const idCmdArgs& args )
 	idMapFile* mapFile = gameLocal.GetLevelMap();
 	idDict dict;
 	idStr mapName;
-	const char* name = NULL;
+	idStr name;
 
 	if( !gameLocal.CheatsOk() )
 	{

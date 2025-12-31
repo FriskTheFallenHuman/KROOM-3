@@ -669,11 +669,11 @@ const char* idVarDef::Name() const
 idVarDef::GlobalName
 ============
 */
-const char* idVarDef::GlobalName() const
+idStr idVarDef::GlobalName() const
 {
 	if( scope != &def_namespace )
 	{
-		return va( "%s::%s", scope->GlobalName(), name->Name() );
+		return va( "%s::%s", scope->GlobalName().c_str(), name->Name() );
 	}
 	else
 	{
@@ -851,11 +851,11 @@ void idVarDef::PrintInfo( idFile* file, int instructionPointer ) const
 		case ev_function :
 			if( value.functionPtr->eventdef )
 			{
-				file->Printf( "event %s", GlobalName() );
+				file->Printf( "event %s", GlobalName().c_str() );
 			}
 			else
 			{
-				file->Printf( "function %s", GlobalName() );
+				file->Printf( "function %s", GlobalName().c_str() );
 			}
 			break;
 
@@ -2078,7 +2078,7 @@ bool idProgram::CompileText( const char* source, const char* text, bool console 
 			{
 				if( !def->value.functionPtr->eventdef && !def->value.functionPtr->firstStatement )
 				{
-					throw idCompileError( va( "function %s was not defined\n", def->GlobalName() ) );
+					throw idCompileError( va( "function %s was not defined\n", def->GlobalName().c_str() ) );
 				}
 			}
 		}

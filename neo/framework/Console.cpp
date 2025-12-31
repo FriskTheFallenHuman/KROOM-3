@@ -283,7 +283,7 @@ float idConsoleLocal::DrawFPS( float y )
 		fps = 1000000 * FPS_FRAMES / total;
 		fps = ( fps + 500 ) / 1000;
 
-		const char* s = va( "%ifps", fps );
+		idStr s = va( "%ifps", fps );
 		int w = strlen( s ) * BIGCHAR_WIDTH;
 
 		if( com_showFPS.GetInteger() == 1 )

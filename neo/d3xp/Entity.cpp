@@ -232,7 +232,7 @@ which should be used by dmap and the editor
 void idGameEdit::ParseSpawnArgsToRenderEntity( const idDict* args, renderEntity_t* renderEntity )
 {
 	int			i;
-	const char*	temp;
+	idStr		temp;
 	idVec3		color;
 	float		angle;
 	const idDeclModelDef* modelDef;
@@ -242,7 +242,7 @@ void idGameEdit::ParseSpawnArgsToRenderEntity( const idDict* args, renderEntity_
 	temp = args->GetString( "model" );
 
 	modelDef = NULL;
-	if( temp[0] != '\0' )
+	if( temp.Length() > 0 )
 	{
 		modelDef = static_cast<const idDeclModelDef*>( declManager->FindType( DECL_MODELDEF, temp, false ) );
 		if( modelDef )
@@ -264,7 +264,7 @@ void idGameEdit::ParseSpawnArgsToRenderEntity( const idDict* args, renderEntity_
 	}
 
 	temp = args->GetString( "skin" );
-	if( temp[0] != '\0' )
+	if( temp.Length() > 0 )
 	{
 		renderEntity->customSkin = declManager->FindSkin( temp );
 	}
@@ -274,7 +274,7 @@ void idGameEdit::ParseSpawnArgsToRenderEntity( const idDict* args, renderEntity_
 	}
 
 	temp = args->GetString( "shader" );
-	if( temp[0] != '\0' )
+	if( temp.Length() > 0 )
 	{
 		renderEntity->customShader = declManager->FindMaterial( temp );
 	}
@@ -326,7 +326,7 @@ void idGameEdit::ParseSpawnArgsToRenderEntity( const idDict* args, renderEntity_
 	for( i = 0; i < MAX_RENDERENTITY_GUI; i++ )
 	{
 		temp = args->GetString( i == 0 ? "gui" : va( "gui%d", i + 1 ) );
-		if( temp[ 0 ] != '\0' )
+		if( temp.Length() > 0 )
 		{
 			AddRenderGui( temp, &renderEntity->gui[ i ], args );
 		}
@@ -512,7 +512,7 @@ idEntity::Spawn
 void idEntity::Spawn()
 {
 	int					i;
-	const char*			temp;
+	idStr				temp;
 	idVec3				origin;
 	idMat3				axis;
 	const idKeyValue*	networkSync;
@@ -561,7 +561,7 @@ void idEntity::Spawn()
 
 	cameraTarget = NULL;
 	temp = spawnArgs.GetString( "cameraTarget" );
-	if( temp != NULL && temp[0] != '\0' )
+	if( temp.Length() > 0 )
 	{
 		// update the camera taget
 		PostEventMS( &EV_UpdateCameraTarget, 0 );
@@ -625,12 +625,12 @@ void idEntity::Spawn()
 	SetAxis( axis );
 
 	temp = spawnArgs.GetString( "model" );
-	if( temp != NULL && *temp != '\0' )
+	if( temp.Length() > 0 )
 	{
 		SetModel( temp );
 	}
 
-	if( spawnArgs.GetString( "bind", "", &temp ) )
+	if( spawnArgs.GetString( "bind", "", temp ) )
 	{
 		PostEventMS( &EV_SpawnBind, 0 );
 	}
@@ -3758,7 +3758,8 @@ idEntity::AddDamageEffect
 */
 void idEntity::AddDamageEffect( const trace_t& collision, const idVec3& velocity, const char* damageDefName )
 {
-	const char* sound, *decal, *key;
+	const char* sound, *decal;
+	idStr key;
 
 	const idDeclEntityDef* def = gameLocal.FindEntityDef( damageDefName, false );
 	if( def == NULL )
@@ -6473,7 +6474,8 @@ idAnimatedEntity::AddLocalDamageEffect
 */
 void idAnimatedEntity::AddLocalDamageEffect( jointHandle_t jointNum, const idVec3& localOrigin, const idVec3& localNormal, const idVec3& localDir, const idDeclEntityDef* def, const idMaterial* collisionMaterial )
 {
-	const char* sound, *splat, *decal, *bleed, *key;
+	const char* sound, *splat, *decal, *bleed;
+	idStr key;
 	damageEffect_t*	de;
 	idVec3 origin, dir;
 	idMat3 axis;
