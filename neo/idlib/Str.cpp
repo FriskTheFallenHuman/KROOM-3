@@ -2353,33 +2353,28 @@ int vsprintf( idStr& string, const char* fmt, va_list argptr )
 
 /*
 ============
-va_ptr
+va_str
 
-does a varargs printf into a temp buffer
-NOTE: now thread safe by using unique_ptr to manage temp buffer lifecycle
-NOTE: va() macro (Str.h) converts to va_ptr().get() for char* return type
+does a varargs printf into a temp buffer (like idStr::Format but global)
+SRS - now thread safe by removing static vars and using idStr return type
+SRS - va() macro (Str.h) converts to va_str().c_str() for char* return type
 ============
 */
-std::unique_ptr< const char[] > va_ptr( const char* fmt, ... )
+idStr va_str( const char* fmt, ... )
 {
 	va_list argptr;
-
-	va_start( argptr, fmt );
-	// SRS - using vsnprintf() determines size, add 1 for null termination
-	#undef vsnprintf
-	int buf_size = vsnprintf( NULL, 0, fmt, argptr ) + 1;
-	assert( buf_size > 0 );
-	va_end( argptr );
-
-	auto buf_ptr = std::make_unique< char[] >( buf_size );
+	char text[MAX_PRINT_MSG];
 
 	va_start( argptr, fmt );
 	// SRS - using idStr::vsnPrintf() guarantees size and null termination
-	int ret = idStr::vsnPrintf( buf_ptr.get(), buf_size, fmt, argptr );
-	assert( ret == buf_size - 1 );
+	int len = idStr::vsnPrintf( text, sizeof( text ), fmt, argptr );
 	va_end( argptr );
 
-	return buf_ptr;
+	if( len < 0 )
+	{
+		idLib::common->FatalError( "va_str() tried to set a large buffer using %s", fmt );
+	}
+	return text;
 }
 
 
