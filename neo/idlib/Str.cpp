@@ -501,8 +501,8 @@ idStr::FloatArrayToString
 */
 const char* idStr::FloatArrayToString( const float* array, const int length, const int precision )
 {
-	static int index = 0;
-	static char str[4][16384];	// in case called by nested functions
+	thread_local int index = 0;
+	thread_local char str[4][MAX_PRINT_MSG];	// in case called by nested functions
 	int i, n;
 	char format[16], *s;
 
@@ -549,8 +549,8 @@ idStr::CStyleQuote
 */
 const char* idStr::CStyleQuote( const char* str )
 {
-	static int index = 0;
-	static char buffers[4][16384];	// in case called by nested functions
+	thread_local int index = 0;
+	thread_local char buffers[4][MAX_PRINT_MSG];	// in case called by nested functions
 	unsigned int i;
 	char* buf;
 
@@ -633,8 +633,8 @@ const char* idStr::CStyleUnQuote( const char* str )
 		return str;
 	}
 
-	static int index = 0;
-	static char buffers[4][16384];	// in case called by nested functions
+	thread_local int index = 0;
+	thread_local char buffers[4][MAX_PRINT_MSG];	// in case called by nested functions
 	unsigned int i;
 	char* buf;
 
@@ -740,7 +740,7 @@ void idStr::Format( const char* fmt, ... )
 
 	if( len < 0 )
 	{
-		idLib::common->FatalError( "Tried to set a large buffer using %s", fmt );
+		idLib::common->FatalError( "idStr::Format() tried to set a large buffer using %s", fmt );
 	}
 	*this = text;
 }
