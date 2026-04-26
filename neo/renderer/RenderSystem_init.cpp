@@ -56,7 +56,6 @@ idGuiModel* tr_guiModel;
 glconfig_t	glConfig;
 
 idCVar r_debugContext( "r_debugContext", "0", CVAR_RENDERER, "Enable various levels of context debug." );
-idCVar r_glDriver( "r_glDriver", "", CVAR_RENDERER, "\"opengl32\", etc." );
 // SRS - Added workaround for AMD OSX driver bugs caused by GL_EXT_timer_query when shadow mapping enabled; Intel bugs not present on OSX
 #if defined(__APPLE__)
 	idCVar r_skipIntelWorkarounds( "r_skipIntelWorkarounds", "1", CVAR_RENDERER | CVAR_BOOL, "skip workarounds for Intel driver bugs" );

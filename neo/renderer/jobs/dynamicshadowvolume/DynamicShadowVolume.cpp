@@ -1217,7 +1217,7 @@ void DynamicShadowVolumeJob( const dynamicShadowVolumeParms_t* parms )
 		// Check if we need to render the shadow volume with Z-fail.
 		bool* preciseInsideShadowVolume = NULL;
 		// If the view is potentially inside the shadow volume bounds we may need to render with Z-fail.
-		if( R_ViewPotentiallyInsideInfiniteShadowVolume( parms->triangleBounds, parms->localLightOrigin, parms->localViewOrigin, parms->zNear * INSIDE_SHADOW_VOLUME_EXTRA_STRETCH ) )
+		if( R_ViewPotentiallyInsideInfiniteShadowVolume( parms->triangleBounds, parms->localLightOrigin, parms->localViewOrigin, parms->zNear ) )
 		{
 			// Optionally perform a more precise test to see whether or not the view is inside the shadow volume.
 			if( parms->useShadowPreciseInsideTest )
@@ -1239,7 +1239,7 @@ void DynamicShadowVolumeJob( const dynamicShadowVolumeParms_t* parms )
 							 parms->verts, parms->numVerts, parms->joints,
 							 parms->localLightOrigin, parms->localViewOrigin,
 							 parms->cullShadowTrianglesToLight, parms->localLightProject,
-							 preciseInsideShadowVolume, parms->zNear * INSIDE_SHADOW_VOLUME_EXTRA_STRETCH );
+							 preciseInsideShadowVolume, parms->zNear );
 		}
 		else
 		{
@@ -1247,7 +1247,7 @@ void DynamicShadowVolumeJob( const dynamicShadowVolumeParms_t* parms )
 							 parms->verts, parms->numVerts,
 							 parms->localLightOrigin, parms->localViewOrigin,
 							 parms->cullShadowTrianglesToLight, parms->localLightProject,
-							 preciseInsideShadowVolume, parms->zNear * INSIDE_SHADOW_VOLUME_EXTRA_STRETCH );
+							 preciseInsideShadowVolume, parms->zNear );
 		}
 
 		// Create shadow volume indices.

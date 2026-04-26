@@ -34,9 +34,6 @@ enum shadowVolumeState_t
 	SHADOWVOLUME_UNFINISHED	= 1
 };
 
-// this extra stretch should also make the "inside shadow volume test" valid for both eyes of a stereo view
-const float INSIDE_SHADOW_VOLUME_EXTRA_STRETCH = 4.0f;	// in theory, should vary with FOV
-
 #define TEMP_ROUND4( x )				( ( x + 3 ) & ~3 )	// round up to a multiple of 4 for SIMD
 #define TEMP_CULLBITS( numVerts )		TEMP_ROUND4( numVerts )
 
