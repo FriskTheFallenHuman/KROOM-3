@@ -556,7 +556,8 @@ void			Sys_GrabMouseCursor( bool grabIt );
 
 void			Sys_ShowWindow( bool show );
 bool			Sys_IsWindowVisible();
-void			Sys_ShowConsole( int visLevel, bool quitOnClose );
+void			Sys_ShowConsole();
+void			Sys_HideConsole();
 
 // This really isn't the right place to have this, but since this is the 'top level' include
 // and has a function signature with 'FILE' in it, it kinda needs to be here =/

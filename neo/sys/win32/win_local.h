@@ -47,8 +47,6 @@ If you have questions concerning this license or the applicable additional terms
 	void	Sys_QueEvent( sysEventType_t type, int value, int value2, int ptrLength, void* ptr, int inputDeviceNum );
 #endif
 
-void	Win_SetErrorText( const char* text );
-
 #ifndef USE_SDL
 	// add additional non keyboard / non mouse movement on top of the keyboard move cmd
 
@@ -106,7 +104,7 @@ struct Win32Vars_t
 	static idCVar	win_viewlog;
 	static idCVar	win_timerUpdate;
 
-	CRITICAL_SECTION criticalSections[MAX_CRITICAL_SECTIONS];
+	mutexHandle_t	criticalSections[MAX_CRITICAL_SECTIONS];
 
 #ifndef USE_SDL
 	HINSTANCE		hInstDI;			// direct input

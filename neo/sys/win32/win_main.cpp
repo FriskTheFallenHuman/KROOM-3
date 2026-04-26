@@ -121,17 +121,17 @@ void Sys_Error( const char* error, ... )
 {
 	va_list		argptr;
 	char		text[4096];
-	MSG        msg;
 
 	va_start( argptr, error );
 	vsprintf( text, error, argptr );
 	va_end( argptr );
 
+#ifdef _DEBUG
 	Conbuf_AppendText( text );
 	Conbuf_AppendText( "\n" );
 
-	Win_SetErrorText( text );
-	Sys_ShowConsole( 1, true );
+	Sys_ShowConsole();
+#endif
 
 	timeEndPeriod( 1 );
 
@@ -143,23 +143,14 @@ void Sys_Error( const char* error, ... )
 	GLimp_Shutdown();
 #endif
 
-	extern idCVar com_productionMode;
-	if( com_productionMode.GetInteger() == 0 )
-	{
-		// wait for the user to quit
-		while( 1 )
-		{
-			if( !GetMessage( &msg, NULL, 0, 0 ) )
-			{
-				common->Quit();
-			}
-			TranslateMessage( &msg );
-			DispatchMessage( &msg );
-		}
-	}
+#ifdef _DEBUG
 	Sys_DestroyConsole();
+#endif
 
-	exit( 1 );
+	if ( ::MessageBox( win32.hWnd, text, "Fatal Error", MB_OK | MB_ICONERROR ) ) {
+		common->Quit(); // notfy common system that we are quitting
+		exit (1);
+	}
 }
 
 /*
@@ -1203,6 +1194,11 @@ Sys_Shutdown
 */
 void Sys_Shutdown()
 {
+	for( int i = 0; i < MAX_CRITICAL_SECTIONS; i++ )
+	{
+		Sys_MutexDestroy( win32.criticalSections[i] );
+	}
+
 	CoUninitialize();
 }
 
@@ -1264,16 +1260,17 @@ WinMain
 	idStr::Copynz( sys_cmdline, lpCmdLine, sizeof( sys_cmdline ) );
 #endif
 
+	// We need to create the mutexes before anything else
+	for( int i = 0; i < MAX_CRITICAL_SECTIONS; i++ )
+	{
+		Sys_MutexCreate( win32.criticalSections[i] );
+	}
+
 	// done before Com/Sys_Init since we need this for error output
 	Sys_CreateConsole();
 
 	// no abort/retry/fail errors
 	SetErrorMode( SEM_FAILCRITICALERRORS );
-
-	for( int i = 0; i < MAX_CRITICAL_SECTIONS; i++ )
-	{
-		InitializeCriticalSection( &win32.criticalSections[i] );
-	}
 
 	// make sure the timer is high precision, otherwise
 	// NT gets 18ms resolution
@@ -1301,14 +1298,18 @@ WinMain
 #endif
 
 	// hide or show the early console as necessary
-	if( win32.win_viewlog.GetInteger() )
+#ifndef _DEBUG
+	if ( win32.win_viewlog.GetInteger() )
 	{
-		Sys_ShowConsole( 1, true );
+		Sys_ShowConsole();
 	}
 	else
 	{
-		Sys_ShowConsole( 0, false );
+		Sys_HideConsole();
 	}
+#else
+	Sys_ShowConsole();
+#endif
 
 #ifdef SET_THREAD_AFFINITY
 	// give the main thread an affinity for the first cpu
