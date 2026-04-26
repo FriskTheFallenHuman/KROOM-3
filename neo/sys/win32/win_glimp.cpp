@@ -266,15 +266,6 @@ void GLW_CheckWGLExtensions( HDC hDC )
 		common->Printf( "Using GLEW %s\n", glewGetString( GLEW_VERSION ) );
 	}
 
-	if( WGLEW_ARB_extensions_string )
-	{
-		glConfig.wgl_extensions_string = ( const char* ) wglGetExtensionsStringARB( hDC );
-	}
-	else
-	{
-		glConfig.wgl_extensions_string = "";
-	}
-
 	// WGL_EXT_swap_control
 	//wglSwapIntervalEXT = ( PFNWGLSWAPINTERVALEXTPROC ) GLimp_ExtensionPointer( "wglSwapIntervalEXT" );
 	r_swapInterval.SetModified();	// force a set next frame

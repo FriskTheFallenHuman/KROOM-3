@@ -146,7 +146,6 @@ struct glconfig_t
 	const char* 		vendor_string;
 	const char* 		version_string;
 	const char* 		extensions_string;
-	const char* 		wgl_extensions_string;
 	const char* 		shading_language_string;
 
 	float				glVersion;				// atof( version_string )

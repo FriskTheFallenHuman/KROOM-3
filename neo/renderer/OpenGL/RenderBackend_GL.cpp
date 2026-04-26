@@ -546,7 +546,7 @@ void idRenderBackend::Init()
 	idLib::Printf( "OpenGL Vendor    : %s\n", glConfig.vendor_string );
 	idLib::Printf( "OpenGL Renderer  : %s\n", glConfig.renderer_string );
 	idLib::Printf( "OpenGL GLSL      : %3.1f\n", glslVersion );
-	idLib::Printf( "OpenGL Extensions: %s\n", glConfig.extensions_string );
+	//idLib::Printf( "OpenGL Extensions: %s\n", glConfig.extensions_string );
 
 	// OpenGL driver constants
 	GLint temp;
