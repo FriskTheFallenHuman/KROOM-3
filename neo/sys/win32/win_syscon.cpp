@@ -48,7 +48,8 @@ void Sys_ConsoleInputThread();
 ** Sys_BindCrtHandlesToStdHandles
 ** https://stackoverflow.com/questions/311955/redirecting-cout-to-a-console-in-windows
 */
-void Sys_BindCrtHandlesToStdHandles( bool bindStdIn, bool bindStdOut, bool bindStdErr ) {
+void Sys_BindCrtHandlesToStdHandles( bool bindStdIn, bool bindStdOut, bool bindStdErr )
+{
 	/*
 		Re-initialize the C runtime "FILE" handles with clean handles bound to "nul". We do this because it has been
 		observed that the file number of our standard handle file objects can be assigned internally to a value of -2
@@ -58,31 +59,39 @@ void Sys_BindCrtHandlesToStdHandles( bool bindStdIn, bool bindStdOut, bool bindS
 		use the "nul" device, which will place them into a valid state, after which we can redirect them to our target
 		using the "_dup2" function.
 	*/
-	if ( bindStdIn ) {
-		FILE *dummyFile;
+	if( bindStdIn )
+	{
+		FILE* dummyFile;
 		freopen_s( &dummyFile, "nul", "r", stdin );
 	}
 
-	if ( bindStdOut ) {
-		FILE *dummyFile;
+	if( bindStdOut )
+	{
+		FILE* dummyFile;
 		freopen_s( &dummyFile, "nul", "w", stdout );
 	}
 
-	if ( bindStdErr ) {
-		FILE *dummyFile;
+	if( bindStdErr )
+	{
+		FILE* dummyFile;
 		freopen_s( &dummyFile, "nul", "w", stderr );
 	}
 
 	// Redirect unbuffered stdin from the current standard input handle
-	if ( bindStdIn ) {
+	if( bindStdIn )
+	{
 		HANDLE stdHandle = GetStdHandle( STD_INPUT_HANDLE );
-		if ( stdHandle != INVALID_HANDLE_VALUE ) {
-			int fileDescriptor = _open_osfhandle( (intptr_t)stdHandle, _O_TEXT );
-			if ( fileDescriptor != -1 ){
-				FILE *file = _fdopen( fileDescriptor, "r" );
-				if ( file != NULL ) {
+		if( stdHandle != INVALID_HANDLE_VALUE )
+		{
+			int fileDescriptor = _open_osfhandle( ( intptr_t )stdHandle, _O_TEXT );
+			if( fileDescriptor != -1 )
+			{
+				FILE* file = _fdopen( fileDescriptor, "r" );
+				if( file != NULL )
+				{
 					int dup2Result = _dup2( _fileno( file ), _fileno( stdin ) );
-					if ( dup2Result == 0 ) {
+					if( dup2Result == 0 )
+					{
 						setvbuf( stdin, NULL, _IONBF, 0 );
 					}
 				}
@@ -91,15 +100,20 @@ void Sys_BindCrtHandlesToStdHandles( bool bindStdIn, bool bindStdOut, bool bindS
 	}
 
 	// Redirect unbuffered stdout to the current standard output handle
-	if ( bindStdOut ) {
+	if( bindStdOut )
+	{
 		HANDLE stdHandle = GetStdHandle( STD_OUTPUT_HANDLE );
-		if ( stdHandle != INVALID_HANDLE_VALUE ) {
-			int fileDescriptor = _open_osfhandle( (intptr_t)stdHandle, _O_TEXT );
-			if ( fileDescriptor != -1 ) {
-				FILE *file = _fdopen( fileDescriptor, "w" );
-				if ( file != NULL ) {
+		if( stdHandle != INVALID_HANDLE_VALUE )
+		{
+			int fileDescriptor = _open_osfhandle( ( intptr_t )stdHandle, _O_TEXT );
+			if( fileDescriptor != -1 )
+			{
+				FILE* file = _fdopen( fileDescriptor, "w" );
+				if( file != NULL )
+				{
 					int dup2Result = _dup2( _fileno( file ), _fileno( stdout ) );
-					if ( dup2Result == 0 ) {
+					if( dup2Result == 0 )
+					{
 						setvbuf( stdout, NULL, _IONBF, 0 );
 					}
 				}
@@ -108,15 +122,20 @@ void Sys_BindCrtHandlesToStdHandles( bool bindStdIn, bool bindStdOut, bool bindS
 	}
 
 	// Redirect unbuffered stderr to the current standard error handle
-	if ( bindStdErr ) {
-		HANDLE stdHandle = GetStdHandle(STD_ERROR_HANDLE);
-		if ( stdHandle != INVALID_HANDLE_VALUE ) {
-			int fileDescriptor = _open_osfhandle((intptr_t)stdHandle, _O_TEXT);
-			if ( fileDescriptor != -1 ) {
-				FILE *file = _fdopen( fileDescriptor, "w" );
-				if ( file != NULL ) {
+	if( bindStdErr )
+	{
+		HANDLE stdHandle = GetStdHandle( STD_ERROR_HANDLE );
+		if( stdHandle != INVALID_HANDLE_VALUE )
+		{
+			int fileDescriptor = _open_osfhandle( ( intptr_t )stdHandle, _O_TEXT );
+			if( fileDescriptor != -1 )
+			{
+				FILE* file = _fdopen( fileDescriptor, "w" );
+				if( file != NULL )
+				{
 					int dup2Result = _dup2( _fileno( file ), _fileno( stderr ) );
-					if ( dup2Result == 0 ) {
+					if( dup2Result == 0 )
+					{
 						setvbuf( stderr, NULL, _IONBF, 0 );
 					}
 				}
@@ -130,17 +149,20 @@ void Sys_BindCrtHandlesToStdHandles( bool bindStdIn, bool bindStdOut, bool bindS
 		versions of Visual Studio after 2005, this seems to always occur during startup regardless of whether anything
 		has been read from or written to the targets or not.
 	*/
-	if ( bindStdIn ) {
+	if( bindStdIn )
+	{
 		std::wcin.clear();
 		std::cin.clear();
 	}
 
-	if ( bindStdOut ) {
+	if( bindStdOut )
+	{
 		std::wcout.clear();
 		std::cout.clear();
 	}
 
-	if ( bindStdErr ) {
+	if( bindStdErr )
+	{
 		std::wcerr.clear();
 		std::cerr.clear();
 	}
@@ -149,44 +171,50 @@ void Sys_BindCrtHandlesToStdHandles( bool bindStdIn, bool bindStdOut, bool bindS
 /*
 ** Sys_CreateConsole
 */
-void Sys_CreateConsole() {
+void Sys_CreateConsole()
+{
 	// We allocate our console first
-    if( AllocConsole() ) {
+	if( AllocConsole() )
+	{
 		// Update the C/C++ runtime standard input, output, and error targets to use the console window
-        Sys_BindCrtHandlesToStdHandles( true, true, true );
-        SetConsoleTitle( "Console Output" );
-        SetConsoleTextAttribute( GetStdHandle( STD_OUTPUT_HANDLE ), FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED );
+		Sys_BindCrtHandlesToStdHandles( true, true, true );
+		SetConsoleTitle( "Console Output" );
+		SetConsoleTextAttribute( GetStdHandle( STD_OUTPUT_HANDLE ), FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED );
 
-        // Remove the close buttons.
-        HMENU hSysMenu = GetSystemMenu( GetConsoleWindow(), FALSE );
-        if ( hSysMenu != NULL ) {
-            DeleteMenu( hSysMenu, SC_CLOSE, MF_BYCOMMAND );
-            DeleteMenu( hSysMenu, SC_MAXIMIZE, MF_BYCOMMAND );
-        }
+		// Remove the close buttons.
+		HMENU hSysMenu = GetSystemMenu( GetConsoleWindow(), FALSE );
+		if( hSysMenu != NULL )
+		{
+			DeleteMenu( hSysMenu, SC_CLOSE, MF_BYCOMMAND );
+			DeleteMenu( hSysMenu, SC_MAXIMIZE, MF_BYCOMMAND );
+		}
 
 		// Hide it by default
-        ShowWindow( GetConsoleWindow(), SW_HIDE );
+		ShowWindow( GetConsoleWindow(), SW_HIDE );
 
 		// Start the console input thread
-        std::thread consoleInputThread( Sys_ConsoleInputThread );
-        consoleInputThread.detach();
-    }
+		std::thread consoleInputThread( Sys_ConsoleInputThread );
+		consoleInputThread.detach();
+	}
 }
 
 /*
 ** Sys_DestroyConsole
 */
-void Sys_DestroyConsole() {
+void Sys_DestroyConsole()
+{
 	FreeConsole();
 }
 
 /*
 ** Sys_ShowConsole
 */
-void Sys_ShowConsole() {
+void Sys_ShowConsole()
+{
 
 	HWND window = GetConsoleWindow();
-	if ( !window ) {
+	if( !window )
+	{
 		return;
 	}
 
@@ -196,10 +224,12 @@ void Sys_ShowConsole() {
 /*
 ** Sys_HideConsole
 */
-void Sys_HideConsole() {
+void Sys_HideConsole()
+{
 
 	HWND window = GetConsoleWindow();
-	if ( !window ) {
+	if( !window )
+	{
 		return;
 	}
 
@@ -209,16 +239,20 @@ void Sys_HideConsole() {
 /*
 ** Sys_ConsoleInputThread
 */
-void Sys_ConsoleInputThread() {
+void Sys_ConsoleInputThread()
+{
 	static char buffer[512];
 
 	DWORD bytesRead;
-	HANDLE hConsole = GetStdHandle(STD_INPUT_HANDLE);
+	HANDLE hConsole = GetStdHandle( STD_INPUT_HANDLE );
 
-	while ( true ) {
+	while( true )
+	{
 		// Check if there is input available
-		if ( _kbhit() ) {
-			if ( ReadConsole( hConsole, buffer, sizeof( buffer ) - 1, &bytesRead, NULL ) ) {
+		if( _kbhit() )
+		{
+			if( ReadConsole( hConsole, buffer, sizeof( buffer ) - 1, &bytesRead, NULL ) )
+			{
 				buffer[bytesRead - 2] = '\0'; // Null-terminate the string and remove CRLF
 
 				Sys_MutexLock( win32.criticalSections[CRITICAL_SECTION_ONE], true );
@@ -233,10 +267,12 @@ void Sys_ConsoleInputThread() {
 /*
 ** Sys_ConsoleInput
 */
-char *Sys_ConsoleInput() {
+char* Sys_ConsoleInput()
+{
 	Sys_MutexLock( win32.criticalSections[CRITICAL_SECTION_ONE], false );
 
-	if ( returnedText[0] == 0 ) {
+	if( returnedText[0] == 0 )
+	{
 		Sys_MutexUnlock( win32.criticalSections[CRITICAL_SECTION_ONE] );
 		return NULL;
 	}
@@ -254,19 +290,32 @@ char *Sys_ConsoleInput() {
 ** Q3ColorToConsoleAttr
 ** Credits to ioQuake3
 */
-static WORD Q3ColorToConsoleAttr( char code ) {
-	switch ( code ) {
-		case '0': return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;                          // DEFAULT
-		case '1': return FOREGROUND_RED | FOREGROUND_INTENSITY;                                        // RED
-		case '2': return FOREGROUND_GREEN | FOREGROUND_INTENSITY;                                      // GREEN
-		case '3': return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY;                     // YELLOW
-		case '4': return FOREGROUND_BLUE | FOREGROUND_INTENSITY;                                       // BLUE
-		case '5': return FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;                    // CYAN
-		case '6': return FOREGROUND_RED | FOREGROUND_GREEN;                                            // ORANGE
-		case '7': return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;   // WHITE
-		case '8': return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;                          // GRAY
-		case '9': return 0;                                                                            // BLACK
-		default:  return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+static WORD Q3ColorToConsoleAttr( char code )
+{
+	switch( code )
+	{
+		case '0':
+			return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;                          // DEFAULT
+		case '1':
+			return FOREGROUND_RED | FOREGROUND_INTENSITY;                                        // RED
+		case '2':
+			return FOREGROUND_GREEN | FOREGROUND_INTENSITY;                                      // GREEN
+		case '3':
+			return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY;                     // YELLOW
+		case '4':
+			return FOREGROUND_BLUE | FOREGROUND_INTENSITY;                                       // BLUE
+		case '5':
+			return FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;                    // CYAN
+		case '6':
+			return FOREGROUND_RED | FOREGROUND_GREEN;                                            // ORANGE
+		case '7':
+			return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;   // WHITE
+		case '8':
+			return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;                          // GRAY
+		case '9':
+			return 0;                                                                            // BLACK
+		default:
+			return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
 	}
 }
 
@@ -275,22 +324,26 @@ static WORD Q3ColorToConsoleAttr( char code ) {
 /*
 ** Conbuf_AppendText
 */
-void Conbuf_AppendText( const char *pMsg ) {
+void Conbuf_AppendText( const char* pMsg )
+{
 #define CONSOLE_BUFFER_SIZE 16384
 
 	HANDLE hConsole = GetStdHandle( STD_OUTPUT_HANDLE );
 
-	const char *msg = pMsg;
-	if ( strlen( pMsg ) > CONSOLE_BUFFER_SIZE - 1 ) {
+	const char* msg = pMsg;
+	if( strlen( pMsg ) > CONSOLE_BUFFER_SIZE - 1 )
+	{
 		msg = pMsg + strlen( pMsg ) - CONSOLE_BUFFER_SIZE + 1;
 	}
 
 	char   buf[ CONSOLE_BUFFER_SIZE * 2 ];
-	char  *b       = buf;
+	char*  b       = buf;
 	size_t bufRoom = sizeof( buf ) - 1;
 
-	auto FlushBuf = [&]() {
-		if ( b > buf ) {
+	auto FlushBuf = [&]()
+	{
+		if( b > buf )
+		{
 			*b = '\0';
 			printf( "%s", buf );
 			b       = buf;
@@ -298,26 +351,44 @@ void Conbuf_AppendText( const char *pMsg ) {
 		}
 	};
 
-	while ( *msg ) {
-		if ( idStr::IsColor( msg ) ) {
+	while( *msg )
+	{
+		if( idStr::IsColor( msg ) )
+		{
 			FlushBuf();
 			SetConsoleTextAttribute( hConsole, Q3ColorToConsoleAttr( msg[1] ) );
 			msg += 2;
 			continue;
 		}
 
-		if ( msg[0] == '\n' && msg[1] == '\r' ) {
-			if ( bufRoom < 2 ) { FlushBuf(); }
-			*b++ = '\r'; *b++ = '\n';
+		if( msg[0] == '\n' && msg[1] == '\r' )
+		{
+			if( bufRoom < 2 )
+			{
+				FlushBuf();
+			}
+			*b++ = '\r';
+			*b++ = '\n';
 			bufRoom -= 2;
 			msg += 2;
-		} else if ( msg[0] == '\r' || msg[0] == '\n' ) {
-			if ( bufRoom < 2 ) { FlushBuf(); }
-			*b++ = '\r'; *b++ = '\n';
+		}
+		else if( msg[0] == '\r' || msg[0] == '\n' )
+		{
+			if( bufRoom < 2 )
+			{
+				FlushBuf();
+			}
+			*b++ = '\r';
+			*b++ = '\n';
 			bufRoom -= 2;
 			msg++;
-		} else {
-			if ( bufRoom < 1 ) { FlushBuf(); }
+		}
+		else
+		{
+			if( bufRoom < 1 )
+			{
+				FlushBuf();
+			}
 			*b++ = *msg++;
 			bufRoom--;
 		}

@@ -176,7 +176,7 @@ void idDebugGraph::Render( idRenderSystem* gui )
 			for( int i = 0; i < labels.Num(); i++ )
 			{
 				idVec2 pos( barLeft - SMALLCHAR_WIDTH * maxLen, barTop + i * barHeight );
-				gui->DrawSmallStringExt( idMath::Ftoi( pos.x ), idMath::Ftoi( pos.y ), labels[i], fontColor, true );
+				gui->DrawSmallStringExt( idMath::Ftoi( pos.x ), idMath::Ftoi( pos.y ), labels[i], fontColor, true, false, 0.0f );
 			}
 		}
 	}
@@ -219,7 +219,7 @@ void idDebugGraph::Render( idRenderSystem* gui )
 			for( int i = 0; i < labels.Num(); i++ )
 			{
 				idVec2 pos( barLeft + i * barWidth, barBottom + border );
-				gui->DrawSmallStringExt( idMath::Ftoi( pos.x ), idMath::Ftoi( pos.y ), labels[i], fontColor, true );
+				gui->DrawSmallStringExt( idMath::Ftoi( pos.x ), idMath::Ftoi( pos.y ), labels[i], fontColor, true, false, 0.0f );
 			}
 		}
 	}

@@ -3154,10 +3154,10 @@ void idLobby::DrawDebugNetworkHUD() const
 
 	renderSystem->DrawFilled( idVec4( 0.0f, 0.0f, 0.0f, 0.7f ), X_OFFSET - 10.0f, curY - 10.0f, 1550, ( peers.Num() + numLines ) * Y_SPACING + 20.0f );
 
-	renderSystem->DrawSmallStringExt( idMath::Ftoi( X_OFFSET ), idMath::Ftoi( curY ), "# Peer                   | Sent kB/s | Recv kB/s | Sent MB | Recv MB | Ping   | L |  %  | R.NM | R.SZ | R.AK | T", colorGreen, false );
+	renderSystem->DrawSmallStringExt( idMath::Ftoi( X_OFFSET ), idMath::Ftoi( curY ), "# Peer                   | Sent kB/s | Recv kB/s | Sent MB | Recv MB | Ping   | L |  %  | R.NM | R.SZ | R.AK | T", colorGreen, false, false, 0.0f );
 	curY += Y_SPACING;
 
-	renderSystem->DrawSmallStringExt( idMath::Ftoi( X_OFFSET ), idMath::Ftoi( curY ), "------------------------------------------------------------------------------------------------------------------------------------", colorGreen, false );
+	renderSystem->DrawSmallStringExt( idMath::Ftoi( X_OFFSET ), idMath::Ftoi( curY ), "------------------------------------------------------------------------------------------------------------------------------------", colorGreen, false, false, 0.0f );
 	curY += Y_SPACING;
 
 	for( int p = 0; p < peers.Num(); p++ )
@@ -3189,11 +3189,11 @@ void idLobby::DrawDebugNetworkHUD() const
 		name += lobbyType == TYPE_PARTY ? "(P" : "(G";
 		name += host == p ? ":H)" : ":C)";
 
-		renderSystem->DrawSmallStringExt( X_OFFSET, curY, va( "%i %22s | %2.02f kB/s | %2.02f kB/s | %2.02f MB | %2.02f MB |%4i ms | %i | %i%% | %i | %i | %i | %2.2f / %2.2f / %i", p, name.c_str(), sentKps, recvKps, sentMB, recvMB, peer.lastPingRtt, peer.loaded, resourcePercent, peer.packetProc->NumQueuedReliables(), peer.packetProc->GetReliableDataSize(), peer.packetProc->NeedToSendReliableAck(), peer.snapHz, peer.maxSnapBps, peer.failedPingRecoveries ), color, false );
+		renderSystem->DrawSmallStringExt( X_OFFSET, curY, va( "%i %22s | %2.02f kB/s | %2.02f kB/s | %2.02f MB | %2.02f MB |%4i ms | %i | %i%% | %i | %i | %i | %2.2f / %2.2f / %i", p, name.c_str(), sentKps, recvKps, sentMB, recvMB, peer.lastPingRtt, peer.loaded, resourcePercent, peer.packetProc->NumQueuedReliables(), peer.packetProc->GetReliableDataSize(), peer.packetProc->NeedToSendReliableAck(), peer.snapHz, peer.maxSnapBps, peer.failedPingRecoveries ), color, false, false, 0.0f );
 		curY += Y_SPACING;
 	}
 
-	renderSystem->DrawSmallStringExt( idMath::Ftoi( X_OFFSET ), idMath::Ftoi( curY ), "------------------------------------------------------------------------------------------------------------------------------------", colorGreen, false );
+	renderSystem->DrawSmallStringExt( idMath::Ftoi( X_OFFSET ), idMath::Ftoi( curY ), "------------------------------------------------------------------------------------------------------------------------------------", colorGreen, false, false, 0.0f );
 	curY += Y_SPACING;
 
 	float totalSentKps = ( float )totalSendRate / 1024.0f;
@@ -3201,7 +3201,7 @@ void idLobby::DrawDebugNetworkHUD() const
 
 	idVec4 color = totalSentKps > 100.0f ? colorRed : colorGreen;
 
-	renderSystem->DrawSmallStringExt( X_OFFSET, curY, va( "# %20s | %2.02f KB/s | %2.02f KB/s | %2.02f MB | %2.02f MB", "", totalSentKps, totalRecvKps, totalSentMB, totalRecvMB ), color, false );
+	renderSystem->DrawSmallStringExt( X_OFFSET, curY, va( "# %20s | %2.02f KB/s | %2.02f KB/s | %2.02f MB | %2.02f MB", "", totalSentKps, totalRecvKps, totalSentMB, totalRecvMB ), color, false, false, 0.0f );
 	curY += Y_SPACING;
 
 	if( net_forceUpstream.GetFloat() != 0.0f )
@@ -3210,7 +3210,7 @@ void idLobby::DrawDebugNetworkHUD() const
 		float upstreamQueuedRate = session->GetUpstreamQueueRate();
 
 		int queuedBytes = session->GetQueuedBytes();
-		renderSystem->DrawSmallStringExt( X_OFFSET, curY, va( "Queued: %d | Dropping: %2.02f kB/s Queue: %2.02f kB/s -> Effective %2.02f kB/s", queuedBytes, upstreamDropRate / 1024.0f, upstreamQueuedRate / 1024.0f, totalSentKps - ( upstreamDropRate / 1024.0f ) + ( upstreamQueuedRate / 1024.0f ) ), color, false );
+		renderSystem->DrawSmallStringExt( X_OFFSET, curY, va( "Queued: %d | Dropping: %2.02f kB/s Queue: %2.02f kB/s -> Effective %2.02f kB/s", queuedBytes, upstreamDropRate / 1024.0f, upstreamQueuedRate / 1024.0f, totalSentKps - ( upstreamDropRate / 1024.0f ) + ( upstreamQueuedRate / 1024.0f ) ), color, false, false, 0.0f );
 	}
 }
 
@@ -3236,13 +3236,13 @@ void idLobby::DrawDebugNetworkHUD2() const
 
 	renderSystem->DrawFilled( idVec4( 1.0f, 1.0f, 1.0f, 0.7f ), X_OFFSET - 10.0f, curY - 10.0f, 550, ( peers.Num() + 5 ) * Y_SPACING + 20.0f );
 
-	renderSystem->DrawSmallStringExt( idMath::Ftoi( X_OFFSET ), idMath::Ftoi( curY ), va( "State: %s. Local time: %d", stateName, Sys_Milliseconds() ), colorGreen, false );
+	renderSystem->DrawSmallStringExt( idMath::Ftoi( X_OFFSET ), idMath::Ftoi( curY ), va( "State: %s. Local time: %d", stateName, Sys_Milliseconds() ), colorGreen, false, false, 0.0f );
 	curY += Y_SPACING;
 
-	renderSystem->DrawSmallStringExt( idMath::Ftoi( X_OFFSET ), idMath::Ftoi( curY ), "Peer           | Sent kB/s | Recv kB/s | L | R | Resources", colorGreen, false );
+	renderSystem->DrawSmallStringExt( idMath::Ftoi( X_OFFSET ), idMath::Ftoi( curY ), "Peer           | Sent kB/s | Recv kB/s | L | R | Resources", colorGreen, false, false, 0.0f );
 	curY += Y_SPACING;
 
-	renderSystem->DrawSmallStringExt( idMath::Ftoi( X_OFFSET ), idMath::Ftoi( curY ), "------------------------------------------------------------------", colorGreen, false );
+	renderSystem->DrawSmallStringExt( idMath::Ftoi( X_OFFSET ), idMath::Ftoi( curY ), "------------------------------------------------------------------", colorGreen, false, false, 0.0f );
 	curY += Y_SPACING;
 
 	for( int p = 0; p < peers.Num(); p++ )
@@ -3291,17 +3291,17 @@ void idLobby::DrawDebugNetworkHUD2() const
 			peerName = "Local     ";
 		}
 
-		renderSystem->DrawSmallStringExt( X_OFFSET, curY, va( "%i - %s | %2.02f kB/s | %2.02f kB/s | %i | %i | %d/%d", p, peerName.c_str(), sentKps, recvKps, peers[p].loaded, peers[p].address.UsingRelay(), rLoaded, rTotal ), color, false );
+		renderSystem->DrawSmallStringExt( X_OFFSET, curY, va( "%i - %s | %2.02f kB/s | %2.02f kB/s | %i | %i | %d/%d", p, peerName.c_str(), sentKps, recvKps, peers[p].loaded, peers[p].address.UsingRelay(), rLoaded, rTotal ), color, false, false, 0.0f );
 		curY += Y_SPACING;
 	}
 
-	renderSystem->DrawSmallStringExt( idMath::Ftoi( X_OFFSET ), idMath::Ftoi( curY ), "------------------------------------------------------------------", colorGreen, false );
+	renderSystem->DrawSmallStringExt( idMath::Ftoi( X_OFFSET ), idMath::Ftoi( curY ), "------------------------------------------------------------------", colorGreen, false, false, 0.0f );
 	curY += Y_SPACING;
 
 	float totalSentKps = ( float )totalSendRate / 1024.0f;
 	float totalRecvKps = ( float )totalRecvRate / 1024.0f;
 
-	renderSystem->DrawSmallStringExt( X_OFFSET, curY, va( "Total | %2.02f KB/s | %2.02f KB/s", totalSentKps, totalRecvKps ), colorGreen, false );
+	renderSystem->DrawSmallStringExt( X_OFFSET, curY, va( "Total | %2.02f KB/s | %2.02f KB/s", totalSentKps, totalRecvKps ), colorGreen, false, false, 0.0f );
 }
 
 
@@ -3397,16 +3397,16 @@ void idLobby::DrawDebugNetworkHUD_ServerSnapshotMetrics( bool draw )
 
 		renderSystem->DrawFilled( idVec4( 0.0f, 0.0f, 0.0f, 0.7f ), X_OFFSET - 10.0f, curY - 10.0f, width, ( Y_SPACING * numLines ) + 20.0f );
 
-		renderSystem->DrawSmallStringExt( X_OFFSET, curY, va( "Peer %d - %s RTT %d %sPeerSnapRate: %d %s", p, GetPeerName( p ), peer.lastPingRtt, throttled ? "^1" : "^2", peer.throttledSnapRate / 1000, throttled ? "^1Throttled" : "" ), color, false );
+		renderSystem->DrawSmallStringExt( X_OFFSET, curY, va( "Peer %d - %s RTT %d %sPeerSnapRate: %d %s", p, GetPeerName( p ), peer.lastPingRtt, throttled ? "^1" : "^2", peer.throttledSnapRate / 1000, throttled ? "^1Throttled" : "" ), color, false, false, 0.0f );
 		curY += Y_SPACING;
 
-		renderSystem->DrawSmallStringExt( X_OFFSET, curY, va( "SnapSeq %d  BaseSeq %d  Delta %d  Queue %d", snapSeq, snapBase, deltaSeq, snapProc->GetSnapQueueSize() ), color, false );
+		renderSystem->DrawSmallStringExt( X_OFFSET, curY, va( "SnapSeq %d  BaseSeq %d  Delta %d  Queue %d", snapSeq, snapBase, deltaSeq, snapProc->GetSnapQueueSize() ), color, false, false, 0.0f );
 		curY += Y_SPACING;
 
-		renderSystem->DrawSmallStringExt( X_OFFSET, curY, va( "Reliables: %d / %d bytes Reliable Ack: %d", packetProc->NumQueuedReliables(), packetProc->GetReliableDataSize(), packetProc->NeedToSendReliableAck() ), color, false );
+		renderSystem->DrawSmallStringExt( X_OFFSET, curY, va( "Reliables: %d / %d bytes Reliable Ack: %d", packetProc->NumQueuedReliables(), packetProc->GetReliableDataSize(), packetProc->NeedToSendReliableAck() ), color, false, false, 0.0f );
 		curY += Y_SPACING;
 
-		renderSystem->DrawSmallStringExt( X_OFFSET, curY, va( "Outgoing %.2f kB/s  Reported %.2f kB/s Throttle: %.2f", peer.packetProc->GetOutgoingRateBytes() / 1024.0f, peers[p].receivedBps / 1024.0f, peer.receivedThrottle ), color, false );
+		renderSystem->DrawSmallStringExt( X_OFFSET, curY, va( "Outgoing %.2f kB/s  Reported %.2f kB/s Throttle: %.2f", peer.packetProc->GetOutgoingRateBytes() / 1024.0f, peers[p].receivedBps / 1024.0f, peer.receivedThrottle ), color, false, false, 0.0f );
 		curY += Y_SPACING;
 
 		if( net_forceUpstream.GetFloat() != 0.0f )
@@ -3414,7 +3414,7 @@ void idLobby::DrawDebugNetworkHUD_ServerSnapshotMetrics( bool draw )
 			float upstreamDropRate = session->GetUpstreamDropRate();
 			float upstreamQueuedRate = session->GetUpstreamQueueRate();
 			int queuedBytes = session->GetQueuedBytes();
-			renderSystem->DrawSmallStringExt( X_OFFSET, curY, va( "Queued: %d | Dropping: %2.02f kB/s Queue: %2.02f kB/s ", queuedBytes, upstreamDropRate / 1024.0f, upstreamQueuedRate / 1024.0f ), color, false );
+			renderSystem->DrawSmallStringExt( X_OFFSET, curY, va( "Queued: %d | Dropping: %2.02f kB/s Queue: %2.02f kB/s ", queuedBytes, upstreamDropRate / 1024.0f, upstreamQueuedRate / 1024.0f ), color, false, false, 0.0f );
 
 		}
 

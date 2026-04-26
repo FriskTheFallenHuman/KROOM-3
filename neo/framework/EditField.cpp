@@ -672,7 +672,7 @@ void idEditField::Draw( int x, int y, int width, bool showCursor )
 	str[ drawLen ] = 0;
 
 	// draw it
-	renderSystem->DrawSmallStringExt( x, y, str, colorWhite, false );
+	renderSystem->DrawSmallStringExt( x, y, str, colorWhite, false, false, 0.0f );
 
 	// draw the cursor
 	if( !showCursor )

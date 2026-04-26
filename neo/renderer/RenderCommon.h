@@ -871,9 +871,9 @@ public:
 	virtual void			DrawStretchTri( const idVec2& p1, const idVec2& p2, const idVec2& p3, const idVec2& t1, const idVec2& t2, const idVec2& t3, const idMaterial* material );
 	virtual idDrawVert* 	AllocTris( int numVerts, const triIndex_t* indexes, int numIndexes, const idMaterial* material );
 	virtual void			DrawSmallChar( int x, int y, int ch );
-	virtual void			DrawSmallStringExt( int x, int y, const char* string, const idVec4& setColor, bool forceColor );
+	virtual void			DrawSmallStringExt( int x, int y, const char* string, const idVec4& setColor, bool forceColor, bool shadow, int maxChars );
 	virtual void			DrawBigChar( int x, int y, int ch );
-	virtual void			DrawBigStringExt( int x, int y, const char* string, const idVec4& setColor, bool forceColor );
+	virtual void			DrawBigStringExt( int x, int y, const char* string, const idVec4& setColor, bool forceColor, bool shadow, int maxChars );
 
 	virtual void			WriteDemoPics();
 	virtual void			WriteEndFrame();

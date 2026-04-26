@@ -147,9 +147,10 @@ void Sys_Error( const char* error, ... )
 	Sys_DestroyConsole();
 #endif
 
-	if ( ::MessageBox( win32.hWnd, text, "Fatal Error", MB_OK | MB_ICONERROR ) ) {
+	if( ::MessageBox( win32.hWnd, text, "Fatal Error", MB_OK | MB_ICONERROR ) )
+	{
 		common->Quit(); // notfy common system that we are quitting
-		exit (1);
+		exit( 1 );
 	}
 }
 
@@ -1299,7 +1300,7 @@ WinMain
 
 	// hide or show the early console as necessary
 #ifndef _DEBUG
-	if ( win32.win_viewlog.GetInteger() )
+	if( win32.win_viewlog.GetInteger() )
 	{
 		Sys_ShowConsole();
 	}

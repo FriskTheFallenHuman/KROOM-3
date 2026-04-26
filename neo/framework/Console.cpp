@@ -176,7 +176,7 @@ void idConsoleLocal::DrawTextLeftAlign( float x, float& y, const char* text, ...
 	va_start( argptr, text );
 	idStr::vsnPrintf( string, sizeof( string ), text, argptr );
 	va_end( argptr );
-	renderSystem->DrawSmallStringExt( x, y + 2, string, colorWhite, true );
+	renderSystem->DrawSmallStringExt( x, y + 2, string, colorWhite, true, true, idStr::Length( string ) );
 	y += SMALLCHAR_HEIGHT + 4;
 }
 
@@ -192,7 +192,7 @@ void idConsoleLocal::DrawTextRightAlign( float x, float& y, const char* text, ..
 	va_start( argptr, text );
 	int i = idStr::vsnPrintf( string, sizeof( string ), text, argptr );
 	va_end( argptr );
-	renderSystem->DrawSmallStringExt( x - i * SMALLCHAR_WIDTH, y + 2, string, colorWhite, true );
+	renderSystem->DrawSmallStringExt( x - i * SMALLCHAR_WIDTH, y + 2, string, colorWhite, true, true, idStr::Length( string ) );
 	y += SMALLCHAR_HEIGHT + 4;
 }
 
@@ -252,7 +252,7 @@ float idConsoleLocal::DrawFPS( float y )
 
 		if( com_showFPS.GetInteger() == 1 )
 		{
-			renderSystem->DrawBigStringExt( LOCALSAFE_RIGHT - w, idMath::Ftoi( y ) + 2, s, colorWhite, true );
+			renderSystem->DrawBigStringExt( LOCALSAFE_RIGHT - w, idMath::Ftoi( y ) + 2, s, colorWhite, true, true, idStr::Length( s ) );
 		}
 	}
 
@@ -1296,7 +1296,8 @@ void idConsoleLocal::DrawNotify()
 				currentColor = idStr::ColorIndex( text_p[x] >> 8 );
 				renderSystem->SetColor( idStr::ColorForIndex( currentColor ) );
 			}
-			renderSystem->DrawSmallChar( LOCALSAFE_LEFT + ( x + 1 )*SMALLCHAR_WIDTH, v, text_p[x] & 0xff );
+			int length = idStr::Length( va( "%c", text_p[x] & 0xff ) );
+			renderSystem->DrawSmallStringExt( LOCALSAFE_LEFT + (x+1)*SMALLCHAR_WIDTH, v, va( "%c", text_p[x] & 0xff ), idStr::ColorForIndex( currentColor ), false, true, length );
 		}
 
 		v += SMALLCHAR_HEIGHT;
