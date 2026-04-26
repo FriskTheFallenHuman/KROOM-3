@@ -3094,38 +3094,6 @@ void idGameLocal::RunAllUserCmdsForPlayer( idUserCmdMgr& cmdMgr, const int playe
 */
 
 /*
-====================
-idGameLocal::CalcFov
-
-Calculates the horizontal and vertical field of view based on a horizontal field of view and custom aspect ratio
-====================
-*/
-void idGameLocal::CalcFov( float base_fov, float& fov_x, float& fov_y ) const
-{
-	const int width = renderSystem->GetWidth();
-	const int height = renderSystem->GetHeight();
-	if( width == height )
-	{
-		// this is the Rift, so don't mess with our aspect ratio corrections
-		fov_x = base_fov;
-		fov_y = base_fov;
-		return;
-	}
-
-	// Calculate the fov_y based on an ideal aspect ratio
-	const float ideal_ratio_x = 16.0f;
-	const float ideal_ratio_y = 9.0f;
-	const float tanHalfX = idMath::Tan( DEG2RAD( base_fov * 0.5f ) );
-	fov_y = 2.0f * RAD2DEG( idMath::ATan( ideal_ratio_y * tanHalfX, ideal_ratio_x ) );
-
-	// Then calculate fov_x based on the true aspect ratio
-	const float ratio_x = width * renderSystem->GetPixelAspect();
-	const float ratio_y = height;
-	const float tanHalfY = idMath::Tan( DEG2RAD( fov_y * 0.5f ) );
-	fov_x = 2.0f * RAD2DEG( idMath::ATan( ratio_x * tanHalfY, ratio_y ) );
-}
-
-/*
 ================
 idGameLocal::Draw
 

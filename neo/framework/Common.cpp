@@ -814,12 +814,7 @@ idCommonLocal::RenderSplash
 */
 void idCommonLocal::RenderSplash()
 {
-	//const emptyCommand_t* renderCommands = NULL;
-
-	// RB: this is the same as Doom 3 renderSystem->BeginFrame()
-	//renderCommands = renderSystem->SwapCommandBuffers_FinishCommandBuffers();
-
-	const float sysWidth = renderSystem->GetWidth() * renderSystem->GetPixelAspect();
+	const float sysWidth = renderSystem->GetWidth();
 	const float sysHeight = renderSystem->GetHeight();
 	const float sysAspect = sysWidth / sysHeight;
 	const float splashAspect = 16.0f / 9.0f;
@@ -855,7 +850,7 @@ idCommonLocal::RenderBink
 */
 void idCommonLocal::RenderBink( const char* path )
 {
-	const float sysWidth = renderSystem->GetWidth() * renderSystem->GetPixelAspect();
+	const float sysWidth = renderSystem->GetWidth();
 	const float sysHeight = renderSystem->GetHeight();
 	const float sysAspect = sysWidth / sysHeight;
 	const float movieAspect = ( 16.0f / 9.0f );

@@ -210,11 +210,6 @@ public:
 	void					MuzzleFlashLight();
 	void					RemoveMuzzleFlashlight();
 
-	// Get a global origin and axis suitable for the laser sight or bullet tracing
-	// Returns false for hands, grenades, and chainsaw.
-	// Can't be const because a frame may need to be created.
-	bool					GetMuzzlePositionWithHacks( idVec3& origin, idMat3& axis );
-
 	void					GetProjectileLaunchOriginAndAxis( idVec3& origin, idMat3& axis );
 
 	const idDeclEntityDef* GetDeclEntityDef()

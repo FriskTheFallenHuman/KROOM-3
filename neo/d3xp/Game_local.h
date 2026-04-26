@@ -79,6 +79,9 @@ const int ENTITYNUM_WORLD		= MAX_GENTITIES - 2;
 const int ENTITYNUM_MAX_NORMAL	= MAX_GENTITIES - 2;
 const int ENTITYNUM_FIRST_NON_REPLICATED	= ENTITYNUM_MAX_NORMAL - 256;
 
+const float MIN_FOV				= 50.0f;
+const float MAX_FOV				= 120.0f;
+
 //============================================================================
 
 void gameError( const char* fmt, ... );
@@ -487,7 +490,6 @@ public:
 	void					SetCamera( idCamera* cam );
 	idCamera* 				GetCamera() const;
 	bool			        SkipCinematic();
-	void					CalcFov( float base_fov, float& fov_x, float& fov_y ) const;
 
 	void					AddEntityToHash( const char* name, idEntity* ent );
 	bool					RemoveEntityFromHash( const char* name, idEntity* ent );

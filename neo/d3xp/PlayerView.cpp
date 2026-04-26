@@ -666,135 +666,6 @@ void idPlayerView::ScreenFade()
 	}
 }
 
-idCVar	stereoRender_interOccularCentimeters( "stereoRender_interOccularCentimeters", "3.0", CVAR_ARCHIVE | CVAR_RENDERER, "Distance between eyes" );
-idCVar	stereoRender_convergence( "stereoRender_convergence", "6", CVAR_RENDERER, "0 = head mounted display, otherwise world units to convergence plane" );
-
-extern	idCVar stereoRender_screenSeparation;	// screen units from center to eyes
-extern	idCVar stereoRender_swapEyes;
-
-// In a head mounted display with separate displays for each eye,
-// screen separation will be zero and world separation will be the eye distance.
-struct stereoDistances_t
-{
-	// Offset to projection matrix, positive one eye, negative the other.
-	// Total distance is twice this, so 0.05 would give a 10% of screen width
-	// separation for objects at infinity.
-	float	screenSeparation;
-
-	// Game world units from one eye to the centerline.
-	// Total distance is twice this.
-	float	worldSeparation;
-};
-
-float CentimetersToInches( const float cm )
-{
-	return cm / 2.54f;
-}
-
-float CentimetersToWorldUnits( const float cm )
-{
-	// In Doom 3, one world unit == one inch
-	return CentimetersToInches( cm );
-}
-
-float	CalculateWorldSeparation(
-	const float screenSeparation,
-	const float convergenceDistance,
-	const float fov_x_degrees )
-{
-
-	const float fovRadians = DEG2RAD( fov_x_degrees );
-	const float screen = tan( fovRadians * 0.5f ) * fabs( screenSeparation );
-	const float worldSeparation = screen * convergenceDistance / 0.5f;
-
-	return worldSeparation;
-}
-
-stereoDistances_t	CaclulateStereoDistances(
-	const float	interOcularCentimeters,		// distance between two eyes, typically 6.0 - 7.0
-	const float screenWidthCentimeters,		// read from operating system
-	const float convergenceWorldUnits,		// pass 0 for head mounted display mode
-	const float	fov_x_degrees )  			// edge to edge horizontal field of view, typically 60 - 90
-{
-
-	stereoDistances_t	dists = {};
-
-	if( convergenceWorldUnits == 0.0f )
-	{
-		// head mounted display mode
-		dists.worldSeparation = CentimetersToInches( interOcularCentimeters * 0.5 );
-		dists.screenSeparation = 0.0f;
-		return dists;
-	}
-
-	// 3DTV mode
-	dists.screenSeparation = 0.5f * interOcularCentimeters / screenWidthCentimeters;
-	dists.worldSeparation = CalculateWorldSeparation( dists.screenSeparation, convergenceWorldUnits, fov_x_degrees );
-
-	return dists;
-}
-
-float	GetScreenSeparationForGuis()
-{
-	const stereoDistances_t dists = CaclulateStereoDistances(
-										stereoRender_interOccularCentimeters.GetFloat(),
-										renderSystem->GetPhysicalScreenWidthInCentimeters(),
-										stereoRender_convergence.GetFloat(),
-										80.0f /* fov */ );
-
-	return dists.screenSeparation;
-}
-
-/*
-===================
-idPlayerView::EmitStereoEyeView
-===================
-*/
-void idPlayerView::EmitStereoEyeView( const int eye, idMenuHandler_HUD* hudManager )
-{
-	renderView_t* view = player->GetRenderView();
-	if( view == NULL )
-	{
-		return;
-	}
-
-	renderView_t eyeView = *view;
-
-	const stereoDistances_t dists = CaclulateStereoDistances(
-										stereoRender_interOccularCentimeters.GetFloat(),
-										renderSystem->GetPhysicalScreenWidthInCentimeters(),
-										stereoRender_convergence.GetFloat(),
-										view->fov_x );
-
-	eyeView.vieworg += eye * dists.worldSeparation * eyeView.viewaxis[1];
-
-	eyeView.viewEyeBuffer = stereoRender_swapEyes.GetBool() ? eye : -eye;
-	eyeView.stereoScreenSeparation = eye * dists.screenSeparation;
-
-	SingleView( &eyeView, hudManager );
-}
-
-/*
-===================
-IsGameStereoRendered
-
-The crosshair is swapped for a laser sight in stereo rendering
-===================
-*/
-bool	IsGameStereoRendered()
-{
-	if( renderSystem->GetStereo3DMode() != STEREO3D_OFF )
-	{
-		return true;
-	}
-	return false;
-}
-
-int EyeForHalfRateFrame( const int frameCount )
-{
-	return ( renderSystem->GetFrameCount() & 1 ) ? -1 : 1;
-}
-
 /*
 ===================
 idPlayerView::RenderPlayerView
@@ -803,18 +674,7 @@ idPlayerView::RenderPlayerView
 void idPlayerView::RenderPlayerView( idMenuHandler_HUD* hudManager )
 {
 	const renderView_t* view = player->GetRenderView();
-	if( renderSystem->GetStereo3DMode() != STEREO3D_OFF )
-	{
-		// render both eye views each frame on the PC
-		for( int eye = 1 ; eye >= -1 ; eye -= 2 )
-		{
-			EmitStereoEyeView( eye, hudManager );
-		}
-	}
-	else
-	{
-		SingleView( view, hudManager );
-	}
+	SingleView( view, hudManager );
 	ScreenFade();
 }
 
@@ -1919,8 +1779,6 @@ void FullscreenFXManager::Restore( idRestoreGame* savefile )
 	}
 }
 
-idCVar player_allowScreenFXInStereo( "player_allowScreenFXInStereo", "1", CVAR_BOOL, "allow full screen fx in stereo mode" );
-
 /*
 ==================
 FullscreenFXManager::Process
@@ -1938,14 +1796,6 @@ void FullscreenFXManager::Process( const renderView_t* view )
 
 	// do the first render
 	gameRenderWorld->RenderScene( view );
-
-	// we should consider these on a case-by-case basis for stereo rendering
-	// double vision could be implemented "for real" by shifting the
-	// eye views
-	if( IsGameStereoRendered() && !player_allowScreenFXInStereo.GetBool() )
-	{
-		return;
-	}
 
 	// do the process
 	for( int i = 0; i < fx.Num(); i++ )

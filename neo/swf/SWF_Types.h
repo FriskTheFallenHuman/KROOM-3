@@ -349,7 +349,6 @@ struct swfRenderState_t
 	int activeMasks;
 	uint8 blendMode;
 	float ratio;
-	stereoDepthType_t stereoDepth;
 };
 
 ID_INLINE swfRect_t::swfRect_t() :
@@ -483,8 +482,7 @@ ID_INLINE swfRenderState_t::swfRenderState_t() :
 	materialHeight( 0 ),
 	activeMasks( 0 ),
 	blendMode( 0 ),
-	ratio( 0.0f ),
-	stereoDepth( STEREO_DEPTH_TYPE_NONE )
+	ratio( 0.0f )
 {
 }
 

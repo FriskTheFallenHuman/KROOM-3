@@ -461,9 +461,8 @@ bool idSWF::HandleEvent( const sysEvent_t* event )
 		// Mouse position in screen space needs to be converted to SWF space
 		if( event->evType == SE_MOUSE_ABSOLUTE )
 		{
-			const float pixelAspect = renderSystem->GetPixelAspect();
-			const float sysWidth = renderSystem->GetWidth() * ( pixelAspect > 1.0f ? pixelAspect : 1.0f );
-			const float sysHeight = renderSystem->GetHeight() / ( pixelAspect < 1.0f ? pixelAspect : 1.0f );
+			const float sysWidth = renderSystem->GetWidth();
+			const float sysHeight = renderSystem->GetHeight();
 			float scale = swfScale * sysHeight / ( float )frameHeight;
 			float invScale = 1.0f / scale;
 			float tx = 0.5f * ( sysWidth - ( frameWidth * scale ) );

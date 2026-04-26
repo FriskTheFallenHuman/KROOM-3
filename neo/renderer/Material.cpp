@@ -89,7 +89,6 @@ void idMaterial::CommonInit()
 	surfaceFlags = SURFTYPE_NONE;
 	materialFlags = 0;
 	sort = SS_BAD;
-	stereoEye = 0;
 	coverage = MC_BAD;
 	cullType = CT_FRONT_SIDED;
 	deform = DFRM_NONE;
@@ -448,36 +447,6 @@ void idMaterial::ParseSort( idLexer& src )
 	else
 	{
 		sort = atof( token );
-	}
-}
-
-/*
-=================
-idMaterial::ParseStereoEye
-=================
-*/
-void idMaterial::ParseStereoEye( idLexer& src )
-{
-	idToken token;
-
-	if( !src.ReadTokenOnLine( &token ) )
-	{
-		src.Warning( "missing eye parameter" );
-		SetMaterialFlag( MF_DEFAULTED );
-		return;
-	}
-
-	if( !token.Icmp( "left" ) )
-	{
-		stereoEye = -1;
-	}
-	else if( !token.Icmp( "right" ) )
-	{
-		stereoEye = 1;
-	}
-	else
-	{
-		stereoEye = 0;
 	}
 }
 
@@ -2485,11 +2454,6 @@ void idMaterial::ParseMaterial( idLexer& src )
 			ParseSort( src );
 			continue;
 		}
-		else if( !token.Icmp( "stereoeye" ) )
-		{
-			ParseStereoEye( src );
-			continue;
-		}
 		// spectrum <integer>
 		else if( !token.Icmp( "spectrum" ) )
 		{
@@ -2814,7 +2778,7 @@ bool idMaterial::Parse( const char* text, const int textLength, bool allowBinary
 	for( i = 0 ; i < numStages ; i++ )
 	{
 		shaderStage_t*	pStage = &pd->parseStages[i];
-		if( pStage->texture.image == globalImages->originalCurrentRenderImage )
+		if( pStage->texture.image == globalImages->currentRenderImage )
 		{
 			if( sort != SS_PORTAL_SKY )
 			{
@@ -2827,7 +2791,7 @@ bool idMaterial::Parse( const char* text, const int textLength, bool allowBinary
 		{
 			for( int j = 0 ; j < pStage->newStage->numFragmentProgramImages ; j++ )
 			{
-				if( pStage->newStage->fragmentProgramImages[j] == globalImages->originalCurrentRenderImage )
+				if( pStage->newStage->fragmentProgramImages[j] == globalImages->currentRenderImage )
 				{
 					if( sort != SS_PORTAL_SKY )
 					{

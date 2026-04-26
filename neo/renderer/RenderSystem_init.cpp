@@ -55,7 +55,6 @@ idGuiModel* tr_guiModel;
 // functions that are not called every frame
 glconfig_t	glConfig;
 
-idCVar r_requestStereoPixelFormat( "r_requestStereoPixelFormat", "1", CVAR_RENDERER, "Ask for a stereo GL pixel format on startup" );
 idCVar r_debugContext( "r_debugContext", "0", CVAR_RENDERER, "Enable various levels of context debug." );
 idCVar r_glDriver( "r_glDriver", "", CVAR_RENDERER, "\"opengl32\", etc." );
 // SRS - Added workaround for AMD OSX driver bugs caused by GL_EXT_timer_query when shadow mapping enabled; Intel bugs not present on OSX
@@ -85,6 +84,9 @@ idCVar r_windowX( "r_windowX", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER,
 idCVar r_windowY( "r_windowY", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "Non-fullscreen parameter" );
 idCVar r_windowWidth( "r_windowWidth", "1280", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "Non-fullscreen parameter" );
 idCVar r_windowHeight( "r_windowHeight", "720", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "Non-fullscreen parameter" );
+idCVar r_aspectRatio( "r_aspectRatio", "-1", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "aspect ratio\n0 is 4:3\n1 is 16:9\n2 is 16:10\n3 is 5:4\n 4 uses r_customAspectRatioH and r_customAspectRatioV\n-1 auto guess from resolution", -1, 4 );
+idCVar r_customAspectRatioH( "r_customAspectRatioH", "16", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "horizontal custom aspect ratio" );
+idCVar r_customAspectRatioV( "r_customAspectRatioV", "10", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "vertical custom aspect ratio" );
 
 idCVar r_useViewBypass( "r_useViewBypass", "1", CVAR_RENDERER | CVAR_INTEGER, "bypass a frame of latency to the view" );
 idCVar r_useLightPortalFlow( "r_useLightPortalFlow", "1", CVAR_RENDERER | CVAR_BOOL, "use a more precise area reference determination" );
@@ -241,11 +243,6 @@ idCVar r_materialOverride( "r_materialOverride", "", CVAR_RENDERER, "overrides a
 
 idCVar r_debugRenderToTexture( "r_debugRenderToTexture", "0", CVAR_RENDERER | CVAR_INTEGER, "" );
 
-idCVar stereoRender_enable( "stereoRender_enable", "0", CVAR_INTEGER | CVAR_ARCHIVE, "1 = side-by-side compressed, 2 = top and bottom compressed, 3 = side-by-side, 4 = 720 frame packed, 5 = interlaced, 6 = OpenGL quad buffer" );
-idCVar stereoRender_swapEyes( "stereoRender_swapEyes", "0", CVAR_BOOL | CVAR_ARCHIVE, "reverse eye adjustments" );
-idCVar stereoRender_deGhost( "stereoRender_deGhost", "0.05", CVAR_FLOAT | CVAR_ARCHIVE, "subtract from opposite eye to reduce ghosting" );
-
-
 // RB: shadow mapping parameters
 #if defined( USE_VULKAN )
 	idCVar r_useShadowMapping( "r_useShadowMapping", "0", CVAR_RENDERER | CVAR_ROM | CVAR_STATIC | CVAR_INTEGER, "use shadow mapping instead of stencil shadows" );
@@ -355,11 +352,6 @@ void R_SetNewMode( const bool fullInit )
 
 	for( int i = 0 ; i < 3 ; i++ )
 	{
-		if( i == 0 && stereoRender_enable.GetInteger() != STEREO3D_QUAD_BUFFER )
-		{
-			continue;		// don't even try for a stereo mode
-		}
-
 		glimpParms_t	parms;
 
 		if( r_fullscreen.GetInteger() <= 0 )
@@ -433,15 +425,6 @@ void R_SetNewMode( const bool fullInit )
 				break;
 		}
 
-		if( i == 0 )
-		{
-			parms.stereo = ( stereoRender_enable.GetInteger() == STEREO3D_QUAD_BUFFER );
-		}
-		else
-		{
-			parms.stereo = false;
-		}
-
 		if( fullInit )
 		{
 			// create the context as well as setting up the window
@@ -485,7 +468,7 @@ void R_SetNewMode( const bool fullInit )
 
 		if( i == 0 )
 		{
-			// same settings, no stereo
+			// same settings
 			continue;
 		}
 
@@ -1513,60 +1496,7 @@ void GfxInfo_f( const idCmdArgs& args )
 #endif
 	// RB end
 
-	if( glConfig.stereoPixelFormatAvailable && glConfig.isStereoPixelFormat )
-	{
-		idLib::Printf( "OpenGl quad buffer stereo pixel format active\n" );
-	}
-	else if( glConfig.stereoPixelFormatAvailable )
-	{
-		idLib::Printf( "OpenGl quad buffer stereo pixel available but not selected\n" );
-	}
-	else
-	{
-		idLib::Printf( "OpenGl quad buffer stereo pixel format not available\n" );
-	}
-
-	idLib::Printf( "Stereo mode: " );
-	switch( renderSystem->GetStereo3DMode() )
-	{
-		case STEREO3D_OFF:
-			idLib::Printf( "STEREO3D_OFF\n" );
-			break;
-		case STEREO3D_SIDE_BY_SIDE_COMPRESSED:
-			idLib::Printf( "STEREO3D_SIDE_BY_SIDE_COMPRESSED\n" );
-			break;
-		case STEREO3D_TOP_AND_BOTTOM_COMPRESSED:
-			idLib::Printf( "STEREO3D_TOP_AND_BOTTOM_COMPRESSED\n" );
-			break;
-		case STEREO3D_SIDE_BY_SIDE:
-			idLib::Printf( "STEREO3D_SIDE_BY_SIDE\n" );
-			break;
-		case STEREO3D_HDMI_720:
-			idLib::Printf( "STEREO3D_HDMI_720\n" );
-			break;
-		case STEREO3D_INTERLACED:
-			idLib::Printf( "STEREO3D_INTERLACED\n" );
-			break;
-		case STEREO3D_QUAD_BUFFER:
-			idLib::Printf( "STEREO3D_QUAD_BUFFER\n" );
-			break;
-		default:
-			idLib::Printf( "Unknown (%i)\n", renderSystem->GetStereo3DMode() );
-			break;
-	}
-
 	idLib::Printf( "%i multisamples\n", glConfig.multisamples );
-
-	common->Printf( "%5.1f cm screen width (%4.1f\" diagonal)\n",
-					glConfig.physicalScreenWidthInCentimeters, glConfig.physicalScreenWidthInCentimeters / 2.54f
-					* sqrt( ( float )( 16 * 16 + 9 * 9 ) ) / 16.0f );
-	extern idCVar r_forceScreenWidthCentimeters;
-	if( r_forceScreenWidthCentimeters.GetFloat() )
-	{
-		common->Printf( "screen size manually forced to %5.1f cm width (%4.1f\" diagonal)\n",
-						renderSystem->GetPhysicalScreenWidthInCentimeters(), renderSystem->GetPhysicalScreenWidthInCentimeters() / 2.54f
-						* sqrt( ( float )( 16 * 16 + 9 * 9 ) ) / 16.0f );
-	}
 
 	if( glConfig.gpuSkinningAvailable )
 	{
@@ -2072,8 +2002,6 @@ void idRenderSystemLocal::Init()
 	guiModel->Clear();
 	tr_guiModel = guiModel;	// for DeviceContext fast path
 
-	UpdateStereo3DMode();
-
 	globalImages->Init();
 
 	// RB begin
@@ -2400,10 +2328,6 @@ idRenderSystemLocal::GetWidth
 */
 int idRenderSystemLocal::GetWidth() const
 {
-	if( glConfig.stereo3Dmode == STEREO3D_SIDE_BY_SIDE || glConfig.stereo3Dmode == STEREO3D_SIDE_BY_SIDE_COMPRESSED )
-	{
-		return glConfig.nativeScreenWidth >> 1;
-	}
 	return glConfig.nativeScreenWidth;
 }
 
@@ -2414,122 +2338,85 @@ idRenderSystemLocal::GetHeight
 */
 int idRenderSystemLocal::GetHeight() const
 {
-	if( glConfig.stereo3Dmode == STEREO3D_HDMI_720 )
-	{
-		return 720;
-	}
-	extern idCVar stereoRender_warp;
-	if( glConfig.stereo3Dmode == STEREO3D_SIDE_BY_SIDE && stereoRender_warp.GetBool() )
-	{
-		// for the Rift, render a square aspect view that will be symetric for the optics
-		return glConfig.nativeScreenWidth >> 1;
-	}
-	if( glConfig.stereo3Dmode == STEREO3D_INTERLACED || glConfig.stereo3Dmode == STEREO3D_TOP_AND_BOTTOM_COMPRESSED )
-	{
-		return glConfig.nativeScreenHeight >> 1;
-	}
 	return glConfig.nativeScreenHeight;
 }
 
 /*
-========================
-idRenderSystemLocal::GetStereo3DMode
-========================
-*/
-stereo3DMode_t idRenderSystemLocal::GetStereo3DMode() const
-{
-	return glConfig.stereo3Dmode;
-}
+====================
+idRenderSystemLocal::CalcFov
 
-/*
-========================
-idRenderSystemLocal::IsStereoScopicRenderingSupported
-========================
+Calculates the horizontal and vertical field of view based on a horizontal field of view and custom aspect ratio
+====================
 */
-bool idRenderSystemLocal::IsStereoScopicRenderingSupported() const
+void idRenderSystemLocal::CalcFov( float base_fov, float &fov_x, float &fov_y, const int width, const int height, const float correctYAspect ) const
 {
-	return true;
-}
+	float	x;
+	float	y;
+	float	ratio_x;
+	float	ratio_y;
 
-/*
-========================
-idRenderSystemLocal::HasQuadBufferSupport
-========================
-*/
-bool idRenderSystemLocal::HasQuadBufferSupport() const
-{
-	return glConfig.stereoPixelFormatAvailable;
-}
-
-/*
-========================
-idRenderSystemLocal::UpdateStereo3DMode
-========================
-*/
-void idRenderSystemLocal::UpdateStereo3DMode()
-{
-	if( glConfig.nativeScreenWidth == 1280 && glConfig.nativeScreenHeight == 1470 )
-	{
-		glConfig.stereo3Dmode = STEREO3D_HDMI_720;
+	// first, calculate the vertical fov based on a 640x480 view
+	x = width / idMath::Tan( base_fov / 360.0f * idMath::PI );
+	if ( correctYAspect > 0.f ) {
+		x /= correctYAspect;
 	}
-	else
-	{
-		glConfig.stereo3Dmode = GetStereoScopicRenderingMode();
+	y = idMath::ATan( height, x );
+	fov_y = y * 360.0f / idMath::PI;
+
+	switch( r_aspectRatio.GetInteger() ) {
+	default:
+	case -1 :
+		// auto mode => use aspect ratio from resolution, assuming screen's pixels are squares
+		ratio_x = renderSystem->GetWidth();
+		ratio_y = renderSystem->GetHeight();
+		if(ratio_x <= 0.0f || ratio_y <= 0.0f)
+		{
+			// for some reason (maybe this is a dedicated server?) GetScreenWidth()/Height()
+			// returned 0. Assume default 4:3 to avoid assert()/Error() below.
+			fov_x = base_fov;
+			return;
+		}
+		break;
+
+	case 0:
+		// 4:3
+		fov_x = base_fov;
+		return;
+
+	case 1:
+		// 16:9
+		ratio_x = 16.0f;
+		ratio_y = 9.0f;
+		break;
+
+	case 2:
+		// 16:10
+		ratio_x = 16.0f;
+		ratio_y = 10.0f;
+		break;
+
+	case 3:
+		// 5:4
+		ratio_x = 5.0f;
+		ratio_y = 4.0f;
+		break;
+
+	case 4:
+		// custom
+		ratio_x = r_customAspectRatioH.GetFloat();
+		ratio_y = r_customAspectRatioV.GetFloat();
+		break;
 	}
-}
 
-/*
-========================
-idRenderSystemLocal::GetStereoScopicRenderingMode
-========================
-*/
-stereo3DMode_t idRenderSystemLocal::GetStereoScopicRenderingMode() const
-{
-	return ( !IsStereoScopicRenderingSupported() ) ? STEREO3D_OFF : ( stereo3DMode_t )stereoRender_enable.GetInteger();
-}
-
-/*
-========================
-idRenderSystemLocal::IsStereoScopicRenderingSupported
-========================
-*/
-void idRenderSystemLocal::EnableStereoScopicRendering( const stereo3DMode_t mode ) const
-{
-	stereoRender_enable.SetInteger( mode );
-}
-
-/*
-========================
-idRenderSystemLocal::GetPixelAspect
-========================
-*/
-float idRenderSystemLocal::GetPixelAspect() const
-{
-	switch( glConfig.stereo3Dmode )
-	{
-		case STEREO3D_SIDE_BY_SIDE_COMPRESSED:
-			return glConfig.pixelAspect * 2.0f;
-		case STEREO3D_TOP_AND_BOTTOM_COMPRESSED:
-		case STEREO3D_INTERLACED:
-			return glConfig.pixelAspect * 0.5f;
-		default:
-			return glConfig.pixelAspect;
+	y = ratio_y / idMath::Tan( fov_y / 360.0f * idMath::PI );
+	if ( correctYAspect > 0.f ) {
+		y *= (height/(float)width) * (SCREEN_WIDTH / (float)SCREEN_HEIGHT);
 	}
-}
+	fov_x = idMath::ATan( ratio_x, y ) * 360.0f / idMath::PI;
 
-/*
-========================
-idRenderSystemLocal::GetPhysicalScreenWidthInCentimeters
-
-This is used to calculate stereoscopic screen offset for a given interocular distance.
-========================
-*/
-idCVar	r_forceScreenWidthCentimeters( "r_forceScreenWidthCentimeters", "0", CVAR_RENDERER | CVAR_ARCHIVE, "Override screen width returned by hardware" );
-float idRenderSystemLocal::GetPhysicalScreenWidthInCentimeters() const
-{
-	if( r_forceScreenWidthCentimeters.GetFloat() > 0 )
-	{
-		return r_forceScreenWidthCentimeters.GetFloat();
+	if ( fov_x < base_fov && correctYAspect == 0.0f ) {
+		fov_x = base_fov;
+		x = ratio_x / idMath::Tan( fov_x / 360.0f * idMath::PI );
+		fov_y = idMath::ATan( ratio_y, x ) * 360.0f / idMath::PI;
 	}
-	return glConfig.physicalScreenWidthInCentimeters;
 }

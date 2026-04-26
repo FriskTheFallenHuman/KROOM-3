@@ -2492,104 +2492,6 @@ void idWeapon::AlertMonsters()
 
 /*
 ================
-idWeapon::GetMuzzlePositionWithHacks
-
-Some weapons that have a barrel joint either have it pointing in the wrong
-direction (rocket launcher), or don't animate it properly (pistol).
-
-For good 3D TV / head mounted display work, we need to display a laser sight
-in the world.
-
-Fixing the animated meshes would be ideal, but hacking it in code is
-the pragmatic move right now.
-
-Returns false for hands, grenades, and chainsaw.
-================
-*/
-bool idWeapon::GetMuzzlePositionWithHacks( idVec3& origin, idMat3& axis )
-{
-	// I couldn't find a simple enum to identify the weapons that need
-	// workaround hacks...
-	const idStr& weaponIconName = pdaIcon;
-
-	origin = playerViewOrigin;
-	axis = playerViewAxis;
-
-	if( weaponIconName == "guis/assets/hud/icons/grenade_new.tga" )
-	{
-		return false;
-	}
-
-	if( weaponIconName == "guis/assets/hud/icons/chainsaw_new.tga" )
-	{
-		return false;
-	}
-
-	if( weaponIconName == "guis/assets/hud/icons/soul_cube.tga" )
-	{
-		return false;
-	}
-
-	if( barrelJointView != INVALID_JOINT )
-	{
-		GetGlobalJointTransform( true, barrelJointView, origin, axis );
-	}
-	else if( guiLightJointView != INVALID_JOINT )
-	{
-		GetGlobalJointTransform( true, guiLightJointView, origin, axis );
-	}
-	else
-	{
-		return false;
-	}
-
-	// get better axis joints for weapons where the barrelJointView isn't
-	// animated properly
-	idVec3	discardedOrigin;
-	if( weaponIconName == "guis/assets/hud/icons/pistol_new.tga" )
-	{
-		// muzzle doesn't animate during firing, Bod does
-		const jointHandle_t bodJoint = animator.GetJointHandle( "Bod" );
-		GetGlobalJointTransform( true, bodJoint, discardedOrigin, axis );
-	}
-	if( weaponIconName == "guis/assets/hud/icons/rocketlauncher_new.tga" )
-	{
-		// joint doesn't point straight, so rotate it
-		std::swap( axis[0], axis[2] );
-	}
-	if( weaponIconName == "guis/assets/hud/icons/shotgun_new.tga" )
-	{
-		// joint doesn't point straight, so rotate it
-		const jointHandle_t bodJoint = animator.GetJointHandle( "trigger" );
-		GetGlobalJointTransform( true, bodJoint, discardedOrigin, axis );
-		std::swap( axis[0], axis[2] );
-		axis[0] = -axis[0];
-	}
-
-	// we probably should fix the above hacks above that are based on texture names above at some
-	// point
-	if( weaponDef != NULL )
-	{
-		if( ( idStr::Icmp( "weapon_shotgun_double", weaponDef->GetName() ) == 0 ) || ( idStr::Icmp( "weapon_shotgun_double_mp", weaponDef->GetName() ) == 0 ) )
-		{
-			// joint doesn't point straight, so rotate it
-			std::swap( axis[0], axis[2] );
-		}
-		else if( idStr::Icmp( "weapon_grabber", weaponDef->GetName() ) == 0 )
-		{
-			idVec3 forward = axis[0];
-			forward.Normalize();
-			const float scaleOffset = 4.0f;
-			forward *= scaleOffset;
-			origin += forward;
-		}
-	}
-
-	return true;
-}
-
-/*
-================
 idWeapon::PresentWeapon
 ================
 */
@@ -3960,8 +3862,7 @@ void idWeapon::GetProjectileLaunchOriginAndAxis( idVec3& origin, idMat3& axis )
 	if( barrelJointView != INVALID_JOINT && projectileDict.GetBool( "launchFromBarrel" ) )
 	{
 		// there is an explicit joint for the muzzle
-		// GetGlobalJointTransform( true, barrelJointView, muzzleOrigin, muzzleAxis );
-		GetMuzzlePositionWithHacks( origin, axis );
+		GetGlobalJointTransform( true, barrelJointView, muzzleOrigin, muzzleAxis );
 	}
 	else
 	{

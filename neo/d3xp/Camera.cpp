@@ -243,7 +243,7 @@ void idCameraView::GetViewParms( renderView_t* view )
 		view->viewaxis = ent->GetPhysics()->GetAxis();
 	}
 
-	gameLocal.CalcFov( fov, view->fov_x, view->fov_y );
+	renderSystem->CalcFov( fov, view->fov_x, view->fov_y );
 }
 
 /*
@@ -642,7 +642,7 @@ void idCameraAnim::GetViewParms( renderView_t* view )
 		view->fov_x = camFrame[ 0 ].fov * invlerp + camFrame[ 1 ].fov * lerp;
 	}
 
-	gameLocal.CalcFov( view->fov_x, view->fov_x, view->fov_y );
+	renderSystem->CalcFov( view->fov_x, view->fov_x, view->fov_y );
 
 	// setup the pvs for this frame
 	UpdatePVSAreas( view->vieworg );

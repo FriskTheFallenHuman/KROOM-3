@@ -465,7 +465,6 @@ void idMenuHandler_Shell::Initialize( const char* swfFile, idSoundWorld* sw )
 		BIND_SHELL_SCREEN( SHELL_AREA_SYSTEM_OPTIONS, idMenuScreen_Shell_SystemOptions, this );
 		BIND_SHELL_SCREEN( SHELL_AREA_GAME_OPTIONS, idMenuScreen_Shell_GameOptions, this );
 		BIND_SHELL_SCREEN( SHELL_AREA_SAVE, idMenuScreen_Shell_Save, this );
-		BIND_SHELL_SCREEN( SHELL_AREA_STEREOSCOPICS, idMenuScreen_Shell_Stereoscopics, this );
 		BIND_SHELL_SCREEN( SHELL_AREA_CONTROLS, idMenuScreen_Shell_Controls, this );
 		BIND_SHELL_SCREEN( SHELL_AREA_KEYBOARD, idMenuScreen_Shell_Bindings, this );
 		BIND_SHELL_SCREEN( SHELL_AREA_RESOLUTION, idMenuScreen_Shell_Resolution, this );
@@ -486,7 +485,6 @@ void idMenuHandler_Shell::Initialize( const char* swfFile, idSoundWorld* sw )
 		BIND_SHELL_SCREEN( SHELL_AREA_GAME_OPTIONS, idMenuScreen_Shell_GameOptions, this );
 		BIND_SHELL_SCREEN( SHELL_AREA_PARTY_LOBBY, idMenuScreen_Shell_PartyLobby, this );
 		BIND_SHELL_SCREEN( SHELL_AREA_GAME_LOBBY, idMenuScreen_Shell_GameLobby, this );
-		BIND_SHELL_SCREEN( SHELL_AREA_STEREOSCOPICS, idMenuScreen_Shell_Stereoscopics, this );
 		BIND_SHELL_SCREEN( SHELL_AREA_DIFFICULTY, idMenuScreen_Shell_Difficulty, this );
 		BIND_SHELL_SCREEN( SHELL_AREA_CONTROLS, idMenuScreen_Shell_Controls, this );
 		BIND_SHELL_SCREEN( SHELL_AREA_KEYBOARD, idMenuScreen_Shell_Bindings, this );
@@ -691,8 +689,6 @@ void idMenuHandler_Shell::ActivateMenu( bool show )
 				idSWFSpriteInstance* mars = gui->GetRootObject().GetNestedSprite( "mars" );
 				if( mars )
 				{
-					mars->stereoDepth = STEREO_DEPTH_TYPE_FAR;
-
 					idSWFSpriteInstance* planet = mars->GetScriptObject()->GetNestedSprite( "planet" );
 
 					if( marsRotation != NULL && planet != NULL )
@@ -1005,7 +1001,7 @@ bool idMenuHandler_Shell::HandleAction( idWidgetAction& action, const idWidgetEv
 				session->Cancel();
 			}
 
-			if( cmd != SHELL_CMD_QUIT && ( nextScreen == SHELL_AREA_STEREOSCOPICS || nextScreen == SHELL_AREA_SYSTEM_OPTIONS || nextScreen == SHELL_AREA_GAME_OPTIONS ||
+			if( cmd != SHELL_CMD_QUIT && ( nextScreen == SHELL_AREA_SYSTEM_OPTIONS || nextScreen == SHELL_AREA_GAME_OPTIONS ||
 										   nextScreen == SHELL_AREA_GAMEPAD || nextScreen == SHELL_AREA_MATCH_SETTINGS ) )
 			{
 
@@ -1114,8 +1110,6 @@ void idMenuHandler_Shell::ShowSmallFrame( bool show )
 		return;
 	}
 
-	smallFrame->stereoDepth = STEREO_DEPTH_TYPE_MID;
-
 	if( show && !smallFrameShowing )
 	{
 		smallFrame->PlayFrame( "rollOn" );
@@ -1148,7 +1142,6 @@ void idMenuHandler_Shell::ShowMPFrame( bool show )
 		return;
 	}
 
-	smallFrame->stereoDepth = STEREO_DEPTH_TYPE_MID;
 
 	if( show && !largeFrameShowing )
 	{
@@ -1185,9 +1178,6 @@ void idMenuHandler_Shell::ShowLogo( bool show )
 	idSWFSpriteInstance* bg = gui->GetRootObject().GetNestedSprite( "background" );
 	if( logo != NULL && bg != NULL )
 	{
-
-		bg->stereoDepth = STEREO_DEPTH_TYPE_MID;
-
 		if( show && !bgShowing )
 		{
 			logo->PlayFrame( "rollOn" );
@@ -1241,7 +1231,7 @@ void idMenuHandler_Shell::UpdateBGState()
 	{
 		if( nextScreen != SHELL_AREA_PLAYSTATION && nextScreen != SHELL_AREA_SETTINGS && nextScreen != SHELL_AREA_CAMPAIGN && nextScreen != SHELL_AREA_DEV )
 		{
-			if( nextScreen != SHELL_AREA_RESOLUTION && nextScreen != SHELL_AREA_GAMEPAD && nextScreen != SHELL_AREA_DIFFICULTY && nextScreen != SHELL_AREA_SYSTEM_OPTIONS && nextScreen != SHELL_AREA_GAME_OPTIONS && nextScreen != SHELL_AREA_NEW_GAME && nextScreen != SHELL_AREA_STEREOSCOPICS &&
+			if( nextScreen != SHELL_AREA_RESOLUTION && nextScreen != SHELL_AREA_GAMEPAD && nextScreen != SHELL_AREA_DIFFICULTY && nextScreen != SHELL_AREA_SYSTEM_OPTIONS && nextScreen != SHELL_AREA_GAME_OPTIONS && nextScreen != SHELL_AREA_NEW_GAME &&
 					nextScreen != SHELL_AREA_CONTROLS )
 			{
 				ShowSmallFrame( false );

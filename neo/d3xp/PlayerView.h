@@ -430,7 +430,6 @@ public:
 	// this may involve rendering to a texture and displaying
 	// that with a warp model or in double vision mode
 	void				RenderPlayerView( idMenuHandler_HUD* hudManager );
-	void				EmitStereoEyeView( const int eye, idMenuHandler_HUD* hudManager );
 
 	void				Fade( idVec4 color, int time );
 
@@ -483,8 +482,5 @@ public:
 	int					AddWarp( idVec3 worldOrigin, float centerx, float centery, float initialRadius, float durationMsec );
 	void				FreeWarp( int id );
 };
-
-// the crosshair is swapped for a laser sight in stereo rendering
-bool	IsGameStereoRendered();
 
 #endif /* !__GAME_PLAYERVIEW_H__ */
