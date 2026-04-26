@@ -37,8 +37,8 @@ extern idCVar s_noSound;
 // DG: get rid of libjpeg; as far as I can tell no roqs that actually use it exist
 //#define ID_USE_LIBJPEG 1
 #ifdef ID_USE_LIBJPEG
-#include <jpeglib.h>
-#include <jerror.h>
+	#include <jpeglib.h>
+	#include <jerror.h>
 #endif
 
 #include "RenderCommon.h"
@@ -2340,10 +2340,10 @@ void idCinematicLocal::RoQReset()
 
 
 #ifdef ID_USE_LIBJPEG
-/* jpeg error handling */
-struct jpeg_error_mgr jerr;
+	/* jpeg error handling */
+	struct jpeg_error_mgr jerr;
 #endif
-int JPEGBlit( byte *wStatus, byte *data, int datasize )
+int JPEGBlit( byte* wStatus, byte* data, int datasize )
 {
 #ifndef ID_USE_LIBJPEG
 	// I don't think this code is actually used, because
@@ -2352,46 +2352,46 @@ int JPEGBlit( byte *wStatus, byte *data, int datasize )
 	common->Warning( "Contrary to Daniel's assumption, JPEGBlit() is actually called! Please report that as a dhewm3 bug!\n" );
 
 #else
-  /* This struct contains the JPEG decompression parameters and pointers to
-   * working space (which is allocated as needed by the JPEG library).
-   */
-  struct jpeg_decompress_struct cinfo;
-  /* We use our private extension JPEG error handler.
-   * Note that this struct must live as long as the main JPEG parameter
-   * struct, to avoid dangling-pointer problems.
-   */
-  /* More stuff */
-  JSAMPARRAY buffer;		/* Output row buffer */
-  int row_stride;		/* physical row width in output buffer */
+	/* This struct contains the JPEG decompression parameters and pointers to
+	 * working space (which is allocated as needed by the JPEG library).
+	 */
+	struct jpeg_decompress_struct cinfo;
+	/* We use our private extension JPEG error handler.
+	 * Note that this struct must live as long as the main JPEG parameter
+	 * struct, to avoid dangling-pointer problems.
+	 */
+	/* More stuff */
+	JSAMPARRAY buffer;		/* Output row buffer */
+	int row_stride;		/* physical row width in output buffer */
 
-  /* Step 1: allocate and initialize JPEG decompression object */
+	/* Step 1: allocate and initialize JPEG decompression object */
 
-  /* We set up the normal JPEG error routines, then override error_exit. */
-  cinfo.err = jpeg_std_error(&jerr);
+	/* We set up the normal JPEG error routines, then override error_exit. */
+	cinfo.err = jpeg_std_error( &jerr );
 
-  /* Now we can initialize the JPEG decompression object. */
-  jpeg_create_decompress(&cinfo);
+	/* Now we can initialize the JPEG decompression object. */
+	jpeg_create_decompress( &cinfo );
 
-  /* Step 2: specify data source (eg, a file) */
+	/* Step 2: specify data source (eg, a file) */
 
-  jpeg_mem_src(&cinfo, data, datasize);
+	jpeg_mem_src( &cinfo, data, datasize );
 
-  /* Step 3: read file parameters with jpeg_read_header() */
+	/* Step 3: read file parameters with jpeg_read_header() */
 
-  (void) jpeg_read_header(&cinfo, TRUE);
-  /* We can ignore the return value from jpeg_read_header since
-   *   (a) suspension is not possible with the stdio data source, and
-   *   (b) we passed TRUE to reject a tables-only JPEG file as an error.
-   * See libjpeg.doc for more info.
-   */
+	( void ) jpeg_read_header( &cinfo, TRUE );
+	/* We can ignore the return value from jpeg_read_header since
+	 *   (a) suspension is not possible with the stdio data source, and
+	 *   (b) we passed TRUE to reject a tables-only JPEG file as an error.
+	 * See libjpeg.doc for more info.
+	 */
 
-  /* Step 4: set parameters for decompression */
+	/* Step 4: set parameters for decompression */
 
-  /* In this example, we don't need to change any of the defaults set by
-   * jpeg_read_header(), so we do nothing here.
-   */
+	/* In this example, we don't need to change any of the defaults set by
+	 * jpeg_read_header(), so we do nothing here.
+	 */
 
-  /* Step 5: Start decompressor */
+	/* Step 5: Start decompressor */
 
 	cinfo.dct_method = JDCT_IFAST;
 	cinfo.dct_method = JDCT_FASTEST;
@@ -2399,75 +2399,76 @@ int JPEGBlit( byte *wStatus, byte *data, int datasize )
 	cinfo.do_fancy_upsampling = FALSE;
 //	cinfo.out_color_space = JCS_GRAYSCALE;
 
-  (void) jpeg_start_decompress(&cinfo);
-  /* We can ignore the return value since suspension is not possible
-   * with the stdio data source.
-   */
-
-  /* We may need to do some setup of our own at this point before reading
-   * the data.  After jpeg_start_decompress() we have the correct scaled
-   * output image dimensions available, as well as the output colormap
-   * if we asked for color quantization.
-   * In this example, we need to make an output work buffer of the right size.
-   */
-  /* JSAMPLEs per row in output buffer */
-  row_stride = cinfo.output_width * cinfo.output_components;
-
-  /* Make a one-row-high sample array that will go away when done with image */
-  buffer = (*cinfo.mem->alloc_sarray)
-		((j_common_ptr) &cinfo, JPOOL_IMAGE, row_stride, 1);
-
-  /* Step 6: while (scan lines remain to be read) */
-  /*           jpeg_read_scanlines(...); */
-
-  /* Here we use the library's state variable cinfo.output_scanline as the
-   * loop counter, so that we don't have to keep track ourselves.
-   */
-
-  wStatus += (cinfo.output_height-1)*row_stride;
-  while (cinfo.output_scanline < cinfo.output_height) {
-	/* jpeg_read_scanlines expects an array of pointers to scanlines.
-	 * Here the array is only one element long, but you could ask for
-	 * more than one scanline at a time if that's more convenient.
+	( void ) jpeg_start_decompress( &cinfo );
+	/* We can ignore the return value since suspension is not possible
+	 * with the stdio data source.
 	 */
-	(void) jpeg_read_scanlines(&cinfo, &buffer[0], 1);
 
-	/* Assume put_scanline_someplace wants a pointer and sample count. */
-	memcpy( wStatus, &buffer[0][0], row_stride );
-	/*
-	int x;
-	unsigned int *buf = (unsigned int *)&buffer[0][0];
-	unsigned int *out = (unsigned int *)wStatus;
-	for(x=0;x<cinfo.output_width;x++) {
-		unsigned int pixel = buf[x];
-		byte *roof = (byte *)&pixel;
-		byte temp = roof[0];
-		roof[0] = roof[2];
-		roof[2] = temp;
-		out[x] = pixel;
+	/* We may need to do some setup of our own at this point before reading
+	 * the data.  After jpeg_start_decompress() we have the correct scaled
+	 * output image dimensions available, as well as the output colormap
+	 * if we asked for color quantization.
+	 * In this example, we need to make an output work buffer of the right size.
+	 */
+	/* JSAMPLEs per row in output buffer */
+	row_stride = cinfo.output_width * cinfo.output_components;
+
+	/* Make a one-row-high sample array that will go away when done with image */
+	buffer = ( *cinfo.mem->alloc_sarray )
+			 ( ( j_common_ptr ) &cinfo, JPOOL_IMAGE, row_stride, 1 );
+
+	/* Step 6: while (scan lines remain to be read) */
+	/*           jpeg_read_scanlines(...); */
+
+	/* Here we use the library's state variable cinfo.output_scanline as the
+	 * loop counter, so that we don't have to keep track ourselves.
+	 */
+
+	wStatus += ( cinfo.output_height - 1 ) * row_stride;
+	while( cinfo.output_scanline < cinfo.output_height )
+	{
+		/* jpeg_read_scanlines expects an array of pointers to scanlines.
+		 * Here the array is only one element long, but you could ask for
+		 * more than one scanline at a time if that's more convenient.
+		 */
+		( void ) jpeg_read_scanlines( &cinfo, &buffer[0], 1 );
+
+		/* Assume put_scanline_someplace wants a pointer and sample count. */
+		memcpy( wStatus, &buffer[0][0], row_stride );
+		/*
+		int x;
+		unsigned int *buf = (unsigned int *)&buffer[0][0];
+		unsigned int *out = (unsigned int *)wStatus;
+		for(x=0;x<cinfo.output_width;x++) {
+			unsigned int pixel = buf[x];
+			byte *roof = (byte *)&pixel;
+			byte temp = roof[0];
+			roof[0] = roof[2];
+			roof[2] = temp;
+			out[x] = pixel;
+		}
+		*/
+		wStatus -= row_stride;
 	}
-	*/
-	wStatus -= row_stride;
-  }
 
-  /* Step 7: Finish decompression */
+	/* Step 7: Finish decompression */
 
-  (void) jpeg_finish_decompress(&cinfo);
-  /* We can ignore the return value since suspension is not possible
-   * with the stdio data source.
-   */
+	( void ) jpeg_finish_decompress( &cinfo );
+	/* We can ignore the return value since suspension is not possible
+	 * with the stdio data source.
+	 */
 
-  /* Step 8: Release JPEG decompression object */
+	/* Step 8: Release JPEG decompression object */
 
-  /* This is an important step since it will release a good deal of memory. */
-  jpeg_destroy_decompress(&cinfo);
+	/* This is an important step since it will release a good deal of memory. */
+	jpeg_destroy_decompress( &cinfo );
 
-  /* At this point you may want to check to see whether any corrupt-data
-   * warnings occurred (test whether jerr.pub.num_warnings is nonzero).
-   */
+	/* At this point you may want to check to see whether any corrupt-data
+	 * warnings occurred (test whether jerr.pub.num_warnings is nonzero).
+	 */
 #endif
-  /* And we're done! */
-  return 1;
+	/* And we're done! */
+	return 1;
 }
 
 /*

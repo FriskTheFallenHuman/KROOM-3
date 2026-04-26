@@ -1141,7 +1141,8 @@ void idUsercmdGenLocal::MakeCurrent()
 		AdjustAngles();
 
 		// Recenter the player view
-		if ( ButtonState( UB_CENTER_VIEW ) ) {
+		if( ButtonState( UB_CENTER_VIEW ) )
+		{
 			viewangles[PITCH] = 0;
 		}
 

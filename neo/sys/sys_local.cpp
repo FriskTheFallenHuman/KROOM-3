@@ -67,7 +67,12 @@ double idSysLocal::ClockTicksPerSecond()
 	return Sys_ClockTicksPerSecond();
 }
 
-cpuid_t idSysLocal::GetProcessorId()
+unsigned int idSysLocal::GetMilliseconds()
+{
+	return Sys_Milliseconds();
+}
+
+int idSysLocal::GetProcessorId()
 {
 	return Sys_GetProcessorId();
 }
@@ -75,16 +80,6 @@ cpuid_t idSysLocal::GetProcessorId()
 const char* idSysLocal::GetProcessorString()
 {
 	return Sys_GetProcessorString();
-}
-
-const char* idSysLocal::FPU_GetState()
-{
-	return Sys_FPU_GetState();
-}
-
-bool idSysLocal::FPU_StackIsEmpty()
-{
-	return Sys_FPU_StackIsEmpty();
 }
 
 void idSysLocal::FPU_SetFTZ( bool enable )
@@ -147,11 +142,6 @@ sysEvent_t idSysLocal::GenerateMouseMoveEvent( int deltax, int deltay )
 	ev.evPtrLength = 0;
 	ev.evPtr = NULL;
 	return ev;
-}
-
-void idSysLocal::FPU_EnableExceptions( int exceptions )
-{
-	Sys_FPU_EnableExceptions( exceptions );
 }
 
 /*

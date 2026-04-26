@@ -3,7 +3,6 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
-Copyright (C) 2015 Robert Beckebans
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -28,7 +27,6 @@ If you have questions concerning this license or the applicable additional terms
 */
 #include "precompiled.h"
 #pragma hdrstop
-
 #include "miniz/miniz.h"
 
 /*
@@ -40,7 +38,7 @@ bool idSWF::Inflate( const byte* input, int inputSize, byte* output, int outputS
 {
 	struct local_swf_alloc_t
 	{
-		static void* zalloc( void* opaque, uint32 items, uint32 size )
+		static void* zalloc( void* opaque, size_t items, size_t size )
 		{
 			return Mem_Alloc( items * size, TAG_SWF );
 		}
@@ -62,46 +60,4 @@ bool idSWF::Inflate( const byte* input, int inputSize, byte* output, int outputS
 	mz_inflateEnd( &stream );
 
 	return success;
-}
-
-/*
-========================
-idSWF::Deflate
-========================
-*/
-bool idSWF::Deflate( const byte* input, int inputSize, byte* output, int& outputSize )
-{
-	struct local_swf_alloc_t
-	{
-		static void* zalloc( void* opaque, uint32 items, uint32 size )
-		{
-			return Mem_Alloc( items * size, TAG_SWF );
-		}
-		static void zfree( void* opaque, void* ptr )
-		{
-			Mem_Free( ptr );
-		}
-	};
-	mz_stream stream;
-	memset( &stream, 0, sizeof( stream ) );
-	stream.next_in = ( Bytef* )input;
-	stream.avail_in = inputSize;
-	stream.next_out = ( Bytef* )output;
-	stream.avail_out = outputSize;
-	stream.zalloc = local_swf_alloc_t::zalloc;
-	stream.zfree = local_swf_alloc_t::zfree;
-
-	int err = mz_deflateInit( &stream, MZ_DEFAULT_COMPRESSION );
-	if( err != MZ_OK )
-	{
-		return false;
-	}
-
-	err = mz_deflate( &stream, MZ_FINISH );
-
-	outputSize = stream.total_out;
-
-	mz_deflateEnd( &stream );
-
-	return ( err == MZ_STREAM_END );
 }

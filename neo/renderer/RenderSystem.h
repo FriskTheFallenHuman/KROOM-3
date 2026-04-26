@@ -374,7 +374,7 @@ public:
 	virtual bool			UploadImage( const char* imageName, const byte* data, int width, int height ) = 0;
 
 	// calculates the horizontal and vertical field of view based on a single base_fov and the current aspect ratio
-	virtual void			CalcFov( float base_fov, float &fov_x, float &fov_y, const int width = SCREEN_WIDTH, const int height = SCREEN_HEIGHT, const float correctYAspect = 0.f ) const = 0;
+	virtual void			CalcFov( float base_fov, float& fov_x, float& fov_y, const int width = SCREEN_WIDTH, const int height = SCREEN_HEIGHT, const float correctYAspect = 0.f ) const = 0;
 
 	// get the number of frames currently
 	virtual int				GetFrameCount() const = 0;

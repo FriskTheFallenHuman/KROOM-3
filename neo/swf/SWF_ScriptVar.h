@@ -138,22 +138,6 @@ public:
 		value.string = s;
 		s->AddRef();
 	}
-
-	// RB begin
-	void SetResult( const idStr& s )
-	{
-		Free();
-		type = SWF_VAR_RESULT;
-		value.string = idSWFScriptString::Alloc( s );
-	}
-	void SetResult( const char* s )
-	{
-		Free();
-		type = SWF_VAR_RESULT;
-		value.string = idSWFScriptString::Alloc( s );
-	}
-	// RB end
-
 	void SetFloat( float f )
 	{
 		Free();
@@ -248,11 +232,6 @@ public:
 		return ( type == SWF_VAR_FLOAT ) || ( type == SWF_VAR_INTEGER ) || ( type == SWF_VAR_BOOL );
 	}
 
-	bool IsResult()		const
-	{
-		return ( type == SWF_VAR_RESULT );
-	}
-
 	enum swfScriptVarType
 	{
 		SWF_VAR_STRINGID,
@@ -263,8 +242,7 @@ public:
 		SWF_VAR_BOOL,
 		SWF_VAR_INTEGER,
 		SWF_VAR_FUNCTION,
-		SWF_VAR_OBJECT,
-		SWF_VAR_RESULT	// RB: for P-Code to Lua
+		SWF_VAR_OBJECT
 	};
 
 	swfScriptVarType	GetType() const

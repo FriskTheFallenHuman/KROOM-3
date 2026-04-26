@@ -92,7 +92,7 @@ public:
 		cpuid = CPUID_NONE;
 	}
 
-	cpuid_t							cpuid;
+	int								cpuid;
 
 	virtual ~idSIMDProcessor() {}                   // SRS - Added virtual destructor
 

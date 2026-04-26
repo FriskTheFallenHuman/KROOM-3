@@ -891,7 +891,7 @@ public:
 	virtual void			CaptureRenderToFile( const char* fileName, bool fixAlpha );
 	virtual void			UnCrop();
 	virtual bool			UploadImage( const char* imageName, const byte* data, int width, int height );
-	virtual void			CalcFov( float base_fov, float &fov_x, float &fov_y, const int width = SCREEN_WIDTH, const int height = SCREEN_HEIGHT, const float correctYAspect = 0.f ) const;
+	virtual void			CalcFov( float base_fov, float& fov_x, float& fov_y, const int width = SCREEN_WIDTH, const int height = SCREEN_HEIGHT, const float correctYAspect = 0.f ) const;
 
 	void					PrintPerformanceCounters();
 
@@ -1591,7 +1591,7 @@ TR_TRISURF
 
 srfTriangles_t* 	R_AllocStaticTriSurf();
 void				R_AllocStaticTriSurfVerts( srfTriangles_t* tri, int numVerts );
-void				R_AllocStaticTriSurfPlanes( srfTriangles_t *tri, int numIndexes );
+void				R_AllocStaticTriSurfPlanes( srfTriangles_t* tri, int numIndexes );
 void				R_AllocStaticTriSurfIndexes( srfTriangles_t* tri, int numIndexes );
 void				R_AllocStaticTriSurfPreLightShadowVerts( srfTriangles_t* tri, int numVerts );
 void				R_AllocStaticTriSurfSilIndexes( srfTriangles_t* tri, int numIndexes );
@@ -1620,7 +1620,7 @@ void				R_RemoveDegenerateTriangles( srfTriangles_t* tri );
 void				R_RemoveUnusedVerts( srfTriangles_t* tri );
 void				R_RangeCheckIndexes( const srfTriangles_t* tri );
 void				R_CreateVertexNormals( srfTriangles_t* tri );		// also called by dmap
-void				R_DeriveFacePlanes( srfTriangles_t *tri );		// also called by renderbump
+void				R_DeriveFacePlanes( srfTriangles_t* tri );		// also called by renderbump
 void				R_CleanupTriangles( srfTriangles_t* tri, bool createNormals, bool identifySilEdges, bool useUnsmoothedTangents, bool useMikktspace );
 void				R_ReverseTriangles( srfTriangles_t* tri );
 

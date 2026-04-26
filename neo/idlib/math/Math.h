@@ -1602,15 +1602,16 @@ RSqrt
 reciprocal square root, returns huge number when x == 0.0
 ========================
 */
-ID_INLINE float idMath::RSqrt( float x ) {
+ID_INLINE float idMath::RSqrt( float x )
+{
 
 	int i;
 	float y, r;
 
 	y = x * 0.5f;
-	i = *reinterpret_cast<int *>( &x );
+	i = *reinterpret_cast<int*>( &x );
 	i = 0x5f3759df - ( i >> 1 );
-	r = *reinterpret_cast<float *>( &i );
+	r = *reinterpret_cast<float*>( &i );
 	r = r * ( 1.5f - r * r * y );
 	return r;
 }

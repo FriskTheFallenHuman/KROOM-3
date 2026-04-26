@@ -118,8 +118,14 @@ If you have questions concerning this license or the applicable additional terms
 #endif // #if defined(_WIN32)
 // RB end
 
-#include <stdlib.h>							// no malloc.h on mac or unix
-#undef FindText								// fix namespace pollution
+// stupid namespace polluting Microsoft monkeys
+#undef FindText
+#undef IsMinimized
+#undef DrawText
+#undef CopyFile
+#undef LoadImage
+#undef AddJob
+#undef PlaySound
 
 
 /*
@@ -135,13 +141,19 @@ If you have questions concerning this license or the applicable additional terms
 	#define NDEBUG
 #endif
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
-#include <assert.h>
-#include <time.h>
-#include <ctype.h>
+// STD
+#include <cstdio>
+#include <cstdlib>
+#include <cstdarg>
+#include <cstring>
+#include <cassert>
+#include <ctime>
+#include <cctype>
+#include <cerrno>
+#include <cmath>
+#include <climits>
+
+// STL
 #include <typeinfo>
 #include <errno.h>
 #include <math.h>
@@ -150,6 +162,10 @@ If you have questions concerning this license or the applicable additional terms
 #include <stdint.h>
 #include <stddef.h>
 #include <vector>
+#include <atomic>
+#include <string>
+#include <chrono>
+#include <thread>
 
 //-----------------------------------------------------
 

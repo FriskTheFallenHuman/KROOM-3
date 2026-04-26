@@ -29,7 +29,8 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "../../idlib/precompiled.h"
+#include "precompiled.h"
+#pragma hdrstop
 
 // DG: SDL.h somehow needs the following functions, so #undef those silly
 //     "don't use" #defines from Str.h
@@ -42,7 +43,11 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "renderer/RenderCommon.h"
 #include "sdl_local.h"
-#include "../posix/posix_public.h"
+#ifdef _WIN32
+	#include "../win32/win_local.h"
+#else
+	#include "../posix/posix_public.h"
+#endif
 
 #if !SDL_VERSION_ATLEAST(2, 0, 0)
 	#define SDL_Keycode SDLKey
@@ -1059,7 +1064,7 @@ sysEvent_t Sys_GetEvent()
 					}
 					cvarSystem->SetCVarInteger( "r_fullscreen", fullscreen );
 					// DG end
-					PushConsoleEvent( "vid_restart" );
+					cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "vid_restart\n" );
 					continue; // handle next event
 				}
 
@@ -1300,6 +1305,7 @@ sysEvent_t Sys_GetEvent()
 
 			case SDL_CONTROLLERBUTTONDOWN:
 			case SDL_CONTROLLERBUTTONUP:
+			{
 				static int controllerButtonRemap[][2] =
 				{
 					{K_JOY1, J_ACTION1},
@@ -1326,370 +1332,18 @@ sysEvent_t Sys_GetEvent()
 
 				joystick_polls.Append( joystick_poll_t( res.evValue, res.evValue2 ) );
 				return res;
-#else
-			// WM0110
-			// NOTE: it seems that the key bindings for the GUI and for the game are
-			// totally independant. I think the event returned by this function seems to work
-			// on the GUI and the event returned by Sys_ReturnJoystickInputEvent() works on
-			// the game.
-			// Also, remember that joystick keys must be binded to actions in order to work!
-			case SDL_JOYBUTTONDOWN:
-			case SDL_JOYBUTTONUP:
-				// sys_public.h: evValue is an axis number and evValue2 is the current state (-127 to 127)
-				// WM0110: joystick ranges must be between (-32769, 32768)!
-				res.evType = SE_KEY;
-				switch( ev.jbutton.button )
-				{
-					case 0:
-						res.evValue = K_JOY1;
-						joystick_polls.Append( joystick_poll_t( J_ACTION1, ev.jbutton.state == SDL_PRESSED ? 1 : 0 ) );
-						break;
-
-					case 1:
-						res.evValue = K_JOY2;
-						joystick_polls.Append( joystick_poll_t( J_ACTION2, ev.jbutton.state == SDL_PRESSED ? 1 : 0 ) );
-						break;
-
-					case 2:
-						res.evValue = K_JOY3;
-						joystick_polls.Append( joystick_poll_t( J_ACTION3, ev.jbutton.state == SDL_PRESSED ? 1 : 0 ) );
-						break;
-
-					case 3:
-						res.evValue = K_JOY4;
-						joystick_polls.Append( joystick_poll_t( J_ACTION4, ev.jbutton.state == SDL_PRESSED ? 1 : 0 ) );
-						break;
-
-					case 4:
-						res.evValue = K_JOY5;
-						joystick_polls.Append( joystick_poll_t( J_ACTION5, ev.jbutton.state == SDL_PRESSED ? 1 : 0 ) );
-						break;
-
-					case 5:
-						res.evValue = K_JOY6;
-						joystick_polls.Append( joystick_poll_t( J_ACTION6, ev.jbutton.state == SDL_PRESSED ? 1 : 0 ) );
-						break;
-
-					case 6:
-						res.evValue = K_JOY7;
-						joystick_polls.Append( joystick_poll_t( J_ACTION7, ev.jbutton.state == SDL_PRESSED ? 1 : 0 ) );
-						break;
-
-					case 7:
-						res.evValue = K_JOY8;
-						joystick_polls.Append( joystick_poll_t( J_ACTION8, ev.jbutton.state == SDL_PRESSED ? 1 : 0 ) );
-						break;
-
-					case 8:
-						res.evValue = K_JOY9;
-						joystick_polls.Append( joystick_poll_t( J_ACTION9, ev.jbutton.state == SDL_PRESSED ? 1 : 0 ) );
-						break;
-
-					case 9:
-						res.evValue = K_JOY10;
-						joystick_polls.Append( joystick_poll_t( J_ACTION10, ev.jbutton.state == SDL_PRESSED ? 1 : 0 ) );
-						break;
-
-					case 10:
-						res.evValue = K_JOY11;
-						joystick_polls.Append( joystick_poll_t( J_ACTION11, ev.jbutton.state == SDL_PRESSED ? 1 : 0 ) );
-						break;
-
-					// D-PAD left (XBox 360 wireless)
-					case 11:
-						// If joystick has a hat, then use the hat as D-PAD. If not, D-PAD is mapped
-						// to buttons.
-						if( SDL_joystick_has_hat )
-						{
-							res.evValue = K_JOY12;
-							joystick_polls.Append( joystick_poll_t( J_ACTION12, ev.jbutton.state == SDL_PRESSED ? 1 : 0 ) );
-						}
-						else
-						{
-							res.evValue = K_JOY_DPAD_LEFT;
-							joystick_polls.Append( joystick_poll_t( J_DPAD_LEFT, ev.jbutton.state == SDL_PRESSED ? 1 : 0 ) );
-						}
-						break;
-
-					// D-PAD right
-					case 12:
-						if( SDL_joystick_has_hat )
-						{
-							res.evValue = K_JOY13;
-							joystick_polls.Append( joystick_poll_t( J_ACTION13, ev.jbutton.state == SDL_PRESSED ? 1 : 0 ) );
-						}
-						else
-						{
-							res.evValue = K_JOY_DPAD_RIGHT;
-							joystick_polls.Append( joystick_poll_t( J_DPAD_RIGHT, ev.jbutton.state == SDL_PRESSED ? 1 : 0 ) );
-						}
-						break;
-
-					// D-PAD up
-					case 13:
-						if( SDL_joystick_has_hat )
-						{
-							res.evValue = K_JOY14;
-							joystick_polls.Append( joystick_poll_t( J_ACTION14, ev.jbutton.state == SDL_PRESSED ? 1 : 0 ) );
-						}
-						else
-						{
-							res.evValue = K_JOY_DPAD_UP;
-							joystick_polls.Append( joystick_poll_t( J_DPAD_UP, ev.jbutton.state == SDL_PRESSED ? 1 : 0 ) );
-						}
-						break;
-
-					// D-PAD down
-					case 14:
-						if( SDL_joystick_has_hat )
-						{
-							res.evValue = K_JOY15;
-							joystick_polls.Append( joystick_poll_t( J_ACTION15, ev.jbutton.state == SDL_PRESSED ? 1 : 0 ) );
-						}
-						else
-						{
-							res.evValue = K_JOY_DPAD_DOWN;
-							joystick_polls.Append( joystick_poll_t( J_DPAD_DOWN, ev.jbutton.state == SDL_PRESSED ? 1 : 0 ) );
-						}
-						break;
-
-					default:
-						common->Warning( "Sys_GetEvent(): Unknown joystick button number %i\n", ev.jbutton.button );
-						continue; // just try next event
-				}
-				res.evValue2 = ev.jbutton.state == SDL_PRESSED ? 1 : 0;
-
-				return res;
-
-			case SDL_JOYHATMOTION:
-				// If this is not the first hat, ignore this event.
-				if( ev.jhat.which != 0 )
-				{
-					continue;    // just try next event
-				}
-
-				res.evType = SE_KEY;
-				if( ev.jhat.value & SDL_HAT_UP )
-				{
-					res.evValue = K_JOY_DPAD_UP;
-					joystick_polls.Append( joystick_poll_t( J_DPAD_UP, 1 ) );
-					res.evValue2 = 1;
-					previous_hat_state = J_DPAD_UP;
-				}
-				else if( ev.jhat.value & SDL_HAT_DOWN )
-				{
-					res.evValue = K_JOY_DPAD_DOWN;
-					joystick_polls.Append( joystick_poll_t( J_DPAD_DOWN, 1 ) );
-					res.evValue2 = 1;
-					previous_hat_state = J_DPAD_DOWN;
-				}
-				else if( ev.jhat.value & SDL_HAT_RIGHT )
-				{
-					res.evValue = K_JOY_DPAD_RIGHT;
-					joystick_polls.Append( joystick_poll_t( J_DPAD_RIGHT, 1 ) );
-					res.evValue2 = 1;
-					previous_hat_state = J_DPAD_RIGHT;
-				}
-				else if( ev.jhat.value & SDL_HAT_LEFT )
-				{
-					res.evValue = K_JOY_DPAD_LEFT;
-					joystick_polls.Append( joystick_poll_t( J_DPAD_LEFT, 1 ) );
-					res.evValue2 = 1;
-					previous_hat_state = J_DPAD_LEFT;
-				}
-				// SDL_HAT_CENTERED is defined as 0
-				else if( ev.jhat.value == SDL_HAT_CENTERED )
-				{
-					// We need to know the previous state to know which event to send.
-					if( previous_hat_state == J_DPAD_UP )
-					{
-						res.evValue = K_JOY_DPAD_UP;
-						joystick_polls.Append( joystick_poll_t( J_DPAD_UP, 0 ) );
-						res.evValue2 = 0;
-					}
-					else if( previous_hat_state == J_DPAD_DOWN )
-					{
-						res.evValue = K_JOY_DPAD_DOWN;
-						joystick_polls.Append( joystick_poll_t( J_DPAD_DOWN, 0 ) );
-						res.evValue2 = 0;
-					}
-					else if( previous_hat_state == J_DPAD_RIGHT )
-					{
-						res.evValue = K_JOY_DPAD_RIGHT;
-						joystick_polls.Append( joystick_poll_t( J_DPAD_RIGHT, 0 ) );
-						res.evValue2 = 0;
-					}
-					else if( previous_hat_state == J_DPAD_LEFT )
-					{
-						res.evValue = K_JOY_DPAD_LEFT;
-						joystick_polls.Append( joystick_poll_t( J_DPAD_LEFT, 0 ) );
-						res.evValue2 = 0;
-					}
-					else if( previous_hat_state == SDL_HAT_CENTERED )
-					{
-						common->Warning( "Sys_GetEvent(): SDL_JOYHATMOTION: previous state SDL_HAT_CENTERED repeated!\n" );
-						continue; // just try next event
-					}
-					else
-					{
-						common->Warning( "Sys_GetEvent(): SDL_JOYHATMOTION: unknown previous hat state %i\n", previous_hat_state );
-						continue; // just try next event
-					}
-
-					previous_hat_state = SDL_HAT_CENTERED;
-				}
-				else
-				{
-					common->Warning( "Sys_GetEvent(): Unknown SDL_JOYHATMOTION value %i\n", ev.jhat.value );
-					continue; // just try next event
-				}
-
-				return res;
-
-			case SDL_JOYAXISMOTION:
-				res.evType = SE_JOYSTICK;
-				// SDL joystick range is: -32768 to 32767, which is what is expected
-				// in void idUsercmdGenLocal::Joystick( int deviceNum ).
-				switch( ev.jaxis.axis )
-				{
-						//const int range = 16384;
-						int triggerValue;
-						bool triggered;
-						int percent;
-						int axis;
-
-					// LEFT trigger
-					case 2:
-						// Convert TRIGGER value from space (-32768, 32767) to (0, 32767)
-						triggerValue = ( ev.jaxis.value + 32768 ) / 2;
-						// common->Printf("Sys_GetEvent: LEFT trigger value = %i / converted value = %i\n", ev.jaxis.value, trigger_value);
-						res.evValue = J_AXIS_LEFT_TRIG;
-
-						joystick_polls.Append( joystick_poll_t( J_AXIS_LEFT_TRIG, triggerValue ) );
-						break;
-
-					// Right trigger
-					case 5:
-						triggerValue = ( ev.jaxis.value + 32768 ) / 2;
-						// common->Printf("Sys_GetEvent: RIGHT trigger value = %i / converted value = %i\n", ev.jaxis.value, trigger_value);
-						res.evValue = J_AXIS_RIGHT_TRIG;
-
-						joystick_polls.Append( joystick_poll_t( J_AXIS_RIGHT_TRIG, triggerValue ) );
-						break;
-
-					// LEFT X
-					case 0:
-						res.evValue = J_AXIS_LEFT_X;
-						joystick_polls.Append( joystick_poll_t( J_AXIS_LEFT_X, ev.jaxis.value ) );
-
-						triggered = ( ev.jaxis.value > 16384 );
-						if( buttonStates[K_JOY_STICK1_RIGHT] != triggered )
-						{
-							buttonStates[K_JOY_STICK1_RIGHT] = triggered;
-
-							res.evType = SE_KEY;
-							res.evValue = K_JOY_STICK1_RIGHT;
-							res.evValue2 = triggered;
-						}
-
-						triggered = ( ev.jaxis.value < -16384 );
-						if( buttonStates[K_JOY_STICK1_LEFT] != triggered )
-						{
-							buttonStates[K_JOY_STICK1_LEFT] = triggered;
-
-							res.evType = SE_KEY;
-							res.evValue = K_JOY_STICK1_LEFT;
-							res.evValue2 = triggered;
-						}
-						break;
-
-					// LEFT Y
-					case 1:
-						res.evValue = J_AXIS_LEFT_Y;
-						joystick_polls.Append( joystick_poll_t( J_AXIS_LEFT_Y, ev.jaxis.value ) );
-
-						triggered = ( ev.jaxis.value > 16384 );
-						if( buttonStates[K_JOY_STICK1_DOWN] != triggered )
-						{
-							buttonStates[K_JOY_STICK1_DOWN] = triggered;
-
-							res.evType = SE_KEY;
-							res.evValue = K_JOY_STICK1_DOWN;
-							res.evValue2 = triggered;
-						}
-
-						triggered = ( ev.jaxis.value < -16384 );
-						if( buttonStates[K_JOY_STICK1_UP] != triggered )
-						{
-							buttonStates[K_JOY_STICK1_UP] = triggered;
-
-							res.evType = SE_KEY;
-							res.evValue = K_JOY_STICK1_UP;
-							res.evValue2 = triggered;
-						}
-
-						break;
-
-					// RIGHT X
-					case 3:
-						res.evValue = J_AXIS_RIGHT_X;
-						joystick_polls.Append( joystick_poll_t( J_AXIS_RIGHT_X, ev.jaxis.value ) );
-
-						triggered = ( ev.jaxis.value > 16384 );
-						if( buttonStates[K_JOY_STICK2_RIGHT] != triggered )
-						{
-							buttonStates[K_JOY_STICK2_RIGHT] = triggered;
-
-							res.evType = SE_KEY;
-							res.evValue = K_JOY_STICK2_RIGHT;
-							res.evValue2 = triggered;
-						}
-
-						triggered = ( ev.jaxis.value < -16384 );
-						if( buttonStates[K_JOY_STICK2_LEFT] != triggered )
-						{
-							buttonStates[K_JOY_STICK2_LEFT] = triggered;
-
-							res.evType = SE_KEY;
-							res.evValue = K_JOY_STICK2_LEFT;
-							res.evValue2 = triggered;
-						}
-						break;
-
-					// RIGHT Y
-					case 4:
-						res.evValue = J_AXIS_RIGHT_Y;
-						joystick_polls.Append( joystick_poll_t( J_AXIS_RIGHT_Y, ev.jaxis.value ) );
-
-						triggered = ( ev.jaxis.value > 16384 );
-						if( buttonStates[K_JOY_STICK2_DOWN] != triggered )
-						{
-							buttonStates[K_JOY_STICK2_DOWN] = triggered;
-
-							res.evType = SE_KEY;
-							res.evValue = K_JOY_STICK2_DOWN;
-							res.evValue2 = triggered;
-						}
-
-						triggered = ( ev.jaxis.value < -16384 );
-						if( buttonStates[K_JOY_STICK2_UP] != triggered )
-						{
-							buttonStates[K_JOY_STICK2_UP] = triggered;
-
-							res.evType = SE_KEY;
-							res.evValue = K_JOY_STICK2_UP;
-							res.evValue2 = triggered;
-						}
-						break;
-
-					default:
-						common->Warning( "Sys_GetEvent(): Unknown joystick axis number %i\n", ev.jaxis.axis );
-						continue; // just try next event
-				}
-
-				return res;
-				// WM0110
-#endif
+			}
+			case SDL_CONTROLLERDEVICEADDED:
+			case SDL_CONTROLLERDEVICEREMOVED:
+			case SDL_CONTROLLERDEVICEREMAPPED:
+			case SDL_CONTROLLERTOUCHPADDOWN:
+			case SDL_CONTROLLERTOUCHPADMOTION:
+			case SDL_CONTROLLERTOUCHPADUP:
+			case SDL_CONTROLLERSENSORUPDATE:
+				//case SDL_CONTROLLERUPDATECOMPLETE_RESERVED_FOR_SDL3:
+				//case SDL_CONTROLLERSTEAMHANDLEUPDATED:
+				// Avoid more 'unknown event' spam
+				continue;
 
 			case SDL_QUIT:
 				PushConsoleEvent( "quit" );
@@ -1741,7 +1395,11 @@ Sys_GenerateEvents
 */
 void Sys_GenerateEvents()
 {
+#ifdef _WIN32
+	char* s = Sys_ConsoleInput();
+#else
 	char* s = Posix_ConsoleInput();
+#endif
 
 	if( s )
 	{

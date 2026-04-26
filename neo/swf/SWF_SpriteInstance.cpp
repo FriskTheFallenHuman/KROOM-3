@@ -467,11 +467,9 @@ idSWFSpriteInstance::DoAction
 */
 void idSWFSpriteInstance::DoAction( idSWFBitStream& bitstream )
 {
-#if 1
 	swfAction_t& action = actions.Alloc();
 	action.data = bitstream.ReadData( bitstream.Length() );
 	action.dataLength = bitstream.Length();
-#endif
 }
 
 /*

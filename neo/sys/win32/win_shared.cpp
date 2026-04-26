@@ -47,20 +47,12 @@ If you have questions concerning this license or the applicable additional terms
 	#include <comdef.h>
 	#include <comutil.h>
 	#include <Wbemidl.h>
-
-
-	// RB: no <atlbase.h> with Visual C++ 2010 Express
-	#if defined(USE_MFC_TOOLS)
-		#include <atlbase.h>
-	#else
-		#include "win_nanoafx.h"
-	#endif
-
 #endif // #if !defined(__MINGW32__)
 // RB end
 
 #pragma comment (lib, "wbemuuid.lib")
 
+#ifndef USE_SDL
 #pragma warning(disable:4740)	// warning C4740: flow in or out of inline asm code suppresses global optimization
 
 /*
@@ -68,10 +60,11 @@ If you have questions concerning this license or the applicable additional terms
 Sys_Milliseconds
 ================
 */
-int Sys_Milliseconds()
+unsigned int Sys_Milliseconds()
 {
-	static DWORD sys_timeBase = timeGetTime();
-	return timeGetTime() - sys_timeBase;
+	static auto start = std::chrono::steady_clock::now();
+	auto now = std::chrono::steady_clock::now();
+	return std::chrono::duration_cast<std::chrono::milliseconds>( now - start ).count();
 }
 
 /*
@@ -81,15 +74,26 @@ Sys_Microseconds
 */
 uint64 Sys_Microseconds()
 {
-	static uint64 ticksPerMicrosecondTimes1024 = 0;
+	return std::chrono::duration_cast<std::chrono::microseconds>( std::chrono::steady_clock::now().time_since_epoch() ).count();
+}
+#endif
 
-	if( ticksPerMicrosecondTimes1024 == 0 )
-	{
-		ticksPerMicrosecondTimes1024 = ( ( uint64 )Sys_ClockTicksPerSecond() << 10 ) / 1000000;
-		assert( ticksPerMicrosecondTimes1024 > 0 );
-	}
+/*
+================
+Sys_GetSystemRam
 
-	return ( ( uint64 )( ( int64 )Sys_GetClockTicks() << 10 ) ) / ticksPerMicrosecondTimes1024;
+	returns amount of physical memory in MB
+================
+*/
+int Sys_GetSystemRam()
+{
+	MEMORYSTATUSEX statex;
+	statex.dwLength = sizeof( statex );
+	GlobalMemoryStatusEx( &statex );
+	int physRam = statex.ullTotalPhys / ( 1024 * 1024 );
+	// HACK: For some reason, ullTotalPhys is sometimes off by a meg or two, so we round up to the nearest 16 megs
+	physRam = ( physRam + 8 ) & ~15;
+	return physRam;
 }
 
 /*
@@ -133,48 +137,6 @@ int64 Sys_GetDriveFreeSpaceInBytes( const char* path )
 
 /*
 ================
-Sys_GetCurrentMemoryStatus
-
-	returns OS mem info
-	all values are in kB except the memoryload
-================
-*/
-void Sys_GetCurrentMemoryStatus( sysMemoryStats_t& stats )
-{
-	MEMORYSTATUSEX statex = {};
-	unsigned __int64 work;
-
-	statex.dwLength = sizeof( statex );
-	GlobalMemoryStatusEx( &statex );
-
-	memset( &stats, 0, sizeof( stats ) );
-
-	stats.memoryLoad = statex.dwMemoryLoad;
-
-	work = statex.ullTotalPhys >> 20;
-	stats.totalPhysical = *( int* )&work;
-
-	work = statex.ullAvailPhys >> 20;
-	stats.availPhysical = *( int* )&work;
-
-	work = statex.ullAvailPageFile >> 20;
-	stats.availPageFile = *( int* )&work;
-
-	work = statex.ullTotalPageFile >> 20;
-	stats.totalPageFile = *( int* )&work;
-
-	work = statex.ullTotalVirtual >> 20;
-	stats.totalVirtual = *( int* )&work;
-
-	work = statex.ullAvailVirtual >> 20;
-	stats.availVirtual = *( int* )&work;
-
-	work = statex.ullAvailExtendedVirtual >> 20;
-	stats.availExtendedVirtual = *( int* )&work;
-}
-
-/*
-================
 Sys_LockMemory
 ================
 */
@@ -202,28 +164,3 @@ void Sys_SetPhysicalWorkMemory( int minBytes, int maxBytes )
 {
 	::SetProcessWorkingSetSize( GetCurrentProcess(), minBytes, maxBytes );
 }
-
-/*
-================
-Sys_GetCurrentUser
-================
-*/
-char* Sys_GetCurrentUser()
-{
-	static char s_userName[1024];
-	unsigned long size = sizeof( s_userName );
-
-
-	if( !GetUserName( s_userName, &size ) )
-	{
-		strcpy( s_userName, "player" );
-	}
-
-	if( !s_userName[0] )
-	{
-		strcpy( s_userName, "player" );
-	}
-
-	return s_userName;
-}
-

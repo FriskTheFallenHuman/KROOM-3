@@ -796,7 +796,7 @@ bool idMapEntity::Write( idFile* fp, int entityNum ) const
 			case idMapPrimitive::TYPE_MESH:
 				static_cast<MapPolygonMesh*>( mapPrim )->Write( fp, i, origin );
 				break;
-			// RB end
+				// RB end
 		}
 	}
 

@@ -26,45 +26,19 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#ifndef __SYS_LOCAL__
-#define __SYS_LOCAL__
+#ifndef __CONFIG_H__
+#define __CONFIG_H__
 
-/*
-==============================================================
+// for MSVC CPUSTRING is set in code (in neo/idlib/sys/sys_defines.h)
+#ifndef _MSC_VER
+#define CPUSTRING				"@cpu@"
+#endif
 
-	idSysLocal
+#define OSTYPESTRING			"@os@"
 
-==============================================================
-*/
+#define BUILD_LIBRARY_SUFFIX	"@CMAKE_SHARED_LIBRARY_SUFFIX@"
 
-class idSysLocal : public idSys
-{
-public:
-	virtual void			DebugPrintf( VERIFY_FORMAT_STRING const char* fmt, ... );
-	virtual void			DebugVPrintf( const char* fmt, va_list arg );
+//#define BUILD_LIBDIR			"@libdir@"
+//#define BUILD_DATADIR			"@datadir@"
 
-	virtual unsigned int	GetMilliseconds();
-	virtual double			GetClockTicks();
-	virtual double			ClockTicksPerSecond();
-	virtual int				GetProcessorId();
-	virtual const char* 	GetProcessorString();
-
-	virtual void			FPU_SetFTZ( bool enable );
-	virtual void			FPU_SetDAZ( bool enable );
-
-	virtual bool			LockMemory( void* ptr, int bytes );
-	virtual bool			UnlockMemory( void* ptr, int bytes );
-
-	virtual int				DLL_Load( const char* dllName );
-	virtual void* 			DLL_GetProcAddress( int dllHandle, const char* procName );
-	virtual void			DLL_Unload( int dllHandle );
-	virtual void			DLL_GetFileName( const char* baseName, char* dllName, int maxLength );
-
-	virtual sysEvent_t		GenerateMouseButtonEvent( int button, bool down );
-	virtual sysEvent_t		GenerateMouseMoveEvent( int deltax, int deltay );
-
-	virtual void			OpenURL( const char* url, bool quit );
-	virtual void			StartProcess( const char* exeName, bool quit );
-};
-
-#endif /* !__SYS_LOCAL__ */
+#endif /* !__CONFIG_H__ */

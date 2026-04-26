@@ -262,12 +262,12 @@ void idCommonLocal::VPrintf( const char* fmt, va_list args )
 	}
 
 #ifdef _WIN32
-	if ( com_outputMsg )
+	if( com_outputMsg )
 	{
-		if ( com_msgID == -1 )
+		if( com_msgID == -1 )
 		{
 			com_msgID = ::RegisterWindowMessage( DMAP_MSGID );
-			if ( !FindEditor() )
+			if( !FindEditor() )
 			{
 				com_outputMsg = false;
 			}
@@ -276,10 +276,10 @@ void idCommonLocal::VPrintf( const char* fmt, va_list args )
 				Sys_ShowWindow( false );
 			}
 		}
-		if ( com_hwndMsg )
+		if( com_hwndMsg )
 		{
 			ATOM atom = ::GlobalAddAtom( msg );
-			::PostMessage( com_hwndMsg, com_msgID, 0, static_cast<LPARAM>(atom) );
+			::PostMessage( com_hwndMsg, com_msgID, 0, static_cast<LPARAM>( atom ) );
 		}
 	}
 #endif

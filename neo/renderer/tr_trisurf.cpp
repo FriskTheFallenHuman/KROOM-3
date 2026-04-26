@@ -442,10 +442,11 @@ void R_AllocStaticTriSurfSilEdges( srfTriangles_t* tri, int numSilEdges )
 R_AllocStaticTriSurfPlanes
 =================
 */
-void R_AllocStaticTriSurfPlanes( srfTriangles_t *tri, int numIndexes ) {
+void R_AllocStaticTriSurfPlanes( srfTriangles_t* tri, int numIndexes )
+{
 	assert( tri->facePlanes == NULL );
 	//tri->facePlanes = new idPlane[tri->numIndexes / 3];
-	tri->facePlanes = (idPlane *)Mem_Alloc( tri->numIndexes / 3 * sizeof( idPlane ), TAG_TRI_PLANES );
+	tri->facePlanes = ( idPlane* )Mem_Alloc( tri->numIndexes / 3 * sizeof( idPlane ), TAG_TRI_PLANES );
 }
 
 /*
@@ -2471,10 +2472,12 @@ R_DeriveFacePlanes
 Writes the facePlanes values, overwriting existing ones if present
 =====================
 */
-void R_DeriveFacePlanes( srfTriangles_t *tri ) {
-	idPlane *	planes;
+void R_DeriveFacePlanes( srfTriangles_t* tri )
+{
+	idPlane* 	planes;
 
-	if ( !tri->facePlanes ) {
+	if( !tri->facePlanes )
+	{
 		R_AllocStaticTriSurfPlanes( tri, tri->numIndexes );
 	}
 	planes = tri->facePlanes;
@@ -2485,10 +2488,11 @@ void R_DeriveFacePlanes( srfTriangles_t *tri ) {
 
 #else
 
-	for ( int i = 0; i < tri->numIndexes; i+= 3, planes++ ) {
+	for( int i = 0; i < tri->numIndexes; i += 3, planes++ )
+	{
 		int		i1, i2, i3;
 		idVec3	d1, d2, normal;
-		idVec3	*v1, *v2, *v3;
+		idVec3*	v1, *v2, *v3;
 
 		i1 = tri->indexes[i + 0];
 		i2 = tri->indexes[i + 1];
@@ -2515,9 +2519,9 @@ void R_DeriveFacePlanes( srfTriangles_t *tri ) {
 		sqrLength = normal.x * normal.x + normal.y * normal.y + normal.z * normal.z;
 		invLength = idMath::RSqrt( sqrLength );
 
-		(*planes)[0] = normal[0] * invLength;
-		(*planes)[1] = normal[1] * invLength;
-		(*planes)[2] = normal[2] * invLength;
+		( *planes )[0] = normal[0] * invLength;
+		( *planes )[1] = normal[1] * invLength;
+		( *planes )[2] = normal[2] * invLength;
 
 		planes->FitThroughPoint( *v1 );
 	}

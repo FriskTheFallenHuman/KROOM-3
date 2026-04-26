@@ -506,7 +506,7 @@ void idCommonLocal::Frame()
 		// DG: Add pause from com_pause cvar
 		if( com_pause.GetInteger() || console->Active() || Dialog().IsDialogActive() || session->IsSystemUIShowing()
 				|| ( game && game->InhibitControls() ) ||  ImGuiTools::ReleaseMouseForTools() )
-		// DG end
+			// DG end
 		{
 			// RB: don't release the mouse when opening a PDA or menu
 			// SRS - but always release at main menu after exiting game or demo
@@ -884,13 +884,6 @@ void idCommonLocal::Frame()
 			Printf( "frame:%d all:%3d gfr:%3d rf:%3lld bk:%3lld\n", idLib::frameNumber, com_frameMsec, time_gameFrame, time_frontend / 1000, time_backend / 1000 );
 			time_gameFrame = 0;
 			time_gameDraw = 0;
-		}
-
-		// the FPU stack better be empty at this point or some bad code or compiler bug left values on the stack
-		if( !Sys_FPU_StackIsEmpty() )
-		{
-			Printf( "%s", Sys_FPU_GetState() );
-			FatalError( "idCommon::Frame: the FPU stack is not empty at the end of the frame\n" );
 		}
 
 		mainFrameTiming = frameTiming;

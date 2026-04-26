@@ -3,7 +3,6 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
-Copyright (C) 2015 Robert Beckebans
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -28,154 +27,28 @@ If you have questions concerning this license or the applicable additional terms
 */
 #include "precompiled.h"
 #pragma hdrstop
+
 #include "../renderer/Image.h"
 
-#ifdef _WIN32
-#include "jpeg-6/jpeglib.h"
-#else
-#include <jpeglib.h>
-#endif
-
-idCVar swf_useChannelScale( "swf_useChannelScale", "0", CVAR_BOOL, "compress texture atlas colors" );
+#include "stb/stb_image.h"
 
 /*
 ========================
-idSWF::idDecompressJPEG
-These are the static callback functions the jpeg library calls
+idSWF::LoadJPEG
 ========================
 */
-void swf_jpeg_error_exit( jpeg_common_struct* cinfo )
+byte* idSWF::LoadJPEG( const byte* input, int inputSize, int& width, int& height )
 {
-	char buffer[JMSG_LENGTH_MAX] = {0};
-	( *cinfo->err->format_message )( cinfo, buffer );
-	throw idException( buffer );
-}
-void swf_jpeg_output_message( jpeg_common_struct* cinfo )
-{
-	char buffer[JMSG_LENGTH_MAX] = {0};
-	( *cinfo->err->format_message )( cinfo, buffer );
-	idLib::Printf( "%s\n", buffer );
-}
-void swf_jpeg_init_source( jpeg_decompress_struct* cinfo )
-{
-}
-boolean swf_jpeg_fill_input_buffer( jpeg_decompress_struct* cinfo )
-{
-	return TRUE;
-}
-void swf_jpeg_skip_input_data( jpeg_decompress_struct* cinfo, long num_bytes )
-{
-	cinfo->src->next_input_byte += num_bytes;
-	cinfo->src->bytes_in_buffer -= num_bytes;
-}
-void swf_jpeg_term_source( jpeg_decompress_struct* cinfo )
-{
-}
+	byte* output;
 
-/*
-========================
-idSWF::idDecompressJPEG::idDecompressJPEG
-========================
-*/
-idSWF::idDecompressJPEG::idDecompressJPEG()
-{
-	jpeg_decompress_struct* cinfo = new( TAG_SWF ) jpeg_decompress_struct;
-	memset( cinfo, 0, sizeof( *cinfo ) );
-
-	cinfo->err = new( TAG_SWF ) jpeg_error_mgr;
-	memset( cinfo->err, 0, sizeof( jpeg_error_mgr ) );
-	jpeg_std_error( cinfo->err );
-	cinfo->err->error_exit = swf_jpeg_error_exit;
-	cinfo->err->output_message = swf_jpeg_output_message;
-
-	jpeg_create_decompress( cinfo );
-
-	vinfo = cinfo;
-}
-
-/*
-========================
-idSWF::idDecompressJPEG::~idDecompressJPEG
-========================
-*/
-idSWF::idDecompressJPEG::~idDecompressJPEG()
-{
-	jpeg_decompress_struct* cinfo = ( jpeg_decompress_struct* )vinfo;
-
-	jpeg_destroy_decompress( cinfo );
-	delete cinfo->err;
-	delete cinfo;
-}
-
-/*
-========================
-idSWF::idDecompressJPEG::Load
-========================
-*/
-byte* idSWF::idDecompressJPEG::Load( const byte* input, int inputSize, int& width, int& height )
-{
-	jpeg_decompress_struct* cinfo = ( jpeg_decompress_struct* )vinfo;
-
-	try
+	output = stbi_load_from_memory( input, inputSize, &width, &height, NULL, 4 );
+	if( !output )
 	{
-
-		width = 0;
-		height = 0;
-
-		jpeg_source_mgr src;
-		memset( &src, 0, sizeof( src ) );
-		src.next_input_byte = ( JOCTET* )input;
-		src.bytes_in_buffer = inputSize;
-		src.init_source = swf_jpeg_init_source;
-		src.fill_input_buffer = swf_jpeg_fill_input_buffer;
-		src.skip_input_data = swf_jpeg_skip_input_data;
-		src.resync_to_restart = jpeg_resync_to_restart;
-		src.term_source = swf_jpeg_term_source;
-		cinfo->src = &src;
-
-		int result = 0;
-		do
-		{
-			result = jpeg_read_header( cinfo, FALSE );
-		}
-		while( result == JPEG_HEADER_TABLES_ONLY );
-
-		if( result == JPEG_SUSPENDED )
-		{
-			return NULL;
-		}
-
-		jpeg_start_decompress( cinfo );
-		if( cinfo->output_components != 4 )
-		{
-			// This shouldn't really be possible, unless the source image is some kind of strange grayscale format or something
-			idLib::Warning( "JPEG output is not 4 components" );
-			jpeg_abort_decompress( cinfo );
-			cinfo->src = NULL;	// value goes out of scope
-			return NULL;
-		}
-		int outputSize = cinfo->output_width * cinfo->output_height * cinfo->output_components;
-		byte* output = ( byte* )Mem_Alloc( outputSize, TAG_SWF );
-		memset( output, 255, outputSize );
-		while( cinfo->output_scanline < cinfo->output_height )
-		{
-			JSAMPROW scanlines = output + cinfo->output_scanline * cinfo->output_width * cinfo->output_components;
-			jpeg_read_scanlines( cinfo, &scanlines, 1 );
-		}
-		jpeg_finish_decompress( cinfo );
-
-		width = cinfo->output_width;
-		height = cinfo->output_height;
-
-		cinfo->src = NULL;	// value goes out of scope
-		return output;
-
-	}
-	catch( idException& )
-	{
-		swf_jpeg_output_message( ( jpeg_common_struct* )cinfo );
+		idLib::Printf( "jpeg load failed\n" );
 		return NULL;
 	}
+
+	return output;
 }
 
 
@@ -276,16 +149,12 @@ void idSWF::WriteSwfImageAtlas( const char* filename )
 		// a bias as well as a scale to enable us to take advantage of the
 		// min values as well as the max, but very few gui images don't go to black,
 		// and just doing a scale avoids changing more code.
-
-		if( swf_useChannelScale.GetBool() )
+		for( int j = 0; j < pack.trueSize.x * pack.trueSize.y * 4; j++ )
 		{
-			for( int j = 0; j < pack.trueSize.x * pack.trueSize.y * 4; j++ )
-			{
-				int	v = pack.imageData[ j ];
-				int	x = j & 3;
-				v = v * 255 / maxV[x];
-				pack.imageData[ j ] = v;
-			}
+			int	v = pack.imageData[ j ];
+			int	x = j & 3;
+			v = v * 255 / maxV[x];
+			pack.imageData[ j ] = v;
 		}
 
 		assert( ( x + blockWidth ) * 4 <= atlasWidth );
@@ -329,13 +198,9 @@ void idSWF::WriteSwfImageAtlas( const char* filename )
 		entry->imageSize.y = pack.trueSize.y;
 		entry->imageAtlasOffset.x = x + 1;
 		entry->imageAtlasOffset.y = y + 1;
-
-		if( swf_useChannelScale.GetBool() )
+		for( int i = 0; i < 4; i++ )
 		{
-			for( int i = 0; i < 4; i++ )
-			{
-				entry->channelScale[i] = maxV[i] / 255.0f;
-			}
+			entry->channelScale[i] = maxV[i] / 255.0f;
 		}
 
 		Mem_Free( pack.imageData );
@@ -404,7 +269,7 @@ void idSWF::JPEGTables( idSWFBitStream& bitstream )
 		return;
 	}
 	int width, height;
-	jpeg.Load( bitstream.ReadData( bitstream.Length() ), bitstream.Length(), width, height );
+	LoadJPEG( bitstream.ReadData( bitstream.Length() ), bitstream.Length(), width, height );
 }
 
 /*
@@ -420,7 +285,7 @@ void idSWF::DefineBits( idSWFBitStream& bitstream )
 	int jpegSize = bitstream.Length() - sizeof( uint16 );
 
 	int width, height;
-	byte* imageData = jpeg.Load( bitstream.ReadData( jpegSize ), jpegSize, width, height );
+	byte* imageData = LoadJPEG( bitstream.ReadData( jpegSize ), jpegSize, width, height );
 	if( imageData == NULL )
 	{
 		return;
@@ -441,12 +306,10 @@ void idSWF::DefineBitsJPEG2( idSWFBitStream& bitstream )
 {
 	uint16 characterID = bitstream.ReadU16();
 
-	idDecompressJPEG jpeg;
-
 	int jpegSize = bitstream.Length() - sizeof( uint16 );
 
 	int width, height;
-	byte* imageData = jpeg.Load( bitstream.ReadData( jpegSize ), jpegSize, width, height );
+	byte* imageData = LoadJPEG( bitstream.ReadData( jpegSize ), jpegSize, width, height );
 	if( imageData == NULL )
 	{
 		return;
@@ -468,10 +331,8 @@ void idSWF::DefineBitsJPEG3( idSWFBitStream& bitstream )
 	uint16 characterID = bitstream.ReadU16();
 	uint32 jpegSize = bitstream.ReadU32();
 
-	idDecompressJPEG jpeg;
-
 	int width, height;
-	byte* imageData = jpeg.Load( bitstream.ReadData( jpegSize ), jpegSize, width, height );
+	byte* imageData = LoadJPEG( bitstream.ReadData( jpegSize ), jpegSize, width, height );
 	if( imageData == NULL )
 	{
 		return;

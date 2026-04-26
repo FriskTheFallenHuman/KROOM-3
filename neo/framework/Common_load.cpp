@@ -940,7 +940,8 @@ bool idCommonLocal::SaveGame( const char* saveName )
 
 	bool autosave = idStr::Icmp( saveName, "autosave" ) != 0;
 
-	if ( autosave ) {
+	if( autosave )
+	{
 		soundWorld->Pause();
 		soundSystem->SetPlayingSoundWorld( menuSoundWorld );
 		soundSystem->Render();
@@ -953,10 +954,11 @@ bool idCommonLocal::SaveGame( const char* saveName )
 	}
 	else
 	{
-		if ( autosave ) {
+		if( autosave )
+		{
 			// Here make sure we pump the gui enough times to show the 'saving' dialog
 			const bool captureToImage = false;
-			for ( int i = 0; i < NumScreenUpdatesToShowDialog; ++i )
+			for( int i = 0; i < NumScreenUpdatesToShowDialog; ++i )
 			{
 				UpdateScreen( captureToImage );
 			}

@@ -148,7 +148,7 @@ class idCommonLocal : public idCommon
 public:
 	idCommonLocal();
 
-	virtual void				Init( int argc, const char* const* argv, const char* cmdline );
+	virtual void				Init( int argc, char* const* argv );
 	virtual void				Shutdown();
 	virtual	void				CreateMainMenu();
 	virtual void				Quit();
@@ -162,7 +162,7 @@ public:
 //	virtual void				UpdateLevelLoadPacifier( bool Secondary );
 //	virtual void				UpdateLevelLoadPacifier( bool updateSecondary, int mProgress );
 	virtual void				StartupVariable( const char* match );
-	virtual void				InitTool( const toolFlag_t tool, const idDict *dict );
+	virtual void				InitTool( const toolFlag_t tool, const idDict* dict );
 	virtual void				ActivateTool( bool active );
 	virtual void				WriteConfigToFile( const char* filename );
 	virtual void				BeginRedirect( char* buffer, int buffersize, void ( *flush )( const char* ) );
@@ -615,7 +615,7 @@ private:
 	void	InitCommands();
 	void	InitSIMD();
 	void	AddStartupCommands();
-	void	ParseCommandLine( int argc, const char* const* argv );
+	void	ParseCommandLine( int argc, char* const* argv );
 	bool	SafeMode();
 	void	CheckToolMode();
 	void	CloseLogFile();

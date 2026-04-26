@@ -28,7 +28,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __SWF_SPRITEINSTANCE_H__
 #define __SWF_SPRITEINSTANCE_H__
 
-// RB: moved here
 #define PlaceFlagHasClipActions		BIT( 7 )
 #define PlaceFlagHasClipDepth		BIT( 6 )
 #define PlaceFlagHasName			BIT( 5 )
@@ -46,7 +45,6 @@ If you have questions concerning this license or the applicable additional terms
 #define PlaceFlagCacheAsBitmap		BIT( 2 )
 #define PlaceFlagHasBlendMode		BIT( 1 )
 #define PlaceFlagHasFilterList		BIT( 0 )
-// RB end
 
 /*
 ================================================
@@ -296,7 +294,5 @@ public:
 	SWF_NATIVE_VAR_DECLARE( onEnterFrame );
 	//SWF_NATIVE_VAR_DECLARE( onLoad );
 };
-
-extern idSWFScriptObject_SpriteInstancePrototype spriteInstanceScriptObjectPrototype;
 
 #endif

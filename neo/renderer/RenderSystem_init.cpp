@@ -1445,8 +1445,6 @@ GfxInfo_f
 */
 void GfxInfo_f( const idCmdArgs& args )
 {
-	common->Printf( "CPU: %s\n", Sys_GetProcessorString() );
-
 	const char* fsstrings[] =
 	{
 		"windowed",
@@ -2348,7 +2346,7 @@ idRenderSystemLocal::CalcFov
 Calculates the horizontal and vertical field of view based on a horizontal field of view and custom aspect ratio
 ====================
 */
-void idRenderSystemLocal::CalcFov( float base_fov, float &fov_x, float &fov_y, const int width, const int height, const float correctYAspect ) const
+void idRenderSystemLocal::CalcFov( float base_fov, float& fov_x, float& fov_y, const int width, const int height, const float correctYAspect ) const
 {
 	float	x;
 	float	y;
@@ -2357,64 +2355,68 @@ void idRenderSystemLocal::CalcFov( float base_fov, float &fov_x, float &fov_y, c
 
 	// first, calculate the vertical fov based on a 640x480 view
 	x = width / idMath::Tan( base_fov / 360.0f * idMath::PI );
-	if ( correctYAspect > 0.f ) {
+	if( correctYAspect > 0.f )
+	{
 		x /= correctYAspect;
 	}
 	y = idMath::ATan( height, x );
 	fov_y = y * 360.0f / idMath::PI;
 
-	switch( r_aspectRatio.GetInteger() ) {
-	default:
-	case -1 :
-		// auto mode => use aspect ratio from resolution, assuming screen's pixels are squares
-		ratio_x = renderSystem->GetWidth();
-		ratio_y = renderSystem->GetHeight();
-		if(ratio_x <= 0.0f || ratio_y <= 0.0f)
-		{
-			// for some reason (maybe this is a dedicated server?) GetScreenWidth()/Height()
-			// returned 0. Assume default 4:3 to avoid assert()/Error() below.
+	switch( r_aspectRatio.GetInteger() )
+	{
+		default:
+		case -1 :
+			// auto mode => use aspect ratio from resolution, assuming screen's pixels are squares
+			ratio_x = renderSystem->GetWidth();
+			ratio_y = renderSystem->GetHeight();
+			if( ratio_x <= 0.0f || ratio_y <= 0.0f )
+			{
+				// for some reason (maybe this is a dedicated server?) GetScreenWidth()/Height()
+				// returned 0. Assume default 4:3 to avoid assert()/Error() below.
+				fov_x = base_fov;
+				return;
+			}
+			break;
+
+		case 0:
+			// 4:3
 			fov_x = base_fov;
 			return;
-		}
-		break;
 
-	case 0:
-		// 4:3
-		fov_x = base_fov;
-		return;
+		case 1:
+			// 16:9
+			ratio_x = 16.0f;
+			ratio_y = 9.0f;
+			break;
 
-	case 1:
-		// 16:9
-		ratio_x = 16.0f;
-		ratio_y = 9.0f;
-		break;
+		case 2:
+			// 16:10
+			ratio_x = 16.0f;
+			ratio_y = 10.0f;
+			break;
 
-	case 2:
-		// 16:10
-		ratio_x = 16.0f;
-		ratio_y = 10.0f;
-		break;
+		case 3:
+			// 5:4
+			ratio_x = 5.0f;
+			ratio_y = 4.0f;
+			break;
 
-	case 3:
-		// 5:4
-		ratio_x = 5.0f;
-		ratio_y = 4.0f;
-		break;
-
-	case 4:
-		// custom
-		ratio_x = r_customAspectRatioH.GetFloat();
-		ratio_y = r_customAspectRatioV.GetFloat();
-		break;
+		case 4:
+			// custom
+			ratio_x = r_customAspectRatioH.GetFloat();
+			ratio_y = r_customAspectRatioV.GetFloat();
+			break;
 	}
 
 	y = ratio_y / idMath::Tan( fov_y / 360.0f * idMath::PI );
-	if ( correctYAspect > 0.f ) {
-		y *= (height/(float)width) * (SCREEN_WIDTH / (float)SCREEN_HEIGHT);
+	if( correctYAspect > 0.f )
+	{
+		y *= ( height / ( float )width ) * ( SCREEN_WIDTH / ( float )SCREEN_HEIGHT );
 	}
 	fov_x = idMath::ATan( ratio_x, y ) * 360.0f / idMath::PI;
 
-	if ( fov_x < base_fov && correctYAspect == 0.0f ) {
+	if( fov_x < base_fov && correctYAspect == 0.0f )
+	{
 		fov_x = base_fov;
 		x = ratio_x / idMath::Tan( fov_x / 360.0f * idMath::PI );
 		fov_y = idMath::ATan( ratio_y, x ) * 360.0f / idMath::PI;

@@ -1585,7 +1585,7 @@ void RenderBumpFlat_f( const idCmdArgs& args )
 	glMatrixMode( GL_PROJECTION );
 	glLoadIdentity();
 	glOrtho( bounds[0][0], bounds[1][0], bounds[0][2],
-			  bounds[1][2], -( bounds[0][1] - 1 ), -( bounds[1][1] + 1 ) );
+			 bounds[1][2], -( bounds[0][1] - 1 ), -( bounds[1][1] + 1 ) );
 
 	glMatrixMode( GL_MODELVIEW );
 	glLoadIdentity();

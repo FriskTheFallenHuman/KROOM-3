@@ -147,13 +147,13 @@ extern int			com_editors;			// current active editor(s)
 extern bool			com_editorActive;		// true if an editor has focus
 
 #ifdef _WIN32
-const char			DMAP_MSGID[] = "DMAPOutput";
-const char			DMAP_DONE[] = "DMAPDone";
-extern HWND			com_hwndMsg;
-extern bool			com_outputMsg;
-extern unsigned int	com_msgID;
+	const char			DMAP_MSGID[] = "DMAPOutput";
+	const char			DMAP_DONE[] = "DMAPDone";
+	extern HWND			com_hwndMsg;
+	extern bool			com_outputMsg;
+	extern unsigned int	com_msgID;
 
-bool FindEditor();
+	bool FindEditor();
 #endif
 
 struct MemInfo_t
@@ -201,7 +201,7 @@ public:
 	// Initialize everything.
 	// if the OS allows, pass argc/argv directly (without executable name)
 	// otherwise pass the command line in a single string (without executable name)
-	virtual void				Init( int argc, const char* const* argv, const char* cmdline ) = 0;
+	virtual void				Init( int argc, char* const* argv ) = 0;
 
 	// Shuts down everything.
 	virtual void				Shutdown() = 0;
@@ -235,7 +235,7 @@ public:
 	virtual void				StartupVariable( const char* match ) = 0;
 
 	// Initializes a tool with the given dictionary.
-	virtual void				InitTool( const toolFlag_t tool, const idDict *dict ) = 0;
+	virtual void				InitTool( const toolFlag_t tool, const idDict* dict ) = 0;
 
 	// Activates or deactivates a tool.
 	virtual void				ActivateTool( bool active ) = 0;

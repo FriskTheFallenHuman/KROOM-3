@@ -29,7 +29,8 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "../../idlib/precompiled.h"
+#include "precompiled.h"
+#pragma hdrstop
 
 // DG: SDL.h somehow needs the following functions, so #undef those silly
 //     "don't use" #defines from Str.h
@@ -51,21 +52,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "sdl_local.h"
 
 idCVar in_nograb( "in_nograb", "0", CVAR_SYSTEM | CVAR_NOCHEAT, "prevents input grabbing" );
-
-// RB: FIXME this shit. We need the OpenGL alpha channel for advanced rendering effects
-idCVar r_waylandcompat( "r_waylandcompat", "0", CVAR_SYSTEM | CVAR_NOCHEAT | CVAR_ARCHIVE, "wayland compatible framebuffer" );
-
-// RB: only relevant if using SDL 2.0
-#if defined(__APPLE__)
-	// only core profile is supported on OS X
-	idCVar r_useOpenGL32( "r_useOpenGL32", "2", CVAR_INTEGER, "0 = OpenGL 3.x, 1 = OpenGL 3.2 compatibility profile, 2 = OpenGL 3.2 core profile", 0, 2 );
-#elif defined(__linux__)
-	// Linux open source drivers suck
-	idCVar r_useOpenGL32( "r_useOpenGL32", "0", CVAR_INTEGER, "0 = OpenGL 3.x, 1 = OpenGL 3.2 compatibility profile, 2 = OpenGL 3.2 core profile", 0, 2 );
-#else
-	idCVar r_useOpenGL32( "r_useOpenGL32", "1", CVAR_INTEGER, "0 = OpenGL 3.x, 1 = OpenGL 3.2 compatibility profile, 2 = OpenGL 3.2 core profile", 0, 2 );
-#endif
-// RB end
 
 static bool grabbed = false;
 
@@ -454,7 +440,6 @@ bool VKimp_SetScreenParms( glimpParms_t parms )
 	}
 
 	glConfig.isFullscreen = parms.fullScreen;
-	glConfig.isStereoPixelFormat = parms.stereo;
 	glConfig.nativeScreenWidth = parms.width;
 	glConfig.nativeScreenHeight = parms.height;
 	glConfig.displayFrequency = parms.displayHz;
@@ -547,114 +532,4 @@ void VKimp_GrabInput( int flags )
 	SDL_SetRelativeMouseMode( flags & GRAB_ENABLE ? SDL_TRUE : SDL_FALSE );
 	SDL_SetWindowGrab( window, grab ? SDL_TRUE : SDL_FALSE );
 
-}
-
-/*
-====================
-DumpAllDisplayDevices
-====================
-*/
-void DumpAllDisplayDevices()
-{
-	common->DPrintf( "TODO: DumpAllDisplayDevices\n" );
-}
-
-class idSort_VidMode : public idSort_Quick< vidMode_t, idSort_VidMode >
-{
-public:
-	int Compare( const vidMode_t& a, const vidMode_t& b ) const
-	{
-		int wd = a.width - b.width;
-		int hd = a.height - b.height;
-		int fd = a.displayHz - b.displayHz;
-		return ( hd != 0 ) ? hd : ( wd != 0 ) ? wd : fd;
-	}
-};
-
-// RB: resolutions supported by XreaL
-static void FillStaticVidModes( idList<vidMode_t>& modeList )
-{
-	modeList.AddUnique( vidMode_t( 320,   240, 60 ) );
-	modeList.AddUnique( vidMode_t( 400,   300, 60 ) );
-	modeList.AddUnique( vidMode_t( 512,   384, 60 ) );
-	modeList.AddUnique( vidMode_t( 640,   480, 60 ) );
-	modeList.AddUnique( vidMode_t( 800,   600, 60 ) );
-	modeList.AddUnique( vidMode_t( 960,   720, 60 ) );
-	modeList.AddUnique( vidMode_t( 1024,  768, 60 ) );
-	modeList.AddUnique( vidMode_t( 1152,  864, 60 ) );
-	modeList.AddUnique( vidMode_t( 1280,  720, 60 ) );
-	modeList.AddUnique( vidMode_t( 1280,  768, 60 ) );
-	modeList.AddUnique( vidMode_t( 1280,  800, 60 ) );
-	modeList.AddUnique( vidMode_t( 1280, 1024, 60 ) );
-	modeList.AddUnique( vidMode_t( 1360,  768, 60 ) );
-	modeList.AddUnique( vidMode_t( 1440,  900, 60 ) );
-	modeList.AddUnique( vidMode_t( 1680, 1050, 60 ) );
-	modeList.AddUnique( vidMode_t( 1600, 1200, 60 ) );
-	modeList.AddUnique( vidMode_t( 1920, 1080, 60 ) );
-	modeList.AddUnique( vidMode_t( 1920, 1200, 60 ) );
-	modeList.AddUnique( vidMode_t( 2048, 1536, 60 ) );
-	modeList.AddUnique( vidMode_t( 2560, 1600, 60 ) );
-
-	modeList.SortWithTemplate( idSort_VidMode() );
-}
-
-/*
-====================
-R_GetModeListForDisplay
-====================
-*/
-bool R_GetModeListForDisplay( const int requestedDisplayNum, idList<vidMode_t>& modeList )
-{
-	assert( requestedDisplayNum >= 0 );
-
-	modeList.Clear();
-
-	// DG: SDL2 implementation
-	if( requestedDisplayNum >= SDL_GetNumVideoDisplays() )
-	{
-		// requested invalid displaynum
-		return false;
-	}
-
-	int numModes = SDL_GetNumDisplayModes( requestedDisplayNum );
-	if( numModes > 0 )
-	{
-		for( int i = 0; i < numModes; i++ )
-		{
-			SDL_DisplayMode m;
-			int ret = SDL_GetDisplayMode( requestedDisplayNum, i, &m );
-			if( ret != 0 )
-			{
-				common->Warning( "Can't get video mode no %i, because of %s\n", i, SDL_GetError() );
-				continue;
-			}
-
-			vidMode_t mode;
-			mode.width = m.w;
-			mode.height = m.h;
-			mode.displayHz = m.refresh_rate ? m.refresh_rate : 60; // default to 60 if unknown (0)
-			modeList.AddUnique( mode );
-		}
-
-		if( modeList.Num() < 1 )
-		{
-			common->Warning( "Couldn't get a single video mode for display %i, using default ones..!\n", requestedDisplayNum );
-			FillStaticVidModes( modeList );
-		}
-
-		// sort with lowest resolution first
-		modeList.SortWithTemplate( idSort_VidMode() );
-	}
-	else
-	{
-		common->Warning( "Can't get Video Info, using default modes...\n" );
-		if( numModes < 0 )
-		{
-			common->Warning( "Reason was: %s\n", SDL_GetError() );
-		}
-		FillStaticVidModes( modeList );
-	}
-
-	return true;
-	// DG end
 }

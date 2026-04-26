@@ -41,6 +41,11 @@ const int GRAB_SETSTATE		= ( 1 << 3 );
 #else
 	void GLimp_GrabInput( int flags );
 #endif
-char*	Sys_ConsoleInput();
 
+#ifndef _WIN32
+	char*	Sys_ConsoleInput();
 #endif
+
+void Sys_SDLIcon( SDL_Window* window );
+
+#endif /* !__SDL_LOCAL_H__ */
