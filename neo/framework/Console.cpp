@@ -66,7 +66,7 @@ public:
 	virtual	void		Print( const char* text );
 	virtual	void		Draw( bool forceFullScreen );
 
-	virtual void		PrintOverlay( idOverlayHandle& handle, justify_t justify, VERIFY_FORMAT_STRING const char* text, idVec4& textColor, const bool showbackground, textSize_t size, ... );
+	virtual void		PrintOverlay( idOverlayHandle& handle, justify_t justify, VERIFY_FORMAT_STRING const char* text, idVec4& textColor, bool showbackground, textSize_t size, ... );
 
 	virtual idDebugGraph* 	CreateGraph( int numItems );
 	virtual void			DestroyGraph( idDebugGraph* graph );
@@ -380,37 +380,37 @@ float idConsoleLocal::DrawFPS( float y )
 	}
 
 	timeStr.Format( "GENERAL: views:%i draws:%i tris:%i (shdw:%i)",
-							commonLocal.stats_frontend.c_numViews,
-							commonLocal.stats_backend.c_drawElements + commonLocal.stats_backend.c_shadowElements,
-							( commonLocal.stats_backend.c_drawIndexes + commonLocal.stats_backend.c_shadowIndexes ) / 3,
-							commonLocal.stats_backend.c_shadowIndexes / 3 );
+					commonLocal.stats_frontend.c_numViews,
+					commonLocal.stats_backend.c_drawElements + commonLocal.stats_backend.c_shadowElements,
+					( commonLocal.stats_backend.c_drawIndexes + commonLocal.stats_backend.c_shadowIndexes ) / 3,
+					commonLocal.stats_backend.c_shadowIndexes / 3 );
 	CREATE_OVERLAY( gviews, timeStr, JUSTIFY_RIGHT, colorCyan, TEXTSIZE_SMALL, false );
 
 	if( com_showFPS.GetInteger() > 2 )
 	{
 		timeStr.Format( "DYNAMIC: callback:%-2i md5:%i dfrmVerts:%i dfrmTris:%i tangTris:%i guis:%i",
-							commonLocal.stats_frontend.c_entityDefCallbacks,
-							commonLocal.stats_frontend.c_generateMd5,
-							commonLocal.stats_frontend.c_deformedVerts,
-							commonLocal.stats_frontend.c_deformedIndexes / 3,
-							commonLocal.stats_frontend.c_tangentIndexes / 3,
-							commonLocal.stats_frontend.c_guiSurfs );
+						commonLocal.stats_frontend.c_entityDefCallbacks,
+						commonLocal.stats_frontend.c_generateMd5,
+						commonLocal.stats_frontend.c_deformedVerts,
+						commonLocal.stats_frontend.c_deformedIndexes / 3,
+						commonLocal.stats_frontend.c_tangentIndexes / 3,
+						commonLocal.stats_frontend.c_guiSurfs );
 		CREATE_OVERLAY( gdyncallbacks, timeStr, JUSTIFY_RIGHT, colorLtGrey, TEXTSIZE_SMALL, false );
 
 		timeStr.Format( "ADDMODEL: callback:%-2i createInteractions:%i createShadowVolumes:%i",
-							commonLocal.stats_frontend.c_entityDefCallbacks,
-							commonLocal.stats_frontend.c_createInteractions,
-							commonLocal.stats_frontend.c_createShadowVolumes );
+						commonLocal.stats_frontend.c_entityDefCallbacks,
+						commonLocal.stats_frontend.c_createInteractions,
+						commonLocal.stats_frontend.c_createShadowVolumes );
 		CREATE_OVERLAY( gaddModel, timeStr, JUSTIFY_RIGHT, colorLtGrey, TEXTSIZE_SMALL, false );
 
 		timeStr.Format( "viewEntities:%-3i  shadowEntities:%-3i  viewLights:%i\n",	commonLocal.stats_frontend.c_visibleViewEntities,
-							commonLocal.stats_frontend.c_shadowViewEntities,
-							commonLocal.stats_frontend.c_viewLights );
+						commonLocal.stats_frontend.c_shadowViewEntities,
+						commonLocal.stats_frontend.c_viewLights );
 		CREATE_OVERLAY( gviewEnts, timeStr, JUSTIFY_RIGHT, colorLtGrey, TEXTSIZE_SMALL, false );
 
 		timeStr.Format( "UPDATES: entityUpdates:%-3i  entityRefs:%-3i  lightUpdates:%-2i  lightRefs:%i\n",
-							commonLocal.stats_frontend.c_entityUpdates, commonLocal.stats_frontend.c_entityReferences,
-							commonLocal.stats_frontend.c_lightUpdates, commonLocal.stats_frontend.c_lightReferences );
+						commonLocal.stats_frontend.c_entityUpdates, commonLocal.stats_frontend.c_entityReferences,
+						commonLocal.stats_frontend.c_lightUpdates, commonLocal.stats_frontend.c_lightReferences );
 		CREATE_OVERLAY( gEntsupdates, timeStr, JUSTIFY_RIGHT, colorLtGrey, TEXTSIZE_SMALL, false );
 	}
 

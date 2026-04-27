@@ -26,30 +26,24 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#ifndef __SYS_FILESYSTEM_H__
-#define __SYS_FILESYSTEM_H__
+#ifndef __SYS_STACKTRACE_H__
+#define __SYS_STACKTRACE_H__
 
-void			Sys_Mkdir( const char* path );
-bool			Sys_Rmdir( const char* path );
-bool			Sys_IsFileWritable( const char* path );
+static const int MAX_LEN = 88;
 
-enum sysFolder_t
+struct debugStackFrame_t
 {
-	FOLDER_ERROR	= -1,
-	FOLDER_NO		= 0,
-	FOLDER_YES		= 1
+	void* pointer;
+	char functionName[MAX_LEN];
+	char fileName[MAX_LEN];
+	int lineNumber;
 };
+void Sys_CaptureStackTrace( int ignoreFrames, uint8* data, int& len );
+int Sys_GetStackTraceFramesCount( uint8* data, int len );
+void Sys_DecodeStackTrace( uint8* data, int len, debugStackFrame_t* frames );
+#ifdef _WIN32
+	void Sys_CaptureExceptionStack( EXCEPTION_POINTERS* exceptionInfo );
+	void Sys_WriteMiniDump( EXCEPTION_POINTERS* exceptionInfo );
+#endif
 
-// returns FOLDER_YES if the specified path is a folder
-sysFolder_t		Sys_IsFolder( const char* path );
-
-// use fs_debug to verbose Sys_ListFiles
-// returns -1 if directory was not found (the list is cleared)
-int				Sys_ListFiles( const char* directory, const char* extension, idList<class idStr>& list );
-
-const char* 	Sys_EXEPath();
-const char* 	Sys_CWD();
-
-const char* 	Sys_LaunchPath();
-
-#endif /* !__SYS_FILESYSTEM_H__ */
+#endif /* !__SYS_STACKTRACE_H__ */

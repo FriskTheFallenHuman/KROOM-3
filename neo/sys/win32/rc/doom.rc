@@ -7,11 +7,7 @@
 //
 // Generated from the TEXTINCLUDE 2 resource.
 //
-#if defined(USE_MFC_TOOLS)
-#include "afxres.h"
-#else
-#include <winresrc.h>
-#endif
+#include "winresrc.h"
 
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
@@ -42,7 +38,7 @@ END
 
 2 TEXTINCLUDE 
 BEGIN
-    "#include ""afxres.h""\r\n"
+    "#include ""winresrc.h""\r\n"
     "\0"
 END
 
@@ -57,6 +53,66 @@ END
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 IDI_ICON1               ICON                    "res\\game.ico"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ASSERT_DIALOG DIALOGEX 0, 0, 307, 75
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Assertion Failed!"
+FONT 8, "MS Sans Serif", 0, 0, 0x0
+BEGIN
+    LTEXT           "File:",IDC_NOID,7,7,23,9
+    LTEXT           "c:/doom3/neo/stuff.cpp",IDC_FILENAME,36,7,252,8
+    LTEXT           "Line:",IDC_NOID,7,18,23,9
+    LTEXT           "45",IDC_LINE_CONTROL,36,18,217,8
+    LTEXT           "Assert:",IDC_NOID,7,29,23,9
+    CONTROL         "ASSERT MESSAGE",IDC_ASSERT_MSG_CTRL,"Static",SS_LEFTNOWORDWRAP | SS_NOPREFIX | WS_GROUP,36,29,217,9
+    DEFPUSHBUTTON   "&Break",IDC_BREAK,33,49,73,14
+    PUSHBUTTON      "&Skip This Assert",IDC_SKIP_ASSERT,113,49,82,14
+    PUSHBUTTON      "Skip &All Asserts",IDC_SKIP_ALL,204,49,73,14
+END
+
+IDD_CRASH_DIALOG DIALOGEX 0, 0, 382, 262
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "Doom 3 BFG Unhandled Exception"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    LTEXT           "",ID_CRASH_TEXT,7,7,368,36
+    CONTROL         "",ID_CRASH_TABS,"SysTabControl32",WS_TABSTOP,7,47,368,174
+    CONTROL         "",ID_STACK_VIEW,"SysListView32",LVS_REPORT | LVS_ALIGNLEFT | WS_BORDER | WS_VSCROLL | WS_TABSTOP,14,67,354,146
+    CONTROL         "",ID_EXCEPTION_VIEW,"SysListView32",LVS_REPORT | LVS_ALIGNLEFT | LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,14,67,354,146
+    EDITTEXT        IDC_REGISTER_EDIT,14,67,354,146,ES_MULTILINE | ES_READONLY | ES_AUTOHSCROLL | ES_AUTOVSCROLL | WS_VSCROLL | WS_HSCROLL | NOT WS_TABSTOP
+    PUSHBUTTON      "Report on GitHub",IDC_REPORT_GITHUB,225,242,100,14
+    PUSHBUTTON      "Close",IDCLOSE,330,242,45,14
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_ASSERT_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 300
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 68
+    END
+
+    IDD_CRASH_DIALOG, DIALOG
+    BEGIN
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -94,6 +150,22 @@ BEGIN
     BEGIN
         VALUE "Translation", 0x409, 1200
     END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_ASSERT_DIALOG AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_CRASH_DIALOG AFX_DIALOG_LAYOUT
+BEGIN
+    0
 END
 
 #endif    // English (United States) resources

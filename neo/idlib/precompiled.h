@@ -45,6 +45,8 @@ If you have questions concerning this license or the applicable additional terms
 #include "sys/sys_public.h"
 
 // id lib
+#include "sys/sys_stacktrace.h"
+
 #include "idlib/Lib.h"
 
 #include "sys/sys_filesystem.h"

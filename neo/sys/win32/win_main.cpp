@@ -1218,6 +1218,14 @@ void Win_Frame()
 	if( win32.win_viewlog.IsModified() )
 	{
 		win32.win_viewlog.ClearModified();
+		if( win32.win_viewlog.GetBool() )
+		{
+			Sys_ShowConsole();
+		}
+		else
+		{
+			Sys_HideConsole();
+		}
 	}
 }
 
@@ -1269,6 +1277,10 @@ WinMain
 
 	// done before Com/Sys_Init since we need this for error output
 	Sys_CreateConsole();
+
+	// Register the unhandled exception
+	LONG WINAPI Sys_UnhandledExceptionFilter( EXCEPTION_POINTERS * exceptionInfo );
+	SetUnhandledExceptionFilter( Sys_UnhandledExceptionFilter );
 
 	// no abort/retry/fail errors
 	SetErrorMode( SEM_FAILCRITICALERRORS );
@@ -1404,15 +1416,6 @@ void idSysLocal::StartProcess( const char* exePath, bool doexit )
 	{
 		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "quit\n" );
 	}
-}
-
-/*
-==================
-Sys_SetFatalError
-==================
-*/
-void Sys_SetFatalError( const char* error )
-{
 }
 
 /*

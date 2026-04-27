@@ -297,6 +297,27 @@ void idLib::PrintfIf( const bool test, const char* fmt, ... )
 }
 
 /*
+===============
+idLib::PrintCallStack
+===============
+*/
+void idLib::PrintCallStack()
+{
+	uint8 traceData[4096];
+
+	int traceSize = sizeof( traceData );
+	uint32 hash = idDebugSystem::GetStack( traceData, traceSize );
+	idList<debugStackFrame_t, TAG_CRAP> callstack;
+	idDebugSystem::DecodeStack( traceData, traceSize, callstack );
+	idDebugSystem::CleanStack( callstack );
+	callstack.RemoveIndex( 0 );	//drop this function
+	char message[4096];
+	idDebugSystem::StringifyStack( hash, callstack.Ptr(), callstack.Num(), message, sizeof( message ) );
+
+	Printf( message );
+}
+
+/*
 ===============================================================================
 
 	Byte order functions

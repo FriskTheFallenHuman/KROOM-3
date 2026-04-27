@@ -325,9 +325,14 @@ system to be completely regenerated if needed.
 idImage* idImageManager::ImageFromFunction( const char* _name, void ( *generatorFunction )( idImage* image ) )
 {
 
-	// strip any .tga file extensions from anywhere in the _name
+	// strip any image file extensions from anywhere in the _name
 	idStr name = _name;
 	name.Replace( ".tga", "" );
+	name.Replace( ".bmp", "" );
+	name.Replace( ".jpg", "" );
+	name.Replace( ".png", "" );
+	name.Replace( ".exr", "" );
+	name.Replace( ".hdr", "" );
 	name.BackSlashesToSlashes();
 
 	// see if the image already exists

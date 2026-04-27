@@ -64,6 +64,9 @@ If you have questions concerning this license or the applicable additional terms
 	#define	PORT_SERVER					"27015"
 #endif
 
+// base folder where the source code lives
+#define SOURCE_CODE_BASE_FOLDER			"neo"
+
 // <= Doom v1.1: 1. no DS_VERSION token ( default )
 // Doom v1.2:  2
 // Doom 3 BFG: 3

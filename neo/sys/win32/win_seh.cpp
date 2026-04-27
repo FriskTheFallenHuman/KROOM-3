@@ -26,30 +26,43 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#ifndef __SYS_FILESYSTEM_H__
-#define __SYS_FILESYSTEM_H__
+#include "precompiled.h"
+#pragma hdrstop
 
-void			Sys_Mkdir( const char* path );
-bool			Sys_Rmdir( const char* path );
-bool			Sys_IsFileWritable( const char* path );
+#include "win_local.h"
 
-enum sysFolder_t
+extern HWND FindParentWindow();
+extern HINSTANCE GetApplicationInstance();
+INT_PTR CALLBACK CrashHandlerDialogProc( HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam );
+
+/*
+** Sys_UnhandledExceptionFilter
+*/
+LONG CALLBACK Sys_UnhandledExceptionFilter( EXCEPTION_POINTERS* exceptionInfo )
 {
-	FOLDER_ERROR	= -1,
-	FOLDER_NO		= 0,
-	FOLDER_YES		= 1
-};
+	static volatile LONG entered = 0;
+	if( InterlockedExchange( &entered, 1 ) != 0 )
+	{
+		return EXCEPTION_EXECUTE_HANDLER;
+	}
 
-// returns FOLDER_YES if the specified path is a folder
-sysFolder_t		Sys_IsFolder( const char* path );
+	// Capture the call stack NOW.
+	Sys_CaptureExceptionStack( exceptionInfo );
 
-// use fs_debug to verbose Sys_ListFiles
-// returns -1 if directory was not found (the list is cleared)
-int				Sys_ListFiles( const char* directory, const char* extension, idList<class idStr>& list );
+	// Write the minidump.
+	Sys_WriteMiniDump( exceptionInfo );
 
-const char* 	Sys_EXEPath();
-const char* 	Sys_CWD();
+	// Minimise the game window.
+	//if ( win32.hWnd ) {
+	//	ShowWindow( win32.hWnd, SW_MINIMIZE );
+	//}
+	Sys_ShowWindow( false );
 
-const char* 	Sys_LaunchPath();
+	// Show the crash dialog.
+	HWND hParent = FindParentWindow();
+	HINSTANCE hInst = GetApplicationInstance();
+	DialogBox( hInst, MAKEINTRESOURCE( 4001 /*IDD_CRASH_DIALOG*/ ), hParent, CrashHandlerDialogProc );
 
-#endif /* !__SYS_FILESYSTEM_H__ */
+	// Let Windows terminate the process normally.
+	return EXCEPTION_EXECUTE_HANDLER;
+}

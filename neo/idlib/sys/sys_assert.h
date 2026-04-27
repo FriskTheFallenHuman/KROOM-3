@@ -87,7 +87,6 @@ bool AssertFailed( const char* file, int line, const char* expression );
 
 #define release_assert( x )	idreleaseassert( x )
 
-// RB: changed UINT_PTR to uintptr_t
 #define assert_2_byte_aligned( ptr )		assert( ( ((uintptr_t)(ptr)) &  1 ) == 0 )
 #define assert_4_byte_aligned( ptr )		assert( ( ((uintptr_t)(ptr)) &  3 ) == 0 )
 #define assert_8_byte_aligned( ptr )		assert( ( ((uintptr_t)(ptr)) &  7 ) == 0 )
@@ -96,12 +95,13 @@ bool AssertFailed( const char* file, int line, const char* expression );
 #define assert_64_byte_aligned( ptr )		assert( ( ((uintptr_t)(ptr)) & 63 ) == 0 )
 #define assert_128_byte_aligned( ptr )		assert( ( ((uintptr_t)(ptr)) & 127 ) == 0 )
 #define assert_aligned_to_type_size( ptr )	assert( ( ((uintptr_t)(ptr)) & ( sizeof( (ptr)[0] ) - 1 ) ) == 0 )
-// RB end
 
-#if !defined( _lint )	// pcLint has problems with assert_offsetof()
+#if !defined( __TYPEINFOGEN__ ) && !defined( _lint )	// pcLint has problems with assert_offsetof()
 
-#if __cplusplus >= 201103L
-#define compile_time_assert( x ) static_assert( x, "Assertion failure" )
+#if __cplusplus >= 201703L
+
+#define compile_time_assert( x )			static_assert( x );
+
 #else
 template<bool> struct compile_time_assert_failed;
 template<> struct compile_time_assert_failed<true> {};
@@ -109,7 +109,6 @@ template<int x> struct compile_time_assert_test {};
 #define compile_time_assert_join2( a, b )	a##b
 #define compile_time_assert_join( a, b )	compile_time_assert_join2(a,b)
 #define compile_time_assert( x )			typedef compile_time_assert_test<sizeof(compile_time_assert_failed<(bool)(x)>)> compile_time_assert_join(compile_time_assert_typedef_, __LINE__)
-#endif
 
 #define assert_sizeof( type, size )						compile_time_assert( sizeof( type ) == size )
 #define assert_sizeof_8_byte_multiple( type )			compile_time_assert( ( sizeof( type ) &  7 ) == 0 )
@@ -117,6 +116,8 @@ template<int x> struct compile_time_assert_test {};
 #define assert_offsetof( type, field, offset )			compile_time_assert( offsetof( type, field ) == offset )
 #define assert_offsetof_8_byte_multiple( type, field )	compile_time_assert( ( offsetof( type, field ) & 7 ) == 0 )
 #define assert_offsetof_16_byte_multiple( type, field )	compile_time_assert( ( offsetof( type, field ) & 15 ) == 0 )
+
+#endif
 
 #else
 

@@ -25,31 +25,80 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
+#ifndef __SYS_EXCEPTIONS_H__
+#define __SYS_EXCEPTIONS_H__
 
-#ifndef __SYS_FILESYSTEM_H__
-#define __SYS_FILESYSTEM_H__
+static const int MAX_ERROR_LEN = 2048;
 
-void			Sys_Mkdir( const char* path );
-bool			Sys_Rmdir( const char* path );
-bool			Sys_IsFileWritable( const char* path );
-
-enum sysFolder_t
+/*
+================================================
+idException
+================================================
+*/
+class idException
 {
-	FOLDER_ERROR	= -1,
-	FOLDER_NO		= 0,
-	FOLDER_YES		= 1
+public:
+	idException( const char* text = "" )
+	{
+		strncpy( error, text, MAX_ERROR_LEN );
+	}
+
+	const char* GetError()
+	{
+		return error;
+	}
+
+protected:
+	char* GetErrorBuffer()
+	{
+		return error;
+	}
+
+	int GetErrorBufferSize()
+	{
+		return MAX_ERROR_LEN;
+	}
+
+private:
+	friend class idFatalException;
+	static char error[MAX_ERROR_LEN];
 };
 
-// returns FOLDER_YES if the specified path is a folder
-sysFolder_t		Sys_IsFolder( const char* path );
+/*
+================================================
+idFatalException
+================================================
+*/
+class idFatalException
+{
+public:
+	idFatalException( const char* text = "", bool doStackTrace = true, bool emergencyExit = false );
 
-// use fs_debug to verbose Sys_ListFiles
-// returns -1 if directory was not found (the list is cleared)
-int				Sys_ListFiles( const char* directory, const char* extension, idList<class idStr>& list );
+	const char* GetError()
+	{
+		return idException::error;
+	}
 
-const char* 	Sys_EXEPath();
-const char* 	Sys_CWD();
+protected:
+	char* GetErrorBuffer()
+	{
+		return idException::error;
+	}
+	int GetErrorBufferSize()
+	{
+		return MAX_ERROR_LEN;
+	}
+};
 
-const char* 	Sys_LaunchPath();
+/*
+================================================
+idNetworkLoadException
+================================================
+*/
+class idNetworkLoadException : public idException
+{
+public:
+	idNetworkLoadException( const char* text = "" ) : idException( text ) { }
+};
 
-#endif /* !__SYS_FILESYSTEM_H__ */
+#endif /* !__SYS_EXCEPTIONS_H__ */

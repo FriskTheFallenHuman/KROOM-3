@@ -26,30 +26,39 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#ifndef __SYS_FILESYSTEM_H__
-#define __SYS_FILESYSTEM_H__
+#ifndef __DEBUG_H__
+#define __DEBUG_H__
 
-void			Sys_Mkdir( const char* path );
-bool			Sys_Rmdir( const char* path );
-bool			Sys_IsFileWritable( const char* path );
+const char* CleanupSourceCodeFileName( const char* fileName );
 
-enum sysFolder_t
+// some utilities for getting debug information in runtime
+class idDebugSystem
 {
-	FOLDER_ERROR	= -1,
-	FOLDER_NO		= 0,
-	FOLDER_YES		= 1
+public:
+	// captures call stack of function calling this one into specified binary blob
+	// len is: size of data buffer refore call, size of written data after call
+	// returns nonzero hash code of the call stack (same call stacks have equal hash codes)
+	static uint32 GetStack( uint8* data, int& len );
+
+	// decodes previously captured call stack as an array of stack frames
+	// most recent stack frame goes first in the array
+	static void DecodeStack( uint8* data, int len, idList<debugStackFrame_t, TAG_CRAP>& info );
+
+	// cleans the stack trace according to these rules:
+	//   cutWinMain: remove all stack frames above CRT "main" inclusive
+	//   shortenPath: remove path prefix ending at "doom3bfg" to make path relative to source code root
+	static void CleanStack( idList<debugStackFrame_t, TAG_CRAP>& info, bool cutWinMain = true, bool shortenPath = true );
+
+	// converts given call stack (array of stack frames) into readable string
+	// str and maxLen specify the receiving string buffer
+	static void StringifyStack( uint32 hash, const debugStackFrame_t* frames, int framesCnt, char* str, int maxLen );
+
+	// caller must copy the returned string immediately!
+	// note: does not allocate any memory in anyway
+	static const char* CleanupFileName( const char* fileName )
+	{
+		return CleanupSourceCodeFileName( fileName );
+	}
 };
 
-// returns FOLDER_YES if the specified path is a folder
-sysFolder_t		Sys_IsFolder( const char* path );
-
-// use fs_debug to verbose Sys_ListFiles
-// returns -1 if directory was not found (the list is cleared)
-int				Sys_ListFiles( const char* directory, const char* extension, idList<class idStr>& list );
-
-const char* 	Sys_EXEPath();
-const char* 	Sys_CWD();
-
-const char* 	Sys_LaunchPath();
-
-#endif /* !__SYS_FILESYSTEM_H__ */
+#endif /* !__DEBUG_H__ */

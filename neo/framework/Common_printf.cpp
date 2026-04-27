@@ -626,10 +626,7 @@ void idCommonLocal::FatalError( const char* fmt, ... )
 		va_end( argptr );
 		errorMessage[sizeof( errorMessage ) - 1] = '\0';
 
-		Sys_Printf( "%s\n", errorMessage );
-
-		// write the console to a log file?
-		Sys_Quit();
+		throw idFatalException( errorMessage, true, true );
 	}
 	com_errorEntered = ERP_FATAL;
 
@@ -643,8 +640,5 @@ void idCommonLocal::FatalError( const char* fmt, ... )
 		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "vid_restart partial windowed\n" );
 	}
 
-	Sys_SetFatalError( errorMessage );
-
-	Sys_Error( "%s", errorMessage );
-
+	throw idFatalException( errorMessage );
 }

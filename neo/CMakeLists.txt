@@ -209,7 +209,7 @@ elseif(MSVC)
 		add_definitions(-D_USE_32BIT_TIME_T)
 	endif()
 
-	set(sys_libs dbghelp iphlpapi winmm wsock32 ${CMAKE_DL_LIBS})
+	set(sys_libs dbghelp iphlpapi winmm wsock32 shlwapi ${CMAKE_DL_LIBS})
 
 	if(MSVC)
 		if(WINDOWS10)
@@ -535,20 +535,12 @@ list(APPEND src_core ${src_compilers})
 file(GLOB src_imgui_editor tools/imgui/*.cpp tools/imgui/*.h)
 source_group("Tools\\ImGUI" FILES ${src_imgui_editor})
 
-file(GLOB src_imgui_editor_utils tools/imgui/util/*.cpp tools/imgui/util/*.h)
-source_group("Tools\\ImGUI\\Util" FILES ${src_imgui_editor_utils})
-
 file(GLOB src_imgui_lighteditor tools/imgui/lighteditor/*.cpp tools/imgui/lighteditor/*.h)
 source_group("Tools\\ImGUI\\LightEditor" FILES ${src_imgui_lighteditor})
 
-file(GLOB src_imgui_afeditor tools/imgui/afeditor/*.cpp tools/imgui/afeditor/*.h)
-source_group("Tools\\ImGUI\\AfEditor" FILES ${src_imgui_afeditor})
-
 set(src_tools_imgui
 	${src_imgui_editor}
-	${src_imgui_editor_utils}
-	${src_imgui_lighteditor}
-	${src_imgui_afeditor})
+	${src_imgui_lighteditor})
 
 list(APPEND src_core ${src_tools_imgui})
 

@@ -175,7 +175,8 @@ static const char* dialogStateToString[ GDM_MAX + 1 ] =
 	ASSERT_ENUM_STRING( GDM_XBOX_DEPLOYMENT_TYPE_FAIL, 136 ),
 	ASSERT_ENUM_STRING( GDM_SAVEGAME_WRONG_LANGUAGE, 137 ),
 	ASSERT_ENUM_STRING( GDM_GAME_RESTART_REQUIRED, 138 ),
-	ASSERT_ENUM_STRING( GDM_MAX, 139 )
+	ASSERT_ENUM_STRING( GDM_GAME_ERROR, 139 ),
+	ASSERT_ENUM_STRING( GDM_MAX, 140 )
 };
 
 idCVar dialog_saveClearLevel( "dialog_saveClearLevel", "1000", CVAR_INTEGER, "Time required to show long message" );
@@ -1538,6 +1539,11 @@ idStr idCommonDialog::GetDialogMsg( gameDialogMessages_t msg, idStr& message, id
 		case GDM_GAME_RESTART_REQUIRED:
 		{
 			message = "#str_dlg_game_restart_required";
+			break;
+		}
+		case GDM_GAME_ERROR:
+		{
+			title = "#str_01754";
 			break;
 		}
 		default:

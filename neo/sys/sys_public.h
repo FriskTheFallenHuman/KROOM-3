@@ -579,9 +579,6 @@ const char* 	Sys_SecToStr( int sec );
 const char* 	Sys_DefaultBasePath();
 const char* 	Sys_DefaultSavePath();
 
-// know early if we are performing a fatal error shutdown so the error message doesn't get lost
-void			Sys_SetFatalError( const char* error );
-
 // Execute the specified process and wait until it's done, calling workFn every waitMS milliseconds.
 // If showOutput == true, std IO from the executed process will be output to the console.
 // Note that the return value is not an indication of the exit code of the process, but is false
