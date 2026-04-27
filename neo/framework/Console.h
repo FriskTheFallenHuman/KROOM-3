@@ -37,6 +37,12 @@ enum justify_t
 	JUSTIFY_CENTER_RIGHT
 };
 
+enum textSize_t
+{
+	TEXTSIZE_SMALL,
+	TEXTSIZE_LARGE
+};
+
 class idOverlayHandle
 {
 	friend class idConsoleLocal;
@@ -85,12 +91,17 @@ public:
 	virtual void	Draw( bool forceFullScreen ) = 0;
 	virtual void	Print( const char* text ) = 0;
 
-	virtual void	PrintOverlay( idOverlayHandle& handle, justify_t justify, VERIFY_FORMAT_STRING const char* text, ... ) = 0;
+	virtual void	PrintOverlay( idOverlayHandle& handle, justify_t justify, VERIFY_FORMAT_STRING const char* text, idVec4& textColor, bool showbackground, textSize_t size, ... ) = 0;
 
 	virtual idDebugGraph* 	CreateGraph( int numItems ) = 0;
 	virtual void			DestroyGraph( idDebugGraph* graph ) = 0;
 };
 
 extern idConsole* 	console;	// statically initialized to an idConsoleLocal
+
+// helper macro for creating overlay text with a single call
+#define CREATE_OVERLAY( name, text, textPos, textColor, textSize, textBkg ) \
+	static idOverlayHandle name; \
+	console->PrintOverlay( name, textPos, text, textColor, textBkg, textSize );
 
 #endif /* !__CONSOLE_H__ */
