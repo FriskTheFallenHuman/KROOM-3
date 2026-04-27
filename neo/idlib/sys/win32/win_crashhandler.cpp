@@ -191,7 +191,7 @@ void Sys_GetExceptionSummary( char* buf, int bufSize )
 	if( !g_exceptionPointers )
 	{
 		idStr::snPrintf( buf, bufSize,
-						 "An unhandled exception has occurred.  Doom 3 BFG will now exit.\r\n\r\n"
+						 "An unhandled exception has occurred.  The game will now exit.\r\n\r\n"
 						 "No exception information available." );
 		return;
 	}
@@ -199,7 +199,7 @@ void Sys_GetExceptionSummary( char* buf, int bufSize )
 	const EXCEPTION_RECORD* er = g_exceptionPointers->ExceptionRecord;
 
 	idStr::snPrintf( buf, bufSize,
-					 "An unhandled exception has occurred.  Doom 3 BFG will now exit.\r\n"
+					 "An unhandled exception has occurred.  The game will now exit.\r\n"
 					 "\r\n"
 					 "Exception : 0x%08X  at  0x%p\r\n"
 					 "Info      : %s\r\n"

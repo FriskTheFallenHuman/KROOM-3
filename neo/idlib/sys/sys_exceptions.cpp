@@ -72,14 +72,14 @@ static void BuildGitHubURL( char* urlBuf, int urlBufSize )
 	{
 		DWORD code = g_exceptionPointers->ExceptionRecord->ExceptionCode;
 		idStr::snPrintf( urlBuf, urlBufSize,
-						 "https://github.com/FriskTheFallenHuman/DOOM-3-BFG/issues/new"
+						 "https://github.com/FriskTheFallenHuman/KROOM-3/issues/new"
 						 "?title=Crash%%3A+0x%08X&labels=crash",
 						 ( unsigned int )code );
 	}
 	else
 	{
 		idStr::snPrintf( urlBuf, urlBufSize,
-						 "https://github.com/FriskTheFallenHuman/DOOM-3-BFG/issues/new"
+						 "https://github.com/FriskTheFallenHuman/KROOM-3/issues/new"
 						 "?title=Crash+Report&labels=crash" );
 	}
 }

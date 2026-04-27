@@ -340,6 +340,10 @@ endif()
 
 set(sys_thirdparty)
 
+if(UNIX)
+	find_package(PkgConfig REQUIRED)
+endif()
+
 if(FFMPEG)
 	find_package(FFMPEG REQUIRED)
 	include_directories(${FFMPEG_INCLUDE_DIRS})
@@ -348,21 +352,28 @@ if(FFMPEG)
 endif()
 
 if(OPENAL)
-	find_package(OpenAL REQUIRED)
-	include_directories(${OPENAL_INCLUDE_DIR})
-	add_definitions(-DUSE_OPENAL)
+	if(UNIX)
+		find_package(OpenAL REQUIRED)
+		include_directories(${OPENAL_INCLUDE_DIR})
+	else()
+		add_subdirectory(extern/OpenalSoft)
+		set(OPENAL_LIBRARY OpenAL::OpenAL)
+	endif()
 	list(APPEND sys_thirdparty ${OPENAL_LIBRARY})
 endif()
 
 if(SDL2)
-	find_package(SDL2 REQUIRED)
-	include_directories(${SDL2_INCLUDE_DIRS})
-	add_definitions(-DUSE_SDL)
-	if(WIN32)
-		list(APPEND sys_thirdparty SDL2::SDL2 SDL2::SDL2main)
+	if(UNIX)
+		pkg_check_modules(SDL2 REQUIRED sdl2)
+		include_directories(${SDL2_INCLUDE_DIRS})
+		link_directories(${SDL2_LIBRARY_DIRS})
+		set(SDLX_LIBRARY ${SDL2_LIBRARIES})
 	else()
-		list(APPEND sys_thirdparty ${SDL2_LIBRARIES})
+		add_subdirectory(extern/SDL2)
+		set(SDLX_LIBRARY SDL2::SDL2 SDL2::SDL2main)
 	endif()
+	add_definitions(-DUSE_SDL)
+	list(APPEND sys_thirdparty_libs ${SDLX_LIBRARY})
 endif()
 
 if(NOT USE_VULKAN)
@@ -788,5 +799,23 @@ if(MSVC)
 		install(TARGETS ${CMAKE_PROJECT_NAME} RUNTIME DESTINATION .)
 	else()
 		install(TARGETS ${CMAKE_PROJECT_NAME} RUNTIME DESTINATION .)
+	endif()
+
+	if (SDL2)
+		add_custom_command(
+		  TARGET ${CMAKE_PROJECT_NAME} POST_BUILD COMMAND
+		  ${CMAKE_COMMAND} -E copy_if_different
+			$<TARGET_FILE:SDL2>
+			$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>
+		  VERBATIM )
+	endif()
+
+	if(OPENAL)
+		add_custom_command(
+		  TARGET ${CMAKE_PROJECT_NAME} POST_BUILD COMMAND
+		  ${CMAKE_COMMAND} -E copy_if_different
+			$<TARGET_FILE:OpenAL>
+			$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>
+		  VERBATIM )
 	endif()
 endif()

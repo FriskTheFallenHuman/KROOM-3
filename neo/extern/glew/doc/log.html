@@ -1,7 +1,7 @@
 <!-- begin header.html -->
 <!--
 The OpenGL Extension Wrangler Library
-Copyright (C) 2008-2019, Nigel Stewart <nigels[]users sourceforge net>
+Copyright (C) 2008-2025, Nigel Stewart <nigels[]nigels com>
 Copyright (C) 2002-2008, Milan Ikits <milan ikits[]ieee org>
 Copyright (C) 2002-2008, Marcelo E. Magallon <mmagallo[]debian org>
 Copyright (C) 2002, Lev Povalahev
@@ -34,7 +34,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 <html>
 <head>
 <title>GLEW: The OpenGL Extension Wrangler Library</title>
-<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII"> 
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <link href="glew.css" type="text/css" rel="stylesheet">
 </head>
 <body bgcolor="#fff0d0">
@@ -46,7 +46,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 <td valign="top">
 
 <table border="0" width="100%" cellpadding="0" cellspacing="0" align="left">
-<tr><td align="center"><i>Latest Release: <a href="https://sourceforge.net/projects/glew/files/glew/2.1.0/">2.1.0</a></i></td></tr>
+<tr><td align="center"><i>Latest Release: <a href="https://github.com/nigels-com/glew/releases/tag/glew-2.3.1">2.3.1</a></i></td></tr>
 <tr><td align="center"><br></td></tr>
 <tr><td align="center"><img src="./glew.png" alt="GLEW Logo" width="97" height="75"></td></tr>
 <tr><td align="center"><br></td></tr>
@@ -62,8 +62,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
 <tr><td align="center"><a href="https://github.com/nigels-com/glew">GitHub</a></td></tr>
 <tr><td align="center"><a href="https://github.com/nigels-com/glew/issues">Issues</a></td></tr>
 <tr><td align="center"><a href="https://github.com/nigels-com/glew/pulls">Pull Requests</a></td></tr>
-<tr><td align="center"><a href="https://github.com/nigels-com/glew#authors">Authors</a></td></tr>
-<tr><td align="center"><a href="https://github.com/nigels-com/glew#copyright-and-licensing">Licensing</a></td></tr>
 <tr><td align="center"><br></tr>
 <tr><td align="center"><a href="https://sourceforge.net/projects/glew">SourceForge Page</a></td></tr>
 </table>
@@ -75,12 +73,10 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 <td valign="bottom">
 <table border="0" width="100%" cellpadding="5" cellspacing="0" align="left">
-<tr><td align="center"><i>Last Update: 07-31-17</i></td></tr>
+<tr><td align="center"><i>Last Update: 01-24-2026</i></td></tr>
 <tr><td align="center">
 	<a href="http://www.opengl.org"><img src="./ogl_sm.jpg" width="68" height="35" border="0" alt="OpenGL Logo"></a><br/>
-	<a href="https://github.com/nigels-com/glew"><img src="github.png" width="70" height="29" border="0" alt="GitHub Logo"></a><br/>
-	<a href="https://travis-ci.org/nigels-com/glew/builds"><img src="travis.png" width="114" height="25" border="0" alt="Travis Logo"></a><br/>
-	<a href="http://sourceforge.net"><img src="http://sourceforge.net/sflogo.php?group_id=67586&amp;type=1" width="88" height="31" border="0" alt="SourceForge Logo"></a>
+	<a href="https://github.com/nigels-com/glew"><img src="github.png" width="70" height="29" border="0" alt="GitHub Logo"></a>
 </td>
 </tr>
 </table>
@@ -91,12 +87,281 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 <td bgcolor="#ffffff" align="left" valign="top">
 
-<h1>The OpenGL Extension Wrangler Library</h1>
+<h1>The OpenGL Extension Wrangler Library (GLEW)</h1>
 
 <!-- end header.html -->
 
 
 <h2>Change Log</h2>
+
+<hr align="center">
+<ul class="none">
+<li><b>2.3.1</b> [01-24-2026]
+
+<ul>
+<li> Bug fixes:
+<ul>
+<li> <a href="https://github.com/nigels-com/glew/issues/454">Issue #454: glNamedBufferStorageEXT</a>
+</ul>
+</ul>
+
+<hr align="center">
+<ul class="none">
+<li><b>2.3.0</b> [12-27-2025]
+
+<ul>
+<li> New extensions:
+<ul>
+<li> GL_ARM_shader_core_properties
+<li> GL_EXT_EGL_image_storage_compression
+<li> GL_EXT_fragment_shading_rate
+<li> GL_EXT_framebuffer_blit_layers
+<li> GL_EXT_mesh_shader
+<li> GL_EXT_separate_depth_stencil
+<li> GL_EXT_shader_clock
+<li> GL_EXT_shader_realtime_clock
+<li> GL_EXT_shader_samples_identical
+<li> GL_EXT_shader_texture_samples
+<li> GL_EXT_texture_storage_compression
+<li> GL_HUAWEI_program_binary
+<li> GL_HUAWEI_shader_binary
+<li> GL_IMG_pvric_end_to_end_signature
+<li> GL_IMG_tile_region_protection
+<li> GL_MESA_bgra
+<li> GL_MESA_framebuffer_flip_x
+<li> GL_MESA_framebuffer_swap_xy
+<li> GL_MESA_texture_const_bandwidth
+<li> GL_NV_memory_object_sparse
+<li> GL_NV_primitive_shading_rate
+<li> GL_NV_timeline_semaphore
+<li> GL_NV_uniform_buffer_std430_layout
+<li> GL_QCOM_frame_extrapolation
+<li> GL_QCOM_motion_estimation
+<li> GL_QCOM_render_sRGB_R8_RG8
+<li> GL_QCOM_render_shared_exponent
+<li> GL_QCOM_shading_rate
+<li> GL_QCOM_texture_foveated2
+<li> GL_QCOM_texture_lod_bias
+<li> GL_QCOM_ycbcr_degamma
+<li> EGL_ANDROID_telemetry_hint
+<li> EGL_ANGLE_sync_control_rate
+<li> EGL_EXT_config_select_group
+<li> EGL_EXT_device_drm_render_node
+<li> EGL_EXT_device_persistent_id
+<li> EGL_EXT_device_query_name
+<li> EGL_EXT_display_alloc
+<li> EGL_EXT_explicit_device
+<li> EGL_EXT_gl_colorspace_bt2020_hlg
+<li> EGL_EXT_platform_xcb
+<li> EGL_EXT_present_opaque
+<li> EGL_EXT_query_reset_notification_strategy
+<li> EGL_EXT_surface_compression
+<li> EGL_NV_stream_consumer_eglimage
+<li> EGL_NV_stream_consumer_eglimage_use_scanout_attrib
+<li> EGL_QNX_image_native_buffer
+<li> EGL_QNX_platform_screen
+<li> GLX_EXT_get_drawable_type
+</ul>
+</ul>
+
+<ul>
+<li> Contributors:
+<ul>
+<li> Alastair McKinstry, Alessio Treglia, Alexey Tereshenkov, Amaya Rodrigo Sastre, Anuraag Agrawal, Ari Pollak, Bertie Wheen, Bertrand Marc, Christian Rauch, Daniel Bernar, Danilo Spinella, Debian Janitor, Dmitry Kalinkin, Fabrizio Regalli, Gianfranco Costamagna, G'lek Tarssza, grahamreeds, Helmut Grohne, ibbem, Jean-Christophe Fillion-Robin, Jelmer Vernooĳ, Joost Yervante Damad, Julian Squires, Julien Schueller, Kekschen, Kerby Geffrard, luz paz, Marcelo E. Magallon, Marvin Schmidt, Matteo F. Vescovi, Matthias Bentrup, Ned Loynd, Nicolas Caramelli, Nigel Stewart, NoamDev, Ondřej Nový, René Schwaiger, Ross Burton, Ryan Schmidt, SpaceIm, Tim Gates, Vanfanel, Vladimir Vukicevic, Xavier Bonaventura, Yaroslav Halchenko
+</ul>
+</ul>
+
+</ul>
+
+<hr align="center">
+<ul class="none">
+<li><b>2.2.0</b> [03-15-20]
+
+<ul>
+<li> Bug fixes:
+<ul>
+<li> GL_EXT_semaphore constants
+<li> Some const pointer fixups in OpenGL API
+<li> Correction for GLEW_VERSION_4_5
+<li> Windows build updates and fixes
+</ul>
+</ul>
+
+<ul>
+<li> New extensions:
+<ul>
+<li> GL_AMD_framebuffer_multisample_advanced
+<li> GL_AMD_gpu_shader_half_float_fetch
+<li> GL_AMD_shader_image_load_store_lod
+<li> GL_ARM_texture_unnormalized_coordinates
+<li> GL_DMP_program_binary
+<li> GL_DMP_shader_binary
+<li> GL_EXT_EGL_image_external_wrap_modes
+<li> GL_EXT_EGL_image_storage
+<li> GL_EXT_EGL_sync
+<li> GL_EXT_clip_control
+<li> GL_EXT_depth_clamp
+<li> GL_EXT_disjoint_timer_query
+<li> GL_EXT_draw_transform_feedback
+<li> GL_EXT_multiview_tessellation_geometry_shader
+<li> GL_EXT_multiview_texture_multisample
+<li> GL_EXT_multiview_timer_query
+<li> GL_EXT_occlusion_query_boolean
+<li> GL_EXT_primitive_bounding_box
+<li> GL_EXT_protected_textures
+<li> GL_EXT_robustness
+<li> GL_EXT_shader_framebuffer_fetch_non_coherent
+<li> GL_EXT_static_vertex_array
+<li> GL_EXT_tessellation_point_size
+<li> GL_EXT_tessellation_shader
+<li> GL_EXT_texture_border_clamp
+<li> GL_EXT_texture_buffer
+<li> GL_EXT_texture_compression_s3tc_srgb
+<li> GL_EXT_texture_format_sRGB_override
+<li> GL_EXT_texture_mirror_clamp_to_edge
+<li> GL_EXT_texture_query_lod
+<li> GL_EXT_texture_shadow_lod
+<li> GL_FJ_shader_binary_GCCSO
+<li> GL_IMG_bindless_texture
+<li> GL_IMG_framebuffer_downsample
+<li> GL_IMG_multisampled_render_to_texture
+<li> GL_IMG_program_binary
+<li> GL_IMG_read_format
+<li> GL_IMG_shader_binary
+<li> GL_IMG_texture_compression_pvrtc
+<li> GL_IMG_texture_compression_pvrtc2
+<li> GL_IMG_texture_env_enhanced_fixed_function
+<li> GL_IMG_texture_filter_cubic
+<li> GL_INTEL_blackhole_render
+<li> GL_INTEL_shader_integer_functions2
+<li> GL_KHR_shader_subgroup
+<li> GL_MESA_framebuffer_flip_y
+<li> GL_MESA_program_binary_formats
+<li> GL_MESA_tile_raster_order
+<li> GL_NVX_gpu_multicast2
+<li> GL_NVX_progress_fence
+<li> GL_NV_compute_shader_derivatives
+<li> GL_NV_conservative_raster_pre_snap
+<li> GL_NV_conservative_raster_underestimation
+<li> GL_NV_depth_nonlinear
+<li> GL_NV_fragment_shader_barycentric
+<li> GL_NV_memory_attachment
+<li> GL_NV_mesh_shader
+<li> GL_NV_query_resource_tag
+<li> GL_NV_read_buffer
+<li> GL_NV_read_buffer_front
+<li> GL_NV_representative_fragment_test
+<li> GL_NV_scissor_exclusive
+<li> GL_NV_shader_subgroup_partitioned
+<li> GL_NV_shader_texture_footprint 
+<li> GL_NV_shading_rate_image
+<li> GL_NV_vdpau_interop2
+<li> GL_OES_EGL_image
+<li> GL_OES_EGL_image_external
+<li> GL_OES_EGL_image_external_essl3
+<li> GL_OES_blend_equation_separate
+<li> GL_OES_blend_func_separate
+<li> GL_OES_blend_subtract
+<li> GL_OES_compressed_ETC1_RGB8_texture
+<li> GL_OES_compressed_paletted_texture
+<li> GL_OES_copy_image
+<li> GL_OES_depth24
+<li> GL_OES_depth32
+<li> GL_OES_depth_texture
+<li> GL_OES_depth_texture_cube_map
+<li> GL_OES_draw_buffers_indexed
+<li> GL_OES_draw_texture
+<li> GL_OES_element_index_uint
+<li> GL_OES_extended_matrix_palette
+<li> GL_OES_fbo_render_mipmap
+<li> GL_OES_fragment_precision_high
+<li> GL_OES_framebuffer_object
+<li> GL_OES_geometry_point_size
+<li> GL_OES_geometry_shader
+<li> GL_OES_get_program_binary
+<li> GL_OES_gpu_shader5
+<li> GL_OES_mapbuffer
+<li> GL_OES_matrix_get
+<li> GL_OES_matrix_palette
+<li> GL_OES_packed_depth_stencil
+<li> GL_OES_point_size_array
+<li> GL_OES_point_sprite
+<li> GL_OES_read_format
+<li> GL_OES_required_internalformat
+<li> GL_OES_rgb8_rgba8
+<li> GL_OES_sample_shading
+<li> GL_OES_sample_variables
+<li> GL_OES_shader_image_atomic
+<li> GL_OES_shader_io_blocks
+<li> GL_OES_shader_multisample_interpolation
+<li> GL_OES_single_precision
+<li> GL_OES_standard_derivatives
+<li> GL_OES_stencil1
+<li> GL_OES_stencil4
+<li> GL_OES_stencil8
+<li> GL_OES_surfaceless_context
+<li> GL_OES_tessellation_point_size
+<li> GL_OES_tessellation_shader
+<li> GL_OES_texture_3D
+<li> GL_OES_texture_border_clamp
+<li> GL_OES_texture_buffer
+<li> GL_OES_texture_compression_astc
+<li> GL_OES_texture_cube_map
+<li> GL_OES_texture_cube_map_array
+<li> GL_OES_texture_env_crossbar
+<li> GL_OES_texture_mirrored_repeat
+<li> GL_OES_texture_npot
+<li> GL_OES_texture_stencil8
+<li> GL_OES_texture_storage_multisample_2d_array
+<li> GL_OES_texture_view
+<li> GL_OES_vertex_array_object
+<li> GL_OES_vertex_half_float
+<li> GL_OES_vertex_type_10_10_10_2
+<li> GL_QCOM_YUV_texture_gather
+<li> GL_QCOM_shader_framebuffer_fetch_rate
+<li> GL_QCOM_texture_foveated
+<li> GL_QCOM_texture_foveated_subsampled_layout
+<li> GL_VIV_shader_binary
+<li> EGL_ANDROID_GLES_layers
+<li> EGL_ANDROID_get_frame_timestamps
+<li> EGL_ANDROID_get_native_client_buffer
+<li> EGL_ARM_image_format
+<li> EGL_EXT_bind_to_front
+<li> EGL_EXT_client_sync
+<li> EGL_EXT_compositor
+<li> EGL_EXT_gl_colorspace_display_p3
+<li> EGL_EXT_gl_colorspace_display_p3_linear
+<li> EGL_EXT_gl_colorspace_display_p3_passthrough
+<li> EGL_EXT_gl_colorspace_scrgb
+<li> EGL_EXT_image_gl_colorspace
+<li> EGL_EXT_image_implicit_sync_control
+<li> EGL_EXT_surface_CTA861_3_metadata
+<li> EGL_EXT_sync_reuse
+<li> EGL_KHR_display_reference
+<li> EGL_MESA_query_driver
+<li> EGL_NV_context_priority_realtime
+<li> EGL_NV_quadruple_buffer
+<li> EGL_NV_stream_dma
+<li> EGL_NV_stream_flush
+<li> EGL_NV_stream_origin
+<li> EGL_NV_triple_buffer
+<li> EGL_WL_bind_wayland_display
+<li> EGL_WL_create_wayland_buffer_from_image
+<li> GLX_EXT_context_priority
+<li> GLX_EXT_no_config_context
+<li> GLX_NV_multigpu_context
+<li> WGL_NV_multigpu_context
+</ul> 
+</ul>
+
+<ul>
+<li> Contributors:
+<ul>
+<li> Alastair McKinstry, Alessio Treglia, Alexey Tereshenkov, Amaya Rodrigo Sastre, Anuraag Agrawal, Ari Pollak, Bertie Wheen, Bertrand Marc, Christian Rauch, CiriUp, Daniel Bernar, Danilo Spinella, Debian Janitor, Deve, dimitri, Dmitry Kalinkin, Eonfge, Fabrizio Regalli, Gianfranco Costamagna, G'lek Tarssza, grahamreeds, Helmut Grohne, ibbem, Jean-Christophe Fillion-Robin, Jelmer Vernooĳ, Joost Yervante Damad, Jose Santiago, Julian Squires, Julien Schueller, Kekschen, Kerby Geffrard, luz paz, Marcelo E. Magallon, Marvin Schmidt, Matteo F. Vescovi, Matthias Bentrup, Ned Loynd, Nicolas Caramelli, Nigel Stewart, NoamDev, Olli Kallioinen, Ondřej Nový, Paul Steinbrecher, Rene, René Schwaiger, Ross Burton, Ryan Schmidt, SpaceIm, Stefan Zabka, Steve Robinson, TheVice, Tim Gates, Valentin Sarthou, Vanfanel, Vladimir Vukicevic, wiranoid, Xavier Bonaventura, Yaroslav Halchenko
+</ul>
+</ul>
+
+</ul>
 
 <hr align="center">
 <ul class="none">
@@ -113,7 +378,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 <ul>
 <li> Bug fixes:
 <ul>
-<li> Resovled crash when glXGetCurrentDisplay() is NULL
+<li> Resolved crash when glXGetCurrentDisplay() is NULL
 <li> CMake: only install PDB files with MSVC
 <li> wglGetProcAddress crash with NOGDI defined 
 <li> Mac: using -Os rather than -O2
@@ -159,6 +424,13 @@ THE POSSIBILITY OF SUCH DAMAGE.
 </ul>
 </ul>
 
+<ul>
+<li> Contributors:
+<ul>
+<li> Abdo Roig-Maranges, Alastair McKinstry, Alessio Treglia, Alexey Tereshenkov, Amaya Rodrigo Sastre, anatoly techtonik, Anuraag Agrawal, Ari Pollak, Bertie Wheen, Bertrand Marc, Christian Rauch, CiriUp, Claudio, Daniel Bernar, Danilo Margarido, Danilo Spinella, Debian Janitor, Deve, Dillon Cower, dimitri, Dmitry Kalinkin, Eonfge, Fabrizio Regalli, Gianfranco Costamagna, G'lek Tarssza, grahamreeds, Helmut Grohne, ibbem, jasjuang, Jean-Christophe Fillion-Robin, Jelmer Vernooĳ, Joost Yervante Damad, Jose Santiago, Julian Squires, Julien Schueller, Kekschen, Kerby Geffrard, luz paz, Marcelo E. Magallon, Marvin Schmidt, Matteo F. Vescovi, Matthias Bentrup, Miguel Vera, Ned Loynd, Nicolas Caramelli, Nigel Stewart, NoamDev, Olli Kallioinen, Ondřej Nový, Paul Steinbrecher, Rashad Kanavath, Rene, René Schwaiger, Ross Burton, Ryan Schmidt, Shanee, SpaceIm, Stefan Zabka, Steve Robinson, Tan Li Boon, TheVice, Tim Gates, Valentin Sarthou, Vanfanel, Vladimir Vukicevic, wiranoid, Xavier Bonaventura, Yaroslav Halchenko
+</ul>
+</ul>
+
 </ul>
 
 <hr align="center">
@@ -199,11 +471,20 @@ THE POSSIBILITY OF SUCH DAMAGE.
 <li> GLX_NV_robustness_video_memory_purge
 </ul>
 </ul>
+
+<ul>
+<li> Contributors:
+<ul>
+<li> Abdo Roig-Maranges, Alastair McKinstry, Alessio Treglia, Alexey Tereshenkov, Amaya Rodrigo Sastre, anatoly techtonik, Anuraag Agrawal, Ari Pollak, Bertie Wheen, Bertrand Marc, Christian Rauch, CiriUp, Claudio, Daniel Bernar, Danilo Margarido, Danilo Spinella, Debian Janitor, Deve, Dillon Cower, dimitri, Dmitry Kalinkin, Eonfge, Fabrizio Regalli, Gianfranco Costamagna, G'lek Tarssza, grahamreeds, Gyusun Yeom, Helmut Grohne, ibbem, Icy Defiance, jasjuang, Jean-Christophe Fillion-Robin, Jelmer Vernooĳ, Joost Yervante Damad, Jose Santiago, Julian Squires, Julien Schueller, Kekschen, Kerby Geffrard, Loufis, luz paz, Marcel Metz, Marcelo E. Magallon, Marvin Schmidt, Matteo F. Vescovi, Matthias Bentrup, Miguel Vera, Mischa Spiegelmock, Ned Loynd, Nicolas Caramelli, Nigel Stewart, NoamDev, Olli Kallioinen, Ondřej Nový, Paul Steinbrecher, Rashad Kanavath, Rene, René Schwaiger, Ross Burton, Ryan Schmidt, Shanee, SpaceIm, Stefan Zabka, Steve Robinson, stopiccot, Tamas Kenez, Tan Li Boon, TheVice, Tim Gates, Valentin Sarthou, Vanfanel, Vladimir Vukicevic, Wes Tarro, wiranoid, Xavier Bonaventura, Yaroslav Halchenko
+</ul>
+</ul>
+
+</ul>
 </ul>
 
 <hr align="center">
 <ul class="none">
-<li><b>1.13.0</b> [08-10-15]
+<li><b>1.13.0</b> [08-10-2015]
 <ul>
 <li> Enhancements:
 <ul>
@@ -234,13 +515,25 @@ THE POSSIBILITY OF SUCH DAMAGE.
 <li> GL_OVR_multiview
 <li> GL_OVR_multiview2
 </ul>
+</ul>
+
+<ul>
 <li> <a href="http://sourceforge.net/p/glew/bugs/milestone/1.13.0/">Bug fixes</a>
+</ul>
+
+<ul>
+<li> Contributors:
+<ul>
+<li> Abdo Roig-Maranges, Alastair McKinstry, Alessio Treglia, Alexey Tereshenkov, Amaya Rodrigo Sastre, anatoly techtonik, Anuraag Agrawal, Ari Pollak, BastiaanOlij, Bertie Wheen, Bertrand Marc, Christian Rauch, CiriUp, Claudio, Daniel Bernar, Danilo Margarido, Danilo Spinella, Debian Janitor, Deve, Dillon Cower, dimitri, Dmitry Kalinkin, Eonfge, Fabrizio Regalli, Gianfranco Costamagna, G'lek Tarssza, grahamreeds, Gyusun Yeom, Helmut Grohne, ibbem, Icy Defiance, jasjuang, Jean-Christophe Fillion-Robin, Jelmer Vernooĳ, Joost Yervante Damad, Jose Santiago, Julian Squires, Julien Schueller, Kekschen, Kerby Geffrard, Lauri Nurmi, Loufis, luz paz, Marcel Metz, Marcelo E. Magallon, Marvin Schmidt, Matteo F. Vescovi, Matthias Bentrup, Miguel Vera, Mischa Spiegelmock, Ned Loynd, Nicolas Caramelli, Nigel Stewart, NoamDev, Olli Kallioinen, Ondřej Nový, Paul Steinbrecher, Rashad Kanavath, Rene, René Schwaiger, Ross Burton, Ryan Schmidt, Shanee, SpaceIm, Stefan Zabka, Steve Robinson, stopiccot, Tamas Kenez, Tan Li Boon, TheVice, Tim Gates, Valentin Sarthou, Vanfanel, Vladimir Vukicevic, Wes Tarro, wiranoid, xantares, Xavier Bonaventura, Yaroslav Halchenko, yy-yyaa
+</ul>
+</ul>
+
 </ul>
 </ul>
 
 <hr align="center">
 <ul class="none">
-<li><b>1.12.0</b> [01-26-15]
+<li><b>1.12.0</b> [01-26-2015]
 <ul>
 <li> New extensions:
 <ul>
@@ -262,13 +555,25 @@ THE POSSIBILITY OF SUCH DAMAGE.
 <li> GL_NV_uniform_buffer_unified_memory
 <li> GL_NV_viewport_array2
 </ul>
+</ul>
+
+<ul>
 <li> <a href="http://sourceforge.net/p/glew/bugs/milestone/1.12.0/">Bug fixes</a>
+</ul>
+
+<ul>
+<li> Contributors:
+<ul>
+<li> Abdo Roig-Maranges, Alastair McKinstry, Alessio Treglia, Alexey Tereshenkov, Amaya Rodrigo Sastre, anatoly techtonik, Anuraag Agrawal, Ari Pollak, BastiaanOlij, Bertie Wheen, Bertrand Marc, BryceMehring, Carsten Neumann, Christian Rauch, CiriUp, Claudio, Daniel Bernar, Danilo Margarido, Danilo Spinella, Debian Janitor, Deve, Dillon Cower, dimitri, Dmitry Kalinkin, Eonfge, Fabrizio Regalli, Frank Park, Gianfranco Costamagna, G'lek Tarssza, grahamreeds, Gyusun Yeom, Helmut Grohne, ibbem, Icy Defiance, jasjuang, Jean-Christophe Fillion-Robin, Jelmer Vernooĳ, Joost Yervante Damad, Jose Santiago, Julian Squires, Julien Schueller, Kekschen, Kerby Geffrard, Lauri Nurmi, Loufis, luz paz, Marcel Metz, Marcelo E. Magallon, Marvin Schmidt, Matteo F. Vescovi, Matthias Bentrup, Matthias Goldhoorn, Miguel Vera, Mischa Spiegelmock, Ned Loynd, Nicolas Caramelli, Nigel Stewart, NoamDev, Olli Kallioinen, omniavinco, Ondřej Nový, Paul Steinbrecher, Rashad Kanavath, Rene, René Schwaiger, Ross Burton, Ryan Schmidt, Shanee, SpaceIm, Stefan Zabka, Steve Robinson, stopiccot, Tamas Kenez, Tan Li Boon, TheVice, Tim Gates, Togo Nishigaki, Valentin Sarthou, Vanfanel, Vladimir Vukicevic, Wes Tarro, wiranoid, xantares, Xavier Bonaventura, Yaroslav Halchenko, yy-yyaa
+</ul>
+</ul>
+
 </ul>
 </ul>
 
 <hr align="center">
 <ul class="none">
-<li><b>1.11.0</b> [08-11-14]
+<li><b>1.11.0</b> [08-11-2014]
 <ul>
 <li> New features:
 <ul>
@@ -318,13 +623,25 @@ THE POSSIBILITY OF SUCH DAMAGE.
 <li> WGL_ARB_context_flush_control
 <li> WGL_NV_delay_before_swap
 </ul>
-<li> <a href="http://sourceforge.net/p/glew/bugs/milestone/1.11.0/">Bug fixes</a>
+</ul>
+
+<ul>
+<li><a href="http://sourceforge.net/p/glew/bugs/milestone/1.11.0/">Bug fixes</a>
+</ul>
+
+<ul>
+<li> Contributors:
+<ul>
+<li> Abdo Roig-Maranges, Alastair McKinstry, Alessio Treglia, Alexey Tereshenkov, Amaya Rodrigo Sastre, anatoly techtonik, Anuraag Agrawal, Ari Pollak, BastiaanOlij, Bertie Wheen, Bertrand Marc, BryceMehring, Carsten Neumann, Christian Rauch, CiriUp, Claudio, Daniel Bernar, Danilo Margarido, Danilo Spinella, Dāvis, Debian Janitor, Deve, Dillon Cower, dimitri, Dmitry Kalinkin, Eonfge, Fabrizio Regalli, Frank Park, Gianfranco Costamagna, G'lek Tarssza, grahamreeds, Gyusun Yeom, hasufell, Helmut Grohne, ibbem, Icy Defiance, jasjuang, Jean-Christophe Fillion-Robin, Jelmer Vernooĳ, Joost Yervante Damad, Jose Santiago, Julian Squires, Julien Schueller, Keith Rosenberg, Kekschen, Kerby Geffrard, Lauri Nurmi, Loufis, luz paz, Marcel Metz, Marcelo E. Magallon, Marvin Schmidt, Matteo F. Vescovi, Matthias Bentrup, Matthias Goldhoorn, Miguel Vera, Mischa Spiegelmock, Ned Loynd, Nicolas Caramelli, Nigel Stewart, NoamDev, Olli Kallioinen, omniavinco, Ondřej Nový, Paul Steinbrecher, Rashad Kanavath, rconde, Rene, René Schwaiger, Ross Burton, Ryan Schmidt, Shanee, SpaceIm, Stefan Zabka, Steve Robinson, stopiccot, Tamas Kenez, Tan Li Boon, TheVice, Tim Gates, Togo Nishigaki, Valentin Sarthou, Vanfanel, Vladimir Vukicevic, Wes Tarro, wiranoid, xantares, Xavier Bonaventura, Yaroslav Halchenko, yy-yyaa
+</ul>
+</ul>
+
 </ul>
 </ul>
 
 <hr align="center">
 <ul class="none">
-<li><b>1.10.0</b> [07-22-13]
+<li><b>1.10.0</b> [07-22-2013]
 <ul>
 <li> New features:
 <ul>
@@ -384,7 +701,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 <hr align="center">
 <ul class="none">
-<li><b>1.9.0</b> [08-06-12]
+<li><b>1.9.0</b> [08-06-2012]
 <ul>
 <li> New features:
 <ul>
@@ -434,7 +751,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 <hr align="center">
 <ul class="none">
-<li><b>1.8.0</b> [07-17-12]
+<li><b>1.8.0</b> [07-17-2012]
 <ul>
 <li> New extensions:
 <ul>
@@ -469,7 +786,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 <hr align="center">
 <ul class="none">
-<li><b>1.7.0</b> [08-26-11]
+<li><b>1.7.0</b> [08-26-2011]
 <ul>
 <li> New features:
 <ul>
@@ -511,7 +828,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 <hr align="center">
 <ul class="none">
-<li><b>1.6.0</b> [04-27-11]
+<li><b>1.6.0</b> [04-27-2011]
 <ul>
 <li> New extensions:
 <ul>
@@ -541,7 +858,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 <hr align="center">
 <ul class="none">
-<li><b>1.5.8</b> [01-31-11]
+<li><b>1.5.8</b> [01-31-2011]
 <ul>
 <li> New extensions:
 <ul>
@@ -562,7 +879,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 <hr align="center">
 <ul class="none">
-<li><b>1.5.7</b> [11-03-10]
+<li><b>1.5.7</b> [11-03-2010]
 <ul>
 <li> New extension:
 <ul>
@@ -580,7 +897,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 <hr align="center">
 <ul class="none">
-<li><b>1.5.6</b> [09-07-10]
+<li><b>1.5.6</b> [09-07-2010]
 <ul>
 <li> New features:
 <ul>
@@ -608,7 +925,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 <hr align="center">
 <ul class="none">
-<li><b>1.5.5</b> [07-13-10]
+<li><b>1.5.5</b> [07-13-2010]
 <ul>
 <li> New extensions:
 <ul>
@@ -634,7 +951,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 <hr align="center">
 <ul class="none">
-<li><b>1.5.4</b> [04-21-10]
+<li><b>1.5.4</b> [04-21-2010]
 <ul>
 <li> New features:
 <ul>
@@ -681,7 +998,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 <hr align="center">
 <ul class="none">
-<li><b>1.5.3</b> [02-28-10]
+<li><b>1.5.3</b> [02-28-2010]
 <ul>
 <li> New extensions:
 <ul>
@@ -700,7 +1017,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 <hr align="center">
 <ul class="none">
-<li><b>1.5.2</b> [12-31-09]
+<li><b>1.5.2</b> [12-31-2009]
 <ul>
 <li> New features:
 <ul>
@@ -771,7 +1088,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 <hr align="center">
 <ul class="none">
-<li><b>1.5.1</b> [11-03-08]
+<li><b>1.5.1</b> [11-03-2008]
 <ul>
 <li> New features:
 <ul>
@@ -826,7 +1143,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 <hr align="center">
 <ul class="none">
-<li><b>1.5.0</b> [12-27-07]
+<li><b>1.5.0</b> [12-27-2007]
 <ul>
 <li> New features:
 <ul>
@@ -842,7 +1159,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 </ul>
 <li> Bug fixes:
 <ul>
-<li> Incorrent 64-bit type definitions
+<li> Incorrect 64-bit type definitions
 <li> Do not strip static library on install
 <li> Missing tokens in GL_ATI_fragment_shader and WGL_{ARB,EXT}_make_current_read
 <li> Missing tokens in GL_VERSION_2_1
@@ -853,7 +1170,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 </ul>
 <hr align="center">
 <ul class="none">
-<li><b>1.4.0</b> [04-27-07]
+<li><b>1.4.0</b> [04-27-2007]
 <ul>
 <li> New features:
 <ul>
@@ -875,7 +1192,7 @@ corruption of their values
 </ul>
 <hr align="center">
 <ul class="none">
-<li><b>1.3.6</b> [03-04-07]
+<li><b>1.3.6</b> [03-04-2007]
 <ul>
 <li> New extensions:
 <ul>
@@ -890,14 +1207,14 @@ corruption of their values
 <li> Missing include guards in glxew.h
 <li> Makefile and install problems for Cygwin builds
 <li> Install problem for Linux AMD64 builds
-<li> Incorrent token in GL_ATI_texture_compression_3dc
+<li> Incorrect token in GL_ATI_texture_compression_3dc
 <li> Missing tokens from GL_ATIX_point_sprites
 </ul>
 </ul>
 </ul>
 <hr align="center">
 <ul class="none">
-<li><b>1.3.5</b> [11-21-06]
+<li><b>1.3.5</b> [11-21-2006]
 <ul>
 <li> New features:
 <ul>
@@ -946,7 +1263,7 @@ corruption of their values
 </ul>
 <hr align="center">
 <ul class="none">
-<li><b>1.3.4</b> [03-04-06]
+<li><b>1.3.4</b> [03-04-2006]
 <ul>
 <li> New extensions:
 <ul>
@@ -969,7 +1286,7 @@ corruption of their values
 </ul>
 <hr align="center">
 <ul class="none">
-<li><b>1.3.3</b> [05-16-05]
+<li><b>1.3.3</b> [05-16-2005]
 <ul>
 <li> New feature:
 <ul>
@@ -988,7 +1305,7 @@ corruption of their values
 </ul>
 <hr align="center">
 <ul class="none">
-<li><b>1.3.2</b> [03-16-05]
+<li><b>1.3.2</b> [03-16-2005]
 <ul>
 <li> New extension:
 <ul>
@@ -1006,7 +1323,7 @@ corruption of their values
 </ul>
 <hr align="center">
 <ul class="none">
-<li><b>1.3.1</b> [02-02-05]
+<li><b>1.3.1</b> [02-02-2005]
 <ul>
 <li> New features:
 <ul>
@@ -1027,7 +1344,7 @@ corruption of their values
 </ul>
 <hr align="center">
 <ul class="none">
-<li><b>1.3.0</b> [01-04-05]
+<li><b>1.3.0</b> [01-04-2005]
 <ul>
 <li> New features:
 <ul>
@@ -1048,7 +1365,7 @@ corruption of their values
 </ul>
 <hr align="center">
 <ul class="none">
-<li><b>1.2.5</b> [12-06-04]
+<li><b>1.2.5</b> [12-06-2004]
 <ul>
 <li> New extensions:
 <ul>
@@ -1069,7 +1386,7 @@ corruption of their values
 </ul>
 <hr align="center">
 <ul class="none">
-<li><b>1.2.4</b> [09-06-04]
+<li><b>1.2.4</b> [09-06-2004]
 <ul>
 <li> Added ARB_draw_buffers and ARB_texture_rectangle
 <li> Fixed bug in ARB_shader_objects
@@ -1078,7 +1395,7 @@ corruption of their values
 </ul>
 <hr align="center">
 <ul class="none">
-<li><b>1.2.3</b> [06-10-04]
+<li><b>1.2.3</b> [06-10-2004]
 <ul>
 <li> Added GL_NV_fragment_program2, GL_NV_fragment_program_option, GL_NV_vertex_program2_option, GL_NV_vertex_program3
 <li> Bug fix in GL_ARB_vertex_blend
@@ -1086,7 +1403,7 @@ corruption of their values
 </ul>
 <hr align="center">
 <ul class="none">
-<li><b>1.2.2</b> [05-08-04]
+<li><b>1.2.2</b> [05-08-2004]
 <ul>
 <li> Added GL_EXT_pixel_buffer_object, removed GL_NV_element_array
 <li> Fixed GLEW_MX problems
@@ -1095,7 +1412,7 @@ corruption of their values
 </ul>
 <hr align="center">
 <ul class="none">
-<li><b>1.2.1</b> [03-18-04]
+<li><b>1.2.1</b> [03-18-2004]
 <ul>
 <li> Bug fix in OpenGL version query (early release of 1.2.0 contained this bug)
 <li> Bug fix in GL_ARB_shader_objects and temporary bug fix in GL_ARB_vertex_shader
@@ -1104,7 +1421,7 @@ corruption of their values
 </ul>
 <hr align="center">
 <ul class="none">
-<li><b>1.2.0</b> [02-19-04]
+<li><b>1.2.0</b> [02-19-2004]
 <ul>
 <li> Added full OpenGL 1.5 support
 <li> Added support for multiple rendering contexts with different capabilities
@@ -1116,7 +1433,7 @@ corruption of their values
 </ul>
 <hr align="center">
 <ul class="none">
-<li><b>1.1.4</b> [12-15-03]
+<li><b>1.1.4</b> [12-15-2003]
 <ul>
 <li> Added GL_APPLE_float_pixels, GL_APPLE_texture_range,
 GL_EXT_texture_cube_map, GL_EXT_texture_edge_clamp,
@@ -1126,7 +1443,7 @@ GLX_ATI_pixel_format_float, and GLX_ATI_render_texture
 </ul>
 <hr align="center">
 <ul class="none">
-<li><b>1.1.3</b> [10-28-03]
+<li><b>1.1.3</b> [10-28-2003]
 <ul>
 <li> Added Solaris and Darwin support
 <li> Added GL_ARB_fragment_shader, GL_ARB_shader_objects, and GL_ARB_vertex_shader
@@ -1136,7 +1453,7 @@ GLX_ATI_pixel_format_float, and GLX_ATI_render_texture
 </ul>
 <hr align="center">
 <ul class="none">
-<li><b>1.1.2</b> [09-15-03]
+<li><b>1.1.2</b> [09-15-2003]
 <ul>
 <li> Removed dependency on WGL_{ARB,EXT}_extensions_string to make GLEW run on Matrox cards
 <li> Added glewGetString for querying the GLEW version string
@@ -1144,7 +1461,7 @@ GLX_ATI_pixel_format_float, and GLX_ATI_render_texture
 </ul>
 <hr align="center">
 <ul class="none">
-<li><b>1.1.1</b> [08-11-03]
+<li><b>1.1.1</b> [08-11-2003]
 <ul>
 <li> Added GLX_NV_float_buffer, GL_ARB_shading_language_100, and GL_ARB_texture_non_power_of_two
 <li> Fixed bug in GL_ARB_vertex_buffer_object
@@ -1153,7 +1470,7 @@ GLX_ATI_pixel_format_float, and GLX_ATI_render_texture
 </ul>
 <hr align="center">
 <ul class="none">
-<li><b>1.1.0</b> [07-08-03]
+<li><b>1.1.0</b> [07-08-2003]
 <ul>
 <li> Added automatic code generation
 <li> Added almost every extension in the registry
@@ -1164,7 +1481,7 @@ GLX_ATI_pixel_format_float, and GLX_ATI_render_texture
 </ul>
 <hr align="center">
 <ul class="none">
-<li><b>1.0.7</b> [06-29-03]
+<li><b>1.0.7</b> [06-29-2003]
 <ul>
 <li> Added GL_EXT_depth_bounds_test
 <li> Fixed typos
@@ -1172,7 +1489,7 @@ GLX_ATI_pixel_format_float, and GLX_ATI_render_texture
 </ul>
 <hr align="center">
 <ul class="none">
-<li><b>1.0.6</b> [05-05-03]
+<li><b>1.0.6</b> [05-05-2003]
 <ul>
 <li> Added ARB_vertex_buffer_object and NV_half_float
 <li> Updated <tt>wglinfo</tt>
@@ -1181,7 +1498,7 @@ GLX_ATI_pixel_format_float, and GLX_ATI_render_texture
 </ul>
 <hr align="center">
 <ul class="none">
-<li><b>1.0.5</b> [02-17-03]
+<li><b>1.0.5</b> [02-17-2003]
 <ul>
 <li> Bug fixes
 <li> Added <tt>wglinfo</tt>
@@ -1190,7 +1507,7 @@ GLX_ATI_pixel_format_float, and GLX_ATI_render_texture
 </ul>
 <hr align="center">
 <ul class="none">
-<li><b>1.0.4</b> [02-02-03]
+<li><b>1.0.4</b> [02-02-2003]
 <ul>
 <li> Added NV_texture_expand_normal
 <li> Added mingw support
@@ -1199,7 +1516,7 @@ GLX_ATI_pixel_format_float, and GLX_ATI_render_texture
 </ul>
 <hr align="center">
 <ul class="none">
-<li><b>1.0.3</b> [01-09-03]
+<li><b>1.0.3</b> [01-09-2003]
 <ul>
 <li> Cleaned up ATI extensions
 <li> Changed function prototypes to match glext.h
@@ -1209,7 +1526,7 @@ GLX_ATI_pixel_format_float, and GLX_ATI_render_texture
 </ul>
 <hr align="center">
 <ul class="none">
-<li><b>1.0.2</b> [12-21-02]
+<li><b>1.0.2</b> [12-21-2002]
 <ul>
 <li> Added list of supported extensions to documentation
 <li> Added NV_half_float and NV_texgen_emboss
@@ -1217,7 +1534,7 @@ GLX_ATI_pixel_format_float, and GLX_ATI_render_texture
 </ul>
 <hr align="center">
 <ul class="none">
-<li><b>1.0.1</b> [12-17-02]
+<li><b>1.0.1</b> [12-17-2002]
 <ul>
 <li> Bug fixes
 <li> Added glewGetExtension
@@ -1225,7 +1542,7 @@ GLX_ATI_pixel_format_float, and GLX_ATI_render_texture
 </ul>
 <hr align="center">
 <ul class="none">
-<li><b>1.0.0</b> [12-12-02]
+<li><b>1.0.0</b> [12-12-2002]
 <ul>
 <li> Initial release
 </ul>

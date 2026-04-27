@@ -66,7 +66,7 @@ CAPTION "Assertion Failed!"
 FONT 8, "MS Sans Serif", 0, 0, 0x0
 BEGIN
     LTEXT           "File:",IDC_NOID,7,7,23,9
-    LTEXT           "c:/doom3/neo/stuff.cpp",IDC_FILENAME,36,7,252,8
+    LTEXT           "c:/doom3bfg/neo/stuff.cpp",IDC_FILENAME,36,7,252,8
     LTEXT           "Line:",IDC_NOID,7,18,23,9
     LTEXT           "45",IDC_LINE_CONTROL,36,18,217,8
     LTEXT           "Assert:",IDC_NOID,7,29,23,9
@@ -78,7 +78,7 @@ END
 
 IDD_CRASH_DIALOG DIALOGEX 0, 0, 382, 262
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
-CAPTION "Doom 3 BFG Unhandled Exception"
+CAPTION "Unhandled Exception"
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     LTEXT           "",ID_CRASH_TEXT,7,7,368,36
@@ -140,9 +140,9 @@ BEGIN
             VALUE "FileDescription", "DOOM 3: BFG Edition"
             VALUE "FileVersion", "1.0.0.1"
             VALUE "InternalName", "Doom3BFG"
-            VALUE "LegalCopyright", "© 1993-2012 id Software LLC, a ZeniMax Media company"
+            VALUE "LegalCopyright", "(C) 1993-2012 id Software LLC, a ZeniMax Media company"
             VALUE "OriginalFilename", "Doom3BFG"
-            VALUE "ProductName", "DOOM® 3: BFG Edition™"
+            VALUE "ProductName", "DOOM(C) 3: BFG Edition(C)"
             VALUE "ProductVersion", "1.0.0.1"
         END
     END
