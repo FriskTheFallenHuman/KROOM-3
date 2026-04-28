@@ -260,6 +260,7 @@ static void LoadEXR( const char* filename, unsigned char** pic, int* width, int*
 		if( ret != 0 )
 		{
 			common->Error( "LoadEXR( %s ): %s\n", filename, err );
+			FreeEXRErrorMessage( err );
 			return;
 		}
 	}
@@ -387,7 +388,7 @@ void R_WriteEXR( const char* filename, const void* rgba16f, int channelsPerPixel
 	if( size == 0 )
 	{
 		common->Error( "R_WriteEXR( %s ): Save EXR err: %s\n", filename, err );
-
+		FreeEXRErrorMessage( err );
 		goto cleanup;
 	}
 
