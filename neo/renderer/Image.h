@@ -603,8 +603,8 @@ public:
 	idImage* 			chromeSpecImage;				// only for the PBR color checker chart
 	idImage* 			plasticSpecImage;				// only for the PBR color checker chart
 	idImage*			brdfLutImage;
-	idImage*			defaultUACIrradianceCube;
-	idImage*			defaultUACRadianceCube;
+	idImage*			defaultIrradianceCube;
+	idImage*			defaultRadianceCube;
 	// RB end
 	idImage* 			scratchImage;
 	idImage* 			scratchImage2;

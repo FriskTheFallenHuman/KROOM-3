@@ -945,12 +945,12 @@ static void R_CreateBrdfLutImage( idImage* image )
 	image->GenerateImage( ( byte* )brfLutTexBytes, BRDFLUT_TEX_WIDTH, BRDFLUT_TEX_HEIGHT, TF_LINEAR, TR_CLAMP, TD_RG16F );
 }
 
-static void R_CreateEnvprobeImage_UAC_lobby_irradiance( idImage* image )
+static void R_CreateEnvprobeImageirradiance( idImage* image )
 {
 	image->GenerateImage( ( byte* )IMAGE_ENV_UAC_LOBBY_AMB_H_Bytes, IMAGE_ENV_UAC_LOBBY_AMB_H_TEX_WIDTH, IMAGE_ENV_UAC_LOBBY_AMB_H_TEX_HEIGHT, TF_DEFAULT, TR_CLAMP, TD_R11G11B10F, SAMPLE_1, CF_2D_PACKED_MIPCHAIN );
 }
 
-static void R_CreateEnvprobeImage_UAC_lobby_radiance( idImage* image )
+static void R_CreateEnvprobeImageradiance( idImage* image )
 {
 	image->GenerateImage( ( byte* )IMAGE_ENV_UAC_LOBBY_SPEC_H_Bytes, IMAGE_ENV_UAC_LOBBY_SPEC_H_TEX_WIDTH, IMAGE_ENV_UAC_LOBBY_SPEC_H_TEX_HEIGHT, TF_DEFAULT, TR_CLAMP, TD_R11G11B10F, SAMPLE_1, CF_2D_PACKED_MIPCHAIN );
 }
@@ -1043,11 +1043,11 @@ void idImageManager::CreateIntrinsicImages()
 
 	// RB begin
 #if 0
-	defaultUACIrradianceCube = ImageFromFile( "env/UAC5_amb", TF_DEFAULT, TR_CLAMP, TD_R11G11B10F, CF_2D_PACKED_MIPCHAIN );
-	defaultUACRadianceCube = ImageFromFile( "env/UAC5_spec", TF_DEFAULT, TR_CLAMP, TD_R11G11B10F, CF_2D_PACKED_MIPCHAIN );
+	defaultIrradianceCube = ImageFromFile( "env/UAC5_amb", TF_DEFAULT, TR_CLAMP, TD_R11G11B10F, CF_2D_PACKED_MIPCHAIN );
+	defaultRadianceCube = ImageFromFile( "env/UAC5_spec", TF_DEFAULT, TR_CLAMP, TD_R11G11B10F, CF_2D_PACKED_MIPCHAIN );
 #else
-	defaultUACIrradianceCube = ImageFromFunction( "_defaultUACIrradiance", R_CreateEnvprobeImage_UAC_lobby_irradiance );
-	defaultUACRadianceCube = ImageFromFunction( "_defaultUACRadiance", R_CreateEnvprobeImage_UAC_lobby_radiance );
+	defaultIrradianceCube = ImageFromFunction( "_defaultIrradiance", R_CreateEnvprobeImageirradiance );
+	defaultRadianceCube = ImageFromFunction( "_defaultRadiance", R_CreateEnvprobeImageradiance );
 #endif
 	// RB end
 

@@ -72,7 +72,7 @@ viewEnvprobe_t* R_SetEnvprobeDefViewEnvprobe( RenderEnvprobeLocal* probe )
 	}
 	//else
 	//{
-	//	vProbe->irradianceImage = globalImages->defaultUACIrradianceCube;
+	//	vProbe->irradianceImage = globalImages->defaultIrradianceCube;
 	//}
 
 	//if( probe->radianceImage->IsLoaded() )
@@ -81,7 +81,7 @@ viewEnvprobe_t* R_SetEnvprobeDefViewEnvprobe( RenderEnvprobeLocal* probe )
 	}
 	//else
 	//{
-	//	vProbe->radianceImage = globalImages->defaultUACRadianceCube;
+	//	vProbe->radianceImage = globalImages->defaultRadianceCube;
 	//}
 
 	// link the view light

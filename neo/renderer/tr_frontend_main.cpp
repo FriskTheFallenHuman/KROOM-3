@@ -489,11 +489,11 @@ static void R_FindClosestEnvironmentProbes()
 	// set safe defaults
 	tr.viewDef->globalProbeBounds.Clear();
 
-	tr.viewDef->irradianceImage = globalImages->defaultUACIrradianceCube;
+	tr.viewDef->irradianceImage = globalImages->defaultIrradianceCube;
 	tr.viewDef->radianceImageBlends.Set( 1, 0, 0, 0 );
 	for( int i = 0; i < 3; i++ )
 	{
-		tr.viewDef->radianceImages[i] = globalImages->defaultUACRadianceCube;
+		tr.viewDef->radianceImages[i] = globalImages->defaultRadianceCube;
 	}
 
 	// early out
@@ -532,7 +532,7 @@ static void R_FindClosestEnvironmentProbes()
 	RenderEnvprobeLocal* nearest = viewEnvprobes[0];
 	tr.viewDef->globalProbeBounds = nearest->globalProbeBounds;
 
-	if( !nearest->irradianceImage->IsDefaulted() )
+	if( nearest->irradianceImage->IsLoaded() && !nearest->irradianceImage->IsDefaulted() )
 	{
 		tr.viewDef->irradianceImage = nearest->irradianceImage;
 	}
@@ -576,7 +576,7 @@ static void R_FindClosestEnvironmentProbes()
 
 	for( int i = 0; i < viewEnvprobes.Num() && i < 3; i++ )
 	{
-		if( !viewEnvprobes[i]->radianceImage->IsDefaulted() )
+		if( viewEnvprobes[i]->radianceImage->IsLoaded() && !viewEnvprobes[i]->radianceImage->IsDefaulted() )
 		{
 			tr.viewDef->radianceImages[i] = viewEnvprobes[i]->radianceImage;
 		}
