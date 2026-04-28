@@ -165,6 +165,34 @@ void idCommonLocal::CheckToolMode()
 }
 
 /*
+==================
+Com_EditLights_f
+==================
+*/
+static void Com_EditLights_f( const idCmdArgs &args ) {
+	if( cvarSystem->GetCVarInteger( "g_editEntityMode" ) != 1 )
+	{
+		cvarSystem->SetCVarInteger( "g_editEntityMode", 1 );
+
+		// turn off com_smp multithreading so we can load and check light textures on main thread
+		com_editors |= EDITOR_LIGHT;
+	}
+	else
+	{
+		cvarSystem->SetCVarInteger( "g_editEntityMode", 0 );
+
+		com_editors &= ~EDITOR_LIGHT;
+
+		// turn off light debug drawing in the render backend
+		//r_singleLight.SetInteger( -1 );
+		//r_showLights.SetInteger( 0 );
+	}
+
+	// put player into fly mode
+	//Cmd_Noclip_f( args );
+}
+
+/*
 =================
 idCommonLocal::InitCommands
 =================
@@ -186,7 +214,6 @@ void idCommonLocal::InitCommands( void )
 #ifdef ID_ALLOW_TOOLS
 	// editors
 	cmdSystem->AddCommand( "editor", Com_Editor_f, CMD_FL_TOOL, "launches the level editor Radiant" );
-	cmdSystem->AddCommand( "editLights", Com_EditLights_f, CMD_FL_TOOL, "launches the in-game Light Editor" );
 	cmdSystem->AddCommand( "editSounds", Com_EditSounds_f, CMD_FL_TOOL, "launches the in-game Sound Editor" );
 	cmdSystem->AddCommand( "editDecls", Com_EditDecls_f, CMD_FL_TOOL, "launches the in-game Declaration Editor" );
 	cmdSystem->AddCommand( "editAFs", Com_EditAFs_f, CMD_FL_TOOL, "launches the in-game Articulated Figure Editor" );
@@ -198,5 +225,7 @@ void idCommonLocal::InitCommands( void )
 
 	//BSM Nerve: Add support for the material editor
 	cmdSystem->AddCommand( "materialEditor", Com_MaterialEditor_f, CMD_FL_TOOL, "launches the Material Editor" );
+#else
+	cmdSystem->AddCommand( "editLights", Com_EditLights_f, CMD_FL_TOOL, "launches the in-game Light Editor" );
 #endif
 }

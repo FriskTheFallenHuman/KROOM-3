@@ -89,6 +89,68 @@ ImVec2	g_DisplaySize = ImVec2( 0.0f, 0.0f ); //{0.0f, 0.0f};
 
 bool g_haveNewFrame = false;
 
+// Map custom key codes to ImGui key codes
+ImGuiKey MapCustomKeyToImGuiKey( keyNum_t keyNum )
+{
+	switch( keyNum )
+	{
+		case K_TAB:
+			return ImGuiKey_Tab;
+		case K_LEFTARROW:
+			return ImGuiKey_LeftArrow;
+		case K_RIGHTARROW:
+			return ImGuiKey_RightArrow;
+		case K_UPARROW:
+			return ImGuiKey_UpArrow;
+		case K_DOWNARROW:
+			return ImGuiKey_DownArrow;
+		case K_PGUP:
+			return ImGuiKey_PageUp;
+		case K_PGDN:
+			return ImGuiKey_PageDown;
+		case K_HOME:
+			return ImGuiKey_Home;
+		case K_END:
+			return ImGuiKey_End;
+		case K_DEL:
+			return ImGuiKey_Delete;
+		case K_BACKSPACE:
+			return ImGuiKey_Backspace;
+		case K_ENTER:
+			return ImGuiKey_Enter;
+		case K_ESCAPE:
+			return ImGuiKey_Escape;
+		case K_LCTRL:
+			return ImGuiKey_LeftCtrl;
+		case K_RCTRL:
+			return ImGuiKey_RightCtrl;
+		case K_LSHIFT:
+			return ImGuiKey_LeftShift;
+		case K_RSHIFT:
+			return ImGuiKey_RightShift;
+		case K_LALT:
+			return ImGuiKey_LeftAlt;
+		case K_RALT:
+			return ImGuiKey_RightAlt;
+		default:
+			break;
+	}
+
+	// Try to map character keys (A-Z)
+	if( keyNum >= K_A && keyNum <= K_Z )
+	{
+		return ( ImGuiKey )( ImGuiKey_A + ( keyNum - K_A ) );
+	}
+
+	// Try to map number keys (0-9)
+	if( keyNum >= K_0 && keyNum <= K_9 )
+	{
+		return ( ImGuiKey )( ImGuiKey_0 + ( keyNum - K_0 ) );
+	}
+
+	return ImGuiKey_None;
+}
+
 bool HandleKeyEvent( const sysEvent_t& keyEvent )
 {
 	assert( keyEvent.evType == SE_KEY );
@@ -100,12 +162,19 @@ bool HandleKeyEvent( const sysEvent_t& keyEvent )
 
 	if( keyNum < K_JOY1 )
 	{
-		// keyboard input as direct input scancodes
-		io.KeysDown[keyNum] = pressed;
+		ImGuiKey imguiKey = MapCustomKeyToImGuiKey( keyNum );
+		if( imguiKey != ImGuiKey_None )
+		{
+			io.AddKeyEvent( imguiKey, pressed );
+		}
 
-		io.KeyAlt = usercmdGen->KeyState( K_LALT ) == 1 || usercmdGen->KeyState( K_RALT ) == 1;
-		io.KeyCtrl = usercmdGen->KeyState( K_LCTRL ) == 1 || usercmdGen->KeyState( K_RCTRL ) == 1;
-		io.KeyShift = usercmdGen->KeyState( K_LSHIFT ) == 1 || usercmdGen->KeyState( K_RSHIFT ) == 1;
+		// Update modifier keys state
+		io.AddKeyEvent( ImGuiKey_LeftCtrl, usercmdGen->KeyState( K_LCTRL ) == 1 );
+		io.AddKeyEvent( ImGuiKey_RightCtrl, usercmdGen->KeyState( K_RCTRL ) == 1 );
+		io.AddKeyEvent( ImGuiKey_LeftShift, usercmdGen->KeyState( K_LSHIFT ) == 1 );
+		io.AddKeyEvent( ImGuiKey_RightShift, usercmdGen->KeyState( K_RSHIFT ) == 1 );
+		io.AddKeyEvent( ImGuiKey_LeftAlt, usercmdGen->KeyState( K_LALT ) == 1 );
+		io.AddKeyEvent( ImGuiKey_RightAlt, usercmdGen->KeyState( K_RALT ) == 1 );
 
 		return true;
 	}
@@ -121,62 +190,6 @@ bool HandleKeyEvent( const sysEvent_t& keyEvent )
 	}
 
 	return false;
-}
-
-// Gross hack. I'm sorry.
-// sets the kb-layout specific keys in the keymap
-void FillCharKeys( int* keyMap )
-{
-	// set scancodes as default values in case the real keys aren't found below
-	keyMap[ImGuiKey_A] = K_A;
-	keyMap[ImGuiKey_C] = K_C;
-	keyMap[ImGuiKey_V] = K_V;
-	keyMap[ImGuiKey_X] = K_X;
-	keyMap[ImGuiKey_Y] = K_Y;
-	keyMap[ImGuiKey_Z] = K_Z;
-
-	// try all probable keys for whether they're ImGuiKey_A/C/V/X/Y/Z
-	for( int k = K_1; k < K_RSHIFT; ++k )
-	{
-		const char* kn = idKeyInput::LocalizedKeyName( ( keyNum_t )k );
-		if( kn[0] == '\0' || kn[1] != '\0' || kn[0] == '?' )
-		{
-			// if the key wasn't found or the name has more than one char,
-			// it's not what we're looking for.
-			continue;
-		}
-		switch( kn[0] )
-		{
-			case 'a': // fall-through
-			case 'A':
-				keyMap [ImGuiKey_A] = k;
-				break;
-			case 'c': // fall-through
-			case 'C':
-				keyMap [ImGuiKey_C] = k;
-				break;
-
-			case 'v': // fall-through
-			case 'V':
-				keyMap [ImGuiKey_V] = k;
-				break;
-
-			case 'x': // fall-through
-			case 'X':
-				keyMap [ImGuiKey_X] = k;
-				break;
-
-			case 'y': // fall-through
-			case 'Y':
-				keyMap [ImGuiKey_Y] = k;
-				break;
-
-			case 'z': // fall-through
-			case 'Z':
-				keyMap [ImGuiKey_Z] = k;
-				break;
-		}
-	}
 }
 
 // Sys_GetClipboardData() expects that you Mem_Free() its returned data
@@ -206,12 +219,7 @@ void SetClipboardText( void*, const char* text )
 
 bool ShowWindows()
 {
-	return ( ImGuiTools::AreEditorsActive() || imgui_showDemoWindow.GetBool() || com_showFPS.GetInteger() > 1 );
-}
-
-bool UseInput()
-{
-	return ImGuiTools::ReleaseMouseForTools();
+	return ( ImGuiTools::AreEditorsActive() || imgui_showDemoWindow.GetBool() );
 }
 
 } //anon namespace
@@ -223,35 +231,22 @@ bool Init( int windowWidth, int windowHeight )
 		Destroy();
 	}
 
+	idLib::Printf( "--------- Initializing ImGui ----------\n" );
+	
 	IMGUI_CHECKVERSION();
+
+	idLib::Printf( "Version: %s\n", ImGui::GetVersion() );
 
 	ImGui::CreateContext();
 
 	ImGuiIO& io = ImGui::GetIO();
-	// Keyboard mapping. ImGui will use those indices to peek into the io.KeyDown[] array.
-	io.KeyMap[ImGuiKey_Tab] = K_TAB;
-	io.KeyMap[ImGuiKey_LeftArrow] = K_LEFTARROW;
-	io.KeyMap[ImGuiKey_RightArrow] = K_RIGHTARROW;
-	io.KeyMap[ImGuiKey_UpArrow] = K_UPARROW;
-	io.KeyMap[ImGuiKey_DownArrow] = K_DOWNARROW;
-	io.KeyMap[ImGuiKey_PageUp] = K_PGUP;
-	io.KeyMap[ImGuiKey_PageDown] = K_PGDN;
-	io.KeyMap[ImGuiKey_Home] = K_HOME;
-	io.KeyMap[ImGuiKey_End] = K_END;
-	io.KeyMap[ImGuiKey_Delete] = K_DEL;
-	io.KeyMap[ImGuiKey_Backspace] = K_BACKSPACE;
-	io.KeyMap[ImGuiKey_Enter] = K_ENTER;
-	io.KeyMap[ImGuiKey_Escape] = K_ESCAPE;
-
-	FillCharKeys( io.KeyMap );
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
 	g_DisplaySize.x = windowWidth;
 	g_DisplaySize.y = windowHeight;
 	io.DisplaySize = g_DisplaySize;
 
-	io.RenderDrawListsFn = idRenderBackend::ImGui_RenderDrawLists;
-
-	// RB: FIXME double check
 	io.SetClipboardTextFn = SetClipboardText;
 	io.GetClipboardTextFn = GetClipboardText;
 	io.ClipboardUserData = NULL;
@@ -267,7 +262,15 @@ bool Init( int windowWidth, int windowHeight )
 	ImGui::StyleColorsDark();
 	//ImGui::StyleColorsClassic();
 
+	static idStr iniPath;
+	iniPath = cvarSystem->GetCVarString( "fs_savepath" );
+	iniPath += "/imgui.ini";
+	io.IniFilename = iniPath.c_str();
+
 	g_IsInit = true;
+
+	idLib::Printf( "imgui initialized.\n" );
+	idLib::Printf( "--------------------------------------\n" );
 
 	return true;
 }
@@ -294,6 +297,12 @@ void NotifyDisplaySizeChanged( int width, int height )
 			io.Fonts->TexID = ( void* )image;
 		}
 	}
+}
+
+// is a imgui windows requestion input?
+bool UseInput()
+{
+	return ( ImGuiTools::ReleaseMouseForTools() || imgui_showDemoWindow.GetBool() );
 }
 
 // inject a sys event
@@ -437,6 +446,7 @@ void Render()
 		//ImGui::End();
 
 		ImGui::Render();
+		idRenderBackend::ImGui_RenderDrawLists( ImGui::GetDrawData() );
 		g_haveNewFrame = false;
 	}
 }
@@ -445,9 +455,13 @@ void Destroy()
 {
 	if( IsInitialized() )
 	{
+		idLib::Printf( "------------ ImGui Shutdown -----------\n" );
+
 		ImGui::DestroyContext();
 		g_IsInit = false;
 		g_haveNewFrame = false;
+
+		idLib::Printf( "--------------------------------------\n" );
 	}
 }
 

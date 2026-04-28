@@ -505,12 +505,12 @@ void idCommonLocal::Frame()
 
 		// DG: Add pause from com_pause cvar
 		if( com_pause.GetInteger() || console->Active() || Dialog().IsDialogActive() || session->IsSystemUIShowing()
-				|| ( game && game->InhibitControls() ) ||  ImGuiTools::ReleaseMouseForTools() )
+				|| ( game && game->InhibitControls() ) || ImGuiHook::UseInput() )
 			// DG end
 		{
 			// RB: don't release the mouse when opening a PDA or menu
 			// SRS - but always release at main menu after exiting game or demo
-			if( console->Active() || !mapSpawned || ImGuiTools::ReleaseMouseForTools() )
+			if( console->Active() || !mapSpawned || ImGuiHook::UseInput() )
 			{
 				Sys_GrabMouseCursor( false );
 			}
@@ -900,7 +900,7 @@ void idCommonLocal::Frame()
 		LeaveGame();
 
 		// Show the message box
-		idStaticList< idSWFScriptFunction *, 4 > callbacks;
+		idStaticList< idSWFScriptFunction*, 4 > callbacks;
 		idStaticList< idStrId, 4 > optionText;
 		optionText.Append( idStrId( "#str_02013" ) );
 		idStrStatic<560> errorname = err.GetError();

@@ -615,7 +615,7 @@ set(src_tools
 	${src_scripteditor}
 	${src_soundeditor})
 
-include_directories(${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/idlib ${CMAKE_SOURCE_DIR}/extern)
+include_directories(${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/idlib ${CMAKE_SOURCE_DIR}/extern ${CMAKE_SOURCE_DIR}/extern/imgui)
 
 add_subdirectory(d3xp)
 add_subdirectory(idlib)

@@ -399,28 +399,24 @@ void LightEditor::LoadLightTextures()
 }
 
 // static
-bool LightEditor::TextureItemsGetter( void* data, int idx, const char** outText )
+const char* LightEditor::TextureItemsGetter( void* data, int idx )
 {
 	LightEditor* self = static_cast<LightEditor*>( data );
 	if( idx == 0 )
 	{
-		*outText = "<No Texture>";
-		return true;
+		return "<No Texture>";
 	}
 
-	// as index 0 has special purpose, the "real" index is one less
-	--idx;
+	--idx; // account for the special 0 entry
 
 	if( idx < 0 || idx >= self->textureNames.Num() )
 	{
-		*outText = "<Invalid Index!>";
-		return false;
+		return "<Invalid Index!>";
 	}
 
-	*outText = self->textureNames[idx].c_str();
-
-	return true;
+	return self->textureNames[idx].c_str();
 }
+
 
 void LightEditor::LoadCurrentTexture()
 {

@@ -308,9 +308,9 @@ void idGuiModel::EmitImGui( ImDrawData* drawData )
 
 			// support more than just the imGui Font texture
 			const idMaterial* mat = tr.imgGuiMaterial;
-			if( pcmd->TextureId && ( mat != ( const idMaterial* )pcmd->TextureId ) )
+			if( pcmd->GetTexID() && ( mat != ( const idMaterial* )pcmd->GetTexID() ) )
 			{
-				mat = ( const idMaterial* )pcmd->TextureId;
+				mat = ( const idMaterial* )pcmd->GetTexID();
 			}
 
 			idDrawVert* verts = renderSystem->AllocTris( numVerts, indexBufferOffset, numIndexes, mat );

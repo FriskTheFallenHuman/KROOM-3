@@ -98,7 +98,7 @@ private:
 	void Reset();
 
 	void LoadLightTextures();
-	static bool TextureItemsGetter( void* data, int idx, const char** out_text );
+	static const char* TextureItemsGetter( void* data, int idx );
 	void LoadCurrentTexture();
 
 	void DrawWindow();

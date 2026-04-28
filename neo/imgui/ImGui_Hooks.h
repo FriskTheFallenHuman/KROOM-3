@@ -12,6 +12,8 @@ bool	Init( int windowWidth, int windowHeight );
 
 bool	IsInitialized();
 
+bool	UseInput();
+
 // tell imgui that the (game) window size has changed
 void	NotifyDisplaySizeChanged( int width, int height );
 
