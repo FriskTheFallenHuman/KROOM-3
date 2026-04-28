@@ -671,7 +671,6 @@ void	idRenderWorldLocal::WriteRenderLight( idDemoFile* f, qhandle_t handle, cons
 	f->WriteVec3( light->start );
 	f->WriteVec3( light->end );
 	f->WriteInt( light->lightId );
-	f->WriteInt( ( int& )light->prelightModel );
 	f->WriteInt( ( int& )light->shader );
 	for( int i = 0; i < MAX_ENTITY_SHADER_PARMS; i++ )
 	{
@@ -679,15 +678,6 @@ void	idRenderWorldLocal::WriteRenderLight( idDemoFile* f, qhandle_t handle, cons
 	}
 	f->WriteInt( ( int& )light->referenceSound );
 
-	if( light->prelightModel )
-	{
-		f->WriteInt( 1 );
-		f->WriteHashString( light->prelightModel->Name() );
-	}
-	else
-	{
-		f->WriteInt( 0 );
-	}
 	if( light->shader )
 	{
 		f->WriteInt( 1 );
@@ -735,7 +725,6 @@ void	idRenderWorldLocal::ReadRenderLight( )
 		common->Printf( "DC_UPDATE_LIGHTDEF: init %i\n", index );
 	}
 	/* Initialize Pointers */
-	light.prelightModel = NULL;
 	light.shader = NULL;
 	light.referenceSound = NULL;
 
@@ -755,7 +744,11 @@ void	idRenderWorldLocal::ReadRenderLight( )
 	common->ReadDemo()->ReadVec3( light.start );
 	common->ReadDemo()->ReadVec3( light.end );
 	common->ReadDemo()->ReadInt( light.lightId );
-	common->ReadDemo()->ReadInt( ( int& )light.prelightModel );
+
+	// keep compatibility.
+	int stub1;
+	common->ReadDemo()->ReadInt( ( int& )stub1 );
+
 	common->ReadDemo()->ReadInt( ( int& )light.shader );
 	for( int i = 0; i < MAX_ENTITY_SHADER_PARMS; i++ )
 	{
@@ -763,11 +756,10 @@ void	idRenderWorldLocal::ReadRenderLight( )
 	}
 	common->ReadDemo()->ReadInt( ( int& )light.referenceSound );
 
-	common->ReadDemo()->ReadInt( i );
-	if( i )
-	{
-		light.prelightModel = renderModelManager->FindModel( common->ReadDemo()->ReadHashString() );
-	}
+	// keep compatibility.
+	int stub2;
+	common->ReadDemo()->ReadInt( stub2 );
+
 	common->ReadDemo()->ReadInt( i );
 	if( i )
 	{

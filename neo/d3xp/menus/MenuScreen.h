@@ -1301,7 +1301,6 @@ public:
 			SYSTEM_FIELD_ANTIALIASING,
 			// RB begin
 			SYSTEM_FIELD_POSTFX,
-			SYSTEM_FIELD_SHADOWMAPPING,
 			SYSTEM_FIELD_SSAO,
 			SYSTEM_FIELD_AMBIENT_BRIGHTNESS,
 			// RB end
@@ -1336,7 +1335,6 @@ public:
 		float originalBrightness;
 		float originalVolume;
 		// RB begin
-		int originalShadowMapping;
 		int originalSSAO;
 		int originalPostProcessing;
 		float originalAmbientBrightness;

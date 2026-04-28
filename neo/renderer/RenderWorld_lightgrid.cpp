@@ -1197,11 +1197,9 @@ CONSOLE_COMMAND( bakeLightGrids, "Bake irradiance/vis light grid data", NULL )
 
 			// RB: this really sucks but prevents a crash I couldn't track down
 			extern idCVar r_useParallelAddModels;
-			extern idCVar r_useParallelAddShadows;
 			extern idCVar r_useParallelAddLights;
 
 			r_useParallelAddModels.SetBool( false );
-			r_useParallelAddShadows.SetBool( false );
 			r_useParallelAddLights.SetBool( false );
 
 			// discard anything currently on the list (this triggers SwapBuffers)
@@ -1318,7 +1316,6 @@ CONSOLE_COMMAND( bakeLightGrids, "Bake irradiance/vis light grid data", NULL )
 
 			r_useScissor.SetBool( true );
 			r_useParallelAddModels.SetBool( true );
-			r_useParallelAddShadows.SetBool( true );
 			r_useParallelAddLights.SetBool( true );
 
 			common->Printf( "captured light grid radiance for area %i in %5.1f seconds\n\n", a, ( end - start ) * 0.001f );

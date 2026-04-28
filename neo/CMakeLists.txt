@@ -421,27 +421,11 @@ source_group("Renderer\\DXT" FILES ${src_renderer_dxt})
 file(GLOB src_renderer_smaa renderer/SMAA/*.h)
 source_group("Renderer\\SMAA" FILES ${src_renderer_smaa})
 
-file(GLOB src_renderer_jobs renderer/jobs/*.cpp renderer/jobs/*.h)
-source_group("Renderer\\Jobs" FILES ${src_renderer_jobs})
-
-file(GLOB src_renderer_jobs_dynamicshadowvolume renderer/jobs/dynamicshadowvolume/*.cpp renderer/jobs/dynamicshadowvolume/*.h)
-source_group("Renderer\\Jobs\\DynamicShadowVolume" FILES ${src_renderer_jobs_dynamicshadowvolume})
-
-file(GLOB src_renderer_jobs_prelightshadowvolume renderer/jobs/prelightshadowvolume/*.cpp renderer/jobs/prelightshadowvolume/*.h)
-source_group("Renderer\\Jobs\\PrelightShadowVolume" FILES ${src_renderer_jobs_prelightshadowvolume})
-
-file(GLOB src_renderer_jobs_staticshadowvolume renderer/jobs/staticshadowvolume/*.cpp renderer/jobs/staticshadowvolume/*.h)
-source_group("Renderer\\Jobs\\StaticShadowVolume" FILES ${src_renderer_jobs_staticshadowvolume})
-
 # These files are funny
 set_source_files_properties(
 	${CMAKE_CURRENT_SOURCE_DIR}/renderer/DXT/DXTDecoder.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/renderer/DXT/DXTEncoder.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/renderer/DXT/DXTEncoder_SSE2.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/renderer/jobs/dynamicshadowvolume/DynamicShadowVolume.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/renderer/jobs/prelightshadowvolume/PreLightShadowVolume.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/renderer/jobs/staticshadowvolume/StaticShadowVolume.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/renderer/jobs/ShadowShared.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/renderer/RenderLog.cpp
 	PROPERTIES
 	SKIP_PRECOMPILE_HEADERS ON)
@@ -496,10 +480,6 @@ set(src_core
 	${src_renderer_color}
 	${src_renderer_dxt}
 	${src_renderer_smaa}
-	${src_renderer_jobs}
-	${src_renderer_jobs_dynamicshadowvolume}
-	${src_renderer_jobs_prelightshadowvolume}
-	${src_renderer_jobs_staticshadowvolume}
 	${src_sound}
 	${src_swf}
 	${src_sys}
@@ -521,9 +501,6 @@ source_group("Tools\\Compilers\\AAS" FILES ${src_aas})
 file(GLOB src_roq tools/compilers/roqvq/*.cpp tools/compilers/roqvq/*.h)
 source_group("Tools\\Compilers\\RoqVq" FILES ${src_roq})
 
-file(GLOB src_renderbump tools/compilers/renderbump/*.cpp tools/compilers/renderbump/*.h)
-source_group("Tools\\Compilers\\RenderBump" FILES ${src_renderbump})
-
 file(GLOB src_amplitude tools/compilers/amplitude/*.cpp tools/compilers/amplitude/*.h)
 source_group("Tools\\Compilers\\Amplitude" FILES ${src_amplitude})
 
@@ -535,7 +512,6 @@ set(src_compilers
 	${src_dmap}
 	${src_aas}
 	${src_roq}
-	${src_renderbump}
 	${src_amplitude}
 	${src_debugger_server})
 

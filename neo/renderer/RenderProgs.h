@@ -523,34 +523,6 @@ public:
 		BindShader_Builtin( BUILTIN_DEPTH_SKINNED );
 	}
 
-	void	BindShader_Shadow()
-	{
-		// RB: no FFP fragment rendering anymore
-		//BindShader( -1, builtinShaders[BUILTIN_SHADOW], -1, true );
-
-		BindShader_Builtin( BUILTIN_SHADOW );
-		// RB end
-	}
-
-	void	BindShader_ShadowSkinned()
-	{
-		// RB: no FFP fragment rendering anymore
-		//BindShader( -1, builtinShaders[BUILTIN_SHADOW_SKINNED], -1, true );
-
-		BindShader_Builtin( BUILTIN_SHADOW_SKINNED );
-		// RB end
-	}
-
-	void	BindShader_ShadowDebug()
-	{
-		BindShader_Builtin( BUILTIN_SHADOW_DEBUG );
-	}
-
-	void	BindShader_ShadowDebugSkinned()
-	{
-		BindShader_Builtin( BUILTIN_SHADOW_DEBUG_SKINNED );
-	}
-
 	void	BindShader_BlendLight()
 	{
 		BindShader_Builtin( BUILTIN_BLENDLIGHT );
@@ -803,10 +775,6 @@ private:
 
 		BUILTIN_DEPTH,
 		BUILTIN_DEPTH_SKINNED,
-		BUILTIN_SHADOW,
-		BUILTIN_SHADOW_SKINNED,
-		BUILTIN_SHADOW_DEBUG,
-		BUILTIN_SHADOW_DEBUG_SKINNED,
 
 		BUILTIN_BLENDLIGHT,
 		BUILTIN_FOG,

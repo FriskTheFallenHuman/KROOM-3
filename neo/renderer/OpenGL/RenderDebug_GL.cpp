@@ -654,99 +654,6 @@ void idRenderBackend::DBG_RenderDrawSurfListWithFunction( drawSurf_t** drawSurfs
 }
 
 /*
-=================
-idRenderBackend::DBG_ShowSilhouette
-
-Blacks out all edges, then adds color for each edge that a shadow
-plane extends from, allowing you to see doubled edges
-
-FIXME: not thread safe!
-=================
-*/
-void idRenderBackend::DBG_ShowSilhouette()
-{
-	int		i;
-	const drawSurf_t*	surf;
-	const viewLight_t*	vLight;
-
-	if( !r_showSilhouette.GetBool() )
-	{
-		return;
-	}
-
-	// clear all triangle edges to black
-
-	// RB
-	renderProgManager.BindShader_Color();
-
-	GL_Color( 0, 0, 0 );
-	GL_State( GLS_DEPTHFUNC_ALWAYS | GLS_POLYMODE_LINE | GLS_CULL_TWOSIDED );
-
-	DBG_RenderDrawSurfListWithFunction( viewDef->drawSurfs, viewDef->numDrawSurfs );
-
-
-	// now blend in edges that cast silhouettes
-	DBG_SimpleWorldSetup();
-
-	GL_Color( 0.5, 0, 0 );
-	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE );
-
-	for( vLight = viewDef->viewLights; vLight; vLight = vLight->next )
-	{
-		for( i = 0; i < 2; i++ )
-		{
-			for( surf = i ? vLight->localShadows : vLight->globalShadows
-						; surf; surf = ( drawSurf_t* )surf->nextOnLight )
-			{
-				DBG_SimpleSurfaceSetup( surf );
-
-				const srfTriangles_t* tri = surf->frontEndGeo;
-
-				idVertexBuffer vertexBuffer;
-				if( !vertexCache.GetVertexBuffer( tri->shadowCache, &vertexBuffer ) )
-				{
-					continue;
-				}
-
-				// RB: 64 bit fixes, changed GLuint to GLintptr
-				glBindBuffer( GL_ARRAY_BUFFER, ( GLintptr )vertexBuffer.GetAPIObject() );
-				GLintptr vertOffset = vertexBuffer.GetOffset();
-				// RB end
-
-				glVertexPointer( 3, GL_FLOAT, sizeof( idShadowVert ), ( void* )vertOffset );
-				glBegin( GL_LINES );
-
-				for( int j = 0; j < tri->numIndexes; j += 3 )
-				{
-					int		i1 = tri->indexes[j + 0];
-					int		i2 = tri->indexes[j + 1];
-					int		i3 = tri->indexes[j + 2];
-
-					if( ( i1 & 1 ) + ( i2 & 1 ) + ( i3 & 1 ) == 1 )
-					{
-						if( ( i1 & 1 ) + ( i2 & 1 ) == 0 )
-						{
-							glArrayElement( i1 );
-							glArrayElement( i2 );
-						}
-						else if( ( i1 & 1 ) + ( i3 & 1 ) == 0 )
-						{
-							glArrayElement( i1 );
-							glArrayElement( i3 );
-						}
-					}
-				}
-				glEnd();
-
-			}
-		}
-	}
-
-	GL_State( GLS_DEFAULT );
-	GL_Color( 1, 1, 1 );
-}
-
-/*
 =====================
 idRenderBackend::DBG_ShowTris
 
@@ -1517,113 +1424,6 @@ void idRenderBackend::DBG_ShowDominantTris( drawSurf_t** drawSurfs, int numDrawS
 		glEnd();
 	}
 	glDisable( GL_POLYGON_OFFSET_LINE );
-}
-
-/*
-=====================
-idRenderBackend::DBG_ShowEdges
-
-Debugging tool
-=====================
-*/
-void idRenderBackend::DBG_ShowEdges( drawSurf_t** drawSurfs, int numDrawSurfs )
-{
-	int			i, j, k, m, n, o;
-	drawSurf_t*	drawSurf;
-	const srfTriangles_t*	tri;
-	const silEdge_t*			edge;
-	int			danglePlane;
-
-	if( !r_showEdges.GetBool() )
-	{
-		return;
-	}
-
-	GL_State( GLS_DEPTHFUNC_ALWAYS );
-
-	for( i = 0; i < numDrawSurfs; i++ )
-	{
-		drawSurf = drawSurfs[i];
-
-		tri = drawSurf->frontEndGeo;
-
-		idDrawVert* ac = ( idDrawVert* )tri->verts;
-		if( !ac )
-		{
-			continue;
-		}
-
-		DBG_SimpleSurfaceSetup( drawSurf );
-
-		// draw non-shared edges in yellow
-		GL_Color( 1, 1, 0 );
-		glBegin( GL_LINES );
-
-		for( j = 0; j < tri->numIndexes; j += 3 )
-		{
-			for( k = 0; k < 3; k++ )
-			{
-				int		l, i1, i2;
-				l = ( k == 2 ) ? 0 : k + 1;
-				i1 = tri->indexes[j + k];
-				i2 = tri->indexes[j + l];
-
-				// if these are used backwards, the edge is shared
-				for( m = 0; m < tri->numIndexes; m += 3 )
-				{
-					for( n = 0; n < 3; n++ )
-					{
-						o = ( n == 2 ) ? 0 : n + 1;
-						if( tri->indexes[m + n] == i2 && tri->indexes[m + o] == i1 )
-						{
-							break;
-						}
-					}
-					if( n != 3 )
-					{
-						break;
-					}
-				}
-
-				// if we didn't find a backwards listing, draw it in yellow
-				if( m == tri->numIndexes )
-				{
-					glVertex3fv( ac[ i1 ].xyz.ToFloatPtr() );
-					glVertex3fv( ac[ i2 ].xyz.ToFloatPtr() );
-				}
-
-			}
-		}
-
-		glEnd();
-
-		// draw dangling sil edges in red
-		if( !tri->silEdges )
-		{
-			continue;
-		}
-
-		// the plane number after all real planes
-		// is the dangling edge
-		danglePlane = tri->numIndexes / 3;
-
-		GL_Color( 1, 0, 0 );
-
-		glBegin( GL_LINES );
-		for( j = 0; j < tri->numSilEdges; j++ )
-		{
-			edge = tri->silEdges + j;
-
-			if( edge->p1 != danglePlane && edge->p2 != danglePlane )
-			{
-				continue;
-			}
-
-			glVertex3fv( ac[ edge->v1 ].xyz.ToFloatPtr() );
-			glVertex3fv( ac[ edge->v2 ].xyz.ToFloatPtr() );
-		}
-		glEnd();
-	}
 }
 
 /*
@@ -3643,7 +3443,6 @@ void idRenderBackend::DBG_RenderDebugTools( drawSurf_t** drawSurfs, int numDrawS
 	DBG_ShowTris( drawSurfs, numDrawSurfs );
 	DBG_ShowUnsmoothedTangents( drawSurfs, numDrawSurfs );
 	DBG_ShowSurfaceInfo( drawSurfs, numDrawSurfs );
-	DBG_ShowEdges( drawSurfs, numDrawSurfs );
 	DBG_ShowNormals( drawSurfs, numDrawSurfs );
 	DBG_ShowViewEntitys( viewDef->viewEntitys );
 	DBG_ShowLights();
@@ -3666,7 +3465,6 @@ void idRenderBackend::DBG_RenderDebugTools( drawSurf_t** drawSurfs, int numDrawS
 	}
 	DBG_TestImage();
 	DBG_ShowPortals();
-	DBG_ShowSilhouette();
 	DBG_ShowDepthBuffer();
 	DBG_ShowIntensity();
 	DBG_ShowCenterOfProjection();

@@ -44,7 +44,11 @@ idCVar idRenderModelStatic::r_slopVertex( "r_slopVertex", "0.01", CVAR_RENDERER,
 idCVar idRenderModelStatic::r_slopTexCoord( "r_slopTexCoord", "0.001", CVAR_RENDERER, "merge texture coordinates this far apart" );
 idCVar idRenderModelStatic::r_slopNormal( "r_slopNormal", "0.02", CVAR_RENDERER, "merge normals that dot less than this" );
 
-static const byte BRM_VERSION = 108;
+static const byte BRM_VERSION_BFG = 108;
+static const byte BRM_VERSION_SHADOWMAPPING = 109;
+static const byte BRM_VERSION = BRM_VERSION_SHADOWMAPPING;
+
+static const unsigned int BRM_MAGIC_BFG = ( 'B' << 24 ) | ( 'R' << 16 ) | ( 'M' << 8 ) | BRM_VERSION_BFG;
 static const unsigned int BRM_MAGIC = ( 'B' << 24 ) | ( 'R' << 16 ) | ( 'M' << 8 ) | BRM_VERSION;
 
 /*
@@ -177,7 +181,7 @@ void idRenderModelStatic::List() const
 		totalTris += surf->geometry->numIndexes / 3;
 		totalVerts += surf->geometry->numVerts;
 	}
-	common->Printf( "%c%4ik %3i %4i %4i %s", closed, totalBytes / 1024, NumSurfaces(), totalVerts, totalTris, Name() );
+	common->Printf( "%c%4ik %3i %4i %4i '%s'", closed, totalBytes / 1024, NumSurfaces(), totalVerts, totalTris, Name() );
 
 	if( IsDynamicModel() == DM_CACHED )
 	{
@@ -382,7 +386,7 @@ bool idRenderModelStatic::LoadBinaryModel( idFile* file, const ID_TIME_T sourceT
 
 	unsigned int magic = 0;
 	file->ReadBig( magic );
-	if( magic != BRM_MAGIC )
+	if( magic != BRM_MAGIC_BFG && magic != BRM_MAGIC )
 	{
 		return false;
 	}
@@ -430,8 +434,11 @@ bool idRenderModelStatic::LoadBinaryModel( idFile* file, const ID_TIME_T sourceT
 			file->ReadVec3( tri.bounds[0] );
 			file->ReadVec3( tri.bounds[1] );
 
-			int ambientViewCount = 0;	// FIXME: remove
-			file->ReadBig( ambientViewCount );
+			if( magic == BRM_MAGIC_BFG )
+			{
+				int ambientViewCount = 0;
+				file->ReadBig( ambientViewCount );
+			}
 			file->ReadBig( tri.generateNormals );
 			file->ReadBig( tri.tangentsCalculated );
 			file->ReadBig( tri.perfectHull );
@@ -456,17 +463,26 @@ bool idRenderModelStatic::LoadBinaryModel( idFile* file, const ID_TIME_T sourceT
 				}
 			}
 
-			file->ReadBig( numInFile );
-			if( numInFile == 0 )
+			if( magic == BRM_MAGIC_BFG )
 			{
-				tri.preLightShadowVertexes = NULL;
-			}
-			else
-			{
-				R_AllocStaticTriSurfPreLightShadowVerts( &tri, numInFile );
-				for( int j = 0; j < numInFile; j++ )
+				// keep compatibility.
+				file->ReadBig( numInFile );
+				if( numInFile == 0 )
 				{
-					file->ReadVec4( tri.preLightShadowVertexes[ j ].xyzw );
+					//tri.preLightShadowVertexes = NULL;
+				}
+				else
+				{
+					//R_AllocStaticTriSurfPreLightShadowVerts( &tri, numInFile );
+					//for( int j = 0; j < numInFile; j++ )
+					//{
+					//	file->ReadVec4( tri.preLightShadowVertexes[ j ].xyzw );
+					//}
+					for( int j = 0; j < numInFile; j++ )
+					{
+						idVec4 stub;
+						file->ReadVec4( stub );
+					}
 				}
 			}
 
@@ -501,18 +517,21 @@ bool idRenderModelStatic::LoadBinaryModel( idFile* file, const ID_TIME_T sourceT
 				file->ReadBigArray( tri.dupVerts, tri.numDupVerts * 2 );
 			}
 
-			file->ReadBig( tri.numSilEdges );
-			tri.silEdges = NULL;
-			if( tri.numSilEdges > 0 )
+			if( magic == BRM_MAGIC_BFG )
 			{
-				R_AllocStaticTriSurfSilEdges( &tri, tri.numSilEdges );
-				assert( tri.silEdges != NULL );
-				for( int j = 0; j < tri.numSilEdges; j++ )
+				// keep compatibility.
+				int numSilEdges = 0;
+				file->ReadBig( numSilEdges );
+				if( numSilEdges > 0 )
 				{
-					file->ReadBig( tri.silEdges[j].p1 );
-					file->ReadBig( tri.silEdges[j].p2 );
-					file->ReadBig( tri.silEdges[j].v1 );
-					file->ReadBig( tri.silEdges[j].v2 );
+					for( int j = 0; j < numSilEdges; j++ )
+					{
+						triIndex_t stub;
+						file->ReadBig( stub );
+						file->ReadBig( stub );
+						file->ReadBig( stub );
+						file->ReadBig( stub );
+					}
 				}
 			}
 
@@ -532,15 +551,19 @@ bool idRenderModelStatic::LoadBinaryModel( idFile* file, const ID_TIME_T sourceT
 				}
 			}
 
-			file->ReadBig( tri.numShadowIndexesNoFrontCaps );
-			file->ReadBig( tri.numShadowIndexesNoCaps );
-			file->ReadBig( tri.shadowCapPlaneBits );
+			if( magic == BRM_MAGIC_BFG )
+			{
+				// keep compatibility.
+				int stub;
+				file->ReadBig( stub );
+				file->ReadBig( stub );
+				file->ReadBig( stub );
+			}
 
 			tri.ambientSurface = NULL;
 			tri.nextDeferredFree = NULL;
 			tri.indexCache = 0;
 			tri.ambientCache = 0;
-			tri.shadowCache = 0;
 		}
 	}
 
@@ -609,8 +632,6 @@ void idRenderModelStatic::WriteBinaryModel( idFile* file, ID_TIME_T* _timeStamp 
 			file->WriteVec3( tri.bounds[0] );
 			file->WriteVec3( tri.bounds[1] );
 
-			int ambientViewCount = 0;	// FIXME: remove
-			file->WriteBig( ambientViewCount );
 			file->WriteBig( tri.generateNormals );
 			file->WriteBig( tri.tangentsCalculated );
 			file->WriteBig( tri.perfectHull );
@@ -638,19 +659,6 @@ void idRenderModelStatic::WriteBinaryModel( idFile* file, ID_TIME_T* _timeStamp 
 					file->WriteBigArray( tri.verts[j].color, sizeof( tri.verts[j].color ) / sizeof( tri.verts[j].color[0] ) );
 					file->WriteBigArray( tri.verts[j].color2, sizeof( tri.verts[j].color2 ) / sizeof( tri.verts[j].color2[0] ) );
 				}
-			}
-
-			if( tri.preLightShadowVertexes != NULL )
-			{
-				file->WriteBig( tri.numVerts * 2 );
-				for( int j = 0; j < tri.numVerts * 2; j++ )
-				{
-					file->WriteVec4( tri.preLightShadowVertexes[ j ].xyzw );
-				}
-			}
-			else
-			{
-				file->WriteBig( ( int ) 0 );
 			}
 
 			file->WriteBig( tri.numIndexes );
@@ -686,18 +694,6 @@ void idRenderModelStatic::WriteBinaryModel( idFile* file, ID_TIME_T* _timeStamp 
 				file->WriteBigArray( tri.dupVerts, tri.numDupVerts * 2 );
 			}
 
-			file->WriteBig( tri.numSilEdges );
-			if( tri.numSilEdges > 0 )
-			{
-				for( int j = 0; j < tri.numSilEdges; j++ )
-				{
-					file->WriteBig( tri.silEdges[j].p1 );
-					file->WriteBig( tri.silEdges[j].p2 );
-					file->WriteBig( tri.silEdges[j].v1 );
-					file->WriteBig( tri.silEdges[j].v2 );
-				}
-			}
-
 			file->WriteBig( tri.dominantTris != NULL );
 			if( tri.dominantTris != NULL )
 			{
@@ -710,10 +706,6 @@ void idRenderModelStatic::WriteBinaryModel( idFile* file, ID_TIME_T* _timeStamp 
 					file->WriteFloat( tri.dominantTris[j].normalizationScale[2] );
 				}
 			}
-
-			file->WriteBig( tri.numShadowIndexesNoFrontCaps );
-			file->WriteBig( tri.numShadowIndexesNoCaps );
-			file->WriteBig( tri.shadowCapPlaneBits );
 		}
 	}
 

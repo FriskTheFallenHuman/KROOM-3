@@ -1046,7 +1046,7 @@ idStr idRenderProgManager::ConvertCG2GLSL( const idStr& in, const char* name, rp
 	idLexer src( LEXFL_NOFATALERRORS );
 	src.LoadMemory( in.c_str(), in.Length(), name );
 
-	bool in_Position4 = ( vertexLayout == LAYOUT_DRAW_SHADOW_VERT ) || ( vertexLayout == LAYOUT_DRAW_SHADOW_VERT_SKINNED );
+	bool in_Position4 = false; //( vertexLayout == LAYOUT_DRAW_SHADOW_VERT ) || ( vertexLayout == LAYOUT_DRAW_SHADOW_VERT_SKINNED );
 
 	bool inMain = false;
 	bool justEnteredMain = false;

@@ -115,7 +115,6 @@ ID_INLINE halfFloat_t F32toF16( float a )
 class idDrawVert
 {
 	friend class idSwap;
-	friend class idShadowVertSkinned;
 	friend class idRenderModelStatic;
 
 	friend void TransformVertsAndTangents( idDrawVert* targetVerts, const int numVerts, const idDrawVert* baseVerts, const idJointMat* joints );
@@ -788,59 +787,6 @@ ID_INLINE idVec3 idDrawVert::GetSkinnedDrawVertPosition( const idDrawVert& vert,
 	idJointMat::Mad( accum, j3, w3 );
 
 	return accum * idVec4( vert.xyz.x, vert.xyz.y, vert.xyz.z, 1.0f );
-}
-
-/*
-===============================================================================
-Shadow Vertex
-===============================================================================
-*/
-class idShadowVert
-{
-public:
-	idVec4			xyzw;
-
-	void			Clear();
-	static int		CreateShadowCache( idShadowVert* vertexCache, const idDrawVert* verts, const int numVerts );
-};
-
-#define SHADOWVERT_XYZW_OFFSET		(0)
-
-assert_offsetof( idShadowVert, xyzw, SHADOWVERT_XYZW_OFFSET );
-
-ID_INLINE void idShadowVert::Clear()
-{
-	xyzw.Zero();
-}
-
-/*
-===============================================================================
-Skinned Shadow Vertex
-===============================================================================
-*/
-class idShadowVertSkinned
-{
-public:
-	idVec4			xyzw;
-	byte			color[4];
-	byte			color2[4];
-	byte			pad[8];		// pad to multiple of 32-byte for glDrawElementsBaseVertex
-
-	void			Clear();
-	static int		CreateShadowCache( idShadowVertSkinned* vertexCache, const idDrawVert* verts, const int numVerts );
-};
-
-#define SHADOWVERTSKINNED_XYZW_OFFSET		(0)
-#define SHADOWVERTSKINNED_COLOR_OFFSET		(16)
-#define SHADOWVERTSKINNED_COLOR2_OFFSET		(20)
-
-assert_offsetof( idShadowVertSkinned, xyzw, SHADOWVERTSKINNED_XYZW_OFFSET );
-assert_offsetof( idShadowVertSkinned, color, SHADOWVERTSKINNED_COLOR_OFFSET );
-assert_offsetof( idShadowVertSkinned, color2, SHADOWVERTSKINNED_COLOR2_OFFSET );
-
-ID_INLINE void idShadowVertSkinned::Clear()
-{
-	xyzw.Zero();
 }
 
 #endif /* !__DRAWVERT_H__ */

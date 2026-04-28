@@ -157,7 +157,7 @@ idRenderModel* idRenderWorldLocal::ParseModel( idLexer* src, const char* mapName
 	if( fileOut != NULL )
 	{
 		// write out the type so the binary reader knows what to instantiate
-		fileOut->WriteString( "shadowmodel" );
+		fileOut->WriteString( "model" );
 		fileOut->WriteString( token );
 	}
 
@@ -325,88 +325,6 @@ idRenderModel* idRenderWorldLocal::ReadBinaryShadowModel( idFile* fileIn )
 	}
 	return NULL;
 }
-/*
-================
-idRenderWorldLocal::ParseShadowModel
-================
-*/
-idRenderModel* idRenderWorldLocal::ParseShadowModel( idLexer* src, idFile* fileOut )
-{
-	idToken token;
-
-	src->ExpectTokenString( "{" );
-
-	// parse the name
-	src->ExpectAnyToken( &token );
-
-	idRenderModel* model = renderModelManager->AllocModel();
-	model->InitEmpty( token );
-
-	if( fileOut != NULL )
-	{
-		// write out the type so the binary reader knows what to instantiate
-		fileOut->WriteString( "shadowmodel" );
-		fileOut->WriteString( token );
-	}
-
-	srfTriangles_t* tri = R_AllocStaticTriSurf();
-
-	tri->numVerts = src->ParseInt();
-	tri->numShadowIndexesNoCaps = src->ParseInt();
-	tri->numShadowIndexesNoFrontCaps = src->ParseInt();
-	tri->numIndexes = src->ParseInt();
-	tri->shadowCapPlaneBits = src->ParseInt();
-
-	assert( ( tri->numVerts & 1 ) == 0 );
-
-	R_AllocStaticTriSurfPreLightShadowVerts( tri, ALIGN( tri->numVerts, 2 ) );
-	tri->bounds.Clear();
-	for( int j = 0; j < tri->numVerts; j++ )
-	{
-		float vec[8];
-
-		src->Parse1DMatrix( 3, vec );
-		tri->preLightShadowVertexes[j].xyzw[0] = vec[0];
-		tri->preLightShadowVertexes[j].xyzw[1] = vec[1];
-		tri->preLightShadowVertexes[j].xyzw[2] = vec[2];
-		tri->preLightShadowVertexes[j].xyzw[3] = 1.0f;		// no homogenous value
-
-		tri->bounds.AddPoint( tri->preLightShadowVertexes[j].xyzw.ToVec3() );
-	}
-	// clear the last vertex if it wasn't stored
-	if( ( tri->numVerts & 1 ) != 0 )
-	{
-		tri->preLightShadowVertexes[ALIGN( tri->numVerts, 2 ) - 1].xyzw.Zero();
-	}
-
-	// to be consistent set the number of vertices to half the number of shadow vertices
-	tri->numVerts = ALIGN( tri->numVerts, 2 ) / 2;
-
-	R_AllocStaticTriSurfIndexes( tri, tri->numIndexes );
-	for( int j = 0; j < tri->numIndexes; j++ )
-	{
-		tri->indexes[j] = src->ParseInt();
-	}
-
-	// add the completed surface to the model
-	modelSurface_t surf;
-	surf.id = 0;
-	surf.shader = tr.defaultMaterial;
-	surf.geometry = tri;
-
-	model->AddSurface( surf );
-
-	src->ExpectTokenString( "}" );
-
-	// NOTE: we do NOT do a model->FinishSurfaceces, because we don't need sil edges, planes, tangents, etc.
-
-	if( fileOut != NULL && model->SupportsBinaryModel() && binaryLoadRenderModels.GetBool() )
-	{
-		model->WriteBinaryModel( fileOut, &mapTimeStamp );
-	}
-
-	return model;
-}
 
 /*
 ================
@@ -566,13 +484,16 @@ void idRenderWorldLocal::ReadBinaryAreaPortals( idFile* file )
 		file->ReadBig( numPoints );
 		file->ReadBig( a1 );
 		file->ReadBig( a2 );
+
 		w = new( TAG_RENDER_WINDING ) idWinding( numPoints );
 		w->SetNumPoints( numPoints );
+
 		for( int j = 0; j < numPoints; j++ )
 		{
 			file->ReadBig( ( *w )[ j ][ 0 ] );
 			file->ReadBig( ( *w )[ j ][ 1 ] );
 			file->ReadBig( ( *w )[ j ][ 2 ] );
+
 			// no texture coordinates
 			( *w )[ j ][ 3 ] = 0;
 			( *w )[ j ][ 4 ] = 0;
@@ -867,7 +788,12 @@ bool idRenderWorldLocal::InitFromMap( const char* name )
 	FreeWorld();
 
 	// see if we have a generated version of this
-	static const byte BPROC_VERSION = 1;
+	static const byte BPROC_VERSION_BFG = 1;
+	static const byte BPROC_VERSION_MOC_DATA = 2;
+	static const byte BPROC_VERSION = BPROC_VERSION_MOC_DATA;
+
+
+	static const unsigned int BPROC_MAGIC_BFG = ( 'P' << 24 ) | ( 'R' << 16 ) | ( 'O' << 8 ) | BPROC_VERSION_BFG;
 	static const unsigned int BPROC_MAGIC = ( 'P' << 24 ) | ( 'R' << 16 ) | ( 'O' << 8 ) | BPROC_VERSION;
 	bool loaded = false;
 	idFileLocal file( fileSystem->OpenFileReadMemory( generatedFileName ) );
@@ -876,7 +802,7 @@ bool idRenderWorldLocal::InitFromMap( const char* name )
 		int numEntries = 0;
 		int magic = 0;
 		file->ReadBig( magic );
-		if( magic == BPROC_MAGIC )
+		if( magic == BPROC_MAGIC_BFG || magic == BPROC_MAGIC )
 		{
 			file->ReadBig( numEntries );
 			file->ReadString( mapName );
@@ -898,8 +824,9 @@ bool idRenderWorldLocal::InitFromMap( const char* name )
 					renderModelManager->AddModel( lastModel );
 					localModels.Append( lastModel );
 				}
-				else if( type == "shadowmodel" )
+				else if( type == "shadowmodel" && magic == BPROC_MAGIC_BFG )
 				{
+					// RB: the original BFG .bproc just saved all models as "shadowmodel"
 					idRenderModel* lastModel = ReadBinaryModel( file );
 					if( lastModel == NULL )
 					{
@@ -992,15 +919,9 @@ bool idRenderWorldLocal::InitFromMap( const char* name )
 
 			if( token == "shadowModel" )
 			{
-				lastModel = ParseShadowModel( src, outputFile );
-
-				// add it to the model manager list
-				renderModelManager->AddModel( lastModel );
-
-				// save it in the list to free when clearing this map
-				localModels.Append( lastModel );
-
-				numEntries++;
+				// RB: just parse the model but don't do anything with it
+				src->SkipBracedSection();
+				lastModel = NULL;
 				continue;
 			}
 
@@ -1120,7 +1041,8 @@ void idRenderWorldLocal::AddWorldModelEntities()
 		{
 			const modelSurface_t* surf = hModel->Surface( j );
 
-			if( surf->shader->GetName() == idStr( "textures/smf/portal_sky" ) )
+			if( surf->shader->GetName() == idStr( "textures/smf/portal_sky" ) ||
+					surf->shader->IsPortalSky() )
 			{
 				def->needsPortalSky = true;
 			}

@@ -115,14 +115,6 @@ void idMenuScreen_Shell_SystemOptions::Initialize( idMenuHandler* data )
 
 	control = new( TAG_SWF ) idMenuWidget_ControlButton();
 	control->SetOptionType( OPTION_SLIDER_TEXT );
-	control->SetLabel( "Soft Shadows" );
-	control->SetDataSource( &systemData, idMenuDataSource_SystemSettings::SYSTEM_FIELD_SHADOWMAPPING );
-	control->SetupEvents( DEFAULT_REPEAT_TIME, options->GetChildren().Num() );
-	control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, idMenuDataSource_SystemSettings::SYSTEM_FIELD_SHADOWMAPPING );
-	options->AddChild( control );
-
-	control = new( TAG_SWF ) idMenuWidget_ControlButton();
-	control->SetOptionType( OPTION_SLIDER_TEXT );
 	control->SetLabel( "SSAO" );
 	control->SetDataSource( &systemData, idMenuDataSource_SystemSettings::SYSTEM_FIELD_SSAO );
 	control->SetupEvents( DEFAULT_REPEAT_TIME, options->GetChildren().Num() );
@@ -413,7 +405,6 @@ void idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings::LoadData
 	originalBrightness = r_exposure.GetFloat();
 	originalVolume = s_volume_dB.GetFloat();
 	// RB begin
-	originalShadowMapping = r_useShadowMapping.GetInteger();
 	originalSSAO = r_useSSAO.GetInteger();
 	originalAmbientBrightness = r_forceAmbient.GetFloat();
 	originalPostProcessing = r_useFilmicPostProcessing.GetInteger();
@@ -443,11 +434,6 @@ bool idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings::IsRestar
 	}
 
 	if( originalFramerate != com_engineHz.GetInteger() )
-	{
-		return true;
-	}
-
-	if( originalShadowMapping != r_useShadowMapping.GetInteger() )
 	{
 		return true;
 	}
@@ -547,13 +533,6 @@ void idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings::AdjustFi
 			static const int numValues = 2;
 			static const int values[numValues] = { 0, 1 };
 			r_useFilmicPostProcessing.SetInteger( AdjustOption( r_useFilmicPostProcessing.GetInteger(), values, numValues, adjustAmount ) );
-			break;
-		}
-		case SYSTEM_FIELD_SHADOWMAPPING:
-		{
-			static const int numValues = 2;
-			static const int values[numValues] = { 0, 1 };
-			r_useShadowMapping.SetInteger( AdjustOption( r_useShadowMapping.GetInteger(), values, numValues, adjustAmount ) );
 			break;
 		}
 		/*case SYSTEM_FIELD_LODBIAS:
@@ -684,16 +663,6 @@ idSWFScriptVar idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings
 		//return va( "%dx", idMath::IPow( 2, r_motionBlur.GetInteger() ) );
 		// RB begin
 
-		case SYSTEM_FIELD_SHADOWMAPPING:
-			if( r_useShadowMapping.GetInteger() == 1 )
-			{
-				return "#str_swf_enabled";
-			}
-			else
-			{
-				return "#str_swf_disabled";
-			}
-
 		//case SYSTEM_FIELD_LODBIAS:
 		//	return LinearAdjust( r_lodBias.GetFloat(), -1.0f, 1.0f, 0.0f, 100.0f );
 
@@ -740,11 +709,6 @@ bool idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings::IsDataCh
 	}
 
 	if( originalVsync != r_swapInterval.GetInteger() )
-	{
-		return true;
-	}
-
-	if( originalShadowMapping != r_useShadowMapping.GetInteger() )
 	{
 		return true;
 	}

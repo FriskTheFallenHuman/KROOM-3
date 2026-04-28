@@ -412,7 +412,6 @@ private:
 //	void				DBG_EnterModelDepthHack( float depth );
 //	void				DBG_LeaveDepthHack();
 	void				DBG_RenderDrawSurfListWithFunction( drawSurf_t** drawSurfs, int numDrawSurfs );
-	void				DBG_ShowSilhouette();
 	void				DBG_ShowTris( drawSurf_t** drawSurfs, int numDrawSurfs );
 	void				DBG_ShowSurfaceInfo( drawSurf_t** drawSurfs, int numDrawSurfs );
 	void				DBG_ShowViewEntitys( viewEntity_t* vModels );
@@ -423,7 +422,6 @@ private:
 	void				DBG_ShowNormals( drawSurf_t** drawSurfs, int numDrawSurfs );
 	void				DBG_ShowTextureVectors( drawSurf_t** drawSurfs, int numDrawSurfs );
 	void				DBG_ShowDominantTris( drawSurf_t** drawSurfs, int numDrawSurfs );
-	void				DBG_ShowEdges( drawSurf_t** drawSurfs, int numDrawSurfs );
 	void				DBG_ShowLights();
 	void				DBG_ShowLightGrid(); // RB
 	void				DBG_ShowViewEnvprobes(); // RB
