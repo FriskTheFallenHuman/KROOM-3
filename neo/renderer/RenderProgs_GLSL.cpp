@@ -486,14 +486,6 @@ idStr idRenderProgManager::StripDeadCode( const idStr& in, const char* name, con
 		src.AddDefine( compileMacros[i] );
 	}
 
-	switch( glConfig.driverType )
-	{
-		case GLDRV_OPENGL_ES2:
-		case GLDRV_OPENGL_ES3:
-			//src.AddDefine( "GLES2" );
-			break;
-	}
-
 	if( !builtin && glConfig.gpuSkinningAvailable )
 	{
 		src.AddDefine( "USE_GPU_SKINNING" );
@@ -989,27 +981,15 @@ void ParseInOutStruct( idLexer& src, int attribType, int attribIgnoreType, idLis
 		}
 
 		// RB: ignore reserved builtin gl_ uniforms
-		//switch( glConfig.driverType )
+		for( int i = 0; attribsPC[i].semantic != NULL; i++ )
 		{
-			//case GLDRV_OPENGL32_CORE_PROFILE:
-			//case GLDRV_OPENGL_ES2:
-			//case GLDRV_OPENGL_ES3:
-			//case GLDRV_OPENGL_MESA:
-			//default:
+			if( var.nameGLSL.Cmp( attribsPC[i].glsl ) == 0 )
 			{
-				for( int i = 0; attribsPC[i].semantic != NULL; i++ )
+				if( ( attribsPC[i].flags & attribIgnoreType ) != 0 )
 				{
-					if( var.nameGLSL.Cmp( attribsPC[i].glsl ) == 0 )
-					{
-						if( ( attribsPC[i].flags & attribIgnoreType ) != 0 )
-						{
-							var.declareInOut = false;
-							break;
-						}
-					}
+					var.declareInOut = false;
+					break;
 				}
-
-				//break;
 			}
 		}
 
