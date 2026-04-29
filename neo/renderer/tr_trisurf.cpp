@@ -32,7 +32,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "RenderCommon.h"
 
-#include "mikktspace/mikktspace.h"
+#include "mikktspace/mikktspace.hh"
 
 /*
 ==============================================================================
@@ -123,29 +123,39 @@ is highly uneven.
 // method of calculating tangent spaces for the original game's normal maps, disable mikktspace before
 // loading in the model.
 // see http://www.mikktspace.com/
-//idCVar r_useMikktspace( "r_useMikktspace", "1", CVAR_RENDERER | CVAR_BOOL, "Use the mikktspace standard to derive tangents" );
 
-static void* mkAlloc( int bytes );
-static void mkFree( void* mem );
-static int mkGetNumFaces( const SMikkTSpaceContext* pContext );
-static int mkGetNumVerticesOfFace( const SMikkTSpaceContext* pContext, const int iFace );
-static void mkGetPosition( const SMikkTSpaceContext* pContext, float fvPosOut[], const int iFace, const int iVert );
-static void mkGetNormal( const SMikkTSpaceContext* pContext, float fvNormOut[], const int iFace, const int iVert );
-static void mkGetTexCoord( const SMikkTSpaceContext* pContext, float fvTexcOut[], const int iFace, const int iVert );
-static void mkSetTSpaceBasic( const SMikkTSpaceContext* pContext, const float fvTangent[], const float fSign, const int iFace, const int iVert );
+struct idMesh {
+	srfTriangles_t* tri;
 
-// Helper class for loading in the interface functions for mikktspace.
-class idMikkTSpaceInterface
-{
-public:
-	idMikkTSpaceInterface();
+	int GetNumFaces() const { return tri->numIndexes / 3; }
+	int GetNumVerticesOfFace(int f) const { return 3; }
 
-	SMikkTSpaceInterface mkInterface;
+	mikk::float3 GetPosition(int f, int v) const {
+		const idDrawVert& vert = tri->verts[tri->indexes[f*3 + v]];
+		return mikk::float3(vert.xyz.x, vert.xyz.y, vert.xyz.z);
+	}
+
+	mikk::float3 GetNormal(int f, int v) const {
+		const idDrawVert& vert = tri->verts[tri->indexes[f*3 + v]];
+		idVec3 n = vert.GetNormal();
+		return mikk::float3(n.x, n.y, n.z);
+	}
+
+	mikk::float3 GetTexCoord(int f, int v) const {
+		const idDrawVert& vert = tri->verts[tri->indexes[f*3 + v]];
+		idVec2 st = vert.GetTexCoord();
+		return mikk::float3(st.x, st.y, 0.0f);
+	}
+
+	bool has_uv() const { return true; }
+
+	void SetTangentSpace(int f, int v, const mikk::float3& tangent, bool orientPreserving) {
+		idDrawVert& vert = tri->verts[tri->indexes[f*3 + v]];
+
+		vert.SetTangent(idVec3(tangent.x, tangent.y, tangent.z));
+		vert.tangent[3] = orientPreserving ? 1 : -1; // store handedness
+	}
 };
-
-static idMikkTSpaceInterface mikkTSpaceInterface;
-
-static void SetUpMikkTSpaceContext( SMikkTSpaceContext* context );
 
 // SP end
 
@@ -772,14 +782,24 @@ Derives the tangent space for the given triangles using the Mikktspace standard.
 Normals must be calculated beforehand.
 ============
 */
-static bool R_DeriveMikktspaceTangents( srfTriangles_t* tri )
+static bool R_DeriveMikktspaceTangents( srfTriangles_t *tri )
 {
-	SMikkTSpaceContext context;
-	SetUpMikkTSpaceContext( &context );
-	context.m_pUserData = tri;
+    idMesh mesh{tri};
+    mikk::Mikktspace<idMesh> generator(mesh);
+    generator.genTangSpace();
 
-	return ( genTangSpaceDefault( &context ) != 0 );
+    // sanity check: did we get any tangents?
+    for (int i = 0; i < tri->numVerts; i++) {
+        if (tri->verts[i].tangent[0] != 0 ||
+            tri->verts[i].tangent[1] != 0 ||
+            tri->verts[i].tangent[2] != 0) {
+            return true; // at least one tangent was written
+        }
+    }
+
+    return false; // all tangents zero → failure
 }
+
 
 /*
 ============
@@ -1080,23 +1100,21 @@ to save space or speed transforms?
 this version only handles bilateral symetry
 =================
 */
-void R_DeriveTangentsWithoutNormals( srfTriangles_t* tri, bool useMikktspace )
+void R_DeriveTangentsWithoutNormals( srfTriangles_t* tri )
 {
 	// SP begin
-	if( useMikktspace )
+	if( !R_DeriveMikktspaceTangents( tri ) )
 	{
-		if( !R_DeriveMikktspaceTangents( tri ) )
-		{
-			idLib::Warning( "Mikkelsen tangent space calculation failed" );
-		}
-		else
-		{
-			tri->tangentsCalculated = true;
-			return;
-		}
+		idLib::Warning( "Mikkelsen tangent space calculation failed" );
+	}
+	else
+	{
+		tri->tangentsCalculated = true;
+		return;
 	}
 	// SP End
 
+#if 0
 	idTempArray< idVec3 > triangleTangents( tri->numIndexes / 3 );
 	idTempArray< idVec3 > triangleBitangents( tri->numIndexes / 3 );
 
@@ -1221,6 +1239,7 @@ void R_DeriveTangentsWithoutNormals( srfTriangles_t* tri, bool useMikktspace )
 	}
 
 	tri->tangentsCalculated = true;
+#endif
 }
 
 /*
@@ -1704,7 +1723,7 @@ R_CleanupTriangles
 FIXME: allow createFlat and createSmooth normals, as well as explicit
 =================
 */
-void R_CleanupTriangles( srfTriangles_t* tri, bool createNormals, bool identifySilEdges, bool useUnsmoothedTangents, bool useMikktspace )
+void R_CleanupTriangles( srfTriangles_t* tri, bool createNormals, bool identifySilEdges, bool useUnsmoothedTangents )
 {
 	R_RangeCheckIndexes( tri );
 
@@ -1732,7 +1751,7 @@ void R_CleanupTriangles( srfTriangles_t* tri, bool createNormals, bool identifyS
 	}
 	else if( !createNormals )
 	{
-		R_DeriveTangentsWithoutNormals( tri, useMikktspace );
+		R_DeriveTangentsWithoutNormals( tri );
 	}
 	else
 	{
@@ -1945,101 +1964,6 @@ void R_CreateStaticBuffersForTri( srfTriangles_t& tri )
 		tri.ambientCache = vertexCache.AllocStaticVertex( tri.verts, ALIGN( tri.numVerts * sizeof( tri.verts[0] ), VERTEX_CACHE_ALIGN ) );
 	}
 }
-
-// SP begin
-static void* mkAlloc( int bytes )
-{
-	return R_StaticAlloc( bytes );
-}
-
-static void mkFree( void* mem )
-{
-	R_StaticFree( mem );
-}
-
-static int mkGetNumFaces( const SMikkTSpaceContext* pContext )
-{
-	srfTriangles_t* tris = reinterpret_cast<srfTriangles_t*>( pContext->m_pUserData );
-	return tris->numIndexes / 3;
-}
-
-static int mkGetNumVerticesOfFace( const SMikkTSpaceContext* pContext, const int iFace )
-{
-	return 3;
-}
-
-static void mkGetPosition( const SMikkTSpaceContext* pContext, float fvPosOut[], const int iFace, const int iVert )
-{
-	srfTriangles_t* tris = reinterpret_cast<srfTriangles_t*>( pContext->m_pUserData );
-
-	const int vertIndex = iFace * 3;
-	const int index = tris->indexes[vertIndex + iVert];
-	const idDrawVert& vert = tris->verts[index];
-
-	fvPosOut[0] = vert.xyz[0];
-	fvPosOut[1] = vert.xyz[1];
-	fvPosOut[2] = vert.xyz[2];
-}
-
-static void mkGetNormal( const SMikkTSpaceContext* pContext, float fvNormOut[], const int iFace, const int iVert )
-{
-	srfTriangles_t* tris = reinterpret_cast<srfTriangles_t*>( pContext->m_pUserData );
-
-	const int vertIndex = iFace * 3;
-	const int index = tris->indexes[vertIndex + iVert];
-	const idDrawVert& vert = tris->verts[index];
-
-	const idVec3 norm = vert.GetNormal();
-	fvNormOut[0] = norm.x;
-	fvNormOut[1] = norm.y;
-	fvNormOut[2] = norm.z;
-}
-
-static void mkGetTexCoord( const SMikkTSpaceContext* pContext, float fvTexcOut[], const int iFace, const int iVert )
-{
-	srfTriangles_t* tris = reinterpret_cast<srfTriangles_t*>( pContext->m_pUserData );
-
-	const int vertIndex = iFace * 3;
-	const int index = tris->indexes[vertIndex + iVert];
-	const idDrawVert& vert = tris->verts[index];
-
-	const idVec2 texCoord = vert.GetTexCoord();
-	fvTexcOut[0] = texCoord.x;
-	fvTexcOut[1] = texCoord.y;
-}
-
-static void mkSetTSpaceBasic( const SMikkTSpaceContext* pContext, const float fvTangent[], const float fSign, const int iFace, const int iVert )
-{
-	srfTriangles_t* tris = reinterpret_cast<srfTriangles_t*>( pContext->m_pUserData );
-
-	const int vertIndex = iFace * 3;
-	const int index = tris->indexes[vertIndex + iVert];
-
-	const idVec3 tangent( fvTangent[0], fvTangent[1], fvTangent[2] );
-	tris->verts[index].SetTangent( tangent );
-	tris->verts[index].SetBiTangentSign( fSign );
-}
-
-idMikkTSpaceInterface::idMikkTSpaceInterface()
-	: mkInterface()
-{
-	mkInterface.m_alloc = mkAlloc;
-	mkInterface.m_free = mkFree;
-	mkInterface.m_getNumFaces = mkGetNumFaces;
-	mkInterface.m_getNumVerticesOfFace = mkGetNumVerticesOfFace;
-	mkInterface.m_getPosition = mkGetPosition;
-	mkInterface.m_getNormal = mkGetNormal;
-	mkInterface.m_getTexCoord = mkGetTexCoord;
-	mkInterface.m_setTSpaceBasic = mkSetTSpaceBasic;
-}
-
-static void SetUpMikkTSpaceContext( SMikkTSpaceContext* context )
-{
-	context->m_pInterface = &mikkTSpaceInterface.mkInterface;
-}
-
-// SP end
-
 
 // RB: Determines the closest point between a point and a triangle
 idVec3 R_ClosestPointPointTriangle( const idVec3& point, const idVec3& vertex1, const idVec3& vertex2, const idVec3& vertex3 )

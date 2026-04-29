@@ -297,8 +297,7 @@ idRenderModel* idRenderWorldLocal::ParseModel( idLexer* src, const char* mapName
 
 	src->ExpectTokenString( "}" );
 
-	// RB: FIXME add check for mikktspace
-	model->FinishSurfaces( false );
+	model->FinishSurfaces();
 
 	if( fileOut != NULL && model->SupportsBinaryModel() && binaryLoadRenderModels.GetBool() )
 	{

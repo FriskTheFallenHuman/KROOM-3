@@ -287,7 +287,7 @@ void idRenderModelStatic::MakeDefaultModel()
 	tri->generateNormals = true;
 
 	AddSurface( surf );
-	FinishSurfaces( false );
+	FinishSurfaces();
 }
 
 /*
@@ -357,19 +357,8 @@ void idRenderModelStatic::InitFromFile( const char* fileName )
 	// it is now available for use
 	purged = false;
 
-	// RB: this is 1.1.2016 10:00 AM
-	// a useful tool for this is https://www.unixtime.de/
-	const ID_TIME_T min2016 = 1451638800;
-
-	bool useMikktspace = false;
-	if( sourceTimeStamp > min2016 )
-	{
-		// HACK: assume this is a newer asset not by id Software and its normalmaps are baked using the mikktspace standard
-		useMikktspace = true;
-	}
-
 	// create the bounds for culling and dynamic surface creation
-	FinishSurfaces( useMikktspace );
+	FinishSurfaces();
 }
 
 /*
@@ -1010,7 +999,7 @@ Extends the bounds of deformed surfaces so they don't cull incorrectly at screen
 
 ================
 */
-void idRenderModelStatic::FinishSurfaces( bool useMikktspace )
+void idRenderModelStatic::FinishSurfaces()
 {
 	int			i;
 	int			totalVerts, totalIndexes;
@@ -1099,9 +1088,7 @@ void idRenderModelStatic::FinishSurfaces( bool useMikktspace )
 	{
 		const modelSurface_t*	surf = &surfaces[i];
 
-		bool mikktspace = useMikktspace || surf->shader->UseMikkTSpace();
-
-		R_CleanupTriangles( surf->geometry, surf->geometry->generateNormals, true, surf->shader->UseUnsmoothedTangents(), mikktspace );
+		R_CleanupTriangles( surf->geometry, surf->geometry->generateNormals, true, surf->shader->UseUnsmoothedTangents() );
 		if( surf->shader->SurfaceCastsShadow() )
 		{
 			totalVerts += surf->geometry->numVerts;
@@ -3129,8 +3116,7 @@ void idRenderModelStatic::ReadFromDemoFile( class idDemoFile* f )
 		this->AddSurface( surf );
 	}
 
-	// RB: don't use mikktspace here because it is slower
-	this->FinishSurfaces( false );
+	this->FinishSurfaces();
 }
 
 /*

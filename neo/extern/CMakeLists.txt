@@ -23,7 +23,7 @@ list(APPEND src_external ${src_external_binkdec})
 list(APPEND src_external_includes ${CMAKE_CURRENT_SOURCE_DIR}/libbinkdec/include)
 endif()
 
-file(GLOB src_external_mikktspace mikktspace/*.c mikktspace/*.h)
+file(GLOB src_external_mikktspace mikktspace/*.hh)
 source_group("MikktSpace" FILES ${src_external_mikktspace})
 list(APPEND src_external ${src_external_mikktspace})
 
