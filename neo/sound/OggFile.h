@@ -50,24 +50,25 @@ Contains the OggFile declaration.
 idOggFile is used for reading generic Vorbis Ogg files.
 ================================================
 */
-class idOggFile {
+class idOggFile
+{
 public:
 	ID_INLINE 	idOggFile();
 	ID_INLINE 	~idOggFile();
 
-	bool	Open( const char *fileName );
+	bool	Open( const char* fileName );
 	void	Close();
 	bool	IsEOS();
 	void	Seek( int samplePos );
-	int		Read( void *buffer, int bufferSize );
+	int		Read( void* buffer, int bufferSize );
 	int64	Size();
 	int64	CompressedSize();
-	void	GetFormat( idWaveFile::waveFmt_t &format );
+	void	GetFormat( idWaveFile::waveFmt_t& format );
 
 private:
-	stb_vorbis * vorbisFile;
+	stb_vorbis* vorbisFile;
 	stb_vorbis_info info;
-	idFile * mhmmio;
+	idFile* mhmmio;
 };
 
 /*
@@ -77,7 +78,8 @@ idOggFile::idOggFile
 */
 ID_INLINE idOggFile::idOggFile() :
 	vorbisFile( NULL ),
-	mhmmio( NULL ) {
+	mhmmio( NULL )
+{
 }
 
 /*
@@ -85,7 +87,8 @@ ID_INLINE idOggFile::idOggFile() :
 idOggFile::~idOggFile
 ========================
 */
-ID_INLINE idOggFile::~idOggFile() {
+ID_INLINE idOggFile::~idOggFile()
+{
 	Close();
 }
 

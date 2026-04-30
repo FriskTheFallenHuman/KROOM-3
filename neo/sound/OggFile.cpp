@@ -41,46 +41,48 @@ If you have questions concerning this license or the applicable additional terms
 ===================================================================================
 */
 
-static const char *my_stbv_strerror( int stbVorbisError ) {
-	switch(stbVorbisError)
+static const char* my_stbv_strerror( int stbVorbisError )
+{
+	switch( stbVorbisError )
 	{
-		case VORBIS__no_error: return "No Error";
+		case VORBIS__no_error:
+			return "No Error";
 #define ERRCASE(X) \
 		case VORBIS_ ## X : return #X;
 
-		ERRCASE( need_more_data )    // not a real error
+			ERRCASE( need_more_data )    // not a real error
 
-		ERRCASE( invalid_api_mixing )           // can't mix API modes
-		ERRCASE( outofmem )                     // not enough memory
-		ERRCASE( feature_not_supported )        // uses floor 0
-		ERRCASE( too_many_channels )            // STB_VORBIS_MAX_CHANNELS is too small
-		ERRCASE( file_open_failure )            // fopen() failed
-		ERRCASE( seek_without_length )          // can't seek in unknown-length file
+			ERRCASE( invalid_api_mixing )           // can't mix API modes
+			ERRCASE( outofmem )                     // not enough memory
+			ERRCASE( feature_not_supported )        // uses floor 0
+			ERRCASE( too_many_channels )            // STB_VORBIS_MAX_CHANNELS is too small
+			ERRCASE( file_open_failure )            // fopen() failed
+			ERRCASE( seek_without_length )          // can't seek in unknown-length file
 
-		ERRCASE( unexpected_eof )               // file is truncated?
-		ERRCASE( seek_invalid )                 // seek past EOF
+			ERRCASE( unexpected_eof )               // file is truncated?
+			ERRCASE( seek_invalid )                 // seek past EOF
 
-		// decoding errors (corrupt/invalid stream) -- you probably
-		// don't care about the exact details of these
+			// decoding errors (corrupt/invalid stream) -- you probably
+			// don't care about the exact details of these
 
-		// vorbis errors:
-		ERRCASE( invalid_setup )
-		ERRCASE( invalid_stream )
+			// vorbis errors:
+			ERRCASE( invalid_setup )
+			ERRCASE( invalid_stream )
 
-		// ogg errors:
-		ERRCASE( missing_capture_pattern )
-		ERRCASE( invalid_stream_structure_version )
-		ERRCASE( continued_packet_flag_invalid )
-		ERRCASE( incorrect_stream_serial_number )
-		ERRCASE( invalid_first_page )
-		ERRCASE( bad_packet_type )
-		ERRCASE( cant_find_last_page )
-		ERRCASE( seek_failed )
-		ERRCASE( ogg_skeleton_not_supported )
+			// ogg errors:
+			ERRCASE( missing_capture_pattern )
+			ERRCASE( invalid_stream_structure_version )
+			ERRCASE( continued_packet_flag_invalid )
+			ERRCASE( incorrect_stream_serial_number )
+			ERRCASE( invalid_first_page )
+			ERRCASE( bad_packet_type )
+			ERRCASE( cant_find_last_page )
+			ERRCASE( seek_failed )
+			ERRCASE( ogg_skeleton_not_supported )
 
 #undef ERRCASE
 	}
-	assert(0 && "unknown stb_vorbis errorcode!");
+	assert( 0 && "unknown stb_vorbis errorcode!" );
 	return "Unknown Error!";
 }
 
@@ -98,13 +100,16 @@ static const char *my_stbv_strerror( int stbVorbisError ) {
 idOggFile::~idOggFile
 ====================
 */
-void idOggFile::Close() {
-	if ( vorbisFile ) {
+void idOggFile::Close()
+{
+	if( vorbisFile )
+	{
 		stb_vorbis_close( vorbisFile );
 		vorbisFile = NULL;
 	}
 
-	if ( mhmmio ) {
+	if( mhmmio )
+	{
 		fileSystem->CloseFile( mhmmio );
 		mhmmio = NULL;
 	}
@@ -115,7 +120,8 @@ void idOggFile::Close() {
 idOggFile::GetFormat
 ====================
 */
-void idOggFile::GetFormat( idWaveFile::waveFmt_t &format ) {
+void idOggFile::GetFormat( idWaveFile::waveFmt_t& format )
+{
 	format.basic.samplesPerSec = this->info.sample_rate;
 	format.basic.numChannels = this->info.channels;
 	format.basic.bitsPerSample = sizeof( short ) * 8;
@@ -129,7 +135,8 @@ void idOggFile::GetFormat( idWaveFile::waveFmt_t &format ) {
 idOggFile::Seek
 ====================
 */
-void idOggFile::Seek( int samplePos ) {
+void idOggFile::Seek( int samplePos )
+{
 	stb_vorbis_seek( this->vorbisFile, samplePos );
 }
 
@@ -138,7 +145,8 @@ void idOggFile::Seek( int samplePos ) {
 idOggFile::IsEOS
 ====================
 */
-bool idOggFile::IsEOS() {
+bool idOggFile::IsEOS()
+{
 	int64 size = stb_vorbis_stream_length_in_samples( this->vorbisFile );
 	return stb_vorbis_get_sample_offset( this->vorbisFile ) >= size;
 }
@@ -148,7 +156,8 @@ bool idOggFile::IsEOS() {
 idOggFile::Size
 ====================
 */
-int64 idOggFile::Size() {
+int64 idOggFile::Size()
+{
 	int64 mdwSize = stb_vorbis_stream_length_in_samples( this->vorbisFile ) * this->info.channels;
 	return mdwSize * sizeof( short );
 }
@@ -158,7 +167,8 @@ int64 idOggFile::Size() {
 idOggFile::CompressedSize
 ====================
 */
-int64 idOggFile::CompressedSize() {
+int64 idOggFile::CompressedSize()
+{
 	return stb_vorbis_stream_length_in_samples( this->vorbisFile );
 }
 
@@ -167,20 +177,24 @@ int64 idOggFile::CompressedSize() {
 idOggFile::Read
 ====================
 */
-int idOggFile::Read( void *pBuffer, int dwSizeToRead ) {
+int idOggFile::Read( void* pBuffer, int dwSizeToRead )
+{
 	// DG: Note that stb_vorbis_get_samples_short_interleaved() operates on shorts,
 	//     while VorbisFile's ov_read() operates on bytes, so some numbers are different
 	int total = dwSizeToRead / sizeof( short );
-	short *bufferPtr = (short *)pBuffer;
-	stb_vorbis *ov = (stb_vorbis *) vorbisFile;
+	short* bufferPtr = ( short* )pBuffer;
+	stb_vorbis* ov = ( stb_vorbis* ) vorbisFile;
 
-	do {
+	do
+	{
 		int numShorts = total; // total >= 2048 ? 2048 : total; - I think stb_vorbis doesn't mind decoding all of it
 		int ret = stb_vorbis_get_samples_short_interleaved( ov, this->info.channels, bufferPtr, numShorts );
-		if ( ret == 0 ) {
+		if( ret == 0 )
+		{
 			break;
 		}
-		if ( ret < 0 ) {
+		if( ret < 0 )
+		{
 			int stbverr = stb_vorbis_get_error( ov );
 			common->Warning( "idOggFile::Read() stb_vorbis_get_samples_short_interleaved() %d shorts failed: %s\n", numShorts, my_stbv_strerror( stbverr ) );
 			return -1;
@@ -191,9 +205,10 @@ int idOggFile::Read( void *pBuffer, int dwSizeToRead ) {
 		ret *= this->info.channels;
 		bufferPtr += ret;
 		total -= ret;
-	} while ( total > 0 );
+	}
+	while( total > 0 );
 
-	return (char *)bufferPtr - (char *)pBuffer;
+	return ( char* )bufferPtr - ( char* )pBuffer;
 }
 
 /*
@@ -201,30 +216,35 @@ int idOggFile::Read( void *pBuffer, int dwSizeToRead ) {
 idOggFile::Open
 ====================
 */
-bool idOggFile::Open( const char * fileName ) {
-	if ( mhmmio ) {
+bool idOggFile::Open( const char* fileName )
+{
+	if( mhmmio )
+	{
 		fileSystem->CloseFile( mhmmio );
 		mhmmio = NULL;
 	}
 
-	if ( vorbisFile != NULL ) {
+	if( vorbisFile != NULL )
+	{
 		stb_vorbis_close( vorbisFile );
 		vorbisFile = NULL;
 	}
 
 	mhmmio = fileSystem->OpenFileRead( fileName );
-	if ( !mhmmio ) {
+	if( !mhmmio )
+	{
 		return false;
 	}
 
 	int fileSize = mhmmio->Length();
-	byte* oggFileData = (byte *)Mem_Alloc( fileSize, TAG_CRAP );
+	byte* oggFileData = ( byte* )Mem_Alloc( fileSize, TAG_CRAP );
 
 	mhmmio->Read( oggFileData, fileSize );
 
 	int stbverr = 0;
-	stb_vorbis *ov = stb_vorbis_open_memory( oggFileData, fileSize, &stbverr, NULL );
-	if( ov == NULL ) {
+	stb_vorbis* ov = stb_vorbis_open_memory( oggFileData, fileSize, &stbverr, NULL );
+	if( ov == NULL )
+	{
 		Mem_Free( oggFileData );
 		common->Warning( "Opening OGG file '%s' with stb_vorbis failed: %s\n", fileName, my_stbv_strerror( stbverr ) );
 		fileSystem->CloseFile( mhmmio );
@@ -234,7 +254,8 @@ bool idOggFile::Open( const char * fileName ) {
 
 	stb_vorbis_info stbvi = stb_vorbis_get_info( ov );
 	int numSamples = stb_vorbis_stream_length_in_samples( ov );
-	if( numSamples == 0 ) {
+	if( numSamples == 0 )
+	{
 		stbverr = stb_vorbis_get_error( ov );
 		common->Warning( "Couldn't get sound length of '%s' with stb_vorbis: %s\n", fileName, my_stbv_strerror( stbverr ) );
 		return false;

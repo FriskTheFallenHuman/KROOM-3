@@ -280,7 +280,8 @@ bool idSoundSample_XAudio2::LoadOgg( const idStr& filename )
 {
 	idOggFile decoder;
 
-	if ( !decoder.Open( filename ) ) {
+	if( !decoder.Open( filename ) )
+	{
 		return false;
 	}
 

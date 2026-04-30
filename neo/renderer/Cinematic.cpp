@@ -751,11 +751,11 @@ bool idCinematicLocal::InitFromFFMPEGFile( const char* qpath, bool amilooping )
 			hasplanar = false;
 		}
 		common->Printf( "Cinematic audio stream found: Sample Rate=%d Hz, Channels=%d, Format=%s, Planar=%d\n", dec_ctx2->sample_rate, dec_ctx2->channels, GetSampleFormat( dec_ctx2->sample_fmt ), hasplanar );
- #if defined(_MSC_VER) && !defined(USE_OPENAL)
+#if defined(_MSC_VER) && !defined(USE_OPENAL)
 		cinematicAudio = new( TAG_AUDIO ) CinematicAudio_XAudio2;
- #else
+#else
 		cinematicAudio = new( TAG_AUDIO ) CinematicAudio_OpenAL;
- #endif
+#endif
 		cinematicAudio->InitAudio( dec_ctx2 );
 	}
 	//GK:End
@@ -1057,7 +1057,7 @@ bool idCinematicLocal::InitFromFile( const char* qpath, bool amilooping )
 			skipLag = true;				// SRS - Disable lag buffer for ffmpeg mp4/webm decoder AV sync
 		}
 
-	// SRS - Support RoQ cinematic playback via ffmpeg decoder - better quality plus audio support
+		// SRS - Support RoQ cinematic playback via ffmpeg decoder - better quality plus audio support
 	}
 	else
 	{
@@ -1066,7 +1066,7 @@ bool idCinematicLocal::InitFromFile( const char* qpath, bool amilooping )
 		skipLag = true;					// SRS - Disable lag buffer for ffmpeg RoQ decoder AV sync
 	}
 	{
-	// SRS End
+		// SRS End
 
 		animationLength = 0;
 		fileName = temp;
