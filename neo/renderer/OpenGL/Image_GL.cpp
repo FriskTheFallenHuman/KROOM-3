@@ -101,7 +101,7 @@ void idImage::Bind()
 		ActuallyLoadImage( true );
 	}
 
-	const int texUnit = tr.backend.GetCurrentTextureUnit();
+	const int texUnit = backEnd.GetCurrentTextureUnit();
 
 	// RB: added support for more types
 	tmu_t* tmu = &glcontext.tmu[texUnit];
@@ -267,7 +267,7 @@ void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight )
 	glTexParameterf( target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	glTexParameterf( target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 
-	tr.backend.pc.c_copyFrameBuffer++;
+	backEnd.pc.c_copyFrameBuffer++;
 }
 
 /*
@@ -283,7 +283,7 @@ void idImage::CopyDepthbuffer( int x, int y, int imageWidth, int imageHeight )
 	opts.height = imageHeight;
 	glCopyTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, x, y, imageWidth, imageHeight, 0 );
 
-	tr.backend.pc.c_copyFrameBuffer++;
+	backEnd.pc.c_copyFrameBuffer++;
 }
 
 /*

@@ -77,7 +77,7 @@ void Framebuffer::Init()
 {
 	cmdSystem->AddCommand( "listFramebuffers", R_ListFramebuffers_f, CMD_FL_RENDERER, "lists framebuffers" );
 
-	tr.backend.currentFramebuffer = NULL;
+	backEnd.currentFramebuffer = NULL;
 
 	// SHADOWMAPS
 
@@ -358,39 +358,39 @@ void Framebuffer::Bind()
 {
 	RENDERLOG_PRINTF( "Framebuffer::Bind( %s )\n", fboName.c_str() );
 
-	if( tr.backend.currentFramebuffer != this )
+	if( backEnd.currentFramebuffer != this )
 	{
 		glBindFramebuffer( GL_FRAMEBUFFER, frameBuffer );
-		tr.backend.currentFramebuffer = this;
+		backEnd.currentFramebuffer = this;
 	}
 }
 
 bool Framebuffer::IsBound()
 {
-	return ( tr.backend.currentFramebuffer == this );
+	return ( backEnd.currentFramebuffer == this );
 }
 
 void Framebuffer::Unbind()
 {
 	RENDERLOG_PRINTF( "Framebuffer::Unbind()\n" );
 
-	//if(tr.backend.framebuffer != NULL)
+	//if(backEnd.framebuffer != NULL)
 	{
 		glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 		glBindRenderbuffer( GL_RENDERBUFFER, 0 );
 
-		tr.backend.currentFramebuffer = NULL;
+		backEnd.currentFramebuffer = NULL;
 	}
 }
 
 bool Framebuffer::IsDefaultFramebufferActive()
 {
-	return ( tr.backend.currentFramebuffer == NULL );
+	return ( backEnd.currentFramebuffer == NULL );
 }
 
 Framebuffer* Framebuffer::GetActiveFramebuffer()
 {
-	return tr.backend.currentFramebuffer;
+	return backEnd.currentFramebuffer;
 }
 
 void Framebuffer::AddColorBuffer( int format, int index, int multiSamples )

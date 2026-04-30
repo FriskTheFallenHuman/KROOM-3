@@ -2361,7 +2361,7 @@ static void RB_DrawText( const char* text, const idVec3& origin, float scale, co
 
 	// RB begin
 	//GL_Color( color[0], color[1], color[2], 1 /*color[3]*/ );
-	renderProgManager.CommitUniforms( tr.backend.GL_GetCurrentState() );
+	renderProgManager.CommitUniforms( backEnd.GL_GetCurrentState() );
 	// RB end
 
 	int i, j, len, num, index, charIndex, line;

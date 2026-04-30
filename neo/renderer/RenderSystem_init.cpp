@@ -2147,7 +2147,7 @@ void idRenderSystemLocal::Shutdown()
 	// SRS - skip this step if we are in Doom 3 mode (com_smp = -1) which has already finished and presented
 	if( com_smp.GetInteger() != -1 )
 	{
-		backend.GL_BlockingSwapBuffers();
+		backEnd.GL_BlockingSwapBuffers();
 	}
 
 	// free the vertex cache, which should have nothing allocated now
@@ -2297,7 +2297,7 @@ void idRenderSystemLocal::InitOpenGL()
 	// if OpenGL isn't started, start it now
 	if( !IsInitialized() )
 	{
-		backend.Init();
+		backEnd.Init();
 
 		// Reloading images here causes the rendertargets to get deleted. Figure out how to handle this properly on 360
 		//globalImages->ReloadImages( true );
@@ -2322,7 +2322,7 @@ void idRenderSystemLocal::ShutdownOpenGL()
 	// free the context and close the window
 	R_ShutdownFrameData();
 
-	backend.Shutdown();
+	backEnd.Shutdown();
 }
 
 /*
