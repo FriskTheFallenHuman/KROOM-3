@@ -240,6 +240,7 @@ bool Init( int windowWidth, int windowHeight )
 	ImGui::CreateContext();
 
 	ImGuiIO& io = ImGui::GetIO();
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
@@ -400,11 +401,6 @@ void NewFrame()
 		// Start the frame
 		ImGui::NewFrame();
 		g_haveNewFrame = true;
-
-		if( imgui_showDemoWindow.GetBool() && !ImGuiTools::ReleaseMouseForTools() )
-		{
-			ImGuiTools::impl::SetReleaseToolMouse( true );
-		}
 	}
 }
 
@@ -435,6 +431,10 @@ void Render()
 			// before idRenderSystemLocal::SwapCommandBuffers_FinishRendering()
 			NewFrame();
 		}
+
+		// make dockspace transparent
+		static ImGuiDockNodeFlags dockspaceFlags = ImGuiDockNodeFlags_PassthruCentralNode;
+		ImGui::DockSpaceOverViewport( NULL, NULL, dockspaceFlags, NULL );
 
 		ImGuiTools::DrawToolWindows();
 
