@@ -835,7 +835,7 @@ bool idRenderModelMD5::LoadBinaryModel( idFile* file, const ID_TIME_T sourceTime
 			deform.dupVerts = tri.dupVerts;
 			file->ReadBigArray( deform.dupVerts, deform.numDupVerts * 2 );
 		}
-		
+
 		// keep compatibility.
 		if( numSilEdges > 0 )
 		{

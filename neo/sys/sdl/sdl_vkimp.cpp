@@ -70,8 +70,8 @@ std::vector<const char*> get_required_extensions()
 	sdlInstanceExtensions.resize( sdlCount );
 	SDL_Vulkan_GetInstanceExtensions( nullptr, &sdlCount, sdlInstanceExtensions.data() );
 
-    // SRS - Report enabled instance extensions in CreateVulkanInstance() vs. doing it here
-    /*
+	// SRS - Report enabled instance extensions in CreateVulkanInstance() vs. doing it here
+	/*
 	if( enableValidationLayers )
 	{
 		idLib::Printf( "\nNumber of availiable instance extensions\t%i\n", sdlCount );
@@ -81,7 +81,7 @@ std::vector<const char*> get_required_extensions()
 			idLib::Printf( "\t%s\n", ext );
 		}
 	}
-    */
+	*/
 
 	// SRS - needed for MoltenVK portability implementation and optionally for MoltenVK configuration on OSX
 #if defined(__APPLE__)
@@ -91,8 +91,8 @@ std::vector<const char*> get_required_extensions()
 #endif
 #endif
 
-    // SRS - Add debug instance extensions in CreateVulkanInstance() vs. hardcoding them here
-    /*
+	// SRS - Add debug instance extensions in CreateVulkanInstance() vs. hardcoding them here
+	/*
 	if( enableValidationLayers )
 	{
 		sdlInstanceExtensions.push_back( "VK_EXT_debug_report" );
@@ -105,7 +105,7 @@ std::vector<const char*> get_required_extensions()
 			idLib::Printf( "\t%s\n", ext );
 		}
 	}
-    */
+	*/
 
 	return sdlInstanceExtensions;
 }

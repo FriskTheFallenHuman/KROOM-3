@@ -232,7 +232,7 @@ bool Init( int windowWidth, int windowHeight )
 	}
 
 	idLib::Printf( "--------- Initializing ImGui ----------\n" );
-	
+
 	IMGUI_CHECKVERSION();
 
 	idLib::Printf( "Version: %s\n", ImGui::GetVersion() );

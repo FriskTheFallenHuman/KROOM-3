@@ -124,35 +124,49 @@ is highly uneven.
 // loading in the model.
 // see http://www.mikktspace.com/
 
-struct idMesh {
+struct idMesh
+{
 	srfTriangles_t* tri;
 
-	int GetNumFaces() const { return tri->numIndexes / 3; }
-	int GetNumVerticesOfFace(int f) const { return 3; }
-
-	mikk::float3 GetPosition(int f, int v) const {
-		const idDrawVert& vert = tri->verts[tri->indexes[f*3 + v]];
-		return mikk::float3(vert.xyz.x, vert.xyz.y, vert.xyz.z);
+	int GetNumFaces() const
+	{
+		return tri->numIndexes / 3;
+	}
+	int GetNumVerticesOfFace( int f ) const
+	{
+		return 3;
 	}
 
-	mikk::float3 GetNormal(int f, int v) const {
-		const idDrawVert& vert = tri->verts[tri->indexes[f*3 + v]];
+	mikk::float3 GetPosition( int f, int v ) const
+	{
+		const idDrawVert& vert = tri->verts[tri->indexes[f * 3 + v]];
+		return mikk::float3( vert.xyz.x, vert.xyz.y, vert.xyz.z );
+	}
+
+	mikk::float3 GetNormal( int f, int v ) const
+	{
+		const idDrawVert& vert = tri->verts[tri->indexes[f * 3 + v]];
 		idVec3 n = vert.GetNormal();
-		return mikk::float3(n.x, n.y, n.z);
+		return mikk::float3( n.x, n.y, n.z );
 	}
 
-	mikk::float3 GetTexCoord(int f, int v) const {
-		const idDrawVert& vert = tri->verts[tri->indexes[f*3 + v]];
+	mikk::float3 GetTexCoord( int f, int v ) const
+	{
+		const idDrawVert& vert = tri->verts[tri->indexes[f * 3 + v]];
 		idVec2 st = vert.GetTexCoord();
-		return mikk::float3(st.x, st.y, 0.0f);
+		return mikk::float3( st.x, st.y, 0.0f );
 	}
 
-	bool has_uv() const { return true; }
+	bool has_uv() const
+	{
+		return true;
+	}
 
-	void SetTangentSpace(int f, int v, const mikk::float3& tangent, bool orientPreserving) {
-		idDrawVert& vert = tri->verts[tri->indexes[f*3 + v]];
+	void SetTangentSpace( int f, int v, const mikk::float3& tangent, bool orientPreserving )
+	{
+		idDrawVert& vert = tri->verts[tri->indexes[f * 3 + v]];
 
-		vert.SetTangent(idVec3(tangent.x, tangent.y, tangent.z));
+		vert.SetTangent( idVec3( tangent.x, tangent.y, tangent.z ) );
 		vert.tangent[3] = orientPreserving ? 1 : -1; // store handedness
 	}
 };
@@ -782,22 +796,24 @@ Derives the tangent space for the given triangles using the Mikktspace standard.
 Normals must be calculated beforehand.
 ============
 */
-static bool R_DeriveMikktspaceTangents( srfTriangles_t *tri )
+static bool R_DeriveMikktspaceTangents( srfTriangles_t* tri )
 {
-    idMesh mesh{tri};
-    mikk::Mikktspace<idMesh> generator(mesh);
-    generator.genTangSpace();
+	idMesh mesh{tri};
+	mikk::Mikktspace<idMesh> generator( mesh );
+	generator.genTangSpace();
 
-    // sanity check: did we get any tangents?
-    for (int i = 0; i < tri->numVerts; i++) {
-        if (tri->verts[i].tangent[0] != 0 ||
-            tri->verts[i].tangent[1] != 0 ||
-            tri->verts[i].tangent[2] != 0) {
-            return true; // at least one tangent was written
-        }
-    }
+	// sanity check: did we get any tangents?
+	for( int i = 0; i < tri->numVerts; i++ )
+	{
+		if( tri->verts[i].tangent[0] != 0 ||
+				tri->verts[i].tangent[1] != 0 ||
+				tri->verts[i].tangent[2] != 0 )
+		{
+			return true; // at least one tangent was written
+		}
+	}
 
-    return false; // all tangents zero → failure
+	return false; // all tangents zero → failure
 }
 
 

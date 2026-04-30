@@ -169,7 +169,8 @@ void idCommonLocal::CheckToolMode()
 Com_EditLights_f
 ==================
 */
-static void Com_EditLights_f( const idCmdArgs &args ) {
+static void Com_EditLights_f( const idCmdArgs& args )
+{
 	if( cvarSystem->GetCVarInteger( "g_editEntityMode" ) != 1 )
 	{
 		cvarSystem->SetCVarInteger( "g_editEntityMode", 1 );
