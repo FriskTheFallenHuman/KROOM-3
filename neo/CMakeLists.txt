@@ -6,7 +6,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMakeModules")
 
 project(Kroom3BFG
-		VERSION "1.2.0"
+		VERSION "1.3.0"
 		DESCRIPTION "Fork of RBDOOM3-BFG v1.3.0 source port aims to modernize DOOM 3 BFG"
 		HOMEPAGE_URL "https://github.com/FriskTheFallenHuman/KROOM-3"
 		LANGUAGES C CXX)
