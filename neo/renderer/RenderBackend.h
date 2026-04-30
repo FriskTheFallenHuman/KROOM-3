@@ -266,8 +266,6 @@ public:
 	void				Print();
 	void				CheckCVars();
 
-	static void			ImGui_Init();
-	static void			ImGui_Shutdown();
 	static void			ImGui_RenderDrawLists( ImDrawData* draw_data );
 
 private:
