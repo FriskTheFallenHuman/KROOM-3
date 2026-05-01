@@ -279,7 +279,7 @@ Several metacharacter may be used in the filter.
 *          match any string of zero or more characters
 ?          match any single character
 [abc...]   match any of the enclosed characters; a hyphen can
-           be used to specify a range (e.g. a-z, A-Z, 0-9)
+		   be used to specify a range (e.g. a-z, A-Z, 0-9)
 
 ============
 */
@@ -2559,6 +2559,68 @@ idStr idStr::FormatNumber( int number )
 	}
 
 	return string;
+}
+
+/*
+================
+idStr::Split
+================
+*/
+idList<idStr> idStr::Split( const char* delimiter )
+{
+	int pos = 0;
+	int oldPos = -1;
+	idList<idStr> strings;
+
+	// For some reason calling the Find inside the while statement
+	// caused pos to return incorect value
+	// So put it inside the loop
+	while( pos > -1 )
+	{
+		//Always check + 1 otherwise it will get the previous delimiter
+		pos = Find( delimiter, false, oldPos + 1 );
+		idStr token = SubStr( oldPos + 1, pos );
+		if( token.Length() > 0 )
+		{
+			oldPos = pos;
+			strings.Append( token );
+		}
+	}
+
+	//in case the split didn't work don't return empty handed. Return the original String.
+	if( strings.Num() == 0 )
+	{
+		strings.AddUnique( *this );
+	}
+	return strings;
+}
+
+
+/*
+================
+idStr::SubStr
+================
+*/
+idStr idStr::SubStr( int start, int end )
+{
+	if( end == -1 )
+	{
+		end = Length();
+	}
+
+	if( start < 0 || start > Length() || end > Length() || end < start )
+	{
+		idLib::common->Error( "idStr::SubStr: Trying to get Sub String with invalid range" );
+		return *this;
+	}
+
+	//This is how many characters we want to take (+1 for null termination)
+	int tmpLen = end - start;
+	char tmpBuffer[256];
+	strncpy( tmpBuffer, data + start, tmpLen );
+	tmpBuffer[tmpLen] = '\0';
+
+	return va( "%s", tmpBuffer );
 }
 
 CONSOLE_COMMAND( testStrId, "prints a localized string", 0 )

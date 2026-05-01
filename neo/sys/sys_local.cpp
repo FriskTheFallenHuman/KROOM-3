@@ -30,15 +30,9 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 #include "sys_local.h"
 
-const char* sysLanguageNames[] =
-{
-	ID_LANG_ENGLISH, ID_LANG_FRENCH, ID_LANG_ITALIAN, ID_LANG_GERMAN, ID_LANG_SPANISH, ID_LANG_JAPANESE, NULL
-};
+idStrList sysLanguageNames;
 
-const int numLanguages = sizeof( sysLanguageNames ) / sizeof sysLanguageNames[ 0 ] - 1;
-
-// RB: allow sys_lang to be saved to config so it has to be set per cmdline only a single time
-idCVar sys_lang( "sys_lang", ID_LANG_ENGLISH, CVAR_SYSTEM | CVAR_INIT | CVAR_ARCHIVE, "", sysLanguageNames, idCmdSystem::ArgCompletion_String<sysLanguageNames> );
+idCVar sys_lang( "sys_lang", ID_LANG_ENGLISH, CVAR_SYSTEM | CVAR_INIT | CVAR_ARCHIVE, "" );
 
 idSysLocal			sysLocal;
 idSys* 				sys = &sysLocal;
@@ -255,17 +249,29 @@ const char* Sys_SecToStr( int sec )
 // return number of supported languages
 int Sys_NumLangs()
 {
-	return numLanguages;
+	return sysLanguageNames.Num();
 }
 
 // get language name by index
 const char* Sys_Lang( int idx )
 {
-	if( idx >= 0 && idx < numLanguages )
+	if( idx >= 0 && idx < sysLanguageNames.Num() )
 	{
 		return sysLanguageNames[ idx ];
 	}
 	return "";
+}
+
+int Sys_LangIndex( const char* lang )
+{
+	for( int i = 0; i < sysLanguageNames.Num(); i++ )
+	{
+		if( idStr::Icmp( lang, sysLanguageNames[i] ) == 0 )
+		{
+			return i;
+		}
+	}
+	return -1;
 }
 
 const char* Sys_DefaultLanguage()
@@ -286,7 +292,7 @@ const char* Sys_DefaultLanguage()
 		return ID_LANG_ENGLISH;
 	}
 
-	// GK: Prevent sys_lang to revert to english if is set manually
+	// Prevent sys_lang to revert to english if is set manually
 	if( idStr::Icmp( ID_LANG_ENGLISH, sys_lang.GetString() ) != 0 )
 	{
 		return sys_lang.GetString();
@@ -313,6 +319,11 @@ const char* Sys_DefaultLanguage()
 		temp = temp.Right( temp.Length() - strlen( "strings/" ) );
 		temp = temp.Left( temp.Length() - strlen( ".lang" ) );
 		currentLangList[i] = temp;
+		// Update available lang list with potentianly new languages
+		if( temp.Find( "_" ) >= 0 )
+		{
+			sysLanguageNames.AddUnique( temp.SubStr( 0, temp.Find( "_" ) ) );
+		}
 	}
 
 	if( currentLangList.Num() <= 0 )
@@ -344,11 +355,11 @@ const char* Sys_DefaultLanguage()
 		}
 		else if( currentLangList.Find( ID_LANG_ITALIAN ) )
 		{
-			sys_lang.SetString( ID_LANG_GERMAN );
+			sys_lang.SetString( ID_LANG_ITALIAN );
 		}
 		else if( currentLangList.Find( ID_LANG_SPANISH ) )
 		{
-			sys_lang.SetString( ID_LANG_GERMAN );
+			sys_lang.SetString( ID_LANG_SPANISH );
 		}
 		else
 		{
@@ -358,7 +369,5 @@ const char* Sys_DefaultLanguage()
 
 	fileSystem->FreeFileList( langFiles );
 
-	return sys_lang.GetString();// ID_LANG_ENGLISH;
-
-
+	return sys_lang.GetString();
 }

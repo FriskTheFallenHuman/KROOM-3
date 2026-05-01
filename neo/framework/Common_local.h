@@ -639,7 +639,7 @@ private:
 	void	CleanupShell();
 	void	RenderBink( const char* path );
 	void	RenderSplash( bool photsensitivity = false );
-	void	FilterLangList( idStrList* list, idStr lang );
+	void	FilterLangList( idStrList* list, idStr lang, bool strict = false );
 	void	CheckStartupStorageRequirements();
 
 	void	ExitMenu();

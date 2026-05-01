@@ -446,8 +446,6 @@ void			Sys_Error( const char* error, ... );
 const char* 	Sys_GetCmdLine();
 void			Sys_ReLaunch();	// DG: Sys_ReLaunch() doesn't need any options (and the old way is painful for POSIX systems)
 void			Sys_Launch( const char* path, idCmdArgs& args,  void* launchData, unsigned int launchDataSize );
-void			Sys_SetLanguageFromSystem();
-const char* 	Sys_DefaultLanguage();
 void			Sys_Quit();
 
 // note that this isn't journaled...
@@ -590,7 +588,13 @@ bool Sys_Exec(	const char* appPath, const char* workingPath, const char* args,
 				execProcessWorkFunction_t workFn, execOutputFunction_t outputFn, const int waitMS,
 				unsigned int& exitCode );
 
-// localization
+/*
+==============================================================
+
+	Localization
+
+==============================================================
+*/
 
 #define ID_LANG_ENGLISH		"english"
 #define ID_LANG_FRENCH		"french"
@@ -598,8 +602,12 @@ bool Sys_Exec(	const char* appPath, const char* workingPath, const char* args,
 #define ID_LANG_GERMAN		"german"
 #define ID_LANG_SPANISH		"spanish"
 #define ID_LANG_JAPANESE	"japanese"
-int Sys_NumLangs();
-const char* Sys_Lang( int idx );
+
+void			Sys_SetLanguageFromSystem();
+const char* 	Sys_DefaultLanguage();
+int				Sys_LangIndex( const char* lang );
+const char* 	Sys_Lang( int idx );
+int				Sys_NumLangs();
 
 /*
 ==============================================================

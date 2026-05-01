@@ -340,6 +340,8 @@ public:
 	static bool			CharIsTab( char c );
 	static int			ColorIndex( int c );
 	static idVec4& 		ColorForIndex( int i );
+	idList<idStr>		Split( const char* delimeter );
+	idStr				SubStr( int start, int end = -1 );
 
 	friend int			sprintf( idStr& dest, const char* fmt, ... );
 	friend int			vsprintf( idStr& dest, const char* fmt, va_list ap );
