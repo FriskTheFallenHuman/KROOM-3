@@ -584,12 +584,12 @@ void idSoundSample_OpenAL::MakeDefault()
 	{
 		CheckALErrors();
 		alGenBuffers( 1, &openalBuffer );
-		
+
 		if( CheckALErrors() != AL_NO_ERROR )
 		{
 			common->Error( "idSoundSample_OpenAL::MakeDefault: error generating OpenAL hardware buffer" );
 		}
-		
+
 		if( alIsBuffer( openalBuffer ) )
 		{
 			CheckALErrors();

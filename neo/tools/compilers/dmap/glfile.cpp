@@ -85,7 +85,7 @@ int PortalVisibleSides( uPortal_t* p )
 void OutputWinding( idWinding* w, OBJGroup& group )
 {
 	// give every surface a different color
-	static idVec4 colors[] = { colorRed, colorGreen, colorBlue, colorYellow, colorMagenta, colorCyan, colorWhite, colorPurple, colorGold };
+	static idVec4 colors[] = { colorRed, colorGreen, colorBlue, colorYellow, colorMagenta, colorCyan, colorWhite, colorPurple, colorBlue };
 	static int colorIndex = 0;
 	colorIndex++;
 	dword color = PackColor( colors[colorIndex % 9] );

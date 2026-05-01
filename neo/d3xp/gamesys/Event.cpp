@@ -143,7 +143,7 @@ idEventDef::idEventDef( const char* command, const char* formatspec, char return
 			{
 				eventError = true;
 				idStr::snPrintf( eventErrorMsg, sizeof( eventErrorMsg ), "idEvent '%s' defined twice with same name but differing format strings ('%s'!='%s').",
-						 command, formatspec, ev->formatspec );
+								 command, formatspec, ev->formatspec );
 				return;
 			}
 
@@ -151,7 +151,7 @@ idEventDef::idEventDef( const char* command, const char* formatspec, char return
 			{
 				eventError = true;
 				idStr::snPrintf( eventErrorMsg, sizeof( eventErrorMsg ), "idEvent '%s' defined twice with same name but differing return types ('%c'!='%c').",
-						 command, returnType, ev->returnType );
+								 command, returnType, ev->returnType );
 				return;
 			}
 			// Don't bother putting the duplicate event in list.

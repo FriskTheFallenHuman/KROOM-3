@@ -626,7 +626,7 @@ public:
 
 	idList<idImage*, TAG_IDLIB_LIST_IMAGE>	images;
 	idHashIndex			imageHash;
-	
+
 	static void			CacheGlobalIlluminationData_f( const idCmdArgs& args ); // RB
 	static void			R_ListImages_f( const idCmdArgs& args );
 

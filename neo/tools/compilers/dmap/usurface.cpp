@@ -788,6 +788,7 @@ void PutPrimitivesInAreas( uEntity_t* e )
 				if( ( extension.Icmp( "lwo" ) != 0 ) &&
 						( extension.Icmp( "ase" ) != 0 ) &&
 						( extension.Icmp( "ma" ) != 0 ) &&
+						( extension.Icmp( "md3" ) != 0 ) &&
 						( extension.Icmp( "obj" ) != 0 ) )
 				{
 					continue;	// not a supported model format
@@ -827,58 +828,15 @@ void PutPrimitivesInAreas( uEntity_t* e )
 			// get the rotation matrix in either full form, or single angle form
 			if( !entity->mapEntity->epairs.GetMatrix( "rotation", "1 0 0 0 1 0 0 0 1", axis ) )
 			{
-				// RB: TrenchBroom interop
-				// support "angles", "modelscale" and "modelscale_vec" like in Quake 3
-				idAngles angles;
-				idMat3 rotMat;
-				idMat3 scaleMat;
-
-				rotMat.Identity();
-				scaleMat.Identity();
-
-				if( entity->mapEntity->epairs.GetAngles( "angles", "0 0 0", angles ) )
+				float angle = entity->mapEntity->epairs.GetFloat( "angle" );
+				if( angle != 0.0f )
 				{
-					if( angles.pitch != 0.0f || angles.yaw != 0.0f || angles.roll != 0.0f )
-					{
-						rotMat = angles.ToMat3();
-					}
+					axis = idAngles( 0.0f, angle, 0.0f ).ToMat3();
 				}
 				else
 				{
-					float angle = entity->mapEntity->epairs.GetFloat( "angle" );
-					if( angle != 0.0f )
-					{
-						rotMat = idAngles( 0.0f, angle, 0.0f ).ToMat3();
-					}
-					else
-					{
-						rotMat.Identity();
-					}
+					axis.Identity();
 				}
-
-				idVec3 scaleVec;
-				if( entity->mapEntity->epairs.GetVector( "modelscale_vec", "1 1 1", scaleVec ) )
-				{
-					// don't allow very small and negative values
-					if( ( scaleVec.x != 1.0f || scaleVec.y != 1.0f || scaleVec.z != 1.0f ) && ( scaleVec.x > 0.01f && scaleVec.y > 0.01f && scaleVec.z > 0.01f ) )
-					{
-						scaleMat[0][0] = scaleVec.x;
-						scaleMat[1][1] = scaleVec.y;
-						scaleMat[2][2] = scaleVec.z;
-					}
-				}
-				else
-				{
-					float scale = entity->mapEntity->epairs.GetFloat( "modelscale", 1.0f );
-					if( scale != 1.0f && scale > 0.01f )
-					{
-						scaleMat[0][0] = scale;
-						scaleMat[1][1] = scale;
-						scaleMat[2][2] = scale;
-					}
-				}
-
-				axis = scaleMat * rotMat;
 			}
 
 			idVec3	origin = entity->mapEntity->epairs.GetVector( "origin" );

@@ -311,7 +311,7 @@ void idCommonLocal::Draw()
 			renderSystem->DrawStretchPic( 0, SCREEN_HEIGHT - 48, loadPacifierBinarizeProgress * SCREEN_HEIGHT, 16, 0, 0, 1, 1, whiteMaterial );
 			renderSystem->DrawSmallStringExt( 0, SCREEN_HEIGHT - 48, loadPacifierBinarizeFilename.c_str(), idVec4( 1.0f, 1.0f, 1.0f, 1.0f ), true, true, idStr::Length( loadPacifierBinarizeFilename.c_str() ) );
 			renderSystem->DrawSmallStringExt( 0, SCREEN_HEIGHT - 32, va( "%s %d/%d lvls", loadPacifierBinarizeInfo.c_str(), loadPacifierBinarizeMiplevel, loadPacifierBinarizeMiplevelTotal ), idVec4( 1.0f, 1.0f, 1.0f, 1.0f ), true, true, idStr::Length( va( "%s %d/%d lvls", loadPacifierBinarizeInfo.c_str(), loadPacifierBinarizeMiplevel, loadPacifierBinarizeMiplevelTotal ) ) );
-			renderSystem->DrawSmallStringExt( 0, SCREEN_HEIGHT - 16, text, idVec4( 1.0f, 1.0f, 1.0f, 1.0f ), true, true, idStr::Length( text )  );
+			renderSystem->DrawSmallStringExt( 0, SCREEN_HEIGHT - 16, text, idVec4( 1.0f, 1.0f, 1.0f, 1.0f ), true, true, idStr::Length( text ) );
 		}
 	}
 	else if( loadGUI != NULL )

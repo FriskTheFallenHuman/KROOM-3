@@ -301,7 +301,7 @@ void idLobby::Shutdown( bool retainMigrationInfo, bool skipGoodbye )
 		}
 	}
 	else
-    {
+	{
 		NET_VERBOSE_PRINT( "NET: ShutdownLobby (%s)\n", GetLobbyName() );
 
 		for( int p = 0; p < peers.Num(); p++ )
@@ -341,8 +341,8 @@ void idLobby::Shutdown( bool retainMigrationInfo, bool skipGoodbye )
 		{
 			sessionCB->DestroyLobbyBackend( lobbyBackend );
 			lobbyBackend = NULL;
-        }
-    }
+		}
+	}
 
 	state = STATE_IDLE;
 }

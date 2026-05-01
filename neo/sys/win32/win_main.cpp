@@ -775,10 +775,10 @@ int Sys_ListFiles( const char* directory, const char* extension, idStrList& list
 	ListFilesRecursive( wDir, wPattern, tempList, baseLen + 1 ); // +1 to skip path separator
 
 	// convert to forward slashes to tab completion works
-	for( auto& s : tempList )
+	for( int i = 0; i < tempList.Num(); i++ )
 	{
-		s.BackSlashesToSlashes();
-		list.Append( s.c_str() );
+		tempList[i].BackSlashesToSlashes();
+		list.Append( tempList[i].c_str() );
 	}
 
 	free( wDir );

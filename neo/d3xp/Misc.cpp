@@ -1728,12 +1728,11 @@ void idStaticEntity::Spawn()
 		model.ExtractFileExtension( extension );
 
 		// only support real model formats and no brush models
-		if( ( extension.Icmp( GLTF_GLB_EXT ) == 0 ) ||
-				( extension.Icmp( GLTF_EXT ) == 0 ) ||
-				( extension.Icmp( "lwo" ) == 0 ) ||
+		if( ( ( extension.Icmp( "lwo" ) == 0 ) ||
 				( extension.Icmp( "ase" ) == 0 ) ||
 				( extension.Icmp( "ma" ) == 0 ) ||
-				( extension.Icmp( "obj" ) == 0 ) )
+				( extension.Icmp( "md3" ) == 0 ) ||
+				( extension.Icmp( "obj" ) == 0 ) ) )
 		{
 			if( !isGUI )
 			{
