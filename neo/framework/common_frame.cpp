@@ -741,7 +741,7 @@ void idCommonLocal::Frame()
 			// SRS - If in Doom 3 mode (com_smp = -1) on map change, must obey fence before returning to avoid command buffer sync issues
 			if( com_smp.GetInteger() < 0 )
 			{
-				renderSystem->SwapCommandBuffers_FinishRendering( &time_frontend, &time_backend, &time_shadows, &time_gpu, &stats_backend, &stats_frontend );
+				renderSystem->SwapCommandBuffers_FinishRendering( &time_frontend, &time_backend, &time_moc, &time_gpu, &stats_backend, &stats_frontend );
 			}
 			return;
 		}
@@ -854,7 +854,7 @@ void idCommonLocal::Frame()
 		if( com_smp.GetInteger() < 0 )
 		{
 			// RB: this is the same as Doom 3 renderSystem->EndFrame()
-			renderSystem->SwapCommandBuffers_FinishRendering( &time_frontend, &time_backend, &time_shadows, &time_gpu, &stats_backend, &stats_frontend );
+			renderSystem->SwapCommandBuffers_FinishRendering( &time_frontend, &time_backend, &time_moc, &time_gpu, &stats_backend, &stats_frontend );
 		}
 		// SRS - Use finishSyncTime_EndFrame to record timing after sync for com_smp = -1, and just before gameThread.WaitForThread() for com_smp = 1
 		frameTiming.finishSyncTime_EndFrame = Sys_Microseconds();

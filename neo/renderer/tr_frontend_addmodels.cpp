@@ -34,7 +34,7 @@ If you have questions concerning this license or the applicable additional terms
 	#if MOC_MULTITHREADED
 		#include "CullingThreadPool.h"
 	#else
-		#include "../libs/moc/MaskedOcclusionCulling.h"
+		#include "moc/MaskedOcclusionCulling.h"
 	#endif
 #endif
 
@@ -722,7 +722,7 @@ void R_AddSingleModel( viewEntity_t* vEntity )
 				idRenderMatrix::OffsetScaleForBounds( modelRenderMatrix, debugBounds, inverseBaseModelProject );
 
 				idRenderMatrix invProjectMVPMatrix;
-				idRenderMatrix::Multiply( viewDef->worldSpace.unjitteredMVP, inverseBaseModelProject, invProjectMVPMatrix );
+				idRenderMatrix::Multiply( viewDef->worldSpace.mvp, inverseBaseModelProject, invProjectMVPMatrix );
 
 				tr.pc.c_mocTests += 1;
 

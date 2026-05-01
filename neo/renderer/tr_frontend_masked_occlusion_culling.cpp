@@ -33,7 +33,7 @@ If you have questions concerning this license or the applicable additional terms
 	#if MOC_MULTITHREADED
 		#include "CullingThreadPool.h"
 	#else
-		#include "../libs/moc/MaskedOcclusionCulling.h"
+		#include "moc/MaskedOcclusionCulling.h"
 	#endif
 #endif
 
@@ -369,7 +369,7 @@ void R_RenderSingleModel( viewEntity_t* vEntity )
 				R_CreateMaskedOcclusionCullingTris( tri );
 
 				idRenderMatrix mvp;
-				idRenderMatrix::Transpose( vEntity->unjitteredMVP, mvp );
+				idRenderMatrix::Transpose( vEntity->mvp, mvp );
 
 #if MOC_MULTITHREADED
 				tr.maskedOcclusionThreaded->SetMatrix( ( float* )&mvp[0][0] );

@@ -34,7 +34,7 @@ If you have questions concerning this license or the applicable additional terms
 	#if MOC_MULTITHREADED
 		#include "CullingThreadPool.h"
 	#else
-		#include "../libs/moc/MaskedOcclusionCulling.h"
+		#include "moc/MaskedOcclusionCulling.h"
 	#endif
 #endif
 
@@ -302,7 +302,7 @@ static void R_AddSingleLight( viewLight_t* vLight )
 			scaledInverseBaseLightProject[2][1] *= mocLightScale;
 			scaledInverseBaseLightProject[2][2] *= mocLightScale;
 
-			idRenderMatrix::Multiply( viewDef->worldSpace.unjitteredMVP, scaledInverseBaseLightProject, invProjectMVPMatrix );
+			idRenderMatrix::Multiply( viewDef->worldSpace.mvp, scaledInverseBaseLightProject, invProjectMVPMatrix );
 
 			tr.pc.c_mocTests += 1;
 
