@@ -88,6 +88,249 @@ void Mem_Free16( void* ptr )
 
 /*
 ==================
+Mem_AllocAligned
+==================
+*/
+void* Mem_AllocAligned( const size_t size, const size_t alignment, const memTag_t tag )
+{
+	// For <= 16 byte alignment we can use the existing allocator.
+	if( alignment <= 16 )
+	{
+		return Mem_Alloc( size, tag );
+	}
+
+#ifdef _WIN32
+	// _aligned_malloc requires power-of-two alignment.
+	return _aligned_malloc( size, alignment );
+#else
+	void* p = nullptr;
+	if( posix_memalign( &p, alignment, size ) != 0 )
+	{
+		p = nullptr;
+	}
+	return p;
+#endif
+}
+
+/*
+==================
+Mem_FreeAligned
+==================
+*/
+void Mem_FreeAligned( void* ptr, const size_t alignment ) noexcept
+{
+	if( !ptr )
+	{
+		return;
+	}
+
+	if( alignment <= 16 )
+	{
+		Mem_Free( ptr );
+		return;
+	}
+
+#ifdef _WIN32
+	_aligned_free( ptr );
+#else
+	free( ptr );
+#endif
+}
+
+// ---- unsized new/delete ----
+
+/*
+==================
+operator new
+==================
+*/
+void* operator new( size_t s )
+{
+	void* p = Mem_Alloc( s, TAG_NEW );
+	if( !p )
+		throw std::bad_alloc();
+	return p;
+}
+
+/*
+==================
+operator new[]
+==================
+*/
+void* operator new[]( size_t s )
+{
+	void* p = Mem_Alloc( s, TAG_NEW );
+	if( !p )
+		throw std::bad_alloc();
+	return p;
+}
+
+/*
+==================
+operator delete
+==================
+*/
+void operator delete( void* p ) noexcept
+{
+	Mem_Free( p );
+}
+
+/*
+==================
+operator delete[]
+==================
+*/
+void operator delete[]( void* p ) noexcept
+{
+	Mem_Free( p );
+}
+
+// ---- sized delete (C++14) ----
+
+/*
+==================
+operator delete
+==================
+*/
+void operator delete( void* p, size_t ) noexcept
+{
+	Mem_Free( p );
+}
+
+/*
+==================
+operator delete[]
+==================
+*/
+void operator delete[]( void* p, size_t ) noexcept
+{
+	Mem_Free( p );
+}
+
+// ---- aligned new/delete (C++17) ----
+
+/*
+==================
+operator new
+==================
+*/
+void* operator new( size_t s, std::align_val_t al )
+{
+	const size_t alignment = ( size_t )al;
+	void*		 p		   = Mem_AllocAligned( s, alignment, TAG_NEW );
+	if( !p )
+		throw std::bad_alloc();
+	return p;
+}
+
+/*
+==================
+operator new[]
+==================
+*/
+void* operator new[]( size_t s, std::align_val_t al )
+{
+	const size_t alignment = ( size_t )al;
+	void* p = Mem_AllocAligned( s, alignment, TAG_NEW );
+	if( !p )
+		throw std::bad_alloc();
+	return p;
+}
+
+/*
+==================
+operator delete
+==================
+*/
+void operator delete( void* p, std::align_val_t al ) noexcept
+{
+	Mem_FreeAligned( p, ( size_t )al );
+}
+
+/*
+==================
+operator delete[]
+==================
+*/
+void operator delete[]( void* p, std::align_val_t al ) noexcept
+{
+	Mem_FreeAligned( p, ( size_t )al );
+}
+
+// ---- sized + aligned delete (C++17) ----
+
+/*
+==================
+operator delete
+==================
+*/
+void operator delete( void* p, size_t, std::align_val_t al ) noexcept
+{
+	Mem_FreeAligned( p, ( size_t )al );
+}
+
+/*
+==================
+operator delete[]
+==================
+*/
+void operator delete[]( void* p, size_t, std::align_val_t al ) noexcept
+{
+	Mem_FreeAligned( p, ( size_t )al );
+}
+
+// ---- tagged new/delete ----
+
+/*
+==================
+operator new
+==================
+*/
+void* operator new( size_t s, memTag_t tag )
+{
+	void* p = Mem_Alloc( s, tag );
+	if( !p )
+		throw std::bad_alloc();
+	return p;
+}
+
+/*
+==================
+operator new[]
+==================
+*/
+void* operator new[]( size_t s, memTag_t tag )
+{
+	void* p = Mem_Alloc( s, tag );
+	if( !p )
+		throw std::bad_alloc();
+	return p;
+}
+
+// This overload is only used if a constructor throws after `new(tag)`.
+
+/*
+==================
+operator delete
+==================
+*/
+void operator delete( void* p, memTag_t ) noexcept
+{
+	Mem_Free( p );
+}
+
+/*
+==================
+operator delete[]
+==================
+*/
+void operator delete[]( void* p, memTag_t ) noexcept
+{
+	Mem_Free( p );
+}
+
+/*
+==================
 Mem_ClearedAlloc
 ==================
 */

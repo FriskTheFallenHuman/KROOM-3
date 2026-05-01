@@ -1031,7 +1031,7 @@ bool idClass::ProcessEventArgPtr( const idEventDef* ev, intptr_t* data )
 	switch( ev->GetFormatspecIndex() )
 	{
 		case 1 << D_EVENT_MAXARGS :
-			( this->*callback )();
+			( this->*( callback.As<void ( idClass::* )()>() ) )();
 			break;
 
 // generated file - see CREATE_EVENT_CODE

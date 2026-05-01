@@ -921,7 +921,10 @@ ID_INLINE bool idStr::StartsWithIgnoreCase( const char* prefix ) const
 ID_INLINE bool idStr::EndsWithIgnoreCase( const char* suffix ) const
 {
 	int len = idStr::Length( suffix );
-	if( len > Length() ) { return false; }
+	if( len > Length() )
+	{
+		return false;
+	}
 	return idStr::Icmp( data + Length() - len, suffix ) == 0;
 }
 

@@ -45,8 +45,8 @@ bool IsWriteCombined( void* base )
 	SIZE_T size = VirtualQueryEx( GetCurrentProcess(), base, &info, sizeof( info ) );
 	if( size == 0 )
 	{
-		DWORD error = GetLastError();
-		error = error;
+		//DWORD error = GetLastError();
+		//error = error;
 		return false;
 	}
 	bool isWriteCombined = ( ( info.AllocationProtect & PAGE_WRITECOMBINE ) != 0 );

@@ -142,7 +142,7 @@ BEGIN
             VALUE "InternalName", "Doom3BFG"
             VALUE "LegalCopyright", "(C) 1993-2012 id Software LLC, a ZeniMax Media company"
             VALUE "OriginalFilename", "Doom3BFG"
-            VALUE "ProductName", "DOOM(C) 3: BFG Edition(C)"
+            VALUE "ProductName", "DOOM(R) 3: BFG Edition(TM)"
             VALUE "ProductVersion", "1.0.0.1"
         END
     END

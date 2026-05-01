@@ -104,7 +104,7 @@ void idWorldspawn::Spawn()
 idWorldspawn::Save
 =================
 */
-void idWorldspawn::Save( idSaveGame* savefile )
+void idWorldspawn::Save( idSaveGame* savefile ) const
 {
 }
 

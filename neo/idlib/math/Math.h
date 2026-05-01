@@ -456,6 +456,9 @@ public:
 
 	static float				LerpToWithScale( const float cur, const float dest, const float scale );
 
+	static bool					IsPrime( int n );
+	static int					NextPrime( int current );
+
 	static const float			PI;							// pi
 	static const float			TWO_PI;						// pi * 2
 	static const float			HALF_PI;					// pi / 2

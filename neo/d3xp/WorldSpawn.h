@@ -46,7 +46,7 @@ public:
 
 	void			Spawn();
 
-	void			Save( idSaveGame* savefile );
+	void			Save( idSaveGame* savefile ) const;
 	void			Restore( idRestoreGame* savefile );
 
 private:

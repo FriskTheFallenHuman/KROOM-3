@@ -36,6 +36,8 @@ Contains types and defines used throughout the engine.
 ================================================================================================
 */
 
+#include <type_traits>
+
 typedef unsigned char		byte;		// 8 bits
 typedef unsigned short		word;		// 16 bits
 typedef unsigned int		dword;		// 32 bits

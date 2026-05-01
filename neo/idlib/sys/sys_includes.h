@@ -152,6 +152,7 @@ If you have questions concerning this license or the applicable additional terms
 #include <cerrno>
 #include <cmath>
 #include <climits>
+#include <cstdint>
 
 // STL
 #include <typeinfo>
