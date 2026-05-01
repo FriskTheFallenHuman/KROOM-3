@@ -53,6 +53,20 @@ void idRenderModelPrt::InitFromFile( const char* fileName )
 {
 	name = fileName;
 	particleSystem = static_cast<const idDeclParticle*>( declManager->FindType( DECL_PARTICLE, fileName ) );
+	hasInteractingSurfaces = false;
+
+	if( particleSystem )
+	{
+		for( int i = 0; i < particleSystem->stages.Num(); i++ )
+		{
+			const idMaterial* material = particleSystem->stages[i]->material;
+			if( material && material->ReceivesLighting() )
+			{
+				hasInteractingSurfaces = true;
+				break;
+			}
+		}
+	}
 }
 
 /*
