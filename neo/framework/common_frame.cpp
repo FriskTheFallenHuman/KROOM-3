@@ -651,47 +651,7 @@ void idCommonLocal::Frame()
 		// How many game frames to run
 		int numGameFrames = 0;
 
-		for( ;; )
 		{
-			const int thisFrameTime = Sys_Milliseconds();
-			static int lastFrameTime = thisFrameTime;	// initialized only the first time
-			const int deltaMilliseconds = thisFrameTime - lastFrameTime;
-			lastFrameTime = thisFrameTime;
-
-			// if there was a large gap in time since the last frame, or the frame
-			// rate is very very low, limit the number of frames we will run
-			const int clampedDeltaMilliseconds = Min( deltaMilliseconds, com_deltaTimeClamp.GetInteger() );
-
-			gameTimeResidual += clampedDeltaMilliseconds * timescale.GetFloat();
-
-			// don't run any frames when paused
-			// jpcy: the game is paused when playing a demo, but playDemo should wait like the game does
-			// SRS - don't wait if window not in focus and playDemo itself paused
-			if( pauseGame && ( !( readDemo && !timeDemo ) || session->IsSystemUIShowing() || com_pause.GetInteger() ) )
-			{
-				gameFrame++;
-				gameTimeResidual = 0;
-				break;
-			}
-
-			// debug cvar to force multiple game tics
-			if( com_fixedTic.GetInteger() > 0 )
-			{
-				numGameFrames = com_fixedTic.GetInteger();
-				gameFrame += numGameFrames;
-				gameTimeResidual = 0;
-				break;
-			}
-
-			if( syncNextGameFrame )
-			{
-				// don't sleep at all
-				syncNextGameFrame = false;
-				gameFrame++;
-				numGameFrames++;
-				gameTimeResidual = 0;
-				break;
-			}
 
 			for( ;; )
 			{
@@ -712,6 +672,8 @@ void idCommonLocal::Frame()
 
 				if( pauseGame )
 				{
+					gameFrame++;
+					gameTimeResidual = 0;
 					break;
 				}
 				*/
@@ -772,28 +734,6 @@ void idCommonLocal::Frame()
 				// com_engineHz is 60, so sleep a bit and check again
 				Sys_Sleep( 0 );
 			}
-
-			if( numGameFrames > 0 )
-			{
-				// ready to actually run them
-				break;
-			}
-
-			// if we are vsyncing, we always want to run at least one game
-			// frame and never sleep, which might happen due to scheduling issues
-			// if we were just looking at real time.
-			if( com_noSleep.GetBool() )
-			{
-				numGameFrames = 1;
-				gameFrame += numGameFrames;
-				gameTimeResidual = 0;
-				break;
-			}
-
-			// not enough time has passed to run a frame, as might happen if
-			// we don't have vsync on, or the monitor is running at 120hz while
-			// com_engineHz is 60, so sleep a bit and check again
-			Sys_Sleep( 0 );
 		}
 
 		// jpcy: playDemo uses the game frame wait logic, but shouldn't run any game frames
@@ -805,7 +745,9 @@ void idCommonLocal::Frame()
 		// don't run any frames when paused
 		// RB: reset numGameFrames here so we use the sleep above
 		// and don't run as many frames as possible on the GPU
-		if( pauseGame )
+		// jpcy: the game is paused when playing a demo, but playDemo should wait like the game does
+		// SRS - don't wait if window not in focus and playDemo itself paused
+		if( pauseGame && !( readDemo && !timeDemo ) )
 		{
 			numGameFrames = 0;
 		}

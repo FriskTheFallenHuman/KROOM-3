@@ -1047,8 +1047,6 @@ extern idCVar r_usePortals;					// 1 = use portals to perform area culling, othe
 extern idCVar r_useStateCaching;			// avoid redundant state changes in GL_*() calls
 extern idCVar r_useEntityCallbacks;			// if 0, issue the callback immediately at update time, rather than defering
 extern idCVar r_lightAllBackFaces;			// light all the back faces, even when they would be shadowed
-extern idCVar r_useLightDepthBounds;		// use depth bounds test on lights to reduce both shadow and interaction fill
-extern idCVar r_useShadowDepthBounds;		// use depth bounds test on individual shadows to reduce shadow fill
 // RB begin
 extern idCVar r_useHalfLambertLighting;		// use Half-Lambert lighting instead of classic Lambert
 extern idCVar r_useHDR;
@@ -1132,8 +1130,6 @@ extern idCVar r_singleEntity;				// suppress all but one entity
 extern idCVar r_singleEnvprobe;				// suppress all but one envprobe
 extern idCVar r_singleArea;					// only draw the portal area the view is actually in
 extern idCVar r_singleSurface;				// suppress all but one surface on each entity
-extern idCVar r_shadowPolygonOffset;		// bias value added to depth test for stencil shadow drawing
-extern idCVar r_shadowPolygonFactor;		// scale value for stencil shadow drawing
 
 extern idCVar r_jitter;						// randomly subpixel jitter the projection matrix
 extern idCVar r_orderIndexes;				// perform index reorganization to optimize vertex use
