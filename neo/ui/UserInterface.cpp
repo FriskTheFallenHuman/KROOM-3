@@ -44,7 +44,7 @@ idUserInterfaceManager* 	uiManager = &uiManagerLocal;
 idDeviceContext* dc;
 
 idCVar g_useNewGuiCode(	"g_useNewGuiCode",	"1", CVAR_GAME | CVAR_INTEGER, "use optimized device context code, 2 = toggle on/off every frame" );
-idCVar binaryLoadGuis( "binaryLoadGuis", "1", CVAR_NEW, "enable binary load/write of particle decls" );
+idCVar binaryLoadGuis( "binaryLoadGuis", "1", CVAR_GUI | CVAR_BOOL, "enable binary load/write of gui files" );
 
 extern idCVar sys_lang;
 

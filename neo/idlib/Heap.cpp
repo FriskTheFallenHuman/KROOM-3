@@ -148,7 +148,9 @@ void* operator new( size_t s )
 {
 	void* p = Mem_Alloc( s, TAG_NEW );
 	if( !p )
+	{
 		throw std::bad_alloc();
+	}
 	return p;
 }
 
@@ -161,7 +163,9 @@ void* operator new[]( size_t s )
 {
 	void* p = Mem_Alloc( s, TAG_NEW );
 	if( !p )
+	{
 		throw std::bad_alloc();
+	}
 	return p;
 }
 
@@ -219,7 +223,9 @@ void* operator new( size_t s, std::align_val_t al )
 	const size_t alignment = ( size_t )al;
 	void*		 p		   = Mem_AllocAligned( s, alignment, TAG_NEW );
 	if( !p )
+	{
 		throw std::bad_alloc();
+	}
 	return p;
 }
 
@@ -233,7 +239,9 @@ void* operator new[]( size_t s, std::align_val_t al )
 	const size_t alignment = ( size_t )al;
 	void* p = Mem_AllocAligned( s, alignment, TAG_NEW );
 	if( !p )
+	{
 		throw std::bad_alloc();
+	}
 	return p;
 }
 
@@ -290,7 +298,9 @@ void* operator new( size_t s, memTag_t tag )
 {
 	void* p = Mem_Alloc( s, tag );
 	if( !p )
+	{
 		throw std::bad_alloc();
+	}
 	return p;
 }
 
@@ -303,7 +313,9 @@ void* operator new[]( size_t s, memTag_t tag )
 {
 	void* p = Mem_Alloc( s, tag );
 	if( !p )
+	{
 		throw std::bad_alloc();
+	}
 	return p;
 }
 
