@@ -258,7 +258,7 @@ void idCommonLocal::Draw()
 		Sys_Sleep( com_sleepDraw.GetInteger() );
 	}
 
-	if( loadPacifierBinarizeActive || LoadPacifierRunning() )
+	if( insideExecuteMapChange )
 	{
 		// foresthale 2014-05-30: when binarizing an asset we show a special
 		// overlay indicating progress
@@ -267,60 +267,55 @@ void idCommonLocal::Draw()
 
 		// render the loading gui (idSWF actually) if it is loaded
 		// (we want to see progress of the loading gui binarize too)
-		if( loadGUI != NULL )
+		if ( game )
 		{
-			loadGUI->Render( renderSystem, Sys_Milliseconds() );
+			game->Shell_RenderLoadingShell();
 		}
 
-		// draw general progress bar
-		DrawLoadPacifierProgressbar();
-
-		if( loadPacifierBinarizeActive )
+		if( loadPacifierBinarizeActive || LoadPacifierRunning() )
 		{
-			// update our progress estimates
-			int time = Sys_Milliseconds();
-			if( loadPacifierBinarizeProgress > 0.0f )
-			{
-				loadPacifierBinarizeTimeLeft = ( 1.0 - loadPacifierBinarizeProgress ) * ( time - loadPacifierBinarizeStartTime ) * 0.001f / loadPacifierBinarizeProgress;
-			}
-			else
-			{
-				loadPacifierBinarizeTimeLeft = -1.0f;
-			}
+			// draw general progress bar
+			DrawLoadPacifierProgressbar();
 
-			// prepare our strings
-			idStr text;
-			if( loadPacifierBinarizeTimeLeft >= 99.5f )
+			if( loadPacifierBinarizeActive )
 			{
-				text = va( "Binarizing %3.0f%% ETA %2.0f minutes", loadPacifierBinarizeProgress * 100.0f, loadPacifierBinarizeTimeLeft / 60.0f );
-			}
-			else if( loadPacifierBinarizeTimeLeft )
-			{
-				text = va( "Binarizing %3.0f%% ETA %2.0f seconds", loadPacifierBinarizeProgress * 100.0f, loadPacifierBinarizeTimeLeft );
-			}
-			else
-			{
-				text = va( "Binarizing %3.0f%%", loadPacifierBinarizeProgress * 100.0f );
-			}
+				// update our progress estimates
+				int time = Sys_Milliseconds();
+				if( loadPacifierBinarizeProgress > 0.0f )
+				{
+					loadPacifierBinarizeTimeLeft = ( 1.0 - loadPacifierBinarizeProgress ) * ( time - loadPacifierBinarizeStartTime ) * 0.001f / loadPacifierBinarizeProgress;
+				}
+				else
+				{
+					loadPacifierBinarizeTimeLeft = -1.0f;
+				}
 
-			// draw our basic overlay
-			renderSystem->SetColor( idVec4( 0.0f, 0.0f, 0.0f, 0.75f ) );
-			renderSystem->DrawStretchPic( 0, SCREEN_HEIGHT - 48, SCREEN_HEIGHT, 48, 0, 0, 1, 1, whiteMaterial );
-			//renderSystem->SetColor( idVec4( 0.0f, 0.5f, 0.8f, 1.0f ) );
-			renderSystem->SetColor( colorBrown );
-			renderSystem->DrawStretchPic( 0, SCREEN_HEIGHT - 48, loadPacifierBinarizeProgress * SCREEN_HEIGHT, 16, 0, 0, 1, 1, whiteMaterial );
-			renderSystem->DrawSmallStringExt( 0, SCREEN_HEIGHT - 48, loadPacifierBinarizeFilename.c_str(), idVec4( 1.0f, 1.0f, 1.0f, 1.0f ), true, true, idStr::Length( loadPacifierBinarizeFilename.c_str() ) );
-			renderSystem->DrawSmallStringExt( 0, SCREEN_HEIGHT - 32, va( "%s %d/%d lvls", loadPacifierBinarizeInfo.c_str(), loadPacifierBinarizeMiplevel, loadPacifierBinarizeMiplevelTotal ), idVec4( 1.0f, 1.0f, 1.0f, 1.0f ), true, true, idStr::Length( va( "%s %d/%d lvls", loadPacifierBinarizeInfo.c_str(), loadPacifierBinarizeMiplevel, loadPacifierBinarizeMiplevelTotal ) ) );
-			renderSystem->DrawSmallStringExt( 0, SCREEN_HEIGHT - 16, text, idVec4( 1.0f, 1.0f, 1.0f, 1.0f ), true, true, idStr::Length( text ) );
+				// prepare our strings
+				idStr text;
+				if( loadPacifierBinarizeTimeLeft >= 99.5f )
+				{
+					text = va( "Binarizing %3.0f%% ETA %2.0f minutes", loadPacifierBinarizeProgress * 100.0f, loadPacifierBinarizeTimeLeft / 60.0f );
+				}
+				else if( loadPacifierBinarizeTimeLeft )
+				{
+					text = va( "Binarizing %3.0f%% ETA %2.0f seconds", loadPacifierBinarizeProgress * 100.0f, loadPacifierBinarizeTimeLeft );
+				}
+				else
+				{
+					text = va( "Binarizing %3.0f%%", loadPacifierBinarizeProgress * 100.0f );
+				}
+
+				// draw our basic overlay
+				renderSystem->SetColor( idVec4( 0.0f, 0.0f, 0.0f, 0.75f ) );
+				renderSystem->DrawStretchPic( 0, SCREEN_HEIGHT - 48, SCREEN_HEIGHT, 48, 0, 0, 1, 1, whiteMaterial );
+				//renderSystem->SetColor( idVec4( 0.0f, 0.5f, 0.8f, 1.0f ) );
+				renderSystem->SetColor( colorBrown );
+				renderSystem->DrawStretchPic( 0, SCREEN_HEIGHT - 48, loadPacifierBinarizeProgress * SCREEN_HEIGHT, 16, 0, 0, 1, 1, whiteMaterial );
+				renderSystem->DrawSmallStringExt( 0, SCREEN_HEIGHT - 48, loadPacifierBinarizeFilename.c_str(), idVec4( 1.0f, 1.0f, 1.0f, 1.0f ), true, true, idStr::Length( loadPacifierBinarizeFilename.c_str() ) );
+				renderSystem->DrawSmallStringExt( 0, SCREEN_HEIGHT - 32, va( "%s %d/%d lvls", loadPacifierBinarizeInfo.c_str(), loadPacifierBinarizeMiplevel, loadPacifierBinarizeMiplevelTotal ), idVec4( 1.0f, 1.0f, 1.0f, 1.0f ), true, true, idStr::Length( va( "%s %d/%d lvls", loadPacifierBinarizeInfo.c_str(), loadPacifierBinarizeMiplevel, loadPacifierBinarizeMiplevelTotal ) ) );
+				renderSystem->DrawSmallStringExt( 0, SCREEN_HEIGHT - 16, text, idVec4( 1.0f, 1.0f, 1.0f, 1.0f ), true, true, idStr::Length( text ) );
+			}
 		}
-	}
-	else if( loadGUI != NULL )
-	{
-		// foresthale 2014-05-30: showing a black background looks better than flickering in widescreen
-		renderSystem->SetColor( colorBlack );
-		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 1, 1, whiteMaterial );
-
-		loadGUI->Render( renderSystem, Sys_Milliseconds() );
 	}
 	else if( game && game->Shell_IsActive() )
 	{
@@ -382,7 +377,8 @@ void idCommonLocal::Draw()
 		// draw the wipe material on top of this if it hasn't completed yet
 		DrawWipeModel();
 
-		Dialog().Render( loadGUI != NULL );
+		bool isLoadingGUI = (game != NULL && game->Shell_IsLoadingActive());
+		Dialog().Render( isLoadingGUI );
 
 		// draw the half console / notify console on top of everything
 		console->Draw( false );
@@ -795,7 +791,10 @@ void idCommonLocal::Frame()
 		ExecuteReliableMessages();
 
 		// send frame and mouse events to active guis
-		GuiFrameEvents();
+		if( game )
+		{
+			game->Shell_SyncWithSession();
+		}
 
 		// SRS - Advance demos inside Frame() vs. Draw() to support smp mode playback
 		// SRS - Pause playDemo (but not timeDemo) when window not in focus
@@ -960,8 +959,10 @@ void idCommonLocal::Frame()
 	catch( idException& err )
 	{
 		// kill loading gui
-		delete loadGUI;
-		loadGUI = NULL;
+		if( game != NULL )
+		{
+			game->Shell_Cleanup(true);
+		}
 
 		// drop back to main menu
 		LeaveGame();

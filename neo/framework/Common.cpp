@@ -146,11 +146,7 @@ idCommonLocal::idCommonLocal() :
 
 	gameDLL = 0;
 
-	loadGUI = NULL;
-	nextLoadTip = 0;
-	isHellMap = false;
 	wipeForced = false;
-	defaultLoadscreen = false;
 
 	menuSoundWorld = NULL;
 
@@ -1068,19 +1064,6 @@ void idCommonLocal::LoadGameDLL()
 idCommonLocal::UnloadGameDLL
 =================
 */
-void idCommonLocal::CleanupShell()
-{
-	if( game != NULL )
-	{
-		game->Shell_Cleanup();
-	}
-}
-
-/*
-=================
-idCommonLocal::UnloadGameDLL
-=================
-*/
 void idCommonLocal::UnloadGameDLL()
 {
 
@@ -1365,7 +1348,10 @@ void idCommonLocal::Init( int argc, char* const* argv )
 			game->Leaderboards_Init();
 		}
 
-		CreateMainMenu();
+		if( game != NULL )
+		{
+			game->Shell_InitMenu();
+		}
 
 		commonDialog.Init();
 
@@ -1485,12 +1471,11 @@ void idCommonLocal::Shutdown()
 	printf( "Stop();\n" );
 	Stop();
 
-	printf( "CleanupShell();\n" );
-	CleanupShell();
-
-	printf( "delete loadGUI;\n" );
-	delete loadGUI;
-	loadGUI = NULL;
+	printf( "game->Shell_Cleanup();\n" );
+	if( game != NULL )
+	{
+		game->Shell_Cleanup();
+	}
 
 	printf( "ImGuiHook::Destroy();\n" );
 	ImGuiHook::Destroy();
@@ -1605,35 +1590,6 @@ void idCommonLocal::Shutdown()
 }
 
 /*
-========================
-idCommonLocal::CreateMainMenu
-========================
-*/
-void idCommonLocal::CreateMainMenu()
-{
-	if( game != NULL )
-	{
-		// note which media we are going to need to load
-		declManager->BeginLevelLoad();
-		renderSystem->BeginLevelLoad();
-		soundSystem->BeginLevelLoad();
-		uiManager->BeginLevelLoad();
-
-		// create main inside an "empty" game level load - so assets get
-		// purged automagically when we transition to a "real" map
-		game->Shell_CreateMenu( false );
-		game->Shell_Show( true );
-		game->Shell_SyncWithSession();
-
-		// load
-		renderSystem->EndLevelLoad();
-		soundSystem->EndLevelLoad();
-		declManager->EndLevelLoad();
-		uiManager->EndLevelLoad( "" );
-	}
-}
-
-/*
 ===============
 idCommonLocal::Stop
 
@@ -1653,7 +1609,10 @@ void idCommonLocal::Stop( bool resetSession )
 	insideExecuteMapChange = false;
 
 	// drop all guis
-	ExitMenu();
+	if( game )
+	{
+		game->Shell_Show( false );
+	}
 
 	if( resetSession )
 	{
@@ -1727,7 +1686,10 @@ void idCommonLocal::LeaveGame()
 
 	Stop( false );
 
-	CreateMainMenu();
+	if( game != NULL )
+	{
+		game->Shell_InitMenu();
+	}
 
 	StartMenu();
 

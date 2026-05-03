@@ -172,7 +172,11 @@ public:
 	// MAIN MENU FUNCTIONS
 	virtual bool				InhibitControls() = 0;
 	virtual void				Shell_Init( const char* filename, idSoundWorld* sw ) = 0;
-	virtual void				Shell_Cleanup() = 0;
+	virtual void				Shell_InitMenu() = 0;
+	virtual bool				Shell_IsLoadingActive() const = 0;
+	virtual void				Shell_LoadingGui( const char* mapName, bool& hellMap ) = 0;
+	virtual void				Shell_RenderLoadingShell() = 0;
+	virtual void				Shell_Cleanup( bool onlyLoading = false ) = 0;
 	virtual void				Shell_CreateMenu( bool inGame ) = 0;
 	virtual void				Shell_ClosePause() = 0;
 	virtual void				Shell_Show( bool show ) = 0;
@@ -186,12 +190,13 @@ public:
 	virtual void				Shell_UpdateClientCountdown( int countdown ) = 0;
 	virtual void				Shell_UpdateLeaderboard( const idLeaderboardCallback* callback ) = 0;
 	virtual void				Shell_SetGameComplete() = 0;
+
+	// Skip Cinematic process
 	virtual bool				SkipCinematicScene() = 0;
 	virtual bool				CheckInCinematic() = 0;
 
 	// Demo helper functions
 	virtual void				StartDemoPlayback( idRenderWorld* renderworld ) = 0;
-
 	virtual bool				ProcessDemoCommand( idDemoFile* readDemo ) = 0;
 };
 

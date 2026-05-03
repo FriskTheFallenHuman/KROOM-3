@@ -271,6 +271,11 @@ void idGameLocal::Clear()
 
 	lastCmdRunTimeOnClient.Zero();
 	lastCmdRunTimeOnServer.Zero();
+
+	loadGUI = NULL;
+	nextLoadTip = 0;
+	isHellMap = false;
+	defaultLoadscreen = false;
 }
 
 /*
@@ -5700,19 +5705,227 @@ void idGameLocal::Shell_Init( const char* filename, idSoundWorld* sw )
 
 /*
 ========================
-idGameLocal::Shell_Init
+idGameLocal::Shell_InitMenu
 ========================
 */
-void idGameLocal::Shell_Cleanup()
+void idGameLocal::Shell_InitMenu()
 {
-	if( shellHandler != NULL )
+	// note which media we are going to need to load
+	declManager->BeginLevelLoad();
+	renderSystem->BeginLevelLoad();
+	soundSystem->BeginLevelLoad();
+	uiManager->BeginLevelLoad();
+
+	// create main inside an "empty" game level load - so assets get
+	// purged automagically when we transition to a "real" map
+	Shell_CreateMenu( false );
+	Shell_Show( true );
+	Shell_SyncWithSession();
+
+	// load
+	renderSystem->EndLevelLoad();
+	soundSystem->EndLevelLoad();
+	declManager->EndLevelLoad();
+	uiManager->EndLevelLoad( "" );
+}
+
+/*
+========================
+idGameLocal::Shell_Cleanup
+========================
+*/
+void idGameLocal::Shell_Cleanup( bool onlyLoading )
+{
+	if ( !onlyLoading )
+		printf( "delete loadGUI;\n" );
+	delete loadGUI;
+	loadGUI = NULL;
+
+	if ( !onlyLoading )
 	{
-		delete shellHandler;
-		shellHandler = NULL;
+		if( shellHandler != NULL )
+		{
+			printf( "delete shellHandler;\n" );
+			delete shellHandler;
+			shellHandler = NULL;
+		}
+
+		printf( "mpGame.CleanupScoreboard();\n" );
+		mpGame.CleanupScoreboard();
+	}
+}
+
+/*
+===============
+idGameLocal::LoadLoadingGui
+===============
+*/
+void idGameLocal::Shell_LoadingGui( const char* mapName, bool& hellMap )
+{
+	defaultLoadscreen = false;
+	loadGUI = new idSWF( "loading/default", NULL );
+
+	extern idCVar g_demoMode;
+	if( g_demoMode.GetBool() )
+	{
+		hellMap = false;
+		if( loadGUI != NULL )
+		{
+			const idMaterial* defaultMat = declManager->FindMaterial( "guis/assets/loadscreens/default" );
+			renderSystem->LoadLevelImages();
+
+			loadGUI->Activate( true );
+			idSWFSpriteInstance* bgImg = loadGUI->GetRootObject().GetSprite( "bgImage" );
+			if( bgImg != NULL )
+			{
+				bgImg->SetMaterial( defaultMat );
+			}
+		}
+		defaultLoadscreen = true;
+		return;
 	}
 
-	mpGame.CleanupScoreboard();
+	// load / program a gui to stay up on the screen while loading
+	idStrStatic< MAX_OSPATH > stripped = mapName;
+	stripped.StripFileExtension();
+	stripped.StripPath();
+
+	// use default load screen for demo
+	idStrStatic< MAX_OSPATH > matName = "guis/assets/loadscreens/";
+	matName.Append( stripped );
+	const idMaterial* mat = declManager->FindMaterial( matName );
+
+	renderSystem->LoadLevelImages();
+
+	if( mat->GetImageWidth() < 32 )
+	{
+		mat = declManager->FindMaterial( "guis/assets/loadscreens/default" );
+		renderSystem->LoadLevelImages();
+	}
+
+	loadTipList.SetNum( loadTipList.Max() );
+	for( int i = 0; i < loadTipList.Max(); ++i )
+	{
+		loadTipList[i] = i;
+	}
+
+	if( loadGUI != NULL )
+	{
+		loadGUI->Activate( true );
+		nextLoadTip = Sys_Milliseconds() + LOAD_TIP_CHANGE_INTERVAL;
+
+		idSWFSpriteInstance* bgImg = loadGUI->GetRootObject().GetSprite( "bgImage" );
+		if( bgImg != NULL )
+		{
+			bgImg->SetMaterial( mat );
+		}
+
+		idSWFSpriteInstance* overlay = loadGUI->GetRootObject().GetSprite( "overlay" );
+
+		const idDeclEntityDef* mapDef = static_cast<const idDeclEntityDef*>( declManager->FindType( DECL_MAPDEF, mapName, false ) );
+		if( mapDef != NULL )
+		{
+			isHellMap = mapDef->dict.GetBool( "hellMap", false );
+
+			if( isHellMap && overlay != NULL )
+			{
+				overlay->SetVisible( false );
+			}
+
+			idStr desc;
+			idStr subTitle;
+			idStr displayName;
+			idSWFTextInstance* txtVal = NULL;
+
+			txtVal = loadGUI->GetRootObject().GetNestedText( "txtRegLoad" );
+			displayName = idLocalization::GetString( mapDef->dict.GetString( "name", mapName ) );
+
+			if( txtVal != NULL )
+			{
+				txtVal->SetText( "#str_00408" );
+				txtVal->SetStrokeInfo( true, 2.0f, 1.0f );
+			}
+
+			const idMatchParameters& matchParameters = session->GetActingGameStateLobbyBase().GetMatchParms();
+			if( matchParameters.gameMode == GAME_MODE_SINGLEPLAYER )
+			{
+				desc = idLocalization::GetString( mapDef->dict.GetString( "desc", "" ) );
+				subTitle = idLocalization::GetString( mapDef->dict.GetString( "subTitle", "" ) );
+			}
+			else
+			{
+				const idStrList& modes = common->GetModeDisplayList();
+				subTitle = modes[ idMath::ClampInt( 0, modes.Num() - 1, matchParameters.gameMode ) ];
+
+				const char* modeDescs[] = { "#str_swf_deathmatch_desc", "#str_swf_tourney_desc", "#str_swf_team_deathmatch_desc", "#str_swf_lastman_desc", "#str_swf_ctf_desc" };
+				desc = idLocalization::GetString( modeDescs[matchParameters.gameMode] );
+			}
+
+			if( !isHellMap )
+			{
+				txtVal = loadGUI->GetRootObject().GetNestedText( "txtName" );
+			}
+			else
+			{
+				txtVal = loadGUI->GetRootObject().GetNestedText( "txtHellName" );
+			}
+			if( txtVal != NULL )
+			{
+				txtVal->SetText( displayName );
+				txtVal->SetStrokeInfo( true, 2.0f, 1.0f );
+			}
+
+			txtVal = loadGUI->GetRootObject().GetNestedText( "txtSub" );
+			if( txtVal != NULL && !isHellMap )
+			{
+				txtVal->SetText( subTitle );
+				txtVal->SetStrokeInfo( true, 1.75f, 0.75f );
+			}
+
+			txtVal = loadGUI->GetRootObject().GetNestedText( "txtDesc" );
+			if( txtVal != NULL )
+			{
+				if( isHellMap )
+				{
+					txtVal->SetText( va( "\n%s", desc.c_str() ) );
+				}
+				else
+				{
+					txtVal->SetText( desc );
+				}
+				txtVal->SetStrokeInfo( true, 1.75f, 0.75f );
+			}
+		}
+	}
 }
+
+/*
+========================
+idGameLocal::Shell_IsActive
+========================
+*/
+bool idGameLocal::Shell_IsLoadingActive() const
+{
+	if ( loadGUI != NULL )
+	{
+		return loadGUI->IsActive();
+	}
+	return false;
+}
+
+/*
+========================
+idGameLocal::Shell_Render
+========================
+*/
+void idGameLocal::Shell_RenderLoadingShell()
+{
+	if ( loadGUI != NULL )
+	{
+		loadGUI->Render( renderSystem, Sys_Milliseconds() );
+	}
+}
+
 
 /*
 ========================
@@ -5844,10 +6057,40 @@ idGameLocal::Shell_SyncWithSession
 */
 void idGameLocal::Shell_SyncWithSession()
 {
+	// Update the Loading tip
+	const int time = Sys_Milliseconds();
+	if( time >= nextLoadTip && loadGUI != NULL && loadTipList.Num() > 0 && !defaultLoadscreen )
+	{
+		nextLoadTip = time + LOAD_TIP_CHANGE_INTERVAL;
+		const int rnd = time % loadTipList.Num();
+		idStrStatic<20> tipId;
+		tipId.Format( "#str_loadtip_%d", loadTipList[ rnd ] );
+		loadTipList.RemoveIndex( rnd );
+
+		idSWFTextInstance* txtVal = loadGUI->GetRootObject().GetNestedText( "txtDesc" );
+		if( txtVal != NULL )
+		{
+			if( isHellMap )
+			{
+				txtVal->SetText( va( "\n%s", idLocalization::GetString( tipId ) ) );
+			}
+			else
+			{
+				txtVal->SetText( idLocalization::GetString( tipId ) );
+			}
+			txtVal->SetStrokeInfo( true, 1.75f, 0.75f );
+		}
+
+		common->UpdateScreen( false );
+	}
+
+	// Don't if we dont have a shell
 	if( shellHandler == NULL )
 	{
 		return;
 	}
+
+	// Synch with idSession
 	switch( session->GetState() )
 	{
 		case idSession::INGAME:

@@ -82,6 +82,9 @@ const int ENTITYNUM_FIRST_NON_REPLICATED	= ENTITYNUM_MAX_NORMAL - 256;
 const float MIN_FOV				= 50.0f;
 const float MAX_FOV				= 120.0f;
 
+const int LOAD_TIP_CHANGE_INTERVAL = 12000;
+const int LOAD_TIP_COUNT		= 26;
+
 //============================================================================
 
 void gameError( const char* fmt, ... );
@@ -591,23 +594,28 @@ public:
 	virtual void				Leaderboards_Shutdown();
 
 	// MAIN MENU FUNCTIONS
-	virtual void					Shell_Init( const char* filename, idSoundWorld* sw );
-	virtual void					Shell_Cleanup();
-	virtual void					Shell_Show( bool show );
-	virtual void					Shell_ClosePause();
-	virtual void					Shell_CreateMenu( bool inGame );
-	virtual bool					Shell_IsActive() const;
-	virtual bool					Shell_HandleGuiEvent( const sysEvent_t* sev );
-	virtual void					Shell_Render();
-	virtual void					Shell_ResetMenu();
-	virtual void					Shell_SyncWithSession() ;
-	virtual void					Shell_SetCanContinue( bool valid );
-	virtual void					Shell_UpdateSavedGames();
-	virtual void					Shell_UpdateClientCountdown( int countdown );
-	virtual void					Shell_UpdateLeaderboard( const idLeaderboardCallback* callback );
-	virtual void					Shell_SetGameComplete();
-	virtual bool			        SkipCinematicScene();
-	virtual bool                    CheckInCinematic();
+	virtual void				Shell_Init( const char* filename, idSoundWorld* sw );
+	virtual void				Shell_InitMenu();
+	virtual bool				Shell_IsLoadingActive() const;
+	virtual void				Shell_LoadingGui( const char* mapName, bool& hellMap );
+	virtual void				Shell_RenderLoadingShell();
+	virtual void				Shell_Cleanup( bool onlyLoading = false );
+	virtual void				Shell_Show( bool show );
+	virtual void				Shell_ClosePause();
+	virtual void				Shell_CreateMenu( bool inGame );
+	virtual bool				Shell_IsActive() const;
+	virtual bool				Shell_HandleGuiEvent( const sysEvent_t* sev );
+	virtual void				Shell_Render();
+	virtual void				Shell_ResetMenu();
+	virtual void				Shell_SyncWithSession() ;
+	virtual void				Shell_SetCanContinue( bool valid );
+	virtual void				Shell_UpdateSavedGames();
+	virtual void				Shell_UpdateClientCountdown( int countdown );
+	virtual void				Shell_UpdateLeaderboard( const idLeaderboardCallback* callback );
+	virtual void				Shell_SetGameComplete();
+
+	virtual bool				SkipCinematicScene();
+	virtual bool				CheckInCinematic();
 
 	virtual void					StartDemoPlayback( idRenderWorld* renderworld );
 
@@ -631,6 +639,12 @@ public:
 
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
+
+	idSWF*					loadGUI;
+	int						nextLoadTip;
+	bool					isHellMap;
+	bool					defaultLoadscreen;
+	idStaticList<int, LOAD_TIP_COUNT>	loadTipList;
 
 	idStr					mapFileName;			// name of the map, empty string if no map loaded
 	idMapFile* 				mapFile;				// will be NULL during the game unless in-game editing is used

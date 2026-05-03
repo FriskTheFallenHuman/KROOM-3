@@ -167,19 +167,6 @@ void idCommonLocal::StartMenu( bool playIntro )
 }
 
 /*
-===============
-idCommonLocal::ExitMenu
-===============
-*/
-void idCommonLocal::ExitMenu()
-{
-	if( game )
-	{
-		game->Shell_Show( false );
-	}
-}
-
-/*
 ==============
 idCommonLocal::MenuEvent
 
@@ -205,17 +192,4 @@ bool idCommonLocal::MenuEvent( const sysEvent_t* event )
 	}
 
 	return false;
-}
-
-/*
-=================
-idCommonLocal::GuiFrameEvents
-=================
-*/
-void idCommonLocal::GuiFrameEvents()
-{
-	if( game )
-	{
-		game->Shell_SyncWithSession();
-	}
 }

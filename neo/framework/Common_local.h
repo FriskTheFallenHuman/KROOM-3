@@ -39,9 +39,6 @@ static const int initialHz = 60;
 static const int initialBaseTicks = 1000 / initialHz;
 static const int initialBaseTicksPerSec = initialHz * initialBaseTicks;
 
-static const int LOAD_TIP_CHANGE_INTERVAL = 12000;
-static const int LOAD_TIP_COUNT = 26;
-
 static const int MAX_CONSOLE_LINES = 32;
 static int com_numConsoleLines;
 static idCmdArgs com_consoleLines[MAX_CONSOLE_LINES];
@@ -150,7 +147,6 @@ public:
 
 	virtual void				Init( int argc, char* const* argv );
 	virtual void				Shutdown();
-	virtual	void				CreateMainMenu();
 	virtual void				Quit();
 	virtual bool				IsInitialized() const;
 	virtual void				Frame();
@@ -564,11 +560,6 @@ private:
 	idStrList			mpDisplayGameModes;
 	idList<mpMap_t>		mpGameMaps;
 
-	idSWF* 				loadGUI;
-	int					nextLoadTip;
-	bool				isHellMap;
-	bool				defaultLoadscreen;
-	idStaticList<int, LOAD_TIP_COUNT>	loadTipList;
 
 	const idMaterial* 	splashScreen;
 	const idMaterial*	photsensitivityScreen;
@@ -636,18 +627,13 @@ private:
 	void	DumpWarnings();
 	void	LoadGameDLL();
 	void	UnloadGameDLL();
-	void	CleanupShell();
 	void	RenderBink( const char* path );
 	void	RenderSplash( bool photsensitivity = false );
 	void	FilterLangList( idStrList* list, idStr lang, bool strict = false );
 	void	CheckStartupStorageRequirements();
 
-	void	ExitMenu();
 	bool	MenuEvent( const sysEvent_t* event );
-
 	void	StartMenu( bool playIntro = false );
-	void	GuiFrameEvents();
-
 	void	BeginAVICapture( const char* name );
 	void	EndAVICapture();
 
@@ -666,11 +652,8 @@ private:
 	void	InterpolateSnapshot( netTimes_t& prev, netTimes_t& next, float fraction, bool predict );
 	void	ResetNetworkingState();
 
-	int		NetworkFrame();
 	void	SendSnapshots();
 	void	SendUsercmds( int localClientNum );
-
-	void	LoadLoadingGui( const char* mapName, bool& hellMap );
 
 	// Meant to be used like:
 	// while ( waiting ) { BusyWait(); }
@@ -690,8 +673,6 @@ private:
 	void	ClearWipe();
 
 	void	MoveToNewMap( const char* mapName, bool devmap );
-
-	void	PlayIntroGui();
 
 	void	ScrubSaveGameFileName( idStr& saveFileName ) const;
 };

@@ -208,8 +208,6 @@ public:
 	virtual void				Shutdown() = 0;
 	virtual bool				IsShuttingDown() const = 0;
 
-	virtual	void				CreateMainMenu() = 0;
-
 	// Shuts down everything.
 	virtual void				Quit() = 0;
 

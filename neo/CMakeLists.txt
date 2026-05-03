@@ -515,7 +515,7 @@ set_source_files_properties(
 	LANGUAGE C
 )
 
-always_optimize_sourcefile(sound/stbvorbis_impl.c)
+#always_optimize_sourcefile(sound/stbvorbis_impl.c)
 
 file(GLOB src_swf swf/*.cpp swf/*.h)
 source_group("SWF" FILES ${src_swf})
