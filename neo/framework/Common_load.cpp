@@ -350,6 +350,10 @@ void idCommonLocal::ExecuteMapChange()
 	// Stop rendering the wipe
 	ClearWipe();
 
+	// force the loading gui to show up
+	UpdateScreen( false );
+	UpdateScreen( false ); // the loading gui appears after this call
+	UpdateScreen( false ); // achievement messages used to appear after this call (now they are rendered via swf and appear before ExecuteMapChange is called)
 
 	if( fileSystem->UsingResourceFiles() )
 	{
