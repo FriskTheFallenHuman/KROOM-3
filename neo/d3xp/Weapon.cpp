@@ -2918,7 +2918,18 @@ idWeapon::GetZoomFov
 */
 int	idWeapon::GetZoomFov()
 {
-	return zoomFov;
+	int fov;
+	if( owner )
+	{
+		float invAmpFactor = idMath::Tan( DEG2RAD( ( float )zoomFov * 0.5f ) ) / idMath::Tan( DEG2RAD( 90.0f * 0.5f ) );
+		float newFov = RAD2DEG( 2.0f * idMath::ATan( invAmpFactor * idMath::Tan( DEG2RAD( owner->DefaultFov() ) * 0.5f ) ) );
+		fov = idMath::ClampInt( 1, 179, ( int )newFov );
+	}
+	else
+	{
+		fov = zoomFov;
+	}
+	return fov;
 }
 
 /*
