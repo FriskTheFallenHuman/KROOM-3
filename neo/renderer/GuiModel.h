@@ -36,6 +36,9 @@ struct guiModelSurface_t
 	uint64				glState;
 	int					firstIndex;
 	int					numIndexes;
+	bool				useShaderParms;
+	int					shaderMsec;
+	idVec4				shaderColor;
 };
 
 class idRenderMatrix;
@@ -67,7 +70,7 @@ public:
 	// the returned pointer will be in write-combined memory, so only make contiguous
 	// 32 bit writes and never read from it.
 	idDrawVert* AllocTris( int numVerts, const triIndex_t* indexes, int numIndexes, const idMaterial* material,
-						   const uint64 glState );
+						   const uint64 glState, bool useShaderParms = false, int shaderMsec = 0, const idVec4& shaderColor = vec4_zero );
 
 	//---------------------------
 private:

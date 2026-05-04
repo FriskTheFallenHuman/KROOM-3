@@ -846,6 +846,7 @@ public:
 
 	virtual void			SetColor( const idVec4& color );
 	virtual uint32			GetColor();
+	virtual void			SetShaderParms( int timeMsec, const idVec4& colorRgba );
 	virtual void			SetGLState( const uint64 glState ) ;
 	virtual void			DrawFilled( const idVec4& color, float x, float y, float w, float h );
 	virtual void			DrawStretchPic( float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial* material );
@@ -945,6 +946,9 @@ public:
 	uint32					currentColorNativeBytesOrder;
 	uint64					currentGLState;
 	class idGuiModel* 		guiModel;
+	bool					useShaderParms;
+	int						shaderMsec;
+	idVec4					shaderColor;
 
 	idList<idFont*, TAG_FONT>		fonts;
 

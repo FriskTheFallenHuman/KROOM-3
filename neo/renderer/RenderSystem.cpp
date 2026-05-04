@@ -274,6 +274,18 @@ void idRenderSystemLocal::SetColor( const idVec4& rgba )
 
 /*
 =============
+idRenderSystemLocal::SetShaderParms
+=============
+*/
+void idRenderSystemLocal::SetShaderParms( int timeMsec, const idVec4& colorRgba )
+{
+	useShaderParms = true;
+	shaderMsec = timeMsec;
+	shaderColor = colorRgba;
+}
+
+/*
+=============
 idRenderSystemLocal::GetColor
 =============
 */
@@ -330,7 +342,17 @@ void idRenderSystemLocal::DrawStretchPic( const idVec4& topLeft, const idVec4& t
 		return;
 	}
 
-	idDrawVert* verts = guiModel->AllocTris( 4, quadPicIndexes, 6, material, currentGLState );
+	idDrawVert* verts;
+	if( useShaderParms )
+	{
+		useShaderParms = false;
+		verts = guiModel->AllocTris( 4, quadPicIndexes, 6, material, currentGLState, true, shaderMsec, shaderColor );
+	}
+	else
+	{
+		verts = guiModel->AllocTris( 4, quadPicIndexes, 6, material, currentGLState );
+	}
+
 	if( verts == NULL )
 	{
 		return;

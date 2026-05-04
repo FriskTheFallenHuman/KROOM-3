@@ -516,10 +516,6 @@ void idPlayerView::SingleView( const renderView_t* view, idMenuHandler_HUD* hudM
 
 
 		// tunnel vision
-		/*
-		RB: disabled tunnel vision because the renderer converts colors set by SetColor4 to bytes which are clamped to [0,255]
-		so materials that want to access float values greater than 1 with parm0 - parm3 are always broken
-
 		float health = 0.0f;
 		if( g_testHealthVision.GetFloat() != 0.0f )
 		{
@@ -541,15 +537,15 @@ void idPlayerView::SingleView( const renderView_t* view, idMenuHandler_HUD* hudM
 
 		if( alpha < 1.0f )
 		{
-			renderSystem->SetColor4( ( player->health <= 0.0f ) ? MS2SEC( gameLocal.slow.time ) : lastDamageTime, 1.0f, 1.0f, ( player->health <= 0.0f ) ? 0.0f : alpha );
+			renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
+			renderSystem->SetShaderParms( gameLocal.fast.time, idVec4( ( player->health <= 0.0f ) ? MS2SEC( gameLocal.fast.time ) : lastDamageTime, 1.0f, 1.0f, ( player->health <= 0.0f ) ? 0.0f : alpha ) );
 			renderSystem->DrawStretchPic( 0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0f, 0.0f, 1.0f, 1.0f, tunnelMaterial );
 		}
-		RB end
-		*/
 
 		if( bfgVision )
 		{
 			renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
+			renderSystem->SetShaderParms( gameLocal.fast.time, idVec4( 1.0f, 1.0f, 1.0f, 1.0f ) );
 			renderSystem->DrawStretchPic( 0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0f, 0.0f, 1.0f, 1.0f, bfgMaterial );
 		}
 
@@ -946,6 +942,7 @@ void FullscreenFX_Helltime::AccumPass( const renderView_t* view )
 	}
 	else
 	{
+		renderSystem->SetShaderParms( gameLocal.fast.time, idVec4( 1.0f, 1.0f, 1.0f, 1.0f ) );
 		renderSystem->DrawStretchPic( 0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0f, t0, 1.0f, t1, captureMaterials[level] );
 	}
 }
@@ -1460,6 +1457,7 @@ void FullscreenFX_InfluenceVision::HighQuality()
 	if( player->GetInfluenceMaterial() )
 	{
 		renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, pct );
+		renderSystem->SetShaderParms( gameLocal.fast.time, idVec4( 1.0f, 1.0f, 1.0f, 1.0f ) );
 		renderSystem->DrawStretchPic( 0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0f, 0.0f, 1.0f, 1.0f, player->GetInfluenceMaterial() );
 	}
 	else if( player->GetInfluenceEntity() == NULL )

@@ -294,6 +294,7 @@ public:
 	{
 		SetColor( idVec4( r, g, b, a ) );
 	}
+	virtual void			SetShaderParms( int timeMsec, const idVec4& colorRgba ) = 0;
 
 	virtual uint32			GetColor() = 0;
 

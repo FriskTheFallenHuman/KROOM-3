@@ -163,7 +163,20 @@ void idGuiModel::EmitSurfaces( float modelMatrix[16], float modelViewMatrix[16],
 		{
 			float* regs = ( float* )R_FrameAlloc( shader->GetNumRegisters() * sizeof( float ), FRAME_ALLOC_SHADER_REGISTER );
 			drawSurf->shaderRegisters = regs;
-			shader->EvaluateRegisters( regs, shaderParms, tr.viewDef->renderView.shaderParms, tr.viewDef->renderView.time[1] * 0.001f, NULL );
+			if( guiSurf.useShaderParms )
+			{
+				float shaderParms[MAX_ENTITY_SHADER_PARMS];
+				memset( shaderParms, 0, sizeof( shaderParms ) );
+				shaderParms[SHADERPARM_RED] = guiSurf.shaderColor.x;
+				shaderParms[SHADERPARM_GREEN] = guiSurf.shaderColor.y;
+				shaderParms[SHADERPARM_BLUE] = guiSurf.shaderColor.z;
+				shaderParms[SHADERPARM_ALPHA] = guiSurf.shaderColor.w;
+				shader->EvaluateRegisters( regs, shaderParms, tr.viewDef->renderView.shaderParms, guiSurf.shaderMsec * 0.001f, NULL );
+			}
+			else
+			{
+				shader->EvaluateRegisters( regs, shaderParms, tr.viewDef->renderView.shaderParms, tr.viewDef->renderView.time[1] * 0.001f, NULL );
+			}
 		}
 		R_LinkDrawSurfToView( drawSurf, tr.viewDef );
 	}
@@ -364,6 +377,8 @@ void idGuiModel::AdvanceSurf()
 		s.glState = 0;
 	}
 
+	s.useShaderParms = false;
+
 	// advance indexes so the pointer to each surface will be 16 byte aligned
 	numIndexes = ALIGN( numIndexes, 8 );
 
@@ -379,7 +394,7 @@ void idGuiModel::AdvanceSurf()
 AllocTris
 =============
 */
-idDrawVert* idGuiModel::AllocTris( int vertCount, const triIndex_t* tempIndexes, int indexCount, const idMaterial* material, const uint64 glState )
+idDrawVert* idGuiModel::AllocTris( int vertCount, const triIndex_t* tempIndexes, int indexCount, const idMaterial* material, const uint64 glState, bool useShaderParms, int shaderMsec, const idVec4& shaderColor )
 {
 	if( material == NULL )
 	{
@@ -408,7 +423,7 @@ idDrawVert* idGuiModel::AllocTris( int vertCount, const triIndex_t* tempIndexes,
 
 	// break the current surface if we are changing to a new material or we can't
 	// fit the data into our allocated block
-	if( material != surf->material || glState != surf->glState )
+	if( material != surf->material || glState != surf->glState || useShaderParms != surf->useShaderParms || ( useShaderParms && ( shaderMsec != surf->shaderMsec || shaderColor != surf->shaderColor ) ) )
 	{
 		if( surf->numIndexes )
 		{
@@ -416,6 +431,12 @@ idDrawVert* idGuiModel::AllocTris( int vertCount, const triIndex_t* tempIndexes,
 		}
 		surf->material = material;
 		surf->glState = glState;
+		surf->useShaderParms = useShaderParms;
+		if( useShaderParms )
+		{
+			surf->shaderMsec = shaderMsec;
+			surf->shaderColor = shaderColor;
+		}
 	}
 
 	int startVert = numVerts;
