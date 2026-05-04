@@ -827,8 +827,9 @@ void idCommonLocal::RenderSplash( bool photsensitivity )
 	const float sysAspect = sysWidth / sysHeight;
 	const float splashAspect = 16.0f / 9.0f;
 	const float adjustment = sysAspect / splashAspect;
-	const float barHeight = ( adjustment >= 1.0f ) ? 0.0f : ( 1.0f - adjustment ) * ( float )SCREEN_HEIGHT * 0.25f;
-	const float barWidth = ( adjustment <= 1.0f ) ? 0.0f : ( adjustment - 1.0f ) * ( float )SCREEN_WIDTH * 0.25f;
+	const float invAdjustment = 1.0f / adjustment;
+	const float barHeight = ( adjustment >= 1.0f ) ? 0.0f : ( 1.0f - adjustment ) * ( float )SCREEN_HEIGHT * 0.5f;
+	const float barWidth = ( adjustment <= 1.0f ) ? 0.0f : ( 1.0f - invAdjustment) * ( float )SCREEN_WIDTH * 0.5f;
 	if( barHeight > 0.0f )
 	{
 		renderSystem->SetColor( colorBlack );
