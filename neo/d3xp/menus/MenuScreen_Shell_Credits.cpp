@@ -742,6 +742,10 @@ void idMenuScreen_Shell_Credits::Initialize( idMenuHandler* data )
 
 	SetSpritePath( "menuCredits" );
 
+	// add a dummy button for focusIndex 0
+	idMenuWidget_Button* dummyButton = new( TAG_SWF ) idMenuWidget_Button();
+	AddChild( dummyButton );
+
 	btnBack = new( TAG_SWF ) idMenuWidget_Button();
 	btnBack->Initialize( data );
 	btnBack->SetLabel( "#str_02305" );
