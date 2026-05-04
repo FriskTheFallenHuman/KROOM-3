@@ -180,8 +180,7 @@ void idMenuScreen_Shell_PartyLobby::Update()
 			}
 			buttonInfo->action.Set( WIDGET_ACTION_PRESS_FOCUSED );
 
-			lobbyUserID_t luid;
-			if( isHost && CanKickSelectedPlayer( luid ) )
+			if( isHost )
 			{
 				buttonInfo = cmdBar->GetButton( idMenuWidget_CommandBar::BUTTON_JOY4 );
 				buttonInfo->label = "#str_swf_kick";
