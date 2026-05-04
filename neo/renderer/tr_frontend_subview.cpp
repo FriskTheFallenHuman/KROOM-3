@@ -321,7 +321,7 @@ static void R_RemoteRender( const drawSurf_t* surf, textureStage_t* stage )
 	parms->isSubview = true;
 	parms->isMirror = false;
 
-	tr.CropRenderSize( stageWidth, stageHeight );
+	tr.CropRenderSize( stageWidth, stageHeight, true );
 
 	tr.GetCroppedViewport( &parms->viewport );
 
@@ -367,7 +367,7 @@ void R_MirrorRender( const drawSurf_t* surf, textureStage_t* stage, idScreenRect
 		return;
 	}
 
-	tr.CropRenderSize( stage->width, stage->height );
+	tr.CropRenderSize( stage->width, stage->height, true );
 
 	tr.GetCroppedViewport( &parms->viewport );
 
@@ -416,7 +416,7 @@ void R_XrayRender( const drawSurf_t* surf, textureStage_t* stage, idScreenRect s
 	int stageWidth = stage->width;
 	int stageHeight = stage->height;
 
-	tr.CropRenderSize( stageWidth, stageHeight );
+	tr.CropRenderSize( stageWidth, stageHeight, true );
 
 	tr.GetCroppedViewport( &parms->viewport );
 
@@ -575,7 +575,7 @@ static void R_EnvironmentProbeRender( const RenderEnvprobeLocal* )
 	int stageWidth = 256;
 	int stageHeight = 256;
 
-	tr.CropRenderSize( stageWidth, stageHeight );
+	tr.CropRenderSize( stageWidth, stageHeight, true );
 
 	tr.GetCroppedViewport( &parms->viewport );
 

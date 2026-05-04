@@ -1080,7 +1080,7 @@ void idRenderSystemLocal::PerformResolutionScaling( int& newWidth, int& newHeigh
 idRenderSystemLocal::CropRenderSize
 ================
 */
-void idRenderSystemLocal::CropRenderSize( int width, int height )
+void idRenderSystemLocal::CropRenderSize( int width, int height, bool oldStyle )
 {
 	if( !IsInitialized() )
 	{
@@ -1116,10 +1116,31 @@ void idRenderSystemLocal::CropRenderSize( int width, int height )
 
 	idScreenRect& current = renderCrops[currentRenderCrop];
 
+	if( oldStyle )
+	{
+		const int previousWidth = previous.GetWidth();
+		const int previousHeight = previous.GetHeight();
+		const float widthRatio = previousWidth / ( float )SCREEN_WIDTH;
+		const float heightRatio = previousHeight / ( float )SCREEN_HEIGHT;
+		width = idMath::FloorPowerOfTwo( ( int )idMath::Rint( width * widthRatio ) );
+		height = idMath::FloorPowerOfTwo( ( int )idMath::Rint( height * heightRatio ) );
+		while( width > previousWidth )
+		{
+			width >>= 1;
+		}
+		while( height > previousHeight )
+		{
+			height >>= 1;
+		}
+	}
+
 	current.x1 = previous.x1;
 	current.x2 = previous.x1 + width - 1;
-	current.y1 = previous.y2 - height + 1;
-	current.y2 = previous.y2;
+	// fix for the heat haze shaders not working correctly with cropped views
+	//current.y1 = previous.y2 - height + 1;
+	//current.y2 = previous.y2;
+	current.y1 = previous.y1;
+	current.y2 = previous.y1 + height - 1;
 }
 
 /*
