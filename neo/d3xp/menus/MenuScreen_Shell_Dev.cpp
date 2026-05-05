@@ -31,6 +31,37 @@ If you have questions concerning this license or the applicable additional terms
 
 const static int NUM_DEV_OPTIONS = 8;
 
+
+/*
+========================
+MapDefIsMultiplayer
+
+Returns true if the mapDef has at least one MP game mode flag set.
+Mirrors the logic in idCommonLocal::InitializeMPMapsModes().
+========================
+*/
+static bool MapDefIsMultiplayer( const idDeclEntityDef* mapDef )
+{
+	if( mapDef == NULL )
+	{
+		return false;
+	}
+
+	const char* gameModes[] =
+	{
+		"Deathmatch", "Tourney", "Team DM", "Last Man", "CTF", NULL
+	};
+
+	for( int i = 0; gameModes[i] != NULL; i++ )
+	{
+		if( mapDef->dict.GetBool( gameModes[i], false ) )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 /*
 ========================
 idMenuScreen_Shell_Dev::Initialize
@@ -89,68 +120,104 @@ idMenuScreen_Shell_Dev::SetupDevOptions
 */
 void idMenuScreen_Shell_Dev::SetupDevOptions()
 {
-
 	devOptions.Clear();
 
-	devOptions.Append( devOption_t( "game/mars_city1", "Mars City 1" ) );
-	devOptions.Append( devOption_t( "game/mc_underground", "MC Underground" ) );
-	devOptions.Append( devOption_t( "game/mars_city2", "Mars City 2" ) );
-	devOptions.Append( devOption_t( "game/admin", "Admin" ) );
-	devOptions.Append( devOption_t( "game/alphalabs1", "Alpha Labs 1" ) );
-	devOptions.Append( devOption_t( "game/alphalabs2", "Alpha Labs 2" ) );
-	devOptions.Append( devOption_t( "game/alphalabs3", "Alpha Labs 3" ) );
-	devOptions.Append( devOption_t( "game/alphalabs4", "Alpha Labs 4" ) );
-	devOptions.Append( devOption_t( "game/enpro", "Enpro" ) );
-	devOptions.Append( devOption_t( "game/commoutside", "Comm outside" ) );
-	devOptions.Append( devOption_t( "game/comm1", "Comm 1" ) );
-	devOptions.Append( devOption_t( "game/recycling1", "Recycling 1" ) );
-	devOptions.Append( devOption_t( "game/recycling2", "Recycling 2" ) );
-	devOptions.Append( devOption_t( "game/monorail", "Monorail" ) );
-	devOptions.Append( devOption_t( "game/delta1", "Delta Labs 1" ) );
-	devOptions.Append( devOption_t( "game/delta2a", "Delta Labs 2a" ) );
-	devOptions.Append( devOption_t( "game/delta2b", "Delta Labs 2b" ) );
-	devOptions.Append( devOption_t( "game/delta3", "Delta Labs 3" ) );
-	devOptions.Append( devOption_t( "game/delta4", "Delta Labs 4" ) );
-	devOptions.Append( devOption_t( "game/hell1", "Hell 1" ) );
-	devOptions.Append( devOption_t( "game/delta5", "Delta Labs 5" ) );
-	devOptions.Append( devOption_t( "game/cpu", "CPU" ) );
-	devOptions.Append( devOption_t( "game/cpuboss", "CPU Boss" ) );
-	devOptions.Append( devOption_t( "game/site3", "Site 3" ) );
-	devOptions.Append( devOption_t( "game/caverns1", "Caverns 1" ) );
-	devOptions.Append( devOption_t( "game/caverns2", "Caverns 2" ) );
-	devOptions.Append( devOption_t( "game/hellhole", "Hell Hole" ) );
-	devOptions.Append( devOption_t( NULL, "-DOOM 3 Expansion-" ) );
-	devOptions.Append( devOption_t( "game/erebus1", "Erebus 1" ) );
-	devOptions.Append( devOption_t( "game/erebus2", "Erebus 2" ) );
-	devOptions.Append( devOption_t( "game/erebus3", "Erebus 3" ) );
-	devOptions.Append( devOption_t( "game/erebus4", "Erebus 4" ) );
-	devOptions.Append( devOption_t( "game/erebus5", "Erebus 5" ) );
-	devOptions.Append( devOption_t( "game/erebus6", "Erebus 6" ) );
-	devOptions.Append( devOption_t( "game/phobos1", "Phobos 1" ) );
-	devOptions.Append( devOption_t( "game/phobos2", "Phobos 2" ) );
-	devOptions.Append( devOption_t( "game/phobos3", "Phobos 3" ) );
-	devOptions.Append( devOption_t( "game/phobos4", "Phobos 4" ) );
-	devOptions.Append( devOption_t( "game/deltax", "Delta X" ) );
-	devOptions.Append( devOption_t( "game/hell", "Hell" ) );
-	devOptions.Append( devOption_t( NULL, "-Lost Missions-" ) );
-	devOptions.Append( devOption_t( "game/le_enpro1", "Enpro 1" ) );
-	devOptions.Append( devOption_t( "game/le_enpro2", "Enpro 2" ) );
-	devOptions.Append( devOption_t( "game/le_underground", "Undeground" ) );
-	devOptions.Append( devOption_t( "game/le_underground2", "Undeground 2" ) );
-	devOptions.Append( devOption_t( "game/le_exis1", "Exis 1" ) );
-	devOptions.Append( devOption_t( "game/le_exis2", "Exis 2" ) );
-	devOptions.Append( devOption_t( "game/le_hell", "Hell" ) );
-	devOptions.Append( devOption_t( "game/le_hell_post", "Hell Post" ) );
-	devOptions.Append( devOption_t( NULL, "-Test Maps-" ) );
-	devOptions.Append( devOption_t( "game/pdas", "PDAs" ) );
-	devOptions.Append( devOption_t( "testmaps/test_box", "Box" ) );
+	idHashIndex seenMaps;
+	idStrList   seenMapNames;
 
+	auto TryAddMap = [&]( const idStr& mapName, const idStr& displayName, bool isMP )
+	{
+		if( mapName.IsEmpty() )
+		{
+			return;
+		}
+		if( mapName.EndsWithIgnoreCase( "_extra_ents" ) )
+		{
+			return;
+		}
+
+		const int key = seenMaps.GenerateKey( mapName, false );
+		for( int idx = seenMaps.GetFirst( key ); idx != idHashIndex::NULL_INDEX; idx = seenMaps.GetNext( idx ) )
+		{
+			if( idStr::Icmp( seenMapNames[idx], mapName ) == 0 )
+			{
+				return;
+			}
+		}
+
+		seenMaps.Add( key, seenMapNames.Num() );
+		seenMapNames.Append( mapName );
+		devOptions.Append( devOption_t( mapName.c_str(), displayName.c_str(), isMP ) );
+	};
+
+	int numMaps = declManager->GetNumDecls( DECL_MAPDEF );
+	for( int i = 0; i < numMaps; i++ )
+	{
+		const idDeclEntityDef* mapDef = static_cast<const idDeclEntityDef*>(
+			declManager->DeclByIndex( DECL_MAPDEF, i ) );
+		if( mapDef == NULL )
+		{
+			continue;
+		}
+
+		idStr mapName    = mapDef->GetName();
+		idStr displayName = idLocalization::GetString(
+			mapDef->dict.GetString( "name", mapName ) );
+		bool  isMP       = MapDefIsMultiplayer( mapDef );
+
+		TryAddMap( mapName, displayName, isMP );
+	}
+
+	idFileList* files = fileSystem->ListFilesTree( "maps", ".map", true );
+	if( files != NULL )
+	{
+		for( int i = 0; i < files->GetNumFiles(); ++i )
+		{
+			idStr fullPath = files->GetFile( i );
+			idStr shortName = fullPath;
+			shortName.StripFileExtension();
+			shortName.StripLeading( "maps/" );
+			if( shortName.Length() > 0 && shortName[0] == '/' )
+			{
+				shortName.StripLeading( "/" );
+			}
+
+			idStr displayName = shortName;
+			bool  isMP        = false;
+
+			const idDeclEntityDef* mapDef = static_cast<const idDeclEntityDef*>(
+				declManager->FindType( DECL_MAPDEF, shortName, false ) );
+			if( mapDef != NULL )
+			{
+				displayName = idLocalization::GetString(
+					mapDef->dict.GetString( "name", shortName ) );
+				isMP = MapDefIsMultiplayer( mapDef );
+			}
+			else
+			{
+				idStr alt = shortName;
+				alt.StripLeading( "game/" );
+				const idDeclEntityDef* mapDef2 = static_cast<const idDeclEntityDef*>(
+					declManager->FindType( DECL_MAPDEF, alt, false ) );
+				if( mapDef2 != NULL )
+				{
+					displayName = idLocalization::GetString(
+						mapDef2->dict.GetString( "name", alt ) );
+					isMP = MapDefIsMultiplayer( mapDef2 );
+				}
+			}
+
+			TryAddMap( shortName, displayName, isMP );
+		}
+		fileSystem->FreeFileList( files );
+	}
+
+	// Build the widget list from the merged, deduplicated devOptions
 	idList< idList< idStr, TAG_IDLIB_LIST_MENU >, TAG_IDLIB_LIST_MENU > menuOptions;
-
 	for( int i = 0; i < devOptions.Num(); ++i )
 	{
 		idList< idStr > option;
-		option.Append( devOptions[ i ].name );
+		option.Append( devOptions[i].name );
 		menuOptions.Append( option );
 	}
 
@@ -281,9 +348,20 @@ bool idMenuScreen_Shell_Dev::HandleAction( idWidgetAction& action, const idWidge
 			}
 
 			int mapIndex = options->GetViewIndex();
-			if( ( mapIndex < devOptions.Num() ) && ( devOptions[ mapIndex ].map != NULL ) )
+			if( ( mapIndex < devOptions.Num() ) && ( !devOptions[ mapIndex ].map.IsEmpty() ) )
 			{
-				cmdSystem->AppendCommandText( va( "devmap %s\n", devOptions[ mapIndex ].map ) );
+				const devOption_t& opt = devOptions[ mapIndex ];
+				if( opt.isMultiplayer )
+				{
+					cmdSystem->AppendCommandText( va( "netmap %s\n", opt.map.c_str() ) );
+				}
+				else
+				{
+					if ( developer.GetBool() )
+						cmdSystem->AppendCommandText( va( "devmap %s\n", opt.map.c_str() ) );
+					else
+						cmdSystem->AppendCommandText( va( "map %s\n", opt.map.c_str() ) );
+				}
 			}
 
 			return true;

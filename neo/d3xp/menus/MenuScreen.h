@@ -794,20 +794,13 @@ public:
 
 	struct devOption_t
 	{
-		devOption_t()
-		{
-			map = "";
-			name = "";
-		};
+		idStr   map;
+		idStr   name;
+		bool    isMultiplayer;
 
-		devOption_t( const char* m, const char* n )
-		{
-			map = m;
-			name = n;
-		}
-
-		const char* 	map;
-		const char* 	name;
+		devOption_t() : isMultiplayer( false ) {}
+		devOption_t( const char* _map, const char* _name, bool _isMP = false )
+			: map( _map ), name( _name ), isMultiplayer( _isMP ) {}
 	};
 
 	idMenuScreen_Shell_Dev() :
