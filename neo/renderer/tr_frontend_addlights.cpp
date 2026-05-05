@@ -401,9 +401,9 @@ static void R_AddSingleLight( viewLight_t* vLight )
 			{
 				lodscale = r_shadowMapLodScale.GetFloat();
 
-				if( lodscale > 20 )
+				if( lodscale > 2.0f )
 				{
-					lodscale = 20;
+					lodscale = 2.0f;
 				}
 
 				flod = 1.0f - projectedRadius * lodscale;

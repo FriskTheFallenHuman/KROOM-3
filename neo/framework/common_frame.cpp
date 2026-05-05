@@ -238,10 +238,10 @@ void idCommonLocal::DrawLoadPacifierProgressbar()
 	renderSystem->SetColor( idVec4( 0.55f, 0.0f, 0.0f, 1.0f ) );
 	renderSystem->DrawStretchPic( 0, SCREEN_HEIGHT - 64, SCREEN_WIDTH, 16, 0, 0, 1, 1, whiteMaterial );
 	//renderSystem->SetColor( idVec4( 0.0f, 0.5f, 0.8f, 1.0f ) );
-	renderSystem->SetColor( colorCyan );
+	renderSystem->SetColor( colorOrange );
 	renderSystem->DrawStretchPic( 0, SCREEN_HEIGHT - 64, loadPacifierProgress * SCREEN_WIDTH, 16, 0, 0, 1, 1, whiteMaterial );
-
-	renderSystem->DrawSmallStringExt( 0, SCREEN_HEIGHT - 64, loadPacifierStatus, idVec4( 1.0f, 1.0f, 1.0f, 1.0f ), true, true, idStr::Length( loadPacifierStatus ) );
+	int len = strlen( loadPacifierStatus.c_str() );
+	renderSystem->DrawSmallStringExt( ( SCREEN_WIDTH - len * SMALLCHAR_WIDTH ) / 2, SCREEN_HEIGHT - 64, loadPacifierStatus, idVec4( 1.0f, 1.0f, 1.0f, 1.0f ), true, false, 0 );
 }
 // RB end
 
@@ -267,17 +267,17 @@ void idCommonLocal::Draw()
 
 		// render the loading gui (idSWF actually) if it is loaded
 		// (we want to see progress of the loading gui binarize too)
-		if ( game )
+		if( game )
 		{
 			game->Shell_RenderLoadingShell();
 		}
 
-		if( loadPacifierBinarizeActive || LoadPacifierRunning() )
+		if( loadPacifierBinarizeActive )
 		{
 			// draw general progress bar
 			DrawLoadPacifierProgressbar();
 
-			if( loadPacifierBinarizeActive )
+			if( LoadPacifierRunning() )
 			{
 				// update our progress estimates
 				int time = Sys_Milliseconds();
@@ -311,9 +311,9 @@ void idCommonLocal::Draw()
 				//renderSystem->SetColor( idVec4( 0.0f, 0.5f, 0.8f, 1.0f ) );
 				renderSystem->SetColor( colorBrown );
 				renderSystem->DrawStretchPic( 0, SCREEN_HEIGHT - 48, loadPacifierBinarizeProgress * SCREEN_HEIGHT, 16, 0, 0, 1, 1, whiteMaterial );
-				renderSystem->DrawSmallStringExt( 0, SCREEN_HEIGHT - 48, loadPacifierBinarizeFilename.c_str(), idVec4( 1.0f, 1.0f, 1.0f, 1.0f ), true, true, idStr::Length( loadPacifierBinarizeFilename.c_str() ) );
-				renderSystem->DrawSmallStringExt( 0, SCREEN_HEIGHT - 32, va( "%s %d/%d lvls", loadPacifierBinarizeInfo.c_str(), loadPacifierBinarizeMiplevel, loadPacifierBinarizeMiplevelTotal ), idVec4( 1.0f, 1.0f, 1.0f, 1.0f ), true, true, idStr::Length( va( "%s %d/%d lvls", loadPacifierBinarizeInfo.c_str(), loadPacifierBinarizeMiplevel, loadPacifierBinarizeMiplevelTotal ) ) );
-				renderSystem->DrawSmallStringExt( 0, SCREEN_HEIGHT - 16, text, idVec4( 1.0f, 1.0f, 1.0f, 1.0f ), true, true, idStr::Length( text ) );
+				renderSystem->DrawSmallStringExt( ( SCREEN_WIDTH - idStr::Length( loadPacifierBinarizeFilename.c_str() ) * SMALLCHAR_WIDTH ) / 2, SCREEN_HEIGHT - 48, loadPacifierBinarizeFilename.c_str(), idVec4( 1.0f, 1.0f, 1.0f, 1.0f ), true, false, 0 );
+				renderSystem->DrawSmallStringExt( ( SCREEN_WIDTH - idStr::Length( va( "%s %d/%d lvls", loadPacifierBinarizeInfo.c_str(), loadPacifierBinarizeMiplevel, loadPacifierBinarizeMiplevelTotal ) ) * SMALLCHAR_WIDTH ) / 2, SCREEN_HEIGHT - 32, va( "%s %d/%d lvls", loadPacifierBinarizeInfo.c_str(), loadPacifierBinarizeMiplevel, loadPacifierBinarizeMiplevelTotal ), idVec4( 1.0f, 1.0f, 1.0f, 1.0f ), true, false, 0 );
+				renderSystem->DrawSmallStringExt( ( SCREEN_WIDTH - idStr::Length( text.c_str() ) * SMALLCHAR_WIDTH ) / 2, SCREEN_HEIGHT - 16, text, idVec4( 1.0f, 1.0f, 1.0f, 1.0f ), true, false, 0 );
 			}
 		}
 	}
@@ -377,7 +377,7 @@ void idCommonLocal::Draw()
 		// draw the wipe material on top of this if it hasn't completed yet
 		DrawWipeModel();
 
-		bool isLoadingGUI = (game != NULL && game->Shell_IsLoadingActive());
+		bool isLoadingGUI = ( game != NULL && game->Shell_IsLoadingActive() );
 		Dialog().Render( isLoadingGUI );
 
 		// draw the half console / notify console on top of everything
@@ -961,7 +961,7 @@ void idCommonLocal::Frame()
 		// kill loading gui
 		if( game != NULL )
 		{
-			game->Shell_Cleanup(true);
+			game->Shell_Cleanup( true );
 		}
 
 		// drop back to main menu

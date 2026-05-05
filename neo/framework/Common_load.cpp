@@ -341,7 +341,7 @@ void idCommonLocal::ExecuteMapChange()
 
 	// load / program a gui to stay up on the screen while loading
 	// set the loading gui that we will wipe to
-	if ( game != NULL )
+	if( game != NULL )
 	{
 		bool hellMap = false;
 		game->Shell_LoadingGui( currentMapName, hellMap );

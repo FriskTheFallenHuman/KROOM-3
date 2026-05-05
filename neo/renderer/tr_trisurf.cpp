@@ -168,7 +168,7 @@ struct idMesh
 		idDrawVert& vert = tri->verts[tri->indexes[f * 3 + v]];
 
 		vert.SetTangent( idVec3( tangent.x, tangent.y, tangent.z ) );
-		vert.tangent[3] = orientPreserving ? 1 : -1; // store handedness
+		vert.tangent[3] = orientPreserving ? 1.0f : -1.0f; // store handedness
 	}
 };
 

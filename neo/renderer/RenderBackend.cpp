@@ -2274,8 +2274,8 @@ void idRenderBackend::AmbientPass( const drawSurf_t* const* drawSurfs, int numDr
 	{
 		// RB: don't let artist run into a trap when baking multibounce lightgrids
 
-		// use default value of r_lightScale 3
-		const float lightScale = 3;
+		// use default value of r_lightScale 2 was 3 but we want to match stock look
+		const float lightScale = 2;
 		const idVec4 lightColor = colorWhite * lightScale;
 
 		// apply the world-global overbright and the 2x factor for specular
