@@ -86,9 +86,9 @@ bool ProcessModel( uEntity_t* e, bool floodFill )
 		}
 		else
 		{
-			common->Printf( "**********************\n" );
-			common->Warning( "******* leaked *******" );
-			common->Printf( "**********************\n" );
+			idLib::Printf( "**********************\n" );
+			idLib::Warning( "******* leaked *******" );
+			idLib::Printf( "**********************\n" );
 			LeakFile( e->tree );
 			WriteGLView( e->tree, "leaked", 0, true );
 			// bail out here.  If someone really wants to
@@ -160,7 +160,7 @@ bool ProcessModels()
 			continue;
 		}
 
-		//common->Printf( "############### entity %i ###############\n", dmapGlobals.entityNum );
+		//idLib::Printf( "############### entity %i ###############\n", dmapGlobals.entityNum );
 
 		// if we leaked, stop without any more processing
 		if( !ProcessModel( entity, ( bool )( dmapGlobals.entityNum == 0 ) ) )
@@ -188,7 +188,7 @@ DmapHelp
 */
 void DmapHelp()
 {
-	common->Printf(
+	idLib::Printf(
 
 		"Usage: dmap [options] mapfile\n"
 		"Options:\n"
@@ -257,7 +257,7 @@ void Dmap( const idCmdArgs& args )
 		return;
 	}
 
-	common->Printf( "---- dmap ----\n" );
+	idLib::Printf( "---- dmap ----\n" );
 
 	dmapGlobals.fullCarve = true;
 	dmapGlobals.noLightCarve = true;
@@ -282,103 +282,103 @@ void Dmap( const idCmdArgs& args )
 		}
 		else if( !idStr::Icmp( s, "v" ) )
 		{
-			common->Printf( "verbose = true\n" );
+			idLib::Printf( "verbose = true\n" );
 			dmapGlobals.verbose = true;
 		}
 		else if( !idStr::Icmp( s, "draw" ) )
 		{
-			common->Printf( "draw = true\n" );
+			idLib::Printf( "draw = true\n" );
 			dmapGlobals.drawflag = true;
 		}
 		else if( !idStr::Icmp( s, "altsplit" ) )
 		{
-			common->Printf( "bspAlternateSplitWeights = true\n" );
+			idLib::Printf( "bspAlternateSplitWeights = true\n" );
 			dmapGlobals.bspAlternateSplitWeights = true;
 		}
 		else if( !idStr::Icmp( s, "blockSize" ) )
 		{
 			if( i + 3 >= args.Argc() )
 			{
-				common->Error( "usage: dmap blockSize <x> <y> <z>" );
+				idLib::Error( "usage: dmap blockSize <x> <y> <z>" );
 			}
 			dmapGlobals.blockSize[0] = atof( args.Argv( i + 1 ) );
 			dmapGlobals.blockSize[1] = atof( args.Argv( i + 2 ) );
 			dmapGlobals.blockSize[2] = atof( args.Argv( i + 3 ) );
-			common->Printf( "blockSize = %f %f %f\n", dmapGlobals.blockSize[0], dmapGlobals.blockSize[1], dmapGlobals.blockSize[2] );
+			idLib::Printf( "blockSize = %f %f %f\n", dmapGlobals.blockSize[0], dmapGlobals.blockSize[1], dmapGlobals.blockSize[2] );
 			i += 3;
 		}
 		else if( !idStr::Icmp( s, "inlineAll" ) )
 		{
-			common->Printf( "inlineAll = true\n" );
+			idLib::Printf( "inlineAll = true\n" );
 			dmapGlobals.inlineStatics = true;
 		}
 		else if( !idStr::Icmp( s, "noMerge" ) )
 		{
-			common->Printf( "noMerge = true\n" );
+			idLib::Printf( "noMerge = true\n" );
 			dmapGlobals.noMerge = true;
 		}
 		else if( !idStr::Icmp( s, "noFlood" ) )
 		{
-			common->Printf( "noFlood = true\n" );
+			idLib::Printf( "noFlood = true\n" );
 			dmapGlobals.noFlood = true;
 		}
 		else if( !idStr::Icmp( s, "noLightCarve" ) )
 		{
-			common->Printf( "noLightCarve = true\n" );
+			idLib::Printf( "noLightCarve = true\n" );
 			dmapGlobals.noLightCarve = true;
 		}
 		else if( !idStr::Icmp( s, "lightCarve" ) )
 		{
-			common->Printf( "noLightCarve = false\n" );
+			idLib::Printf( "noLightCarve = false\n" );
 			dmapGlobals.noLightCarve = false;
 		}
 		else if( !idStr::Icmp( s, "noOpt" ) )
 		{
-			common->Printf( "noOptimize = true\n" );
+			idLib::Printf( "noOptimize = true\n" );
 			dmapGlobals.noOptimize = true;
 		}
 		else if( !idStr::Icmp( s, "verboseentities" ) )
 		{
-			common->Printf( "verboseentities = true\n" );
+			idLib::Printf( "verboseentities = true\n" );
 			dmapGlobals.verboseentities = true;
 		}
 		else if( !idStr::Icmp( s, "noCurves" ) )
 		{
-			common->Printf( "noCurves = true\n" );
+			idLib::Printf( "noCurves = true\n" );
 			dmapGlobals.noCurves = true;
 		}
 		else if( !idStr::Icmp( s, "noModels" ) )
 		{
-			common->Printf( "noModels = true\n" );
+			idLib::Printf( "noModels = true\n" );
 			dmapGlobals.noModelBrushes = true;
 		}
 		else if( !idStr::Icmp( s, "noClipSides" ) )
 		{
-			common->Printf( "noClipSides = true\n" );
+			idLib::Printf( "noClipSides = true\n" );
 			dmapGlobals.noClipSides = true;
 		}
 		else if( !idStr::Icmp( s, "noCarve" ) )
 		{
-			common->Printf( "noCarve = true\n" );
+			idLib::Printf( "noCarve = true\n" );
 			dmapGlobals.fullCarve = false;
 		}
 		else if( !idStr::Icmp( s, "noTjunc" ) )
 		{
 			// triangle optimization won't work properly without tjunction fixing
-			common->Printf( "noTJunc = true\n" );
+			idLib::Printf( "noTJunc = true\n" );
 			dmapGlobals.noTJunc = true;
 			dmapGlobals.noOptimize = true;
-			common->Printf( "forcing noOptimize = true\n" );
+			idLib::Printf( "forcing noOptimize = true\n" );
 		}
 		else if( !idStr::Icmp( s, "noCM" ) )
 		{
 			noCM = true;
-			common->Printf( "noCM = true\n" );
+			idLib::Printf( "noCM = true\n" );
 		}
 		else if( !idStr::Icmp( s, "noAAS" ) )
 		{
 			noAAS = true;
-			common->Printf( "noAAS = true\n" );
+			idLib::Printf( "noAAS = true\n" );
 		}
 		else
 		{
@@ -388,7 +388,7 @@ void Dmap( const idCmdArgs& args )
 
 	if( i >= args.Argc() )
 	{
-		common->Error( "usage: dmap [options] mapfile" );
+		idLib::Error( "usage: dmap [options] mapfile" );
 	}
 
 	passedName = args.Argv( i );		// may have an extension
@@ -454,11 +454,11 @@ void Dmap( const idCmdArgs& args )
 
 	FreeDMapFile();
 
-	common->Printf( "%i static models merged\n", dmapGlobals.totalInlinedModels );
+	idLib::Printf( "%i static models merged\n", dmapGlobals.totalInlinedModels );
 
 	end = Sys_Milliseconds();
-	common->Printf( "-----------------------\n" );
-	common->Printf( "%5.0f seconds for dmap\n", ( end - start ) * 0.001f );
+	idLib::Printf( "-----------------------\n" );
+	idLib::Printf( "%5.0f seconds for dmap\n", ( end - start ) * 0.001f );
 
 	if( !leaked )
 	{
@@ -475,8 +475,8 @@ void Dmap( const idCmdArgs& args )
 			collisionModelManager->FreeMap();
 
 			end = Sys_Milliseconds();
-			common->Printf( "-------------------------------------\n" );
-			common->Printf( "%5.0f seconds to create collision map\n", ( end - start ) * 0.001f );
+			idLib::Printf( "-------------------------------------\n" );
+			idLib::Printf( "%5.0f seconds to create collision map\n", ( end - start ) * 0.001f );
 		}
 
 		if( !noAAS && !region )
@@ -505,9 +505,15 @@ void Dmap_f( const idCmdArgs& args )
 
 	// refresh the screen each time we print so it doesn't look
 	// like it is hung
-	common->SetRefreshOnPrint( true );
+	if( idLib::IsMainThread() )
+	{
+		common->SetRefreshOnPrint( true );
+	}
 	Dmap( args );
-	common->SetRefreshOnPrint( false );
+	if( idLib::IsMainThread() )
+	{
+		common->SetRefreshOnPrint( false );
+	}
 
 	common->PrintWarnings();
 }

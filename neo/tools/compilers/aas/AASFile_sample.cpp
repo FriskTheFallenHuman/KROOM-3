@@ -563,7 +563,7 @@ bool idAASFileLocal::Trace( aasTrace_t& trace, const idVec3& start, const idVec3
 			tstack_p++;
 			if( tstack_p >= &tracestack[MAX_AAS_TREE_DEPTH] )
 			{
-				common->Error( "idAASFileLocal::Trace: stack overflow\n" );
+				idLib::Error( "idAASFileLocal::Trace: stack overflow\n" );
 				return false;
 			}
 		}
@@ -576,7 +576,7 @@ bool idAASFileLocal::Trace( aasTrace_t& trace, const idVec3& start, const idVec3
 			tstack_p++;
 			if( tstack_p >= &tracestack[MAX_AAS_TREE_DEPTH] )
 			{
-				common->Error( "idAASFileLocal::Trace: stack overflow\n" );
+				idLib::Error( "idAASFileLocal::Trace: stack overflow\n" );
 				return false;
 			}
 		}
@@ -616,7 +616,7 @@ bool idAASFileLocal::Trace( aasTrace_t& trace, const idVec3& start, const idVec3
 			tstack_p++;
 			if( tstack_p >= &tracestack[MAX_AAS_TREE_DEPTH] )
 			{
-				common->Error( "idAASFileLocal::Trace: stack overflow\n" );
+				idLib::Error( "idAASFileLocal::Trace: stack overflow\n" );
 				return false;
 			}
 			// now put the part near the start of the line on the stack so we will
@@ -628,7 +628,7 @@ bool idAASFileLocal::Trace( aasTrace_t& trace, const idVec3& start, const idVec3
 			tstack_p++;
 			if( tstack_p >= &tracestack[MAX_AAS_TREE_DEPTH] )
 			{
-				common->Error( "idAASFileLocal::Trace: stack overflow\n" );
+				idLib::Error( "idAASFileLocal::Trace: stack overflow\n" );
 				return false;
 			}
 		}

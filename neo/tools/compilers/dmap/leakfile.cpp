@@ -64,7 +64,7 @@ void LeakFile( tree_t* tree )
 		return;
 	}
 
-	common->Printf( "--- LeakFile ---\n" );
+	idLib::Printf( "--- LeakFile ---\n" );
 
 	//
 	// write the points to the file
@@ -74,7 +74,7 @@ void LeakFile( tree_t* tree )
 	linefile = fopen( ospath, "w" );
 	if( !linefile )
 	{
-		common->Error( "Couldn't open %s\n", filename.c_str() );
+		idLib::Error( "Couldn't open %s\n", filename.c_str() );
 	}
 
 	count = 0;
@@ -108,8 +108,7 @@ void LeakFile( tree_t* tree )
 	node->occupant->mapEntity->epairs.GetVector( "origin", "", mid );
 
 	fprintf( linefile, "%f %f %f\n", mid[0], mid[1], mid[2] );
-	common->Printf( "%5i point linefile\n", count + 1 );
+	idLib::Printf( "%5i point linefile\n", count + 1 );
 
 	fclose( linefile );
 }
-

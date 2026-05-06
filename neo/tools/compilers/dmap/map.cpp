@@ -185,8 +185,8 @@ static uBrush_t* FinishBrush()
 	{
 		if( dmapGlobals.numEntities != 1 )
 		{
-			common->Printf( "Entity %i, Brush %i: areaportals only allowed in world\n"
-							,  dmapGlobals.numEntities - 1, entityPrimitive );
+			idLib::Printf( "Entity %i, Brush %i: areaportals only allowed in world\n"
+						   ,  dmapGlobals.numEntities - 1, entityPrimitive );
 			FreeBuildBrush();
 			return NULL;
 		}
@@ -277,8 +277,8 @@ static bool RemoveDuplicateBrushPlanes( uBrush_t* b )
 		// check for a degenerate plane
 		if( sides[i].planenum == -1 )
 		{
-			common->Printf( "Entity %i, Brush %i: degenerate plane\n"
-							, b->entitynum, b->brushnum );
+			idLib::Printf( "Entity %i, Brush %i: degenerate plane\n"
+						   , b->entitynum, b->brushnum );
 			// remove it
 			for( k = i + 1 ; k < b->numsides ; k++ )
 			{
@@ -294,8 +294,8 @@ static bool RemoveDuplicateBrushPlanes( uBrush_t* b )
 		{
 			if( sides[i].planenum == sides[j].planenum )
 			{
-				common->Printf( "Entity %i, Brush %i: duplicate plane\n"
-								, b->entitynum, b->brushnum );
+				idLib::Printf( "Entity %i, Brush %i: duplicate plane\n"
+							   , b->entitynum, b->brushnum );
 				// remove the second duplicate
 				for( k = i + 1 ; k < b->numsides ; k++ )
 				{
@@ -309,8 +309,8 @@ static bool RemoveDuplicateBrushPlanes( uBrush_t* b )
 			if( sides[i].planenum == ( sides[j].planenum ^ 1 ) )
 			{
 				// mirror plane, brush is invalid
-				common->Printf( "Entity %i, Brush %i: mirrored plane\n"
-								, b->entitynum, b->brushnum );
+				idLib::Printf( "Entity %i, Brush %i: mirrored plane\n"
+							   , b->entitynum, b->brushnum );
 				return false;
 			}
 		}
@@ -368,7 +368,7 @@ static void ParseBrush( const idMapBrush* mapBrush, int primitiveNum )
 
 	if( fixedDegeneracies && dmapGlobals.verboseentities )
 	{
-		common->Warning( "brush %d has degenerate plane equations", primitiveNum );
+		idLib::Warning( "brush %d has degenerate plane equations", primitiveNum );
 	}
 }
 
@@ -616,8 +616,8 @@ static void CreateMapLight( const idMapEntity* mapEnt )
 	idStr::Copynz( light->name, name, sizeof( light->name ) );
 	if( !light->name[0] )
 	{
-		common->Error( "Light at (%f,%f,%f) didn't have a name",
-					   light->def.parms.origin[0], light->def.parms.origin[1], light->def.parms.origin[2] );
+		idLib::Error( "Light at (%f,%f,%f) didn't have a name",
+					  light->def.parms.origin[0], light->def.parms.origin[1], light->def.parms.origin[2] );
 	}
 #if 0
 	// use the renderer code to get the bounding planes for the light
@@ -668,8 +668,8 @@ bool LoadDMapFile( const char* filename )
 	int			i;
 	int			size;
 
-	common->Printf( "--- LoadDMapFile ---\n" );
-	common->Printf( "loading %s\n", filename );
+	idLib::Printf( "--- LoadDMapFile ---\n" );
+	idLib::Printf( "loading %s\n", filename );
 
 	// load and parse the map file into canonical form
 	dmapGlobals.dmapFile = new idMapFile();
@@ -677,7 +677,7 @@ bool LoadDMapFile( const char* filename )
 	{
 		delete dmapGlobals.dmapFile;
 		dmapGlobals.dmapFile = NULL;
-		common->Warning( "Couldn't load map file: '%s'", filename );
+		idLib::Warning( "Couldn't load map file: '%s'", filename );
 		return false;
 	}
 
@@ -734,14 +734,14 @@ bool LoadDMapFile( const char* filename )
 		// RB end
 	}
 
-	common->Printf( "%5i total world brushes\n", brushes );
-	common->Printf( "%5i total world triSurfs\n", triSurfs );
-	common->Printf( "%5i patches\n", c_numMapPatches );
-	common->Printf( "%5i entities\n", dmapGlobals.numEntities );
-	common->Printf( "%5i planes\n", dmapGlobals.mapPlanes.Num() );
-	common->Printf( "%5i areaportals\n", c_areaportals );
-	common->Printf( "size: %5.0f,%5.0f,%5.0f to %5.0f,%5.0f,%5.0f\n", mapBounds[0][0], mapBounds[0][1], mapBounds[0][2],
-					mapBounds[1][0], mapBounds[1][1], mapBounds[1][2] );
+	idLib::Printf( "%5i total world brushes\n", brushes );
+	idLib::Printf( "%5i total world triSurfs\n", triSurfs );
+	idLib::Printf( "%5i patches\n", c_numMapPatches );
+	idLib::Printf( "%5i entities\n", dmapGlobals.numEntities );
+	idLib::Printf( "%5i planes\n", dmapGlobals.mapPlanes.Num() );
+	idLib::Printf( "%5i areaportals\n", c_areaportals );
+	idLib::Printf( "size: %5.0f,%5.0f,%5.0f to %5.0f,%5.0f,%5.0f\n", mapBounds[0][0], mapBounds[0][1], mapBounds[0][2],
+				   mapBounds[1][0], mapBounds[1][1], mapBounds[1][2] );
 
 	return true;
 }

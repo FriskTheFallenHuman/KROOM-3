@@ -142,7 +142,7 @@ void roq::EncodeStream( const char* paramInputFile )
 
 	if( paramFile->NoAlpha() == true )
 	{
-		common->Printf( "encodeStream: eluding alpha\n" );
+		idLib::Printf( "encodeStream: eluding alpha\n" );
 	}
 
 	f0 = "";
@@ -545,7 +545,7 @@ void roq::WriteLossless()
 	/* After finish_compress, we can close the output file. */
 
 	directdw = hackSize;
-	common->Printf( "writeLossless: writing %d bytes to RoQ_QUAD_JPEG\n", hackSize );
+	idLib::Printf( "writeLossless: writing %d bytes to RoQ_QUAD_JPEG\n", hackSize );
 	Write32Word( &directdw, RoQFile );
 	direct = 0;		// flags
 	Write16Word( &direct, RoQFile );
@@ -571,12 +571,12 @@ void roq::InitRoQFile( const char* RoQFilename )
 	if( !finit )
 	{
 		finit++;
-		common->Printf( "initRoQFile: %s\n", RoQFilename );
+		idLib::Printf( "initRoQFile: %s\n", RoQFilename );
 		RoQFile = fileSystem->OpenFileWrite( RoQFilename );
 //		chmod(RoQFilename, S_IREAD|S_IWRITE|S_ISUID|S_ISGID|0070|0007 );
 		if( !RoQFile )
 		{
-			common->Error( "Unable to open output file %s.\n", RoQFilename );
+			idLib::Error( "Unable to open output file %s.\n", RoQFilename );
 		}
 
 		i = RoQ_ID;
@@ -607,7 +607,7 @@ void roq::InitRoQPatterns()
 	j = 8;
 
 	Write32Word( &j, RoQFile );
-	common->Printf( "initRoQPatterns: outputting %d bytes to RoQ_INFO\n", j );
+	idLib::Printf( "initRoQPatterns: outputting %d bytes to RoQ_INFO\n", j );
 	direct = image->hasAlpha();
 	if( ParamNoAlpha() == true )
 	{
@@ -628,7 +628,7 @@ void roq::InitRoQPatterns()
 
 void roq::CloseRoQFile()
 {
-	common->Printf( "closeRoQFile: closing RoQ file\n" );
+	idLib::Printf( "closeRoQFile: closing RoQ file\n" );
 	fileSystem->CloseFile( RoQFile );
 }
 
@@ -636,7 +636,7 @@ void roq::WriteHangFrame()
 {
 	uint j;
 	word direct;
-	common->Printf( "*******************************************************************\n" );
+	idLib::Printf( "*******************************************************************\n" );
 	direct = RoQ_QUAD_HANG;
 	Write16Word( &direct, RoQFile );
 	j = 0;
@@ -652,7 +652,7 @@ void roq::WriteCodeBookToStream( byte* codebook, int csize, word cflags )
 
 	if( !csize )
 	{
-		common->Printf( "writeCodeBook: false VQ DATA!!!!\n" );
+		idLib::Printf( "writeCodeBook: false VQ DATA!!!!\n" );
 		return;
 	}
 
@@ -663,7 +663,7 @@ void roq::WriteCodeBookToStream( byte* codebook, int csize, word cflags )
 	j = csize;
 
 	Write32Word( &j, RoQFile );
-	common->Printf( "writeCodeBook: outputting %d bytes to RoQ_QUAD_CODEBOOK\n", j );
+	idLib::Printf( "writeCodeBook: outputting %d bytes to RoQ_QUAD_CODEBOOK\n", j );
 
 	direct = cflags;
 	Write16Word( &direct, RoQFile );
@@ -776,7 +776,7 @@ void roq::WriteFrame( quadcel* pquad )
 		}
 		code = j * dimension;
 		direct = j;
-		common->Printf( "writeFrame: really used %d 2x2 cels\n", j );
+		idLib::Printf( "writeFrame: really used %d 2x2 cels\n", j );
 		j = 0;
 		for( i = 0; i < 256; i++ )
 		{
@@ -792,7 +792,7 @@ void roq::WriteFrame( quadcel* pquad )
 		}
 		code += j * 4;
 		direct = ( direct << 8 ) + j;
-		common->Printf( "writeFrame: really used %d 4x4 cels\n", j );
+		idLib::Printf( "writeFrame: really used %d 4x4 cels\n", j );
 		if( image->hasAlpha() )
 		{
 			i = 3584;
@@ -837,7 +837,7 @@ void roq::WriteFrame( quadcel* pquad )
 					dy = ( ( pquad[i].domain & 0xff ) ) - 128 - dyMean + 8;
 					if( dx > 15 || dx < 0 || dy > 15 || dy < 0 )
 					{
-						common->Error( "writeFrame: FCC error %d,%d mean %d,%d at %d,%d,%d rmse %f\n", dx, dy, dxMean, dyMean, pquad[i].xat, pquad[i].yat, pquad[i].size, pquad[i].snr[FCC] );
+						idLib::Error( "writeFrame: FCC error %d,%d mean %d,%d at %d,%d,%d rmse %f\n", dx, dy, dxMean, dyMean, pquad[i].xat, pquad[i].yat, pquad[i].size, pquad[i].snr[FCC] );
 					}
 					cccList[onCCC++] = ( dx << 4 ) + dy;
 					break;
@@ -853,12 +853,12 @@ void roq::WriteFrame( quadcel* pquad )
 					cccList[onCCC++] = index2[pquad[i].patten[4]];
 					break;
 				case	DEAD:
-					common->Error( "dead cels in picture\n" );
+					idLib::Error( "dead cels in picture\n" );
 					break;
 			}
 			if( code == -1 )
 			{
-				common->Error( "writeFrame: an error occurred writing the frame\n" );
+				idLib::Error( "writeFrame: an error occurred writing the frame\n" );
 			}
 
 			action = ( action << 2 ) | code;
@@ -894,7 +894,7 @@ void roq::WriteFrame( quadcel* pquad )
 
 	Write16Word( &direct, RoQFile );
 
-	common->Printf( "writeFrame: outputting %d bytes to RoQ_QUAD_VQ\n", j );
+	idLib::Printf( "writeFrame: outputting %d bytes to RoQ_QUAD_VQ\n", j );
 
 	previousSize = j;
 
@@ -915,7 +915,7 @@ void roq::LoadAndDisplayImage( const char* filename )
 		delete image;
 	}
 
-	common->Printf( "loadAndDisplayImage: %s\n", filename );
+	idLib::Printf( "loadAndDisplayImage: %s\n", filename );
 
 	currentFile = filename;
 
@@ -932,7 +932,7 @@ void roq::LoadAndDisplayImage( const char* filename )
 
 	if( !quietMode )
 	{
-		common->Printf( "loadAndDisplayImage: %dx%d\n", image->pixelsWide(), image->pixelsHigh() );
+		idLib::Printf( "loadAndDisplayImage: %dx%d\n", image->pixelsWide(), image->pixelsHigh() );
 	}
 }
 
@@ -954,13 +954,13 @@ void RoQFileEncode_f( const idCmdArgs& args )
 {
 	if( args.Argc() != 2 )
 	{
-		common->Printf( "Usage: roq <paramfile>\n" );
+		idLib::Printf( "Usage: roq <paramfile>\n" );
 		return;
 	}
 	theRoQ = new roq;
 	int		startMsec = Sys_Milliseconds();
 	theRoQ->EncodeStream( args.Argv( 1 ) );
 	int		stopMsec = Sys_Milliseconds();
-	common->Printf( "total encoding time: %i second\n", ( stopMsec - startMsec ) / 1000 );
+	idLib::Printf( "total encoding time: %i second\n", ( stopMsec - startMsec ) / 1000 );
 
 }

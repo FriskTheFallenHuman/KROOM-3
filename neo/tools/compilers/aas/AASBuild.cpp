@@ -139,7 +139,7 @@ bool idAASBuild::LoadProcBSP( const char* name, ID_TIME_T minFileTime )
 	src = new idLexer( fileName, LEXFL_NOSTRINGCONCAT | LEXFL_NODOLLARPRECOMPILE );
 	if( !src->IsLoaded() )
 	{
-		common->Warning( "idAASBuild::LoadProcBSP: couldn't load %s", fileName.c_str() );
+		idLib::Warning( "idAASBuild::LoadProcBSP: couldn't load %s", fileName.c_str() );
 		delete src;
 		return false;
 	}
@@ -153,7 +153,7 @@ bool idAASBuild::LoadProcBSP( const char* name, ID_TIME_T minFileTime )
 
 	if( !src->ReadToken( &token ) || token.Icmp( PROC_FILE_ID ) )
 	{
-		common->Warning( "idAASBuild::LoadProcBSP: bad id '%s' instead of '%s'", token.c_str(), PROC_FILE_ID );
+		idLib::Warning( "idAASBuild::LoadProcBSP: bad id '%s' instead of '%s'", token.c_str(), PROC_FILE_ID );
 		delete src;
 		return false;
 	}
@@ -333,7 +333,7 @@ void idAASBuild::ClipBrushSidesWithProcBSP( idBrushList& brushList )
 		}
 	}
 
-	common->Printf( "%6d brush sides clipped\n", clippedSides );
+	idLib::Printf( "%6d brush sides clipped\n", clippedSides );
 }
 
 /*
@@ -405,7 +405,7 @@ idBrushList idAASBuild::AddBrushesForMapBrush( const idMapBrush* mapBrush, const
 
 	if( !brush->FromSides( sideList ) )
 	{
-		common->Warning( "brush primitive %d on entity %d is degenerate", primitiveNum, entityNum );
+		idLib::Warning( "brush primitive %d on entity %d is degenerate", primitiveNum, entityNum );
 		delete brush;
 		return brushList;
 	}
@@ -485,7 +485,7 @@ idBrushList idAASBuild::AddBrushesForMapPolygonMesh( const MapPolygonMesh* mapMe
 
 	if( !validBrushes )
 	{
-		common->Warning( "map polygon primitive %d on entity %d is completely degenerate", primitiveNum, entityNum );
+		idLib::Warning( "map polygon primitive %d on entity %d is completely degenerate", primitiveNum, entityNum );
 	}
 
 	return brushList;
@@ -632,7 +632,7 @@ idBrushList idAASBuild::AddBrushesForMapPatch( const idMapPatch* mapPatch, const
 
 	if( !validBrushes )
 	{
-		common->Warning( "patch primitive %d on entity %d is completely degenerate", primitiveNum, entityNum );
+		idLib::Warning( "patch primitive %d on entity %d is completely degenerate", primitiveNum, entityNum );
 	}
 
 	return brushList;
@@ -705,7 +705,7 @@ idBrushList idAASBuild::AddBrushesForMapFile( const idMapFile* mapFile, idBrushL
 {
 	int i;
 
-	common->Printf( "[Brush Load]\n" );
+	idLib::Printf( "[Brush Load]\n" );
 
 	brushList = AddBrushesForMapEntity( mapFile->GetEntity( 0 ), 0, brushList );
 
@@ -719,7 +719,7 @@ idBrushList idAASBuild::AddBrushesForMapFile( const idMapFile* mapFile, idBrushL
 		}
 	}
 
-	common->Printf( "%6d brushes\n", brushList.Num() );
+	idLib::Printf( "%6d brushes\n", brushList.Num() );
 
 	return brushList;
 }
@@ -833,7 +833,7 @@ bool idAASBuild::Build( const idStr& fileName, const idAASSettings* settings )
 	if( !mapFile->Parse( name ) )
 	{
 		delete mapFile;
-		common->Error( "Couldn't load map file: '%s'", name.c_str() );
+		idLib::Error( "Couldn't load map file: '%s'", name.c_str() );
 		return false;
 	}
 
@@ -841,7 +841,7 @@ bool idAASBuild::Build( const idStr& fileName, const idAASSettings* settings )
 	if( !CheckForEntities( mapFile, entityClassNames ) )
 	{
 		delete mapFile;
-		common->Printf( "no entities in map that use %s\n", settings->fileExtension.c_str() );
+		idLib::Printf( "no entities in map that use %s\n", settings->fileExtension.c_str() );
 		return true;
 	}
 
@@ -852,7 +852,7 @@ bool idAASBuild::Build( const idStr& fileName, const idAASSettings* settings )
 	if( brushList.Num() == 0 )
 	{
 		delete mapFile;
-		common->Error( "%s is empty", name.c_str() );
+		idLib::Error( "%s is empty", name.c_str() );
 		return false;
 	}
 
@@ -912,7 +912,7 @@ bool idAASBuild::Build( const idStr& fileName, const idAASSettings* settings )
 	{
 		bsp.LeakFile( name );
 		delete mapFile;
-		common->Printf( "%s has no outside", name.c_str() );
+		idLib::Printf( "%s has no outside", name.c_str() );
 		return false;
 	}
 
@@ -965,7 +965,7 @@ bool idAASBuild::Build( const idStr& fileName, const idAASSettings* settings )
 	// delete the map file
 	delete mapFile;
 
-	common->Printf( "%6d seconds to create AAS\n", ( Sys_Milliseconds() - startTime ) / 1000 );
+	idLib::Printf( "%6d seconds to create AAS\n", ( Sys_Milliseconds() - startTime ) / 1000 );
 
 	return true;
 }
@@ -994,7 +994,7 @@ bool idAASBuild::BuildReachability( const idStr& fileName, const idAASSettings* 
 	if( !mapFile->Parse( name ) )
 	{
 		delete mapFile;
-		common->Error( "Couldn't load map file: '%s'", name.c_str() );
+		idLib::Error( "Couldn't load map file: '%s'", name.c_str() );
 		return false;
 	}
 
@@ -1004,7 +1004,7 @@ bool idAASBuild::BuildReachability( const idStr& fileName, const idAASSettings* 
 	if( !file->Load( name, 0 ) )
 	{
 		delete mapFile;
-		common->Error( "Couldn't load AAS file: '%s'", name.c_str() );
+		idLib::Error( "Couldn't load AAS file: '%s'", name.c_str() );
 		return false;
 	}
 
@@ -1022,7 +1022,7 @@ bool idAASBuild::BuildReachability( const idStr& fileName, const idAASSettings* 
 	// delete the map file
 	delete mapFile;
 
-	common->Printf( "%6d seconds to calculate reachability\n", ( Sys_Milliseconds() - startTime ) / 1000 );
+	idLib::Printf( "%6d seconds to calculate reachability\n", ( Sys_Milliseconds() - startTime ) / 1000 );
 
 	return true;
 }
@@ -1046,22 +1046,22 @@ int ParseOptions( const idCmdArgs& args, idAASSettings& settings )
 		if( str.Icmp( "usePatches" ) == 0 )
 		{
 			settings.usePatches = true;
-			common->Printf( "usePatches = true\n" );
+			idLib::Printf( "usePatches = true\n" );
 		}
 		else if( str.Icmp( "writeBrushMap" ) == 0 )
 		{
 			settings.writeBrushMap = true;
-			common->Printf( "writeBrushMap = true\n" );
+			idLib::Printf( "writeBrushMap = true\n" );
 		}
 		else if( str.Icmp( "playerFlood" ) == 0 )
 		{
 			settings.playerFlood = true;
-			common->Printf( "playerFlood = true\n" );
+			idLib::Printf( "playerFlood = true\n" );
 		}
 		else if( str.Icmp( "noOptimize" ) == 0 )
 		{
 			settings.noOptimize = true;
-			common->Printf( "noOptimize = true\n" );
+			idLib::Printf( "noOptimize = true\n" );
 		}
 	}
 	return args.Argc() - 1;
@@ -1081,23 +1081,26 @@ void RunAAS_f( const idCmdArgs& args )
 
 	if( args.Argc() <= 1 )
 	{
-		common->Printf( "runAAS [options] <mapfile>\n"
-						"options:\n"
-						"  -usePatches        = use bezier patches for collision detection.\n"
-						"  -writeBrushMap     = write a brush map with the AAS geometry.\n"
-						"  -playerFlood       = use player spawn points as valid AAS positions.\n" );
+		idLib::Printf( "runAAS [options] <mapfile>\n"
+					   "options:\n"
+					   "  -usePatches        = use bezier patches for collision detection.\n"
+					   "  -writeBrushMap     = write a brush map with the AAS geometry.\n"
+					   "  -playerFlood       = use player spawn points as valid AAS positions.\n" );
 		return;
 	}
 
 	common->ClearWarnings( "compiling AAS" );
 
-	common->SetRefreshOnPrint( true );
+	if( idLib::IsMainThread() )
+	{
+		common->SetRefreshOnPrint( true );
+	}
 
 	// get the aas settings definitions
 	const idDict* dict = gameEdit->FindEntityDefDict( "aas_types", false );
 	if( !dict )
 	{
-		common->Error( "Unable to find entityDef for 'aas_types'" );
+		idLib::Error( "Unable to find entityDef for 'aas_types'" );
 	}
 
 	const idKeyValue* kv = dict->MatchPrefix( "type" );
@@ -1106,7 +1109,7 @@ void RunAAS_f( const idCmdArgs& args )
 		const idDict* settingsDict = gameEdit->FindEntityDefDict( kv->GetValue(), false );
 		if( !settingsDict )
 		{
-			common->Warning( "Unable to find '%s' in def/aas.def", kv->GetValue().c_str() );
+			idLib::Warning( "Unable to find '%s' in def/aas.def", kv->GetValue().c_str() );
 		}
 		else
 		{
@@ -1124,10 +1127,13 @@ void RunAAS_f( const idCmdArgs& args )
 		kv = dict->MatchPrefix( "type", kv );
 		if( kv )
 		{
-			common->Printf( "=======================================================\n" );
+			idLib::Printf( "=======================================================\n" );
 		}
 	}
-	common->SetRefreshOnPrint( false );
+	if( idLib::IsMainThread() )
+	{
+		common->SetRefreshOnPrint( false );
+	}
 	common->PrintWarnings();
 }
 
@@ -1145,19 +1151,22 @@ void RunAASDir_f( const idCmdArgs& args )
 
 	if( args.Argc() <= 1 )
 	{
-		common->Printf( "runAASDir <folder>\n" );
+		idLib::Printf( "runAASDir <folder>\n" );
 		return;
 	}
 
 	common->ClearWarnings( "compiling AAS" );
 
-	common->SetRefreshOnPrint( true );
+	if( idLib::IsMainThread() )
+	{
+		common->SetRefreshOnPrint( true );
+	}
 
 	// get the aas settings definitions
 	const idDict* dict = gameEdit->FindEntityDefDict( "aas_types", false );
 	if( !dict )
 	{
-		common->Error( "Unable to find entityDef for 'aas_types'" );
+		idLib::Error( "Unable to find entityDef for 'aas_types'" );
 	}
 
 	// scan for .map files
@@ -1168,7 +1177,7 @@ void RunAASDir_f( const idCmdArgs& args )
 	{
 		if( i )
 		{
-			common->Printf( "=======================================================\n" );
+			idLib::Printf( "=======================================================\n" );
 		}
 
 		const idKeyValue* kv = dict->MatchPrefix( "type" );
@@ -1177,7 +1186,7 @@ void RunAASDir_f( const idCmdArgs& args )
 			const idDict* settingsDict = gameEdit->FindEntityDefDict( kv->GetValue(), false );
 			if( !settingsDict )
 			{
-				common->Warning( "Unable to find '%s' in def/aas.def", kv->GetValue().c_str() );
+				idLib::Warning( "Unable to find '%s' in def/aas.def", kv->GetValue().c_str() );
 			}
 			else
 			{
@@ -1188,14 +1197,18 @@ void RunAASDir_f( const idCmdArgs& args )
 			kv = dict->MatchPrefix( "type", kv );
 			if( kv )
 			{
-				common->Printf( "=======================================================\n" );
+				idLib::Printf( "=======================================================\n" );
 			}
 		}
 	}
 
 	fileSystem->FreeFileList( mapFiles );
 
-	common->SetRefreshOnPrint( false );
+	if( idLib::IsMainThread() )
+	{
+		common->SetRefreshOnPrint( false );
+	}
+
 	common->PrintWarnings();
 }
 
@@ -1212,19 +1225,22 @@ void RunReach_f( const idCmdArgs& args )
 
 	if( args.Argc() <= 1 )
 	{
-		common->Printf( "runReach [options] <mapfile>\n" );
+		idLib::Printf( "runReach [options] <mapfile>\n" );
 		return;
 	}
 
 	common->ClearWarnings( "calculating AAS reachability" );
 
-	common->SetRefreshOnPrint( true );
+	if( idLib::IsMainThread() )
+	{
+		common->SetRefreshOnPrint( true );
+	}
 
 	// get the aas settings definitions
 	const idDict* dict = gameEdit->FindEntityDefDict( "aas_types", false );
 	if( !dict )
 	{
-		common->Error( "Unable to find entityDef for 'aas_types'" );
+		idLib::Error( "Unable to find entityDef for 'aas_types'" );
 	}
 
 	const idKeyValue* kv = dict->MatchPrefix( "type" );
@@ -1233,7 +1249,7 @@ void RunReach_f( const idCmdArgs& args )
 		const idDict* settingsDict = gameEdit->FindEntityDefDict( kv->GetValue(), false );
 		if( !settingsDict )
 		{
-			common->Warning( "Unable to find '%s' in def/aas.def", kv->GetValue().c_str() );
+			idLib::Warning( "Unable to find '%s' in def/aas.def", kv->GetValue().c_str() );
 		}
 		else
 		{
@@ -1245,10 +1261,14 @@ void RunReach_f( const idCmdArgs& args )
 		kv = dict->MatchPrefix( "type", kv );
 		if( kv )
 		{
-			common->Printf( "=======================================================\n" );
+			idLib::Printf( "=======================================================\n" );
 		}
 	}
 
-	common->SetRefreshOnPrint( false );
+	if( idLib::IsMainThread() )
+	{
+		common->SetRefreshOnPrint( false );
+	}
+
 	common->PrintWarnings();
 }

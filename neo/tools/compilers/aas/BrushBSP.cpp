@@ -85,7 +85,7 @@ void idBrushBSPPortal::AddToNodes( idBrushBSPNode* front, idBrushBSPNode* back )
 {
 	if( nodes[0] || nodes[1] )
 	{
-		common->Error( "AddToNode: already included" );
+		idLib::Error( "AddToNode: already included" );
 	}
 
 	assert( front && back );
@@ -115,7 +115,7 @@ void idBrushBSPPortal::RemoveFromNode( idBrushBSPNode* l )
 		t = *pp;
 		if( !t )
 		{
-			common->Error( "idBrushBSPPortal::RemoveFromNode: portal not in node" );
+			idLib::Error( "idBrushBSPPortal::RemoveFromNode: portal not in node" );
 		}
 
 		if( t == this )
@@ -133,7 +133,7 @@ void idBrushBSPPortal::RemoveFromNode( idBrushBSPNode* l )
 		}
 		else
 		{
-			common->Error( "idBrushBSPPortal::RemoveFromNode: portal not bounding node" );
+			idLib::Error( "idBrushBSPPortal::RemoveFromNode: portal not bounding node" );
 		}
 	}
 
@@ -149,7 +149,7 @@ void idBrushBSPPortal::RemoveFromNode( idBrushBSPNode* l )
 	}
 	else
 	{
-		common->Error( "idBrushBSPPortal::RemoveFromNode: mislinked portal" );
+		idLib::Error( "idBrushBSPPortal::RemoveFromNode: mislinked portal" );
 	}
 }
 
@@ -986,8 +986,8 @@ idBrushBSPNode* idBrushBSP::ProcessGridCell( idBrushBSPNode* node, int skipConte
 	bool* testedPlanes;
 
 #ifdef OUPUT_BSP_STATS_PER_GRID_CELL
-	common->Printf( "[Grid Cell %d]\n", ++numGridCells );
-	common->Printf( "%6d brushes\n", node->brushList.Num() );
+	idLib::Printf( "[Grid Cell %d]\n", ++numGridCells );
+	idLib::Printf( "%6d brushes\n", node->brushList.Num() );
 #endif
 
 	numGridCellSplits = 0;
@@ -1002,7 +1002,7 @@ idBrushBSPNode* idBrushBSP::ProcessGridCell( idBrushBSPNode* node, int skipConte
 	node->brushList.CreatePlaneList( planeList );
 
 #ifdef OUPUT_BSP_STATS_PER_GRID_CELL
-	common->Printf( "[Grid Cell BSP]\n" );
+	idLib::Printf( "[Grid Cell BSP]\n" );
 #endif
 
 	testedPlanes = new bool[planeList.Num()];
@@ -1012,7 +1012,7 @@ idBrushBSPNode* idBrushBSP::ProcessGridCell( idBrushBSPNode* node, int skipConte
 	delete[] testedPlanes;
 
 #ifdef OUPUT_BSP_STATS_PER_GRID_CELL
-	common->Printf( "\r%6d splits\n", numGridCellSplits );
+	idLib::Printf( "\r%6d splits\n", numGridCellSplits );
 #endif
 
 	return node;
@@ -1102,8 +1102,8 @@ void idBrushBSP::Build( idBrushList brushList, int skipContents,
 	int i;
 	idList<idBrushBSPNode*> gridCells;
 
-	common->Printf( "[Brush BSP]\n" );
-	common->Printf( "%6d brushes\n", brushList.Num() );
+	idLib::Printf( "[Brush BSP]\n" );
+	idLib::Printf( "%6d brushes\n", brushList.Num() );
 
 	BrushChopAllowed = ChopAllowed;
 	BrushMergeAllowed = MergeAllowed;
@@ -1118,7 +1118,7 @@ void idBrushBSP::Build( idBrushList brushList, int skipContents,
 
 	BuildGrid_r( gridCells, root );
 
-	common->Printf( "\r%6d grid cells\n", gridCells.Num() );
+	idLib::Printf( "\r%6d grid cells\n", gridCells.Num() );
 
 #ifdef OUPUT_BSP_STATS_PER_GRID_CELL
 	for( i = 0; i < gridCells.Num(); i++ )
@@ -1126,16 +1126,16 @@ void idBrushBSP::Build( idBrushList brushList, int skipContents,
 		ProcessGridCell( gridCells[i], skipContents );
 	}
 #else
-	common->Printf( "\r%6d %%", 0 );
+	idLib::Printf( "\r%6d %%", 0 );
 	for( i = 0; i < gridCells.Num(); i++ )
 	{
 		DisplayRealTimeString( "\r%6d", i * 100 / gridCells.Num() );
 		ProcessGridCell( gridCells[i], skipContents );
 	}
-	common->Printf( "\r%6d %%\n", 100 );
+	idLib::Printf( "\r%6d %%\n", 100 );
 #endif
 
-	common->Printf( "\r%6d splits\n", numSplits );
+	idLib::Printf( "\r%6d splits\n", numSplits );
 
 	if( brushMap )
 	{
@@ -1216,9 +1216,9 @@ idBrushBSP::PruneTree
 void idBrushBSP::PruneTree( int contents )
 {
 	numPrunedSplits = 0;
-	common->Printf( "[Prune BSP]\n" );
+	idLib::Printf( "[Prune BSP]\n" );
 	PruneTree_r( root, contents );
-	common->Printf( "%6d splits pruned\n", numPrunedSplits );
+	idLib::Printf( "%6d splits pruned\n", numPrunedSplits );
 }
 
 /*
@@ -1286,7 +1286,7 @@ void idBrushBSP::MakeNodePortal( idBrushBSPNode* node )
 		}
 		else
 		{
-			common->Error( "MakeNodePortal: mislinked portal" );
+			idLib::Error( "MakeNodePortal: mislinked portal" );
 		}
 	}
 
@@ -1340,7 +1340,7 @@ void idBrushBSP::SplitNodePortals( idBrushBSPNode* node )
 		}
 		else
 		{
-			common->Error( "idBrushBSP::SplitNodePortals: mislinked portal" );
+			idLib::Error( "idBrushBSP::SplitNodePortals: mislinked portal" );
 			return;
 		}
 		nextPortal = p->next[side];
@@ -1438,14 +1438,14 @@ void idBrushBSP::MakeTreePortals_r( idBrushBSPNode* node )
 
 	if( bounds[0][0] >= bounds[1][0] )
 	{
-		//common->Warning( "node without volume" );
+		//idLib::Warning( "node without volume" );
 	}
 
 	for( i = 0; i < 3; i++ )
 	{
 		if( bounds[0][i] < MIN_WORLD_COORD || bounds[1][i] > MAX_WORLD_COORD )
 		{
-			common->Warning( "node with unbounded volume" );
+			idLib::Warning( "node with unbounded volume" );
 			break;
 		}
 	}
@@ -1481,7 +1481,7 @@ void idBrushBSP::MakeOutsidePortals()
 	{
 		if( bounds[0][i] > bounds[1][i] )
 		{
-			common->Error( "empty BSP tree" );
+			idLib::Error( "empty BSP tree" );
 		}
 	}
 
@@ -1531,12 +1531,12 @@ idBrushBSP::Portalize
 */
 void idBrushBSP::Portalize()
 {
-	common->Printf( "[Portalize BSP]\n" );
-	common->Printf( "%6d nodes\n", ( numSplits - numPrunedSplits ) * 2 + 1 );
+	idLib::Printf( "[Portalize BSP]\n" );
+	idLib::Printf( "%6d nodes\n", ( numSplits - numPrunedSplits ) * 2 + 1 );
 	numPortals = 0;
 	MakeOutsidePortals();
 	MakeTreePortals_r( root );
-	common->Printf( "\r%6d nodes portalized\n", numPortals );
+	idLib::Printf( "\r%6d nodes portalized\n", numPortals );
 }
 
 /*
@@ -1564,12 +1564,12 @@ void idBrushBSP::LeakFile( const idStr& fileName )
 	qpath = fileName;
 	qpath.SetFileExtension( "lin" );
 
-	common->Printf( "writing %s...\n", qpath.c_str() );
+	idLib::Printf( "writing %s...\n", qpath.c_str() );
 
 	lineFile = fileSystem->OpenFileWrite( qpath, "fs_devpath" );
 	if( !lineFile )
 	{
-		common->Error( "Couldn't open %s\n", qpath.c_str() );
+		idLib::Error( "Couldn't open %s\n", qpath.c_str() );
 		return;
 	}
 
@@ -1614,12 +1614,12 @@ void idBrushBSP::FloodThroughPortals_r( idBrushBSPNode* node, int contents, int 
 
 	if( !node )
 	{
-		common->Error( "FloodThroughPortals_r: NULL node\n" );
+		idLib::Error( "FloodThroughPortals_r: NULL node\n" );
 	}
 
 	if( node->occupied )
 	{
-		common->Error( "FloodThroughPortals_r: node already occupied\n" );
+		idLib::Error( "FloodThroughPortals_r: node already occupied\n" );
 	}
 	node->occupied = depth;
 
@@ -1760,11 +1760,11 @@ bool idBrushBSP::FloodFromEntities( const idMapFile* mapFile, int contents, cons
 
 	if( !inside )
 	{
-		common->Warning( "no entities inside" );
+		idLib::Warning( "no entities inside" );
 	}
 	else if( outside->occupied )
 	{
-		common->Warning( "reached outside from entity %d (%s)", i, classname.c_str() );
+		idLib::Warning( "reached outside from entity %d (%s)", i, classname.c_str() );
 	}
 
 	return ( inside && !outside->occupied );
@@ -1815,7 +1815,7 @@ idBrushBSP::RemoveOutside
 */
 bool idBrushBSP::RemoveOutside( const idMapFile* mapFile, int contents, const idStrList& classNames )
 {
-	common->Printf( "[Remove Outside]\n" );
+	idLib::Printf( "[Remove Outside]\n" );
 
 	solidLeafNodes = outsideLeafNodes = insideLeafNodes = 0;
 
@@ -1826,9 +1826,9 @@ bool idBrushBSP::RemoveOutside( const idMapFile* mapFile, int contents, const id
 
 	RemoveOutside_r( root, contents );
 
-	common->Printf( "%6d solid leaf nodes\n", solidLeafNodes );
-	common->Printf( "%6d outside leaf nodes\n", outsideLeafNodes );
-	common->Printf( "%6d inside leaf nodes\n", insideLeafNodes );
+	idLib::Printf( "%6d solid leaf nodes\n", solidLeafNodes );
+	idLib::Printf( "%6d outside leaf nodes\n", outsideLeafNodes );
+	idLib::Printf( "%6d inside leaf nodes\n", insideLeafNodes );
 
 	//PruneTree( contents );
 
@@ -2069,10 +2069,10 @@ idBrushBSP::MergePortals
 void idBrushBSP::MergePortals( int skipContents )
 {
 	numMergedPortals = 0;
-	common->Printf( "[Merge Portals]\n" );
+	idLib::Printf( "[Merge Portals]\n" );
 	SetPortalPlanes();
 	MergePortals_r( root, skipContents );
-	common->Printf( "%6d portals merged\n", numMergedPortals );
+	idLib::Printf( "%6d portals merged\n", numMergedPortals );
 }
 
 /*
@@ -2455,9 +2455,9 @@ void idBrushBSP::MeltPortals( int skipContents )
 	idVectorSet<idVec3, 3> vertexList;
 
 	numInsertedPoints = 0;
-	common->Printf( "[Melt Portals]\n" );
+	idLib::Printf( "[Melt Portals]\n" );
 	RemoveColinearPoints_r( root, skipContents );
 	MeltPortals_r( root, skipContents, vertexList );
 	root->RemoveFlagRecurse( NODE_DONE );
-	common->Printf( "\r%6d points inserted\n", numInsertedPoints );
+	idLib::Printf( "\r%6d points inserted\n", numInsertedPoints );
 }

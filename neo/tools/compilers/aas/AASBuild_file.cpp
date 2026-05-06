@@ -521,7 +521,7 @@ bool idAASBuild::StoreFile( const idBrushBSP& bsp )
 	aasArea_t area;
 	aasNode_t node;
 
-	common->Printf( "[Store AAS]\n" );
+	idLib::Printf( "[Store AAS]\n" );
 
 	SetupHash();
 	ClearHash( bsp.GetTreeBounds() );
@@ -556,7 +556,7 @@ bool idAASBuild::StoreFile( const idBrushBSP& bsp )
 
 	ShutdownHash();
 
-	common->Printf( "\r%6d areas\n", file->areas.Num() );
+	idLib::Printf( "\r%6d areas\n", file->areas.Num() );
 
 	return true;
 }

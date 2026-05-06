@@ -144,7 +144,7 @@ bool Process( FILE* in, FILE* out )
 	int headerSize = WAVE_ReadHeader( in );
 	if( headerSize == 0 )
 	{
-		common->Warning( "Header invalid\n" );
+		idLib::Warning( "Header invalid\n" );
 		return false;
 	}
 
@@ -154,12 +154,12 @@ bool Process( FILE* in, FILE* out )
 	int numChunks = WAVE_ReadChunks( in, headerSize + 8, chunks, MAX_CHUNKS );
 	if( numChunks == 0 )
 	{
-		common->Warning( "No chunks\n" );
+		idLib::Warning( "No chunks\n" );
 		return false;
 	}
 	if( numChunks > MAX_CHUNKS )
 	{
-		common->Warning( "Too many chunks\n" );
+		idLib::Warning( "Too many chunks\n" );
 		return false;
 	}
 
@@ -173,12 +173,12 @@ bool Process( FILE* in, FILE* out )
 		{
 			if( foundFormat )
 			{
-				common->Warning( "Found multiple format chunks\n" );
+				idLib::Warning( "Found multiple format chunks\n" );
 				return false;
 			}
 			if( chunks[i].size < sizeof( format ) )
 			{
-				common->Warning( "Format chunk too small\n" );
+				idLib::Warning( "Format chunk too small\n" );
 				return false;
 			}
 			fseek( in, chunks[i].offset, SEEK_SET );
@@ -189,7 +189,7 @@ bool Process( FILE* in, FILE* out )
 		{
 			if( dataOffset > 0 )
 			{
-				common->Warning( "Found multiple data chunks\n" );
+				idLib::Warning( "Found multiple data chunks\n" );
 				return false;
 			}
 			dataOffset = chunks[i].offset;
@@ -198,33 +198,33 @@ bool Process( FILE* in, FILE* out )
 	}
 	if( dataOffset == 0 )
 	{
-		common->Warning( "Colud not find data chunk\n" );
+		idLib::Warning( "Colud not find data chunk\n" );
 		return false;
 	}
 	if( !foundFormat )
 	{
-		common->Warning( "Could not find fmt chunk\n" );
+		idLib::Warning( "Could not find fmt chunk\n" );
 		return false;
 	}
 	if( format.formatTag != FORMAT_PCM )
 	{
-		common->Warning( "Only PCM files supported (%d)\n", format.formatTag );
+		idLib::Warning( "Only PCM files supported (%d)\n", format.formatTag );
 		return false;
 	}
 	if( format.bitsPerSample != 8 && format.bitsPerSample != 16 )
 	{
-		common->Warning( "Only 8 or 16 bit files supported (%d)\n", format.bitsPerSample );
+		idLib::Warning( "Only 8 or 16 bit files supported (%d)\n", format.bitsPerSample );
 		return false;
 	}
 	if( format.numChannels != 1 && format.numChannels != 2 )
 	{
-		common->Warning( "Only stereo or mono files supported (%d)\n", format.numChannels );
+		idLib::Warning( "Only stereo or mono files supported (%d)\n", format.numChannels );
 		return false;
 	}
 	unsigned short expectedSampleSize = format.numChannels * format.bitsPerSample / 8;
 	if( format.sampleSize != expectedSampleSize )
 	{
-		common->Warning( "Invalid sampleSize (%d, expected %d)\n", format.sampleSize, expectedSampleSize );
+		idLib::Warning( "Invalid sampleSize (%d, expected %d)\n", format.sampleSize, expectedSampleSize );
 		return false;
 	}
 	unsigned int numSamples = dataSize / expectedSampleSize;
@@ -232,7 +232,7 @@ bool Process( FILE* in, FILE* out )
 	void* inputData = malloc( dataSize );
 	if( inputData == NULL )
 	{
-		common->Warning( "Out of memory\n" );
+		idLib::Warning( "Out of memory\n" );
 		return false;
 	}
 	fseek( in, dataOffset, SEEK_SET );
@@ -244,7 +244,7 @@ bool Process( FILE* in, FILE* out )
 	unsigned char* outputData = ( unsigned char* )malloc( numOutputSamples );
 	if( min == NULL || max == NULL || outputData == NULL )
 	{
-		common->Warning( "Out of memory\n" );
+		idLib::Warning( "Out of memory\n" );
 		free( inputData );
 		free( min );
 		free( max );
@@ -337,7 +337,7 @@ bool Process( FILE* in, FILE* out )
 	free( max );
 	free( outputData );
 
-	common->Printf( "Success\n" );
+	idLib::Printf( "Success\n" );
 	return true;
 }
 
@@ -345,24 +345,24 @@ void Amplitude_f( const idCmdArgs& args )
 {
 	if( args.Argc() != 2 )
 	{
-		common->Printf( "usage: amplitude <wav file>" );
+		idLib::Printf( "usage: amplitude <wav file>" );
 		return;
 	}
 
 	const char* inputFileName = args.Argv( 1 );
 
-	common->Printf( "Processing %s: \n", inputFileName );
+	idLib::Printf( "Processing %s: \n", inputFileName );
 
 	FILE* in = NULL;
 	if( fopen_s( &in, inputFileName, "rb" ) != 0 )
 	{
-		common->Error( "Could not open input file\n" );
+		idLib::Error( "Could not open input file\n" );
 		return;
 	}
 	char outputFileName[1024] = {0};
 	if( strcpy_s( outputFileName, inputFileName ) != 0 )
 	{
-		common->Error( "Filename too long\n" );
+		idLib::Error( "Filename too long\n" );
 		return;
 	}
 	char* dot = strrchr( outputFileName, '.' );
@@ -372,14 +372,14 @@ void Amplitude_f( const idCmdArgs& args )
 	}
 	if( strcpy_s( dot, sizeof( outputFileName ) - ( dot - outputFileName ), ".amp" ) != 0 )
 	{
-		common->Error( "Filename too long\n" );
+		idLib::Error( "Filename too long\n" );
 		return;
 	}
 
 	FILE* out = NULL;
 	if( fopen_s( &out, outputFileName, "wb" ) != 0 )
 	{
-		common->Error( "Could not open output file %s\n", outputFileName );
+		idLib::Error( "Could not open output file %s\n", outputFileName );
 		return;
 	}
 

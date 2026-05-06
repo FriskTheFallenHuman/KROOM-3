@@ -200,15 +200,11 @@ idCommonLocal::InitCommands
 */
 void idCommonLocal::InitCommands( void )
 {
-#if	!defined( ID_DEDICATED )
-	// compilers
-	cmdSystem->AddCommand( "dmap", Dmap_f, CMD_FL_TOOL, "compiles a map", idCmdSystem::ArgCompletion_MapName );
-	cmdSystem->AddCommand( "runAAS", RunAAS_f, CMD_FL_TOOL, "compiles an AAS file for a map", idCmdSystem::ArgCompletion_MapName );
-	cmdSystem->AddCommand( "runAASDir", RunAASDir_f, CMD_FL_TOOL, "compiles AAS files for all maps in a folder", idCmdSystem::ArgCompletion_MapName );
-	cmdSystem->AddCommand( "runReach", RunReach_f, CMD_FL_TOOL, "calculates reachability for an AAS file", idCmdSystem::ArgCompletion_MapName );
-	cmdSystem->AddCommand( "roq", RoQFileEncode_f, CMD_FL_TOOL, "encodes a roq file" );
-	cmdSystem->AddCommand( "amplitude", Amplitude_f, CMD_FL_TOOL, "encodes a wav file into a amp file", idCmdSystem::ArgCompletion_SoundName );
-#endif
+	if( !IsServer() )
+	{
+		// compilers
+		RegisterCompilerThreadCommands();
+	}
 
 #ifdef ID_ALLOW_TOOLS
 	// editors

@@ -3031,7 +3031,7 @@ idVec2i idFileSystemLocal::AddResourceFile( const char* resourceFileName )
 		if( rc->Init( resourceFile ) )
 		{
 			search.resourceFiles.Append( rc );
-			common->Printf( "Loaded resource file %s\n", resourceFile.c_str() );
+			common->Printf( S_COLOR_GRAY "  ...loading resource file" S_COLOR_WHITE " %s\n", resourceFile.c_str() );
 			return idVec2i( sp, search.resourceFiles.Num() - 1 );
 		}
 		delete rc;
@@ -3173,7 +3173,7 @@ void idFileSystemLocal::AddGameDirectory( const char* path, const char* dir )
 				if( rc->Init( pakfile ) )
 				{
 					search.resourceFiles.Append( rc );
-					common->Printf( "Loaded resource file %s\n", pakfile.c_str() );
+					common->Printf( S_COLOR_GRAY "  ...loading resource file" S_COLOR_WHITE " %s\n", pakfile.c_str() );
 					//com_productionMode.SetInteger( 2 );
 
 					resourceFilesFound = true;
@@ -3201,8 +3201,7 @@ void idFileSystemLocal::AddGameDirectory( const char* path, const char* dir )
 					if( zip->Init( pakfile ) )
 					{
 						search.zipFiles.Append( zip );
-						common->Printf( "Loaded zip file %s\n", pakfile.c_str() );
-						common->Printf( "Loaded pk4 %s with checksum 0x%x\n", pakfile.c_str(), zip->GetChecksum() );
+						common->Printf( S_COLOR_GRAY "  ...loading pk4 file" S_COLOR_WHITE " %s" S_COLOR_GRAY "with checksum" S_COLOR_WHITE " 0x%x\n", pakfile.c_str(), zip->GetChecksum() );
 						//com_productionMode.SetInteger( 2 );
 
 						zipFilesFound = true;

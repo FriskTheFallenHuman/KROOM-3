@@ -54,7 +54,7 @@ bool idAASCluster::UpdatePortal( int areaNum, int clusterNum )
 
 	if( portalNum >= file->portals.Num() )
 	{
-		common->Error( "no portal for area %d", areaNum );
+		idLib::Error( "no portal for area %d", areaNum );
 		return true;
 	}
 
@@ -117,7 +117,7 @@ bool idAASCluster::FloodClusterAreas_r( int areaNum, int clusterNum )
 			return true;
 		}
 		// there's a reachability going from one cluster to another only in one direction
-		common->Error( "cluster %d touched cluster %d at area %d\r\n", clusterNum, file->areas[areaNum].cluster, areaNum );
+		idLib::Error( "cluster %d touched cluster %d at area %d\r\n", clusterNum, file->areas[areaNum].cluster, areaNum );
 		return false;
 	}
 
@@ -531,7 +531,7 @@ void idAASCluster::RemoveInvalidPortals()
 		}
 	}
 
-	common->Printf( "\r%6d invalid portals removed\n", numInvalidPortals );
+	idLib::Printf( "\r%6d invalid portals removed\n", numInvalidPortals );
 }
 
 /*
@@ -542,7 +542,7 @@ idAASCluster::Build
 bool idAASCluster::Build( idAASFileLocal* file )
 {
 
-	common->Printf( "[Clustering]\n" );
+	idLib::Printf( "[Clustering]\n" );
 
 	this->file = file;
 	this->noFaceFlood = true;
@@ -558,7 +558,7 @@ bool idAASCluster::Build( idAASFileLocal* file )
 		// create the portals from the portal areas
 		CreatePortals();
 
-		common->Printf( "\r%6d", file->portals.Num() );
+		idLib::Printf( "\r%6d", file->portals.Num() );
 
 		// find the clusters
 		if( !FindClusters() )
@@ -575,12 +575,12 @@ bool idAASCluster::Build( idAASFileLocal* file )
 		break;
 	}
 
-	common->Printf( "\r%6d portals\n", file->portals.Num() );
-	common->Printf( "%6d clusters\n", file->clusters.Num() );
+	idLib::Printf( "\r%6d portals\n", file->portals.Num() );
+	idLib::Printf( "%6d clusters\n", file->clusters.Num() );
 
 	for( int i = 0; i < file->clusters.Num(); i++ )
 	{
-		common->Printf( "%6d reachable areas in cluster %d\n", file->clusters[i].numReachableAreas, i );
+		idLib::Printf( "%6d reachable areas in cluster %d\n", file->clusters[i].numReachableAreas, i );
 	}
 
 	file->ReportRoutingEfficiency();
@@ -598,7 +598,7 @@ bool idAASCluster::BuildSingleCluster( idAASFileLocal* file )
 	int i, numAreas;
 	aasCluster_t cluster;
 
-	common->Printf( "[Clustering]\n" );
+	idLib::Printf( "[Clustering]\n" );
 
 	this->file = file;
 
@@ -630,12 +630,12 @@ bool idAASCluster::BuildSingleCluster( idAASFileLocal* file )
 	}
 	file->clusters.Append( cluster );
 
-	common->Printf( "%6d portals\n", file->portals.Num() );
-	common->Printf( "%6d clusters\n", file->clusters.Num() );
+	idLib::Printf( "%6d portals\n", file->portals.Num() );
+	idLib::Printf( "%6d clusters\n", file->clusters.Num() );
 
 	for( i = 0; i < file->clusters.Num(); i++ )
 	{
-		common->Printf( "%6d reachable areas in cluster %d\n", file->clusters[i].numReachableAreas, i );
+		idLib::Printf( "%6d reachable areas in cluster %d\n", file->clusters[i].numReachableAreas, i );
 	}
 
 	file->ReportRoutingEfficiency();

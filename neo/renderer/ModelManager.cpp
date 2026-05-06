@@ -702,7 +702,7 @@ void idRenderModelManagerLocal::Preload( const idPreloadManifest& manifest )
 		}
 
 		int	end = Sys_Milliseconds();
-		common->Printf( "%05d models preloaded ( or were already loaded ) in %5.1f seconds\n", numLoaded, ( end - start ) * 0.001 );
+		common->Printf( S_COLOR_GRAY "%05d " S_COLOR_WHITE "models preloaded ( or were already loaded ) in" S_COLOR_GRAY " %5.1f" S_COLOR_WHITE " seconds\n", numLoaded, ( end - start ) * 0.001 );
 		common->Printf( "----------------------------------------\n" );
 	}
 }
@@ -787,11 +787,11 @@ void idRenderModelManagerLocal::EndLevelLoad()
 
 	// _D3XP added this
 	int	end = Sys_Milliseconds();
-	common->Printf( "%5i models purged from previous level, ", purgeCount );
-	common->Printf( "%5i models kept.\n", keepCount );
+	common->Printf( S_COLOR_GRAY "%5i" S_COLOR_WHITE " models purged from previous level, ", purgeCount );
+	common->Printf( S_COLOR_GRAY "%5i" S_COLOR_WHITE " models kept.\n", keepCount );
 	if( loadCount )
 	{
-		common->Printf( "%5i new models loaded in %5.1f seconds\n", loadCount, ( end - start ) * 0.001 );
+		common->Printf( S_COLOR_GRAY "%5i " S_COLOR_WHITE "new models loaded in" S_COLOR_GRAY " %5.1f" S_COLOR_WHITE " seconds\n", loadCount, ( end - start ) * 0.001 );
 	}
 	common->Printf( "---------------------------------------------------\n" );
 }

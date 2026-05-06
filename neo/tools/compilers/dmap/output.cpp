@@ -424,7 +424,7 @@ static void WriteOutputSurfaces( int entityNum, int areaNum )
 		entity->epairs.GetString( "name", "", &name );
 		if( !name[0] )
 		{
-			common->Error( "Entity %i has surfaces, but no name key", entityNum );
+			idLib::Error( "Entity %i has surfaces, but no name key", entityNum );
 		}
 		procFile->WriteFloatString( "model { /* name = */ \"%s\" /* numSurfaces = */ %i\n\n",
 									name, numSurfaces );
@@ -495,7 +495,7 @@ static void WriteOutputSurfaces( int entityNum, int areaNum )
 
 		if( surfaceNum >= numSurfaces )
 		{
-			common->Error( "WriteOutputSurfaces: surfaceNum >= numSurfaces" );
+			idLib::Error( "WriteOutputSurfaces: surfaceNum >= numSurfaces" );
 		}
 
 		procFile->WriteFloatString( "/* surface %i */ { ", surfaceNum );
@@ -692,16 +692,16 @@ void WriteOutputFile()
 	idStr			qpath;
 
 	// write the file
-	common->Printf( "----- WriteOutputFile -----\n" );
+	idLib::Printf( "----- WriteOutputFile -----\n" );
 
 	sprintf( qpath, "%s." PROC_FILE_EXT, dmapGlobals.mapFileBase );
 
-	common->Printf( "writing %s\n", qpath.c_str() );
+	idLib::Printf( "writing %s\n", qpath.c_str() );
 	// _D3XP used fs_cdpath
 	procFile = fileSystem->OpenFileWrite( qpath, "fs_basepath" );
 	if( !procFile )
 	{
-		common->Error( "Error opening %s", qpath.c_str() );
+		idLib::Error( "Error opening %s", qpath.c_str() );
 	}
 
 	procFile->WriteFloatString( "%s\n\n", PROC_FILE_ID );

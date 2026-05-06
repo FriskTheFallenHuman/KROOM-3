@@ -48,7 +48,7 @@ NSBitmapImageRep::NSBitmapImageRep( const char* filename )
 	R_LoadImage( filename, &bmap, &width, &height, &timestamp, false, NULL );
 	if( !width || !height )
 	{
-		common->FatalError( "roqvq: unable to load image %s\n", filename );
+		idLib::Error( "roqvq: unable to load image %s\n", filename );
 	}
 }
 

@@ -605,7 +605,7 @@ list(APPEND src_core ${src_d3xp})
 
 ##################### Compilers ###########################
 
-file(GLOB src_tools_compilers tools/compilers/*.h)
+file(GLOB src_tools_compilers tools/compilers/*.cpp tools/compilers/*.h)
 source_group("Tools\\Compilers" FILES ${src_tools_compilers})
 
 file(GLOB src_dmap tools/compilers/dmap/*.cpp tools/compilers/dmap/*.h)

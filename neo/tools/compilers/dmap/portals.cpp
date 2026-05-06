@@ -90,7 +90,7 @@ static bool Portal_Passable( uPortal_t*  p )
 	if( p->nodes[0]->planenum != PLANENUM_LEAF
 			|| p->nodes[1]->planenum != PLANENUM_LEAF )
 	{
-		common->Error( "Portal_EntityFlood: not a leaf" );
+		idLib::Error( "Portal_EntityFlood: not a leaf" );
 	}
 
 	if( !p->nodes[0]->opaque && !p->nodes[1]->opaque )
@@ -115,7 +115,7 @@ void AddPortalToNodes( uPortal_t*  p, node_t* front, node_t* back )
 {
 	if( p->nodes[0] || p->nodes[1] )
 	{
-		common->Error( "AddPortalToNode: allready included" );
+		idLib::Error( "AddPortalToNode: allready included" );
 	}
 
 	p->nodes[0] = front;
@@ -144,7 +144,7 @@ void RemovePortalFromNode( uPortal_t*  portal, node_t* l )
 		t = *pp;
 		if( !t )
 		{
-			common->Error( "RemovePortalFromNode: portal not in leaf" );
+			idLib::Error( "RemovePortalFromNode: portal not in leaf" );
 		}
 
 		if( t == portal )
@@ -162,7 +162,7 @@ void RemovePortalFromNode( uPortal_t*  portal, node_t* l )
 		}
 		else
 		{
-			common->Error( "RemovePortalFromNode: portal not bounding leaf" );
+			idLib::Error( "RemovePortalFromNode: portal not bounding leaf" );
 		}
 	}
 
@@ -178,7 +178,7 @@ void RemovePortalFromNode( uPortal_t*  portal, node_t* l )
 	}
 	else
 	{
-		common->Error( "RemovePortalFromNode: mislinked" );
+		idLib::Error( "RemovePortalFromNode: mislinked" );
 	}
 }
 
@@ -192,7 +192,7 @@ void PrintPortal( uPortal_t* p )
 	w = p->winding;
 	for( i = 0; i < w->GetNumPoints(); i++ )
 	{
-		common->Printf( "(%5.0f,%5.0f,%5.0f)\n", ( *w )[i][0], ( *w )[i][1], ( *w )[i][2] );
+		idLib::Printf( "(%5.0f,%5.0f,%5.0f)\n", ( *w )[i][0], ( *w )[i][1], ( *w )[i][2] );
 	}
 }
 
@@ -232,7 +232,7 @@ static void MakeHeadnodePortals( tree_t* tree )
 		bounds[1][i] = tree->bounds[1][i] + SIDESPACE;
 		if( bounds[0][i] >= bounds[1][i] )
 		{
-			common->Error( "Backwards tree volume" );
+			idLib::Error( "Backwards tree volume" );
 		}
 	}
 
@@ -354,7 +354,7 @@ static void MakeNodePortal( node_t* node )
 		}
 		else
 		{
-			common->Error( "CutNodePortals_r: mislinked portal" );
+			idLib::Error( "CutNodePortals_r: mislinked portal" );
 			side = 0;	// quiet a compiler warning
 		}
 
@@ -414,7 +414,7 @@ static void SplitNodePortals( node_t* node )
 		}
 		else
 		{
-			common->Error( "SplitNodePortals: mislinked portal" );
+			idLib::Error( "SplitNodePortals: mislinked portal" );
 			side = 0;	// quiet a compiler warning
 		}
 		next_portal = p->next[side];
@@ -536,14 +536,14 @@ void MakeTreePortals_r( node_t* node )
 	if( node->bounds[0][0] >= node->bounds[1][0] )
 	{
 		DMAP_VERBOSITY( "Warning: node without a volume" );
-		//common->Warning( "node without a volume" );
+		//idLib::Warning( "node without a volume" );
 	}
 
 	for( i = 0; i < 3; i++ )
 	{
 		if( node->bounds[0][i] < MIN_WORLD_COORD || node->bounds[1][i] > MAX_WORLD_COORD )
 		{
-			common->Warning( "node with unbounded volume" );
+			idLib::Warning( "node with unbounded volume" );
 			break;
 		}
 	}
@@ -665,7 +665,7 @@ bool FloodEntities( tree_t* tree )
 	node_t* headnode;
 
 	headnode = tree->headnode;
-	common->Printf( "--- FloodEntities ---\n" );
+	idLib::Printf( "--- FloodEntities ---\n" );
 	inside = false;
 	tree->outside_node.occupied = 0;
 
@@ -722,30 +722,30 @@ bool FloodEntities( tree_t* tree )
 		if( tree->outside_node.occupied && !errorShown )
 		{
 			errorShown = true;
-			common->Printf( "Leak on entity # %d\n", i );
+			idLib::Printf( "Leak on entity # %d\n", i );
 			const char* p;
 
 			mapEnt->epairs.GetString( "classname", "", &p );
-			common->Printf( "Entity classname was: %s\n", p );
+			idLib::Printf( "Entity classname was: %s\n", p );
 			mapEnt->epairs.GetString( "name", "", &p );
-			common->Printf( "Entity name was: %s\n", p );
+			idLib::Printf( "Entity name was: %s\n", p );
 			idVec3 origin;
 			if( mapEnt->epairs.GetVector( "origin", "", origin ) )
 			{
-				common->Printf( "Entity origin is: %f %f %f\n\n\n", origin.x, origin.y, origin.z );
+				idLib::Printf( "Entity origin is: %f %f %f\n\n\n", origin.x, origin.y, origin.z );
 			}
 		}
 	}
 
-	common->Printf( "%5i flooded leafs\n", c_floodedleafs );
+	idLib::Printf( "%5i flooded leafs\n", c_floodedleafs );
 
 	if( !inside )
 	{
-		common->Printf( "no entities in open -- no filling\n" );
+		idLib::Printf( "no entities in open -- no filling\n" );
 	}
 	else if( tree->outside_node.occupied )
 	{
-		common->Printf( "entity reached from outside -- no filling\n" );
+		idLib::Printf( "entity reached from outside -- no filling\n" );
 	}
 
 	return ( bool )( inside && !tree->outside_node.occupied );
@@ -817,7 +817,7 @@ static side_t*	FindSideForPortal( uPortal_t* p )
 					{
 						continue;
 					}
-					common->Warning( "brush has multiple area portal sides at %s", s2->visibleHull->GetCenter().ToString() );
+					idLib::Warning( "brush has multiple area portal sides at %s", s2->visibleHull->GetCenter().ToString() );
 					delete s2->visibleHull;
 					s2->visibleHull = NULL;
 				}
@@ -988,7 +988,7 @@ void CheckAreas_r( node_t* node )
 	}
 	if( !node->opaque && node->area < 0 )
 	{
-		common->Error( "CheckAreas_r: area = %i", node->area );
+		idLib::Error( "CheckAreas_r: area = %i", node->area );
 	}
 }
 
@@ -1062,7 +1062,7 @@ static void FindInterAreaPortals_r( node_t* node )
 //		w = p->winding;
 		if( !side )
 		{
-			common->Warning( "FindSideForPortal failed at %s", p->winding->GetCenter().ToString() );
+			idLib::Warning( "FindSideForPortal failed at %s", p->winding->GetCenter().ToString() );
 			continue;
 		}
 		w = side->visibleHull;
@@ -1128,7 +1128,7 @@ static void FindInterAreaPortals_r( node_t* node )
 		FindTrianglesForPortal( p, apTriangles );
 		if( apTriangles.Num() < 2 )
 		{
-			//common->Warning( "FindTrianglesForPortal failed at %s", p->winding->GetCenter().ToString() );
+			//idLib::Warning( "FindTrianglesForPortal failed at %s", p->winding->GetCenter().ToString() );
 			continue;
 		}
 
@@ -1198,7 +1198,7 @@ void FloodAreas( uEntity_t* e )
 {
 	if( e == &dmapGlobals.uEntities[0] )
 	{
-		common->Printf( "--- FloodAreas ---\n" );
+		idLib::Printf( "--- FloodAreas ---\n" );
 	}
 
 	// set all areas to -1
@@ -1210,7 +1210,7 @@ void FloodAreas( uEntity_t* e )
 
 	if( e == &dmapGlobals.uEntities[0] )
 	{
-		common->Printf( "%5i areas\n", c_areas );
+		idLib::Printf( "%5i areas\n", c_areas );
 	}
 	e->numAreas = c_areas;
 
@@ -1279,9 +1279,9 @@ void FillOutside( uEntity_t* e )
 	c_outside = 0;
 	c_inside = 0;
 	c_solid = 0;
-	common->Printf( "--- FillOutside ---\n" );
+	idLib::Printf( "--- FillOutside ---\n" );
 	FillOutside_r( e->tree->headnode );
-	common->Printf( "%5i solid leafs\n", c_solid );
-	common->Printf( "%5i leafs filled\n", c_outside );
-	common->Printf( "%5i inside leafs\n", c_inside );
+	idLib::Printf( "%5i solid leafs\n", c_solid );
+	idLib::Printf( "%5i leafs filled\n", c_outside );
+	idLib::Printf( "%5i inside leafs\n", c_inside );
 }

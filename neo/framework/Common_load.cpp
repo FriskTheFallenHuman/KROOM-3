@@ -695,7 +695,7 @@ bool idCommonLocal::LoadPacifierRunning()
 // foresthale 2014-05-30: loading progress pacifier for binarize operations only
 void idCommonLocal::LoadPacifierBinarizeFilename( const char* filename, const char* reason )
 {
-	idLib::Printf( "Binarize File: '%s' - reason '%s'\n", filename, reason );
+	idLib::Printf( "Binarize File: " S_COLOR_GRAY "'%s'" S_COLOR_DEFAULT " - reason " S_COLOR_GRAY "'%s'\n", filename, reason );
 
 	// we won't actually show updates on very quick files (<16ms), so keep this false until the first progress
 	loadPacifierBinarizeActive = false;

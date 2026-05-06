@@ -49,11 +49,11 @@ void roqParam::InitFromFile( const char* fileName )
 	if( !src->IsLoaded() )
 	{
 		delete src;
-		common->Printf( "Error: can't open param file %s\n", fileName );
+		idLib::Printf( "Error: can't open param file %s\n", fileName );
 		return;
 	}
 
-	common->Printf( "initFromFile: %s\n", fileName );
+	idLib::Printf( "initFromFile: %s\n", fileName );
 
 	fullSearch = false;
 	scaleDown = false;
@@ -95,7 +95,7 @@ void roqParam::InitFromFile( const char* fileName )
 			src->ReadToken( &token );
 			addPath = true;
 			currentPath = token;
-//			common->Printf("  + input directory is %s\n", currentPath );
+//			idLib::Printf("  + input directory is %s\n", currentPath );
 			readarg++;
 			continue;
 		}
@@ -103,7 +103,7 @@ void roqParam::InitFromFile( const char* fileName )
 		if( token.Icmp( "scale_down" ) == 0 )
 		{
 			scaleDown = true;
-//			common->Printf("  + scaling down input\n" );
+//			idLib::Printf("  + scaling down input\n" );
 			readarg++;
 			continue;
 		}
@@ -126,7 +126,7 @@ void roqParam::InitFromFile( const char* fileName )
 		if( token.Icmp( "no_alpha" ) == 0 )
 		{
 			noAlphaAtAll = true;
-//			common->Printf("  + scaling down input\n" );
+//			idLib::Printf("  + scaling down input\n" );
 			readarg++;
 			continue;
 		}
@@ -140,7 +140,7 @@ void roqParam::InitFromFile( const char* fileName )
 		if( token.Icmp( "video_in" ) == 0 )
 		{
 			encodeVideo = true;
-//			common->Printf("  + Using the video port as input\n");
+//			idLib::Printf("  + Using the video port as input\n");
 			continue;
 		}
 //timecode range
@@ -149,7 +149,7 @@ void roqParam::InitFromFile( const char* fileName )
 			useTimecodeForRange = true;
 			firstframesize = 12 * 1024;
 			normalframesize = 4500;
-//			common->Printf("  + Using timecode as range\n");
+//			idLib::Printf("  + Using timecode as range\n");
 			continue;
 		}
 // soundfile for making a .RnR
@@ -158,7 +158,7 @@ void roqParam::InitFromFile( const char* fileName )
 			src->ReadToken( &token );
 			soundfile = token;
 			hasSound = true;
-//			common->Printf("  + Using timecode as range\n");
+//			idLib::Printf("  + Using timecode as range\n");
 			continue;
 		}
 // soundfile for making a .RnR
@@ -172,7 +172,7 @@ void roqParam::InitFromFile( const char* fileName )
 		{
 			src->ReadToken( &token );
 			outputFilename = token;
-//			common->Printf("  + output file is %s\n", outputFilename );
+//			idLib::Printf("  + output file is %s\n", outputFilename );
 			readarg++;
 			continue;
 		}
@@ -181,7 +181,7 @@ void roqParam::InitFromFile( const char* fileName )
 		{
 			src->ReadToken( &token );
 			sprintf( startPal, "/LocalLibrary/vdxPalettes/%s", token.c_str() );
-//			common->Error("  + starting palette is %s\n", startPal );
+//			idLib::Error("  + starting palette is %s\n", startPal );
 			startPalette = true;
 			readarg++;
 			continue;
@@ -191,7 +191,7 @@ void roqParam::InitFromFile( const char* fileName )
 		{
 			src->ReadToken( &token );
 			sprintf( endPal, "/LocalLibrary/vdxPalettes/%s", token.c_str() );
-//			common->Printf("  + ending palette is %s\n", endPal );
+//			idLib::Printf("  + ending palette is %s\n", endPal );
 			endPalette = true;
 			readarg++;
 			continue;
@@ -201,7 +201,7 @@ void roqParam::InitFromFile( const char* fileName )
 		{
 			src->ReadToken( &token );
 			sprintf( startPal, "/LocalLibrary/vdxPalettes/%s", token.c_str() );
-//			common->Printf("  + fixed palette is %s\n", startPal );
+//			idLib::Printf("  + fixed palette is %s\n", startPal );
 			fixedPalette = true;
 			readarg++;
 			continue;
@@ -209,7 +209,7 @@ void roqParam::InitFromFile( const char* fileName )
 // these are screen shots
 		if( token.Icmp( "screenshot" ) == 0 )
 		{
-//			common->Printf("  + shooting screen shots\n" );
+//			idLib::Printf("  + shooting screen shots\n" );
 			screenShots = true;
 			readarg++;
 			continue;
@@ -221,14 +221,14 @@ void roqParam::InitFromFile( const char* fileName )
 			keyG = src->ParseInt();
 			keyB = src->ParseInt();
 			keyColor = true;
-//			common->Printf("  + key color is %03d %03d %03d\n", keyR, keyG, keyB );
+//			idLib::Printf("  + key color is %03d %03d %03d\n", keyR, keyG, keyB );
 			readarg++;
 			continue;
 		}
 // only want deltas
 		if( token.Icmp( "just_delta" ) == 0 )
 		{
-//			common->Printf("  + outputting deltas in the night\n" );
+//			idLib::Printf("  + outputting deltas in the night\n" );
 //			justDelta = true;
 //			justDeltaFlag = true;
 			readarg++;
@@ -324,7 +324,7 @@ void roqParam::InitFromFile( const char* fileName )
 
 					if( arg1[0] != '[' )
 					{
-//						common->Printf("  + reading %s\n", file[field] );
+//						idLib::Printf("  + reading %s\n", file[field] );
 						range[field] = 0;
 						numfiles[field] = 1;
 						realnum++;
@@ -337,12 +337,12 @@ void roqParam::InitFromFile( const char* fileName )
 							if( useTimecodeForRange )
 							{
 								realnum += parseTimecodeRange( arg1, field, skipnum, startnum, endnum, numfiles, padding, numpadding );
-//								common->Printf("  + reading %s from %d to %d\n", file[field], startnum[field], endnum[field]);
+//								idLib::Printf("  + reading %s from %d to %d\n", file[field], startnum[field], endnum[field]);
 							}
 							else
 							{
 								realnum += parseRange( arg1, field, skipnum, startnum, endnum, numfiles, padding, numpadding );
-//								common->Printf("  + reading %s from %d to %d\n", file[field], startnum[field], endnum[field]);
+//								idLib::Printf("  + reading %s from %d to %d\n", file[field], startnum[field], endnum[field]);
 							}
 						}
 						else if( ( arg1[0] != '[' ) && ( arg2[0] == '[' ) && ( arg3[0] == '[' ) ) //a double ranger...
@@ -352,12 +352,12 @@ void roqParam::InitFromFile( const char* fileName )
 							file2[field] = arg1;
 							range[field] = 2;
 							files1 = parseRange( arg2, field, skipnum, startnum, endnum, numfiles, padding, numpadding );
-//							common->Printf("  + reading %s from %d to %d\n", file[field], startnum[field], endnum[field]);
+//							idLib::Printf("  + reading %s from %d to %d\n", file[field], startnum[field], endnum[field]);
 							files2 = parseRange( arg3, field, skipnum2, startnum2, endnum2, numfiles, padding2, numpadding2 );
-//							common->Printf("  + reading %s from %d to %d\n", file2[field], startnum2[field], endnum2[field]);
+//							idLib::Printf("  + reading %s from %d to %d\n", file2[field], startnum2[field], endnum2[field]);
 							if( files1 != files2 )
 							{
-								common->Error( "You had %d files for %s and %d for %s!", files1, arg1.c_str(), files2, arg2.c_str() );
+								idLib::Error( "You had %d files for %s and %d for %s!", files1, arg1.c_str(), files2, arg2.c_str() );
 							}
 							else
 							{
@@ -366,7 +366,7 @@ void roqParam::InitFromFile( const char* fileName )
 						}
 						else
 						{
-							common->Error( "Error: invalid range on open (%s %s %s)\n", arg1.c_str(), arg2.c_str(), arg3.c_str() );
+							idLib::Error( "Error: invalid range on open (%s %s %s)\n", arg1.c_str(), arg2.c_str(), arg3.c_str() );
 						}
 					}
 					field++;
@@ -381,7 +381,7 @@ void roqParam::InitFromFile( const char* fileName )
 		realnum = realnum + ( realnum >> 2 );
 	}
 	numInputFiles = realnum;
-	common->Printf( "  + reading a total of %d frames in %s\n", numInputFiles, currentPath.c_str() );
+	idLib::Printf( "  + reading a total of %d frames in %s\n", numInputFiles, currentPath.c_str() );
 	delete src;
 }
 
@@ -668,7 +668,7 @@ int parseRange( const char* rangeStr, int field, int skipnum[], int startnum[], 
 	*stptr = '\0';
 	if( rangeStr[i++] != '-' )
 	{
-		common->Error( "Error: invalid range on middle \n" );
+		idLib::Error( "Error: invalid range on middle \n" );
 	}
 	do
 	{
@@ -680,7 +680,7 @@ int parseRange( const char* rangeStr, int field, int skipnum[], int startnum[], 
 	{
 		if( rangeStr[i++] != '+' )
 		{
-			common->Error( "Error: invalid range on close\n" );
+			idLib::Error( "Error: invalid range on close\n" );
 		}
 		do
 		{
@@ -729,7 +729,7 @@ int parseTimecodeRange( const char* rangeStr, int field, int skipnum[], int star
 	*stptr = '\0';
 	if( rangeStr[i++] != '-' )
 	{
-		common->Error( "Error: invalid range on middle \n" );
+		idLib::Error( "Error: invalid range on middle \n" );
 	}
 	do
 	{
@@ -741,7 +741,7 @@ int parseTimecodeRange( const char* rangeStr, int field, int skipnum[], int star
 	{
 		if( rangeStr[i++] != '+' )
 		{
-			common->Error( "Error: invalid range on close\n" );
+			idLib::Error( "Error: invalid range on close\n" );
 		}
 		do
 		{

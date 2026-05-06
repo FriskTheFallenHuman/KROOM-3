@@ -70,7 +70,7 @@ bool idResourceContainer::Init( const char* _fileName )
 
 	if( resourceFile == NULL )
 	{
-		idLib::Warning( "Unable to open resource file %s", _fileName );
+		idLib::Warning( "Unable to open resource file " S_COLOR_GRAY "'%s'", _fileName );
 		return false;
 	}
 
@@ -184,7 +184,7 @@ void idResourceContainer::UpdateResourceFile( const char* _filename, const idStr
 	idFile* outFile = fileSystem->OpenFileWrite( va( "%s.new", _filename ) );
 	if( outFile == NULL )
 	{
-		idLib::Warning( "Unable to open resource file %s or new output file", _filename );
+		idLib::Warning( "Unable to open resource file" S_COLOR_GRAY "'%s'" S_COLOR_WHITE "or new output file", _filename );
 		return;
 	}
 
@@ -337,7 +337,7 @@ void idResourceContainer::ExtractResourceFile( const char* _fileName, const char
 		return;
 	}
 
-	common->Printf( "extracting resource file %s\n", _fileName );
+	common->Printf( "  ...extracting resource file" S_COLOR_GRAY "'%s'\n", _fileName );
 
 	int _tableOffset;
 	int _tableLength;
@@ -502,7 +502,7 @@ void idResourceContainer::WriteResourceFile( const char* manifestName, const idS
 		return;
 	}
 
-	idLib::Printf( "Writing resource file %s\n", manifestName );
+	idLib::Printf( "  ...writing resource file" S_COLOR_GRAY "'%s'\n", manifestName );
 
 	// build multiple output files at 1GB each
 	idList < idStrList > outPutFiles;
@@ -555,11 +555,11 @@ void idResourceContainer::WriteResourceFile( const char* manifestName, const idS
 
 		if( resFile == NULL )
 		{
-			idLib::Warning( "Cannot open %s for writing.\n", fileName.c_str() );
+			idLib::Warning( "Cannot open " S_COLOR_GRAY "'%s'" S_COLOR_WHITE " for writing.\n", fileName.c_str() );
 			return;
 		}
 
-		idLib::Printf( "Writing resource file %s\n", fileName.c_str() );
+		idLib::Printf( "  ...writing resource file " S_COLOR_GRAY "'%s'\n", fileName.c_str() );
 
 		int	tableOffset = 0;
 		int	tableLength = 0;

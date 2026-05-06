@@ -159,7 +159,7 @@ bool idLangDict::Load( const byte* buffer, const int bufferLen, const char* name
 		return false;
 	}
 
-	idLib::Printf( "Reading %s", name );
+	idLib::Printf( "Reading " S_COLOR_GRAY "'%s'", name );
 
 	bool utf8 = false;
 
@@ -190,11 +190,11 @@ bool idLangDict::Load( const byte* buffer, const int bufferLen, const char* name
 
 	if( utf8 )
 	{
-		idLib::Printf( " as UTF-8\n" );
+		idLib::Printf( " as " S_COLOR_GRAY "UTF-8\n" );
 	}
 	else
 	{
-		idLib::Printf( " as ASCII\n" );
+		idLib::Printf( " as " S_COLOR_GRAY "ASCII\n" );
 	}
 
 	idStr tempKey;

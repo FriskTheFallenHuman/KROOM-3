@@ -1209,7 +1209,7 @@ void idAnimManager::Preload( const idPreloadManifest& manifest )
 			}
 		}
 		int	end = Sys_Milliseconds();
-		common->Printf( "%05d anims preloaded ( or were already loaded ) in %5.1f seconds\n", numLoaded, ( end - start ) * 0.001 );
+		common->Printf( S_COLOR_GRAY "%05d " S_COLOR_WHITE "anims preloaded ( or were already loaded ) in" S_COLOR_GRAY " %5.1f " S_COLOR_WHITE "seconds\n", numLoaded, ( end - start ) * 0.001 );
 		common->Printf( "----------------------------------------\n" );
 	}
 }

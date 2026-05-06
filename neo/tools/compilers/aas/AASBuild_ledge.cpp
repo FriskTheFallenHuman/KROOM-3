@@ -639,15 +639,15 @@ void idAASBuild::LedgeSubdivision( idBrushBSP& bsp )
 	numLedgeSubdivisions = 0;
 	ledgeList.Clear();
 
-	common->Printf( "[Ledge Subdivision]\n" );
+	idLib::Printf( "[Ledge Subdivision]\n" );
 
 	bsp.GetRootNode()->RemoveFlagRecurse( NODE_VISITED );
 	FindLedges_r( bsp.GetRootNode(), bsp.GetRootNode() );
 	bsp.GetRootNode()->RemoveFlagRecurse( NODE_VISITED );
 
-	common->Printf( "\r%6d ledges\n", ledgeList.Num() );
+	idLib::Printf( "\r%6d ledges\n", ledgeList.Num() );
 
 	LedgeSubdiv( bsp.GetRootNode() );
 
-	common->Printf( "\r%6d subdivisions\n", numLedgeSubdivisions );
+	idLib::Printf( "\r%6d subdivisions\n", numLedgeSubdivisions );
 }

@@ -26,31 +26,54 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#ifndef __COMPILER_PUBLIC_H__
-#define __COMPILER_PUBLIC_H__
+#ifndef __COMPILER_THREAD_H__
+#define __COMPILER_THREAD_H__
 
 /*
 ===============================================================================
 
-	Compilers for map, model, video etc. processing.
+idCompilerThread
+
+Runs any compiler function (dmap, AAS, etc.) on a
+dedicated background thread so the main thread stays
+responsive. Only one compiler job runs at a time.
 
 ===============================================================================
 */
 
-// map processing (also see SuperOptimizeOccluders in tr_local.h)
-void Dmap_f( const idCmdArgs& args );
+class idCompilerThread : public idSysThread
+{
+public:
+	typedef void ( *CompilerFunc_t )( const idCmdArgs& );
 
-// AAS file compiler
-void RunAAS_f( const idCmdArgs& args );
-void RunAASDir_f( const idCmdArgs& args );
-void RunReach_f( const idCmdArgs& args );
+	idCompilerThread();
+	~idCompilerThread();
 
-// video file encoding
-void RoQFileEncode_f( const idCmdArgs& args );
+	// Returns false if a job is already running.
+	bool            Dispatch( CompilerFunc_t func, const idCmdArgs& args,
+							  const char* threadName = "CompilerThread" );
 
-// wav amplitude processort
-void Amplitude_f( const idCmdArgs& args );
+	// Non-blocking poll.
+	bool            IsRunning() const;
 
-void RegisterCompilerThreadCommands();
+	// Blocks until the thread finishes.
+	void            WaitForCompletion();
 
-#endif	/* !__COMPILER_PUBLIC_H__ */
+	// Last exit code returned by the compiler.
+	int             GetResult() const
+	{
+		return result;
+	}
+
+private:
+	virtual int     Run() override;
+
+	CompilerFunc_t	func;
+	idCmdArgs	args;
+	volatile bool	running;
+	int	result;
+};
+
+extern idCompilerThread g_compilerThread;
+
+#endif	/* !__COMPILER_THREAD_H__ */

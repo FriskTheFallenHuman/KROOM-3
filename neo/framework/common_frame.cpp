@@ -504,6 +504,9 @@ void idCommonLocal::Frame()
 		// This is the only place this is incremented
 		idLib::frameNumber++;
 
+		// Flush any messages queued by worker threads so they appear in the in-game console
+		FlushThreadedPrintQueue();
+
 		// allow changing SIMD usage on the fly
 		if( com_forceGenericSIMD.IsModified() )
 		{

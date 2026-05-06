@@ -48,7 +48,7 @@ codec::codec()
 {
 	int i;
 
-	common->Printf( "init: initing.....\n" );
+	idLib::Printf( "init: initing.....\n" );
 	codebooksize = 256;
 	codebook2 = ( VQDATA** ) Mem_ClearedAlloc( 256 * sizeof( VQDATA* ), TAG_ROQ );
 	for( i = 0; i < 256; i++ )
@@ -73,7 +73,7 @@ codec::codec()
 
 codec::~codec()
 {
-	common->Printf( "codec: resetting\n" );
+	idLib::Printf( "codec: resetting\n" );
 	if( qStatus )
 	{
 		Mem_Free( qStatus );
@@ -176,12 +176,12 @@ void codec::Segment( int* alist, float* flist, int numElements, float rmse )
 
 	lineout = ( byte* )Mem_ClearedAlloc( 4 * 1024, TAG_ROQ );
 
-	common->Printf( "trying %s\n", cbFile );
+	idLib::Printf( "trying %s\n", cbFile );
 	fpcb = fileSystem->OpenFileRead( cbFile );
 	if( !fpcb )
 	{
 		doopen = true;
-		common->Printf( "failed....\n" );
+		idLib::Printf( "failed....\n" );
 	}
 	else
 	{
@@ -196,14 +196,14 @@ void codec::Segment( int* alist, float* flist, int numElements, float rmse )
 		if( fpcb->Read( lineout, x ) != x )
 		{
 			doopen = true;
-			common->Printf( "failed....\n" );
+			idLib::Printf( "failed....\n" );
 		}
 		fileSystem->CloseFile( fpcb );
 	}
 
 	if( doopen )
 	{
-		common->Printf( "segment: making %s\n", cbFile );
+		idLib::Printf( "segment: making %s\n", cbFile );
 		numc = numElements;
 		if( numElements > numc )
 		{
@@ -258,7 +258,7 @@ void codec::Segment( int* alist, float* flist, int numElements, float rmse )
 				}
 			}
 		}
-		common->Printf( "segment: %d 4x4 cels to vq\n", numEntries );
+		idLib::Printf( "segment: %d 4x4 cels to vq\n", numEntries );
 
 		VQ( numEntries, dimension4, cbook, snrBook, codebook4, true );
 
@@ -286,7 +286,7 @@ void codec::Segment( int* alist, float* flist, int numElements, float rmse )
 				}
 			}
 		}
-		common->Printf( "segment: %d 2x2 cels to vq\n", numEntries );
+		idLib::Printf( "segment: %d 2x2 cels to vq\n", numEntries );
 
 		VQ( numEntries, dimension2, cbook, snrBook, codebook2, false );
 
@@ -341,7 +341,7 @@ void codec::Segment( int* alist, float* flist, int numElements, float rmse )
 			{
 				fcr = 255;
 			}
-			//common->Printf(" fcr == %f, fcb == %f\n", fcr, fcb );
+			//idLib::Printf(" fcr == %f, fcb == %f\n", fcr, fcb );
 			lineout[index++] = ( byte )fcr;
 			lineout[index++] = ( byte )fcb;
 		}
@@ -369,10 +369,10 @@ void codec::Segment( int* alist, float* flist, int numElements, float rmse )
 		}
 
 		fpcb = fileSystem->OpenFileWrite( cbFile );
-		common->Printf( "made up %d entries\n", index );
+		idLib::Printf( "made up %d entries\n", index );
 		fpcb->Write( lineout, index );
 		fileSystem->CloseFile( fpcb );
-		common->Printf( "finished write\n" );
+		idLib::Printf( "finished write\n" );
 	}
 
 	for( y = 0; y < 256; y++ )
@@ -489,7 +489,7 @@ void codec::SetPreviousImage( const char* filename, NSBitmapImageRep* timage )
 	{
 		delete previousImage[1];
 	}
-	common->Printf( "setPreviousImage:%s\n", filename );
+	idLib::Printf( "setPreviousImage:%s\n", filename );
 
 	previousImage[0] = new NSBitmapImageRep( );
 	previousImage[1] = new NSBitmapImageRep( );
@@ -501,7 +501,7 @@ void codec::SetPreviousImage( const char* filename, NSBitmapImageRep* timage )
 	pixelsHigh = previousImage[0]->pixelsHigh();
 	pixelsWide = previousImage[0]->pixelsWide();
 
-	common->Printf( "setPreviousImage: %dx%d\n", pixelsWide, pixelsHigh );
+	idLib::Printf( "setPreviousImage: %dx%d\n", pixelsWide, pixelsHigh );
 }
 
 void codec::MakePreviousImage( quadcel* pquad )
@@ -588,7 +588,7 @@ void codec::MakePreviousImage( quadcel* pquad )
 					}
 					if( diff == false && whichFrame )
 					{
-						common->Printf( "drawImage: SLD just changed the same thing\n" );
+						idLib::Printf( "drawImage: SLD just changed the same thing\n" );
 					}
 					break;
 				case	PAT:
@@ -633,7 +633,7 @@ void codec::MakePreviousImage( quadcel* pquad )
 					}
 					if( diff == false && whichFrame )
 					{
-						common->Printf( "drawImage: PAT just changed the same thing\n" );
+						idLib::Printf( "drawImage: PAT just changed the same thing\n" );
 					}
 					break;
 				case	CCC:
@@ -687,19 +687,19 @@ void codec::MakePreviousImage( quadcel* pquad )
 					if( diff == false && whichFrame )
 					{
 						/*
-						common->Printf("drawImage: CCC just changed the same thing\n");
-						common->Printf("sparseEncode: something is wrong here\n");
-						common->Printf("xat:    %d\n", pquad[i].xat);
-						common->Printf("yat:    %d\n", pquad[i].yat);
-						common->Printf("size    %d\n", pquad[i].size);
-						common->Printf("type:   %d\n", pquad[i].status);
-						common->Printf("motsnr: %0f\n", pquad[i].snr[FCC]);
-						common->Printf("cccsnr: %0f\n", pquad[i].snr[CCC]);
-						common->Printf("rmse:   %0f\n", pquad[i].rsnr);
-						common->Printf("pat0:   %0d\n", pquad[i].patten[1]);
-						common->Printf("pat1:   %0d\n", pquad[i].patten[2]);
-						common->Printf("pat2:   %0d\n", pquad[i].patten[3]);
-						common->Printf("pat3:   %0d\n", pquad[i].patten[4]);
+						idLib::Printf("drawImage: CCC just changed the same thing\n");
+						idLib::Printf("sparseEncode: something is wrong here\n");
+						idLib::Printf("xat:    %d\n", pquad[i].xat);
+						idLib::Printf("yat:    %d\n", pquad[i].yat);
+						idLib::Printf("size    %d\n", pquad[i].size);
+						idLib::Printf("type:   %d\n", pquad[i].status);
+						idLib::Printf("motsnr: %0f\n", pquad[i].snr[FCC]);
+						idLib::Printf("cccsnr: %0f\n", pquad[i].snr[CCC]);
+						idLib::Printf("rmse:   %0f\n", pquad[i].rsnr);
+						idLib::Printf("pat0:   %0d\n", pquad[i].patten[1]);
+						idLib::Printf("pat1:   %0d\n", pquad[i].patten[2]);
+						idLib::Printf("pat2:   %0d\n", pquad[i].patten[3]);
+						idLib::Printf("pat3:   %0d\n", pquad[i].patten[4]);
 						//exit(1);
 						*/
 					}
@@ -716,7 +716,7 @@ void codec::MakePreviousImage( quadcel* pquad )
 						dx = pquad[i].xat - ( ( pquad[i].domain >> 8 ) - 128 ) * 2;
 						dy = pquad[i].yat - ( ( pquad[i].domain & 0xff ) - 128 ) * 2;
 					}
-//				if (pquad[i].yat == 0) common->Printf("dx = %d, dy = %d, xat = %d\n", dx, dy, pquad[i].xat);
+//				if (pquad[i].yat == 0) idLib::Printf("dx = %d, dy = %d, xat = %d\n", dx, dy, pquad[i].xat);
 
 					ind = ( dy * pWide + dx ) * 4;
 					for( dy = 0; dy < size; dy++ )
@@ -746,12 +746,12 @@ void codec::MakePreviousImage( quadcel* pquad )
 						}
 						ind += ( pWide - size ) * 4;
 					}
-//				if (diff == false && whichFrame) common->Printf("drawImage: FCC just changed the same thing\n");
+//				if (diff == false && whichFrame) idLib::Printf("drawImage: FCC just changed the same thing\n");
 					break;
 				case	MOT:
 					break;
 				default:
-					common->Error( "bad code!!\n" );
+					idLib::Error( "bad code!!\n" );
 					break;
 			}
 		}
@@ -777,7 +777,7 @@ void codec::MakePreviousImage( quadcel* pquad )
 
 	if( theRoQ->IsQuiet() == false )
 	{
-		common->Printf( "drawImage: used %d 4x4 and %d 2x2 VQ cels\n", x, y );
+		idLib::Printf( "drawImage: used %d 4x4 and %d 2x2 VQ cels\n", x, y );
 	}
 
 	Mem_Free( idataA );
@@ -811,7 +811,7 @@ void codec::InitImages()
 		lutimage = previousImage[temp]->bitmapData();
 		if( theRoQ->IsQuiet() == false )
 		{
-			common->Printf( "initImage: remaking lut image using buffer %d\n", temp );
+			idLib::Printf( "initImage: remaking lut image using buffer %d\n", temp );
 		}
 		index0 = index1 = 0;
 		for( y = 0; y < pixelsHigh; y++ )
@@ -1481,7 +1481,7 @@ void codec::SparseEncode()
 
 	if( !previousImage[0] )
 	{
-		common->Printf( "sparseEncode: sparsely encoding a %d,%d image\n", pixelsWide, pixelsHigh );
+		idLib::Printf( "sparseEncode: sparsely encoding a %d,%d image\n", pixelsWide, pixelsHigh );
 	}
 	InitImages();
 
@@ -1576,7 +1576,7 @@ void codec::SparseEncode()
 
 	if( theRoQ->IsQuiet() == false )
 	{
-		common->Printf( "sparseEncode: rmse of quad0 is %f, size is %d (meant to be %d)\n", sRMSE, GetCurrentQuadOutputSize( qStatus ), fsize );
+		idLib::Printf( "sparseEncode: rmse of quad0 is %f, size is %d (meant to be %d)\n", sRMSE, GetCurrentQuadOutputSize( qStatus ), fsize );
 	}
 
 	onf = 0;
@@ -1604,7 +1604,7 @@ void codec::SparseEncode()
 	}
 	if (temp) { dxMean /= temp; dyMean /= temp; }
 	*/
-	common->Printf( "sparseEncode: dx/dy mean is %d,%d\n", dxMean, dyMean );
+	idLib::Printf( "sparseEncode: dx/dy mean is %d,%d\n", dxMean, dyMean );
 
 	detail = false;
 	if( codebookmade && whichFrame > 4 )
@@ -1635,15 +1635,15 @@ void codec::SparseEncode()
 					dy = ( qStatus[i].domain & 0xff ) - 128 - dyMean + 8;
 					if( ( dx < 0 || dx > 15 || dy < 0 || dy > 15 ) && qStatus[i].snr[FCC] != 9999 && qStatus[i].status == FCC )
 					{
-						common->Printf( "sparseEncode: something is wrong here, dx/dy is %d,%d after being clamped\n", dx, dy );
-						common->Printf( "xat:    %d\n", qStatus[i].xat );
-						common->Printf( "yat:    %d\n", qStatus[i].yat );
-						common->Printf( "size    %d\n", qStatus[i].size );
-						common->Printf( "type:   %d\n", qStatus[i].status );
-						common->Printf( "mot:    %04x\n", qStatus[i].domain );
-						common->Printf( "motsnr: %0f\n", qStatus[i].snr[FCC] );
-						common->Printf( "rmse:   %0f\n", qStatus[i].rsnr );
-						common->Error( "need to go away now\n" );
+						idLib::Printf( "sparseEncode: something is wrong here, dx/dy is %d,%d after being clamped\n", dx, dy );
+						idLib::Printf( "xat:    %d\n", qStatus[i].xat );
+						idLib::Printf( "yat:    %d\n", qStatus[i].yat );
+						idLib::Printf( "size    %d\n", qStatus[i].size );
+						idLib::Printf( "type:   %d\n", qStatus[i].status );
+						idLib::Printf( "mot:    %04x\n", qStatus[i].domain );
+						idLib::Printf( "motsnr: %0f\n", qStatus[i].snr[FCC] );
+						idLib::Printf( "rmse:   %0f\n", qStatus[i].rsnr );
+						idLib::Error( "need to go away now\n" );
 					}
 				}
 			}
@@ -1651,16 +1651,16 @@ void codec::SparseEncode()
 			theRoQ->MarkQuadx( qStatus[i].xat, qStatus[i].yat, qStatus[i].size, qStatus[i].rsnr, qStatus[i].status );
 			/*
 			if (qStatus[i].status==FCC && qStatus[i].snr[FCC]>qStatus[i].snr[SLD]) {
-						common->Printf("sparseEncode: something is wrong here\n");
-						common->Printf("xat:    %d\n", qStatus[i].xat);
-						common->Printf("yat:    %d\n", qStatus[i].yat);
-						common->Printf("size    %d\n", qStatus[i].size);
-						common->Printf("type:   %d\n", qStatus[i].status);
-						common->Printf("mot:    %04x\n", qStatus[i].domain);
-						common->Printf("motsnr: %0f\n", qStatus[i].snr[FCC]);
-						common->Printf("sldsnr: %0f\n", qStatus[i].snr[SLD]);
-						common->Printf("rmse:   %0f\n", qStatus[i].rsnr);
-						//common->Error("need to go away now\n");
+						idLib::Printf("sparseEncode: something is wrong here\n");
+						idLib::Printf("xat:    %d\n", qStatus[i].xat);
+						idLib::Printf("yat:    %d\n", qStatus[i].yat);
+						idLib::Printf("size    %d\n", qStatus[i].size);
+						idLib::Printf("type:   %d\n", qStatus[i].status);
+						idLib::Printf("mot:    %04x\n", qStatus[i].domain);
+						idLib::Printf("motsnr: %0f\n", qStatus[i].snr[FCC]);
+						idLib::Printf("sldsnr: %0f\n", qStatus[i].snr[SLD]);
+						idLib::Printf("rmse:   %0f\n", qStatus[i].rsnr);
+						//idLib::Error("need to go away now\n");
 			}
 			*/
 		}
@@ -1668,8 +1668,8 @@ void codec::SparseEncode()
 
 	if( theRoQ->IsQuiet() == false )
 	{
-		common->Printf( "sparseEncode: rmse of quad0 is %f, size is %d (meant to be %d)\n", GetCurrentRMSE( qStatus ), GetCurrentQuadOutputSize( qStatus ), fsize );
-		common->Printf( "sparseEncode: %d outside fcc limits\n", temp );
+		idLib::Printf( "sparseEncode: rmse of quad0 is %f, size is %d (meant to be %d)\n", GetCurrentRMSE( qStatus ), GetCurrentQuadOutputSize( qStatus ), fsize );
+		idLib::Printf( "sparseEncode: %d outside fcc limits\n", temp );
 	}
 
 	onf = 0;
@@ -1752,7 +1752,7 @@ void codec::SparseEncode()
 		}
 	}
 
-	common->Printf( "sparseEncode: rmse of frame %d is %f, size is %d\n", whichFrame, GetCurrentRMSE( qStatus ), GetCurrentQuadOutputSize( qStatus ) );
+	idLib::Printf( "sparseEncode: rmse of frame %d is %f, size is %d\n", whichFrame, GetCurrentRMSE( qStatus ), GetCurrentQuadOutputSize( qStatus ) );
 
 	if( previousImage[0] )
 	{
@@ -1783,7 +1783,7 @@ void codec::SparseEncode()
 				j++;
 			}
 		}
-		common->Printf( "sparseEncode: for 08x08 CCC = %d, FCC = %d, MOT = %d, SLD = %d, PAT = %d\n", num[CCC], num[FCC], num[MOT], num[SLD], num[PAT] );
+		idLib::Printf( "sparseEncode: for 08x08 CCC = %d, FCC = %d, MOT = %d, SLD = %d, PAT = %d\n", num[CCC], num[FCC], num[MOT], num[SLD], num[PAT] );
 
 		for( i = 0; i < DEAD; i++ )
 		{
@@ -1800,9 +1800,9 @@ void codec::SparseEncode()
 				j++;
 			}
 		}
-		common->Printf( "sparseEncode: for 04x04 CCC = %d, FCC = %d, MOT = %d, SLD = %d, PAT = %d\n", num[CCC], num[FCC], num[MOT], num[SLD], num[PAT] );
+		idLib::Printf( "sparseEncode: for 04x04 CCC = %d, FCC = %d, MOT = %d, SLD = %d, PAT = %d\n", num[CCC], num[FCC], num[MOT], num[SLD], num[PAT] );
 
-		common->Printf( "sparseEncode: average RMSE = %f, numActiveQuadCels = %d, estSize = %d, slop = %d \n", GetCurrentRMSE( qStatus ), j, GetCurrentQuadOutputSize( qStatus ), slop );
+		idLib::Printf( "sparseEncode: average RMSE = %f, numActiveQuadCels = %d, estSize = %d, slop = %d \n", GetCurrentRMSE( qStatus ), j, GetCurrentQuadOutputSize( qStatus ), slop );
 	}
 
 	theRoQ->WriteFrame( qStatus );
@@ -1847,7 +1847,7 @@ void codec::EncodeNothing()
 
 	if( !previousImage[0] )
 	{
-		common->Printf( "sparseEncode: sparsely encoding a %d,%d image\n", pixelsWide, pixelsHigh );
+		idLib::Printf( "sparseEncode: sparsely encoding a %d,%d image\n", pixelsWide, pixelsHigh );
 	}
 	InitImages();
 
@@ -1924,7 +1924,7 @@ void codec::EncodeNothing()
 //
 	sRMSE = GetCurrentRMSE( qStatus );
 
-	common->Printf( "sparseEncode: rmse of frame %d is %f, size is %d\n", whichFrame, sRMSE, GetCurrentQuadOutputSize( qStatus ) );
+	idLib::Printf( "sparseEncode: rmse of frame %d is %f, size is %d\n", whichFrame, sRMSE, GetCurrentQuadOutputSize( qStatus ) );
 
 
 	if( theRoQ->IsQuiet() == false )
@@ -1945,7 +1945,7 @@ void codec::EncodeNothing()
 				j++;
 			}
 		}
-		common->Printf( "sparseEncode: for 08x08 CCC = %d, FCC = %d, MOT = %d, SLD = %d, PAT = %d\n", num[CCC], num[FCC], num[MOT], num[SLD], num[PAT] );
+		idLib::Printf( "sparseEncode: for 08x08 CCC = %d, FCC = %d, MOT = %d, SLD = %d, PAT = %d\n", num[CCC], num[FCC], num[MOT], num[SLD], num[PAT] );
 
 		for( i = 0; i < DEAD; i++ )
 		{
@@ -1962,9 +1962,9 @@ void codec::EncodeNothing()
 				j++;
 			}
 		}
-		common->Printf( "sparseEncode: for 04x04 CCC = %d, FCC = %d, MOT = %d, SLD = %d, PAT = %d\n", num[CCC], num[FCC], num[MOT], num[SLD], num[PAT] );
+		idLib::Printf( "sparseEncode: for 04x04 CCC = %d, FCC = %d, MOT = %d, SLD = %d, PAT = %d\n", num[CCC], num[FCC], num[MOT], num[SLD], num[PAT] );
 
-		common->Printf( "sparseEncode: average RMSE = %f, numActiveQuadCels = %d, estSize = %d \n", GetCurrentRMSE( qStatus ), j, GetCurrentQuadOutputSize( qStatus ) );
+		idLib::Printf( "sparseEncode: average RMSE = %f, numActiveQuadCels = %d, estSize = %d \n", GetCurrentRMSE( qStatus ), j, GetCurrentQuadOutputSize( qStatus ) );
 	}
 
 	theRoQ->WriteFrame( qStatus );
@@ -2038,7 +2038,7 @@ void codec::VQ( const int numEntries, const int dimension, const unsigned char* 
 		}
 	}
 
-	common->Printf( "VQ: has %d entries to process\n", numFinalEntries );
+	idLib::Printf( "VQ: has %d entries to process\n", numFinalEntries );
 
 	//
 	// are we done?
@@ -2246,7 +2246,7 @@ void codec::VQ( const int numEntries, const int dimension, const unsigned char* 
 			import[bestOtherIndex] += import[bestIndex];
 			if( ( numFinalEntries & 511 ) == 0 )
 			{
-				common->Printf( "VQ: has %d entries to process\n", numFinalEntries );
+				idLib::Printf( "VQ: has %d entries to process\n", numFinalEntries );
 				common->UpdateScreen( false );
 			}
 		}
@@ -2267,16 +2267,16 @@ void codec::VQ( const int numEntries, const int dimension, const unsigned char* 
 			}
 			if( onEntry == 0 )
 			{
-				common->Printf( "First vq = %d\n ", i );
+				idLib::Printf( "First vq = %d\n ", i );
 			}
 			if( onEntry == 255 )
 			{
-				common->Printf( "last vq = %d\n", i );
+				idLib::Printf( "last vq = %d\n", i );
 			}
 			onEntry++;
 		}
 	}
 
 	int		endMsec = Sys_Milliseconds();
-	common->Printf( "VQ took %i msec\n", endMsec - startMsec );
+	idLib::Printf( "VQ took %i msec\n", endMsec - startMsec );
 }

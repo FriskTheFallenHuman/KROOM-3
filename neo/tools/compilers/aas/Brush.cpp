@@ -57,7 +57,7 @@ void DisplayRealTimeString( const char* string, ... )
 		va_start( argPtr, string );
 		idStr::vsnPrintf( buf, sizeof( buf ), string, argPtr );
 		va_end( argPtr );
-		common->Printf( "%s", buf );
+		idLib::Printf( "%s", buf );
 		lastUpdateTime = time;
 	}
 }
@@ -327,7 +327,7 @@ void idBrush::BoundBrush( const idBrush* original )
 			bm->WriteBrush( original );
 			delete bm;
 		}
-		common->Error( "idBrush::BoundBrush: brush %d on entity %d without windings", primitiveNum, entityNum );
+		idLib::Error( "idBrush::BoundBrush: brush %d on entity %d without windings", primitiveNum, entityNum );
 	}
 
 	for( i = 0; i < 3; i++ )
@@ -340,7 +340,7 @@ void idBrush::BoundBrush( const idBrush* original )
 				bm->WriteBrush( original );
 				delete bm;
 			}
-			common->Error( "idBrush::BoundBrush: brush %d on entity %d is unbounded", primitiveNum, entityNum );
+			idLib::Error( "idBrush::BoundBrush: brush %d on entity %d is unbounded", primitiveNum, entityNum );
 		}
 	}
 }
@@ -824,10 +824,10 @@ int idBrush::Split( const idPlane& plane, int planeNum, idBrush** front, idBrush
 		else if( mid->IsHuge() )
 		{
 			// if the winding is huge then the brush is unbounded
-			common->Warning( "brush %d on entity %d is unbounded"
-							 "( %1.2f %1.2f %1.2f )-( %1.2f %1.2f %1.2f )-( %1.2f %1.2f %1.2f )", primitiveNum, entityNum,
-							 bounds[0][0], bounds[0][1], bounds[0][2], bounds[1][0], bounds[1][1], bounds[1][2],
-							 bounds[1][0] - bounds[0][0], bounds[1][1] - bounds[0][1], bounds[1][2] - bounds[0][2] );
+			idLib::Warning( "brush %d on entity %d is unbounded"
+							"( %1.2f %1.2f %1.2f )-( %1.2f %1.2f %1.2f )-( %1.2f %1.2f %1.2f )", primitiveNum, entityNum,
+							bounds[0][0], bounds[0][1], bounds[0][2], bounds[1][0], bounds[1][1], bounds[1][2],
+							bounds[1][0] - bounds[0][0], bounds[1][1] - bounds[0][1], bounds[1][2] - bounds[0][2] );
 			delete mid;
 			mid = NULL;
 		}
@@ -1137,7 +1137,7 @@ void idBrush::ExpandForAxialBox( const idBounds& bounds )
 
 	if( !CreateWindings() )
 	{
-		common->Error( "idBrush::ExpandForAxialBox: brush %d on entity %d imploded", primitiveNum, entityNum );
+		idLib::Error( "idBrush::ExpandForAxialBox: brush %d on entity %d imploded", primitiveNum, entityNum );
 	}
 
 	/*
@@ -1486,8 +1486,8 @@ void idBrushList::Chop( bool ( *ChopAllowed )( idBrush* b1, idBrush* b2 ) )
 	idPlaneSet planeList;
 
 #ifdef OUTPUT_CHOP_STATS
-	common->Printf( "[Brush CSG]\n" );
-	common->Printf( "%6d original brushes\n", this->Num() );
+	idLib::Printf( "[Brush CSG]\n" );
+	idLib::Printf( "%6d original brushes\n", this->Num() );
 #endif
 
 	CreatePlaneList( planeList );
@@ -1620,7 +1620,7 @@ void idBrushList::Chop( bool ( *ChopAllowed )( idBrush* b1, idBrush* b2 ) )
 	*this = keep;
 
 #ifdef OUTPUT_CHOP_STATS
-	common->Printf( "\r%6d output brushes\n", Num() );
+	idLib::Printf( "\r%6d output brushes\n", Num() );
 #endif
 }
 
@@ -1636,8 +1636,8 @@ void idBrushList::Merge( bool ( *MergeAllowed )( idBrush* b1, idBrush* b2 ) )
 	idBrush* b1, *b2, *nextb2;
 	int numMerges;
 
-	common->Printf( "[Brush Merge]\n" );
-	common->Printf( "%6d original brushes\n", Num() );
+	idLib::Printf( "[Brush Merge]\n" );
+	idLib::Printf( "%6d original brushes\n", Num() );
 
 	CreatePlaneList( planeList );
 
@@ -1668,7 +1668,7 @@ void idBrushList::Merge( bool ( *MergeAllowed )( idBrush* b1, idBrush* b2 ) )
 		}
 	}
 
-	common->Printf( "\r%6d brushes merged\n", numMerges );
+	idLib::Printf( "\r%6d brushes merged\n", numMerges );
 }
 
 /*
@@ -1764,12 +1764,12 @@ idBrushMap::idBrushMap( const idStr& fileName, const idStr& ext )
 	qpath += ext;
 	qpath.SetFileExtension( "map" );
 
-	common->Printf( "writing %s...\n", qpath.c_str() );
+	idLib::Printf( "writing %s...\n", qpath.c_str() );
 
 	fp = fileSystem->OpenFileWrite( qpath, "fs_devpath" );
 	if( !fp )
 	{
-		common->Error( "Couldn't open %s\n", qpath.c_str() );
+		idLib::Error( "Couldn't open %s\n", qpath.c_str() );
 		return;
 	}
 

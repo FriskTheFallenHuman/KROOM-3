@@ -758,7 +758,7 @@ bool idCinematicLocal::InitFromFFMPEGFile( const char* qpath, bool amilooping )
 			dst_smp = dec_ctx2->sample_fmt;														// SRS - Must always define the destination format
 			hasplanar = false;
 		}
-		common->Printf( "Cinematic audio stream found: Sample Rate=%d Hz, Channels=%d, Format=%s, Planar=%d\n", dec_ctx2->sample_rate,
+		common->DPrintf( "Cinematic audio stream found: Sample Rate=%d Hz, Channels=%d, Format=%s, Planar=%d\n", dec_ctx2->sample_rate,
 #if	LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59,37,100)
 						dec_ctx2->ch_layout.nb_channels,
 #else
@@ -807,7 +807,7 @@ bool idCinematicLocal::InitFromFFMPEGFile( const char* qpath, bool amilooping )
 	}
 	animationLength = durationSec * 1000;
 	frameRate = av_q2d( fmt_ctx->streams[video_stream_index]->avg_frame_rate );
-	common->Printf( "Loaded FFMPEG file: '%s', looping=%d, %dx%d, %3.2f FPS, %4.1f sec\n", qpath, looping, CIN_WIDTH, CIN_HEIGHT, frameRate, durationSec );
+	common->Printf( S_COLOR_GRAY "  ...Movie file: " S_COLOR_WHITE "'%s'\n", qpath );
 
 	// SRS - Get image buffer size (dimensions mod 32 for bik & webm codecs, subsumes mod 16 for mp4 codec), then allocate image and fill with correct parameters
 	int bufWidth = ( CIN_WIDTH + 31 ) & ~31;
@@ -938,7 +938,7 @@ bool idCinematicLocal::InitFromBinkDecFile( const char* qpath, bool amilooping )
 	{
 		trackIndex = 0;														// SRS - Use the first audio track - is this reasonable?
 		binkInfo = Bink_GetAudioTrackDetails( binkHandle, trackIndex );
-		common->Printf( "Cinematic audio stream found: Sample Rate=%d Hz, Channels=%d, Format=16-bit\n", binkInfo.sampleRate, binkInfo.nChannels );
+		common->DPrintf( "Cinematic audio stream found: Sample Rate=%d Hz, Channels=%d, Format=16-bit\n", binkInfo.sampleRate, binkInfo.nChannels );
 #if defined(_MSC_VER) && !defined(USE_OPENAL)
 		cinematicAudio = new( TAG_AUDIO ) CinematicAudio_XAudio2;
 #else
@@ -951,7 +951,7 @@ bool idCinematicLocal::InitFromBinkDecFile( const char* qpath, bool amilooping )
 	numFrames = Bink_GetNumFrames( binkHandle );
 	float durationSec = numFrames / frameRate;      // SRS - fixed Bink durationSec calculation
 	animationLength = durationSec * 1000;           // SRS - animationLength is in milliseconds
-	common->Printf( "Loaded Bink file: '%s', looping=%d, %dx%d, %3.2f FPS, %4.1f sec\n", qpath, looping, CIN_WIDTH, CIN_HEIGHT, frameRate, durationSec );
+	common->Printf( S_COLOR_GRAY "  ...Bink file: " S_COLOR_WHITE "'%s'\n", qpath );
 
 	memset( yuvBuffer, 0, sizeof( yuvBuffer ) );
 
@@ -1126,7 +1126,7 @@ bool idCinematicLocal::InitFromFile( const char* qpath, bool amilooping )
 		RoQ_init();
 		status = FMV_PLAY;
 		ImageForTime( 0 );
-		common->Printf( "Loaded RoQ file: '%s', looping=%d, %dx%d, %3.2f FPS\n", fileName.c_str(), looping, CIN_WIDTH, CIN_HEIGHT, frameRate );
+		common->Printf( S_COLOR_GRAY "  ...RoQ file: " S_COLOR_WHITE "'%s'\n", fileName.c_str() );
 		status = ( looping ) ? FMV_PLAY : FMV_IDLE;
 		return true;
 	}

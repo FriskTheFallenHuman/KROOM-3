@@ -138,28 +138,28 @@ void PrintTree_r( node_t* node, int depth )
 
 	for( i = 0 ; i < depth ; i++ )
 	{
-		common->Printf( "  " );
+		idLib::Printf( "  " );
 	}
 	if( node->planenum == PLANENUM_LEAF )
 	{
 		if( !node->brushlist )
 		{
-			common->Printf( "NULL\n" );
+			idLib::Printf( "NULL\n" );
 		}
 		else
 		{
 			for( bb = node->brushlist ; bb ; bb = bb->next )
 			{
-				common->Printf( "%i ", bb->original->brushnum );
+				idLib::Printf( "%i ", bb->original->brushnum );
 			}
-			common->Printf( "\n" );
+			idLib::Printf( "\n" );
 		}
 		return;
 	}
 
 	idPlane& plane = dmapGlobals.mapPlanes[node->planenum];
-	common->Printf( "#%i (%5.2f %5.2f %5.2f %5.2f)\n", node->planenum,
-					plane[0], plane[1], plane[2], plane[3] );
+	idLib::Printf( "#%i (%5.2f %5.2f %5.2f %5.2f)\n", node->planenum,
+				   plane[0], plane[1], plane[2], plane[3] );
 	PrintTree_r( node->children[0], depth + 1 );
 	PrintTree_r( node->children[1], depth + 1 );
 }
@@ -725,8 +725,8 @@ tree_t* FaceBSP( bspFace_t* list )
 	if( dmapGlobals.entityNum == 0 )
 	{
 		int depth = log2f( c_faceLeafs + 1 );
-		common->Printf( "BSP depth = %i and %5i leafs\n", depth, c_faceLeafs );
-		common->Printf( "%5i split counters\n", dmapGlobals.splitPlanesCounter.Num() );
+		idLib::Printf( "BSP depth = %i and %5i leafs\n", depth, c_faceLeafs );
+		idLib::Printf( "%5i split counters\n", dmapGlobals.splitPlanesCounter.Num() );
 
 		if( dmapGlobals.bspAlternateSplitWeights )
 		{
@@ -844,6 +844,3 @@ bspFace_t*	MakeStructuralBspFaceList( primitive_t* list )
 
 	return flist;
 }
-
-
-

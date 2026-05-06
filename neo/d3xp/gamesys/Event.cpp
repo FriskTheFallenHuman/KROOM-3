@@ -773,7 +773,7 @@ void idEvent::Init()
 
 	eventDataAllocator.Init();
 
-	gameLocal.Printf( "...%i event definitions\n", idEventDef::NumEventCommands() );
+	gameLocal.Printf( "..." S_COLOR_WHITE "%i" S_COLOR_DEFAULT " event definitions\n", idEventDef::NumEventCommands() );
 
 	// the event system has started
 	initialized = true;

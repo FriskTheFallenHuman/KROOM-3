@@ -179,13 +179,15 @@ void idCommonLocal::VPrintf( const char* fmt, va_list args )
 
 	if( !idLib::IsMainThread() )
 	{
-		// RB: printf should be thread-safe on Linux
+		// Still send to debugger/terminal for immediate visibility
 #if defined(_WIN32)
 		OutputDebugString( msg );
 #else
 		printf( "%s", msg );
 #endif
-		// RB end
+		// Queue the message for the main thread to print to the in-game console/log
+		idScopedCriticalSection lock( threadedPrintQueueMutex );
+		threadedPrintQueue.Append( msg );
 		return;
 	}
 
@@ -331,7 +333,7 @@ void idCommonLocal::DPrintf( const char* fmt, ... )
 	bool temp = com_refreshOnPrint;
 	com_refreshOnPrint = false;
 
-	Printf( S_COLOR_RED"%s", msg );
+	Printf( S_COLOR_GRAY "%s", msg );
 
 	com_refreshOnPrint = temp;
 }
@@ -358,7 +360,7 @@ void idCommonLocal::DWarning( const char* fmt, ... )
 	va_end( argptr );
 	msg[sizeof( msg ) - 1] = '\0';
 
-	Printf( S_COLOR_YELLOW"WARNING: %s\n", msg );
+	Printf( S_COLOR_ORANGE "WARNING: " S_COLOR_GRAY "%s\n", msg );
 }
 
 /*
@@ -373,17 +375,33 @@ void idCommonLocal::Warning( const char* fmt, ... )
 	va_list		argptr;
 	char		msg[MAX_PRINT_MSG_SIZE];
 
-	if( !idLib::IsMainThread() )
-	{
-		return;	// not thread safe!
-	}
-
 	va_start( argptr, fmt );
 	idStr::vsnPrintf( msg, sizeof( msg ), fmt, argptr );
 	va_end( argptr );
 	msg[sizeof( msg ) - 1] = 0;
 
-	Printf( S_COLOR_YELLOW "WARNING: " S_COLOR_RED "%s\n", msg );
+	// If called from a non-main thread, queue the formatted message
+	// for the main thread and store the raw warning for PrintWarnings()
+	if( !idLib::IsMainThread() )
+	{
+		char formatted[MAX_PRINT_MSG_SIZE];
+		idStr::snPrintf( formatted, sizeof( formatted ), S_COLOR_YELLOW "WARNING: " S_COLOR_WHITE "%s\n", msg );
+#if defined(_WIN32)
+		OutputDebugString( formatted );
+#else
+		printf( "%s", formatted );
+#endif
+
+		idScopedCriticalSection lock( threadedPrintQueueMutex );
+		threadedPrintQueue.Append( formatted );
+		if( threadedWarningList.Num() < MAX_WARNING_LIST )
+		{
+			threadedWarningList.AddUnique( msg );
+		}
+		return;
+	}
+
+	Printf( S_COLOR_YELLOW "WARNING: " S_COLOR_WHITE "%s\n", msg );
 
 	if( warningList.Num() < MAX_WARNING_LIST )
 	{
@@ -400,6 +418,20 @@ void idCommonLocal::PrintWarnings()
 {
 	int i;
 
+	// Move any warnings produced on worker threads into the main warning list
+	idScopedCriticalSection lock( threadedPrintQueueMutex );
+	if( threadedWarningList.Num() )
+	{
+		for( int wi = 0; wi < threadedWarningList.Num(); wi++ )
+		{
+			if( warningList.Num() < MAX_WARNING_LIST )
+			{
+				warningList.AddUnique( threadedWarningList[wi] );
+			}
+		}
+		threadedWarningList.Clear();
+	}
+
 	if( !warningList.Num() )
 	{
 		return;
@@ -410,7 +442,7 @@ void idCommonLocal::PrintWarnings()
 
 	for( i = 0; i < warningList.Num(); i++ )
 	{
-		Printf( S_COLOR_YELLOW "WARNING: " S_COLOR_RED "%s\n", warningList[i].c_str() );
+		Printf( S_COLOR_YELLOW "WARNING: " S_COLOR_WHITE "%s\n", warningList[i].c_str() );
 	}
 	if( warningList.Num() )
 	{
@@ -432,8 +464,10 @@ idCommonLocal::ClearWarnings
 */
 void idCommonLocal::ClearWarnings( const char* reason )
 {
+	idScopedCriticalSection lock( threadedPrintQueueMutex );
 	warningCaption = reason;
 	warningList.Clear();
+	threadedWarningList.Clear();
 }
 
 /*
@@ -489,6 +523,33 @@ void idCommonLocal::DumpWarnings()
 		osPath = fileSystem->RelativePathToOSPath( "warnings.txt", "fs_savepath" );
 		WinExec( va( "Notepad.exe %s", osPath.c_str() ), SW_SHOW );
 #endif
+	}
+}
+
+/*
+==================
+idCommonLocal::FlushThreadedPrintQueue
+
+Flush messages queued by non-main threads. Called from the main thread (Frame()).
+==================
+*/
+void idCommonLocal::FlushThreadedPrintQueue()
+{
+	idList<idStr> localQueue;
+
+	// move queued messages into a local list under lock
+	idScopedCriticalSection lock( threadedPrintQueueMutex );
+	if( threadedPrintQueue.Num() == 0 )
+	{
+		return;
+	}
+	localQueue = threadedPrintQueue;
+	threadedPrintQueue.Clear();
+
+	// print them on the main thread using Printf to preserve normal behavior
+	for( int i = 0; i < localQueue.Num(); i++ )
+	{
+		Printf( "%s", localQueue[i].c_str() );
 	}
 }
 

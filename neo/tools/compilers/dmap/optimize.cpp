@@ -89,13 +89,13 @@ static void ValidateEdgeCounts( optIsland_t* island )
 			}
 			else
 			{
-				common->Error( "ValidateEdgeCounts: mislinked" );
+				idLib::Error( "ValidateEdgeCounts: mislinked" );
 			}
 		}
 		if( c != 2 && c != 0 )
 		{
 			// this can still happen at diamond intersections
-//			common->Printf( "ValidateEdgeCounts: %i edges\n", c );
+//			idLib::Printf( "ValidateEdgeCounts: %i edges\n", c );
 		}
 	}
 }
@@ -112,7 +112,7 @@ static optEdge_t*	AllocEdge()
 
 	if( numOptEdges == MAX_OPT_EDGES )
 	{
-		common->Error( "MAX_OPT_EDGES" );
+		idLib::Error( "MAX_OPT_EDGES" );
 	}
 	e = &optEdges[ numOptEdges ];
 	numOptEdges++;
@@ -151,7 +151,7 @@ static	void RemoveEdgeFromVert( optEdge_t* e1, optVertex_t* vert )
 			}
 			else
 			{
-				common->Error( "RemoveEdgeFromVert: vert not found" );
+				idLib::Error( "RemoveEdgeFromVert: vert not found" );
 			}
 			return;
 		}
@@ -166,7 +166,7 @@ static	void RemoveEdgeFromVert( optEdge_t* e1, optVertex_t* vert )
 		}
 		else
 		{
-			common->Error( "RemoveEdgeFromVert: vert not found" );
+			idLib::Error( "RemoveEdgeFromVert: vert not found" );
 		}
 	}
 }
@@ -192,7 +192,7 @@ static	void UnlinkEdge( optEdge_t* e, optIsland_t* island )
 		}
 	}
 
-	common->Error( "RemoveEdgeFromIsland: couldn't free edge" );
+	idLib::Error( "RemoveEdgeFromIsland: couldn't free edge" );
 }
 
 
@@ -236,7 +236,7 @@ static optVertex_t* FindOptVertex( idDrawVert* v, optimizeGroup_t* opt )
 
 	if( numOptVerts >= MAX_OPT_VERTEXES )
 	{
-		common->Error( "MAX_OPT_VERTEXES" );
+		idLib::Error( "MAX_OPT_VERTEXES" );
 		return NULL;
 	}
 
@@ -726,7 +726,7 @@ static	void RemoveIfColinear( optVertex_t* ov, optIsland_t* island )
 		}
 		else
 		{
-			common->Error( "RemoveIfColinear: mislinked edge" );
+			idLib::Error( "RemoveIfColinear: mislinked edge" );
 		}
 	}
 
@@ -754,7 +754,7 @@ static	void RemoveIfColinear( optVertex_t* ov, optIsland_t* island )
 	}
 	else
 	{
-		common->Error( "RemoveIfColinear: mislinked edge" );
+		idLib::Error( "RemoveIfColinear: mislinked edge" );
 	}
 	if( e2->v1 == v2 )
 	{
@@ -766,12 +766,12 @@ static	void RemoveIfColinear( optVertex_t* ov, optIsland_t* island )
 	}
 	else
 	{
-		common->Error( "RemoveIfColinear: mislinked edge" );
+		idLib::Error( "RemoveIfColinear: mislinked edge" );
 	}
 
 	if( v1 == v3 )
 	{
-		common->Error( "RemoveIfColinear: mislinked edge" );
+		idLib::Error( "RemoveIfColinear: mislinked edge" );
 	}
 
 	// they must point in opposite directions
@@ -820,7 +820,7 @@ static	void RemoveIfColinear( optVertex_t* ov, optIsland_t* island )
 	// v2 should have no edges now
 	if( v2->edges )
 	{
-		common->Error( "RemoveIfColinear: didn't remove properly" );
+		idLib::Error( "RemoveIfColinear: didn't remove properly" );
 	}
 
 
@@ -1056,7 +1056,7 @@ static void LinkTriToEdge( optTri_t* optTri, optEdge_t* edge )
 		edge->frontTri = optTri;
 		return;
 	}
-	common->Error( "LinkTriToEdge: edge not found on tri" );
+	idLib::Error( "LinkTriToEdge: edge not found on tri" );
 }
 
 /*
@@ -1081,7 +1081,7 @@ static void CreateOptTri( optVertex_t* first, optEdge_t* e1, optEdge_t* e2, optI
 	}
 	else
 	{
-		common->Error( "CreateOptTri: mislinked edge" );
+		idLib::Error( "CreateOptTri: mislinked edge" );
 	}
 
 	if( e2->v1 == first )
@@ -1094,12 +1094,12 @@ static void CreateOptTri( optVertex_t* first, optEdge_t* e1, optEdge_t* e2, optI
 	}
 	else
 	{
-		common->Error( "CreateOptTri: mislinked edge" );
+		idLib::Error( "CreateOptTri: mislinked edge" );
 	}
 
 	if( !IsTriangleValid( first, second, third ) )
 	{
-		common->Error( "CreateOptTri: invalid" );
+		idLib::Error( "CreateOptTri: invalid" );
 	}
 
 //DrawEdges( island );
@@ -1139,7 +1139,7 @@ static void CreateOptTri( optVertex_t* first, optEdge_t* e1, optEdge_t* e2, optI
 		}
 		else
 		{
-			common->Error( "BuildOptTriangles: mislinked edge" );
+			idLib::Error( "BuildOptTriangles: mislinked edge" );
 		}
 	}
 
@@ -1303,7 +1303,7 @@ static void BuildOptTriangles( optIsland_t* island )
 			}
 			else
 			{
-				common->Error( "BuildOptTriangles: mislinked edge" );
+				idLib::Error( "BuildOptTriangles: mislinked edge" );
 			}
 
 			// if the vertex has already been used, it can't be used again
@@ -1326,7 +1326,7 @@ static void BuildOptTriangles( optIsland_t* island )
 				}
 				else
 				{
-					common->Error( "BuildOptTriangles: mislinked edge" );
+					idLib::Error( "BuildOptTriangles: mislinked edge" );
 				}
 				if( e2 == e1 )
 				{
@@ -1361,7 +1361,7 @@ static void BuildOptTriangles( optIsland_t* island )
 					}
 					else
 					{
-						common->Error( "BuildOptTriangles: mislinked edge" );
+						idLib::Error( "BuildOptTriangles: mislinked edge" );
 					}
 
 					if( check == e1 || check == e2 )
@@ -1537,7 +1537,7 @@ void AddEdgeIfNotAlready( optVertex_t* v1, optVertex_t* v2 )
 		}
 		else
 		{
-			common->Error( "SplitEdgeByList: bad edge link" );
+			idLib::Error( "SplitEdgeByList: bad edge link" );
 		}
 	}
 
@@ -1745,7 +1745,7 @@ void SplitOriginalEdgesAtCrossings( optimizeGroup_t* opt )
 
 			if( !newVert )
 			{
-//common->Printf( "lines %i (%i to %i) and %i (%i to %i) are colinear\n", i, v1 - optVerts, v2 - optVerts,
+//idLib::Printf( "lines %i (%i to %i) and %i (%i to %i) are colinear\n", i, v1 - optVerts, v2 - optVerts,
 //		   j, v3 - optVerts, v4 - optVerts );	// !@#
 				// colinear, so add both verts of each edge to opposite
 				if( VertexBetween( v3, v1, v2 ) )
@@ -1785,13 +1785,13 @@ void SplitOriginalEdgesAtCrossings( optimizeGroup_t* opt )
 #if 0
 			if( newVert && newVert != v1 && newVert != v2 && newVert != v3 && newVert != v4 )
 			{
-				common->Printf( "lines %i (%i to %i) and %i (%i to %i) cross at new point %i\n", i, v1 - optVerts, v2 - optVerts,
-								j, v3 - optVerts, v4 - optVerts, newVert - optVerts );
+				idLib::Printf( "lines %i (%i to %i) and %i (%i to %i) cross at new point %i\n", i, v1 - optVerts, v2 - optVerts,
+							   j, v3 - optVerts, v4 - optVerts, newVert - optVerts );
 			}
 			else if( newVert )
 			{
-				common->Printf( "lines %i (%i to %i) and %i (%i to %i) intersect at old point %i\n", i, v1 - optVerts, v2 - optVerts,
-								j, v3 - optVerts, v4 - optVerts, newVert - optVerts );
+				idLib::Printf( "lines %i (%i to %i) and %i (%i to %i) intersect at old point %i\n", i, v1 - optVerts, v2 - optVerts,
+							   j, v3 - optVerts, v4 - optVerts, newVert - optVerts );
 			}
 #endif
 			if( newVert != v1 && newVert != v2 )
@@ -1863,7 +1863,7 @@ void SplitOriginalEdgesAtCrossings( optimizeGroup_t* opt )
 				}
 				if( l == numCross )
 				{
-//common->Printf( "line %i fragment from point %i to %i\n", i, sorted[j] - optVerts, sorted[k] - optVerts );
+//idLib::Printf( "line %i fragment from point %i to %i\n", i, sorted[j] - optVerts, sorted[k] - optVerts );
 					AddEdgeIfNotAlready( sorted[j], sorted[k] );
 				}
 			}
@@ -1884,7 +1884,7 @@ void SplitOriginalEdgesAtCrossings( optimizeGroup_t* opt )
 			if( ( optEdges[i].v1 == optEdges[j].v1 && optEdges[i].v2 == optEdges[j].v2 )
 					|| ( optEdges[i].v1 == optEdges[j].v2 && optEdges[i].v2 == optEdges[j].v1 ) )
 			{
-				common->Printf( "duplicated optEdge\n" );
+				idLib::Printf( "duplicated optEdge\n" );
 			}
 		}
 	}
@@ -2041,7 +2041,7 @@ static void AddVertexToIsland_r( optVertex_t* vert, optIsland_t* island )
 			e = e->v2link;
 			continue;
 		}
-		common->Error( "AddVertexToIsland_r: mislinked vert" );
+		idLib::Error( "AddVertexToIsland_r: mislinked vert" );
 	}
 
 }

@@ -444,23 +444,23 @@ bool idAASSettings::FromFile( const idStr& fileName )
 
 	name = fileName;
 
-	common->Printf( "loading %s\n", name.c_str() );
+	idLib::Printf( "loading %s\n", name.c_str() );
 
 	if( !src.LoadFile( name ) )
 	{
-		common->Error( "WARNING: couldn't load %s\n", name.c_str() );
+		idLib::Error( "WARNING: couldn't load %s\n", name.c_str() );
 		return false;
 	}
 
 	if( !src.ExpectTokenString( "settings" ) )
 	{
-		common->Error( "%s is not a settings file", name.c_str() );
+		idLib::Error( "%s is not a settings file", name.c_str() );
 		return false;
 	}
 
 	if( !FromParser( src ) )
 	{
-		common->Error( "failed to parse %s", name.c_str() );
+		idLib::Error( "failed to parse %s", name.c_str() );
 		return false;
 	}
 
@@ -478,11 +478,11 @@ bool idAASSettings::FromDict( const char* name, const idDict* dict )
 
 	if( !dict->GetVector( "mins", "0 0 0", bounds[ 0 ] ) )
 	{
-		common->Error( "Missing 'mins' in entityDef '%s'", name );
+		idLib::Error( "Missing 'mins' in entityDef '%s'", name );
 	}
 	if( !dict->GetVector( "maxs", "0 0 0", bounds[ 1 ] ) )
 	{
-		common->Error( "Missing 'maxs' in entityDef '%s'", name );
+		idLib::Error( "Missing 'maxs' in entityDef '%s'", name );
 	}
 
 	numBoundingBoxes = 1;
@@ -490,37 +490,37 @@ bool idAASSettings::FromDict( const char* name, const idDict* dict )
 
 	if( !dict->GetBool( "usePatches", "0", usePatches ) )
 	{
-		common->Error( "Missing 'usePatches' in entityDef '%s'", name );
+		idLib::Error( "Missing 'usePatches' in entityDef '%s'", name );
 	}
 
 	if( !dict->GetBool( "writeBrushMap", "0", writeBrushMap ) )
 	{
-		common->Error( "Missing 'writeBrushMap' in entityDef '%s'", name );
+		idLib::Error( "Missing 'writeBrushMap' in entityDef '%s'", name );
 	}
 
 	if( !dict->GetBool( "playerFlood", "0", playerFlood ) )
 	{
-		common->Error( "Missing 'playerFlood' in entityDef '%s'", name );
+		idLib::Error( "Missing 'playerFlood' in entityDef '%s'", name );
 	}
 
 	if( !dict->GetBool( "allowSwimReachabilities", "0", allowSwimReachabilities ) )
 	{
-		common->Error( "Missing 'allowSwimReachabilities' in entityDef '%s'", name );
+		idLib::Error( "Missing 'allowSwimReachabilities' in entityDef '%s'", name );
 	}
 
 	if( !dict->GetBool( "allowFlyReachabilities", "0", allowFlyReachabilities ) )
 	{
-		common->Error( "Missing 'allowFlyReachabilities' in entityDef '%s'", name );
+		idLib::Error( "Missing 'allowFlyReachabilities' in entityDef '%s'", name );
 	}
 
 	if( !dict->GetString( "fileExtension", "", fileExtension ) )
 	{
-		common->Error( "Missing 'fileExtension' in entityDef '%s'", name );
+		idLib::Error( "Missing 'fileExtension' in entityDef '%s'", name );
 	}
 
 	if( !dict->GetVector( "gravity", "0 0 -1066", gravity ) )
 	{
-		common->Error( "Missing 'gravity' in entityDef '%s'", name );
+		idLib::Error( "Missing 'gravity' in entityDef '%s'", name );
 	}
 	gravityDir = gravity;
 	gravityValue = gravityDir.Normalize();
@@ -528,47 +528,47 @@ bool idAASSettings::FromDict( const char* name, const idDict* dict )
 
 	if( !dict->GetFloat( "maxStepHeight", "0", maxStepHeight ) )
 	{
-		common->Error( "Missing 'maxStepHeight' in entityDef '%s'", name );
+		idLib::Error( "Missing 'maxStepHeight' in entityDef '%s'", name );
 	}
 
 	if( !dict->GetFloat( "maxBarrierHeight", "0", maxBarrierHeight ) )
 	{
-		common->Error( "Missing 'maxBarrierHeight' in entityDef '%s'", name );
+		idLib::Error( "Missing 'maxBarrierHeight' in entityDef '%s'", name );
 	}
 
 	if( !dict->GetFloat( "maxWaterJumpHeight", "0", maxWaterJumpHeight ) )
 	{
-		common->Error( "Missing 'maxWaterJumpHeight' in entityDef '%s'", name );
+		idLib::Error( "Missing 'maxWaterJumpHeight' in entityDef '%s'", name );
 	}
 
 	if( !dict->GetFloat( "maxFallHeight", "0", maxFallHeight ) )
 	{
-		common->Error( "Missing 'maxFallHeight' in entityDef '%s'", name );
+		idLib::Error( "Missing 'maxFallHeight' in entityDef '%s'", name );
 	}
 
 	if( !dict->GetFloat( "minFloorCos", "0", minFloorCos ) )
 	{
-		common->Error( "Missing 'minFloorCos' in entityDef '%s'", name );
+		idLib::Error( "Missing 'minFloorCos' in entityDef '%s'", name );
 	}
 
 	if( !dict->GetInt( "tt_barrierJump", "0", tt_barrierJump ) )
 	{
-		common->Error( "Missing 'tt_barrierJump' in entityDef '%s'", name );
+		idLib::Error( "Missing 'tt_barrierJump' in entityDef '%s'", name );
 	}
 
 	if( !dict->GetInt( "tt_startCrouching", "0", tt_startCrouching ) )
 	{
-		common->Error( "Missing 'tt_startCrouching' in entityDef '%s'", name );
+		idLib::Error( "Missing 'tt_startCrouching' in entityDef '%s'", name );
 	}
 
 	if( !dict->GetInt( "tt_waterJump", "0", tt_waterJump ) )
 	{
-		common->Error( "Missing 'tt_waterJump' in entityDef '%s'", name );
+		idLib::Error( "Missing 'tt_waterJump' in entityDef '%s'", name );
 	}
 
 	if( !dict->GetInt( "tt_startWalkOffLedge", "0", tt_startWalkOffLedge ) )
 	{
-		common->Error( "Missing 'tt_startWalkOffLedge' in entityDef '%s'", name );
+		idLib::Error( "Missing 'tt_startWalkOffLedge' in entityDef '%s'", name );
 	}
 
 	return true;
@@ -669,18 +669,18 @@ bool idAASSettings::ValidEntity( const char* classname ) const
 
 		if( !ValidForBounds( bounds ) )
 		{
-			common->Printf( "bounds: (%f %f %f) to (%f %f %f)\n",
-							bounds[0][0], bounds[0][1], bounds[0][2],
-							bounds[1][0], bounds[1][1], bounds[1][2] );
+			idLib::Printf( "bounds: (%f %f %f) to (%f %f %f)\n",
+						   bounds[0][0], bounds[0][1], bounds[0][2],
+						   bounds[1][0], bounds[1][1], bounds[1][2] );
 
 			for( int i = 0; i < 3; i++ )
 			{
-				common->Printf( "boundingBoxes %d: (%f %f %f) to (%f %f %f)\n", i,
-								boundingBoxes[i][0][0], boundingBoxes[i][0][1], boundingBoxes[i][0][2],
-								boundingBoxes[i][1][0], boundingBoxes[i][1][1], boundingBoxes[i][1][2] );
+				idLib::Printf( "boundingBoxes %d: (%f %f %f) to (%f %f %f)\n", i,
+							   boundingBoxes[i][0][0], boundingBoxes[i][0][1], boundingBoxes[i][0][2],
+							   boundingBoxes[i][1][0], boundingBoxes[i][1][1], boundingBoxes[i][1][2] );
 			}
 
-			common->Error( "%s cannot use %s\n", classname, fileExtension.c_str() );
+			idLib::Error( "%s cannot use %s\n", classname, fileExtension.c_str() );
 		}
 
 		return true;
@@ -775,8 +775,8 @@ bool idAASFileLocal::Write( const idStr& fileName, unsigned int mapFileCRC )
 	idFile* aasFile;
 	idReachability* reach;
 
-	common->Printf( "[Write AAS]\n" );
-	common->Printf( "writing %s\n", fileName.c_str() );
+	idLib::Printf( "[Write AAS]\n" );
+	idLib::Printf( "writing %s\n", fileName.c_str() );
 
 	name = fileName;
 	crc = mapFileCRC;
@@ -784,7 +784,7 @@ bool idAASFileLocal::Write( const idStr& fileName, unsigned int mapFileCRC )
 	aasFile = fileSystem->OpenFileWrite( fileName, "fs_basepath" );
 	if( !aasFile )
 	{
-		common->Error( "Error opening %s", fileName.c_str() );
+		idLib::Error( "Error opening %s", fileName.c_str() );
 		return false;
 	}
 
@@ -907,7 +907,7 @@ bool idAASFileLocal::Write( const idStr& fileName, unsigned int mapFileCRC )
 	// close file
 	fileSystem->CloseFile( aasFile );
 
-	common->Printf( "done.\n" );
+	idLib::Printf( "done.\n" );
 
 	return true;
 }
@@ -1313,8 +1313,8 @@ bool idAASFileLocal::Load( const idStr& fileName, unsigned int mapFileCRC )
 	name = fileName;
 	crc = mapFileCRC;
 
-	common->Printf( "[Load AAS]\n" );
-	common->Printf( "loading %s\n", name.c_str() );
+	idLib::Printf( "[Load AAS]\n" );
+	idLib::Printf( "loading %s\n", name.c_str() );
 
 	if( !src.LoadFile( name ) )
 	{
@@ -1323,26 +1323,26 @@ bool idAASFileLocal::Load( const idStr& fileName, unsigned int mapFileCRC )
 
 	if( !src.ExpectTokenString( AAS_FILEID ) )
 	{
-		common->Warning( "Not an AAS file: '%s'", name.c_str() );
+		idLib::Warning( "Not an AAS file: '%s'", name.c_str() );
 		return false;
 	}
 
 	if( !src.ReadToken( &token ) || token != AAS_FILEVERSION )
 	{
-		common->Warning( "AAS file '%s' has version %s instead of %s", name.c_str(), token.c_str(), AAS_FILEVERSION );
+		idLib::Warning( "AAS file '%s' has version %s instead of %s", name.c_str(), token.c_str(), AAS_FILEVERSION );
 		return false;
 	}
 
 	if( !src.ExpectTokenType( TT_NUMBER, TT_INTEGER, &token ) )
 	{
-		common->Warning( "AAS file '%s' has no map file CRC", name.c_str() );
+		idLib::Warning( "AAS file '%s' has no map file CRC", name.c_str() );
 		return false;
 	}
 
 	c = token.GetUnsignedLongValue();
 	if( mapFileCRC && c != mapFileCRC )
 	{
-		common->Warning( "AAS file '%s' is out of date", name.c_str() );
+		idLib::Warning( "AAS file '%s' is out of date", name.c_str() );
 		return false;
 	}
 
@@ -1458,7 +1458,7 @@ bool idAASFileLocal::Load( const idStr& fileName, unsigned int mapFileCRC )
 
 	common->UpdateLevelLoadPacifier();
 
-	common->Printf( "done.\n" );
+	idLib::Printf( "done.\n" );
 
 	return true;
 }
@@ -1495,9 +1495,9 @@ idAASFileLocal::PrintInfo
 */
 void idAASFileLocal::PrintInfo() const
 {
-	common->Printf( "%6d KB file size\n", MemorySize() >> 10 );
-	common->Printf( "%6d areas\n", areas.Num() );
-	common->Printf( "%6d max tree depth\n", MaxTreeDepth() );
+	idLib::Printf( "%6d KB file size\n", MemorySize() >> 10 );
+	idLib::Printf( "%6d areas\n", areas.Num() );
+	idLib::Printf( "%6d max tree depth\n", MaxTreeDepth() );
 	ReportRoutingEfficiency();
 }
 
@@ -1541,9 +1541,9 @@ void idAASFileLocal::ReportRoutingEfficiency() const
 	}
 	total += numReachableAreas * portals.Num();
 
-	common->Printf( "%6d reachable areas\n", numReachableAreas );
-	common->Printf( "%6d reachabilities\n", NumReachabilities() );
-	common->Printf( "%6d KB max routing cache\n", ( total * 3 ) >> 10 );
+	idLib::Printf( "%6d reachable areas\n", numReachableAreas );
+	idLib::Printf( "%6d reachabilities\n", NumReachabilities() );
+	idLib::Printf( "%6d KB max routing cache\n", ( total * 3 ) >> 10 );
 }
 
 /*

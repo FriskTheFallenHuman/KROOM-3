@@ -513,7 +513,7 @@ void idImage::ActuallyLoadImage( bool fromBackEnd )
 
 			if( pic == NULL )
 			{
-				idLib::Warning( "Couldn't load image: %s : %s", GetName(), generatedName.c_str() );
+				idLib::Warning( "Couldn't load image:" S_COLOR_GRAY "'%s'" S_COLOR_WHITE " : " S_COLOR_GRAY "'%s'", GetName(), generatedName.c_str() );
 
 				// create a default so it doesn't get continuously reloaded
 				opts.width = 8;

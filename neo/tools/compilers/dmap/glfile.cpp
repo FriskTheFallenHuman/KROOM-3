@@ -458,7 +458,7 @@ WriteGLView
 void WriteGLView( tree_t* tree, const char* source, int entityNum, bool force )
 {
 	//c_glfaces = 0;
-	//common->Printf( "Writing %s\n", source );
+	//idLib::Printf( "Writing %s\n", source );
 
 	if( entityNum != 0 && !force )
 	{
@@ -479,7 +479,7 @@ void WriteGLView( tree_t* tree, const char* source, int entityNum, bool force )
 
 	CollectPortals_r( tree->headnode, portals, false );
 
-	common->Printf( "%5i c_glfaces\n", portals.faces.Num() );
+	idLib::Printf( "%5i c_glfaces\n", portals.faces.Num() );
 
 	OBJGroup& portals2 = groups.Alloc();
 	portals2.name = "void_portals";

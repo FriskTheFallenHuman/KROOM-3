@@ -862,7 +862,7 @@ void idImageManager::Preload( const idPreloadManifest& manifest, const bool& map
 		}
 		//fileSystem->StopPreload();
 		int	end = Sys_Milliseconds();
-		idLib::Printf( "%05d images preloaded ( or were already loaded ) in %5.1f seconds\n", numLoaded, ( end - start ) * 0.001 );
+		idLib::Printf( S_COLOR_GRAY "%05d " S_COLOR_WHITE "images preloaded ( or were already loaded ) in" S_COLOR_GRAY " %5.1f" S_COLOR_WHITE " seconds\n", numLoaded, ( end - start ) * 0.001 );
 		idLib::Printf( "----------------------------------------\n" );
 		preloadingMapImages = false;
 	}
@@ -921,7 +921,7 @@ void idImageManager::EndLevelLoad()
 	int	loadCount = LoadLevelImages( true );
 
 	int	end = Sys_Milliseconds();
-	idLib::Printf( "%5i images loaded in %5.1f seconds\n", loadCount, ( end - start ) * 0.001 );
+	idLib::Printf( S_COLOR_GRAY "%5i " S_COLOR_WHITE "images loaded in" S_COLOR_GRAY " %5.1f" S_COLOR_WHITE " seconds\n", loadCount, ( end - start ) * 0.001 );
 	idLib::Printf( "----------------------------------------\n" );
 	//R_ListImages_f( idCmdArgs( "sorted sorted", false ) );
 }

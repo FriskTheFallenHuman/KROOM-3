@@ -178,11 +178,11 @@ void idAASBuild::MergeLeafNodes( idBrushBSP& bsp )
 {
 	numMergedLeafNodes = 0;
 
-	common->Printf( "[Merge Leaf Nodes]\n" );
+	idLib::Printf( "[Merge Leaf Nodes]\n" );
 
 	MergeLeafNodes_r( bsp, bsp.GetRootNode() );
 	bsp.GetRootNode()->RemoveFlagRecurse( NODE_DONE );
 	bsp.PruneMergedTree_r( bsp.GetRootNode() );
 
-	common->Printf( "\r%6d leaf nodes merged\n", numMergedLeafNodes );
+	idLib::Printf( "\r%6d leaf nodes merged\n", numMergedLeafNodes );
 }

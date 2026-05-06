@@ -619,7 +619,7 @@ void idSoundSystemLocal::Preload( idPreloadManifest& manifest )
 	}
 
 	int	end = Sys_Milliseconds();
-	common->Printf( "%05d sounds preloaded in %5.1f seconds\n", numLoaded, ( end - start ) * 0.001 );
+	common->Printf( S_COLOR_GRAY "%05d " S_COLOR_WHITE "sounds preloaded in" S_COLOR_GRAY " %5.1f" S_COLOR_WHITE " seconds\n", numLoaded, ( end - start ) * 0.001 );
 	common->Printf( "----------------------------------------\n" );
 }
 
@@ -685,7 +685,7 @@ void idSoundSystemLocal::EndLevelLoad()
 	}
 	int	end = Sys_Milliseconds();
 
-	common->Printf( "%5i sounds loaded in %5.1f seconds\n", loadCount, ( end - start ) * 0.001 );
+	common->Printf( S_COLOR_GRAY "%5i " S_COLOR_WHITE "sounds loaded in" S_COLOR_GRAY " %5.1f" S_COLOR_WHITE " seconds\n", loadCount, ( end - start ) * 0.001 );
 	common->Printf( "----------------------------------------\n" );
 }
 

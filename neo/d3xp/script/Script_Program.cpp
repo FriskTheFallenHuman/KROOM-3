@@ -2039,15 +2039,15 @@ void idProgram::CompileStats()
 	memused += functions.MemoryUsed();	// name and filename of functions are shared, so no need to include them
 	memused += sizeof( variables );
 
-	gameLocal.Printf( "Memory usage:\n" );
-	gameLocal.Printf( "     Strings: %d, %d bytes\n", fileList.Num(), stringspace );
-	gameLocal.Printf( "  Statements: %d, %zd bytes\n", statements.Num(), statements.MemoryUsed() );
-	gameLocal.Printf( "   Functions: %d, %d bytes\n", functions.Num(), funcMem );
-	gameLocal.Printf( "   Variables: %d bytes\n", numVariables );
-	gameLocal.Printf( "    Mem used: %d bytes\n", memused );
-	gameLocal.Printf( " Static data: %zd bytes\n", sizeof( idProgram ) );
-	gameLocal.Printf( "   Allocated: %d bytes\n", memallocated );
-	gameLocal.Printf( " Thread size: %zd bytes\n", sizeof( idThread ) );
+	gameLocal.Printf( S_COLOR_WHITE "Memory usage:\n" );
+	gameLocal.Printf( S_COLOR_WHITE "     Strings: " S_COLOR_GREEN "%d, %d" S_COLOR_WHITE " bytes\n", fileList.Num(), stringspace );
+	gameLocal.Printf( S_COLOR_WHITE "  Statements: " S_COLOR_GREEN "%d, %zd" S_COLOR_WHITE " bytes\n", statements.Num(), statements.MemoryUsed() );
+	gameLocal.Printf( S_COLOR_WHITE "   Functions: " S_COLOR_GREEN "%d, %d" S_COLOR_WHITE " bytes\n", functions.Num(), funcMem );
+	gameLocal.Printf( S_COLOR_WHITE "   Variables: " S_COLOR_GREEN "%d" S_COLOR_WHITE " bytes\n", numVariables );
+	gameLocal.Printf( S_COLOR_WHITE "    Mem used: " S_COLOR_GREEN "%d" S_COLOR_WHITE " bytes\n", memused );
+	gameLocal.Printf( S_COLOR_WHITE " Static data: " S_COLOR_GREEN "%zd" S_COLOR_WHITE " bytes\n", sizeof( idProgram ) );
+	gameLocal.Printf( S_COLOR_WHITE "   Allocated: " S_COLOR_GREEN "%d" S_COLOR_WHITE " bytes\n", memallocated );
+	gameLocal.Printf( S_COLOR_WHITE " Thread size: " S_COLOR_GREEN "%zd" S_COLOR_WHITE " bytes\n", sizeof( idThread ) );
 }
 
 /*

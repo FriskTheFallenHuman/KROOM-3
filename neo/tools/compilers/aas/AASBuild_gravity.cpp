@@ -411,10 +411,10 @@ void idAASBuild::GravitationalSubdivision( idBrushBSP& bsp )
 {
 	numGravitationalSubdivisions = 0;
 
-	common->Printf( "[Gravitational Subdivision]\n" );
+	idLib::Printf( "[Gravitational Subdivision]\n" );
 
 	SetPortalFlags_r( bsp.GetRootNode() );
 	GravSubdiv_r( bsp.GetRootNode() );
 
-	common->Printf( "\r%6d subdivisions\n", numGravitationalSubdivisions );
+	idLib::Printf( "\r%6d subdivisions\n", numGravitationalSubdivisions );
 }

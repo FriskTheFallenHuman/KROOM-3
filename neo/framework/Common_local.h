@@ -436,6 +436,14 @@ private:
 	int							rd_buffersize;
 	void	( *rd_flush )( const char* buffer );
 
+	// Thread-safe queue for messages printed from non-main threads.
+	// Messages are queued and flushed from the main thread in Frame().
+	idSysMutex			threadedPrintQueueMutex;
+	idList<idStr>			threadedPrintQueue;
+	// queued warnings produced by non-main threads (moved into warningList by PrintWarnings)
+	idStrList				threadedWarningList;
+	void				FlushThreadedPrintQueue();
+
 	idStr						warningCaption;
 	idStrList					warningList;
 	idStrList					errorList;

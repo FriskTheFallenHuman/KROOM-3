@@ -244,7 +244,7 @@ mapTri_t* TriListForSide( const side_t* s, const idWinding* w )
 				dv->SetNormal( dmapGlobals.mapPlanes[s->planenum].Normal() );
 				if( dv->GetNormal().Length() < 0.9 || dv->GetNormal().Length() > 1.1 )
 				{
-					common->Error( "Bad normal in TriListForSide" );
+					idLib::Error( "Bad normal in TriListForSide" );
 				}
 			}
 		}
@@ -293,7 +293,7 @@ mapTri_t* TriListForSide( const side_t* s, const idWinding* w )
 				dv->SetNormal( dmapGlobals.mapPlanes[s->planenum].Normal() );
 				if( dv->GetNormal().Length() < 0.9f || dv->GetNormal().Length() > 1.1f )
 				{
-					common->Error( "Bad normal in TriListForSide" );
+					idLib::Error( "Bad normal in TriListForSide" );
 				}
 			}
 		}
@@ -443,7 +443,7 @@ void ClipTriIntoTree_r( idWinding* w, mapTri_t* originalTri, uEntity_t* e, node_
 
 	if( node->planenum != PLANENUM_LEAF )
 	{
-		//common->Printf( "ClipTriIntoTree_r: splitting triangle with splitplane %i\n", node->nodeNumber );
+		//idLib::Printf( "ClipTriIntoTree_r: splitting triangle with splitplane %i\n", node->nodeNumber );
 
 		w->Split( dmapGlobals.mapPlanes[ node->planenum ], ON_EPSILON, &front, &back );
 		delete w;
@@ -454,7 +454,7 @@ void ClipTriIntoTree_r( idWinding* w, mapTri_t* originalTri, uEntity_t* e, node_
 		return;
 	}
 
-	//common->Printf( "ClipTriIntoTree_r: leaf area = %i, opaque = %i, occupied = %i\n", node->area, node->occupied );
+	//idLib::Printf( "ClipTriIntoTree_r: leaf area = %i, opaque = %i, occupied = %i\n", node->area, node->occupied );
 
 	// if opaque leaf, don't add
 	if( !node->opaque && node->area >= 0 )
@@ -613,7 +613,7 @@ static void PutWindingIntoAreas_r( uEntity_t* e, const idWinding* w, side_t* sid
 		return;
 	}
 
-	//common->Printf( "PutWindingIntoAreas_r: leaf area = %i, opaque = %i\n", node->area, (int) node->opaque );
+	//idLib::Printf( "PutWindingIntoAreas_r: leaf area = %i, opaque = %i\n", node->area, (int) node->opaque );
 
 	// if opaque leaf, don't add
 	if( node->area >= 0 && !node->opaque )
@@ -773,7 +773,7 @@ void PutPrimitivesInAreas( uEntity_t* e )
 			}
 
 			const char* entityName = entity->mapEntity->epairs.GetString( "name" );
-			//common->Printf( "testing %s.%s\n", entityName, modelName.c_str() );
+			//idLib::Printf( "testing %s.%s\n", entityName, modelName.c_str() );
 
 			if( inlineAll )
 			{
@@ -819,7 +819,7 @@ void PutPrimitivesInAreas( uEntity_t* e )
 
 			idRenderModel*	model = renderModelManager->FindModel( modelName );
 
-			common->Printf( "inlining %s.%s\n", entityName, modelName.c_str() );
+			idLib::Printf( "inlining %s.%s\n", entityName, modelName.c_str() );
 			dmapGlobals.totalInlinedModels++;
 
 			idMat3	axis;
@@ -1135,8 +1135,8 @@ static void CarveGroupsByLight( uEntity_t* e, mapLight_t* light )
 
 			if( group->numGroupLights == MAX_GROUP_LIGHTS )
 			{
-				common->Error( "MAX_GROUP_LIGHTS around %f %f %f",
-							   group->triList->v[0].xyz[0], group->triList->v[0].xyz[1], group->triList->v[0].xyz[2] );
+				idLib::Error( "MAX_GROUP_LIGHTS around %f %f %f",
+							  group->triList->v[0].xyz[0], group->triList->v[0].xyz[1], group->triList->v[0].xyz[2] );
 			}
 
 			// if the group doesn't face the light,
@@ -1252,6 +1252,3 @@ void Prelight( uEntity_t* e )
 	}
 
 }
-
-
-

@@ -991,7 +991,7 @@ void idAASReach::FlagReachableAreas( idAASFileLocal* file )
 		numReachableAreas++;
 	}
 
-	common->Printf( "%6d reachable areas\n", numReachableAreas );
+	idLib::Printf( "%6d reachable areas\n", numReachableAreas );
 }
 
 /*
@@ -1007,7 +1007,7 @@ bool idAASReach::Build( const idMapFile* mapFile, idAASFileLocal* file )
 	this->file = file;
 	numReachabilities = 0;
 
-	common->Printf( "[Reachability]\n" );
+	idLib::Printf( "[Reachability]\n" );
 
 	// delete all existing reachabilities
 	file->DeleteReachabilities();
@@ -1063,7 +1063,7 @@ bool idAASReach::Build( const idMapFile* mapFile, idAASFileLocal* file )
 		percent = 100 * i / file->areas.Num();
 		if( percent > lastPercent )
 		{
-			common->Printf( "\r%6d%%", percent );
+			idLib::Printf( "\r%6d%%", percent );
 			lastPercent = percent;
 		}
 	}
@@ -1078,7 +1078,7 @@ bool idAASReach::Build( const idMapFile* mapFile, idAASFileLocal* file )
 
 	file->LinkReversedReachability();
 
-	common->Printf( "\r%6d reachabilities\n", numReachabilities );
+	idLib::Printf( "\r%6d reachabilities\n", numReachabilities );
 
 	return true;
 }

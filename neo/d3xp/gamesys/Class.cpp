@@ -455,7 +455,7 @@ void idClass::Init()
 
 	initialized = true;
 
-	gameLocal.Printf( "...%i classes, %i bytes for event callbacks\n", types.Num(), eventCallbackMemory );
+	gameLocal.Printf( "..." S_COLOR_WHITE "%i" S_COLOR_DEFAULT " classes, " S_COLOR_WHITE "%i" S_COLOR_DEFAULT " bytes for event callbacks\n", types.Num(), eventCallbackMemory );
 }
 
 /*

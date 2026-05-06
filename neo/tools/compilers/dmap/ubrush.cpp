@@ -170,11 +170,11 @@ void PrintBrush( uBrush_t* brush )
 {
 	int		i;
 
-	common->Printf( "brush: %p\n", brush );
+	idLib::Printf( "brush: %p\n", brush );
 	for( i = 0; i < brush->numsides ; i++ )
 	{
 		brush->sides[i].winding->Print();
-		common->Printf( "\n" );
+		idLib::Printf( "\n" );
 	}
 }
 
@@ -363,12 +363,12 @@ void WriteBspBrushMap( const char* name, uBrush_t* list )
 	int			i;
 	idWinding* 	w;
 
-	common->Printf( "writing %s\n", name );
+	idLib::Printf( "writing %s\n", name );
 	f = fileSystem->OpenFileWrite( name );
 
 	if( !f )
 	{
-		common->Error( "Can't write %s\b", name );
+		idLib::Error( "Can't write %s\b", name );
 	}
 
 	f->Printf( "{\n\"classname\" \"worldspawn\"\n" );
@@ -638,7 +638,7 @@ void SplitBrush( uBrush_t* brush, int planenum, uBrush_t** front, uBrush_t** bac
 
 	if( w->IsHuge() )
 	{
-		common->Printf( "WARNING: huge winding\n" );
+		idLib::Printf( "WARNING: huge winding\n" );
 	}
 
 	midwinding = w;
@@ -706,11 +706,11 @@ void SplitBrush( uBrush_t* brush, int planenum, uBrush_t** front, uBrush_t** bac
 	{
 		if( !b[0] && !b[1] )
 		{
-			common->Printf( "split removed brush\n" );
+			idLib::Printf( "split removed brush\n" );
 		}
 		else
 		{
-			common->Printf( "split not on both sides\n" );
+			idLib::Printf( "split not on both sides\n" );
 		}
 		if( b[0] )
 		{
@@ -754,7 +754,7 @@ void SplitBrush( uBrush_t* brush, int planenum, uBrush_t** front, uBrush_t** bac
 			{
 				FreeBrush( b[i] );
 				b[i] = NULL;
-//			common->Printf ("tiny volume after clip\n");
+//			idLib::Printf ("tiny volume after clip\n");
 			}
 		}
 	}
