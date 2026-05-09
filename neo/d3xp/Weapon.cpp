@@ -80,6 +80,11 @@ const idEventDef EV_Weapon_StartWeaponParticle( "startWeaponParticle", "s" );
 const idEventDef EV_Weapon_StopWeaponParticle( "stopWeaponParticle", "s" );
 const idEventDef EV_Weapon_StartWeaponLight( "startWeaponLight", "s" );
 const idEventDef EV_Weapon_StopWeaponLight( "stopWeaponLight", "s" );
+const idEventDef EV_Weapon_GetAux( "getAux", NULL, 'd' );
+const idEventDef EV_Weapon_SetAux( "setAux", "d" );
+const idEventDef EV_Weapon_BeginLightSync( "beginLightSync" );
+const idEventDef EV_Weapon_SetNetfiring( "setNetfiring", "d" );
+const idEventDef EV_Weapon_SetWeaponGuiParm( "setWeaponGuiParm", "ss" );
 
 //
 // class def
@@ -133,6 +138,11 @@ EVENT( EV_Weapon_StartWeaponParticle,		idWeapon::Event_StartWeaponParticle )
 EVENT( EV_Weapon_StopWeaponParticle,		idWeapon::Event_StopWeaponParticle )
 EVENT( EV_Weapon_StartWeaponLight,			idWeapon::Event_StartWeaponLight )
 EVENT( EV_Weapon_StopWeaponLight,			idWeapon::Event_StopWeaponLight )
+EVENT( EV_Weapon_GetAux,					idWeapon::Event_GetAux )
+EVENT( EV_Weapon_SetAux,					idWeapon::Event_SetAux )
+EVENT( EV_Weapon_BeginLightSync,			idWeapon::Event_BeginLightSync )
+EVENT( EV_Weapon_SetNetfiring,				idWeapon::Event_SetNetfiring )
+EVENT( EV_Weapon_SetWeaponGuiParm,			idWeapon::Event_SetWeaponGuiParm )
 END_CLASS
 
 
@@ -463,6 +473,9 @@ void idWeapon::Save( idSaveGame* savefile ) const
 		savefile->WriteRenderLight( light->light );
 	}
 
+	savefile->WriteInt( snapshotLight );
+	savefile->WriteBool( canSyncLight );
+	savefile->WriteInt( isAux );
 }
 
 /*
@@ -713,6 +726,10 @@ void idWeapon::Restore( idRestoreGame* savefile )
 		}
 		weaponLights.Set( newLight.name, newLight );
 	}
+
+	savefile->ReadInt( snapshotLight );
+	savefile->ReadBool( canSyncLight );
+	savefile->ReadInt( isAux );
 }
 
 /***********************************************************************
@@ -937,6 +954,10 @@ void idWeapon::Clear()
 	projectileEnt		= NULL;
 
 	isFiring			= false;
+
+	snapshotLight		= 0;
+	canSyncLight		= false;
+	isAux				= 0;
 }
 
 /*
@@ -1879,6 +1900,8 @@ void idWeapon::Reload()
 	{
 		WEAPON_RELOAD = true;
 	}
+
+	grabber.Reload( grabberState );
 }
 
 /*
@@ -2566,6 +2589,18 @@ idWeapon::PresentWeapon
 */
 void idWeapon::PresentWeapon( bool showViewModel )
 {
+	// moved from ReadFromSnapshot (with changes)
+	if( common->IsClient() && IsLinked() && canSyncLight && snapshotLight > 0 )
+	{
+		bool playerLightOn = ( bool )( snapshotLight - 1 );
+		if( owner != NULL && !owner->IsLocallyControlled() && playerLightOn != lightOn )
+		{
+			// flashlight
+			Reload();
+		}
+		snapshotLight = 0;
+	}
+
 	playerViewOrigin = owner->firstPersonViewOrigin;
 	playerViewAxis = owner->firstPersonViewAxis;
 
@@ -2749,12 +2784,6 @@ void idWeapon::PresentWeapon( bool showViewModel )
 		}
 	}
 
-	// Update the grabber effects
-	if( grabberState != -1 )
-	{
-		grabberState = grabber.Update( owner, hide );
-	}
-
 	// remove the muzzle flash light when it's done
 	if( ( !lightOn && ( gameLocal.time >= muzzleFlashEnd ) ) || IsHidden() )
 	{
@@ -2875,6 +2904,7 @@ void idWeapon::EnterCinematic()
 	}
 
 	disabled = true;
+	isFiring = false;
 
 	LowerWeapon();
 }
@@ -3197,9 +3227,15 @@ void idWeapon::WriteToSnapshot( idBitMsg& msg ) const
 {
 	msg.WriteBits( ammoClip.Get(), ASYNC_PLAYER_INV_CLIP_BITS );
 	msg.WriteBits( worldModel.GetSpawnId(), 32 );
-	msg.WriteBits( lightOn, 1 );
-	msg.WriteBits( flashlightOn, 2 );
+
+	int lightState = 0;
+	if( canSyncLight )
+	{
+		lightState = ( int )lightOn + 1;
+	}
+	msg.WriteBits( lightState, 2 );
 	msg.WriteBits( isFiring ? 1 : 0, 1 );
+	msg.WriteBits( isAux, AUX_BITS );
 }
 
 /*
@@ -3211,8 +3247,9 @@ void idWeapon::ReadFromSnapshot( const idBitMsg& msg )
 {
 	const int snapshotAmmoClip = msg.ReadBits( ASYNC_PLAYER_INV_CLIP_BITS );
 	worldModel.SetSpawnId( msg.ReadBits( 32 ) );
-	const bool snapshotLightOn = msg.ReadBits( 2 ) != 0;
+	snapshotLight = msg.ReadBits( 2 );
 	isFiring = msg.ReadBits( 1 ) != 0;
+	isAux = msg.ReadBits( AUX_BITS );
 
 	// Local clients predict the ammo in the clip. Only use the ammo cpunt from the snapshot for local clients
 	// if the server has processed the same usercmd in which we predicted the ammo count.
@@ -3224,35 +3261,7 @@ void idWeapon::ReadFromSnapshot( const idBitMsg& msg )
 	// WEAPON_NETFIRING is only turned on for other clients we're predicting. not for local client
 	if( owner && !owner->IsLocallyControlled() && WEAPON_NETFIRING.IsLinked() )
 	{
-
-		// immediately go to the firing state so we don't skip fire animations
-		if( !WEAPON_NETFIRING && isFiring )
-		{
-			idealState = "Fire";
-		}
-
-		// immediately switch back to idle
-		if( WEAPON_NETFIRING && !isFiring )
-		{
-			idealState = "Idle";
-		}
-
 		WEAPON_NETFIRING = isFiring;
-		WEAPON_ATTACK = isFiring;
-	}
-
-	// Only update the flashlight state if it has changed, and if this isn't the local player.
-	// The local player sets their flashlight immediately for responsiveness.
-	if( owner != NULL && !owner->IsLocallyControlled() && flashlightOn != snapshotLightOn )
-	{
-		if( snapshotLightOn )
-		{
-			FlashlightOn();
-		}
-		else
-		{
-			FlashlightOff();
-		}
 	}
 }
 
@@ -3349,27 +3358,6 @@ void idWeapon::Event_WeaponState( const char* statename, int blendFrames )
 	}
 
 	idealState = statename;
-
-	// HACK, Fixes reload animation on player not playing on second reload ( on non local client players, and only with host viewing. )
-	if( common->IsMultiplayer() && strcmp( weaponDef->GetName(), "weapon_shotgun_double_mp" ) == 0 )
-	{
-		if( strcmp( statename, "Reload" ) != 0 )
-		{
-			if( status ==  WP_RELOAD )
-			{
-				status =  WP_READY;
-			}
-		}
-	}
-
-	if( !idealState.Icmp( "Fire" ) )
-	{
-		isFiring = true;
-	}
-	else
-	{
-		isFiring = false;
-	}
 
 	animBlendFrames = blendFrames;
 	thread->DoneProcessing();
@@ -3480,7 +3468,11 @@ void idWeapon::Event_UseAmmo( int amount )
 		return;
 	}
 
-	owner->inventory.UseAmmo( ammoType, ( powerAmmo ) ? amount : ( amount * ammoRequired ) );
+	if( clipSize == 0 )
+	{
+		owner->inventory.UseAmmo( ammoType, ( powerAmmo ) ? amount : ( amount * ammoRequired ) );
+	}
+
 	if( clipSize && ammoRequired )
 	{
 		ammoClip -= powerAmmo ? amount : ( amount * ammoRequired );
@@ -3768,7 +3760,8 @@ void idWeapon::Event_SetSkin( const char* skinname )
 		worldModel.GetEntity()->SetSkin( skinDecl );
 	}
 
-	if( common->IsServer() )
+	// Hack, don't send message if flashlight, because clients process the flashlight instantly.
+	if( common->IsServer() && owner && owner->GetCurrentWeaponSlot() != owner->weapon_flashlight )
 	{
 		idBitMsg			msg;
 		byte				msgBuf[MAX_EVENT_PARAM_SIZE];
@@ -4065,7 +4058,8 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 	// for sound & visual effects. Damage will be handled through reliable messages to the host.
 	const bool isHitscan = projectileDict.GetBool( "net_instanthit" );
 	const bool attackerIsLocal = owner->IsLocallyControlled();
-	const bool actuallySpawnProjectile = common->IsServer() || attackerIsLocal || isHitscan;
+	const bool forceReplication = projectileDict.GetBool( "net_replicate" );
+	const bool actuallySpawnProjectile = common->IsServer() || ( attackerIsLocal && !forceReplication ) || isHitscan;
 
 	if( actuallySpawnProjectile )
 	{
@@ -4228,8 +4222,8 @@ void idWeapon::Event_LaunchProjectilesEllipse( int num_projectiles, float spread
 		return;
 	}
 
-	// avoid all ammo considerations on a client
-	if( !common->IsClient() )
+	// Predict clip ammo on locally controlled MP clients.
+	if( common->IsServer() || owner->IsLocallyControlled() )
 	{
 		if( ( clipSize != 0 ) && ( ammoClip.Get() <= 0 ) )
 		{
@@ -4242,7 +4236,8 @@ void idWeapon::Event_LaunchProjectilesEllipse( int num_projectiles, float spread
 			owner->inventory.UseAmmo( ammoType, ammoRequired );
 		}
 
-		if( clipSize && ammoRequired )
+		// see Event_LaunchProjectiles
+		if( clipSize && ammoRequired && !g_infiniteAmmo.GetBool() )
 		{
 			ammoClip -= ammoRequired;
 		}
@@ -4258,7 +4253,7 @@ void idWeapon::Event_LaunchProjectilesEllipse( int num_projectiles, float spread
 	// set the shader parm to the time of last projectile firing,
 	// which the gun material shaders can reference for single shot barrel glows, etc
 	renderEntity.shaderParms[ SHADERPARM_DIVERSITY ]	= gameLocal.random.CRandomFloat();
-	renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ]	= -MS2SEC( gameLocal.time );
+	renderEntity.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.realClientTime );
 
 	if( worldModel.GetEntity() )
 	{
@@ -4266,31 +4261,27 @@ void idWeapon::Event_LaunchProjectilesEllipse( int num_projectiles, float spread
 		worldModel.GetEntity()->SetShaderParm( SHADERPARM_TIMEOFFSET, renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] );
 	}
 
-	// calculate the muzzle position
-	if( barrelJointView != INVALID_JOINT && projectileDict.GetBool( "launchFromBarrel" ) )
-	{
-		// there is an explicit joint for the muzzle
-		GetGlobalJointTransform( true, barrelJointView, muzzleOrigin, muzzleAxis );
-	}
-	else
-	{
-		// go straight out of the view
-		muzzleOrigin = playerViewOrigin;
-		muzzleAxis = playerViewAxis;
-	}
+	GetProjectileLaunchOriginAndAxis( muzzleOrigin, muzzleAxis );
 
-	// add some to the kick time, incrementally moving repeat firing weapons back
-	if( kick_endtime < gameLocal.time )
+	if( kick_endtime < gameLocal.realClientTime )
 	{
-		kick_endtime = gameLocal.time;
+		kick_endtime = gameLocal.realClientTime;
 	}
 	kick_endtime += muzzle_kick_time;
-	if( kick_endtime > gameLocal.time + muzzle_kick_maxtime )
+	if( kick_endtime > gameLocal.realClientTime + muzzle_kick_maxtime )
 	{
-		kick_endtime = gameLocal.time + muzzle_kick_maxtime;
+		kick_endtime = gameLocal.realClientTime + muzzle_kick_maxtime;
 	}
 
-	if( !common->IsClient() )
+	// "Predict" damage effects on clients by just spawning a local projectile that deals no damage. Used only
+	// for sound & visual effects. Damage will be handled through reliable messages to the host.
+	const bool isHitscan = projectileDict.GetBool( "net_instanthit" );
+	const bool attackerIsLocal = owner->IsLocallyControlled();
+	//const bool actuallySpawnProjectile = common->IsServer() || attackerIsLocal || isHitscan;
+	const bool forceReplication = projectileDict.GetBool( "net_replicate" );
+	const bool actuallySpawnProjectile = common->IsServer() || ( attackerIsLocal && !forceReplication ) || isHitscan;
+
+	if( actuallySpawnProjectile )
 	{
 		ownerBounds = owner->GetPhysics()->GetAbsBounds();
 
@@ -4308,12 +4299,41 @@ void idWeapon::Event_LaunchProjectilesEllipse( int num_projectiles, float spread
 			dir = playerViewAxis[ 0 ] + playerViewAxis[ 2 ] * ( angb * idMath::Sin( spin ) ) - playerViewAxis[ 1 ] * ( anga * idMath::Cos( spin ) );
 			dir.Normalize();
 
+			if( common->IsClient() )
+			{
+				// This is predicted on a client, don't replicate.
+				// Must be set before spawn, so that the entity can be spawned into the correct area of the entities array.
+				projectileDict.SetBool( "net_skip_replication", true );
+			}
+			else
+			{
+				projectileDict.SetBool( "net_skip_replication", false );
+			}
+
 			gameLocal.SpawnEntityDef( projectileDict, &ent );
 			if( ent == NULL || !ent->IsType( idProjectile::Type ) )
 			{
 				const char* projectileName = weaponDef->dict.GetString( "def_projectile" );
 				gameLocal.Error( "'%s' is not an idProjectile", projectileName );
 				return;
+			}
+
+			int predictedKey = idEntity::INVALID_PREDICTION_KEY;
+
+			if( projectileDict.GetBool( "net_instanthit" ) )
+			{
+				// don't synchronize this on top of the already predicted effect
+				ent->fl.networkSync = false;
+			}
+			else if( owner != NULL )
+			{
+				// Set the prediction key only for non-instanthit projectiles.
+				if( common->IsClient() )
+				{
+					owner->IncrementFireCount();
+				}
+				predictedKey = gameLocal.GeneratePredictionKey( this, owner, -1 );
+				ent->SetPredictedKey( predictedKey );
 			}
 
 			proj = static_cast<idProjectile*>( ent );
@@ -4337,7 +4357,34 @@ void idWeapon::Event_LaunchProjectilesEllipse( int num_projectiles, float spread
 				muzzle_pos = tr.endpos;
 			}
 
-			proj->Launch( muzzle_pos, dir, pushVelocity, fuseOffset, power );
+			// If this is the server simulating a remote client, the client has spawned the projectile in the past.
+			// The server will catch-up the projectile so that its position will be as if the projectile had spawned
+			// when the client fired it.
+			if( common->IsServer() && owner != NULL && !owner->IsLocallyControlled() && !projectileDict.GetBool( "net_instanthit" ) )
+			{
+				int serverTimeOnClient = owner->usercmd.serverGameMilliseconds;
+
+				int delta = idMath::ClampInt( 0, cg_projectile_clientAuthoritative_maxCatchup.GetInteger(), gameLocal.GetServerGameTimeMs() - serverTimeOnClient );
+
+				int startTime = gameLocal.GetServerGameTimeMs() - delta;
+
+				//proj->Launch(muzzle_pos, dir, pushVelocity, fuseOffset, launchPower, dmgPower);
+				proj->Launch( muzzle_pos, dir, pushVelocity, fuseOffset, power );
+
+				// predictively spawned, but no need to simulate - was needed for correct processing of client mines when spawned on the server (because we're futzing with the clip models)
+				proj->QueueToSimulate( startTime );
+
+				if( cg_predictedSpawn_debug.GetBool() )
+				{
+					idLib::Printf( "Spawning throw item projectile for player %d. PredictiveKey: %d \n", owner->GetEntityNumber(), predictedKey );
+				}
+			}
+			else
+			{
+				// Normal launch
+				//proj->Launch(muzzle_pos, dir, pushVelocity, fuseOffset, launchPower, dmgPower);
+				proj->Launch( muzzle_pos, dir, pushVelocity, fuseOffset, power );
+			}
 		}
 
 		// toss the brass
@@ -4355,9 +4402,7 @@ void idWeapon::Event_LaunchProjectilesEllipse( int num_projectiles, float spread
 
 	owner->WeaponFireFeedback( &weaponDef->dict );
 
-	// reset muzzle smoke
-	weaponSmokeStartTime = gameLocal.time;
-
+	weaponSmokeStartTime = gameLocal.realClientTime;
 }
 
 /**
@@ -4742,7 +4787,6 @@ idWeapon::ClientThink
 */
 void idWeapon::ClientThink( const int curTime, const float fraction, const bool predict )
 {
-	UpdateAnimation();
 }
 
 /*
@@ -4752,11 +4796,77 @@ idWeapon::ClientPredictionThink
 */
 void idWeapon::ClientPredictionThink()
 {
-	UpdateAnimation();
 }
 
 
 void idWeapon::ForceAmmoInClip()
 {
 	ammoClip = clipSize;
+}
+
+void idWeapon::UpdateGrabber()
+{
+	// moved from PresentWeapon (with changes)
+	if( !common->IsMultiplayer() && grabberState != -1 )
+	{
+		grabberState = grabber.Update( owner, hide );
+	}
+}
+
+void idWeapon::Event_GetAux()
+{
+	idThread::ReturnInt( isAux );
+}
+
+void idWeapon::Event_SetAux( int aux )
+{
+	if( common->IsServer() )
+	{
+		isAux = aux;
+	}
+}
+
+void idWeapon::Event_BeginLightSync()
+{
+	canSyncLight = true;
+}
+
+void idWeapon::Event_SetNetfiring( int isNetfiring )
+{
+	if( common->IsServer() )
+	{
+		// this will set/clear WEAPON_NETFIRING on clients; see WriteToSnapshot/ReadFromSnapshot
+		isFiring = isNetfiring;
+	}
+}
+
+void idWeapon::Event_SetWeaponGuiParm( const char* key, const char* val )
+{
+	// code below is adapted from idWeapon::UpdateGUI and idEntity::Event_SetGuiParm
+
+	if( !renderEntity.gui[0] || !owner )
+	{
+		return;
+	}
+
+	int localClientNum = gameLocal.GetLocalClientNum();
+	if( localClientNum != owner->entityNumber )
+	{
+		// if updating the hud for a followed client
+		if( localClientNum >= 0 && gameLocal.entities[localClientNum] && gameLocal.entities[localClientNum]->IsType( idPlayer::Type ) )
+		{
+			idPlayer* p = static_cast< idPlayer* >( gameLocal.entities[localClientNum] );
+			if( !p->spectating || p->spectator != owner->entityNumber )
+			{
+				return;
+			}
+		}
+		else
+		{
+			return;
+		}
+	}
+
+	renderEntity.gui[0]->SetStateString( key, val );
+	renderEntity.gui[0]->StateChanged( gameLocal.fast.time );
 }

@@ -527,7 +527,7 @@ void idSoundWorldLocal::Update()
 				continue;
 			}
 
-			static const int lifetime = 20;
+			static const int lifetime = -1; // a negative value means that the lifetime is one engine frame
 
 			idBounds ref;
 			ref.Clear();

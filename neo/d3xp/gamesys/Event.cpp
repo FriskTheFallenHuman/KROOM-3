@@ -429,13 +429,13 @@ void idEvent::Schedule( idClass* obj, const idTypeInfo* type, int time )
 	object = obj;
 	typeinfo = type;
 
-	// wraps after 24 days...like I care. ;)
-	this->time = gameLocal.time + time;
-
 	eventNode.Remove();
 
 	if( obj->IsType( idEntity::Type ) && ( ( ( idEntity* )( obj ) )->timeGroup == TIME_GROUP2 ) )
 	{
+		// wraps after 24 days...like I care. ;)
+		this->time = gameLocal.fast.time + time;
+
 		event = FastEventQueue.Next();
 		while( ( event != NULL ) && ( this->time >= event->time ) )
 		{

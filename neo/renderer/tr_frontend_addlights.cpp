@@ -512,17 +512,6 @@ static void R_AddSingleLight( viewLight_t* vLight )
 				continue;
 			}
 
-			// We don't want the lights on weapons to illuminate anything else.
-			// There are two assumptions here -- that allowLightInViewID is only
-			// used for weapon lights, and that all weapons will have weaponDepthHack.
-			// A more general solution would be to have an allowLightOnEntityID field.
-			// HACK: the armor-mounted flashlight is a private spot light, which is probably
-			// wrong -- you would expect to see them in multiplayer.
-			//	if( light->parms.allowLightInViewID && light->parms.pointLight && !eParms.weaponDepthHack )
-			//	{
-			//		continue;
-			//	}
-
 			// non-shadow casting entities don't need to be added if they aren't
 			// directly visible
 			if( ( eParms.noShadow || ( eModel && !eModel->ModelHasShadowCastingSurfaces() ) ) && !edef->IsDirectlyVisible() )

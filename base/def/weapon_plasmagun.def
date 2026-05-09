@@ -80,10 +80,6 @@ entityDef weapon_plasmagun {
 	"snd_hum"					"player_plasma_idle"
 
 	// MP
-	"skin_on"					"skins/models/weapons/flashlight_on"
-	"skin_on_invis"				"skins/models/weapons/flashlight_on_invis"
-	"skin_off"					"skins/models/weapons/flashlight_off"
-	"skin_off_invis"			"skins/models/weapons/flashlight_off_invis"
 	"skin_invisible"			"skins/plasma_invis"
 
 	"spread"					"0"

@@ -426,7 +426,7 @@ idSessionLocalCallbacks::HandlePeerMatchParamUpdate
 */
 void idSessionLocalCallbacks::HandlePeerMatchParamUpdate( int peer, int msg )
 {
-	if( net_headlessServer.GetBool() )
+	if( common->GetServerDedicated() )
 	{
 		sessionLocal->storedPeer = peer;
 		sessionLocal->storedMsgType = msg;

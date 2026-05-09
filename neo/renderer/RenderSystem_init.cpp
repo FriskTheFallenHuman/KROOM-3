@@ -66,27 +66,27 @@ glconfig_t	glConfig;
 idCVar r_debugContext( "r_debugContext", "0", CVAR_RENDERER, "Enable various levels of context debug." );
 // SRS - Added workaround for AMD OSX driver bugs caused by GL_EXT_timer_query when shadow mapping enabled; Intel bugs not present on OSX
 #if defined(__APPLE__)
-	idCVar r_skipIntelWorkarounds( "r_skipIntelWorkarounds", "1", CVAR_RENDERER | CVAR_BOOL, "skip workarounds for Intel driver bugs" );
-	idCVar r_skipAMDWorkarounds( "r_skipAMDWorkarounds", "0", CVAR_RENDERER | CVAR_BOOL, "skip workarounds for AMD driver bugs" );
+	idCVar r_skipIntelWorkarounds( "r_skipIntelWorkarounds", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_NOCHEAT, "skip workarounds for opengl sync objects not working with Intel drivers" );
+	idCVar r_skipAMDWorkarounds( "r_skipAMDWorkarounds", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_NOCHEAT, "skip workarounds for opengl sync objects not working with AMD drivers" );
 #else
-	idCVar r_skipIntelWorkarounds( "r_skipIntelWorkarounds", "0", CVAR_RENDERER | CVAR_BOOL, "skip workarounds for Intel driver bugs" );
-	idCVar r_skipAMDWorkarounds( "r_skipAMDWorkarounds", "1", CVAR_RENDERER | CVAR_BOOL, "skip workarounds for AMD driver bugs" );
+	idCVar r_skipIntelWorkarounds( "r_skipIntelWorkarounds", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_NOCHEAT, "skip workarounds for opengl sync objects not working with Intel drivers" );
+	idCVar r_skipAMDWorkarounds( "r_skipAMDWorkarounds", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_NOCHEAT, "skip workarounds for opengl sync objects not working with AMD drivers" );
 #endif
 // SRS end
 // RB: disabled 16x MSAA
 idCVar r_antiAliasing( "r_antiAliasing", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, " 0 = None\n 1 = SMAA 1x\n 2 = MSAA 2x\n 3 = MSAA 4x\n 4 = MSAA 8x\n", 0, ANTI_ALIASING_MSAA_8X );
 // RB end
-idCVar r_vidMode( "r_vidMode", "0", CVAR_ARCHIVE | CVAR_RENDERER | CVAR_INTEGER, "fullscreen video mode number" );
-idCVar r_displayRefresh( "r_displayRefresh", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_NOCHEAT, "optional display refresh rate option for vid mode", 0.0f, 240.0f );
-#ifdef WIN32
-	idCVar r_fullscreen( "r_fullscreen", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "0 = windowed, 1 = full screen on monitor 1, 2 = full screen on monitor 2, etc" );
-#else
-	// DG: add mode -2 for SDL, also defaulting to windowed mode, as that causes less trouble on linux
-	idCVar r_fullscreen( "r_fullscreen", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "-2 = use current monitor, -1 = (reserved), 0 = windowed, 1 = full screen on monitor 1, 2 = full screen on monitor 2, etc" );
-	// DG end
-#endif
-idCVar r_customWidth( "r_customWidth", "1280", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "custom screen width. set r_vidMode to -1 to activate" );
-idCVar r_customHeight( "r_customHeight", "720", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "custom screen height. set r_vidMode to -1 to activate" );
+idCVar r_vidMode( "r_vidMode", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "fullscreen mode: 0 = normal; -1 = custom", -1, 0 );
+idCVar r_vidFullscreen( "r_vidFullscreen", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "-1 = borderless window, 0 = window, 1 = fullscreen", -1, 1 );
+idCVar r_vidMonitor( "r_vidMonitor", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "monitor to use in fullscreen when r_vidMode is 0", 1, idMath::MAX_INT );
+idCVar r_vidWidth( "r_vidWidth", "1280", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "fullscreen width when r_vidMode is 0", 0, idMath::MAX_INT );
+idCVar r_vidHeight( "r_vidHeight", "720", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "fullscreen height when r_vidMode is 0", 0, idMath::MAX_INT );
+idCVar r_vidDisplayRefresh( "r_vidDisplayRefresh", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "fullscreen display refresh rate when r_vidMode is 0; this cvar can be 0, which means not specified", 0, idMath::MAX_INT );
+idCVar r_vidCustomMonitor( "r_vidCustomMonitor", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "monitor to use in fullscreen when r_vidMode is -1", 1, idMath::MAX_INT );
+idCVar r_vidCustomWidth( "r_vidCustomWidth", "1280", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "custom fullscreen width when r_vidMode is -1", 0, idMath::MAX_INT );
+idCVar r_vidCustomHeight( "r_vidCustomHeight", "720", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "custom fullscreen height when r_vidMode is -1", 0, idMath::MAX_INT );
+idCVar r_vidCustomDisplayRefresh( "r_vidCustomDisplayRefresh", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "custom fullscreen display refresh rate when r_vidMode is -1; this cvar can be 0, which means not specified", 0, idMath::MAX_INT );
+idCVar r_vidConfigRunOnce( "r_vidConfigRunOnce", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "if 0 run default video config on init. becomes 1 automatically." );
 idCVar r_windowX( "r_windowX", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "Non-fullscreen parameter" );
 idCVar r_windowY( "r_windowY", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "Non-fullscreen parameter" );
 idCVar r_windowWidth( "r_windowWidth", "1280", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "Non-fullscreen parameter" );
@@ -107,9 +107,7 @@ idCVar r_useCachedDynamicModels( "r_useCachedDynamicModels", "1", CVAR_RENDERER 
 idCVar r_useSeamlessCubeMap( "r_useSeamlessCubeMap", "1", CVAR_RENDERER | CVAR_BOOL, "use ARB_seamless_cube_map if available" );
 idCVar r_maxAnisotropicFiltering( "r_maxAnisotropicFiltering", "8", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "limit aniso filtering" );
 idCVar r_useTrilinearFiltering( "r_useTrilinearFiltering", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "Extra quality filtering" );
-// RB: not used anymore
-idCVar r_lodBias( "r_lodBias", "0.5", CVAR_RENDERER | CVAR_ARCHIVE, "UNUSED: image lod bias" );
-// RB end
+idCVar r_lodBias( "r_lodBias", "0.5", CVAR_RENDERER | CVAR_ARCHIVE, "image lod bias" );
 
 idCVar r_useStateCaching( "r_useStateCaching", "1", CVAR_RENDERER | CVAR_BOOL, "avoid redundant state changes in GL_*() calls" );
 
@@ -197,7 +195,7 @@ idCVar r_lightAllBackFaces( "r_lightAllBackFaces", "0", CVAR_RENDERER | CVAR_BOO
 
 // visual debugging info
 idCVar r_showPortals( "r_showPortals", "0", CVAR_RENDERER | CVAR_BOOL, "draw portal outlines in color based on passed / not passed" );
-idCVar r_showUnsmoothedTangents( "r_showUnsmoothedTangents", "0", CVAR_RENDERER | CVAR_BOOL, "if 1, put all nvidia register combiner programming in display lists" );
+idCVar r_showUnsmoothedTangents( "r_showUnsmoothedTangents", "0", CVAR_RENDERER | CVAR_BOOL, "highlight materials that are using unsmoothed tangents" );
 idCVar r_showSilhouette( "r_showSilhouette", "0", CVAR_RENDERER | CVAR_BOOL, "highlight edges that are casting shadow planes" );
 idCVar r_showVertexColor( "r_showVertexColor", "0", CVAR_RENDERER | CVAR_BOOL, "draws all triangles with the solid vertex color" );
 idCVar r_showUpdates( "r_showUpdates", "0", CVAR_RENDERER | CVAR_BOOL, "report entity and light updates and ref counts" );
@@ -205,7 +203,7 @@ idCVar r_showDemo( "r_showDemo", "0", CVAR_RENDERER | CVAR_BOOL, "report reads a
 idCVar r_showDynamic( "r_showDynamic", "0", CVAR_RENDERER | CVAR_BOOL, "report stats on dynamic surface generation" );
 idCVar r_showTrace( "r_showTrace", "0", CVAR_RENDERER | CVAR_INTEGER, "show the intersection of an eye trace with the world", idCmdSystem::ArgCompletion_Integer<0, 2> );
 idCVar r_showIntensity( "r_showIntensity", "0", CVAR_RENDERER | CVAR_BOOL, "draw the screen colors based on intensity, red = 0, green = 128, blue = 255" );
-idCVar r_showLights( "r_showLights", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = just print volumes numbers, highlighting ones covering the view, 2 = also draw planes of each volume, 3 = also draw edges of each volume", 0, 3, idCmdSystem::ArgCompletion_Integer<0, 3> );
+idCVar r_showLights( "r_showLights", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = just print volumes numbers, 2 = draw planes of each volume, 3 = also draw edges of each volume", 0, 3, idCmdSystem::ArgCompletion_Integer<0, 3> );
 idCVar r_showShadows( "r_showShadows", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = visualize the stencil shadow volumes, 2 = draw filled in", 0, 3, idCmdSystem::ArgCompletion_Integer<0, 3> );
 idCVar r_showLightScissors( "r_showLightScissors", "0", CVAR_RENDERER | CVAR_BOOL, "show light scissor rectangles" );
 idCVar r_showLightCount( "r_showLightCount", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = colors surfaces based on light count, 2 = also count everything through walls, 3 = also print overdraw", 0, 3, idCmdSystem::ArgCompletion_Integer<0, 3> );
@@ -216,7 +214,7 @@ idCVar r_showNormals( "r_showNormals", "0", CVAR_RENDERER | CVAR_FLOAT, "draws w
 idCVar r_showMemory( "r_showMemory", "0", CVAR_RENDERER | CVAR_BOOL, "print frame memory utilization" );
 idCVar r_showCull( "r_showCull", "0", CVAR_RENDERER | CVAR_BOOL, "report sphere and box culling stats" );
 idCVar r_showAddModel( "r_showAddModel", "0", CVAR_RENDERER | CVAR_BOOL, "report stats from tr_addModel" );
-idCVar r_showDepth( "r_showDepth", "0", CVAR_RENDERER | CVAR_BOOL, "display the contents of the depth buffer and the depth range" );
+idCVar r_showDepth( "r_showDepth", "0", CVAR_RENDERER | CVAR_INTEGER, "show the depth buffer: 0 = off, 1 = original color approach, 2 = alternative color approach, 3 = grayscale", 0, 3 );
 idCVar r_showSurfaces( "r_showSurfaces", "0", CVAR_RENDERER | CVAR_BOOL, "report surface/light/shadow counts" );
 idCVar r_showPrimitives( "r_showPrimitives", "0", CVAR_RENDERER | CVAR_INTEGER, "report drawsurf/index/vertex counts" );
 idCVar r_showEdges( "r_showEdges", "0", CVAR_RENDERER | CVAR_BOOL, "draw the sil edges" );
@@ -224,7 +222,7 @@ idCVar r_showTexturePolarity( "r_showTexturePolarity", "0", CVAR_RENDERER | CVAR
 idCVar r_showTangentSpace( "r_showTangentSpace", "0", CVAR_RENDERER | CVAR_INTEGER, "shade triangles by tangent space, 1 = use 1st tangent vector, 2 = use 2nd tangent vector, 3 = use normal vector", 0, 3, idCmdSystem::ArgCompletion_Integer<0, 3> );
 idCVar r_showDominantTri( "r_showDominantTri", "0", CVAR_RENDERER | CVAR_BOOL, "draw lines from vertexes to center of dominant triangles" );
 idCVar r_showTextureVectors( "r_showTextureVectors", "0", CVAR_RENDERER | CVAR_FLOAT, " if > 0 draw each triangles texture (tangent) vectors" );
-idCVar r_showOverDraw( "r_showOverDraw", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = geometry overdraw, 2 = light interaction overdraw, 3 = geometry and light interaction overdraw", 0, 3, idCmdSystem::ArgCompletion_Integer<0, 3> );
+idCVar r_showOverDraw( "r_showOverDraw", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = geometry overdraw, 2 = light interaction overdraw, 3 = geometry and light interaction overdraw" );
 // RB begin
 idCVar r_showShadowMaps( "r_showShadowMaps", "0", CVAR_RENDERER | CVAR_BOOL, "" );
 idCVar r_showShadowMapLODs( "r_showShadowMapLODs", "0", CVAR_RENDERER | CVAR_INTEGER, "" );
@@ -237,7 +235,7 @@ idCVar r_jointNameScale( "r_jointNameScale", "0.02", CVAR_RENDERER | CVAR_FLOAT,
 idCVar r_jointNameOffset( "r_jointNameOffset", "0.5", CVAR_RENDERER | CVAR_FLOAT, "offset of joint names when r_showskel is set to 1" );
 
 idCVar r_debugLineDepthTest( "r_debugLineDepthTest", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "perform depth test on debug lines" );
-idCVar r_debugLineWidth( "r_debugLineWidth", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "width of debug lines" );
+idCVar r_debugLineWidth( "r_debugLineWidth", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "width of debug lines", 1, 10 );
 idCVar r_debugArrowStep( "r_debugArrowStep", "120", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "step size of arrow cone line rotation in degrees", 0, 120 );
 idCVar r_debugPolygonFilled( "r_debugPolygonFilled", "1", CVAR_RENDERER | CVAR_BOOL, "draw a filled polygon" );
 
@@ -346,67 +344,198 @@ r_displayRefresh 0	don't specify refresh
 r_displayRefresh 70	specify 70 hz, etc
 =============================
 */
+static bool R_SetDefaultVideoParms()
+{
+	r_vidMonitor.SetString( r_vidMonitor.GetDefaultString() );
+	r_vidWidth.SetString( r_vidWidth.GetDefaultString() );
+	r_vidHeight.SetString( r_vidHeight.GetDefaultString() );
+	r_vidDisplayRefresh.SetString( r_vidDisplayRefresh.GetDefaultString() );
+
+	int defaultDisplay = 0;
+	vidMode_t defaultMode = {};
+
+	// get the default display and its default mode
+	if( !R_GetDefaultDisplayMode( defaultDisplay, defaultMode ) )
+	{
+		idLib::Printf( "Couldn't get default video mode.\n" );
+		return false;
+	}
+
+	// make sure the default mode is on the list of modes for the default display
+	idList<vidMode_t> modeList;
+	if( !R_GetModeListForDisplay( defaultDisplay, modeList, 1 ) )
+	{
+		idLib::Printf( "Couldn't get mode list for default display.\n" );
+		return false;
+	}
+	if( modeList.FindIndex( defaultMode ) < 0 )
+	{
+		idLib::Printf( "Couldn't find default mode on mode list for default display.\n" );
+		return false;
+	}
+
+	// see if the default resolution is available @ 60 hz; if yes, then use it
+	if( defaultMode.displayHz != 60 )
+	{
+		vidMode_t mode_60hz = defaultMode;
+		mode_60hz.displayHz = 60;
+		if( modeList.FindIndex( mode_60hz ) > -1 )
+		{
+			defaultMode = mode_60hz;
+		}
+	}
+
+	// set the parms
+	r_vidFullscreen.SetInteger( 1 );
+	r_vidMode.SetInteger( 0 );
+	r_vidMonitor.SetInteger( defaultDisplay + 1 );
+	r_vidWidth.SetInteger( defaultMode.width );
+	r_vidHeight.SetInteger( defaultMode.height );
+	r_vidDisplayRefresh.SetInteger( defaultMode.displayHz );
+
+	return true;
+}
+
+static void R_SetSafeVideoParms()
+{
+	// safe mode is windowed
+	r_vidFullscreen.SetInteger( 0 );
+	r_windowX.SetString( r_windowX.GetDefaultString() );
+	r_windowY.SetString( r_windowY.GetDefaultString() );
+	r_windowWidth.SetString( r_windowWidth.GetDefaultString() );
+	r_windowHeight.SetString( r_windowHeight.GetDefaultString() );
+}
+
+static void R_FillGlimpParmsForWindowedMode( glimpParms_t& parms )
+{
+	memset( &parms, 0, sizeof( parms ) );
+	// use explicit position / size for window
+	parms.x = r_windowX.GetInteger();
+	parms.y = r_windowY.GetInteger();
+	parms.fullScreen = r_vidFullscreen.GetInteger(); // may still be -1 to force a borderless window
+	parms.width = r_windowWidth.GetInteger();
+	parms.height = r_windowHeight.GetInteger();
+	// parms.displayHz: ignored in windowed mode
+}
+
+static void R_FillGlimpParmsForFullscreenMode( glimpParms_t& parms, bool& defaultParmsCalled, bool& safeParmsCalled )
+{
+	memset( &parms, 0, sizeof( parms ) );
+
+	// parms.x: ignored in fullscreen
+	// parms.y: ignored in fullscreen
+
+	if( r_vidMode.GetInteger() == 0 )
+	{
+		// get the mode list for this monitor
+		idList<vidMode_t> modeList;
+		if( !defaultParmsCalled && !R_GetModeListForDisplay( r_vidMonitor.GetInteger() - 1, modeList, 1 ) )
+		{
+			idLib::Printf( "Mode list failed for display %d. Using default video parms.\n", r_vidMonitor.GetInteger() );
+			defaultParmsCalled = true;
+			if( !R_SetDefaultVideoParms() )
+			{
+				// failed; use safe mode
+				idLib::Printf( "Failed to set default video parms. Using safe parms.\n" );
+				safeParmsCalled = true;
+				R_SetSafeVideoParms();
+				R_FillGlimpParmsForWindowedMode( parms );
+				return;
+			}
+		}
+		vidMode_t mode;
+		mode.width = r_vidWidth.GetInteger();
+		mode.height = r_vidHeight.GetInteger();
+		mode.displayHz = r_vidDisplayRefresh.GetInteger();
+		// check if the desired mode is on the list
+		if( !defaultParmsCalled && modeList.FindIndex( mode ) < 0 )
+		{
+			idLib::Printf( "The current fullscreen parms are no longer valid. Using default video parms.\n" );
+			defaultParmsCalled = true;
+			if( !R_SetDefaultVideoParms() )
+			{
+				// failed; use safe mode
+				idLib::Printf( "Failed to set default video parms. Using safe parms.\n" );
+				safeParmsCalled = true;
+				R_SetSafeVideoParms();
+				R_FillGlimpParmsForWindowedMode( parms );
+				return;
+			}
+			// R_SetDefaultVideoParms changes the r_vid* cvars, so read them again
+			mode.width = r_vidWidth.GetInteger();
+			mode.height = r_vidHeight.GetInteger();
+			mode.displayHz = r_vidDisplayRefresh.GetInteger();
+		}
+		parms.fullScreen = r_vidMonitor.GetInteger(); // parms.fullScreen is the monitor number in fullscreen mode
+		parms.width = mode.width;
+		parms.height = mode.height;
+		parms.displayHz = mode.displayHz;
+	}
+	else
+	{
+		// try forcing a specific mode, even if it isn't on the list
+		parms.fullScreen = r_vidCustomMonitor.GetInteger(); // parms.fullScreen is the monitor number in fullscreen mode
+		parms.width = r_vidCustomWidth.GetInteger();
+		parms.height = r_vidCustomHeight.GetInteger();
+		parms.displayHz = r_vidCustomDisplayRefresh.GetInteger();
+	}
+}
+
+void R_AdjustFramerateFromDisplayHz( int displayHz )
+{
+	//if (displayHz == 0) {
+	if( displayHz < 60 )
+	{
+		com_engineHz.SetInteger( 60 );
+	}
+	else
+	{
+		com_engineHz.SetInteger( displayHz );
+	}
+}
+
 void R_SetNewMode( const bool fullInit )
 {
-	// try up to three different configurations
+	bool setModeWorked = false;
+	bool safeParmsCalled = false;
+	bool defaultParmsCalled = false;
+	bool initialVideoConfig = false;
 
-	for( int i = 0 ; i < 3 ; i++ )
+	// run initial video config if needed
+	if( !r_vidConfigRunOnce.GetBool() )
 	{
-		glimpParms_t	parms;
-
-		if( r_fullscreen.GetInteger() <= 0 )
+		r_vidConfigRunOnce.SetBool( true );
+		if( fullInit )
 		{
-			// use explicit position / size for window
-			parms.x = r_windowX.GetInteger();
-			parms.y = r_windowY.GetInteger();
-			parms.width = r_windowWidth.GetInteger();
-			parms.height = r_windowHeight.GetInteger();
-			// may still be -1 to force a borderless window
-			parms.fullScreen = r_fullscreen.GetInteger();
-			parms.displayHz = 0;		// ignored
-		}
-		else
-		{
-			// get the mode list for this monitor
-			idList<vidMode_t> modeList;
-			if( !R_GetModeListForDisplay( r_fullscreen.GetInteger() - 1, modeList ) )
+			idLib::Printf( "Running initial video config.\n" );
+			initialVideoConfig = true;
+			defaultParmsCalled = true;
+			if( !R_SetDefaultVideoParms() )
 			{
-				idLib::Printf( "Going to safe mode because display not found.\n" );
-				goto safeMode;
-			}
-
-			if( modeList.Num() < 1 )
-			{
-				idLib::Printf( "Going to safe mode because mode list failed." );
-				goto safeMode;
-			}
-
-			parms.x = 0;		// ignored
-			parms.y = 0;		// ignored
-			parms.fullScreen = r_fullscreen.GetInteger();
-
-			// set the parameters we are trying
-			if( r_vidMode.GetInteger() < 0 )
-			{
-				// try forcing a specific mode, even if it isn't on the list
-				parms.width = r_customWidth.GetInteger();
-				parms.height = r_customHeight.GetInteger();
-				parms.displayHz = r_displayRefresh.GetInteger();
-			}
-			else
-			{
-				if( r_vidMode.GetInteger() >= modeList.Num() )
-				{
-					idLib::Printf( "r_vidMode reset from %i to 0.\n", r_vidMode.GetInteger() );
-					r_vidMode.SetInteger( 0 );
-				}
-
-				parms.width = modeList[ r_vidMode.GetInteger() ].width;
-				parms.height = modeList[ r_vidMode.GetInteger() ].height;
-				parms.displayHz = modeList[ r_vidMode.GetInteger() ].displayHz;
+				idLib::Printf( "Failed to set default video parms. Using safe parms.\n" );
+				safeParmsCalled = true;
+				R_SetSafeVideoParms();
 			}
 		}
+	}
 
+	glimpParms_t parms = {};
+	// fill in parms, except for multiSamples and stereo, which are set in the loop below
+	if( r_vidFullscreen.GetInteger() == 1 )
+	{
+		R_FillGlimpParmsForFullscreenMode( parms, defaultParmsCalled, safeParmsCalled ); // may switch to windowed mode if needed
+	}
+	else
+	{
+		R_FillGlimpParmsForWindowedMode( parms );
+	}
+
+	// try 4 configurations:
+	// 0 = normal
+	// 1 = no multisamples
+	// 2 = no multisamples, safe mode (windowed)
+	for( int i = 0; i < 4; i++ )
+	{
 		switch( r_antiAliasing.GetInteger() )
 		{
 			case ANTI_ALIASING_MSAA_2X:
@@ -439,6 +568,7 @@ void R_SetNewMode( const bool fullInit )
 				// DG: ImGui must be initialized after the window has been created, it needs an opengl context
 				ImGuiHook::Init( parms.width, parms.height );
 
+				setModeWorked = true;
 				break;
 			}
 		}
@@ -456,48 +586,72 @@ void R_SetNewMode( const bool fullInit )
 
 				// DG: ImGui must know about the changed window size
 				ImGuiHook::NotifyDisplaySizeChanged( parms.width, parms.height );
+
+				setModeWorked = true;
 				break;
 			}
-		}
-
-		if( i == 2 )
-		{
-			common->FatalError( "Unable to initialize renderer" );
 		}
 
 		if( i == 0 )
 		{
-			// same settings
-			continue;
+			idLib::Printf( "Set video mode: attempt 0 failed.\n" );
+			if( r_antiAliasing.GetInteger() == 0 )
+			{
+				// already without multisampling; skip one attempt
+				++i;
+			}
+			else
+			{
+				r_antiAliasing.SetInteger( ANTI_ALIASING_NONE );
+				continue;
+			}
 		}
-
-safeMode:
-		// if we failed, set everything back to "safe mode"
-		// and try again
-
-		// SRS - get the first display with a non-zero mode list, or fail if not found
-		int safeDisplay = 0;
-		idList<vidMode_t> safeList;
-		for( ; ; safeDisplay++ )
+		if( i == 1 )
 		{
-			if( !R_GetModeListForDisplay( safeDisplay, safeList ) )
+			idLib::Printf( "Set video mode: attempt 1 failed.\n" );
+			if( safeParmsCalled || ( r_vidFullscreen.GetInteger() == 1 && r_vidMode.GetInteger() == -1 ) )
 			{
-				common->FatalError( "Unable to find a valid display for renderer" );
+				// already tried everything
+				++i;
 			}
-			else if( safeList.Num() > 0 )
+			else
 			{
-				break;
+				safeParmsCalled = true;
+				R_SetSafeVideoParms();
+				R_FillGlimpParmsForWindowedMode( parms );
+				continue;
 			}
 		}
-		// SRS end
-
-		r_vidMode.SetInteger( 0 );
-		r_fullscreen.SetInteger( safeDisplay + 1 );
-		r_displayRefresh.SetInteger( 0 );
-		r_antiAliasing.SetInteger( 0 );
+		if( i == 2 )
+		{
+			idLib::Printf( "Set video mode: attempt 2 failed.\n" );
+		}
 	}
-}
 
+	if( !setModeWorked )
+	{
+		if( r_vidFullscreen.GetInteger() == 1 && r_vidMode.GetInteger() == -1 )
+		{
+			idLib::Printf( "------------------------------\n" );
+			idLib::Printf( "Couldn't set custom video mode (r_vidMode is -1). Check your combination of r_vidCustomMonitor, r_vidCustomWidth, r_vidCustomHeight, and r_vidCustomDisplayRefresh. Or enable normal mode (set r_vidMode to 0).\n" );
+			idLib::Printf( "------------------------------\n" );
+		}
+		common->FatalError( "Unable to initialize OpenGL" );
+	}
+
+	// update engineHz if needed on fullInit only (the menus update it in a separate step after a resolution change)
+	if( fullInit && ( initialVideoConfig || defaultParmsCalled ) )
+	{
+		R_AdjustFramerateFromDisplayHz( parms.displayHz );
+	}
+
+	//if( fullInit && !initialVideoConfig && defaultParmsCalled )
+	//{
+	//	common->SetShowDefaultedFullscreenMsgOnInit();
+	//}
+
+	//idSWF::InvalidateMouseInClientAreaFilter();
+}
 
 /*
 =====================
@@ -538,7 +692,7 @@ static void R_ListModes_f( const idCmdArgs& args )
 	for( int displayNum = 0 ; ; displayNum++ )
 	{
 		idList<vidMode_t> modeList;
-		if( !R_GetModeListForDisplay( displayNum, modeList ) )
+		if( !R_GetModeListForDisplay( displayNum, modeList, 1 ) )
 		{
 			break;
 		}
@@ -1076,9 +1230,6 @@ thousands of shots
 */
 void R_ScreenshotFilename( int& lastNumber, const char* base, idStr& fileName )
 {
-	bool restrict = cvarSystem->GetCVarBool( "fs_restrict" );
-	cvarSystem->SetCVarBool( "fs_restrict", false );
-
 	lastNumber++;
 	if( lastNumber > 99999 )
 	{
@@ -1123,7 +1274,6 @@ void R_ScreenshotFilename( int& lastNumber, const char* base, idStr& fileName )
 		}
 		// check again...
 	}
-	cvarSystem->SetCVarBool( "fs_restrict", restrict );
 }
 
 /*
@@ -1475,7 +1625,6 @@ void GfxInfo_f( const idCmdArgs& args )
 	common->Printf( "GL_VERSION: %s\n", glConfig.version_string );
 	common->Printf( "GL_EXTENSIONS: %s\n", glConfig.extensions_string );
 	common->Printf( "GL_MAX_TEXTURE_SIZE: %d\n", glConfig.maxTextureSize );
-	common->Printf( "GL_MAX_TEXTURE_COORDS_ARB: %d\n", glConfig.maxTextureCoords );
 	common->Printf( "GL_MAX_TEXTURE_IMAGE_UNITS_ARB: %d\n", glConfig.maxTextureImageUnits );
 
 	// print all the display adapters, monitors, and video modes
@@ -1483,7 +1632,7 @@ void GfxInfo_f( const idCmdArgs& args )
 	//DumpAllDisplayDevices();
 
 	common->Printf( "\nPIXELFORMAT: color(%d-bits) Z(%d-bit) stencil(%d-bits)\n", glConfig.colorBits, glConfig.depthBits, glConfig.stencilBits );
-	common->Printf( "MODE: %d, %d x %d %s hz:", r_vidMode.GetInteger(), renderSystem->GetWidth(), renderSystem->GetHeight(), fsstrings[r_fullscreen.GetBool()] );
+	common->Printf( "MODE: %d, %d x %d %s hz:", r_vidMode.GetInteger(), renderSystem->GetWidth(), renderSystem->GetHeight(), fsstrings[r_vidFullscreen.GetInteger() == 1 ? 1 : 0] );
 	if( glConfig.displayFrequency )
 	{
 		common->Printf( "%d\n", glConfig.displayFrequency );
@@ -2503,7 +2652,7 @@ idRenderSystemLocal::IsFullScreen
 */
 bool idRenderSystemLocal::IsFullScreen() const
 {
-	return glConfig.isFullscreen != 0;
+	return glConfig.isFullscreen > 0;
 }
 
 /*

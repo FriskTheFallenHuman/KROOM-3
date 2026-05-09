@@ -32,12 +32,12 @@ If you have questions concerning this license or the applicable additional terms
 
 const static int NUM_SYSTEM_OPTIONS_OPTIONS = 8;
 
-extern idCVar r_antiAliasing;
-extern idCVar r_useFilmicPostProcessing;
+extern idCVar r_vidMode;
+extern idCVar r_vidMonitor;
+extern idCVar r_vidWidth;
+extern idCVar r_vidHeight;
+extern idCVar r_vidDisplayRefresh;
 extern idCVar r_swapInterval;
-extern idCVar s_volume_dB;
-extern idCVar r_exposure; // RB: use this to control HDR exposure or brightness in LDR mode
-extern idCVar r_lightScale;
 
 /*
 ========================
@@ -82,10 +82,26 @@ void idMenuScreen_Shell_SystemOptions::Initialize( idMenuHandler* data )
 
 	control = new( TAG_SWF ) idMenuWidget_ControlButton();
 	control->SetOptionType( OPTION_SLIDER_TEXT );
-	control->SetLabel( "#str_swf_framerate" );
-	control->SetDataSource( &systemData, idMenuDataSource_SystemSettings::SYSTEM_FIELD_FRAMERATE );
+	control->SetLabel( "Frame Rate (Integer)" );
+	control->SetDataSource( &systemData, idMenuDataSource_SystemSettings::SYSTEM_FIELD_FRAMERATE_INT );
 	control->SetupEvents( DEFAULT_REPEAT_TIME, options->GetChildren().Num() );
-	control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, idMenuDataSource_SystemSettings::SYSTEM_FIELD_FRAMERATE );
+	control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, idMenuDataSource_SystemSettings::SYSTEM_FIELD_FRAMERATE_INT );
+	options->AddChild( control );
+
+	control = new( TAG_SWF ) idMenuWidget_ControlButton();
+	control->SetOptionType( OPTION_SLIDER_TEXT );
+	control->SetLabel( "Frame Rate (Fraction)" );
+	control->SetDataSource( &systemData, idMenuDataSource_SystemSettings::SYSTEM_FIELD_FRAMERATE_FRAC );
+	control->SetupEvents( 2, options->GetChildren().Num() );
+	control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, options->GetChildren().Num() );
+	options->AddChild( control );
+
+	control = new( TAG_SWF ) idMenuWidget_ControlButton();
+	control->SetOptionType( OPTION_SLIDER_TEXT );
+	control->SetLabel( "High Resolution Clock" );
+	control->SetDataSource( &systemData, idMenuDataSource_SystemSettings::SYSTEM_FIELD_HIGH_RESOLUTION_CLOCK );
+	control->SetupEvents( DEFAULT_REPEAT_TIME, options->GetChildren().Num() );
+	control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, options->GetChildren().Num() );
 	options->AddChild( control );
 
 	control = new( TAG_SWF ) idMenuWidget_ControlButton();
@@ -94,65 +110,6 @@ void idMenuScreen_Shell_SystemOptions::Initialize( idMenuHandler* data )
 	control->SetDataSource( &systemData, idMenuDataSource_SystemSettings::SYSTEM_FIELD_VSYNC );
 	control->SetupEvents( DEFAULT_REPEAT_TIME, options->GetChildren().Num() );
 	control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, idMenuDataSource_SystemSettings::SYSTEM_FIELD_VSYNC );
-	options->AddChild( control );
-
-	control = new( TAG_SWF ) idMenuWidget_ControlButton();
-	control->SetOptionType( OPTION_SLIDER_TEXT );
-	control->SetLabel( "#str_04128" );
-	control->SetDataSource( &systemData, idMenuDataSource_SystemSettings::SYSTEM_FIELD_ANTIALIASING );
-	control->SetupEvents( DEFAULT_REPEAT_TIME, options->GetChildren().Num() );
-	control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, idMenuDataSource_SystemSettings::SYSTEM_FIELD_ANTIALIASING );
-	options->AddChild( control );
-
-	// RB begin
-	control = new( TAG_SWF ) idMenuWidget_ControlButton();
-	control->SetOptionType( OPTION_SLIDER_TEXT );
-	control->SetLabel( "Filmic VFX" );
-	control->SetDataSource( &systemData, idMenuDataSource_SystemSettings::SYSTEM_FIELD_POSTFX );
-	control->SetupEvents( DEFAULT_REPEAT_TIME, options->GetChildren().Num() );
-	control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, idMenuDataSource_SystemSettings::SYSTEM_FIELD_POSTFX );
-	options->AddChild( control );
-
-	control = new( TAG_SWF ) idMenuWidget_ControlButton();
-	control->SetOptionType( OPTION_SLIDER_TEXT );
-	control->SetLabel( "SSAO" );
-	control->SetDataSource( &systemData, idMenuDataSource_SystemSettings::SYSTEM_FIELD_SSAO );
-	control->SetupEvents( DEFAULT_REPEAT_TIME, options->GetChildren().Num() );
-	control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, idMenuDataSource_SystemSettings::SYSTEM_FIELD_SSAO );
-	options->AddChild( control );
-
-	/*control = new( TAG_SWF ) idMenuWidget_ControlButton();
-	control->SetOptionType( OPTION_SLIDER_BAR );
-	control->SetLabel( "#str_swf_lodbias" );
-	control->SetDataSource( &systemData, idMenuDataSource_SystemSettings::SYSTEM_FIELD_LODBIAS );
-	control->SetupEvents( DEFAULT_REPEAT_TIME, options->GetChildren().Num() );
-	control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, idMenuDataSource_SystemSettings::SYSTEM_FIELD_LODBIAS );
-	options->AddChild( control );*/
-
-	control = new( TAG_SWF ) idMenuWidget_ControlButton();
-	control->SetOptionType( OPTION_SLIDER_BAR );
-	control->SetLabel( "Ambient Lighting" );
-	control->SetDescription( "Sets the amount of indirect lighting. Needed for modern PBR reflections" );
-	control->SetDataSource( &systemData, idMenuDataSource_SystemSettings::SYSTEM_FIELD_AMBIENT_BRIGHTNESS );
-	control->SetupEvents( 2, options->GetChildren().Num() );
-	control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, idMenuDataSource_SystemSettings::SYSTEM_FIELD_SSAO );
-	options->AddChild( control );
-	// RB end
-
-	control = new( TAG_SWF ) idMenuWidget_ControlButton();
-	control->SetOptionType( OPTION_SLIDER_BAR );
-	control->SetLabel( "#str_02155" );	// Brightness
-	control->SetDataSource( &systemData, idMenuDataSource_SystemSettings::SYSTEM_FIELD_BRIGHTNESS );
-	control->SetupEvents( 2, options->GetChildren().Num() );
-	control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, idMenuDataSource_SystemSettings::SYSTEM_FIELD_BRIGHTNESS );
-	options->AddChild( control );
-
-	control = new( TAG_SWF ) idMenuWidget_ControlButton();
-	control->SetOptionType( OPTION_SLIDER_BAR );
-	control->SetLabel( "#str_02163" );	// Volume
-	control->SetDataSource( &systemData, idMenuDataSource_SystemSettings::SYSTEM_FIELD_VOLUME );
-	control->SetupEvents( 2, options->GetChildren().Num() );
-	control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, idMenuDataSource_SystemSettings::SYSTEM_FIELD_VOLUME );
 	options->AddChild( control );
 
 	options->AddEventAction( WIDGET_EVENT_SCROLL_DOWN ).Set( new( TAG_SWF ) idWidgetActionHandler( options, WIDGET_ACTION_EVENT_SCROLL_DOWN_START_REPEATER, WIDGET_EVENT_SCROLL_DOWN ) );
@@ -226,6 +183,28 @@ void idMenuScreen_Shell_SystemOptions::ShowScreen( const mainMenuTransition_t tr
 {
 
 	systemData.LoadData();
+	if( options != NULL )
+	{
+		idMenuWidget_ControlButton* controlFullscreen = dynamic_cast<idMenuWidget_ControlButton*>( &options->GetChildByIndex( idMenuDataSource_SystemSettings::SYSTEM_FIELD_FULLSCREEN ) );
+		if( controlFullscreen )
+		{
+			if( r_vidFullscreen.GetInteger() == 1 && r_vidMode.GetInteger() == 0 )
+			{
+				idStr str;
+				str.Append( va( "%s %d: ", idLocalization::GetString( "#str_swf_monitor" ), r_vidMonitor.GetInteger() ) );
+				str.Append( va( "%d x %d", r_vidWidth.GetInteger(), r_vidHeight.GetInteger() ) );
+				if( r_vidDisplayRefresh.GetInteger() > 0 )
+				{
+					str.Append( va( " @ %dhz", r_vidDisplayRefresh.GetInteger() ) );
+				}
+				controlFullscreen->SetDescription( str.c_str() );
+			}
+			else
+			{
+				controlFullscreen->SetDescription( "" );
+			}
+		}
+	}
 
 	idMenuScreen::ShowScreen( transitionType );
 }
@@ -238,7 +217,14 @@ idMenuScreen_Shell_SystemOptions::HideScreen
 void idMenuScreen_Shell_SystemOptions::HideScreen( const mainMenuTransition_t transitionType )
 {
 
-	if( systemData.IsRestartRequired() )
+	bool skipRestart = false;
+	if( menuData && menuData->NextScreen() == SHELL_AREA_RESOLUTION )
+	{
+		systemData.SetWentToFullscreenMenu( true );
+		skipRestart = true;
+	}
+
+	if( !skipRestart && systemData.IsRestartRequired() )
 	{
 		class idSWFScriptFunction_Restart : public idSWFScriptFunction_RefCounted
 		{
@@ -253,6 +239,14 @@ void idMenuScreen_Shell_SystemOptions::HideScreen( const mainMenuTransition_t tr
 				common->Dialog().ClearDialog( msg );
 				if( restart )
 				{
+					/*
+					idStr cmdLine = Sys_GetCmdLine();
+					if( cmdLine.Find( "com_skipIntroVideos" ) < 0 )
+					{
+						cmdLine.Append( " +set com_skipIntroVideos 1" );
+					}
+					Sys_ReLaunch( ( void* )cmdLine.c_str(), cmdLine.Length() );
+					*/
 					// DG: Sys_ReLaunch() doesn't need any options anymore
 					//     (the old way would have been unnecessarily painful on POSIX systems)
 					Sys_ReLaunch();
@@ -302,77 +296,73 @@ bool idMenuScreen_Shell_SystemOptions::HandleAction( idWidgetAction& action, con
 	widgetAction_t actionType = action.GetType();
 	const idSWFParmList& parms = action.GetParms();
 
-	switch( actionType )
+	if( actionType == WIDGET_ACTION_GO_BACK )
 	{
-		case WIDGET_ACTION_GO_BACK:
+		if( menuData != NULL )
 		{
-			if( menuData != NULL )
-			{
-				menuData->SetNextScreen( SHELL_AREA_SETTINGS, MENU_TRANSITION_SIMPLE );
-			}
-			return true;
+			menuData->SetNextScreen( SHELL_AREA_SETTINGS, MENU_TRANSITION_SIMPLE );
 		}
-		case WIDGET_ACTION_ADJUST_FIELD:
+		return true;
+	}
+	else if( actionType == WIDGET_ACTION_ADJUST_FIELD )
+	{
+		if( widget )
+		{
 			if( widget->GetDataSourceFieldIndex() == idMenuDataSource_SystemSettings::SYSTEM_FIELD_FULLSCREEN )
 			{
 				menuData->SetNextScreen( SHELL_AREA_RESOLUTION, MENU_TRANSITION_SIMPLE );
 				return true;
 			}
-			break;
-		case WIDGET_ACTION_COMMAND:
-		{
-
-			if( options == NULL )
+			else if( widget->GetDataSourceFieldIndex() == idMenuDataSource_SystemSettings::SYSTEM_FIELD_FRAMERATE_INT || widget->GetDataSourceFieldIndex() == idMenuDataSource_SystemSettings::SYSTEM_FIELD_FRAMERATE_FRAC )
 			{
+				if( widget->GetDataSource() == NULL || widget->GetParent() == NULL || parms.Num() < 1 )
+				{
+					return true;
+				}
+				widget->GetDataSource()->AdjustField( widget->GetDataSourceFieldIndex(), parms[0].ToInteger() );
+				widget->GetParent()->GetChildByIndex( idMenuDataSource_SystemSettings::SYSTEM_FIELD_FRAMERATE_INT ).Update();
+				widget->GetParent()->GetChildByIndex( idMenuDataSource_SystemSettings::SYSTEM_FIELD_FRAMERATE_FRAC ).Update();
 				return true;
 			}
+		}
+	}
+	else if( actionType == WIDGET_ACTION_COMMAND )
+	{
+		if( options == NULL )
+		{
+			return true;
+		}
+		int selectionIndex = options->GetFocusIndex();
+		if( parms.Num() > 0 )
+		{
+			selectionIndex = parms[0].ToInteger();
+		}
+		if( selectionIndex == idMenuDataSource_SystemSettings::SYSTEM_FIELD_FULLSCREEN )
+		{
+			menuData->SetNextScreen( SHELL_AREA_RESOLUTION, MENU_TRANSITION_SIMPLE );
+		}
+		else
+		{
+			systemData.AdjustField( selectionIndex, 1 );
+			options->Update();
+		}
+	}
+	else if( actionType == WIDGET_ACTION_START_REPEATER )
+	{
 
-			int selectionIndex = options->GetFocusIndex();
-			if( parms.Num() > 0 )
-			{
-				selectionIndex = parms[0].ToInteger();
-			}
+		if( options == NULL )
+		{
+			return true;
+		}
 
-			if( options && selectionIndex != options->GetFocusIndex() )
+		if( parms.Num() == 4 )
+		{
+			int selectionIndex = parms[3].ToInteger();
+			if( selectionIndex != options->GetFocusIndex() )
 			{
 				options->SetViewIndex( options->GetViewOffset() + selectionIndex );
 				options->SetFocusIndex( selectionIndex );
 			}
-
-			switch( parms[0].ToInteger() )
-			{
-				case idMenuDataSource_SystemSettings::SYSTEM_FIELD_FULLSCREEN:
-				{
-					menuData->SetNextScreen( SHELL_AREA_RESOLUTION, MENU_TRANSITION_SIMPLE );
-					return true;
-				}
-				default:
-				{
-					systemData.AdjustField( parms[0].ToInteger(), 1 );
-					options->Update();
-				}
-			}
-
-			return true;
-		}
-		case WIDGET_ACTION_START_REPEATER:
-		{
-
-			if( options == NULL )
-			{
-				return true;
-			}
-
-			if( parms.Num() == 4 )
-			{
-				int selectionIndex = parms[3].ToInteger();
-				if( selectionIndex != options->GetFocusIndex() )
-				{
-					options->SetViewIndex( options->GetViewOffset() + selectionIndex );
-					options->SetFocusIndex( selectionIndex );
-				}
-			}
-			break;
 		}
 	}
 
@@ -399,26 +389,18 @@ idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings::LoadData
 */
 void idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings::LoadData()
 {
-	originalFramerate = com_engineHz.GetInteger();
-	originalAntialias = r_antiAliasing.GetInteger();
-	originalVsync = r_swapInterval.GetInteger();
-	originalBrightness = r_exposure.GetFloat();
-	originalVolume = s_volume_dB.GetFloat();
-	// RB begin
-	originalSSAO = r_useSSAO.GetInteger();
-	originalAmbientBrightness = r_forceAmbient.GetFloat();
-	originalPostProcessing = r_useFilmicPostProcessing.GetInteger();
-	// RB end
-
-	const int fullscreen = r_fullscreen.GetInteger();
-	if( fullscreen > 0 )
+	if( !wentToFullscreenMenu )
 	{
-		R_GetModeListForDisplay( fullscreen - 1, modeList );
+		originalFramerate = com_engineHz.GetFloat();
+		//originalAntialias = r_multiSamples.GetInteger();
 	}
 	else
 	{
-		modeList.Clear();
+		// keep the old values of originalFramerate and originalAntialias if coming back from the Fullscreen menu
+		wentToFullscreenMenu = false;
 	}
+	originalHighResolutionClock = com_hiResClock.GetInteger();
+	originalVsync = r_swapInterval.GetInteger();
 }
 
 /*
@@ -428,16 +410,11 @@ idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings::IsRestartRequ
 */
 bool idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings::IsRestartRequired() const
 {
-	if( originalAntialias != r_antiAliasing.GetInteger() )
+	if( /*originalAntialias != r_multiSamples.GetInteger() ||*/
+		originalFramerate != com_engineHz.GetFloat() )
 	{
 		return true;
 	}
-
-	if( originalFramerate != com_engineHz.GetInteger() )
-	{
-		return true;
-	}
-
 	return false;
 }
 
@@ -495,87 +472,59 @@ idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings::AdjustField
 */
 void idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings::AdjustField( const int fieldIndex, const int adjustAmount )
 {
+	if( fieldIndex < 0 || fieldIndex >= MAX_SYSTEM_FIELDS )
+	{
+		return;
+	}
 	switch( fieldIndex )
 	{
-		case SYSTEM_FIELD_FRAMERATE:
+		case idMenuDataSource_SystemSettings::SYSTEM_FIELD_FRAMERATE_INT:
 		{
-			static const int numValues = 2;
-			static const int values[numValues] = { 60, 120 };
-			com_engineHz.SetInteger( AdjustOption( com_engineHz.GetInteger(), values, numValues, adjustAmount ) );
+			float engineHz = com_engineHz.GetFloat();
+			engineHz += adjustAmount;
+			engineHz = idMath::Rint( engineHz * 100.0f ) / 100.0f;
+			if( idMath::Frac( engineHz ) == 0.0f )
+			{
+				com_engineHz.SetFloat( engineHz );
+			}
+			else
+			{
+				com_engineHz.SetString( va( "%.2f", engineHz ) );
+			}
 			break;
 		}
-		case SYSTEM_FIELD_VSYNC:
+		case idMenuDataSource_SystemSettings::SYSTEM_FIELD_FRAMERATE_FRAC:
+		{
+			float engineHz = com_engineHz.GetFloat();
+			engineHz = idMath::Rint( engineHz * 100.0f ) / 100.0f;
+			float hzInt = idMath::Floor( engineHz );
+			float hzFrac = idMath::Frac( engineHz ) * 100.0f;
+			hzFrac = idMath::Rint( hzFrac + adjustAmount );
+			hzFrac = idMath::ClampFloat( 0.0f, 99.0f, hzFrac );
+			hzFrac /= 100.0f;
+			engineHz = hzInt + hzFrac;
+			if( idMath::Frac( engineHz ) == 0.0f )
+			{
+				com_engineHz.SetFloat( engineHz );
+			}
+			else
+			{
+				com_engineHz.SetString( va( "%.2f", engineHz ) );
+			}
+			break;
+		}
+		case idMenuDataSource_SystemSettings::SYSTEM_FIELD_HIGH_RESOLUTION_CLOCK:
+		{
+			static const int numValues = 3;
+			static const int values[numValues] = { 0, 1, 2 };
+			com_hiResClock.SetInteger( AdjustOption( com_hiResClock.GetInteger(), values, numValues, adjustAmount ) );
+			break;
+		}
+		case idMenuDataSource_SystemSettings::SYSTEM_FIELD_VSYNC:
 		{
 			static const int numValues = 3;
 			static const int values[numValues] = { 0, 1, 2 };
 			r_swapInterval.SetInteger( AdjustOption( r_swapInterval.GetInteger(), values, numValues, adjustAmount ) );
-			break;
-		}
-		case SYSTEM_FIELD_ANTIALIASING:
-		{
-			// RB: disabled 16x MSAA
-			static const int numValues = 5;
-			static const int values[numValues] =
-			{
-				ANTI_ALIASING_NONE,
-				ANTI_ALIASING_SMAA_1X,
-				ANTI_ALIASING_MSAA_2X,
-				ANTI_ALIASING_MSAA_4X,
-				ANTI_ALIASING_MSAA_8X
-			};
-			// RB end
-			r_antiAliasing.SetInteger( AdjustOption( r_antiAliasing.GetInteger(), values, numValues, adjustAmount ) );
-			break;
-		}
-		// RB begin
-		case SYSTEM_FIELD_POSTFX:
-		{
-			static const int numValues = 2;
-			static const int values[numValues] = { 0, 1 };
-			r_useFilmicPostProcessing.SetInteger( AdjustOption( r_useFilmicPostProcessing.GetInteger(), values, numValues, adjustAmount ) );
-			break;
-		}
-		/*case SYSTEM_FIELD_LODBIAS:
-		{
-			const float percent = LinearAdjust( r_lodBias.GetFloat(), -1.0f, 1.0f, 0.0f, 100.0f );
-			const float adjusted = percent + ( float )adjustAmount * 5.0f;
-			const float clamped = idMath::ClampFloat( 0.0f, 100.0f, adjusted );
-			r_lodBias.SetFloat( LinearAdjust( clamped, 0.0f, 100.0f, -1.0f, 1.0f ) );
-			break;
-		}*/
-		case SYSTEM_FIELD_SSAO:
-		{
-			static const int numValues = 2;
-			static const int values[numValues] = { 0, 1 };
-			r_useSSAO.SetInteger( AdjustOption( r_useSSAO.GetInteger(), values, numValues, adjustAmount ) );
-			break;
-		}
-		case SYSTEM_FIELD_AMBIENT_BRIGHTNESS:
-		{
-			const float percent = LinearAdjust( r_forceAmbient.GetFloat(), 0.0f, 1.0f, 0.0f, 100.0f );
-			const float adjusted = percent + ( float )adjustAmount;
-			const float clamped = idMath::ClampFloat( 0.0f, 100.0f, adjusted );
-
-			r_forceAmbient.SetFloat( LinearAdjust( clamped, 0.0f, 100.0f, 0.0f, 1.0f ) );
-			break;
-		}
-		// RB end
-		case SYSTEM_FIELD_BRIGHTNESS:
-		{
-			const float percent = LinearAdjust( r_exposure.GetFloat(), 0.0f, 1.0f, 0.0f, 100.0f );
-			const float adjusted = percent + ( float )adjustAmount;
-			const float clamped = idMath::ClampFloat( 0.0f, 100.0f, adjusted );
-
-			r_exposure.SetFloat( LinearAdjust( clamped, 0.0f, 100.0f, 0.0f, 1.0f ) ); // RB
-			r_lightScale.SetFloat( LinearAdjust( clamped, 0.0f, 100.0f, 2.0f, 4.0f ) );
-			break;
-		}
-		case SYSTEM_FIELD_VOLUME:
-		{
-			const float percent = 100.0f * Square( 1.0f - ( s_volume_dB.GetFloat() / DB_SILENCE ) );
-			const float adjusted = percent + ( float )adjustAmount;
-			const float clamped = idMath::ClampFloat( 0.0f, 100.0f, adjusted );
-			s_volume_dB.SetFloat( DB_SILENCE - ( idMath::Sqrt( clamped / 100.0f ) * DB_SILENCE ) );
 			break;
 		}
 	}
@@ -589,34 +538,55 @@ idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings::GetField
 */
 idSWFScriptVar idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings::GetField( const int fieldIndex ) const
 {
+	if( fieldIndex < 0 || fieldIndex >= MAX_SYSTEM_FIELDS )
+	{
+		return false;
+	}
 	switch( fieldIndex )
 	{
-		case SYSTEM_FIELD_FULLSCREEN:
+		case idMenuDataSource_SystemSettings::SYSTEM_FIELD_FULLSCREEN:
 		{
-			const int fullscreen = r_fullscreen.GetInteger();
+			const int fullscreen = r_vidFullscreen.GetInteger();
 			const int vidmode = r_vidMode.GetInteger();
 			if( fullscreen == 0 )
 			{
 				return "#str_swf_disabled";
 			}
-			if( fullscreen < 0 || vidmode < 0 || vidmode >= modeList.Num() )
+			if( fullscreen == -1 || vidmode == -1 )
 			{
 				return "???";
 			}
-			if( modeList[vidmode].displayHz == 60 )
+			if( r_vidDisplayRefresh.GetInteger() > 0 )
 			{
-				return va( "%4i x %4i", modeList[vidmode].width, modeList[vidmode].height );
+				return va( "%dx%d %dhz", r_vidWidth.GetInteger(), r_vidHeight.GetInteger(), r_vidDisplayRefresh.GetInteger() );
 			}
 			else
 			{
-				return va( "%4i x %4i @ %dhz", modeList[vidmode].width, modeList[vidmode].height, modeList[vidmode].displayHz );
+				return va( "%dx%d", r_vidWidth.GetInteger(), r_vidHeight.GetInteger() );
 			}
 		}
-
-		case SYSTEM_FIELD_FRAMERATE:
-			return va( "%d FPS", com_engineHz.GetInteger() );
-
-		case SYSTEM_FIELD_VSYNC:
+		case idMenuDataSource_SystemSettings::SYSTEM_FIELD_FRAMERATE_INT:
+		{
+			float engineHz = com_engineHz.GetFloat();
+			engineHz = idMath::Rint( engineHz * 100.0f ) / 100.0f;
+			return va( "%.2f FPS", engineHz );
+		}
+		case idMenuDataSource_SystemSettings::SYSTEM_FIELD_FRAMERATE_FRAC:
+			return "              "; // leave blank here and let idMenuDataSource_SystemSettings::SYSTEM_FIELD_FRAMERATE_INT show the complete framerate value
+		case idMenuDataSource_SystemSettings::SYSTEM_FIELD_HIGH_RESOLUTION_CLOCK:
+			if( com_hiResClock.GetInteger() == 1 )
+			{
+				return "Normal";
+			}
+			else if( com_hiResClock.GetInteger() == 2 )
+			{
+				return "Affinity";
+			}
+			else
+			{
+				return "#str_swf_disabled";
+			}
+		case idMenuDataSource_SystemSettings::SYSTEM_FIELD_VSYNC:
 			if( r_swapInterval.GetInteger() == 1 )
 			{
 				return "#str_swf_smart";
@@ -629,64 +599,6 @@ idSWFScriptVar idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings
 			{
 				return "#str_swf_disabled";
 			}
-
-		case SYSTEM_FIELD_ANTIALIASING:
-		{
-			if( r_antiAliasing.GetInteger() == 0 )
-			{
-				return "#str_swf_disabled";
-			}
-
-			static const int numValues = 5;
-			static const char* values[numValues] =
-			{
-				"None",
-				"SMAA 1X",
-				"MSAA 2X",
-				"MSAA 4X",
-				"MSAA 8X"
-			};
-
-			compile_time_assert( numValues == ( ANTI_ALIASING_MSAA_8X + 1 ) );
-
-			return values[ r_antiAliasing.GetInteger() ];
-		}
-		case SYSTEM_FIELD_POSTFX:
-			if( r_useFilmicPostProcessing.GetInteger() > 0 )
-			{
-				return "#str_swf_enabled";
-			}
-			else
-			{
-				return "#str_swf_disabled";
-			}
-		//return va( "%dx", idMath::IPow( 2, r_motionBlur.GetInteger() ) );
-		// RB begin
-
-		//case SYSTEM_FIELD_LODBIAS:
-		//	return LinearAdjust( r_lodBias.GetFloat(), -1.0f, 1.0f, 0.0f, 100.0f );
-
-		case SYSTEM_FIELD_SSAO:
-			if( r_useSSAO.GetInteger() == 1 )
-			{
-				return "#str_swf_enabled";
-			}
-			else
-			{
-				return "#str_swf_disabled";
-			}
-
-		case SYSTEM_FIELD_AMBIENT_BRIGHTNESS:
-			return LinearAdjust( r_forceAmbient.GetFloat(), 0.0f, 1.0f, 0.0f, 100.0f );
-		// RB end
-
-		case SYSTEM_FIELD_BRIGHTNESS:
-			return LinearAdjust( r_exposure.GetFloat(), 0.0f, 1.0f, 0.0f, 100.0f );
-
-		case SYSTEM_FIELD_VOLUME:
-		{
-			return 100.0f * Square( 1.0f - ( s_volume_dB.GetFloat() / DB_SILENCE ) );
-		}
 	}
 	return false;
 }
@@ -698,46 +610,13 @@ idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings::IsDataChanged
 */
 bool idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings::IsDataChanged() const
 {
-	if( originalFramerate != com_engineHz.GetInteger() )
+	if( originalFramerate != com_engineHz.GetFloat() ||
+			originalHighResolutionClock != com_hiResClock.GetInteger() ||
+			//originalAntialias != r_multiSamples.GetInteger() ||
+			originalVsync != r_swapInterval.GetInteger() )
 	{
 		return true;
 	}
-
-	if( originalAntialias != r_antiAliasing.GetInteger() )
-	{
-		return true;
-	}
-
-	if( originalVsync != r_swapInterval.GetInteger() )
-	{
-		return true;
-	}
-
-	if( originalSSAO != r_useSSAO.GetInteger() )
-	{
-		return true;
-	}
-
-	if( originalPostProcessing != r_useFilmicPostProcessing.GetInteger() )
-	{
-		return true;
-	}
-
-	if( originalAmbientBrightness != r_forceAmbient.GetFloat() )
-	{
-		return true;
-	}
-
-	if( originalBrightness != r_exposure.GetFloat() )
-	{
-		return true;
-	}
-
-	if( originalVolume != s_volume_dB.GetFloat() )
-	{
-		return true;
-	}
-
 	return false;
 }
 

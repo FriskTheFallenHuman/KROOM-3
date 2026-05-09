@@ -26,9 +26,24 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
+// Build version
 const int BUILD_NUMBER_SAVE_VERSION_BEFORE_SKIP_CINEMATIC	= 1400;
 const int BUILD_NUMBER_SAVE_VERSION_CHANGE					= 1401;		// Altering saves so that the version goes in the Details file that we read in during the enumeration phase
 const int BUILD_NUMBER_SAVE_VERSION_SCRIPT_CHANGES1			= 1402;		// RB: Merged script compiler changes from Dhewm3 so functions don't need declarations before used
 
 const int BUILD_NUMBER = BUILD_NUMBER_SAVE_VERSION_SCRIPT_CHANGES1;
 const int BUILD_NUMBER_MINOR = 0;
+
+// Save file version
+const int SAVEGAME_VERSION_BEFORE_SKIP_CINEMATIC	= 1500;
+const int SAVEGAME_VERSION_CHANGE					= 1501;
+const int SAVEGAME_VERSION_SCRIPT_CHANGES1			= 1502;
+
+const int SAVEGAME_VERSION							= SAVEGAME_VERSION_SCRIPT_CHANGES1;
+
+// Net version
+const int NET_VERSION_BEFORE_SKIP_CINEMATIC		= 1600;
+const int NET_VERSION_CHANGE					= 1601;
+const int NET_VERSION_SCRIPT_CHANGES1			= 1602;
+
+const int NET_VERSION							= NET_VERSION_SCRIPT_CHANGES1;

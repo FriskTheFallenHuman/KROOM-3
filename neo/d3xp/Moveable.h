@@ -203,6 +203,7 @@ private:
 	int						lightTime;
 	float					time;
 	bool					isStable;
+	bool					grabberFlames;
 
 	void					AddParticles( const char* name, bool burn );
 	void					AddLight( const char* name , bool burn );

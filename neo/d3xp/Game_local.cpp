@@ -101,7 +101,7 @@ static const char* fastEntityList[] =
 	"weapon_soulcube",
 	"projectile_soulblast",
 	"weapon_shotgun_double",
-	"projectile_shotgunbullet_double",
+	"projectile_bullet_shotgun_double",
 	"weapon_grabber",
 	"weapon_bloodstone_active1",
 	"weapon_bloodstone_active2",
@@ -223,10 +223,10 @@ void idGameLocal::Clear()
 	smokeParticles = NULL;
 	editEntities = NULL;
 	entityHash.Clear( 1024, MAX_GENTITIES );
+	inCinematic = false;
 	cinematicSkipTime = 0;
 	cinematicStopTime = 0;
 	cinematicMaxSkipTime = 0;
-	inCinematic = false;
 	framenum = 0;
 	previousTime = 0;
 	time = 0;
@@ -473,7 +473,7 @@ void idGameLocal::SaveGame( idFile* f, idFile* strings )
 		}
 	}
 
-	idSaveGame savegame( f, strings, BUILD_NUMBER );
+	idSaveGame savegame( f, strings, SAVEGAME_VERSION );
 
 	if( g_flushSave.GetBool( ) == true )
 	{
@@ -699,7 +699,7 @@ void idGameLocal::GetSaveGameDetails( idSaveGameDetails& gameDetails )
 	gameDetails.descriptors.SetInt( SAVEGAME_DETAIL_FIELD_EXPANSION, expansionType );
 	gameDetails.descriptors.Set( SAVEGAME_DETAIL_FIELD_MAP, mapPrettyName );
 	gameDetails.descriptors.Set( SAVEGAME_DETAIL_FIELD_MAP_LOCATE, locationStr );
-	gameDetails.descriptors.SetInt( SAVEGAME_DETAIL_FIELD_SAVE_VERSION, BUILD_NUMBER );
+	gameDetails.descriptors.SetInt( SAVEGAME_DETAIL_FIELD_SAVE_VERSION, SAVEGAME_VERSION );
 	gameDetails.descriptors.SetInt( SAVEGAME_DETAIL_FIELD_DIFFICULTY, g_skill.GetInteger() );
 	gameDetails.descriptors.SetInt( SAVEGAME_DETAIL_FIELD_PLAYTIME, playTime );
 
@@ -774,7 +774,7 @@ void idGameLocal::DPrintf( const char* fmt, ... ) const
 	idStr::vsnPrintf( text, sizeof( text ), fmt, argptr );
 	va_end( argptr );
 
-	common->Printf( "%s", text );
+	common->DPrintf( "%s", text );
 }
 
 /*
@@ -1390,8 +1390,6 @@ bool idGameLocal::InitFromSaveGame( const char* mapName, idRenderWorld* renderWo
 	gameRenderWorld = renderWorld;
 	gameSoundWorld = soundWorld;
 
-	SetScriptFPS( com_engineHz_latched );
-
 	// load the map needed for this savegame
 	LoadMap( mapName, 0 );
 
@@ -1410,8 +1408,12 @@ bool idGameLocal::InitFromSaveGame( const char* mapName, idRenderWorld* renderWo
 		// with the player persistent data.
 		savegame.DeleteObjects();
 		program.Restart();
+
+		SetScriptFPS( com_engineHz_latched );
 		return false;
 	}
+
+	SetScriptFPS( com_engineHz_latched );
 
 	savegame.ReadInt( i );
 	g_skill.SetInteger( i );
@@ -1826,6 +1828,11 @@ idGameLocal::GetLocalClientNum
 */
 int idGameLocal::GetLocalClientNum() const
 {
+	if( common->IsServer() && common->GetServerDedicated() )
+	{
+		return -1;
+	}
+
 	localUserHandle_t localUserHandle = session->GetSignInManager().GetMasterLocalUserHandle();
 	if( !localUserHandle.IsValid() )
 	{
@@ -2595,6 +2602,8 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 	idPlayer*	player;
 	const renderView_t* view;
 
+	const int initialFrame = framenum + 1;
+
 	if( g_recordTrace.GetBool() )
 	{
 		bool result = BeginTraceRecording( "e:\\gametrace.pix2" );
@@ -2613,10 +2622,10 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 
 	if( gameRenderWorld == NULL )
 	{
+		ret = gameReturn_t();
 		return;
 	}
 
-	SyncPlayersWithLobbyUsers( false );
 	ServerSendNetworkSyncCvars();
 
 	player = GetLocalPlayer();
@@ -2633,6 +2642,8 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 			cmdMgr.MakeReadPtrCurrentForPlayer( GetLocalClientNum() );
 			player->Think();
 		}
+
+		ret = gameReturn_t();
 	}
 	else
 	{
@@ -2644,6 +2655,12 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 			fast.time = FRAME_TO_MSEC( framenum );
 			fast.realClientTime = fast.time;
 			SetServerGameTimeMs( fast.time );
+
+			if( framenum > initialFrame && gameSoundWorld )
+			{
+				// adjust the sound time here when skipping cinematics
+				gameSoundWorld->Skip( fast.time - fast.previousTime );
+			}
 
 			ComputeSlowScale();
 
@@ -2818,31 +2835,27 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 
 			BuildReturnValue( ret );
 
-			// see if a target_sessionCommand has forced a changelevel
-			if( sessionCommand.Length() )
+			// break the skipCinematic loop if a target_sessionCommand has forced a changelevel
+			if( ret.sessionCommand[0] )
 			{
-				strncpy( ret.sessionCommand, sessionCommand, sizeof( ret.sessionCommand ) );
 				break;
 			}
 
 			// make sure we don't loop forever when skipping a cinematic
-			if( skipCinematic && ( time > cinematicMaxSkipTime ) )
+			if( skipCinematic && ( fast.time > cinematicMaxSkipTime ) )
 			{
 				Warning( "Exceeded maximum cinematic skip length.  Cinematic may be looping infinitely." );
-				skipCinematic = false;
 				break;
 			}
 		}
-		while( ( inCinematic || ( time < cinematicStopTime ) ) && skipCinematic );
-
-		// i think this loop always play all that content until we skip the cinematic,
-		// when then we keep until the end of the function
+		while( ( inCinematic || ( fast.time < cinematicStopTime ) ) && skipCinematic );
 	}
 
 	if( skipCinematic )
 	{
 		soundSystem->SetMute( false );
 		skipCinematic = false;
+		ret.syncNextGameFrame = true;
 	}
 
 	// show any debug info for this frame
@@ -2866,6 +2879,7 @@ Fills out gameReturn_t, called on server and clients.
 void idGameLocal::BuildReturnValue( gameReturn_t& ret )
 {
 	ret.sessionCommand[0] = 0;
+	ret.syncNextGameFrame = false;
 
 	if( GetLocalPlayer() != NULL )
 	{
@@ -4893,7 +4907,7 @@ void idGameLocal::SetCamera( idCamera* cam )
 	else
 	{
 		inCinematic = false;
-		cinematicStopTime = time + 1;
+		cinematicStopTime = FRAME_TO_MSEC( framenum + 1 ); // this is the fast.time of the next frame
 
 		// restore r_znear
 		cvarSystem->SetCVarFloat( "r_znear", 3.0f );
@@ -5736,12 +5750,14 @@ idGameLocal::Shell_Cleanup
 */
 void idGameLocal::Shell_Cleanup( bool onlyLoading )
 {
-	if ( !onlyLoading )
+	if( !onlyLoading )
+	{
 		printf( "delete loadGUI;\n" );
+	}
 	delete loadGUI;
 	loadGUI = NULL;
 
-	if ( !onlyLoading )
+	if( !onlyLoading )
 	{
 		if( shellHandler != NULL )
 		{
@@ -5906,7 +5922,7 @@ idGameLocal::Shell_IsActive
 */
 bool idGameLocal::Shell_IsLoadingActive() const
 {
-	if ( loadGUI != NULL )
+	if( loadGUI != NULL )
 	{
 		return loadGUI->IsActive();
 	}
@@ -5920,7 +5936,7 @@ idGameLocal::Shell_Render
 */
 void idGameLocal::Shell_RenderLoadingShell()
 {
-	if ( loadGUI != NULL )
+	if( loadGUI != NULL )
 	{
 		loadGUI->Render( renderSystem, Sys_Milliseconds() );
 	}
@@ -6125,8 +6141,25 @@ void idGameLocal::Shell_SetGameComplete()
 	if( shellHandler != NULL )
 	{
 		shellHandler->SetGameComplete();
-		Shell_Show( true );
 	}
+}
+
+bool idGameLocal::Shell_IsShowingIntro()
+{
+	if( !shellHandler )
+	{
+		return false;
+	}
+	return shellHandler->IsShowingIntro();
+}
+
+bool idGameLocal::Shell_IsGameComplete()
+{
+	if( !shellHandler )
+	{
+		return false;
+	}
+	return shellHandler->GetGameComplete();
 }
 
 /*

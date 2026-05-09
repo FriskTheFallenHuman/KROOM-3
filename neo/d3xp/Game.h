@@ -161,6 +161,7 @@ public:
 	virtual void				GetAimAssistAngles( idAngles& angles ) = 0;
 	virtual float				GetAimAssistSensitivity() = 0;
 
+	virtual void				SyncPlayersWithLobbyUsers() = 0;
 	// Release the mouse when the PDA is open
 	virtual bool				IsPDAOpen() const = 0;
 	virtual bool				IsPlayerChatting() const = 0;
@@ -190,6 +191,8 @@ public:
 	virtual void				Shell_UpdateClientCountdown( int countdown ) = 0;
 	virtual void				Shell_UpdateLeaderboard( const idLeaderboardCallback* callback ) = 0;
 	virtual void				Shell_SetGameComplete() = 0;
+	virtual bool				Shell_IsShowingIntro() = 0;
+	virtual bool				Shell_IsGameComplete() = 0;
 
 	// Skip Cinematic process
 	virtual bool				SkipCinematicScene() = 0;

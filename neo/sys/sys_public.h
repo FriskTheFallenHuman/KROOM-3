@@ -471,6 +471,10 @@ void			Sys_DebugVPrintf( const char* fmt, va_list arg );
 // allow game to yield CPU time
 // NOTE: due to SYS_MINSLEEP this is very bad portability karma, and should be completely removed
 void			Sys_Sleep( int msec );
+void			Sys_EnableThreadAffinity( bool enable );
+int64			Sys_HiResClockCount();
+double			Sys_HiResClockCountToMilliseconds( int64 count );
+void			Sys_SleepHiRes( double msec );
 
 // Sys_Milliseconds should only be used for profiling purposes,
 // any game related timing information should come from event timestamps

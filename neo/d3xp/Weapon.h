@@ -39,6 +39,8 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
+#define AUX_BITS	2
+
 extern const idEventDef EV_Weapon_State;
 
 typedef enum
@@ -183,6 +185,7 @@ public:
 	int						AmmoRequired() const;
 	int						AmmoCount() const;
 	int						GetGrabberState() const;
+	void					UpdateGrabber();
 
 	// Flashlight
 	idAnimatedEntity* 		GetWorldModel()
@@ -451,6 +454,16 @@ private:
 
 	void					Event_StartWeaponLight( const char* name );
 	void					Event_StopWeaponLight( const char* name );
+
+	int						snapshotLight;
+	bool					canSyncLight;
+	int						isAux;
+
+	void					Event_GetAux();
+	void					Event_SetAux( int aux );
+	void					Event_BeginLightSync();
+	void					Event_SetNetfiring( int isNetfiring );
+	void					Event_SetWeaponGuiParm( const char* key, const char* val );
 };
 
 ID_INLINE bool idWeapon::IsLinked()

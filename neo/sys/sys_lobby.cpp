@@ -32,7 +32,7 @@ If you have questions concerning this license or the applicable additional terms
 extern idCVar net_connectTimeoutInSeconds;
 extern idCVar net_headlessServer;
 
-idCVar net_checkVersion( "net_checkVersion", "0", CVAR_INTEGER, "Check for matching version when clients connect. 0: normal rules, 1: force check, otherwise no check (pass always)" );
+idCVar net_checkVersion( "net_checkVersion", "1", CVAR_BOOL, "check for matching version when clients connect" );
 idCVar net_peerTimeoutInSeconds( "net_peerTimeoutInSeconds", "30", CVAR_INTEGER, "If the host hasn't received a response from a peer in this amount of time (in seconds), the peer will be disconnected." );
 idCVar net_peerTimeoutInSeconds_Lobby( "net_peerTimeoutInSeconds_Lobby", "20", CVAR_INTEGER, "If the host hasn't received a response from a peer in this amount of time (in seconds), the peer will be disconnected." );
 
@@ -440,6 +440,7 @@ void idLobby::HandlePacket( lobbyAddress_t& remoteAddress, idBitMsg fragMsg, idP
 			// Get connection info
 			lobbyConnectInfo_t connectInfo;
 			connectInfo.ReadFromMsg( msg );
+			connectInfo.netAddr = remoteAddress.netAddr;	// see idLobbyBackendDirect::GetConnectInfo
 
 			if( lobbyBackend != NULL && lobbyBackend->GetState() != idLobbyBackend::STATE_FAILED && lobbyBackend->IsOwnerOfConnectInfo( connectInfo ) )  		// Ignore duplicate invites
 			{
@@ -603,7 +604,7 @@ void idLobby::HandlePacket( lobbyAddress_t& remoteAddress, idBitMsg fragMsg, idP
 			idBitMsg reliableMsg( reliableData, reliableSize );
 			reliableMsg.SetSize( reliableSize );
 
-			HandleReliableMsg( peerNum, reliableMsg, &remoteAddress );
+			HandleReliableMsg( peerNum, reliableMsg, remoteAddress );
 		}
 
 		if( peerNum == -1 || !peers[ peerNum ].IsConnected() )
@@ -1770,7 +1771,7 @@ bool idLobby::CheckVersion( idBitMsg& msg, lobbyAddress_t peerAddress )
 {
 	const unsigned int remoteChecksum = msg.ReadLong(); // DG: use int instead of long for 64bit compatibility
 
-	if( net_checkVersion.GetInteger() == 1 )
+	if( net_checkVersion.GetBool() )
 	{
 		const unsigned int localChecksum = NetGetVersionChecksum(); // DG: use int instead of long for 64bit compatibility
 
@@ -2123,7 +2124,7 @@ void idLobby::InitStateLobbyHost()
 	// We will be the host
 	isHost = true;
 
-	if( net_headlessServer.GetBool() )
+	if( common->GetServerDedicated() )
 	{
 		return;		// Don't add any players to headless server
 	}
@@ -2779,7 +2780,7 @@ const char* idLobby::GetPeerName( int peerNum ) const
 idLobby::HandleReliableMsg
 ========================
 */
-void idLobby::HandleReliableMsg( int p, idBitMsg& msg, const lobbyAddress_t* remoteAddress /* = NULL */ )
+void idLobby::HandleReliableMsg( int p, idBitMsg& msg, const lobbyAddress_t& remoteAddress )
 {
 	peer_t& peer = peers[p];
 
@@ -3035,16 +3036,8 @@ void idLobby::HandleReliableMsg( int p, idBitMsg& msg, const lobbyAddress_t* rem
 
 		// Get connection info
 		lobbyConnectInfo_t connectInfo;
-
 		connectInfo.ReadFromMsg( msg );
-
-		// DG: if connectInfo.ip = 0.0.0.0 just use remoteAddress
-		//     i.e. the IP used to connect to the lobby
-		if( remoteAddress && *( ( int* )connectInfo.netAddr.ip ) == 0 )
-		{
-			connectInfo.netAddr = remoteAddress->netAddr;
-		}
-		// DG end
+		connectInfo.netAddr = remoteAddress.netAddr;
 
 		const lobbyType_t	destLobbyType	= ( lobbyType_t )msg.ReadByte();
 		const bool			waitForMembers	= msg.ReadBool();

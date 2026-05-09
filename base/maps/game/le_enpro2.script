@@ -1,0 +1,256 @@
+void spindle_thingy();
+
+void setMoveParms( entity mover, float nTime, float accelT, float decelT ){
+	mover.time( nTime );
+	mover.accelTime( accelT );
+	mover.decelTime( decelT );
+}
+
+void fan_init (){
+	$fan01_anchor.rotateOnce ('45 0 0');
+	$fan02_anchor.rotateOnce ('45 0 0');
+	//$fan03_anchor.rotateOnce ('0 0 0');
+	//$fan04_anchor.rotateOnce ('0 0 0');
+	sys.waitFor ($fan01_anchor);
+	$fanblade01.rotate ('0 0 540');
+	$fanblade02.rotate ('0 0 540');
+	//$fanblade03.rotate ('0 0 0');
+	//$fanblade04.rotate ('0 0 0');
+}
+
+void door01_red_to_green() {
+	thread crossFadeEnt ($door_light1a, $door_light1a.getColor(), '0 1 0', 0.5);
+	thread crossFadeEnt ($door_light1b, $door_light1b.getColor(), '0 1 0', 0.5);
+	//$door_light1a.setColor( 0,1,0 );
+	//$door_light1b.setColor( 0,1,0 );
+}
+
+void plasma_tube( entity pFx, entity pLight, entity lightOn, entity lightOff, entity endPos, float pTime ) {
+	vector startPos;
+	startPos = pFx.getWorldOrigin();
+	pLight.setColor( 0, 0, 0 );
+	while( 1 ) {
+		setMoveParms( pFx, .75, 0, 0 );
+
+		pFx.moveTo( lightOn );
+		sys.waitFor( pFx );
+		pLight.setColor( 0.55, 0.75, 0.65 );
+		
+		pFx.moveTo( lightOff );
+		sys.waitFor( pFx );
+		pLight.setColor( 0, 0, 0 );
+		
+		pFx.moveTo( endPos );
+		sys.waitFor( pFx );
+		
+		//pLight.setColor( 0, 0, 0 );
+		//thread crossFadeEnt( pLight, pLight.getColor(), '0 0 0', 0.1 );
+		sys.wait( 0.1 );
+		setMoveParms( pFx, 0.1, 0, 0 );	
+		pFx.hide();
+		//pLight.hide();
+		sys.wait( 0.1 );
+		pFx.setWorldOrigin( startPos );
+		sys.waitFor( pFx );
+		//pLight.setColor( 0.55, 0.75, 0.65 );
+		//thread crossFadeEnt( pLight, pLight.getColor(), '0.55 0.75 0.65', 0.1 );
+		pFx.show();
+		//pLight.show();
+		sys.wait( pTime );
+	}
+}
+
+void canister_conveyor( entity cEnt, entity cLight ) {
+	vector cStartPos;
+	cStartPos = cEnt.getWorldOrigin();
+	setMoveParms( $can_rotate1_1, .75, 0, 0 );
+	setMoveParms( $can_rotate1_2, .75, 0, 0 );
+	setMoveParms( $can_rotate1_3, 2, 0, 0 );
+	setMoveParms( $can_rotate1_4, .75, 0, 0 );
+	setMoveParms( $can_rotate1_5, .75, 0, 0 );
+	
+	while( 1 ) {
+		setMoveParms( cEnt, 2, 0, 0 );
+		cEnt.moveTo( $can_point1_1 );
+		sys.waitFor( cEnt );
+		cEnt.bind( $can_rotate1_1 );
+		$can_rotate1_1.rotateOnce( '0 0 -45' );
+		sys.waitFor( $can_rotate1_1 );
+		cEnt.unbind();
+		setMoveParms( cEnt, 2.5, 0, 0 );
+		cEnt.moveTo( $can_point1_2 );
+		sys.waitFor( cEnt );
+		cEnt.bind( $can_rotate1_2 );
+		$can_rotate1_2.rotateOnce( '0 0 45' );
+		sys.waitFor( $can_rotate1_2 );
+		cEnt.unbind();
+		cEnt.moveTo( $can_point1_3 );
+		sys.waitFor( cEnt );
+		cEnt.bind( $can_rotate1_3 );
+		$can_rotate1_3.rotateOnce( '0 0 -90' );
+		sys.waitFor( $can_rotate1_3 );
+		cEnt.unbind();
+		setMoveParms( cEnt, 4, 0, 0 );
+		cEnt.moveTo( $can_point1_4 );
+		sys.waitFor( cEnt );
+		
+		cEnt.bind( $can_rotate1_4 );
+		$can_rotate1_4.rotateOnce( '0 0 45' );
+		sys.waitFor( $can_rotate1_4 );
+		cEnt.unbind();
+		setMoveParms( cEnt, 2, 0, 0 );
+		cEnt.moveTo( $can_point1_5 );
+		sys.waitFor( cEnt );
+		cEnt.bind( $can_rotate1_5 );
+		$can_rotate1_5.rotateOnce( '0 0 45' );
+		sys.waitFor( $can_rotate1_5 );
+		cEnt.unbind();
+		setMoveParms( cEnt, 2, 0, 0 );
+		cEnt.moveTo( $can_point1_6 );
+		sys.waitFor( cEnt );
+		
+		cEnt.hide();
+		cLight.setColor( 0, 0, 0 );
+		cEnt.setWorldOrigin( cStartPos );
+		sys.wait( 0.02 );
+		cEnt.show();
+		cLight.setColor( 0.6, 1, 0.95 );
+		
+	}
+
+} 
+
+void start_conveyor() {
+	thread canister_conveyor( $can01, $can01_light );
+	sys.wait( 8.76 );
+	thread canister_conveyor( $can02, $can02_light );
+}
+
+float gateDoorState = 0; //0 = closed, 1 = open
+	
+void gate_door() {
+	$func_static_55666.setGuiParm( "noninteractive", "1" );
+	setMoveParms( $gate_door1a, 1.5, 1.25, 0.25 );
+	setMoveParms( $gate_door1b, 1.5, 1.25, 0.25 );
+	setMoveParms( $gate_door2a, 1.5, 1.25, 0.25 );
+	setMoveParms( $gate_door2b, 1.5, 1.25, 0.25 );
+	if( gateDoorState == 0 ) {
+		spindle_thingy();
+		sys.wait( 4.0 ); //wait for spindle to stop 
+		sys.trigger( $gate_door1_aasobstacle ); // open aas path
+		sys.trigger( $gate_door2_aasobstacle );
+		$gate_door1_playerclip.hide();
+		sys.trigger( $gate_door_1_speaker );
+		$gate_door1a.rotateOnce( '0 -90 0' );
+		$gate_door1b.rotateOnce( '0 90 0' );
+		sys.trigger( $gate_door_2_speaker );
+		$gate_door2a.rotateOnce( '0 -90 0' );
+		$gate_door2b.rotateOnce( '0 90 0' );
+		gateDoorState = 1;
+		sys.waitFor( $gate_door2a );
+		$func_static_55666.setGuiParm( "noninteractive", "0" );
+	} else{
+		sys.trigger( $gate_door1_aasobstacle );		// close aas path
+		sys.trigger( $gate_door2_aasobstacle );
+		$gate_door1_playerclip.show();
+		sys.trigger( $gate_door_1_speaker );
+		$gate_door1a.rotateOnce( '0 90 0' );
+		$gate_door1b.rotateOnce( '0 -90 0' );
+		sys.trigger( $gate_door_2_speaker );
+		$gate_door2a.rotateOnce( '0 90 0' );
+		$gate_door2b.rotateOnce( '0 -90 0' );
+		gateDoorState = 0;
+		sys.waitFor( $gate_door2a ); //wait for doors to shut
+		spindle_thingy();
+		$func_static_55666.setGuiParm( "noninteractive", "0" );
+	}
+}
+
+float spinShaftState = 0; //0 = off, 1 = on
+
+void spindle_thingy() {
+	if( spinShaftState == 0 ) {
+		sys.trigger( $speaker_spindle_on );
+		setMoveParms( $spin_shaft, 6.0, 6.0, 0 );
+		$spin_shaft.rotate( '0 240 0' );
+		spinShaftState = 1;
+		sys.wait( 5.9 );
+		sys.trigger( $speaker_spindle_loop );
+		
+	} else {
+		sys.trigger( $speaker_spindle_loop );
+		sys.trigger( $speaker_spindle_off );
+		setMoveParms( $spin_shaft, 4.0, 0, 4.0 );
+		$spin_shaft.rotateOnce( '0 240 0' );
+		spinShaftState = 0;
+	}
+}
+
+void generator_powerup() {
+	setMoveParms( $accelswayL, 3, 3, 0 );
+	setMoveParms( $accelspinL, 3, 3, 0 );
+	setMoveParms( $accelspinM, 3, 3, 0 );
+	setMoveParms( $accelspinR, 3, 3, 0 );
+	setMoveParms( $c2_spin_2, 3, 3, 0 );
+	setMoveParms( $c2_spin_3, 3, 3, 0 );
+	
+	$accelswayL.rotate ('0 -20 0');
+	$accelspinL.rotate ('0 45 0');		
+	$accelspinM.rotate ('0 -35 0');	
+	$accelspinR.rotate ('0 50 0');
+	$c2_spin_2.rotate ('0 -40 0');
+	$c2_spin_3.rotate ('0 20 0');
+
+	sys.trigger ($speaker_machine_on);
+	sys.wait (4);
+	sys.trigger ($speaker_machine_loop);
+	sys.trigger ($speaker_machine_loop2);
+}
+// function to activate trigger 'facing' - pass trigger as activator instead of player - fix bug with triggerFirst and facing
+void activate_impscare() {
+	$trigger_once_facing_imp.activate( $trigger_once_facing_armor );
+}
+
+void shaker1_move()	{
+	$shaker1.time (.075);
+	while(1){
+		$shaker1.rotateOnce ( '.4 .2 .2' );
+		sys.waitFor ($shaker1);
+		$shaker1.rotateOnce ( '-.4 -.2 -.2' );
+		sys.waitFor ($shaker1);
+	}
+}
+
+
+
+//#modified-fva; BEGIN
+void cst_setup_lift_lamp() {
+	if (sys.getcvar("cst_mapLeEnpro2_noLiftLamp") == "1") {
+		// remove the original lift lamp
+		$light_4731.remove();
+		$func_mover_5.remove();
+	} else {
+		// remove the new model-less lift light
+		$light_cst_4731.remove();
+	}
+}
+//#modified-fva; END
+
+void main ()
+{
+	//fan_init();
+	//generator_powerup();
+	thread plasma_tube( $plasma_fx01, $plasma_light01, $plasma_light_on_01, $plasma_light_off_01, $plasma_dest01, 1.0 );
+	thread plasma_tube( $plasma_fx02, $plasma_light02, $plasma_light_on_02, $plasma_light_off_02, $plasma_dest02, 1.0 );
+	thread plasma_tube( $plasma_fx03, $plasma_light03, $plasma_light_on_03, $plasma_light_off_03, $plasma_dest03, 1.0 );
+	thread start_conveyor();
+	thread spindle_thingy();
+	thread shaker1_move();
+	//sys.trigger( $speaker_spindle_loop );
+	
+	//#modified-fva; BEGIN
+	cst_setup_lift_lamp();
+	//#modified-fva; END
+}
+
+

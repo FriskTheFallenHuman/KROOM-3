@@ -1,0 +1,18 @@
+
+entityDef weapon_shotgun_double_mp {
+	"inherit"			"weapon_shotgun_double"
+	"model"				"models/weapons/doublebarrel/doublebarrel_w.lwo"
+}
+
+entityDef moveable_item_shotgun_double_mp {
+	"inherit"			"moveable_item_shotgun_double"
+}
+
+entityDef projectile_bullet_shotgun_double_mp {
+	"inherit"			"projectile_bullet_shotgun_double"
+	"net_instanthit"	"1"
+	"velocity"			"20000 0 0"
+	"mass"				"0.5"
+	"tracers"			"0"
+	"push"				"0"
+}

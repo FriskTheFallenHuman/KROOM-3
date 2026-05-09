@@ -535,44 +535,59 @@ public:
 	virtual void				ShowScreen( const mainMenuTransition_t transitionType );
 	virtual void				HideScreen( const mainMenuTransition_t transitionType );
 	virtual bool				HandleAction( idWidgetAction& action, const idWidgetEvent& event, idMenuWidget* widget, bool forceHandled = false );
+	virtual void				ObserveEvent( const idMenuWidget& widget, const idWidgetEvent& event );
 
 private:
 	struct optionData_t
 	{
 		optionData_t()
 		{
-			fullscreen = -1;
-			vidmode = -1;
+			monitor = -1;
+			width = -1;
+			height = -1;
+			displayHz = -1;
 		}
-		optionData_t( int f, int v )
+		optionData_t( int _monitor, int _width, int _height, int _displayHz )
 		{
-			fullscreen = f;
-			vidmode = v;
+			monitor = _monitor;
+			width = _width;
+			height = _height;
+			displayHz = _displayHz;
 		}
 		optionData_t( const optionData_t& other )
 		{
-			fullscreen = other.fullscreen;
-			vidmode = other.vidmode;
+			monitor = other.monitor;
+			width = other.width;
+			height = other.height;
+			displayHz = other.displayHz;
 		}
 		const optionData_t& operator=( const optionData_t& other )
 		{
-			fullscreen = other.fullscreen;
-			vidmode = other.vidmode;
+			monitor = other.monitor;
+			width = other.width;
+			height = other.height;
+			displayHz = other.displayHz;
 			return *this;
 		}
 		bool operator==( const optionData_t& other ) const
 		{
-			return ( fullscreen == other.fullscreen ) && ( ( vidmode == other.vidmode ) || ( fullscreen == 0 ) );
+			return ( monitor == other.monitor ) && ( ( monitor == 0 ) || ( width == other.width && height == other.height && displayHz == other.displayHz ) );
 		}
-		int fullscreen;
-		int vidmode;
+		int monitor; // a value of 0 means fullscreen is disabled; a value > 0 is the monitor number
+		int width;
+		int height;
+		int displayHz;
 	};
 	idList<optionData_t>		optionData;
 
 	optionData_t				originalOption;
+	int							originalFullscreen;
+	int							originalVidMode;
+
+	idMenuWidget_ScrollBar* 	scrollbar;
 
 	idMenuWidget_DynamicList* 	options;
-	idMenuWidget_Button*			btnBack;
+	idMenuWidget_Button* 		btnBack;
 };
 
 //*
@@ -945,7 +960,6 @@ public:
 			GAME_FIELD_AUTO_RELOAD,
 			GAME_FIELD_AIM_ASSIST,
 			GAME_FIELD_ALWAYS_SPRINT,
-			GAME_FIELD_MUZZLE_FLASHES,
 			MAX_GAME_FIELDS
 		};
 
@@ -986,6 +1000,79 @@ public:
 private:
 	idMenuWidget_DynamicList* 	options;
 	idMenuDataSource_GameSettings	systemData;
+	idMenuWidget_Button*			btnBack;
+};
+
+//*
+//================================================
+//idMenuScreen_Shell_GraphicsOptions
+//================================================
+//*/
+class idMenuScreen_Shell_GraphicsOptions : public idMenuScreen
+{
+public:
+
+	/*
+	================================================
+	idMenuDataSource_GraphicsSettings
+	================================================
+	*/
+	class idMenuDataSource_GraphicsSettings : public idMenuDataSource
+	{
+	public:
+		enum graphicsSettingFields_t
+		{
+			GRAPHICS_FIELD_ANTIALIASING,
+			// RB begin
+			GRAPHICS_FIELD_POSTFX,
+			GRAPHICS_FIELD_SSAO,
+			GRAPHICS_FIELD_AMBIENT_BRIGHTNESS,
+			GRAPHICS_FIELD_SHADOWMAP_LOD,
+			GRAPHICS_FIELD_HDR,
+			GRAPHICS_FIELD_HDR_AUTOEXPOSURE,
+			GRAPHICS_FIELD_SSGI,
+			GRAPHICS_FIELD_HALF_LIGHT,
+			// RB end
+			GRAPHICS_FIELD_MOTIONBLUR,
+			GRAPHICS_FIELD_BRIGHTNESS,
+			GRAPHICS_FIELD_LODBIAS,
+			MAX_GRAPHICS_FIELDS
+		};
+
+		idMenuDataSource_GraphicsSettings();
+
+		// loads data
+		virtual void				LoadData();
+
+		// submits data
+		virtual void				CommitData();
+
+		// says whether something changed with the data
+		virtual bool				IsDataChanged() const;
+
+		// retrieves a particular field for reading or updating
+		virtual idSWFScriptVar		GetField( const int fieldIndex ) const;
+
+		virtual void				AdjustField( const int fieldIndex, const int adjustAmount );
+
+	private:
+		idStaticList< idSWFScriptVar, MAX_GRAPHICS_FIELDS >	fields;
+		idStaticList< idSWFScriptVar, MAX_GRAPHICS_FIELDS >	originalFields;
+	};
+
+	idMenuScreen_Shell_GraphicsOptions() :
+		options( NULL ),
+		btnBack( NULL )
+	{
+	}
+	virtual void				Initialize( idMenuHandler* data );
+	virtual void				Update();
+	virtual void				ShowScreen( const mainMenuTransition_t transitionType );
+	virtual void				HideScreen( const mainMenuTransition_t transitionType );
+	virtual bool				HandleAction( idWidgetAction& action, const idWidgetEvent& event, idMenuWidget* widget, bool forceHandled = false );
+private:
+	idMenuWidget_DynamicList* 	options;
+	idMenuDataSource_GraphicsSettings	renderData;
 	idMenuWidget_Button*			btnBack;
 };
 
@@ -1289,16 +1376,10 @@ public:
 		enum systemSettingFields_t
 		{
 			SYSTEM_FIELD_FULLSCREEN,
-			SYSTEM_FIELD_FRAMERATE,
+			SYSTEM_FIELD_FRAMERATE_INT,
+			SYSTEM_FIELD_FRAMERATE_FRAC,
+			SYSTEM_FIELD_HIGH_RESOLUTION_CLOCK,
 			SYSTEM_FIELD_VSYNC,
-			SYSTEM_FIELD_ANTIALIASING,
-			// RB begin
-			SYSTEM_FIELD_POSTFX,
-			SYSTEM_FIELD_SSAO,
-			SYSTEM_FIELD_AMBIENT_BRIGHTNESS,
-			// RB end
-			SYSTEM_FIELD_BRIGHTNESS,
-			SYSTEM_FIELD_VOLUME,
 			MAX_SYSTEM_FIELDS
 		};
 
@@ -1321,19 +1402,16 @@ public:
 
 		bool						IsRestartRequired() const;
 
-	private:
-		int originalFramerate;
-		int originalAntialias;
-		int originalVsync;
-		float originalBrightness;
-		float originalVolume;
-		// RB begin
-		int originalSSAO;
-		int originalPostProcessing;
-		float originalAmbientBrightness;
-		// RB end
+		void						SetWentToFullscreenMenu( bool _wentToFullscreenMenu )
+		{
+			wentToFullscreenMenu = _wentToFullscreenMenu;
+		}
 
-		idList<vidMode_t>			modeList;
+	private:
+		float originalFramerate;
+		int originalHighResolutionClock;
+		int originalVsync;
+		bool wentToFullscreenMenu;
 	};
 
 	idMenuScreen_Shell_SystemOptions() :
@@ -1506,7 +1584,8 @@ public:
 		cursorItem( 0 ),
 		cursorGrabber( 0 ),
 		cursorNone( 0 ),
-		showSoulCubeInfoOnLoad( false )
+		showSoulCubeInfoOnLoad( false ),
+		updateOnRestore( false )
 	{
 	}
 
@@ -1530,9 +1609,16 @@ public:
 	void					ToggleNewPDA( bool show );
 	void					UpdateAudioLog( bool show );
 	void					UpdateCommunication( bool show, idPlayer* player );
-	void					UpdateOxygen( bool show, int val = 0, bool envSuit = false );
+	void					UpdateOxygen( bool show, int val = 0 );
+	void					UpdateEnviro( bool show, int bar, int val );
+
 	void					SetupObjective( const idStr& title, const idStr& desc, const idMaterial* screenshot );
 	void					SetupObjectiveComplete( const idStr& title );
+	idStr					GetObjectiveCompleteTitle()
+	{
+		return objCompleteTitle;
+	}
+
 	void					ShowObjective( bool complete );
 	void					HideObjective( bool complete );
 	void					GiveWeapon( idPlayer* player, int weaponIndex );
@@ -1548,6 +1634,11 @@ public:
 	void					SetShowSoulCubeOnLoad( bool show )
 	{
 		showSoulCubeInfoOnLoad = show;
+	}
+
+	void					UpdateOnRestore( bool update )
+	{
+		updateOnRestore = update;
 	}
 
 	// MULTIPLAYER
@@ -1638,6 +1729,7 @@ private:
 	idStr					cursorFocus;
 
 	bool					showSoulCubeInfoOnLoad;
+	bool					updateOnRestore;
 };
 
 //*

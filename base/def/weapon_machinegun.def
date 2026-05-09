@@ -80,10 +80,6 @@ entityDef weapon_machinegun {
 	"snd_glass"					"bullet_impact_glass"
 
 	// MP
-	"skin_on"					"skins/models/weapons/flashlight_on"
-	"skin_on_invis"				"skins/models/weapons/flashlight_on_invis"
-	"skin_off"					"skins/models/weapons/flashlight_off"
-	"skin_off_invis"			"skins/models/weapons/flashlight_off_invis"
 	"skin_invisible"			"skins/machinegun_invis"
 
 	"spread"					"1"

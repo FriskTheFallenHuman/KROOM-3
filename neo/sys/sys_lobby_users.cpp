@@ -1188,7 +1188,7 @@ void idLobby::SyncLobbyUsersWithLocalUsers( bool allowLocalJoins, bool onlineMat
 		return;
 	}
 
-	if( allowLocalJoins )
+	if( allowLocalJoins && !common->GetServerDedicated() )
 	{
 		// If we are allowed to do so, allow local users to join the session user list
 		for( int i = 0; i < sessionCB->GetSignInManager().GetNumLocalUsers(); i++ )

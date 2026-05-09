@@ -3,23 +3,6 @@
  Bloodstone Active
 
 ***********************************************************************/
-export jay {
-	// view model blood_orb
-	options -prefix setup01_ -rename origin blah -keep flash
-	mesh	models/weapons/blood_orb/cycles/idle_passive.mb -dest models/md5/weapons/blood_orb_view/bloodorb
-	anim	models/weapons/blood_orb/cycles/1_to_2.mb -dest models/md5/weapons/blood_orb_view/1_to_2
-	anim	models/weapons/blood_orb/cycles/2_to_3.mb -dest models/md5/weapons/blood_orb_view/2_to_3
-	anim	models/weapons/blood_orb/cycles/3_to_passive.mb -dest models/md5/weapons/blood_orb_view/3_to_passive
-	anim	models/weapons/blood_orb/cycles/idle_1.mb -dest models/md5/weapons/blood_orb_view/idle_1
-	anim	models/weapons/blood_orb/cycles/idle_2.mb -dest models/md5/weapons/blood_orb_view/idle_2
-	anim	models/weapons/blood_orb/cycles/idle_3.mb -dest models/md5/weapons/blood_orb_view/idle_3
-	anim	models/weapons/blood_orb/cycles/putaway_2.mb -dest models/md5/weapons/blood_orb_view/putaway_2
-	anim	models/weapons/blood_orb/cycles/putaway_3.mb -dest models/md5/weapons/blood_orb_view/putaway_3 
-	anim	models/weapons/blood_orb/cycles/passive_to_1.mb -dest models/md5/weapons/blood_orb_view/passive_to_1 
-	anim	models/weapons/blood_orb/cycles/raise_2.mb -dest models/md5/weapons/blood_orb_view/raise_2
-	anim	models/weapons/blood_orb/cycles/raise_3.mb -dest models/md5/weapons/blood_orb_view/raise_3
-	
-}
 
 model viewmodel_bloodstone_active1 {
 	mesh						models/md5/weapons/blood_orb_view/bloodorb.md5mesh
@@ -79,17 +62,17 @@ entityDef weapon_bloodstone_active1 {
 	"hudIcon"					"guis/assets/hud/icons/bloodorb2w.tga"
 
 	"weapon_scriptobject"		"weapon_bloodstone_active1"
-	
+
 	"ammoType"					"ammo_bloodstone"
 	"ammoRequired"				"1000"
 	"clipSize"					"0"
 	"lowAmmo"					"-1"
-		
+
 	"mtr_flashShader"			"muzzleflash"
 	"flashColor"				"1 0.8 0.4"
 	"flashRadius"				"120"
 	"flashPointLight"			"1"
-	
+
 	"snd_acquire"				"sound_weapon_acquire"
 	"snd_respawn"				"sound_weapon_respawn"
 }
@@ -117,17 +100,17 @@ entityDef weapon_bloodstone_active2 {
 	"hudIcon"					"guis/assets/hud/icons/bloodorb2w.tga"
 
 	"weapon_scriptobject"		"weapon_bloodstone_active2"
-	
+
 	"ammoType"					"ammo_bloodstone"
 	"ammoRequired"				"1000"
 	"clipSize"					"0"
 	"lowAmmo"					"-1"
-		
+
 	"mtr_flashShader"			"muzzleflash"
 	"flashColor"				"1 0.8 0.4"
 	"flashRadius"				"120"
 	"flashPointLight"			"1"
-	
+
 	"snd_acquire"				"sound_weapon_acquire"
 	"snd_respawn"				"sound_weapon_respawn"
 }
@@ -156,16 +139,16 @@ entityDef weapon_bloodstone_active3 {
 	"hudIcon"					"guis/assets/hud/icons/bloodorb2w.tga"
 
 	"weapon_scriptobject"		"weapon_bloodstone_active3"
-	
+
 	"ammoType"					"ammo_bloodstone"
 	"ammoRequired"				"1000"
 	"clipSize"					"0"
-	
+
 	"mtr_flashShader"			"muzzleflash"
 	"flashColor"				"1 0.8 0.4"
 	"flashRadius"				"120"
 	"flashPointLight"			"1"
-	
+
 	"snd_acquire"				"sound_weapon_acquire"
 	"snd_respawn"				"sound_weapon_respawn"
 }

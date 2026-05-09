@@ -40,6 +40,8 @@ If you have questions concerning this license or the applicable additional terms
 class idSIMD_Generic : public idSIMDProcessor
 {
 public:
+	virtual ~idSIMD_Generic() {}
+
 	virtual const char* VPCALL GetName() const;
 
 	virtual void VPCALL MinMax( float& min,			float& max,				const float* src,		const int count );

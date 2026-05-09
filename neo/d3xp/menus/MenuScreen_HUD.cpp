@@ -181,6 +181,38 @@ void idMenuScreen_HUD::ShowScreen( const mainMenuTransition_t transitionType )
 
 	menuGUI->SetGlobal( "toggleNewNotification", new idTriggerNewPDAOrVideo( this ) );
 
+	if( !common->IsMultiplayer() )
+	{
+		idPlayer* player = gameLocal.GetLocalPlayer();
+		if( player && player->hud == this )
+		{
+			if( updateOnRestore )
+			{
+				updateOnRestore = false;
+				if( player->IsTipVisible() )
+				{
+					player->ShowLastTip();
+				}
+				if( player->IsObjectiveUp() )
+				{
+					ShowObjective( false );
+				}
+				if( player->IsObjectiveCompleteUp() )
+				{
+					ShowObjective( true );
+				}
+				if( player->IsNewVideoUp() )
+				{
+					ToggleNewVideo( true );
+				}
+				if( player->IsNewPDAUp() )
+				{
+					ToggleNewPDA( true );
+				}
+			}
+			UpdateWeaponStates( player, false );
+		}
+	}
 }
 
 /*
@@ -288,7 +320,11 @@ void idMenuScreen_HUD::UpdateHealthArmor( idPlayer* player )
 	{
 		if( player->healthPulse )
 		{
-			player->StartSound( "snd_healthpulse", SND_CHANNEL_ITEM, 0, false, NULL );
+			if( player->playHealthPulseSound )
+			{
+				player->playHealthPulseSound = false;
+				player->StartSound( "snd_healthpulse", SND_CHANNEL_ITEM, 0, false, NULL );
+			}
 			player->healthPulse = false;
 			healthPulse->SetVisible( true );
 			healthPulse->PlayFrame( "rollOn" );
@@ -391,6 +427,12 @@ void idMenuScreen_HUD::UpdateWeaponInfo( idPlayer* player )
 	}
 	else
 	{
+
+		if( weapon.GetEntity()->ClipSize() > 0 && weapon.GetEntity()->GetRenderEntity()->gui[0] != NULL || g_infiniteAmmo.GetBool() )
+		{
+			ammoInfo->SetVisible( false );
+			return; // watch out
+		}
 
 		idStr totalAmmo;
 		idStr playerAmmo;
@@ -1037,7 +1079,7 @@ void idMenuScreen_HUD::UpdateWeaponStates( idPlayer* player, bool weaponChanged 
 	if( common->IsMultiplayer() )
 	{
 
-		if( !mpWeapons || player->GetIdealWeapon() == 0 )
+		if( !mpWeapons || player->GetIdealWeapon() == 0 || player->GetIdealWeapon() == 17 )
 		{
 			return;
 		}
@@ -1054,6 +1096,11 @@ void idMenuScreen_HUD::UpdateWeaponStates( idPlayer* player, bool weaponChanged 
 			// start at 1 so we skip the fists
 			for( int i = 1; i < MAX_WEAPONS; ++i )
 			{
+				if( i >= 17 && i <= 19 )
+				{
+					continue; // skip the handheld flashlight, and the PDA
+				}
+
 				if( player->inventory.weapons & ( 1 << i ) )
 				{
 					if( i == player->GetIdealWeapon() )
@@ -1578,7 +1625,7 @@ void  idMenuScreen_HUD::UpdateAudioLog( bool show )
 
 		if( audioLogPrevTime == 0 )
 		{
-			audioLogPrevTime = gameLocal.time;
+			audioLogPrevTime = gameLocal.fast.time;
 		}
 
 		for( int index = 0; index < 13; ++index )
@@ -1586,7 +1633,7 @@ void  idMenuScreen_HUD::UpdateAudioLog( bool show )
 			idSWFSpriteInstance* node = audioLog->GetScriptObject()->GetNestedSprite( "bar", va( "node%d", index ) );
 			if( node != NULL )
 			{
-				float diff = gameLocal.time - audioLogPrevTime;
+				float diff = gameLocal.fast.time - audioLogPrevTime;
 				float speed = ( diff / 350.0f ) * 100.0f;
 				if( !node->UpdateMoveToScale( speed ) )
 				{
@@ -1596,7 +1643,7 @@ void  idMenuScreen_HUD::UpdateAudioLog( bool show )
 				}
 			}
 		}
-		audioLogPrevTime = gameLocal.time;
+		audioLogPrevTime = gameLocal.fast.time;
 	}
 }
 
@@ -1664,7 +1711,7 @@ void  idMenuScreen_HUD::UpdateCommunication( bool show, idPlayer* player )
 
 		if( commPrevTime == 0 )
 		{
-			commPrevTime = gameLocal.time;
+			commPrevTime = gameLocal.fast.time;
 		}
 
 		for( int index = 0; index < 16; ++index )
@@ -1672,7 +1719,7 @@ void  idMenuScreen_HUD::UpdateCommunication( bool show, idPlayer* player )
 			idSWFSpriteInstance* node = communication->GetScriptObject()->GetNestedSprite( "info", "bar", va( "node%d", index ) );
 			if( node != NULL )
 			{
-				float diff = gameLocal.time - commPrevTime;
+				float diff = gameLocal.fast.time - commPrevTime;
 				float speed = ( diff / 350.0f ) * 100.0f;
 				if( !node->UpdateMoveToScale( speed ) )
 				{
@@ -1683,7 +1730,7 @@ void  idMenuScreen_HUD::UpdateCommunication( bool show, idPlayer* player )
 			}
 		}
 
-		commPrevTime = gameLocal.time;
+		commPrevTime = gameLocal.fast.time;
 	}
 
 	oxygenComm = inVaccuum;
@@ -1694,7 +1741,7 @@ void  idMenuScreen_HUD::UpdateCommunication( bool show, idPlayer* player )
 idMenuScreen_HUD::UpdateOxygen
 ========================
 */
-void  idMenuScreen_HUD::UpdateOxygen( bool show, int val, bool envSuit )
+void  idMenuScreen_HUD::UpdateOxygen( bool show, int val )
 {
 
 	if( !oxygen )
@@ -1737,14 +1784,74 @@ void  idMenuScreen_HUD::UpdateOxygen( bool show, int val, bool envSuit )
 		idSWFTextInstance* txtVal = oxygen->GetScriptObject()->GetNestedText( "info", "txtHeading" );
 		if( txtVal != NULL )
 		{
-			if( envSuit )
+			txtVal->SetText( "#str_00100922" );
+			txtVal->SetStrokeInfo( true, 0.9f, 2.0f );
+		}
+
+		txtVal = oxygen->GetScriptObject()->GetNestedText( "info", "txtVal" );
+		if( txtVal != NULL )
+		{
+			txtVal->SetText( va( "%d", val ) );
+			txtVal->SetStrokeInfo( true, 0.9f, 2.0f );
+		}
+
+	}
+	else if( !show )
+	{
+		inVaccuum = false;
+		oxygen->StopFrame( 1 );
+	}
+}
+
+/*
+========================
+idMenuScreen_HUD::UpdateEnviro
+========================
+*/
+void idMenuScreen_HUD::UpdateEnviro( bool show, int bar, int val )
+{
+	// code below is from idMenuScreen_HUD::UpdateOxygen (with changes)
+	if( !oxygen )
+	{
+		return;
+	}
+
+	if( show )
+	{
+		if( !oxygen->IsVisible() )
+		{
+			inVaccuum = true;
+			oxygen->SetVisible( true );
+			oxygen->PlayFrame( "rollOn" );
+		}
+
+		idSWFSpriteInstance* info = oxygen->GetScriptObject()->GetNestedSprite( "info" );
+		if( info != NULL )
+		{
+			info->StopFrame( bar + 1 );
+		}
+
+		idSWFSpriteInstance* goodFrame = oxygen->GetScriptObject()->GetNestedSprite( "goodFrame" );
+		idSWFSpriteInstance* badFrame = oxygen->GetScriptObject()->GetNestedSprite( "badFrame" );
+
+		if( goodFrame != NULL && badFrame != NULL )
+		{
+			if( bar + 1 >= 36 )
 			{
-				txtVal->SetText( "#str_00100204" );
+				goodFrame->SetVisible( true );
+				badFrame->SetVisible( false );
 			}
 			else
 			{
-				txtVal->SetText( "#str_00100922" );
+				goodFrame->SetVisible( false );
+				badFrame->SetVisible( true );
 			}
+		}
+
+		idSWFTextInstance* txtVal = oxygen->GetScriptObject()->GetNestedText( "info", "txtHeading" );
+		if( txtVal != NULL )
+		{
+			txtVal->SetText( "#str_00100204" );
 			txtVal->SetStrokeInfo( true, 0.9f, 2.0f );
 		}
 
@@ -2280,10 +2387,7 @@ void idMenuScreen_HUD::UpdateChattingHud( idPlayer* player )
 		{
 			mpChatObject->StopFrame( 1 );
 			gui->ForceInhibitControl( false );
-
-			// RB: 64 bit fixes, changed NULL to 0
 			gui->SetGlobal( "focusWindow", 0 );
-			// RB end
 		}
 	}
 	else

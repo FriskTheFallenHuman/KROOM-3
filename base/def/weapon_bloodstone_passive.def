@@ -4,28 +4,6 @@
 
 ***********************************************************************/
 
-export fredorb {
-	// view model blood_orb
-	options -prefix ART_ -keep flash
-	mesh	models/weapons/artifact/cycles/makemesh.mb -dest models/md5/weapons/blood_orb_view/new/bloodorb
-	anim	models/weapons/artifact/cycles/idle_normal.mb -dest models/md5/weapons/blood_orb_view/new/idle_normal
-	anim	models/weapons/artifact/cycles/idle_charged.mb -dest models/md5/weapons/blood_orb_view/new/idle_charged
-	anim	models/weapons/artifact/cycles/raise.mb -range 1 15 -dest models/md5/weapons/blood_orb_view/new/raise
-	anim	models/weapons/artifact/cycles/raise.mb -range 15 20 -dest models/md5/weapons/blood_orb_view/new/putaway
-	anim	models/weapons/artifact/cycles/fire.mb -dest models/md5/weapons/blood_orb_view/new/fire
-	anim	models/weapons/artifact/cycles/absorb.mb -range 1 15 -dest models/md5/weapons/blood_orb_view/new/absorb
-	anim	models/weapons/artifact/cycles/idle_inactive.mb -dest models/md5/weapons/blood_orb_view/new/idle_inactive
-}
-
-export jayorbworld {
-
-	options -prefix PLAYER_ARTIFACT_ -keep ATTACHER -rename ATTACHER origin -clearorigin
-
-	mesh	models/characters/player_character/cycles/artifact_w_idle.mb -dest models/md5/weapons/artifact_world/artifactworld
-	anim	models/characters/player_character/cycles/artifact_w_idle.mb -dest models/md5/weapons/artifact_world/artifactworld_idle
-
-}
-
 model worldmodel_bloodstone_passive {
 	mesh						models/md5/weapons/artifact_world/artifactworld.md5mesh
 
@@ -90,7 +68,7 @@ entityDef weapon_bloodstone_passive {
 
 	"inv_desc"					"#str_00100213"
 	"display_name"				"#str_00100209"
-	"pdaIcon"					"guis/assets/hud/icons/shotgun_new.tga"	
+	"pdaIcon"					"guis/assets/hud/icons/shotgun_new.tga"
 	"hudIcon"					"guis/assets/hud/icons/bloodorbw.tga"
 
 	"weapon_scriptobject"		"weapon_bloodstone_passive"

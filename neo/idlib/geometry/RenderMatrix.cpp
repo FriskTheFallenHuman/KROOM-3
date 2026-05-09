@@ -3978,7 +3978,7 @@ static bool PointInsideInfiniteShadow( const idBounds& occluderBounds, const idV
 
 	// If the light is inside the bounding box then the shadow is projected
 	// in all directions and any point is inside the infinte shadow projection.
-	if( expandedBounds.ContainsPoint( localPoint ) )
+	if( expandedBounds.ContainsPoint( localLightOrigin ) )
 	{
 		return true;
 	}

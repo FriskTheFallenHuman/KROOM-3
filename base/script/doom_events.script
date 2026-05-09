@@ -171,13 +171,13 @@ scriptEvent	void 	setGuiParm( string key, string value );
 scriptEvent	void 	setGuiFloat( string key, float value );
 
 // searches for the name of a spawn arg that matches the prefix.  for example,
-// passing in "attack_target" matches "attack_target1", "attack_targetx", "attack_target_enemy", 
+// passing in "attack_target" matches "attack_target1", "attack_targetx", "attack_target_enemy",
 // etc. The returned string is the name of the key which can then be passed into
 // functions like getKey() to lookup the value of that spawn arg.  This
 // is usefull for when you have multiple values to look up, like when you
 // target multiple objects.  To find the next matching key, pass in the previous
 // result and the next key returned will be the first one that matches after
-// the previous result.  pass in "" to get the first match.  returns "" when no 
+// the previous result.  pass in "" to get the first match.  returns "" when no
 // more keys match.  Note to coders: this is the same as MatchPrefix in the game code.
 scriptEvent	string	getNextKey( string prefix, string lastMatch );
 
@@ -1102,10 +1102,10 @@ scriptEvent	void 	clearBurn();
 
 // enables/disables smoke particles on bones.  pass in the particle #, or ALL_PARTICLES for turning on/off all particle systems.
 // particles are spawned in the order they appear in the entityDef
-scriptEvent void	setSmokeVisibility( float particle_num, float on );	
+scriptEvent void	setSmokeVisibility( float particle_num, float on );
 
 // returns the # of emitters defined by 'smokeParticleSystem' in the entitydef
-scriptEvent float	numSmokeEmitters();	
+scriptEvent float	numSmokeEmitters();
 
 scriptEvent	void 	waitAction( string name );
 scriptEvent	void 	stopThinking();

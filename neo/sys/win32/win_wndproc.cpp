@@ -192,6 +192,7 @@ LONG WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 		case WM_CLOSE:
 			soundSystem->SetMute( true );
 			cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "quit\n" );
+			common->SetQuitRequested( true );
 			break;
 
 		case WM_ACTIVATE:

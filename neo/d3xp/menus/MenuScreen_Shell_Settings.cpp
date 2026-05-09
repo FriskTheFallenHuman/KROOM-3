@@ -36,6 +36,7 @@ enum settingMenuCmds_t
 	SETTING_CMD_CONTROLS,
 	SETTING_CMD_GAMEPLAY,
 	SETTING_CMD_SYSTEM,
+	SETTING_GRAPHICS_SYSTEM,
 };
 
 /*
@@ -67,6 +68,9 @@ void idMenuScreen_Shell_Settings::Initialize( idMenuHandler* data )
 	option.Append( "#str_04160" );	// system
 	menuOptions.Append( option );
 	option.Clear();
+	option.Append( "Graphics" );	// graphics options
+	menuOptions.Append( option );
+	option.Clear();
 
 	options->SetListData( menuOptions );
 	options->SetNumVisibleOptions( NUM_SETTING_OPTIONS );
@@ -78,7 +82,7 @@ void idMenuScreen_Shell_Settings::Initialize( idMenuHandler* data )
 	helpWidget->SetSpritePath( GetSpritePath(), "info", "helpTooltip" );
 	AddChild( helpWidget );
 
-	const char* tips[] = { "#str_02166", "#str_02168", "#str_02170" };
+	const char* tips[] = { "#str_02166", "#str_02168", "Customize system settings", "Customize video settings" };
 
 	while( options->GetChildren().Num() < NUM_SETTING_OPTIONS )
 	{
@@ -238,6 +242,11 @@ bool idMenuScreen_Shell_Settings::HandleAction( idWidgetAction& action, const id
 				case SETTING_CMD_GAMEPLAY:
 				{
 					menuData->SetNextScreen( SHELL_AREA_GAME_OPTIONS, MENU_TRANSITION_SIMPLE );
+					break;
+				}
+				case SETTING_GRAPHICS_SYSTEM:
+				{
+					menuData->SetNextScreen( SHELL_AREA_GRAPHICS_OPTIONS, MENU_TRANSITION_SIMPLE );
 					break;
 				}
 				case SETTING_CMD_SYSTEM:

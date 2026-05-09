@@ -170,7 +170,9 @@ const idEventDef AI_TriggerFX( "triggerFX", "ss" );
 const idEventDef AI_StartEmitter( "startEmitter", "sss", 'e' );
 const idEventDef AI_GetEmitter( "getEmitter", "s", 'e' );
 const idEventDef AI_StopEmitter( "stopEmitter", "s" );
-
+const idEventDef AI_CustomClearGrabbed( "cclearGrabbed" );
+const idEventDef AI_FindHittableEnemy( "findHittableEnemy", "d", 'e' );
+const idEventDef AI_FindHittableEnemyAI( "findHittableEnemyAI", "d", 'e' );
 
 
 CLASS_DECLARATION( idActor, idAI )
@@ -311,6 +313,9 @@ EVENT( AI_TriggerFX,						idAI::Event_TriggerFX )
 EVENT( AI_StartEmitter,						idAI::Event_StartEmitter )
 EVENT( AI_GetEmitter,						idAI::Event_GetEmitter )
 EVENT( AI_StopEmitter,						idAI::Event_StopEmitter )
+EVENT( AI_CustomClearGrabbed,				idAI::Event_CustomClearGrabbed )
+EVENT( AI_FindHittableEnemy,				idAI::Event_FindHittableEnemy )
+EVENT( AI_FindHittableEnemyAI,				idAI::Event_FindHittableEnemyAI )
 END_CLASS
 
 /*
@@ -3398,4 +3403,137 @@ void idAI::Event_SetHomingMissileGoal()
 	}
 
 	homingMissileGoal = enemy->GetPhysics()->GetOrigin();
+}
+
+/*
+=====================
+idAI::Event_CustomClearGrabbed
+=====================
+*/
+void idAI::Event_CustomClearGrabbed()
+{
+	fl.grabbed = false;
+	noGrab = spawnArgs.GetBool( "noGrab", "0" );
+	wasThrown = false;
+}
+
+/*
+=====================
+idAI::CanHitActor
+=====================
+*/
+bool idAI::CanHitActor( const idActor& actor, bool useFov )
+{
+	// code below is from idAI::Event_CanHitEnemy and idActor::CanSee (with changes)
+	if( actor.IsHidden() )
+	{
+		return false;
+	}
+
+	idVec3 toPos = actor.GetEyePosition();
+	if( useFov && !CheckFOV( toPos ) )
+	{
+		return false;
+	}
+	idVec3 eye = GetEyePosition();
+
+	// expand the ray out as far as possible so we can detect anything behind the enemy
+	idVec3 dir = toPos - eye;
+	dir.Normalize();
+	toPos = eye + dir * MAX_WORLD_SIZE;
+	trace_t	tr;
+	gameLocal.clip.TracePoint( tr, eye, toPos, MASK_SHOT_BOUNDINGBOX, this );
+	idEntity* hit = gameLocal.GetTraceEntity( tr );
+
+	if( tr.fraction >= 1.0f || hit == &actor || ( tr.fraction < 1.0f && hit->IsType( idAI::Type ) && static_cast<idAI*>( hit )->team != team ) )
+	{
+		return true;
+	}
+	return false;
+}
+
+/*
+=====================
+idAI::Event_FindHittableEnemy
+=====================
+*/
+void idAI::Event_FindHittableEnemy( int useFov )
+{
+	// code below is from idAI::Event_FindEnemy (with changes)
+	if( gameLocal.InPlayerPVS( this ) )
+	{
+		for( int i = 0; i < gameLocal.numClients; i++ )
+		{
+			idEntity* ent = gameLocal.entities[i];
+
+			if( !ent || !ent->IsType( idActor::Type ) )
+			{
+				continue;
+			}
+
+			idActor* actor = static_cast<idActor*>( ent );
+			if( actor == GetEnemy() )
+			{
+				continue; // skip the current enemy
+			}
+			if( actor->health <= 0 || !( ReactionTo( actor ) & ATTACK_ON_SIGHT ) )
+			{
+				continue;
+			}
+
+			if( CanHitActor( *actor, useFov != 0 ) )
+			{
+				idThread::ReturnEntity( actor );
+				return;
+			}
+		}
+	}
+
+	idThread::ReturnEntity( NULL );
+}
+
+/*
+=====================
+idAI::Event_FindHittableEnemyAI
+=====================
+*/
+void idAI::Event_FindHittableEnemyAI( int useFov )
+{
+	// code below is from idAI::Event_FindEnemyAI (with changes)
+	pvsHandle_t pvs = gameLocal.pvs.SetupCurrentPVS( GetPVSAreas(), GetNumPVSAreas() );
+
+	float bestDist = idMath::INFINITUM;
+	idActor* bestEnemy = NULL;
+	for( idEntity* ent = gameLocal.activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() )
+	{
+		if( ent->fl.hidden || ent->fl.isDormant || !ent->IsType( idActor::Type ) )
+		{
+			continue;
+		}
+
+		idActor* actor = static_cast<idActor*>( ent );
+		if( actor == GetEnemy() )
+		{
+			continue; // skip the current enemy
+		}
+		if( actor->health <= 0 || !( ReactionTo( actor ) & ATTACK_ON_SIGHT ) )
+		{
+			continue;
+		}
+		if( !gameLocal.pvs.InCurrentPVS( pvs, actor->GetPVSAreas(), actor->GetNumPVSAreas() ) )
+		{
+			continue;
+		}
+
+		idVec3 delta = physicsObj.GetOrigin() - actor->GetPhysics()->GetOrigin();
+		float dist = delta.LengthSqr();
+		if( ( dist < bestDist ) && CanHitActor( *actor, useFov != 0 ) )
+		{
+			bestDist = dist;
+			bestEnemy = actor;
+		}
+	}
+
+	gameLocal.pvs.FreeCurrentPVS( pvs );
+	idThread::ReturnEntity( bestEnemy );
 }

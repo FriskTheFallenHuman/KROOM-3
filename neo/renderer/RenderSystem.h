@@ -157,7 +157,6 @@ struct glconfig_t
 	float				glVersion;				// atof( version_string )
 
 	int					maxTextureSize;			// queried from GL
-	int					maxTextureCoords;
 	int					maxTextureImageUnits;
 	int					uniformBufferOffsetAlignment;
 	float				maxTextureAnisotropy;
@@ -176,7 +175,6 @@ struct glconfig_t
 	bool				mapBufferRangeAvailable;
 	bool				vertexArrayObjectAvailable;
 	bool				drawElementsBaseVertexAvailable;
-	bool				fragmentProgramAvailable;
 	bool				glslAvailable;
 	bool				uniformBufferAvailable;
 	bool				twoSidedStencilAvailable;

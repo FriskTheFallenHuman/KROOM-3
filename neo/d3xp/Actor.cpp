@@ -2440,6 +2440,10 @@ void idActor::Gib( const idVec3& dir, const char* damageDefName )
 		return;
 	}
 	idAFEntity_Gibbable::Gib( dir, damageDefName );
+
+	// moved from idActor::SpawnGibs
+	RemoveAttachments();
+
 	if( head.GetEntity() )
 	{
 		head.GetEntity()->Hide();
@@ -2797,7 +2801,6 @@ idActor::SpawnGibs
 void idActor::SpawnGibs( const idVec3& dir, const char* damageDefName )
 {
 	idAFEntity_Gibbable::SpawnGibs( dir, damageDefName );
-	RemoveAttachments();
 }
 
 /*

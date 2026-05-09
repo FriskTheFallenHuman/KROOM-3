@@ -166,6 +166,8 @@ idLobbyToSessionCB* lobbyToSessionCB = &lobbyToSessionCBLocal;
 class idVoiceChatMgrWin : public idVoiceChatMgr
 {
 public:
+	virtual			~idVoiceChatMgrWin() {}
+
 	virtual bool	GetLocalChatDataInternal( int talkerIndex, byte* data, int& dataSize )
 	{
 		return false;
@@ -339,7 +341,13 @@ idSessionLocalWin::ListServers
 */
 void idSessionLocalWin::ListServers( const idCallback& callback )
 {
-	ListServersCommon();
+	idCallback* localCallBack = callback.Clone();
+	if( localCallBack )
+	{
+		localCallBack->Call();
+		delete localCallBack;
+		localCallBack = NULL;
+	}
 }
 
 /*
@@ -389,27 +397,46 @@ void idSessionLocalWin::Connect_f( const idCmdArgs& args )
 {
 	if( args.Argc() < 2 )
 	{
-		idLib::Printf( "Usage: Connect to IP. Use IP:Port to specify port (e.g. 10.0.0.1:1234) \n" );
+		const char* usage =
+			"Connect to the specified IP and port. Usage:\n"
+			"\n"
+			" connect <ip>\n"
+			" connect <ip> <port>\n"
+			"\n"
+			"If <port> isn't specified, the default port (%s) is used.\n";
+		idLib::Printf( usage, net_port.GetDefaultString() );
 		return;
 	}
 
+	lobbyConnectInfo_t connectInfo;
+	if( !Sys_StringToNetAdr( args.Argv( 1 ), &connectInfo.netAddr, true ) )
+	{
+		idLib::Printf( "Invalid IP.\n" );
+		return;
+	}
+	if( args.Argc() > 2 )
+	{
+		int port = atoi( args.Argv( 2 ) );
+		if( port < 0 || port > 65535 )
+		{
+			idLib::Printf( "Invalid port.\n" );
+			return;
+		}
+		connectInfo.netAddr.port = ( unsigned short )port;
+	}
+	else
+	{
+		connectInfo.netAddr.port = ( unsigned short )atoi( net_port.GetDefaultString() );
+	}
+	idLib::Printf( "Connecting to %s\n", Sys_NetAdrToString( connectInfo.netAddr ) );
+
 	Cancel();
+	common->SetServerDedicated( false );
 
 	if( signInManager->GetMasterLocalUser() == NULL )
 	{
 		signInManager->RegisterLocalUser( 0 );
 	}
-
-	lobbyConnectInfo_t connectInfo;
-
-	Sys_StringToNetAdr( args.Argv( 1 ), &connectInfo.netAddr, true );
-	// DG: don't use net_port to select port to connect to
-	//     the port can be specified in the command, else the default port is used
-	if( connectInfo.netAddr.port == 0 )
-	{
-		connectInfo.netAddr.port = 27015;
-	}
-	// DG end
 
 	ConnectAndMoveToLobby( GetPartyLobby(), connectInfo, false );
 }
@@ -419,7 +446,7 @@ void idSessionLocalWin::Connect_f( const idCmdArgs& args )
 void Connect_f
 ========================
 */
-CONSOLE_COMMAND( connect, "Connect to the specified IP", NULL )
+CONSOLE_COMMAND_SHIP( connect, "Connect to the specified IP and port", NULL )
 {
 	sessionLocalWin.Connect_f( args );
 }

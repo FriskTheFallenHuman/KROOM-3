@@ -13,6 +13,7 @@ weapon_flashlight.script
 #define FLASHLIGHT_RELOAD_TO_IDLE	4
 
 object weapon_flashlight : weapon_base {
+	float		netFired;
 	boolean		on;
 	boolean		onBeforeCinematic;
 	float		intensity;
@@ -20,9 +21,9 @@ object weapon_flashlight : weapon_base {
 	string		skin_on_invis;
 	string		skin_off;
 	string		skin_off_invis;
-	
+
 	void		init();
-	
+
 	void		Lower();
 	void		Raise();
 	void		Idle();
@@ -33,6 +34,7 @@ object weapon_flashlight : weapon_base {
 	void		TurnOff();
 	void		EnterCinematic();
 	void		ExitCinematic();
+	void		NetCatchup();
 
 	void		updateLightIntensity();
 
@@ -41,17 +43,18 @@ object weapon_flashlight : weapon_base {
 };
 
 void weapon_flashlight::init() {
+	netFired = false;
 
 	skin_on			= getKey( "skin_on" );
 	skin_on_invis	= getKey( "skin_on_invis" );
 	skin_off		= getKey( "skin_off" );
 	skin_off_invis	= getKey( "skin_off_invis" );
-	
+
 	global_flashlight_intensity = 1.0;
 	intensity = 1.0;
 	setLightParm( 3, 1.0 );
 	setShaderParm( 3, 1.0 );
-	
+
 	weaponState( "Raise", 0 );
 }
 
@@ -72,7 +75,16 @@ void weapon_flashlight::Raise() {
 		updateLightIntensity();
 		waitFrame();
 	}
+
+	beginLightSync();
+
 	weaponState( "Idle", FLASHLIGHT_RAISE_TO_IDLE );
+}
+
+void weapon_flashlight::NetCatchup() {
+	SetLight( !getIntKey( "start_off" ) );
+	beginLightSync();
+	weaponState( "Idle", 0 );
 }
 
 void weapon_flashlight::Lower() {
@@ -95,13 +107,14 @@ void weapon_flashlight::Idle() {
 		if ( WEAPON_LOWERWEAPON ) {
 			weaponState( "Lower", FLASHLIGHT_IDLE_TO_LOWER );
 		}
-		if ( WEAPON_ATTACK ) {
+
+		if ( WEAPON_ATTACK || WEAPON_NETFIRING ) {
+			netFired = WEAPON_NETFIRING;
+			setNetfiring(true);
 			weaponState( "Fire", FLASHLIGHT_IDLE_TO_FIRE );
 		}
 		if ( WEAPON_RELOAD ) {
-			if ( sys.isMultiplayer() ) {
-				weaponState( "ToggleOnOff", FLASHLIGHT_IDLE_TO_RELOAD );
-			}
+			weaponState( "ToggleOnOff", FLASHLIGHT_IDLE_TO_RELOAD );
 		}
 		waitFrame();
 	}
@@ -110,17 +123,47 @@ void weapon_flashlight::Idle() {
 void weapon_flashlight::Fire() {
 	float waitTime;
 
-	playAnim( ANIMCHANNEL_ALL, "fire" );
-	waitTime = sys.getTime() + 0.1;
-	while( sys.getTime() < waitTime ) {
-		updateLightIntensity();
-		waitFrame();
+	if ( !sys.isMultiplayer() ) {
+		do {
+			playAnim( ANIMCHANNEL_ALL, "fire" );
+			waitTime = sys.getTime() + 0.1;
+			while( sys.getTime() < waitTime ) {
+				updateLightIntensity();
+				waitFrame();
+			}
+			melee();
+			while( !animDone( ANIMCHANNEL_ALL, FLASHLIGHT_FIRE_TO_IDLE ) ) {
+				updateLightIntensity();
+				waitFrame();
+			}
+		} while ( WEAPON_ATTACK || WEAPON_NETFIRING );
+	} else {
+		float doBreak = false;
+		do {
+			playAnim( ANIMCHANNEL_ALL, "fire" );
+			waitTime = sys.getTime() + 0.1;
+			while( sys.getTime() < waitTime ) {
+				updateLightIntensity();
+				waitFrame();
+			}
+			melee();
+
+			while( !animDone( ANIMCHANNEL_ALL, FLASHLIGHT_FIRE_TO_IDLE + 5 ) ) {
+				updateLightIntensity();
+				waitFrame();
+			}
+			if ( !netFired && (!WEAPON_ATTACK || WEAPON_LOWERWEAPON) ) {
+				doBreak = true;
+				setNetfiring(false);
+			}
+
+			while( !animDone( ANIMCHANNEL_ALL, FLASHLIGHT_FIRE_TO_IDLE ) ) {
+				updateLightIntensity();
+				waitFrame();
+			}
+		} while ( (!netFired && !doBreak) || (netFired && WEAPON_NETFIRING) );
 	}
-	melee();
-	while( !animDone( ANIMCHANNEL_ALL, FLASHLIGHT_FIRE_TO_IDLE ) ) {
-		updateLightIntensity();
-		waitFrame();
-	}
+
 	weaponState( "Idle", FLASHLIGHT_FIRE_TO_IDLE );
 }
 
@@ -134,25 +177,28 @@ void weapon_flashlight::ToggleOnOff() {
 	float waitTime;
 
 	playAnim( ANIMCHANNEL_ALL, "reload" );
-	
-	updateLightIntensity();
+
+	waitTime = sys.getTime() + 0.2;
+	while( sys.getTime() < waitTime ) {
+		updateLightIntensity();
+		waitFrame();
+	}
 
 	SetLight( !on );
-	
+
 	while( !animDone( ANIMCHANNEL_ALL, FLASHLIGHT_RELOAD_TO_IDLE ) ) {
 		updateLightIntensity();
 		waitFrame();
 	}
-	//weaponState( "Idle", FLASHLIGHT_RELOAD_TO_IDLE );
+
+	weaponState( "Idle", FLASHLIGHT_RELOAD_TO_IDLE );
 }
 
 void weapon_flashlight::TurnOn() {
-
 	SetLight( true );
 }
 
 void weapon_flashlight::TurnOff() {
-
 	SetLight( false );
 }
 
@@ -163,6 +209,7 @@ void weapon_flashlight::EnterCinematic() {
 }
 
 void weapon_flashlight::ExitCinematic() {
+	netFired = false;
 	SetLight( onBeforeCinematic );
 	intensity = 1.0;
 	updateLightIntensity();

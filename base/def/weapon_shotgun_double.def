@@ -4,37 +4,6 @@
 
 ***********************************************************************/
 
-export dbshotgun {
-	// view model double barrel shotgun
-	options -prefix DB_ -keep barrel flash eject -parent flash gunbarrel -parent eject gunbody -parent barrel gunbarrel -sourcedir models/weapons/doublebarrel/cycles -destdir models/md5/weapons/doublebarrel_view/new
-
-
-	mesh	idle.mb -dest dbviewmesh
-	anim	idle.mb
-	anim	raise_lower.mb -range 1 15 -dest raise
-	anim	raise_lower.mb -range 15 21 -dest lower
-	anim	fire1.mb -xyzprecision .01 -quatprecision 0.00001
-	anim	fire2.mb -xyzprecision .01 -quatprecision 0.00001
-	anim	reload.mb -xyzprecision .01 -quatprecision 0.00001
-	//anim	reload2.mb
-	anim	reload3.mb
-	anim	reload4.mb
-	anim 	putaway.mb
-	anim	reload_noammo.mb
-	anim 	noammo.mb
-}
-
-export jayshotgun {
-
-	// world model double shotgun
-	options -prefix PLAYER_DBSHOTGUN_ -keep ATTACHER barrel flash eject -parent flash body -parent eject body -rename ATTACHER origin -clearorigin
-
-	mesh	models/characters/player_character/cycles/grabber_w_idle.mb -dest models/md5/weapons/shotgun_double_world/worlddbshotgun
-	anim	models/characters/player_character/cycles/grabber_w_idle.mb -range 0 0 -dest models/md5/weapons/shotgun_double_world/dbshotgun_idle
-	anim	models/characters/player_character/cycles/grabber_w_idle.mb -range 0 0 -dest models/md5/weapons/shotgun_double_world/dbshotgun_fire1
-	anim	models/characters/player_character/cycles/dbshotgun_w_reload.mb -dest models/md5/weapons/shotgun_double_world/dbshotgun_reload
-}
-
 model worldmodel_shotgun_double {
 	mesh						models/md5/weapons/shotgun_double_world/worlddbshotgun.md5mesh
 
@@ -47,9 +16,6 @@ model worldmodel_shotgun_double {
 	anim reload_start 			models/md5/weapons/shotgun_double_world/dbshotgun_reload.md5anim
 	anim putaway				models/md5/weapons/shotgun_double_world/dbshotgun_idle.md5anim
 }
-
-
-
 
 model viewmodel_shotgun_double {
 	mesh						models/md5/weapons/doublebarrel_view/new/dbviewmesh.md5mesh
@@ -93,9 +59,6 @@ model viewmodel_shotgun_double {
 	}
 }
 
-
-
-
 entityDef weapon_shotgun_double {
 	"editor_color"				".3 .3 1"
 	"editor_mins"				"-16 -16 0"
@@ -121,7 +84,7 @@ entityDef weapon_shotgun_double {
 
 	"inv_desc"					"#str_00100212"
 	"display_name"				"#str_00100191"
-	"hudIcon"					"guis/assets/hud/icons/doublebarrelw.tga"	
+	"hudIcon"					"guis/assets/hud/icons/doublebarrelw.tga"
 
 	"weapon_scriptobject"		"weapon_shotgun_double"
 	"def_projectile"			"projectile_bullet_shotgun_double"
@@ -159,7 +122,7 @@ entityDef weapon_shotgun_double {
 	"snd_respawn"				"sound_weapon_respawn"
 
 	"skin_invisible"			"skins/shotgun_double_invis"
-	
+
 	"controllerShakeHighMag"	"2.0"
 	"controllerShakeHighTime"	"220"
 	"controllerShakeLowMag"		"20.9"

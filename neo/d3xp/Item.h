@@ -98,6 +98,8 @@ public:
 	virtual void			ReadFromSnapshot( const idBitMsg& msg );
 
 protected:
+	bool					canPickUp;
+
 	int						GetPredictPickupMilliseconds() const
 	{
 		return clientPredictPickupMilliseconds;
@@ -107,7 +109,6 @@ private:
 	idVec3					orgOrigin;
 	bool					spin;
 	bool					pulse;
-	bool					canPickUp;
 
 	// for item pulse effect
 	int						itemShellHandle;

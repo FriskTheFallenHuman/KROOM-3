@@ -50,6 +50,7 @@ const float	idMath::M_MS2SEC		= 0.001f;
 const float	idMath::INFINITUM		= 1e30f;
 const float idMath::FLOAT_EPSILON		= 1.192092896e-07f;
 const float idMath::FLT_SMALLEST_NON_DENORMAL	= * reinterpret_cast< const float* >( & SMALLEST_NON_DENORMAL );	// 1.1754944e-038f
+const int idMath::MAX_INT			= ( int )( ( ~( unsigned int )0 ) >> 1 );
 
 #if defined(USE_INTRINSICS_SSE)
 const __m128 idMath::SIMD_SP_zero				= { 0.0f, 0.0f, 0.0f, 0.0f };

@@ -575,10 +575,7 @@ idMoveable::ReadFromSnapshot
 void idMoveable::ReadFromSnapshot( const idBitMsg& msg )
 {
 	physicsObj.ReadFromSnapshot( msg );
-	if( msg.HasChanged() )
-	{
-		UpdateVisuals();
-	}
+	UpdateVisuals();
 }
 
 /*
@@ -916,6 +913,7 @@ idExplodingBarrel::idExplodingBarrel()
 	spawnAxis.Zero();
 	state = NORMAL;
 	isStable = true;
+	grabberFlames = false;
 	particleModelDefHandle = -1;
 	lightDefHandle = -1;
 	memset( &particleRenderEntity, 0, sizeof( particleRenderEntity ) );
@@ -964,6 +962,8 @@ void idExplodingBarrel::Save( idSaveGame* savefile ) const
 	savefile->WriteFloat( time );
 
 	savefile->WriteBool( isStable );
+
+	savefile->WriteBool( grabberFlames );
 }
 
 /*
@@ -997,6 +997,8 @@ void idExplodingBarrel::Restore( idRestoreGame* savefile )
 	{
 		particleModelDefHandle = gameRenderWorld->AddEntityDef( &particleRenderEntity );
 	}
+
+	savefile->ReadBool( grabberFlames );
 }
 
 /*
@@ -1010,6 +1012,7 @@ void idExplodingBarrel::Spawn()
 	fl.takedamage = true;
 	isStable = true;
 	fl.networkSync = true;
+	grabberFlames = false;
 	spawnOrigin = GetPhysics()->GetOrigin();
 	spawnAxis = GetPhysics()->GetAxis();
 	state = NORMAL;
@@ -1123,8 +1126,29 @@ idExplodingBarrel::StartBurning
 */
 void idExplodingBarrel::StartBurning()
 {
+	if( state != NORMAL && state != BURNING )
+	{
+		return;
+	}
+
 	state = BURNING;
-	AddParticles( "barrelfire.prt", true );
+	grabberFlames = true;
+
+	CancelEvents( &EV_Explode );
+	CancelEvents( &EV_Activate );
+
+	if( particleModelDefHandle < 0 )
+	{
+		idStr modelBurn;
+		if( spawnArgs.GetString( "model_burn", "", modelBurn ) )
+		{
+			AddParticles( modelBurn.c_str(), true );
+		}
+		else
+		{
+			AddParticles( "barrelfire.prt", true );
+		}
+	}
 }
 
 /*
@@ -1134,6 +1158,13 @@ idExplodingBarrel::StartBurning
 */
 void idExplodingBarrel::StopBurning()
 {
+	if( !grabberFlames )
+	{
+		return;
+	}
+	grabberFlames = false;
+	health = spawnArgs.GetInt( "health", "5" );
+
 	state = NORMAL;
 
 	if( particleModelDefHandle >= 0 )
@@ -1222,6 +1253,15 @@ idExplodingBarrel::ExplodingEffects
 void idExplodingBarrel::ExplodingEffects()
 {
 	const char* temp;
+
+	// remove flames before adding the exploding effects
+	if( particleModelDefHandle >= 0 )
+	{
+		gameRenderWorld->FreeEntityDef( particleModelDefHandle );
+		particleModelDefHandle = -1;
+		particleTime = 0;
+		memset( &particleRenderEntity, 0, sizeof( particleRenderEntity ) );
+	}
 
 	StartSound( "snd_explode", SND_CHANNEL_ANY, 0, false, NULL );
 
@@ -1457,6 +1497,25 @@ void idExplodingBarrel::Event_Respawn()
 	}
 	health = spawnArgs.GetInt( "health", "5" );
 	fl.takedamage = true;
+	isStable = true;
+	grabberFlames = false;
+
+	if( particleModelDefHandle >= 0 )
+	{
+		gameRenderWorld->FreeEntityDef( particleModelDefHandle );
+		particleModelDefHandle = -1;
+		particleTime = 0;
+		memset( &particleRenderEntity, 0, sizeof( particleRenderEntity ) );
+	}
+
+	if( lightDefHandle >= 0 )
+	{
+		gameRenderWorld->FreeLightDef( lightDefHandle );
+		lightDefHandle = -1;
+		lightTime = 0;
+		memset( &light, 0, sizeof( light ) );
+	}
+
 	physicsObj.SetOrigin( spawnOrigin );
 	physicsObj.SetAxis( spawnAxis );
 	physicsObj.SetContents( CONTENTS_SOLID );
@@ -1485,6 +1544,8 @@ void idExplodingBarrel::WriteToSnapshot( idBitMsg& msg ) const
 {
 	idMoveable::WriteToSnapshot( msg );
 	msg.WriteBits( IsHidden(), 1 );
+	msg.WriteBits( state, 2 );
+	msg.WriteBits( particleModelDefHandle >= 0, 1 );
 }
 
 /*
@@ -1503,6 +1564,65 @@ void idExplodingBarrel::ReadFromSnapshot( const idBitMsg& msg )
 	else
 	{
 		Show();
+	}
+
+	explode_state_t expState = ( explode_state_t )msg.ReadBits( 2 );
+	bool particle = msg.ReadBits( 1 ) != 0;
+
+	bool addFlames = false;
+	bool freeParticle = false;
+	bool freeLight = false;
+
+	switch( expState )
+	{
+		case NORMAL:
+			freeParticle = true;
+			freeLight = true;
+			break;
+
+		case BURNING:
+			if( particle )
+			{
+				addFlames = true;
+			}
+			else
+			{
+				freeParticle = true;
+			}
+			break;
+
+		default:
+			// if exploding, idExplodingBarrel::ExplodingEffects takes care of removing the flames
+			break;
+	}
+
+	if( addFlames && particleModelDefHandle < 0 )
+	{
+		idStr modelBurn;
+		if( spawnArgs.GetString( "model_burn", "", modelBurn ) )
+		{
+			AddParticles( modelBurn.c_str(), true );
+		}
+		else
+		{
+			AddParticles( "barrelfire.prt", true );
+		}
+	}
+
+	if( freeParticle && particleModelDefHandle >= 0 )
+	{
+		gameRenderWorld->FreeEntityDef( particleModelDefHandle );
+		particleModelDefHandle = -1;
+		particleTime = 0;
+		memset( &particleRenderEntity, 0, sizeof( particleRenderEntity ) );
+	}
+
+	if( freeLight && lightDefHandle >= 0 )
+	{
+		gameRenderWorld->FreeLightDef( lightDefHandle );
+		lightDefHandle = -1;
+		lightTime = 0;
+		memset( &light, 0, sizeof( light ) );
 	}
 }
 

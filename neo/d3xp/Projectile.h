@@ -38,6 +38,7 @@ If you have questions concerning this license or the applicable additional terms
 */
 
 extern const idEventDef EV_Explode;
+extern const idEventDef EV_Fizzle;
 
 class idProjectile : public idEntity
 {
@@ -189,6 +190,7 @@ public :
 	virtual void			Launch( const idVec3& start, const idVec3& dir, const idVec3& pushVelocity, const float timeSinceFire = 0.0f, const float launchPower = 1.0f, const float dmgPower = 1.0f );
 	void					SetEnemy( idEntity* ent );
 	void					Event_SetEnemy( idEntity* ent );
+	void					UnGuide();
 
 protected:
 	float					speed;
@@ -244,6 +246,7 @@ struct beamTarget_t
 	idEntityPtr<idEntity>	target;
 	renderEntity_t			renderEntity;
 	qhandle_t				modelDefHandle;
+	bool					isPlayer;
 };
 
 class idBFGProjectile : public idProjectile
@@ -261,6 +264,12 @@ public :
 	virtual void			Think();
 	virtual void			Launch( const idVec3& start, const idVec3& dir, const idVec3& pushVelocity, const float timeSinceFire = 0.0f, const float launchPower = 1.0f, const float dmgPower = 1.0f );
 	virtual void			Explode( const trace_t& collision, idEntity* ignore );
+	virtual void			ClientThink( const int curTime, const float fraction, const bool predict );
+	virtual void			WriteToSnapshot( idBitMsg& msg ) const;
+	virtual void			ReadFromSnapshot( const idBitMsg& msg );
+
+	void StopBeams();
+	void StartBeams();
 
 private:
 	idList<beamTarget_t, TAG_PROJECTILE>	beamTargets;
@@ -272,6 +281,17 @@ private:
 	void					FreeBeams();
 	void					Event_RemoveBeams();
 	void					ApplyDamage();
+
+	static idList<idBFGProjectile*> bfgProjectiles;
+
+	bool bfgVision[MAX_PLAYERS];
+	int targetsMP;
+
+	void ClearBfgVision();
+	void UpdateBfgVision( idPlayer* player, bool enable );
+	void FreeSingleBeam( beamTarget_t& beamTarget );
+	void ClientStopBeams( bool stopSound = true );
+	void ClientUpdateBeams( int targets );
 };
 
 class idHomingProjectile : public idProjectile
@@ -291,6 +311,7 @@ public :
 	void					SetEnemy( idEntity* ent );
 	void					SetSeekPos( idVec3 pos );
 	void					Event_SetEnemy( idEntity* ent );
+	void					UnGuide();
 
 protected:
 	float					speed;

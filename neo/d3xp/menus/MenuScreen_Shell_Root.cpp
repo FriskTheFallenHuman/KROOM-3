@@ -129,7 +129,6 @@ enum rootMenuCmds_t
 	ROOT_CMD_START_DEMO2,
 	ROOT_CMD_SETTINGS,
 	ROOT_CMD_QUIT,
-	ROOT_CMD_DEV,
 	ROOT_CMD_CAMPAIGN,
 	ROOT_CMD_MULTIPLAYER,
 	ROOT_CMD_PLAYSTATION,
@@ -211,19 +210,6 @@ void idMenuScreen_Shell_Root::ShowScreen( const mainMenuTransition_t transitionT
 
 			idMenuWidget_Button* buttonWidget = NULL;
 
-#if !defined ( ID_RETAIL )
-			option.Append( "DEV" );	// DEV
-			menuOptions.Append( option );
-			options->GetChildByIndex( index ).ClearEventActions();
-			options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, ROOT_CMD_DEV );
-			buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
-			if( buttonWidget != NULL )
-			{
-				buttonWidget->SetDescription( "View a list of maps available for play" );
-			}
-			index++;
-#endif
-
 			option.Clear();
 			option.Append( "#str_swf_campaign" );	// singleplayer
 			menuOptions.Append( option );
@@ -304,6 +290,7 @@ void idMenuScreen_Shell_Root::ShowScreen( const mainMenuTransition_t transitionT
 			idMenuWidget_MenuBar* menuBar = shell->GetMenuBar();
 			if( menuBar != NULL )
 			{
+				menuBar->SetViewIndex( GetRootIndex() );
 				menuBar->SetFocusIndex( GetRootIndex() );
 			}
 		}
@@ -383,6 +370,7 @@ void idMenuScreen_Shell_Root::SetRootIndex( int index )
 {
 	if( options != NULL )
 	{
+		options->SetViewIndex( index );
 		options->SetFocusIndex( index );
 	}
 }
@@ -468,11 +456,8 @@ bool idMenuScreen_Shell_Root::HandleAction( idWidgetAction& action, const idWidg
 
 			int index = menuBar->GetViewIndex();
 			const int dir = parms[0].ToInteger();
-#ifdef ID_RETAIL
-			const int totalCount = menuBar->GetTotalNumberOfOptions() - 1;
-#else
 			const int totalCount = menuBar->GetTotalNumberOfOptions();
-#endif
+
 			index += dir;
 			if( index < 0 )
 			{
@@ -511,11 +496,6 @@ bool idMenuScreen_Shell_Root::HandleAction( idWidgetAction& action, const idWidg
 				case ROOT_CMD_QUIT:
 				{
 					HandleExitGameBtn();
-					break;
-				}
-				case ROOT_CMD_DEV:
-				{
-					menuData->SetNextScreen( SHELL_AREA_DEV, MENU_TRANSITION_SIMPLE );
 					break;
 				}
 				case ROOT_CMD_CAMPAIGN:

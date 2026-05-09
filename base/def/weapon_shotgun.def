@@ -68,10 +68,6 @@ entityDef weapon_shotgun {
 	"snd_respawn"				"sound_weapon_respawn"
 
 	// MP
-	"skin_on"					"skins/models/weapons/flashlight_on"
-	"skin_on_invis"				"skins/models/weapons/flashlight_on_invis"
-	"skin_off"					"skins/models/weapons/flashlight_off"
-	"skin_off_invis"			"skins/models/weapons/flashlight_off_invis"
 	"skin_invisible"			"skins/shotgun_invis"
 
 	"spread"					"22"

@@ -1,0 +1,14 @@
+// weapons
+scriptEvent float getAux();
+scriptEvent void setAux(float aux);
+scriptEvent void beginLightSync();
+scriptEvent void setNetfiring(float isNetfiring);
+scriptEvent void setWeaponGuiParm(string key, string value);
+
+// monsters
+scriptEvent void cclearGrabbed();
+scriptEvent entity findHittableEnemy(float useFov);
+scriptEvent entity findHittableEnemyAI(float useFov);
+
+// players
+scriptEvent void Damage(string damageDef);

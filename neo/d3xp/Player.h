@@ -287,6 +287,7 @@ public:
 
 	bool					noclip;
 	bool					godmode;
+	bool					demigodmode;
 
 	bool					spawnAnglesSet;		// on first usercmd, we must set deltaAngles
 	idAngles				spawnAngles;
@@ -349,10 +350,15 @@ public:
 	int						weapon_fists;
 	int						weapon_flashlight;
 	int						weapon_chainsaw;
+	int						weapon_grabber;
+	int						weapon_shotgun;
+	int						weapon_shotgun_double;
+	int						weapon_handgrenade;
 	int						weapon_bloodstone;
 	int						weapon_bloodstone_active1;
 	int						weapon_bloodstone_active2;
 	int						weapon_bloodstone_active3;
+
 	bool					harvest_lock;
 
 	int						heartRate;
@@ -367,6 +373,7 @@ public:
 	float					healthPool;			// amount of health to give over time
 	int						nextHealthPulse;
 	bool					healthPulse;
+	bool					playHealthPulseSound;
 	bool					healthTake;
 	int						nextHealthTake;
 
@@ -785,6 +792,26 @@ public:
 	{
 		numProjectileKills = 0;
 	}
+
+	void					ShowLastTip();
+
+	bool					IsObjectiveUp() const
+	{
+		return objectiveUp;
+	}
+	bool					IsObjectiveCompleteUp() const
+	{
+		return objectiveCompleteUp;
+	}
+	bool					IsNewVideoUp() const
+	{
+		return newVideoUp;
+	}
+	bool					IsNewPDAUp() const
+	{
+		return newPDAUp;
+	}
+
 private:
 	// Stats & achievements
 	idAchievementManager	achievementManager;
@@ -874,7 +901,28 @@ private:
 	const idMaterial* 		pdaVideoMat;
 
 	bool					tipUp;
+
+	struct idTipInfo
+	{
+		idTipInfo() : autoHide( true ) {}
+		void	Clear()
+		{
+			title.Clear();
+			tip.Clear();
+			autoHide = true;
+		}
+
+		idStr	title;
+		idStr	tip;
+		bool	autoHide;
+	};
+	idTipInfo				lastTip;
+
 	bool					objectiveUp;
+
+	bool					objectiveCompleteUp;
+	bool					newVideoUp;
+	bool					newPDAUp;
 
 	int						lastDamageDef;
 	idVec3					lastDamageDir;
@@ -988,6 +1036,20 @@ private:
 	void					Event_StopHelltime( int mode );
 	void					Event_ToggleBloom( int on );
 	void					Event_SetBloomParms( float speed, float intensity );
+	void					Event_Damage( const char* damageDef );
+
+	class idCrouchRate
+	{
+	public:
+		idCrouchRate();
+		void	Reset();
+		float	GetValue();
+
+	private:
+		float	baseRate;
+		float	adjustedRate;
+	};
+	idCrouchRate			crouchRate;
 };
 
 ID_INLINE bool idPlayer::IsRespawning()

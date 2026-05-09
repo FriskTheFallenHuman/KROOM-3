@@ -1182,7 +1182,7 @@ void idAI::DormantEnd()
 	{
 		for( int i = 0; i < particles.Num(); i++ )
 		{
-			particles[i].time = gameLocal.time;
+			particles[i].time = gameLocal.slow.time;
 		}
 	}
 
@@ -3837,17 +3837,18 @@ const idDeclParticle* idAI::SpawnParticlesOnJoint( particleEmitter_t& pe, const 
 		origin = renderEntity.origin + origin * renderEntity.axis;
 
 		BecomeActive( TH_UPDATEPARTICLES );
-		if( !gameLocal.time )
+
+		if( !gameLocal.slow.time )
 		{
-			// particles with time of 0 don't show, so set the time differently on the first frame
 			pe.time = 1;
 		}
 		else
 		{
-			pe.time = gameLocal.time;
+			pe.time = gameLocal.slow.time;
 		}
+
 		pe.particle = static_cast<const idDeclParticle*>( declManager->FindType( DECL_PARTICLE, particleName ) );
-		gameLocal.smokeParticles->EmitSmoke( pe.particle, pe.time, gameLocal.random.CRandomFloat(), origin, axis, timeGroup /*_D3XP*/ );
+		gameLocal.smokeParticles->EmitSmoke( pe.particle, pe.time, gameLocal.random.CRandomFloat(), origin, axis, TIME_GROUP1 /*_D3XP*/ );
 	}
 
 	return pe.particle;
@@ -3937,12 +3938,14 @@ void idAI::Killed( idEntity* inflictor, idEntity* attacker, int damage, const id
 
 	Unbind();
 
-	if( StartRagdoll() )
+	// To be properly grabbed by the Grabber, the lost soul now has a ragdoll. Only the Grabber should start it, however.
+	bool hasModelDeath = spawnArgs.GetString( "model_death", "", &modelDeath );
+	if( !hasModelDeath && StartRagdoll() )
 	{
 		StartSound( "snd_death", SND_CHANNEL_VOICE, 0, false, NULL );
 	}
 
-	if( spawnArgs.GetString( "model_death", "", &modelDeath ) )
+	if( hasModelDeath )
 	{
 		// lost soul is only case that does not use a ragdoll and has a model_death so get the death sound in here
 		StartSound( "snd_death", SND_CHANNEL_VOICE, 0, false, NULL );
@@ -5151,7 +5154,7 @@ bool idAI::AttackMelee( const char* meleeDefName )
 			}
 			if( t < 1000 )
 			{
-				gameLocal.Printf( "Saving throw.\n" );
+				gameLocal.DPrintf( "Saving throw.\n" );
 				forceMiss = true;
 			}
 		}
@@ -5497,8 +5500,6 @@ void idAI::UpdateParticles()
 		int particlesAlive = 0;
 		for( int i = 0; i < particles.Num(); i++ )
 		{
-			// Smoke particles on AI characters will always be "slow", even when held by grabber
-			SetTimeState ts( TIME_GROUP1 );
 			if( particles[i].particle && particles[i].time )
 			{
 				particlesAlive++;
@@ -5514,11 +5515,11 @@ void idAI::UpdateParticles()
 					realVector = physicsObj.GetOrigin() + ( realVector + modelOffset ) * ( viewAxis * physicsObj.GetGravityAxis() );
 				}
 
-				if( !gameLocal.smokeParticles->EmitSmoke( particles[i].particle, particles[i].time, gameLocal.random.CRandomFloat(), realVector, realAxis, timeGroup /*_D3XP*/ ) )
+				if( !gameLocal.smokeParticles->EmitSmoke( particles[i].particle, particles[i].time, gameLocal.random.CRandomFloat(), realVector, realAxis, TIME_GROUP1 /*_D3XP*/ ) )
 				{
 					if( restartParticles )
 					{
-						particles[i].time = gameLocal.time;
+						particles[i].time = gameLocal.slow.time;
 					}
 					else
 					{
@@ -5549,7 +5550,7 @@ void idAI::TriggerParticles( const char* jointName )
 	{
 		if( particles[i].joint == jointNum )
 		{
-			particles[i].time = gameLocal.time;
+			particles[i].time = gameLocal.slow.time;
 			BecomeActive( TH_UPDATEPARTICLES );
 		}
 	}

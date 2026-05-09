@@ -51,14 +51,7 @@ If you have questions concerning this license or the applicable additional terms
 */
 
 static const ID_TIME_T	FILE_NOT_FOUND_TIMESTAMP	= ( ID_TIME_T ) - 1;
-
-// RB: bumped MAX_OSPATH to solve some problems with very long .bimage paths
-// Maximum path length limits:
-// Windows: 260 chars (default), up to 32,767 with "\\?\" prefix and Unicode APIs
-// Linux:   Typically 4096 chars (PATH_MAX), 255 per component (NAME_MAX)
-// macOS:   1024–4096 chars depending on file system, 255 per component
-static const int		MAX_OSPATH					= 1024;		// was 256 in BFG
-// RB end
+static const int		MAX_OSPATH					= 256;
 
 // modes for OpenFileByMode
 typedef enum

@@ -4,18 +4,6 @@
 
 ***********************************************************************/
 
-export fred {
-	options -prefix PDA_ -keep guilight -parent guilight pdabody -sourcedir models/items/pda/cycles -destdir models/md5/items/pda_view
-	mesh	idle.mb
-	anim	idle.mb
-	anim	idle2.mb
-	anim	idle3.mb
-	anim	raise.mb
-	anim	raise2.mb
-	anim	lower.mb
-	anim	lower2.mb
-}
-
 entityDef weapon_pda {
 	//"inherit"					"item_default"
 	"model" 					"models/items/pda/pda_world.lwo"
@@ -32,7 +20,7 @@ entityDef weapon_pda {
 
 	"mtr_guiLightShader"		"lights/viewWeaponGuiLight"
 	"hudIcon"					"guis/assets/hud/icons/pda.tga"
-	
+
 	"hide_time"					"0"								// time to hide weapon when talking to npcs or looking at guis
 	"hide_distance"				"0"								// distance to offset weapon when talking to npcs or looking at guis
 
@@ -65,7 +53,7 @@ export fred {
 	options -prefix PLAYER_PDA_ -keep ATTACHER -rename ATTACHER origin -clearorigin
 	addoptions -keepmesh PLAYER_polySurface1
 	addoptions -keepmesh PLAYER_polySurface2
-	
+
 	mesh	models/characters/male_npc/cycles/tweakedplayermoves/pda_idle.mb -dest models/md5/items/pda_world/worldpda
 	anim	models/characters/male_npc/cycles/tweakedplayermoves/pda_idle.mb -dest models/md5/items/pda_world/pda_idle
 }

@@ -1288,9 +1288,8 @@ idAFEntity_Gibbable::Collide
 bool idAFEntity_Gibbable::Collide( const trace_t& collision, const idVec3& velocity )
 {
 
-	if( !gibbed && wasThrown )
+	if( !gibbed && wasThrown && !fl.grabbed )
 	{
-
 		// Everything gibs (if possible)
 		if( spawnArgs.GetBool( "gib" ) )
 		{
@@ -1380,6 +1379,8 @@ void idAFEntity_Gibbable::Gib( const idVec3& dir, const char* damageDefName )
 		return;
 	}
 
+	SetTimeState ts( timeGroup );
+
 	// Don't grab this ent after it's been gibbed (and now invisible!)
 	noGrab = true;
 
@@ -1407,14 +1408,28 @@ void idAFEntity_Gibbable::Gib( const idVec3& dir, const char* damageDefName )
 
 	if( g_bloodEffects.GetBool() )
 	{
-		if( gameLocal.time > gameLocal.GetGibTime() )
+		if( gameLocal.fast.time > gameLocal.GetGibTime() )
 		{
-			gameLocal.SetGibTime( gameLocal.time + GIB_DELAY );
+			gameLocal.SetGibTime( gameLocal.fast.time + GIB_DELAY );
 			SpawnGibs( dir, damageDefName );
 			renderEntity.noShadow = true;
 			renderEntity.shaderParms[ SHADERPARM_TIME_OF_DEATH ] = gameLocal.time * 0.001f;
 			StartSound( "snd_gibbed", SND_CHANNEL_ANY, 0, false, NULL );
 			gibbed = true;
+		}
+		else
+		{
+			const char* skinName = spawnArgs.GetString( "skin_dropGib" );
+			if( skinName[0] )
+			{
+				SetSkin( declManager->FindSkin( skinName ) );
+			}
+			if( skinName[0] || skeletonModel )
+			{
+				renderEntity.noShadow = true;
+				renderEntity.shaderParms[SHADERPARM_TIME_OF_DEATH] = gameLocal.time * 0.001f;
+				gibbed = true;
+			}
 		}
 	}
 	else
@@ -3798,6 +3813,9 @@ void idHarvestable::BeginBurn()
 		return;
 	}
 
+
+	parent->spawnArgs.SetBool( "gib", false );
+	parent->noGrab = true;
 
 	//Switch Skins if the parent would like us to.
 	idStr skin = parent->spawnArgs.GetString( "skin_harvest_burn", "" );

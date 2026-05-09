@@ -477,6 +477,7 @@ public:
 	static const float			INFINITUM;					// huge number which should be larger than any valid number used
 	static const float			FLOAT_EPSILON;				// smallest positive number such that 1.0+FLOAT_EPSILON != 1.0
 	static const float			FLT_SMALLEST_NON_DENORMAL;	// smallest non-denormal 32-bit floating point value
+	static const int			MAX_INT;
 
 #if defined(USE_INTRINSICS_SSE)
 	static const __m128				SIMD_SP_zero;

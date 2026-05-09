@@ -1204,6 +1204,7 @@ void idGameLocal::ClientRunFrame( idUserCmdMgr& cmdMgr, bool lastPredictFrame, g
 
 		// service any pending events
 		idEvent::ServiceEvents();
+		ret = gameReturn_t();
 
 		return;
 	}

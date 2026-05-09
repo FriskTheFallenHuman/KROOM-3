@@ -611,7 +611,7 @@ void idMover::SetGuiState( const char* key, const char* val ) const
 				if( ent->GetRenderEntity() && ent->GetRenderEntity()->gui[ j ] )
 				{
 					ent->GetRenderEntity()->gui[ j ]->SetStateString( key, val );
-					ent->GetRenderEntity()->gui[ j ]->StateChanged( gameLocal.slow.time, true );
+					ent->GetRenderEntity()->gui[j]->StateChanged( gameLocal.fast.time, true );
 				}
 			}
 			ent->UpdateVisuals();
@@ -646,7 +646,7 @@ void idMover::SetGuiStates( const char* state )
 		if( renderEntity.gui[ i ] )
 		{
 			renderEntity.gui[ i ]->SetStateString( "movestate", state );
-			renderEntity.gui[ i ]->StateChanged( gameLocal.slow.time, true );
+			renderEntity.gui[i]->StateChanged( gameLocal.fast.time, true );
 		}
 	}
 }
@@ -2207,7 +2207,7 @@ void idElevator::BeginMove( idThread* thread )
 				if( ent->GetRenderEntity() && ent->GetRenderEntity()->gui[ j ] )
 				{
 					ent->GetRenderEntity()->gui[ j ]->SetStateString( "floor", "" );
-					ent->GetRenderEntity()->gui[ j ]->StateChanged( gameLocal.slow.time, true );
+					ent->GetRenderEntity()->gui[j]->StateChanged( gameLocal.fast.time, true );
 				}
 			}
 			ent->UpdateVisuals();
@@ -2296,7 +2296,7 @@ void idElevator::DoneMoving()
 				if( ent->GetRenderEntity() && ent->GetRenderEntity()->gui[ j ] )
 				{
 					ent->GetRenderEntity()->gui[ j ]->SetStateString( "floor", va( "%i", currentFloor ) );
-					ent->GetRenderEntity()->gui[ j ]->StateChanged( gameLocal.slow.time, true );
+					ent->GetRenderEntity()->gui[j]->StateChanged( gameLocal.fast.time, true );
 				}
 			}
 			ent->UpdateVisuals();
@@ -3360,7 +3360,7 @@ void idMover_Binary::SetGuiState( const char* key, const char* val ) const
 				if( ent->GetRenderEntity() && ent->GetRenderEntity()->gui[ j ] )
 				{
 					ent->GetRenderEntity()->gui[ j ]->SetStateString( key, val );
-					ent->GetRenderEntity()->gui[ j ]->StateChanged( gameLocal.slow.time, true );
+					ent->GetRenderEntity()->gui[j]->StateChanged( gameLocal.fast.time, true );
 				}
 			}
 			ent->UpdateVisuals();

@@ -316,6 +316,16 @@ bool idMenuHandler_Shell::HandleGuiEvent( const sysEvent_t* sev )
 		return true;
 	}
 
+	if( inGame && sev->evType == SE_KEY && sev->evValue2 == 1 && sev->evValue >= K_F1 && sev->evValue <= K_F12 )
+	{
+		const char* binding = idKeyInput::GetBinding( sev->evValue );
+		if( idStr::Icmp( binding, "screenshot" ) == 0 || idStr::Icmp( binding, "loadgame quick" ) == 0 )
+		{
+			idKeyInput::ExecKeyBinding( sev->evValue );
+			return true;
+		}
+	}
+
 	if( waitForBinding )
 	{
 
@@ -466,6 +476,7 @@ void idMenuHandler_Shell::Initialize( const char* swfFile, idSoundWorld* sw )
 		BIND_SHELL_SCREEN( SHELL_AREA_SETTINGS, idMenuScreen_Shell_Settings, this );
 		BIND_SHELL_SCREEN( SHELL_AREA_LOAD, idMenuScreen_Shell_Load, this );
 		BIND_SHELL_SCREEN( SHELL_AREA_SYSTEM_OPTIONS, idMenuScreen_Shell_SystemOptions, this );
+		BIND_SHELL_SCREEN( SHELL_AREA_GRAPHICS_OPTIONS, idMenuScreen_Shell_GraphicsOptions, this );
 		BIND_SHELL_SCREEN( SHELL_AREA_GAME_OPTIONS, idMenuScreen_Shell_GameOptions, this );
 		BIND_SHELL_SCREEN( SHELL_AREA_SAVE, idMenuScreen_Shell_Save, this );
 		BIND_SHELL_SCREEN( SHELL_AREA_CONTROLS, idMenuScreen_Shell_Controls, this );
@@ -485,6 +496,7 @@ void idMenuHandler_Shell::Initialize( const char* swfFile, idSoundWorld* sw )
 		BIND_SHELL_SCREEN( SHELL_AREA_LOAD, idMenuScreen_Shell_Load, this );
 		BIND_SHELL_SCREEN( SHELL_AREA_NEW_GAME, idMenuScreen_Shell_NewGame, this );
 		BIND_SHELL_SCREEN( SHELL_AREA_SYSTEM_OPTIONS, idMenuScreen_Shell_SystemOptions, this );
+		BIND_SHELL_SCREEN( SHELL_AREA_GRAPHICS_OPTIONS, idMenuScreen_Shell_GraphicsOptions, this );
 		BIND_SHELL_SCREEN( SHELL_AREA_GAME_OPTIONS, idMenuScreen_Shell_GameOptions, this );
 		BIND_SHELL_SCREEN( SHELL_AREA_PARTY_LOBBY, idMenuScreen_Shell_PartyLobby, this );
 		BIND_SHELL_SCREEN( SHELL_AREA_GAME_LOBBY, idMenuScreen_Shell_GameLobby, this );
@@ -744,7 +756,6 @@ enum shellCommandsPC_t
 {
 	SHELL_CMD_DEMO0,
 	SHELL_CMD_DEMO1,
-	SHELL_CMD_DEV,
 	SHELL_CMD_CAMPAIGN,
 	SHELL_CMD_MULTIPLAYER,
 	SHELL_CMD_SETTINGS,
@@ -818,9 +829,6 @@ void idMenuHandler_Shell::SetupPCOptions()
 		}
 		else
 		{
-#if !defined ( ID_RETAIL )
-			navOptions.Append( "DEV" );	// DEV
-#endif
 			navOptions.Append( "#str_swf_campaign" );	// singleplayer
 			navOptions.Append( "#str_swf_multiplayer" );	// multiplayer
 			navOptions.Append( "#str_swf_settings" );	// settings
@@ -830,16 +838,7 @@ void idMenuHandler_Shell::SetupPCOptions()
 
 			idMenuWidget_MenuButton* buttonWidget = NULL;
 			int index = 0;
-#if !defined ( ID_RETAIL )
-			buttonWidget = dynamic_cast< idMenuWidget_MenuButton* >( &menuBar->GetChildByIndex( index ) );
-			if( buttonWidget != NULL )
-			{
-				buttonWidget->ClearEventActions();
-				buttonWidget->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, SHELL_CMD_DEV, index );
-				buttonWidget->SetDescription( "View a list of maps available for play" );
-			}
-			index++;
-#endif
+
 			buttonWidget = dynamic_cast< idMenuWidget_MenuButton* >( &menuBar->GetChildByIndex( index ) );
 			if( buttonWidget != NULL )
 			{
@@ -1005,7 +1004,7 @@ bool idMenuHandler_Shell::HandleAction( idWidgetAction& action, const idWidgetEv
 				session->Cancel();
 			}
 
-			if( cmd != SHELL_CMD_QUIT && ( nextScreen == SHELL_AREA_SYSTEM_OPTIONS || nextScreen == SHELL_AREA_GAME_OPTIONS ||
+			if( cmd != SHELL_CMD_QUIT && ( nextScreen == SHELL_AREA_SYSTEM_OPTIONS || nextScreen == SHELL_AREA_GAME_OPTIONS || nextScreen == SHELL_AREA_GRAPHICS_OPTIONS ||
 										   nextScreen == SHELL_AREA_GAMEPAD || nextScreen == SHELL_AREA_MATCH_SETTINGS ) )
 			{
 
@@ -1032,12 +1031,6 @@ bool idMenuHandler_Shell::HandleAction( idWidgetAction& action, const idWidgetEv
 				case SHELL_CMD_DEMO1:
 				{
 					cmdSystem->AppendCommandText( va( "devmap %s %d\n", "game/le_hell", 2 ) );
-					break;
-				}
-				case SHELL_CMD_DEV:
-				{
-					nextScreen = SHELL_AREA_DEV;
-					transition = MENU_TRANSITION_SIMPLE;
 					break;
 				}
 				case SHELL_CMD_CAMPAIGN:
@@ -1235,7 +1228,7 @@ void idMenuHandler_Shell::UpdateBGState()
 	{
 		if( nextScreen != SHELL_AREA_PLAYSTATION && nextScreen != SHELL_AREA_SETTINGS && nextScreen != SHELL_AREA_CAMPAIGN && nextScreen != SHELL_AREA_DEV )
 		{
-			if( nextScreen != SHELL_AREA_RESOLUTION && nextScreen != SHELL_AREA_GAMEPAD && nextScreen != SHELL_AREA_DIFFICULTY && nextScreen != SHELL_AREA_SYSTEM_OPTIONS && nextScreen != SHELL_AREA_GAME_OPTIONS && nextScreen != SHELL_AREA_NEW_GAME &&
+			if( nextScreen != SHELL_AREA_RESOLUTION && nextScreen != SHELL_AREA_GAMEPAD && nextScreen != SHELL_AREA_DIFFICULTY && nextScreen != SHELL_AREA_SYSTEM_OPTIONS && nextScreen != SHELL_AREA_GRAPHICS_OPTIONS && nextScreen != SHELL_AREA_GAME_OPTIONS && nextScreen != SHELL_AREA_NEW_GAME &&
 					nextScreen != SHELL_AREA_CONTROLS )
 			{
 				ShowSmallFrame( false );
@@ -1527,7 +1520,7 @@ void idMenuHandler_Shell::ShowDoomIntro()
 				txtVal->renderMode = SWF_TEXT_RENDER_PARAGRAPH;
 				txtVal->rndSpotsVisible = -1;
 				txtVal->renderDelay = 50;
-				txtVal->generatingText = false;
+				txtVal->generatingText = true;
 				if( typeSoundShader != NULL )
 				{
 					txtVal->soundClip = typeSoundShader->GetName();
@@ -1736,7 +1729,7 @@ void idMenuHandler_Shell::ShowROEIntro()
 				txtVal->renderMode = SWF_TEXT_RENDER_PARAGRAPH;
 				txtVal->rndSpotsVisible = -1;
 				txtVal->renderDelay = 40;
-				txtVal->generatingText = false;
+				txtVal->generatingText = true;
 				if( typeSoundShader != NULL )
 				{
 					txtVal->soundClip = typeSoundShader->GetName();
@@ -1913,7 +1906,7 @@ void idMenuHandler_Shell::ShowLEIntro()
 			txtVal->renderMode = SWF_TEXT_RENDER_PARAGRAPH;
 			txtVal->rndSpotsVisible = -1;
 			txtVal->renderDelay = 60;
-			txtVal->generatingText = false;
+			txtVal->generatingText = true;
 			if( typeSoundShader != NULL )
 			{
 				txtVal->soundClip = typeSoundShader->GetName();

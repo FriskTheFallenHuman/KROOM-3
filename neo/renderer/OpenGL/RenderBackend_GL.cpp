@@ -51,6 +51,7 @@ If you have questions concerning this license or the applicable additional terms
 idCVar r_drawFlickerBox( "r_drawFlickerBox", "0", CVAR_RENDERER | CVAR_BOOL, "visual test for dropping frames" );
 idCVar r_showSwapBuffers( "r_showSwapBuffers", "0", CVAR_BOOL, "Show timings from GL_BlockingSwapBuffers" );
 idCVar r_syncEveryFrame( "r_syncEveryFrame", "1", CVAR_BOOL, "Don't let the GPU buffer execution past swapbuffers" );
+idCVar r_intelWorkaroundsSyncType( "r_intelWorkaroundsSyncType", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_NOCHEAT, "sync strategy involving glFinish and SwapBuffers to use with Intel video cards when r_skipIntelWorkarounds is 0:\n  0 = finish, swap\n  1 = swap, finish\n  2 = swap, small draw, finish\n  3 = finish, swap, finish\n  4 = finish, swap, small draw, finish", 0, 4 );
 
 static int		swapIndex;		// 0 or 1 into renderSync
 static GLsync	renderSync[2];
@@ -305,13 +306,8 @@ static void R_CheckPortableExtensions()
 	// GL_ARB_draw_elements_base_vertex
 	glConfig.drawElementsBaseVertexAvailable = GLEW_ARB_draw_elements_base_vertex != 0;
 
-	// GL_ARB_vertex_program / GL_ARB_fragment_program
-	glConfig.fragmentProgramAvailable = GLEW_ARB_fragment_program != 0;
-	//if( glConfig.fragmentProgramAvailable )
-	{
-		glGetIntegerv( GL_MAX_TEXTURE_COORDS, ( GLint* )&glConfig.maxTextureCoords );
-		glGetIntegerv( GL_MAX_TEXTURE_IMAGE_UNITS, ( GLint* )&glConfig.maxTextureImageUnits );
-	}
+	// GL_ARB_vertex_program and GL_ARB_fragment_program aren't needed
+	glGetIntegerv( GL_MAX_TEXTURE_IMAGE_UNITS, ( GLint* )&glConfig.maxTextureImageUnits );
 
 	// GLSL, core in OpenGL > 2.0
 	glConfig.glslAvailable = ( glConfig.glVersion >= 2.0f );
@@ -765,7 +761,11 @@ void idRenderBackend::GL_BlockingSwapBuffers()
 
 	if( !glConfig.syncAvailable )
 	{
-		glFinish();
+		int syncType = r_intelWorkaroundsSyncType.GetInteger();
+		if( syncType == 0 || syncType == 3 || syncType == 4 )
+		{
+			glFinish();
+		}
 	}
 
 	const int beforeSwap = Sys_Milliseconds();
@@ -823,6 +823,21 @@ void idRenderBackend::GL_BlockingSwapBuffers()
 			{
 				r = glClientWaitSync( syncToWaitOn, GL_SYNC_FLUSH_COMMANDS_BIT, 1000 * 1000 );
 			}
+		}
+	}
+	else
+	{
+		int syncType = r_intelWorkaroundsSyncType.GetInteger();
+		if( syncType > 0 )
+		{
+			if( syncType == 2 || syncType == 4 )
+			{
+				// draw something tiny to ensure the sync is after the swap
+				glScissor( 0, 0, 1, 1 );
+				glEnable( GL_SCISSOR_TEST );
+				glClear( GL_COLOR_BUFFER_BIT );
+			}
+			glFinish();
 		}
 	}
 
@@ -1613,6 +1628,11 @@ void idRenderBackend::SetBuffer( const void* data )
 	const setBufferCommand_t* cmd = ( const setBufferCommand_t* )data;
 
 	RENDERLOG_PRINTF( "---------- RB_SetBuffer ---------- to buffer # %d\n", cmd->buffer );
+
+	if( !cmd->canClear )
+	{
+		return;
+	}
 
 	GL_Scissor( 0, 0, tr.GetWidth(), tr.GetHeight() );
 

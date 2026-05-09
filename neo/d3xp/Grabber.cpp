@@ -40,6 +40,7 @@ If you have questions concerning this license or the applicable additional terms
 #define	THROW_SCALE						1000
 #define MAX_PICKUP_VELOCITY				1500 * 1500
 #define MAX_PICKUP_SIZE					96
+#define GRABBED_GRAVITY					idVec3(0.f, 0.f, -0.001f)
 
 /*
 ===============================================================================
@@ -72,6 +73,9 @@ idGrabber::idGrabber()
 	startDragTime = 0;
 	warpId = -1;
 	dragTraceDist = MAX_DRAG_TRACE_DISTANCE;
+	id = 0;
+	drop = false;
+	setDragPhysics = false;
 }
 
 /*
@@ -125,6 +129,8 @@ void idGrabber::Save( idSaveGame* savefile ) const
 	savefile->WriteObject( beamTarget );
 
 	savefile->WriteInt( warpId );
+
+	savefile->WriteBool( drop );
 }
 
 /*
@@ -143,10 +149,10 @@ void idGrabber::Restore( idRestoreGame* savefile )
 	savefile->ReadVec3( saveGravity );
 	savefile->ReadInt( id );
 
-	// Restore the drag force's physics object
+	// restore physics on idGrabber::Update
 	if( dragEnt.IsValid() )
 	{
-		drag.SetPhysics( dragEnt.GetEntity()->GetPhysics(), id, dragEnt.GetEntity()->GetPhysics()->GetOrigin() );
+		setDragPhysics = true;
 	}
 
 	savefile->ReadVec3( localPlayerPoint );
@@ -168,6 +174,8 @@ void idGrabber::Restore( idRestoreGame* savefile )
 	savefile->ReadObject( reinterpret_cast<idClass*&>( beamTarget ) );
 
 	savefile->ReadInt( warpId );
+
+	savefile->ReadBool( drop );
 }
 
 /*
@@ -211,6 +219,10 @@ void idGrabber::Initialize()
 		endTime = 0;
 		dragTraceDist = MAX_DRAG_TRACE_DISTANCE;
 	};
+
+	id = 0;
+	drop = false;
+	setDragPhysics = false;
 }
 
 /*
@@ -233,11 +245,11 @@ void idGrabber::StartDrag( idEntity* grabEnt, int id )
 	int clipModelId = id;
 	idPlayer* thePlayer = owner.GetEntity();
 
+	drop = false;
+
 	holdingAF = false;
 	dragFailTime = gameLocal.slow.time;
 	startDragTime = gameLocal.slow.time;
-
-	oldImpulseSequence = thePlayer->usercmd.impulseSequence;
 
 	// set grabbed state for networking
 	grabEnt->SetGrabbedState( true );
@@ -280,6 +292,26 @@ void idGrabber::StartDrag( idEntity* grabEnt, int id )
 		grabEnt->GetPhysics()->SetContents( 0 );
 		grabEnt->GetPhysics()->SetClipMask( CONTENTS_SOLID | CONTENTS_BODY );
 
+		if( !common->IsClient() )
+		{
+			if( grabEnt->IsType( idBFGProjectile::Type ) )
+			{
+				idBFGProjectile* bp = static_cast<idBFGProjectile*>( grabEnt );
+				bp->StopBeams();
+			}
+
+			if( grabEnt->spawnArgs.GetFloat( "fuse" ) > 0 )
+			{
+				if( grabEnt->spawnArgs.GetBool( "detonate_on_fuse" ) )
+				{
+					grabEnt->CancelEvents( &EV_Explode );
+				}
+				else
+				{
+					grabEnt->CancelEvents( &EV_Fizzle );
+				}
+			}
+		}
 	}
 	else if( grabEnt->IsType( idExplodingBarrel::Type ) )
 	{
@@ -310,7 +342,7 @@ void idGrabber::StartDrag( idEntity* grabEnt, int id )
 
 	// Turn off gravity on object
 	saveGravity = phys->GetGravity();
-	phys->SetGravity( vec3_origin );
+	phys->SetGravity( GRABBED_GRAVITY );
 
 	// hold it directly in front of player
 	localPlayerPoint = ( thePlayer->firstPersonViewAxis[0] * HOLD_DISTANCE ) * thePlayer->firstPersonViewAxis.Transpose();
@@ -324,6 +356,8 @@ void idGrabber::StartDrag( idEntity* grabEnt, int id )
 
 	// start the screen warp
 	warpId = thePlayer->playerView.AddWarp( phys->GetOrigin(), SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 160, 2000 );
+
+	this->id = clipModelId;
 }
 
 /*
@@ -334,6 +368,8 @@ idGrabber::StopDrag
 void idGrabber::StopDrag( bool dropOnly )
 {
 	idPlayer* thePlayer = owner.GetEntity();
+
+	drop = false;
 
 	if( beam )
 	{
@@ -372,6 +408,13 @@ void idGrabber::StopDrag( bool dropOnly )
 			{
 				idAI* aiEnt = static_cast<idAI*>( ent );
 
+				// Stopping the ragdoll here solves the problem of monsters getting stuck after being resurrected by
+				// the archvile. The ragdoll is restarted by the damage call below (the monster is killed).
+				aiEnt->StopRagdoll();
+
+				// This solves issues with temporary ai invulnerability (for instance, when ticks use anim 16hole).
+				aiEnt->fl.takedamage = true;
+
 				aiEnt->Damage( thePlayer, thePlayer, vec3_origin, "damage_suicide", 1.0f, INVALID_JOINT );
 			}
 
@@ -401,7 +444,48 @@ void idGrabber::StopDrag( bool dropOnly )
 		else
 		{
 			// Shoot the object forward
-			ent->ApplyImpulse( thePlayer, 0, ent->GetPhysics()->GetOrigin(), thePlayer->firstPersonViewAxis[0] * THROW_SCALE * ent->GetPhysics()->GetMass() );
+			int stableThrow = 0;
+			if( stableThrow > 0 )
+			{
+				// remove any linear movement that is not in the throw direction
+				idPhysics* entPhys = ent->GetPhysics();
+				idVec3 entVel = entPhys->GetLinearVelocity( id );
+				idVec3 baseVel;
+				if( stableThrow == 1 )
+				{
+					// remove relative to the player
+					baseVel = thePlayer->GetPlayerPhysics()->GetLinearVelocity();
+				}
+				else
+				{
+					// remove relative to the world
+					baseVel = vec3_origin;
+				}
+				float speed = ( entVel - baseVel ) * thePlayer->firstPersonViewAxis[0];
+				if( speed < 0.f )
+				{
+					speed = 0.f;
+				}
+				entVel = baseVel + ( speed * thePlayer->firstPersonViewAxis[0] );
+				int num = entPhys->GetNumClipModels();
+				for( int i = 0; i < num; i++ )
+				{
+					entPhys->SetLinearVelocity( entVel, i );
+				}
+			}
+			if( holdingAF )
+			{
+				idPhysics_AF* afPhysics = static_cast<idPhysics_AF*>( ent->GetPhysics() );
+				bool oldTruncateImpulse = afPhysics->truncateImpulse;
+				afPhysics->truncateImpulse = false;
+				ent->ApplyImpulse( thePlayer, 0, ent->GetPhysics()->GetOrigin(), thePlayer->firstPersonViewAxis[0] * THROW_SCALE * ent->GetPhysics()->GetMass() );
+				afPhysics->truncateImpulse = oldTruncateImpulse;
+			}
+			else
+			{
+				ent->ApplyImpulse( thePlayer, 0, ent->GetPhysics()->GetOrigin(), thePlayer->firstPersonViewAxis[0] * THROW_SCALE * ent->GetPhysics()->GetMass() );
+			}
+
 			thePlayer->StartSoundShader( declManager->FindSound( "grabber_release" ), SND_CHANNEL_WEAPON, 0, false, NULL );
 
 			// Orient projectiles away from the player
@@ -417,6 +501,28 @@ void idGrabber::StopDrag( bool dropOnly )
 				// Restore projectile contents
 				ent->GetPhysics()->SetContents( savedContents );
 				ent->GetPhysics()->SetClipMask( savedClipmask );
+
+				if( !common->IsClient() )
+				{
+					if( ent->IsType( idBFGProjectile::Type ) )
+					{
+						idBFGProjectile* bp = static_cast<idBFGProjectile*>( ent );
+						bp->StartBeams();
+					}
+
+					float fuse = ent->spawnArgs.GetFloat( "fuse" );
+					if( fuse > 0 )
+					{
+						if( ent->spawnArgs.GetBool( "detonate_on_fuse" ) )
+						{
+							ent->PostEventSec( &EV_Explode, fuse );
+						}
+						else
+						{
+							ent->PostEventSec( &EV_Fizzle, fuse );
+						}
+					}
+				}
 
 				idProjectile* projectile = static_cast< idProjectile* >( ent );
 				if( projectile != NULL )
@@ -470,6 +576,15 @@ int idGrabber::Update( idPlayer* player, bool hide )
 	trace_t trace;
 	idEntity* newEnt;
 
+	if( setDragPhysics )
+	{
+		setDragPhysics = false;
+		if( dragEnt.IsValid() )
+		{
+			drag.SetPhysics( dragEnt.GetEntity()->GetPhysics(), id, dragEnt.GetEntity()->GetPhysics()->GetOrigin() );
+		}
+	}
+
 	// pause before allowing refire
 	if( lastFiredTime + FIRING_DELAY > gameLocal.time )
 	{
@@ -505,8 +620,9 @@ int idGrabber::Update( idPlayer* player, bool hide )
 		{
 			abort = true;
 		}
-		// Not in multiplayer :: Pressing "reload" lets you carefully drop an item
-		if( !common->IsMultiplayer() && !abort && ( player->usercmd.impulseSequence != oldImpulseSequence ) && ( player->usercmd.impulse == IMPULSE_13 ) )
+
+		// Dropping an item with "reload" is now signaled via idGrabber::Reload and idWeapon::Reload.
+		if( drop )
 		{
 			abort = true;
 		}
@@ -820,6 +936,17 @@ idGrabber::grabbableAI
 */
 bool idGrabber::grabbableAI( const char* aiName )
 {
+	// hack for a specific trite
+	if( !idStr::Cmp( aiName, "cpu1_monster_trite" ) )
+	{
+		return true;
+	}
+
+	if( idStr::Cmpn( aiName, "monster_", 8 ) )
+	{
+		return false;
+	}
+
 	// skip "monster_"
 	aiName += 8;
 
@@ -834,5 +961,18 @@ bool idGrabber::grabbableAI( const char* aiName )
 	}
 
 	return false;
+}
+
+/*
+==============
+idGrabber::Reload
+==============
+*/
+void idGrabber::Reload( int grabberState )
+{
+	if( !common->IsClient() && grabberState == 2 )
+	{
+		drop = true;
+	}
 }
 

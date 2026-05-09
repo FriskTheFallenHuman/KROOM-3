@@ -200,7 +200,8 @@ void idProjectile::Restore( idRestoreGame* savefile )
 		idVec3 dir;
 		dir = physicsObj.GetLinearVelocity();
 		dir.NormalizeFast();
-		gameLocal.smokeParticles->EmitSmoke( smokeFly, gameLocal.time, gameLocal.random.RandomFloat(), GetPhysics()->GetOrigin(), GetPhysics()->GetAxis(), timeGroup /*_D3XP*/ );
+		SetTimeState ts( originalTimeGroup );
+		gameLocal.smokeParticles->EmitSmoke( smokeFly, gameLocal.time, gameLocal.random.RandomFloat(), GetPhysics()->GetOrigin(), GetPhysics()->GetAxis(), originalTimeGroup /*_D3XP*/ );
 	}
 
 	if( lightDefHandle >= 0 )
@@ -560,7 +561,7 @@ void idProjectile::AddParticlesAndLight()
 		dir.Normalize();
 		SetTimeState ts( originalTimeGroup );
 
-		if( !gameLocal.smokeParticles->EmitSmoke( smokeFly, smokeFlyTime, gameLocal.random.RandomFloat(), GetPhysics()->GetOrigin(), dir.ToMat3(), timeGroup /*_D3XP*/ ) )
+		if( !gameLocal.smokeParticles->EmitSmoke( smokeFly, smokeFlyTime, gameLocal.random.RandomFloat(), GetPhysics()->GetOrigin(), dir.ToMat3(), originalTimeGroup /*_D3XP*/ ) )
 		{
 			smokeFlyTime = gameLocal.time;
 		}
@@ -573,6 +574,7 @@ void idProjectile::AddParticlesAndLight()
 		renderLight.axis = GetPhysics()->GetAxis();
 		if( ( lightDefHandle != -1 ) )
 		{
+			SetTimeState ts( originalTimeGroup );
 			if( lightEndTime > 0 && gameLocal.time <= lightEndTime )
 			{
 				idVec3 color( 0, 0, 0 );
@@ -1016,6 +1018,12 @@ void idProjectile::Explode( const trace_t& collision, idEntity* ignore )
 		return;
 	}
 
+	int idTime;
+	{
+		SetTimeState ts( originalTimeGroup );
+		idTime = gameLocal.time;
+	}
+
 	// activate rumble for player
 	idPlayer* player = gameLocal.GetLocalPlayer();
 	const bool isHitscan = spawnArgs.GetBool( "net_instanthit" );
@@ -1156,7 +1164,7 @@ void idProjectile::Explode( const trace_t& collision, idEntity* ignore )
 			renderEntity.shaderParms[SHADERPARM_GREEN] =
 				renderEntity.shaderParms[SHADERPARM_BLUE] =
 					renderEntity.shaderParms[SHADERPARM_ALPHA] = 1.0f;
-		renderEntity.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.time );
+		renderEntity.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( idTime );
 		renderEntity.shaderParms[SHADERPARM_DIVERSITY] = gameLocal.random.CRandomFloat();
 		Show();
 		removeTime = ( removeTime > 3000 ) ? removeTime : 3000;
@@ -1195,7 +1203,7 @@ void idProjectile::Explode( const trace_t& collision, idEntity* ignore )
 		renderLight.shaderParms[SHADERPARM_GREEN] = lightColor.y;
 		renderLight.shaderParms[SHADERPARM_BLUE] = lightColor.z;
 		renderLight.shaderParms[SHADERPARM_ALPHA] = 1.0f;
-		renderLight.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.time );
+		renderLight.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( idTime );
 
 		// Midnight ctf
 		if( gameLocal.mpGame.IsGametypeFlagBased() && gameLocal.serverInfo.GetBool( "si_midnight" ) )
@@ -1207,8 +1215,8 @@ void idProjectile::Explode( const trace_t& collision, idEntity* ignore )
 			light_fadetime = spawnArgs.GetFloat( "explode_light_fadetime", "0.5" );
 		}
 
-		lightStartTime = gameLocal.time;
-		lightEndTime = MSEC_ALIGN_TO_FRAME( gameLocal.time + SEC2MS( light_fadetime ) );
+		lightStartTime = idTime;
+		lightEndTime = MSEC_ALIGN_TO_FRAME( idTime + SEC2MS( light_fadetime ) );
 		BecomeActive( TH_THINK );
 	}
 
@@ -1307,7 +1315,15 @@ void idProjectile::Explode( const trace_t& collision, idEntity* ignore )
 	}
 
 	CancelEvents( &EV_Explode );
-	PostEventMS( &EV_Remove, removeTime );
+	if( fl.grabbed )
+	{
+		timeGroup = originalTimeGroup;
+		PostEventMS( &EV_Remove, removeTime );
+	}
+	else
+	{
+		PostEventMS( &EV_Remove, removeTime );
+	}
 }
 
 /*
@@ -1413,11 +1429,21 @@ void idProjectile::CatchProjectile( idEntity* o, const char* reflectName )
 	owner = o;
 	physicsObj.GetClipModel()->SetOwner( o );
 
+	thrust = 0.0f;
+
 	if( this->IsType( idGuidedProjectile::Type ) )
 	{
 		idGuidedProjectile* proj = static_cast<idGuidedProjectile*>( this );
 
 		proj->SetEnemy( prevowner );
+		proj->UnGuide();
+	}
+
+	if( this->IsType( idHomingProjectile::Type ) )
+	{
+		idHomingProjectile* proj = static_cast<idHomingProjectile*>( this );
+		proj->SetEnemy( prevowner );
+		proj->UnGuide();
 	}
 
 	idStr s = spawnArgs.GetString( "def_damage" );
@@ -1757,8 +1783,6 @@ void idProjectile::PostSimulate( int endTime )
 	}
 }
 
-
-
 /*
 ===============================================================================
 
@@ -2019,6 +2043,11 @@ void idGuidedProjectile::SetEnemy( idEntity* ent )
 void idGuidedProjectile::Event_SetEnemy( idEntity* ent )
 {
 	SetEnemy( ent );
+}
+
+void idGuidedProjectile::UnGuide()
+{
+	unGuided = true;
 }
 
 /*
@@ -2284,6 +2313,7 @@ CLASS_DECLARATION( idProjectile, idBFGProjectile )
 EVENT( EV_RemoveBeams,		idBFGProjectile::Event_RemoveBeams )
 END_CLASS
 
+idList<idBFGProjectile*> idBFGProjectile::bfgProjectiles;
 
 /*
 =================
@@ -2295,6 +2325,7 @@ idBFGProjectile::idBFGProjectile()
 	memset( &secondModel, 0, sizeof( secondModel ) );
 	secondModelDefHandle = -1;
 	nextDamageTime = 0;
+	bfgProjectiles.Append( this );
 }
 
 /*
@@ -2311,6 +2342,11 @@ idBFGProjectile::~idBFGProjectile()
 		gameRenderWorld->FreeEntityDef( secondModelDefHandle );
 		secondModelDefHandle = -1;
 	}
+
+	bfgProjectiles.Remove( this );
+
+	// downsize the list using the same granularity
+	bfgProjectiles.SetGranularity( bfgProjectiles.GetGranularity() );
 }
 
 /*
@@ -2337,6 +2373,8 @@ void idBFGProjectile::Spawn()
 	}
 	nextDamageTime = 0;
 	damageFreq = NULL;
+	memset( bfgVision, 0, sizeof( bfgVision ) );
+	targetsMP = 0;
 }
 
 /*
@@ -2360,6 +2398,12 @@ void idBFGProjectile::Save( idSaveGame* savefile ) const
 	savefile->WriteInt( secondModelDefHandle );
 	savefile->WriteInt( nextDamageTime );
 	savefile->WriteString( damageFreq );
+
+	for( int i = 0; i < MAX_PLAYERS; i++ )
+	{
+		savefile->WriteBool( bfgVision[i] );
+	}
+	savefile->WriteInt( targetsMP );
 }
 
 /*
@@ -2394,6 +2438,12 @@ void idBFGProjectile::Restore( idRestoreGame* savefile )
 	{
 		secondModelDefHandle = gameRenderWorld->AddEntityDef( &secondModel );
 	}
+
+	for( int i = 0; i < MAX_PLAYERS; i++ )
+	{
+		savefile->ReadBool( bfgVision[i] );
+	}
+	savefile->ReadInt( targetsMP );
 }
 
 /*
@@ -2405,17 +2455,12 @@ void idBFGProjectile::FreeBeams()
 {
 	for( int i = 0; i < beamTargets.Num(); i++ )
 	{
-		if( beamTargets[i].modelDefHandle >= 0 )
-		{
-			gameRenderWorld->FreeEntityDef( beamTargets[i].modelDefHandle );
-			beamTargets[i].modelDefHandle = -1;
-		}
+		FreeSingleBeam( beamTargets[i] );
 	}
-
-	idPlayer* player = gameLocal.GetLocalPlayer();
-	if( player )
+	ClearBfgVision();
+	if( !common->IsClient() )
 	{
-		player->playerView.EnableBFGVision( false );
+		targetsMP = 0;
 	}
 }
 
@@ -2434,9 +2479,33 @@ void idBFGProjectile::Think()
 		{
 			if( beamTargets[i].target.GetEntity() == NULL )
 			{
+				FreeSingleBeam( beamTargets[i] );
+				if( !common->IsClient() && beamTargets[i].isPlayer )
+				{
+					targetsMP &= ~( 1 << beamTargets[i].target.GetEntityNum() );
+					beamTargets[i].target = NULL;
+					beamTargets[i].isPlayer = false;
+				}
 				continue;
 			}
+
 			idPlayer* player = ( beamTargets[i].target.GetEntity()->IsType( idPlayer::Type ) ) ? static_cast<idPlayer*>( beamTargets[i].target.GetEntity() ) : NULL;
+			if( beamTargets[i].target.GetEntity()->health <= 0 || ( player && player->spectating ) )
+			{
+				FreeSingleBeam( beamTargets[i] );
+				if( player )
+				{
+					UpdateBfgVision( player, false );
+					if( !common->IsClient() )
+					{
+						targetsMP &= ~( 1 << player->entityNumber );
+						beamTargets[i].target = NULL;
+						beamTargets[i].isPlayer = false;
+					}
+				}
+				continue;
+			}
+
 			// Major hack for end boss.  :(
 			idAnimatedEntity*	beamEnt;
 			idVec3				org;
@@ -2462,34 +2531,50 @@ void idBFGProjectile::Think()
 			beamTargets[i].renderEntity.shaderParms[ SHADERPARM_BEAM_END_X ] = org.x;
 			beamTargets[i].renderEntity.shaderParms[ SHADERPARM_BEAM_END_Y ] = org.y;
 			beamTargets[i].renderEntity.shaderParms[ SHADERPARM_BEAM_END_Z ] = org.z;
-			beamTargets[i].renderEntity.shaderParms[ SHADERPARM_RED ] =
-				beamTargets[i].renderEntity.shaderParms[ SHADERPARM_GREEN ] =
-					beamTargets[i].renderEntity.shaderParms[ SHADERPARM_BLUE ] =
-						beamTargets[i].renderEntity.shaderParms[ SHADERPARM_ALPHA ] = 1.0f;
+
 			if( gameLocal.time > nextDamageTime )
 			{
-				bool bfgVision = true;
+				bool canDamage = false;
 				if( damageFreq && *( const char* )damageFreq && beamTargets[i].target.GetEntity() && ( forceDamage || beamTargets[i].target.GetEntity()->CanDamage( GetPhysics()->GetOrigin(), org ) ) )
 				{
-					org = beamTargets[i].target.GetEntity()->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
-					org.Normalize();
-					beamTargets[i].target.GetEntity()->Damage( this, owner.GetEntity(), org, damageFreq, ( damagePower ) ? damagePower : 1.0f, INVALID_JOINT );
-				}
-				else
-				{
-					beamTargets[i].renderEntity.shaderParms[ SHADERPARM_RED ] =
-						beamTargets[i].renderEntity.shaderParms[ SHADERPARM_GREEN ] =
-							beamTargets[i].renderEntity.shaderParms[ SHADERPARM_BLUE ] =
-								beamTargets[i].renderEntity.shaderParms[ SHADERPARM_ALPHA ] = 0.0f;
-					bfgVision = false;
+					canDamage = true;
+					if( !common->IsClient() && ( forceDamage || player ) )
+					{
+						// only players (and roe end boss) are damaged here; other actors are damaged in Explode.
+						org = beamTargets[i].target.GetEntity()->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
+						org.Normalize();
+						beamTargets[i].target.GetEntity()->Damage( this, owner.GetEntity(), org, damageFreq, ( damagePower ) ? damagePower : 1.0f, INVALID_JOINT );
+					}
 				}
 				if( player )
 				{
-					player->playerView.EnableBFGVision( bfgVision );
+					UpdateBfgVision( player, canDamage );
 				}
-				nextDamageTime = gameLocal.time + BFG_DAMAGE_FREQUENCY;
+				if( canDamage )
+				{
+					if( beamTargets[i].modelDefHandle >= 0 )
+					{
+						gameRenderWorld->UpdateEntityDef( beamTargets[i].modelDefHandle, &beamTargets[i].renderEntity );
+					}
+					else
+					{
+						beamTargets[i].modelDefHandle = gameRenderWorld->AddEntityDef( &beamTargets[i].renderEntity );
+					}
+				}
+				else
+				{
+					FreeSingleBeam( beamTargets[i] );
+				}
 			}
-			gameRenderWorld->UpdateEntityDef( beamTargets[i].modelDefHandle, &beamTargets[i].renderEntity );
+			else if( beamTargets[i].modelDefHandle >= 0 )
+			{
+				gameRenderWorld->UpdateEntityDef( beamTargets[i].modelDefHandle, &beamTargets[i].renderEntity );
+			}
+		}
+
+		if( gameLocal.time > nextDamageTime )
+		{
+			nextDamageTime = gameLocal.time + BFG_DAMAGE_FREQUENCY;
 		}
 
 		if( secondModelDefHandle >= 0 )
@@ -2513,7 +2598,10 @@ void idBFGProjectile::Think()
 		UpdateVisuals();
 	}
 
-	idProjectile::Think();
+	if( !common->IsClient() || fl.skipReplication )
+	{
+		idProjectile::Think();
+	}
 }
 
 /*
@@ -2525,36 +2613,17 @@ void idBFGProjectile::Launch( const idVec3& start, const idVec3& dir, const idVe
 {
 	idProjectile::Launch( start, dir, pushVelocity, 0.0f, power, dmgPower );
 
-	// dmgPower * radius is the target acquisition area
-	// acquisition should make sure that monsters are not dormant
-	// which will cut down on hitting monsters not actively fighting
-	// but saves on the traces making sure they are visible
-	// damage is not applied until the projectile explodes
-
-	idEntity* 	ent;
-	idEntity* 	entityList[ MAX_GENTITIES ];
-	int			numListedEntities;
-	idBounds	bounds;
-	idVec3		damagePoint;
-
-	float radius;
-	spawnArgs.GetFloat( "damageRadius", "512", radius );
-	bounds = idBounds( GetPhysics()->GetOrigin() ).Expand( radius );
-
-	float beamWidth = spawnArgs.GetFloat( "beam_WidthFly" );
-	const char* skin = spawnArgs.GetString( "skin_beam" );
-
 	memset( &secondModel, 0, sizeof( secondModel ) );
 	secondModelDefHandle = -1;
 	const char* temp = spawnArgs.GetString( "model_two" );
-	if( temp != NULL && *temp != '\0' )
+	if( temp && *temp )
 	{
 		secondModel.hModel = renderModelManager->FindModel( temp );
 		secondModel.bounds = secondModel.hModel->Bounds( &secondModel );
-		secondModel.shaderParms[ SHADERPARM_RED ] =
-			secondModel.shaderParms[ SHADERPARM_GREEN ] =
-				secondModel.shaderParms[ SHADERPARM_BLUE ] =
-					secondModel.shaderParms[ SHADERPARM_ALPHA ] = 1.0f;
+		secondModel.shaderParms[SHADERPARM_RED] =
+			secondModel.shaderParms[SHADERPARM_GREEN] =
+				secondModel.shaderParms[SHADERPARM_BLUE] =
+					secondModel.shaderParms[SHADERPARM_ALPHA] = 1.0f;
 		secondModel.noSelfShadow = true;
 		secondModel.noShadow = true;
 		secondModel.origin = GetPhysics()->GetOrigin();
@@ -2562,108 +2631,15 @@ void idBFGProjectile::Launch( const idVec3& start, const idVec3& dir, const idVe
 		secondModelDefHandle = gameRenderWorld->AddEntityDef( &secondModel );
 	}
 
-	idVec3 delta( 15.0f, 15.0f, 15.0f );
-	//physicsObj.SetAngularExtrapolation( extrapolation_t(EXTRAPOLATION_LINEAR|EXTRAPOLATION_NOSTOP), gameLocal.time, 0, physicsObj.GetAxis().ToAngles(), delta, ang_zero );
-
-	// get all entities touching the bounds
-	numListedEntities = gameLocal.clip.EntitiesTouchingBounds( bounds, CONTENTS_BODY, entityList, MAX_GENTITIES );
-	for( int e = 0; e < numListedEntities; e++ )
+	if( !common->IsClient() )
 	{
-		ent = entityList[ e ];
-		assert( ent );
-
-		if( ent == this || ent == owner.GetEntity() || ent->IsHidden() || !ent->IsActive() || !ent->fl.takedamage || ent->health <= 0 || !ent->IsType( idActor::Type ) )
-		{
-			continue;
-		}
-
-		if( !ent->CanDamage( GetPhysics()->GetOrigin(), damagePoint ) )
-		{
-			continue;
-		}
-
-		if( ent->IsType( idPlayer::Type ) )
-		{
-			idPlayer* player = static_cast<idPlayer*>( ent );
-			player->playerView.EnableBFGVision( true );
-		}
-
-		beamTarget_t bt;
-		memset( &bt.renderEntity, 0, sizeof( renderEntity_t ) );
-		bt.renderEntity.origin = GetPhysics()->GetOrigin();
-		bt.renderEntity.axis = GetPhysics()->GetAxis();
-		bt.renderEntity.shaderParms[ SHADERPARM_BEAM_WIDTH ] = beamWidth;
-		bt.renderEntity.shaderParms[ SHADERPARM_RED ] = 1.0f;
-		bt.renderEntity.shaderParms[ SHADERPARM_GREEN ] = 1.0f;
-		bt.renderEntity.shaderParms[ SHADERPARM_BLUE ] = 1.0f;
-		bt.renderEntity.shaderParms[ SHADERPARM_ALPHA ] = 1.0f;
-		bt.renderEntity.shaderParms[ SHADERPARM_DIVERSITY] = gameLocal.random.CRandomFloat() * 0.75;
-		bt.renderEntity.hModel = renderModelManager->FindModel( "_beam" );
-		bt.renderEntity.callback = NULL;
-		bt.renderEntity.numJoints = 0;
-		bt.renderEntity.joints = NULL;
-		bt.renderEntity.bounds.Clear();
-		bt.renderEntity.customSkin = declManager->FindSkin( skin );
-		bt.target = ent;
-		bt.modelDefHandle = gameRenderWorld->AddEntityDef( &bt.renderEntity );
-		beamTargets.Append( bt );
+		StartBeams();
 	}
-
-	// Major hack for end boss.  :(
-	idAnimatedEntity* maledict = static_cast<idAnimatedEntity*>( gameLocal.FindEntity( "monster_boss_d3xp_maledict_1" ) );
-
-	if( maledict )
-	{
-		SetTimeState	ts( maledict->timeGroup );
-
-		idVec3			realPoint;
-		idMat3			temp;
-		float			dist;
-		jointHandle_t	bodyJoint;
-
-		bodyJoint = maledict->GetAnimator()->GetJointHandle( "Chest1" );
-		maledict->GetJointWorldTransform( bodyJoint, gameLocal.time, realPoint, temp );
-
-		dist = idVec3( realPoint - GetPhysics()->GetOrigin() ).Length();
-
-		if( dist < radius )
-		{
-			beamTarget_t bt;
-			memset( &bt.renderEntity, 0, sizeof( renderEntity_t ) );
-			bt.renderEntity.origin = GetPhysics()->GetOrigin();
-			bt.renderEntity.axis = GetPhysics()->GetAxis();
-			bt.renderEntity.shaderParms[ SHADERPARM_BEAM_WIDTH ] = beamWidth;
-			bt.renderEntity.shaderParms[ SHADERPARM_RED ] = 1.0f;
-			bt.renderEntity.shaderParms[ SHADERPARM_GREEN ] = 1.0f;
-			bt.renderEntity.shaderParms[ SHADERPARM_BLUE ] = 1.0f;
-			bt.renderEntity.shaderParms[ SHADERPARM_ALPHA ] = 1.0f;
-			bt.renderEntity.shaderParms[ SHADERPARM_DIVERSITY] = gameLocal.random.CRandomFloat() * 0.75;
-			bt.renderEntity.hModel = renderModelManager->FindModel( "_beam" );
-			bt.renderEntity.callback = NULL;
-			bt.renderEntity.numJoints = 0;
-			bt.renderEntity.joints = NULL;
-			bt.renderEntity.bounds.Clear();
-			bt.renderEntity.customSkin = declManager->FindSkin( skin );
-			bt.target = maledict;
-			bt.modelDefHandle = gameRenderWorld->AddEntityDef( &bt.renderEntity );
-			beamTargets.Append( bt );
-
-			numListedEntities++;
-		}
-	}
-
-	if( numListedEntities )
-	{
-		StartSound( "snd_beam", SND_CHANNEL_BODY2, 0, false, NULL );
-	}
-	damageFreq = spawnArgs.GetString( "def_damageFreq" );
-	nextDamageTime = gameLocal.time + BFG_DAMAGE_FREQUENCY;
-	UpdateVisuals();
 }
 
 /*
 ================
-idProjectile::Event_RemoveBeams
+idBFGProjectile::Event_RemoveBeams
 ================
 */
 void idBFGProjectile::Event_RemoveBeams()
@@ -2674,7 +2650,7 @@ void idBFGProjectile::Event_RemoveBeams()
 
 /*
 ================
-idProjectile::Explode
+idBFGProjectile::Explode
 ================
 */
 void idBFGProjectile::Explode( const trace_t& collision, idEntity* ignore )
@@ -2737,7 +2713,7 @@ void idBFGProjectile::Explode( const trace_t& collision, idEntity* ignore )
 			}
 		}
 
-		if( damage[0] && ( beamTargets[i].target.GetEntity()->entityNumber > gameLocal.numClients - 1 ) )
+		if( !common->IsClient() && damage[0] && ( beamTargets[i].target.GetEntity()->entityNumber > gameLocal.numClients - 1 ) )
 		{
 			dir = beamTargets[i].target.GetEntity()->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
 			dir.Normalize();
@@ -2756,19 +2732,405 @@ void idBFGProjectile::Explode( const trace_t& collision, idEntity* ignore )
 		projectileFlags.noSplashDamage = true;
 	}
 
-	if( !common->IsClient() || fl.skipReplication )
+	// always free beams
+	Event_RemoveBeams();
+
+	return idProjectile::Explode( collision, ignore );
+}
+
+/*
+================
+idBFGProjectile::ClearBfgVision
+================
+*/
+void idBFGProjectile::ClearBfgVision()
+{
+	for( int i = 0; i < MAX_PLAYERS; i++ )
 	{
-		if( ignore != NULL )
+		idEntity* ent = gameLocal.entities[i];
+		if( ent && ent->IsType( idPlayer::Type ) )
 		{
-			PostEventMS( &EV_RemoveBeams, 750 );
+			UpdateBfgVision( static_cast<idPlayer*>( ent ), false );
 		}
 		else
 		{
-			PostEventMS( &EV_RemoveBeams, 0 );
+			bfgVision[i] = false;
+		}
+	}
+}
+
+/*
+================
+idBFGProjectile::UpdateBfgVision
+================
+*/
+void idBFGProjectile::UpdateBfgVision( idPlayer* player, bool enable )
+{
+	if( !player )
+	{
+		return;
+	}
+	int entityNum = player->entityNumber;
+
+	if( bfgVision[entityNum] == enable )
+	{
+		// no changes, nothing else to do
+		return;
+	}
+	bfgVision[entityNum] = enable;
+
+	if( enable == false )
+	{
+		// if disabling, first check other bfg projectiles
+		for( int i = 0; i < bfgProjectiles.Num(); i++ )
+		{
+			enable = enable || bfgProjectiles[i]->bfgVision[entityNum];
+			if( enable )
+			{
+				return;
+			}
+		}
+	}
+	player->playerView.EnableBFGVision( enable );
+}
+
+/*
+================
+idBFGProjectile::FreeSingleBeam
+================
+*/
+void idBFGProjectile::FreeSingleBeam( beamTarget_t& beamTarget )
+{
+	if( beamTarget.modelDefHandle >= 0 )
+	{
+		gameRenderWorld->FreeEntityDef( beamTarget.modelDefHandle );
+		beamTarget.modelDefHandle = -1;
+	}
+}
+
+/*
+================
+idBFGProjectile::ClientThink
+================
+*/
+void idBFGProjectile::ClientThink( const int curTime, const float fraction, const bool predict )
+{
+	if( !renderEntity.hModel )
+	{
+		return;
+	}
+	if( !fl.skipReplication )
+	{
+		// also think when replicating to update the beams
+		Think();
+	}
+	idProjectile::ClientThink( curTime, fraction, predict );
+}
+
+/*
+================
+idBFGProjectile::WriteToSnapshot
+================
+*/
+void idBFGProjectile::WriteToSnapshot( idBitMsg& msg ) const
+{
+	idProjectile::WriteToSnapshot( msg );
+	int peerTargets = 0;
+	if( targetsMP > 0 )
+	{
+		idLobbyBase& lobby = session->GetActingGameStateLobbyBase();
+		for( int i = 0; i < MAX_PLAYERS; ++i )
+		{
+			if( targetsMP & ( 1 << i ) )
+			{
+				int peerIndex = lobby.PeerIndexFromLobbyUser( gameLocal.lobbyUserIDs[i] );
+				peerTargets |= ( 1 << ( peerIndex + 1 ) ); // +1 because peerIndex is -1 for the host
+			}
+		}
+	}
+	msg.WriteBits( peerTargets, MAX_PLAYERS + 1 );
+}
+
+/*
+================
+idBFGProjectile::ReadFromSnapshot
+================
+*/
+void idBFGProjectile::ReadFromSnapshot( const idBitMsg& msg )
+{
+	idProjectile::ReadFromSnapshot( msg );
+	int peerTargets = msg.ReadBits( MAX_PLAYERS + 1 );
+
+	int targets = 0;
+	if( peerTargets > 0 )
+	{
+		for( int i = 0; i < MAX_PLAYERS + 1; ++i )
+		{
+			if( peerTargets & ( 1 << i ) )
+			{
+				int playerNum = gameLocal.MapPeerToClient( i - 1 );
+				if( playerNum >= 0 )
+				{
+					targets |= ( 1 << playerNum );
+				}
+			}
+		}
+	}
+	ClientUpdateBeams( targets );
+}
+
+/*
+================
+idBFGProjectile::StopBeams
+================
+*/
+void idBFGProjectile::StopBeams()
+{
+	if( common->IsClient() || state != LAUNCHED || !beamTargets.Num() )
+	{
+		return;
+	}
+	ClientStopBeams(); // we're not a client, but this part is the same
+}
+
+/*
+================
+idBFGProjectile::StartBeams
+================
+*/
+void idBFGProjectile::StartBeams()
+{
+	// code below is from idBFGProjectile::Launch (with changes)
+	if( common->IsClient() || state != LAUNCHED || beamTargets.Num() )
+	{
+		return;
+	}
+	targetsMP = 0;
+
+	idEntity* 	ent;
+	idEntity* 	entityList[MAX_GENTITIES];
+	int			numListedEntities;
+	idBounds	bounds;
+	idVec3		damagePoint;
+
+	float radius;
+	spawnArgs.GetFloat( "damageRadius", "512", radius );
+	bounds = idBounds( GetPhysics()->GetOrigin() ).Expand( radius );
+
+	float beamWidth = spawnArgs.GetFloat( "beam_WidthFly" );
+	const char* skin = spawnArgs.GetString( "skin_beam" );
+
+	// get all entities touching the bounds
+	numListedEntities = gameLocal.clip.EntitiesTouchingBounds( bounds, CONTENTS_BODY, entityList, MAX_GENTITIES );
+	for( int e = 0; e < numListedEntities; e++ )
+	{
+		ent = entityList[e];
+		assert( ent );
+
+		if( ent == this || ent == owner.GetEntity() || ent->IsHidden() || !ent->IsActive() || !ent->fl.takedamage || ent->health <= 0 || !ent->IsType( idActor::Type ) )
+		{
+			continue;
+		}
+
+		if( !ent->CanDamage( GetPhysics()->GetOrigin(), damagePoint ) )
+		{
+			continue;
+		}
+
+		if( ent->IsType( idPlayer::Type ) )
+		{
+			idPlayer* player = static_cast<idPlayer*>( ent );
+
+			if( gameLocal.mpGame.IsGametypeTeamBased() )
+			{
+				idEntity* ownerEnt = owner.GetEntity();
+				if( ownerEnt && ownerEnt->IsType( idPlayer::Type ) )
+				{
+					idPlayer* ownerPlayer = static_cast<idPlayer*>( ownerEnt );
+					if( ownerPlayer->team == player->team )
+					{
+						continue;
+					}
+				}
+			}
+
+			UpdateBfgVision( player, true );
+			targetsMP |= ( 1 << player->entityNumber );
+		}
+
+		beamTarget_t bt;
+		memset( &bt.renderEntity, 0, sizeof( renderEntity_t ) );
+		bt.renderEntity.origin = GetPhysics()->GetOrigin();
+		bt.renderEntity.axis = GetPhysics()->GetAxis();
+		bt.renderEntity.shaderParms[SHADERPARM_BEAM_WIDTH] = beamWidth;
+		bt.renderEntity.shaderParms[SHADERPARM_RED] = 1.0f;
+		bt.renderEntity.shaderParms[SHADERPARM_GREEN] = 1.0f;
+		bt.renderEntity.shaderParms[SHADERPARM_BLUE] = 1.0f;
+		bt.renderEntity.shaderParms[SHADERPARM_ALPHA] = 1.0f;
+		bt.renderEntity.shaderParms[SHADERPARM_DIVERSITY] = gameLocal.random.CRandomFloat() * 0.75;
+		bt.renderEntity.hModel = renderModelManager->FindModel( "_beam" );
+		bt.renderEntity.callback = NULL;
+		bt.renderEntity.numJoints = 0;
+		bt.renderEntity.joints = NULL;
+		bt.renderEntity.bounds.Clear();
+		bt.renderEntity.customSkin = declManager->FindSkin( skin );
+		bt.target = ent;
+		bt.modelDefHandle = gameRenderWorld->AddEntityDef( &bt.renderEntity );
+		bt.isPlayer = ent->IsType( idPlayer::Type );
+
+		beamTargets.Append( bt );
+	}
+
+	// Major hack for end boss.  :(
+	idAnimatedEntity* maledict = static_cast<idAnimatedEntity*>( gameLocal.FindEntity( "monster_boss_d3xp_maledict_1" ) );
+
+	if( maledict )
+	{
+		SetTimeState	ts( maledict->timeGroup );
+
+		idVec3			realPoint;
+		idMat3			temp;
+		float			dist;
+		jointHandle_t	bodyJoint;
+
+		bodyJoint = maledict->GetAnimator()->GetJointHandle( "Chest1" );
+		maledict->GetJointWorldTransform( bodyJoint, gameLocal.time, realPoint, temp );
+
+		dist = idVec3( realPoint - GetPhysics()->GetOrigin() ).Length();
+
+		if( dist < radius )
+		{
+			beamTarget_t bt;
+			memset( &bt.renderEntity, 0, sizeof( renderEntity_t ) );
+			bt.renderEntity.origin = GetPhysics()->GetOrigin();
+			bt.renderEntity.axis = GetPhysics()->GetAxis();
+			bt.renderEntity.shaderParms[SHADERPARM_BEAM_WIDTH] = beamWidth;
+			bt.renderEntity.shaderParms[SHADERPARM_RED] = 1.0f;
+			bt.renderEntity.shaderParms[SHADERPARM_GREEN] = 1.0f;
+			bt.renderEntity.shaderParms[SHADERPARM_BLUE] = 1.0f;
+			bt.renderEntity.shaderParms[SHADERPARM_ALPHA] = 1.0f;
+			bt.renderEntity.shaderParms[SHADERPARM_DIVERSITY] = gameLocal.random.CRandomFloat() * 0.75;
+			bt.renderEntity.hModel = renderModelManager->FindModel( "_beam" );
+			bt.renderEntity.callback = NULL;
+			bt.renderEntity.numJoints = 0;
+			bt.renderEntity.joints = NULL;
+			bt.renderEntity.bounds.Clear();
+			bt.renderEntity.customSkin = declManager->FindSkin( skin );
+			bt.target = maledict;
+			bt.modelDefHandle = gameRenderWorld->AddEntityDef( &bt.renderEntity );
+			bt.isPlayer = false;
+
+			beamTargets.Append( bt );
+
+			numListedEntities++;
 		}
 	}
 
-	return idProjectile::Explode( collision, ignore );
+	if( beamTargets.Num() )
+	{
+		StartSound( "snd_beam", SND_CHANNEL_BODY2, 0, false, NULL );
+	}
+	damageFreq = spawnArgs.GetString( "def_damageFreq" );
+	nextDamageTime = gameLocal.time + BFG_DAMAGE_FREQUENCY;
+	UpdateVisuals();
+}
+
+/*
+================
+idBFGProjectile::ClientStopBeams
+================
+*/
+void idBFGProjectile::ClientStopBeams( bool stopSound )
+{
+	if( !beamTargets.Num() )
+	{
+		// nothing else to do
+		return;
+	}
+	Event_RemoveBeams();
+	beamTargets.Clear();
+	if( stopSound )
+	{
+		StopSound( SND_CHANNEL_BODY2, false );
+	}
+}
+
+/*
+================
+idBFGProjectile::ClientUpdateBeams
+================
+*/
+void idBFGProjectile::ClientUpdateBeams( int targets )
+{
+	// part of the code below is from idBFGProjectile::Launch (with changes)
+	int oldTargets = targetsMP;
+	targetsMP = targets;
+
+	if( targetsMP == oldTargets )
+	{
+		return;
+	}
+	if( targetsMP == 0 )
+	{
+		ClientStopBeams();
+		return;
+	}
+
+	// targetsMP != oldTargets && targetsMP != 0
+	bool keepSound = ( oldTargets != 0 );
+
+	ClientStopBeams( !keepSound );
+
+	float beamWidth = spawnArgs.GetFloat( "beam_WidthFly" );
+	idRenderModel* hModel = renderModelManager->FindModel( "_beam" );
+	const idDeclSkin* customSkin = declManager->FindSkin( spawnArgs.GetString( "skin_beam" ) );
+
+	for( int i = 0; i < MAX_PLAYERS; i++ )
+	{
+		bool isTarget = targetsMP & ( 1 << i );
+		if( !isTarget )
+		{
+			continue;
+		}
+		beamTarget_t bt;
+		memset( &bt.renderEntity, 0, sizeof( renderEntity_t ) );
+		bt.renderEntity.origin = GetPhysics()->GetOrigin();
+		bt.renderEntity.axis = GetPhysics()->GetAxis();
+		bt.renderEntity.shaderParms[SHADERPARM_BEAM_WIDTH] = beamWidth;
+		bt.renderEntity.shaderParms[SHADERPARM_RED] = 1.0f;
+		bt.renderEntity.shaderParms[SHADERPARM_GREEN] = 1.0f;
+		bt.renderEntity.shaderParms[SHADERPARM_BLUE] = 1.0f;
+		bt.renderEntity.shaderParms[SHADERPARM_ALPHA] = 1.0f;
+		bt.renderEntity.shaderParms[SHADERPARM_DIVERSITY] = gameLocal.random.CRandomFloat() * 0.75;
+		//bt.renderEntity.hModel = renderModelManager->FindModel("_beam");
+		bt.renderEntity.hModel = hModel;
+		bt.renderEntity.callback = NULL;
+		bt.renderEntity.numJoints = 0;
+		bt.renderEntity.joints = NULL;
+		bt.renderEntity.bounds.Clear();
+		//bt.renderEntity.customSkin = declManager->FindSkin(spawnArgs.GetString("skin_beam"));
+		bt.renderEntity.customSkin = customSkin;
+		//bt.target = ent;
+		bt.target = gameLocal.entities[i];
+		bt.modelDefHandle = gameRenderWorld->AddEntityDef( &bt.renderEntity );
+		//bt.isPlayer = ent->IsType(idPlayer::Type);
+		bt.isPlayer = true;
+		beamTargets.Append( bt );
+
+		idEntity* ent = bt.target.GetEntity();
+		if( ent && ent->IsType( idPlayer::Type ) )
+		{
+			UpdateBfgVision( static_cast<idPlayer*>( ent ), true );
+		}
+	}
+	if( !keepSound )
+	{
+		StartSound( "snd_beam", SND_CHANNEL_BODY2, 0, false, NULL );
+	}
+	damageFreq = spawnArgs.GetString( "def_damageFreq" );
+	//nextDamageTime = gameLocal.time + BFG_DAMAGE_FREQUENCY;
+	nextDamageTime = gameLocal.realClientTime + BFG_DAMAGE_FREQUENCY;
+	UpdateVisuals();
 }
 
 
@@ -3274,6 +3636,12 @@ void idHomingProjectile::Think()
 		return;
 	}
 
+	if( unGuided )
+	{
+		idProjectile::Think();
+		return;
+	}
+
 	idVec3		dir;
 	idVec3		velocity;
 	idVec3		nose;
@@ -3322,7 +3690,6 @@ void idHomingProjectile::Think()
 
 	if( burstMode && dist < burstDist )
 	{
-		unGuided = true;
 		velocity *= burstVelocity;
 	}
 
@@ -3395,4 +3762,9 @@ void idHomingProjectile::SetSeekPos( idVec3 pos )
 void idHomingProjectile::Event_SetEnemy( idEntity* ent )
 {
 	SetEnemy( ent );
+}
+
+void idHomingProjectile::UnGuide()
+{
+	unGuided = true;
 }

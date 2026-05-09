@@ -35,8 +35,8 @@ If you have questions concerning this license or the applicable additional terms
 static const char* iconKeys[ ICON_NONE ] =
 {
 	"mtr_icon_lag",
-	"mtr_icon_chat"
-	, "mtr_icon_redteam",
+	"mtr_icon_chat",
+	"mtr_icon_redteam",
 	"mtr_icon_blueteam"
 };
 

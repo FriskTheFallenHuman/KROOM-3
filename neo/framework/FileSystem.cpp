@@ -35,9 +35,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #ifdef WIN32
 	#include <io.h>	// for _read
-
-	// RB: to allow path names longer than 260 chars
-	wchar_t* MakeWindowsLongPathW( const char* utf8Path );
 #else
 	#if !__MACH__ && __MWERKS__
 		#include <types.h>
@@ -509,16 +506,7 @@ idFileHandle idFileSystemLocal::OpenOSFile( const char* fileName, fsMode_t mode 
 		dwFlags = FILE_ATTRIBUTE_NORMAL;
 	}
 
-	// RB: support paths longer than 260 characters
-	wchar_t* wPath = MakeWindowsLongPathW( fileName );
-	if( !wPath )
-	{
-		common->FatalError( "Failed to convert path to wide string: '%s'", fileName );
-		free( wPath );
-		return NULL;
-	}
-
-	fp = CreateFileW( wPath, dwAccess, dwShare, NULL, dwCreate, dwFlags, NULL );
+	fp = CreateFile( fileName, dwAccess, dwShare, NULL, dwCreate, dwFlags, NULL );
 	if( fp == INVALID_HANDLE_VALUE )
 	{
 		return NULL;
@@ -1557,16 +1545,17 @@ Copy a fully specified file from one place to another`
 */
 void idFileSystemLocal::CopyFile( const char* fromOSPath, const char* toOSPath )
 {
-	if( idStr::Icmp( fromOSPath, toOSPath ) == 0 )
-	{
-		// same file can happen during build games
-		return;
-	}
 
 	idFile* src = OpenExplicitFileRead( fromOSPath );
 	if( src == NULL )
 	{
 		idLib::Warning( "Could not open %s for read", fromOSPath );
+		return;
+	}
+
+	if( idStr::Icmp( fromOSPath, toOSPath ) == 0 )
+	{
+		// same file can happen during build games
 		return;
 	}
 
@@ -1823,8 +1812,7 @@ const char* idFileSystemLocal::OSPathToRelativePath( const char* OSPath )
 		// No colon and it doesn't start with a slash... it must already be a relative path
 		return OSPath;
 	}
-	// RB: bumped from 32 to 128
-	idStaticList< idStrStatic< 128 >, 5 > basePaths;
+	idStaticList< idStrStatic< 32 >, 5 > basePaths;
 	basePaths.Append( "base" );
 	basePaths.Append( "d3xp" );
 	basePaths.Append( "d3le" );
@@ -1926,12 +1914,7 @@ void idFileSystemLocal::RemoveFile( const char* relativePath )
 
 		// RB begin
 #if defined(_WIN32)
-		wchar_t* wPath = MakeWindowsLongPathW( OSPath );
-		if( wPath )
-		{
-			DeleteFileW( wPath );
-			free( wPath );
-		}
+		::DeleteFile( OSPath );
 #else
 		remove( OSPath );
 #endif
@@ -1942,12 +1925,7 @@ void idFileSystemLocal::RemoveFile( const char* relativePath )
 
 	// RB begin
 #if defined(_WIN32)
-	wchar_t* wPath = MakeWindowsLongPathW( OSPath );
-	if( wPath )
-	{
-		DeleteFileW( wPath );
-		free( wPath );
-	}
+	::DeleteFile( OSPath );
 #else
 	remove( OSPath );
 #endif

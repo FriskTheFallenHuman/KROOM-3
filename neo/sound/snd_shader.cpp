@@ -468,6 +468,23 @@ bool idSoundShader::HasDefaultSound() const
 
 /*
 ===============
+idSoundShader::HasUnloadedSounds
+===============
+*/
+bool idSoundShader::HasUnloadedSounds() const
+{
+	for( int i = 0; i < entries.Num(); ++i )
+	{
+		if( entries[i] && !entries[i]->IsLoaded() )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+/*
+===============
 idSoundShader::GetParms
 ===============
 */

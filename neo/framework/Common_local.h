@@ -145,7 +145,7 @@ class idCommonLocal : public idCommon
 public:
 	idCommonLocal();
 
-	virtual void				Init( int argc, char* const* argv );
+	virtual void				Init( int argc, const char* const* argv, const char* cmdline );
 	virtual void				Shutdown();
 	virtual void				Quit();
 	virtual bool				IsInitialized() const;
@@ -386,6 +386,19 @@ public:
 	virtual void				LoadPacifierBinarizeProgressTotal( int total );
 	virtual void				LoadPacifierBinarizeProgressIncrement( int step );
 
+	virtual bool				GetServerDedicated()
+	{
+		return serverDedicated;
+	}
+	virtual void				SetServerDedicated( bool dedicated )
+	{
+		serverDedicated = dedicated;
+	}
+	virtual void				SetQuitRequested( bool quitRequested )
+	{
+		isQuitRequested = quitRequested;
+	}
+
 	frameTiming_t		frameTiming;
 	frameTiming_t		mainFrameTiming;
 
@@ -623,11 +636,14 @@ private:
 
 	bool				showShellRequested;
 
+	bool				serverDedicated;
+	bool				isQuitRequested;
+
 private:
 	void	InitCommands();
 	void	InitSIMD();
 	void	AddStartupCommands();
-	void	ParseCommandLine( int argc, char* const* argv );
+	void	ParseCommandLine( int argc, const char* const* argv );
 	bool	SafeMode();
 	void	CheckToolMode();
 	void	CloseLogFile();

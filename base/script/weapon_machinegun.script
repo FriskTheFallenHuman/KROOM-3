@@ -17,11 +17,12 @@ weapon_machinegun.script
 #define MACHINEGUN_RELOAD_TO_IDLE	4
 
 object weapon_machinegun : weapon_base_flashlight {
+	float		inMultiplayer;
 	float		next_attack;
 	float		spread;
-	
+
 	void		init();
-	
+
 	void		Lower();
 	void		Raise();
 	void		Idle();
@@ -33,6 +34,7 @@ object weapon_machinegun : weapon_base_flashlight {
 };
 
 void weapon_machinegun::init() {
+	inMultiplayer = sys.isMultiplayer();
 	next_attack = 0;
 	spread		= getFloatKey( "spread" );
 	weaponState( "Raise", 0 );
@@ -65,9 +67,9 @@ void weapon_machinegun::Idle() {
 	float ammoClip;
 	float avail;
 	float clip_size;
-	
-	clip_size = clipSize();	
-	
+
+	clip_size = clipSize();
+
 	if ( !ammoInClip() ) {
 		weaponOutOfAmmo();
 	} else {
@@ -77,18 +79,20 @@ void weapon_machinegun::Idle() {
 	playCycle( ANIMCHANNEL_ALL, "idle" );
 	while( 1 ) {
 		updateLightIntensity();
-		if ( WEAPON_LOWERWEAPON ) {
+		if ( WEAPON_LOWERWEAPON && !WEAPON_NETFIRING ) {
 			weaponState( "Lower", MACHINEGUN_IDLE_TO_LOWER );
 		}
 		currentTime = sys.getTime();
 		ammoClip = ammoInClip();
-		if ( ( currentTime >= next_attack ) && WEAPON_ATTACK ) {
-			if ( ammoClip > 0 ) {
+		if ( ( currentTime >= next_attack ) && ( WEAPON_ATTACK || WEAPON_NETFIRING ) ) {
+			if ( WEAPON_NETFIRING || ammoClip > 0 ) {
+				setNetfiring(true);
 				weaponState( "Fire", MACHINEGUN_IDLE_TO_FIRE );
 			} else if ( ammoAvailable() > 0 ) {
 				if ( autoReload() ) {
 					netReload();
 					weaponState( "Reload", MACHINEGUN_IDLE_TO_RELOAD );
+
 					if ( sys.isMultiplayer() ) {
 						weaponState( "ToggleOnOff", MACHINEGUN_IDLE_TO_RELOAD );
 					}
@@ -98,6 +102,7 @@ void weapon_machinegun::Idle() {
 		if ( WEAPON_RELOAD && ( ammoAvailable() > ammoClip ) && ( ammoClip < clip_size ) ) {
 			netReload();
 			weaponState( "Reload", MACHINEGUN_IDLE_TO_RELOAD );
+
 			if ( sys.isMultiplayer() ) {
 				weaponState( "ToggleOnOff", MACHINEGUN_IDLE_TO_RELOAD );
 			}
@@ -117,14 +122,15 @@ void weapon_machinegun::Fire() {
 	float waitTime;
 	float ammoClip;
 	float currentTime;
-	
+	float fireAgain;
+
 	next_attack = sys.getTime() + MACHINEGUN_FIRERATE;
-	
+
 	ammoClip = ammoInClip();
 	if ( ammoClip == MACHINEGUN_LOWAMMO ) {
 		startSound( "snd_lowammo", SND_CHANNEL_ITEM, true );
 	}
-	
+
 	launchProjectiles( MACHINEGUN_NUMPROJECTILES, spread, 0, 1.0, 1.0 );
 	playAnim( ANIMCHANNEL_ALL, "fire" );
 	waitTime = sys.getTime() + 0.1;
@@ -135,12 +141,30 @@ void weapon_machinegun::Fire() {
 	while( !animDone( ANIMCHANNEL_ALL, MACHINEGUN_FIRE_TO_IDLE ) ) {
 		currentTime = sys.getTime();
 		ammoClip = ammoInClip();
-		if ( ( currentTime >= next_attack ) && WEAPON_ATTACK && ( ammoClip > 0 ) ) {
-			weaponState( "Fire", 0 );
+		if ( currentTime >= next_attack ) {
+			fireAgain = false;
+			if ( WEAPON_NETFIRING ) {
+				fireAgain = true;
+			} else if ( WEAPON_ATTACK && !(inMultiplayer && WEAPON_LOWERWEAPON) ) {
+				if (ammoClip > 0) {
+					fireAgain = true;
+				} else if ( autoReload() && ammoAvailable() > 0 ) {
+					addToClip( clipSize() );
+					fireAgain = true;
+				}
+			}
+			if ( fireAgain ) {
+				setNetfiring(true);
+				weaponState( "Fire", 0 );
+			}
+			setNetfiring(false);
 		}
+
 		updateLightIntensity();
 		waitFrame();
 	}
+
+	setNetfiring(false);
 
 	weaponState( "Idle", MACHINEGUN_FIRE_TO_IDLE );
 }
@@ -170,11 +194,11 @@ void weapon_machinegun::ToggleOnOff() {
 	float waitTime;
 
 	playAnim( ANIMCHANNEL_ALL, "reload" );
-	
+
 	updateLightIntensity();
 
 	SetLight( !on );
-	
+
 	while( !animDone( ANIMCHANNEL_ALL, MACHINEGUN_RELOAD_TO_IDLE ) ) {
 		updateLightIntensity();
 		waitFrame();

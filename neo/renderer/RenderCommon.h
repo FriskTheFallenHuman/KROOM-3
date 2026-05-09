@@ -694,6 +694,7 @@ struct setBufferCommand_t
 	renderCommand_t		commandId;
 	renderCommand_t* 	next;
 	int					buffer;
+	bool				canClear;
 };
 
 struct drawSurfsCommand_t
@@ -998,6 +999,7 @@ extern glconfig_t			glConfig;		// outside of TR since it shouldn't be cleared du
 //
 // cvars
 //
+extern idCVar r_vidFullscreen;
 extern idCVar r_windowX;
 extern idCVar r_windowY;
 extern idCVar r_windowWidth;
@@ -1011,9 +1013,6 @@ extern idCVar r_debugContext;				// enable various levels of context debug
 extern idCVar r_skipAMDWorkarounds;         // skip work arounds for AMD driver bugs
 // SRS end
 extern idCVar r_skipIntelWorkarounds;		// skip work arounds for Intel driver bugs
-extern idCVar r_vidMode;					// video mode number
-extern idCVar r_displayRefresh;				// optional display refresh rate option for vid mode
-extern idCVar r_fullscreen;					// 0 = windowed, 1 = full screen
 extern idCVar r_antiAliasing;				// anti aliasing mode, SMAA, TXAA, MSAA etc.
 
 extern idCVar r_znear;						// near Z clip plane
@@ -1254,7 +1253,8 @@ struct vidMode_t
 // the number of displays can be found by itterating this until it returns false
 // displayNum is the 0 based value passed to EnumDisplayDevices(), you must add
 // 1 to this to get an r_fullScreen value.
-bool R_GetModeListForDisplay( const int displayNum, idList<vidMode_t>& modeList );
+bool R_GetModeListForDisplay( const int displayNum, idList<vidMode_t>& modeList, const int minHeight );
+bool R_GetDefaultDisplayMode( int& defaultDisplayNum, vidMode_t& defaultMode );
 
 struct glimpParms_t
 {

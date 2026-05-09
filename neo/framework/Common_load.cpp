@@ -542,6 +542,11 @@ void idCommonLocal::ExecuteMapChange()
 	// we are valid for game draws now
 	insideExecuteMapChange = false;
 	mapSpawned = true;
+
+	// this avoids evaluating SE_KEY event when a loadgame is issued from F1-F12 while the menus are active
+	Sys_PollKeyboardInputEvents();
+	Sys_EndKeyboardInputEvents();
+
 	Sys_ClearEvents();
 
 
@@ -845,10 +850,21 @@ bool idCommonLocal::SaveGame( const char* saveName )
 		return false;
 	}
 
+	if( !game )
+	{
+		return false;
+	}
+
 	const idDict& persistentPlayerInfo = game->GetPersistentPlayerInfo( 0 );
 	if( persistentPlayerInfo.GetInt( "health" ) <= 0 )
 	{
 		common->Printf( "You must be alive to save the game\n" );
+		return false;
+	}
+
+	if( game->Shell_IsGameComplete() )
+	{
+		common->Printf( "Can't save on game complete\n" );
 		return false;
 	}
 
@@ -994,6 +1010,8 @@ bool idCommonLocal::LoadGame( const char* saveName )
 		}
 		return false;
 	}
+
+	common->SetServerDedicated( false );
 
 	mapSpawnData.savegameFile = &saveFile;
 	mapSpawnData.stringTableFile = &stringsFile;
@@ -1149,7 +1167,7 @@ void idCommonLocal::OnLoadFilesCompleted( idSaveLoadParms& parms )
 		mapSpawnData.savegameFile->ReadString( gamename );
 		mapSpawnData.savegameFile->ReadString( mapname );
 
-		if( ( gamename != GAME_NAME ) || ( mapname.IsEmpty() ) || ( parms.description.GetSaveVersion() > BUILD_NUMBER ) )
+		if( ( gamename != GAME_NAME ) || ( mapname.IsEmpty() ) || ( parms.description.GetSaveVersion() != SAVEGAME_VERSION ) )
 		{
 			// if this isn't a savegame for the correct game, abort loadgame
 			common->Warning( "Attempted to load an invalid savegame" );
@@ -1261,6 +1279,8 @@ Restart the server on a different map
 */
 CONSOLE_COMMAND_SHIP( map, "loads a map", idCmdSystem::ArgCompletion_MapName )
 {
+	common->SetServerDedicated( false );
+
 	commonLocal.StartNewGame( args.Argv( 1 ), false, GAME_MODE_SINGLEPLAYER );
 }
 
@@ -1286,6 +1306,8 @@ Restart the server on a different map in developer mode
 */
 CONSOLE_COMMAND_SHIP( devmap, "loads a map in developer mode", idCmdSystem::ArgCompletion_MapName )
 {
+	common->SetServerDedicated( false );
+
 	commonLocal.StartNewGame( args.Argv( 1 ), true, GAME_MODE_SINGLEPLAYER );
 }
 

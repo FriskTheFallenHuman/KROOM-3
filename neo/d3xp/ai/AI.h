@@ -548,6 +548,7 @@ protected:
 	idProjectile*			LaunchProjectile( const char* jointname, idEntity* target, bool clampToAttackCone );
 	virtual void			DamageFeedback( idEntity* victim, idEntity* inflictor, int& damage );
 	void					DirectDamage( const char* meleeDefName, idEntity* ent );
+	bool					CanHitActor( const idActor& actor, bool useFov );
 	bool					TestMelee() const;
 	bool					AttackMelee( const char* meleeDefName );
 	void					BeginAttack( const char* name );
@@ -713,6 +714,10 @@ protected:
 	void					Event_StartEmitter( const char* name, const char* joint, const char* particle );
 	void					Event_GetEmitter( const char* name );
 	void					Event_StopEmitter( const char* name );
+
+	void					Event_CustomClearGrabbed();
+	void					Event_FindHittableEnemy( int useFov );
+	void					Event_FindHittableEnemyAI( int useFov );
 };
 
 class idCombatNode : public idEntity

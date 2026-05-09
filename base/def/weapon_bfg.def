@@ -4,26 +4,6 @@
 
 ***********************************************************************/
 
-export fred {
-	// View Model BFG
-	options -prefix BFG_ -keep barrel LBarrel RBarrel guilight flash eject -parent guilight Body -parent flash Body -parent guilight Body -parent barrel Body -parent RBarrel Body -parent LBarrel Body -sourcedir models/weapons/bfg/cycles -destdir models/md5/weapons/bfg_view
-	mesh	viewbfg.mb
-	anim	raise.mb
-	anim	idle.mb
-	anim	fire.mb
-	anim	fire.mb -range 1 140 -dest startfire
-	anim	fire.mb -range 141 167 -dest bfgfire
-	anim	empty_idle.mb
-	anim	reload1.mb -dest reload
-	anim	noammo.mb
-	anim	lower.mb
-
-	// World Model BFG
-	options -prefix PLAYER_BFG_ -keep ATTACHER bfgbarrel -rename ATTACHER origin -parent bfgbarrel bfgbody -clearorigin
-	mesh	models/characters/male_npc/cycles/tweakedplayermoves/bfg_idle.mb -dest models/md5/weapons/bfg_world/worldbfg
-	anim	models/characters/male_npc/cycles/tweakedplayermoves/bfg_idle.mb -dest models/md5/weapons/bfg_world/bfg_idle
-}
-
 entityDef weapon_bfg {
 	"editor_color"				".3 .3 1"
 	"editor_mins"				"-16 -16 0"
@@ -48,7 +28,7 @@ entityDef weapon_bfg {
 	"display_name"				"#str_02022"
 	"icon"						"guis/assets/hud/wpn_8"
 	"pdaIcon"					"guis/assets/hud/icons/bfg_new.tga"
-	"hudIcon"					"guis/assets/hud/icons/bfgw.tga"	
+	"hudIcon"					"guis/assets/hud/icons/bfgw.tga"
 
 	"weaponAngleOffsetAverages" "15"
 	"weaponAngleOffsetScale" 	".5"
@@ -65,9 +45,9 @@ entityDef weapon_bfg {
 	"def_overcharge_damage"		"damage_bfg_overcharge"
 	"def_overcharge"			"env_bfg_overcharge"
 	"snd_explode"				"rocket_impact"
-	
+
 	"smoke_muzzle"				"BFG_barrel.ptr"
-	
+
 	"weapon_scriptobject"		"weapon_bfg"
 	"def_projectile"			"projectile_bfg"
 	"ammoType"					"ammo_bfg"
@@ -94,6 +74,9 @@ entityDef weapon_bfg {
 entityDef env_bfg_overcharge {
 	"spawnclass"				"idAnimatedEntity"
 	"model"						"bigexplosion.prt"
+	"networkSync"				"1"
+	"use_spawntime"				"1"
+	"sync_origin"				"1"
 }
 
 entityDef moveable_item_bfg {
@@ -108,7 +91,7 @@ entityDef moveable_item_bfg {
 
 model worldmodel_bfg {
 	mesh						models/md5/weapons/bfg_world/worldbfg.md5mesh
-	
+
 	anim raise 					models/md5/weapons/bfg_world/bfg_idle.md5anim
 	anim idle 					models/md5/weapons/bfg_world/bfg_idle.md5anim
 	anim aim					models/md5/weapons/bfg_world/bfg_idle.md5anim
@@ -126,7 +109,7 @@ model viewmodel_bfg {
 		frame 1						sound_weapon player_bfg_raise
 
 	}
-	anim idle 					models/md5/weapons/bfg_view/idle.md5anim 
+	anim idle 					models/md5/weapons/bfg_view/idle.md5anim
 	anim fire_begin 			models/md5/weapons/bfg_view/startfire.md5anim {
 		frame 1 				sound_weapon player_bfg_firebegin
 	}
@@ -176,21 +159,21 @@ entityDef projectile_bfg {
 	"model_two"					"models/particles/bfg_bolt/bfg_bolt2.lwo"
 
 	"no_contents"				"1"
-							
+
 	"def_damage"				"damage_bfg"
 	"def_damageFreq"			"damage_bfgFreq"
 	"def_splash_damage"			"damage_bfgSplash"
-	
+
 	"beam_WidthFly"				"24"
 	"beam_WidthExplode"			"128"
 	"skin_beam"					"skins/duffybolt"
-	
+
 	"snd_fly"					"player_bfg_fly"
 	"snd_beam"					"player_bfg_arc"
 	"remove_time"				"7000"
-	
+
 	"damageRadius"				"2048"
-								
+
 	"launchFromBarrel"			"1"
 	"health"					"5"					// amount of damage projectile can take if damaged (0 means it can't be destroyed)
 	"velocity"					"350 0 0"			// how fast the projectile leaves the gun (or distance if fuse is 0)
@@ -205,17 +188,17 @@ entityDef projectile_bfg {
 	"mass"						"50"
 	"gravity"					"0"					// how much gravity affects the trajectory.  gravity direction is same as the entity that fired it.
 	"fuse"						"4.5"					// how long before the projectile is removed or self-detonates.  Use 0 for beam weapons (velocity == distance).
-								
+
 	"detonate_on_fuse"			"1"					// whether projectile should detonate when it's fuse runs out
 	"detonate_on_death"			"1"					// whether projectile should detonate when it's "killed" (health runs out)
 	"detonate_on_world"			"1"					// whether projectile should detonate when it hits an obstacle
 	"detonate_on_actor"			"1"					// whether projectile should detonate when it hits a character in the game
-								
+
 	"impact_damage_effect"		"1"					// whether projectile causes blood splats from characters that bleed
 	"impact_gib"				"1"					// whether projectile can gib a character or not (for example: bullets don't gib, but rockets do)
-								
+
 	"mtr_detonate"				"textures/decals/bfg_wallmark"
-	"decal_size"				"72" 
+	"decal_size"				"72"
 
 	"smoke_fly"					""					// particle effect while in the air
 	"smoke_detonate"			""					// particle effect when detonates

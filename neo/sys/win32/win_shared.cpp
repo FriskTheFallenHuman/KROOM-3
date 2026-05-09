@@ -96,6 +96,7 @@ int Sys_GetSystemRam()
 	return physRam;
 }
 
+
 /*
 ================
 Sys_GetDriveFreeSpace

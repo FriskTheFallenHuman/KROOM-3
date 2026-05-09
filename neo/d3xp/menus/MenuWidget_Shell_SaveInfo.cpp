@@ -116,7 +116,7 @@ void idMenuWidget_Shell_SaveInfo::Update()
 			info.Append( "\n" );
 			info.Append( va( "^1%s^0", idLocalization::GetString( "#str_swf_damaged" ) ) );
 		}
-		else if( details.GetSaveVersion() > BUILD_NUMBER )
+		else if( details.GetSaveVersion() != SAVEGAME_VERSION )
 		{
 			info.Append( "\n" );
 			info.Append( va( "^1%s^0", idLocalization::GetString( "#str_swf_wrong_version" ) ) );

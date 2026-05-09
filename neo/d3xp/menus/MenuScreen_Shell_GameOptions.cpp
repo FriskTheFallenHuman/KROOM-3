@@ -112,14 +112,6 @@ void idMenuScreen_Shell_GameOptions::Initialize( idMenuHandler* data )
 	control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_PRESS_FOCUSED, options->GetChildren().Num() );
 	options->AddChild( control );
 
-	control = new( TAG_SWF )idMenuWidget_ControlButton();
-	control->SetOptionType( OPTION_SLIDER_TOGGLE );
-	control->SetLabel( "Muzzle Flashes" );
-	control->SetDataSource( &systemData, idMenuDataSource_GameSettings::GAME_FIELD_MUZZLE_FLASHES );
-	control->SetupEvents( DEFAULT_REPEAT_TIME, options->GetChildren().Num() );
-	control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_PRESS_FOCUSED, options->GetChildren().Num() );
-	options->AddChild( control );
-
 	options->AddEventAction( WIDGET_EVENT_SCROLL_DOWN ).Set( new( TAG_SWF ) idWidgetActionHandler( options, WIDGET_ACTION_EVENT_SCROLL_DOWN_START_REPEATER, WIDGET_EVENT_SCROLL_DOWN ) );
 	options->AddEventAction( WIDGET_EVENT_SCROLL_UP ).Set( new( TAG_SWF ) idWidgetActionHandler( options, WIDGET_ACTION_EVENT_SCROLL_UP_START_REPEATER, WIDGET_EVENT_SCROLL_UP ) );
 	options->AddEventAction( WIDGET_EVENT_SCROLL_DOWN_RELEASE ).Set( new( TAG_SWF ) idWidgetActionHandler( options, WIDGET_ACTION_EVENT_STOP_REPEATER, WIDGET_EVENT_SCROLL_DOWN_RELEASE ) );
@@ -287,7 +279,6 @@ extern idCVar ui_autoReload;
 extern idCVar aa_targetAimAssistEnable;
 extern idCVar in_alwaysRun;
 extern idCVar g_checkpoints;
-extern idCVar g_muzzleFlash;
 
 /*
 ========================
@@ -313,7 +304,6 @@ void idMenuScreen_Shell_GameOptions::idMenuDataSource_GameSettings::LoadData()
 	fields[ GAME_FIELD_AUTO_RELOAD ].SetBool( ui_autoReload.GetBool() );
 	fields[ GAME_FIELD_AIM_ASSIST ].SetBool( aa_targetAimAssistEnable.GetBool() );
 	fields[ GAME_FIELD_ALWAYS_SPRINT ].SetBool( in_alwaysRun.GetBool() );
-	fields[ GAME_FIELD_MUZZLE_FLASHES ].SetBool( g_muzzleFlash.GetBool() );
 	originalFields = fields;
 }
 
@@ -325,14 +315,16 @@ idMenuScreen_Shell_GameOptions::idMenuDataSource_AudioSettings::CommitData
 void idMenuScreen_Shell_GameOptions::idMenuDataSource_GameSettings::CommitData()
 {
 
-	g_fov.SetFloat( fields[ GAME_FIELD_FOV ].ToFloat() );
+	if( fields[GAME_FIELD_FOV].ToInteger() != originalFields[GAME_FIELD_FOV].ToInteger() )
+	{
+		g_fov.SetFloat( fields[GAME_FIELD_FOV].ToFloat() );
+	}
 
 	g_checkpoints.SetBool( fields[ GAME_FIELD_CHECKPOINTS ].ToBool() );
 	ui_autoSwitch.SetBool( fields[ GAME_FIELD_AUTO_SWITCH ].ToBool() );
 	ui_autoReload.SetBool( fields[ GAME_FIELD_AUTO_RELOAD ].ToBool() );
 	aa_targetAimAssistEnable.SetBool( fields[ GAME_FIELD_AIM_ASSIST ].ToBool() );
 	in_alwaysRun.SetBool( fields[ GAME_FIELD_ALWAYS_SPRINT ].ToBool() );
-	g_muzzleFlash.SetBool( fields[ GAME_FIELD_MUZZLE_FLASHES ].ToBool() );
 
 	cvarSystem->SetModifiedFlags( CVAR_ARCHIVE );
 
@@ -349,7 +341,7 @@ void idMenuScreen_Shell_GameOptions::idMenuDataSource_GameSettings::AdjustField(
 {
 	if( fieldIndex == GAME_FIELD_FOV )
 	{
-		fields[ fieldIndex ].SetInteger( idMath::ClampInt( MIN_FOV, MAX_FOV, fields[ fieldIndex ].ToInteger() + adjustAmount * 5 ) );
+		fields[ fieldIndex ].SetInteger( idMath::ClampInt( MIN_FOV, MAX_FOV, fields[ fieldIndex ].ToInteger() + adjustAmount ) );
 	}
 	else
 	{
@@ -395,9 +387,5 @@ bool idMenuScreen_Shell_GameOptions::idMenuDataSource_GameSettings::IsDataChange
 		return true;
 	}
 
-	if( fields[ GAME_FIELD_MUZZLE_FLASHES ].ToBool() != originalFields[ GAME_FIELD_MUZZLE_FLASHES ].ToBool() )
-	{
-		return true;
-	}
 	return false;
 }

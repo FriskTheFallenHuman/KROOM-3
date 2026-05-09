@@ -4,29 +4,6 @@
 
 ***********************************************************************/
 
-export fred {
-	// viewmodel chaingun
-
-	options -prefix CHAINGUN_ -keep eject muzzle barrel flash guilight -parent eject chaingun -parent flash chaingun -parent guilight chaingun -parent barrel chaingun -rename barrel spinner -rename muzzle barrel -rename origin blah
-
-	mesh	models/weapons/chaingun/cycles/idle.mb -dest models/md5/weapons/chaingun_view/viewchaingun
-	anim	models/weapons/chaingun/cycles/raise.mb -dest models/md5/weapons/chaingun_view/raise
-	anim	models/weapons/chaingun/cycles/idle.mb -dest models/md5/weapons/chaingun_view/idle
-	anim	models/weapons/chaingun/cycles/fireloop.mb -dest models/md5/weapons/chaingun_view/fireloop
-	anim	models/weapons/chaingun/cycles/reload.mb -dest models/md5/weapons/chaingun_view/reload
-	anim	models/weapons/chaingun/cycles/noammo.mb -dest models/md5/weapons/chaingun_view/noammo	
-	anim	models/weapons/chaingun/cycles/lower.mb -dest models/md5/weapons/chaingun_view/lower
-	anim	models/weapons/chaingun/cycles/windup.mb -dest models/md5/weapons/chaingun_view/windup
-	anim	models/weapons/chaingun/cycles/winddown.mb -dest models/md5/weapons/chaingun_view/winddown
-
-	// world model chaingun
-	options -ignorescale -prefix PLAYER_CHAINGUN_ -keep ATTACHER barrel eject flash -parent barrel body -parent eject body -parent flash body -rename ATTACHER origin -clearorigin 
-
-	mesh	models/characters/player/mocap/chaingun_idle.mb -dest models/md5/weapons/chaingun_world/worldchaingun
-	anim	models/characters/player/mocap/chaingun_idle.mb -range 1 80 -dest models/md5/weapons/chaingun_world/chaingun_idle
-	anim	models/characters/male_npc/cycles/tweakedplayermoves/chaingun_fire.mb -range 16 30 -dest models/md5/weapons/chaingun_world/chaingun_fire
-}
-
 entityDef weapon_chaingun {
 	"editor_color"				".3 .3 1"
 	"editor_mins"				"-16 -16 0"
@@ -51,11 +28,11 @@ entityDef weapon_chaingun {
 
 	"icon"						"guis/assets/hud/wpn_11"
 	"pdaIcon"					"guis/assets/hud/icons/chaingun_new.tga"
-	"hudIcon"					"guis/assets/hud/icons/chaingunw.tga"	
+	"hudIcon"					"guis/assets/hud/icons/chaingunw.tga"
 
 	"gui"						"guis/weapons/chaingun.gui"
 	"mtr_guiLightShader"		"lights/viewWeaponGuiLight"
-	
+
 	"weapon_scriptobject"		"weapon_chaingun"
 	"def_projectile"			"projectile_chaingunbullet"
 	"ammoType"					"ammo_belt"
@@ -99,7 +76,7 @@ entityDef weapon_chaingun {
 
 	"def_ejectBrass"			"debris_brass"
 	"ejectBrassDelay"			"10"
-	
+
 	"spread"					"5"
 
 	"controllerShakeHighMag"	"1.0"
@@ -119,7 +96,7 @@ entityDef moveable_item_chaingun {
 
 model worldmodel_chaingun {
 	mesh						models/md5/weapons/chaingun_world/worldchaingun.md5mesh
-		
+
 	anim idle 					models/md5/weapons/chaingun_world/chaingun_idle.md5anim
 	anim fire					models/md5/weapons/chaingun_world/chaingun_fire.md5anim
 	anim chaingun_fire			models/md5/weapons/chaingun_world/chaingun_fire.md5anim
@@ -161,9 +138,9 @@ entityDef projectile_chaingunbullet {
 	"noshadows"					"1"
 	"tracers"					"1"
 	"model_tracer"				"models/particles/tracer/tracer.lwo"
-	
+
 	"def_damage"				"damage_bullet_chaingun"
-								
+
 	"launchFromBarrel"			"1"
 	"health"					"0"
 	"velocity"					"2000 0 0"	// .38 Special 600 fps.  Source: Petzal, David E. "How fast is a speeding bullet." Field and Stream. 97 (1992): 23
@@ -194,7 +171,7 @@ entityDef projectile_chaingunbullet {
 
 	"model_smokespark"			"cgsmokeandspark.prt"
 	"model_ricochet"			"bulletricochet.prt"
-	
+
 	"smoke_wound_flesh"			"burstysquirt.prt"
 	"smoke_detonate"			"smokeandspark.smoke"
 	"smoke_residue" 			""	//particles/chaingun_residue.particle"
@@ -234,7 +211,7 @@ entityDef	damage_bullet_chaingun {
 	"blob_offset_x"		"400"
 
 	"knockback"			"1"
-	
+
 	"gib"				"1"
 	"smoke_wound_flesh"	"bloodwound.ptr"
 	"mtr_wound_flesh"	"textures/decals/hurt02"

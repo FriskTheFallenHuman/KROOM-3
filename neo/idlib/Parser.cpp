@@ -1089,6 +1089,25 @@ int idParser::ExpandDefineIntoSource( idToken* deftoken, define_t* define )
 		lasttoken->next = idParser::tokens;
 		idParser::tokens = firsttoken;
 	}
+	else if( !firsttoken && !lasttoken && deftoken )
+	{
+		idToken* newtoken = new( TAG_IDLIB_PARSER ) idToken;
+		if( newtoken )
+		{
+			if( idParser::ReadToken( newtoken ) )
+			{
+				newtoken->linesCrossed += deftoken->linesCrossed;
+				// see idParser::UnreadSourceToken
+				newtoken->next = idParser::tokens;
+				idParser::tokens = newtoken;
+			}
+			else
+			{
+				delete newtoken;
+			}
+		}
+	}
+
 	return true;
 }
 

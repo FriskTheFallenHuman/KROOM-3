@@ -100,6 +100,7 @@ public:
 	virtual const idSoundShader* GetAltSound() const;
 
 	virtual bool			HasDefaultSound() const;
+	virtual bool			HasUnloadedSounds() const;
 
 	virtual const soundShaderParms_t* GetParms() const;
 	virtual int				GetNumSounds() const;

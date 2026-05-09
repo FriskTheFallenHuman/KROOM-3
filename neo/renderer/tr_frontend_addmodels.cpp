@@ -41,10 +41,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "RenderCommon.h"
 #include "Model_local.h"
 
-idCVar r_skipStaticShadows( "r_skipStaticShadows", "0", CVAR_RENDERER | CVAR_BOOL, "skip static shadows" );
-idCVar r_skipDynamicShadows( "r_skipDynamicShadows", "0", CVAR_RENDERER | CVAR_BOOL, "skip dynamic shadows" );
 idCVar r_useParallelAddModels( "r_useParallelAddModels", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_NOCHEAT, "add all models in parallel with jobs" );
-idCVar r_forceShadowCaps( "r_forceShadowCaps", "0", CVAR_RENDERER | CVAR_BOOL, "0 = skip rendering shadow caps if view is outside shadow volume, 1 = always render shadow caps" );
 // RB begin
 idCVar r_forceShadowMapsOnAlphaTestedSurfaces( "r_forceShadowMapsOnAlphaTestedSurfaces", "1", CVAR_RENDERER | CVAR_BOOL, "0 = same shadowing as with stencil shadows, 1 = ignore noshadows for alpha tested materials" );
 // RB end
@@ -137,7 +134,7 @@ Returns the cached dynamic model if present, otherwise creates it.
 */
 idRenderModel* R_EntityDefDynamicModel( idRenderEntityLocal* def )
 {
-	if( def->dynamicModelFrameCount == tr.frameCount )
+	if( def->dynamicModelFrameCount == tr.frameCount && !r_showSkel.GetBool() )
 	{
 		return def->dynamicModel;
 	}
@@ -169,8 +166,14 @@ idRenderModel* R_EntityDefDynamicModel( idRenderEntityLocal* def )
 		return model;
 	}
 
+	bool showSkelUpdate = false;
+	if( r_showSkel.GetBool() )
+	{
+		showSkelUpdate = true;
+	}
+
 	// continously animating models (particle systems, etc) will have their snapshot updated every single view
-	if( callbackUpdate || ( model->IsDynamicModel() == DM_CONTINUOUS && def->dynamicModelFrameCount != tr.frameCount ) )
+	if( callbackUpdate || ( model->IsDynamicModel() == DM_CONTINUOUS && def->dynamicModelFrameCount != tr.frameCount ) || showSkelUpdate )
 	{
 		R_ClearEntityDefDynamicModel( def );
 	}

@@ -1,0 +1,243 @@
+/***********************************************************************
+ 
+ player model base animations
+
+***********************************************************************/
+
+model model_player_base_anims {
+	skin								skins/characters/player/greenmarine.skin
+	mesh								models/md5/characters/npcs/playermoves/spplayer.md5mesh
+
+	anim af_pose						models/md5/characters/npcs/playermoves/initial.md5anim
+	anim ik_pose						models/md5/characters/npcs/playermoves/initial.md5anim
+	anim initial						models/md5/characters/npcs/playermoves/initial.md5anim
+
+	anim teleport						models/md5/characters/npcs/playermoves/teleportin.md5anim
+	anim exit							models/md5/characters/npcs/playermoves/exit_teleporter.md5anim
+
+	anim idle							models/md5/characters/npcs/playermoves/fists_idle.md5anim
+	anim crouch_down					models/md5/characters/npcs/playermoves/crouch_down.md5anim
+	anim crouch							models/md5/characters/npcs/playermoves/crouch.md5anim
+	anim crouch_up						models/md5/characters/npcs/playermoves/crouch_up.md5anim
+	anim crouch_walk					models/md5/characters/npcs/playermoves/crouch_walk.md5anim
+	anim crouch_walk_backwards			models/md5/characters/npcs/playermoves/crouch_walk_back.md5anim
+
+	anim walk							models/md5/characters/npcs/playermoves/jog.md5anim {
+		frame 2							leftfoot
+		frame 11						rightfoot
+	}
+	anim walk_backwards					models/md5/characters/npcs/playermoves/jog_back.md5anim {
+		frame 6							rightfoot
+		frame 15						leftfoot
+	}
+
+	anim walk_strafe_left				models/md5/characters/npcs/playermoves/walk_strafe_left.md5anim {
+		frame 4							rightfoot
+		frame 11						leftfoot
+		frame 17						rightfoot
+		frame 25						leftfoot
+	}
+
+	anim walk_strafe_right				models/md5/characters/npcs/playermoves/walk_strafe_right.md5anim {
+		frame 3							rightfoot
+		frame 10						leftfoot
+		frame 17						rightfoot
+		frame 25						leftfoot
+	}
+
+
+	//anim run_forward					models/md5/characters/npcs/playermoves/newrun.md5anim
+	//{
+	//	frame 10						rightfoot
+	//	frame 19						leftfoot
+	//}
+
+	anim run_forward					models/md5/characters/npcs/playermoves/run.md5anim {
+		frame 8							leftfoot
+		frame 17						rightfoot
+	}
+
+	anim run_backwards					models/md5/characters/npcs/playermoves/run_backwards_270.md5anim {
+		prevent_idle_override
+		frame 7							rightfoot
+		frame 14						leftfoot
+		frame 21						rightfoot
+		frame 27						leftfoot
+	}
+	anim run_strafe_left				models/md5/characters/npcs/playermoves/run_strafe_left.md5anim {
+		prevent_idle_override
+		frame 4							rightfoot
+		frame 7							leftfoot
+		frame 18						rightfoot
+		frame 21						leftfoot
+	}
+	anim run_strafe_right				models/md5/characters/npcs/playermoves/run_strafe_right.md5anim {
+		prevent_idle_override
+		frame 5							leftfoot
+		frame 8							rightfoot
+		frame 18						leftfoot
+		frame 20						rightfoot
+	}
+	anim jump							models/md5/characters/npcs/playermoves/walkjump1.md5anim {
+		prevent_idle_override
+		frame 1							sound_body player_sounds_jump_small
+	}
+	anim run_jump						models/md5/characters/npcs/playermoves/walkjump1.md5anim {
+		prevent_idle_override
+		frame 1							sound_body player_sounds_jump
+	}
+	anim soft_land						models/md5/characters/npcs/playermoves/soft_land.md5anim {
+		prevent_idle_override
+		frame 1							sound_voice2 snd_land_soft
+		frame 1							leftfoot
+		frame 3							rightfoot
+	}
+	anim hard_land						models/md5/characters/npcs/playermoves/hard_land.md5anim {
+		prevent_idle_override
+		frame 1							sound_voice2 snd_land_hard
+		frame 1							leftfoot
+		frame 3							rightfoot
+	}
+	anim fall							models/md5/characters/npcs/playermoves/fall.md5anim {
+		prevent_idle_override
+	}
+	anim turn_left						models/md5/characters/npcs/playermoves/turn_left.md5anim {
+		prevent_idle_override
+	}
+	anim turn_right						models/md5/characters/npcs/playermoves/turn_right.md5anim  {
+		prevent_idle_override
+	}
+	anim pain							models/md5/characters/npcs/playermoves/painchest.md5anim {
+		prevent_idle_override
+	}
+	anim pain_head						models/md5/characters/npcs/playermoves/painhead.md5anim {
+		prevent_idle_override
+	}
+
+	anim pain_right_arm					models/md5/characters/npcs/playermoves/painrightarm.md5anim {
+		prevent_idle_override
+	}
+
+	anim pain_left_arm					models/md5/characters/npcs/playermoves/painleftarm.md5anim {
+		prevent_idle_override
+	}
+
+	anim pain_chest						models/md5/characters/npcs/playermoves/painchest.md5anim {
+		prevent_idle_override
+	}
+
+	anim pda_raise					models/md5/characters/npcs/playermoves/raisepda.md5anim
+	anim pda_idle					models/md5/characters/npcs/playermoves/pda_idle.md5anim
+	anim pda_lower					models/md5/characters/npcs/playermoves/lowerpda.md5anim
+
+	anim fists_raise					models/md5/characters/npcs/playermoves/raisewep.md5anim
+	anim fists_idle						models/md5/characters/npcs/playermoves/fists_idle_down.md5anim, models/md5/characters/npcs/playermoves/fists_idle.md5anim, models/md5/characters/npcs/playermoves/fists_idle_up.md5anim
+	anim fists_aim						models/md5/characters/npcs/playermoves/fists_aim_down.md5anim, models/md5/characters/npcs/playermoves/fists_aim.md5anim, models/md5/characters/npcs/playermoves/fists_aim_up.md5anim
+	anim fists_punch_right				models/md5/characters/npcs/playermoves/fists_punch_down1.md5anim, models/md5/characters/npcs/playermoves/fists_punch1.md5anim, models/md5/characters/npcs/playermoves/fists_punch_up1.md5anim
+	anim fists_punch_left				models/md5/characters/npcs/playermoves/fists_punch_down2.md5anim, models/md5/characters/npcs/playermoves/fists_punch2.md5anim, models/md5/characters/npcs/playermoves/fists_punch_up2.md5anim
+	anim fists_lower					models/md5/characters/npcs/playermoves/lowerwep.md5anim
+
+	anim pistol_raise					models/md5/characters/npcs/playermoves/raisewep.md5anim
+	anim pistol_idle					models/md5/characters/npcs/playermoves/pistol_idle_down.md5anim, models/md5/characters/npcs/playermoves/pistol_idle.md5anim, models/md5/characters/npcs/playermoves/pistol_idle_up.md5anim
+	anim pistol_aim						models/md5/characters/npcs/playermoves/pistol_aim_down.md5anim, models/md5/characters/npcs/playermoves/pistol_aim.md5anim, models/md5/characters/npcs/playermoves/pistol_aim_up.md5anim
+	anim pistol_fire1					models/md5/characters/npcs/playermoves/pistol_fire_down.md5anim, models/md5/characters/npcs/playermoves/pistol_fire1.md5anim, models/md5/characters/npcs/playermoves/pistol_fire_up.md5anim
+	anim pistol_reload					models/md5/characters/npcs/playermoves/pistol_reload.md5anim
+	anim pistol_lower					models/md5/characters/npcs/playermoves/lowerwep.md5anim
+
+	anim shotgun_raise					models/md5/characters/npcs/playermoves/raisewep.md5anim
+
+	anim shotgun_idle					models/md5/characters/npcs/playermoves/shotgun_idle_down.md5anim, models/md5/characters/npcs/playermoves/shotgun_idle.md5anim, models/md5/characters/npcs/playermoves/shotgun_idle_up.md5anim
+	anim shotgun_aim					models/md5/characters/npcs/playermoves/shotgun_aim_down.md5anim, models/md5/characters/npcs/playermoves/shotgun_aim.md5anim, models/md5/characters/npcs/playermoves/shotgun_aim_up.md5anim
+	anim shotgun_fire1					models/md5/characters/npcs/playermoves/shotgun_fire_down.md5anim, models/md5/characters/npcs/playermoves/shotgun_fire1.md5anim, models/md5/characters/npcs/playermoves/shotgun_fire_up.md5anim
+	anim shotgun_reload_start			models/md5/characters/npcs/playermoves/shotgun_reload_start.md5anim
+	anim shotgun_reload_loop			models/md5/characters/npcs/playermoves/shotgun_reload_loop1.md5anim
+	anim shotgun_reload_end				models/md5/characters/npcs/playermoves/shotgun_reload_end.md5anim
+	anim shotgun_lower					models/md5/characters/npcs/playermoves/lowerwep.md5anim
+
+	anim machinegun_raise				models/md5/characters/npcs/playermoves/raisewep.md5anim
+	anim machinegun_idle				models/md5/characters/npcs/playermoves/machinegun_idle_down.md5anim, models/md5/characters/npcs/playermoves/machinegun_idle.md5anim, models/md5/characters/npcs/playermoves/machinegun_idle_up.md5anim
+	anim machinegun_aim					models/md5/characters/npcs/playermoves/machinegun_aim_down.md5anim, models/md5/characters/npcs/playermoves/machinegun_aim.md5anim, models/md5/characters/npcs/playermoves/machinegun_aim_up.md5anim
+	anim machinegun_fire1				models/md5/characters/npcs/playermoves/machinegun_fire_down.md5anim, models/md5/characters/npcs/playermoves/machinegun_fire1.md5anim, models/md5/characters/npcs/playermoves/machinegun_fire_up.md5anim
+	anim machinegun_reload				models/md5/characters/npcs/playermoves/machinegun_reload.md5anim
+	anim machinegun_lower				models/md5/characters/npcs/playermoves/lowerwep.md5anim
+
+	anim chaingun_raise					models/md5/characters/npcs/playermoves/raisewep.md5anim
+	anim chaingun_idle					models/md5/characters/npcs/playermoves/chaingun_idle_down.md5anim, models/md5/characters/npcs/playermoves/chaingun_idle.md5anim, models/md5/characters/npcs/playermoves/chaingun_idle_up.md5anim
+	anim chaingun_aim					models/md5/characters/npcs/playermoves/chaingun_idle_down.md5anim, models/md5/characters/npcs/playermoves/chaingun_idle.md5anim, models/md5/characters/npcs/playermoves/chaingun_idle_up.md5anim
+	anim chaingun_fire					models/md5/characters/npcs/playermoves/chaingun_fire_down.md5anim, models/md5/characters/npcs/playermoves/chaingun_fire.md5anim, models/md5/characters/npcs/playermoves/chaingun_fire_up.md5anim
+	anim chaingun_reload				models/md5/characters/npcs/playermoves/chaingun_reload.md5anim
+	anim chaingun_lower					models/md5/characters/npcs/playermoves/lowerwep.md5anim
+
+
+	anim plasmagun_raise				models/md5/characters/npcs/playermoves/raisewep.md5anim
+	anim plasmagun_idle					models/md5/characters/npcs/playermoves/plasmagun_idle_down.md5anim, models/md5/characters/npcs/playermoves/plasmagun_idle.md5anim, models/md5/characters/npcs/playermoves/plasmagun_idle_up.md5anim
+	anim plasmagun_aim					models/md5/characters/npcs/playermoves/plasmagun_aim_down.md5anim, models/md5/characters/npcs/playermoves/plasmagun_aim.md5anim, models/md5/characters/npcs/playermoves/plasmagun_aim_up.md5anim
+	anim plasmagun_fire1				models/md5/characters/npcs/playermoves/plasmagun_fire_down.md5anim, models/md5/characters/npcs/playermoves/plasmagun_fire1.md5anim, models/md5/characters/npcs/playermoves/plasmagun_fire_up.md5anim
+
+	anim plasmagun_reload				models/md5/characters/npcs/playermoves/machinegun_reload.md5anim
+	anim plasmagun_lower				models/md5/characters/npcs/playermoves/lowerwep.md5anim
+
+	anim handgrenade_raise				models/md5/characters/npcs/playermoves/raisewep.md5anim
+	anim handgrenade_idle				models/md5/characters/npcs/playermoves/nade_idle_down.md5anim, models/md5/characters/npcs/playermoves/nade_idle.md5anim, models/md5/characters/npcs/playermoves/nade_idle_up.md5anim
+	anim handgrenade_aim				models/md5/characters/npcs/playermoves/nade_idle_down.md5anim, models/md5/characters/npcs/playermoves/nade_idle.md5anim, models/md5/characters/npcs/playermoves/nade_idle_up.md5anim
+	anim handgrenade_throw_quick		models/md5/characters/npcs/playermoves/nade_quickthrow_down.md5anim, models/md5/characters/npcs/playermoves/nade_quickthrow.md5anim, models/md5/characters/npcs/playermoves/nade_quickthrow_up.md5anim
+	anim handgrenade_throw_start		models/md5/characters/npcs/playermoves/nade_throwstart_down.md5anim, models/md5/characters/npcs/playermoves/nade_throwstart.md5anim, models/md5/characters/npcs/playermoves/nade_throwstart_up.md5anim
+	anim handgrenade_throw				models/md5/characters/npcs/playermoves/nade_throw_down.md5anim, models/md5/characters/npcs/playermoves/nade_throw.md5anim, models/md5/characters/npcs/playermoves/nade_throw_up.md5anim
+
+	anim handgrenade_startfire			models/md5/characters/npcs/playermoves/nade_throwstart_down.md5anim, models/md5/characters/npcs/playermoves/nade_throwstart.md5anim, models/md5/characters/npcs/playermoves/nade_throwstart_up.md5anim
+	anim handgrenade_fire				models/md5/characters/npcs/playermoves/nade_throw_down.md5anim, models/md5/characters/npcs/playermoves/nade_throw.md5anim, models/md5/characters/npcs/playermoves/nade_throw_up.md5anim
+	anim handgrenade_lower				models/md5/characters/npcs/playermoves/lowerwep.md5anim
+
+	anim chainsaw_raise					models/md5/characters/npcs/playermoves/chainsaw_raise.md5anim
+	anim chainsaw_idle					models/md5/characters/npcs/playermoves/chainsaw_idle_down.md5anim, models/md5/characters/npcs/playermoves/chainsaw_idle.md5anim, models/md5/characters/npcs/playermoves/chainsaw_idle_up.md5anim
+	anim chainsaw_aim					models/md5/characters/npcs/playermoves/chainsaw_idle_down.md5anim, models/md5/characters/npcs/playermoves/chainsaw_idle.md5anim, models/md5/characters/npcs/playermoves/chainsaw_idle_up.md5anim
+	anim chainsaw_fire					models/md5/characters/npcs/playermoves/chainsaw_fire_down.md5anim, models/md5/characters/npcs/playermoves/chainsaw_fire.md5anim, models/md5/characters/npcs/playermoves/chainsaw_fire_up.md5anim
+	anim chainsaw_lower					models/md5/characters/npcs/playermoves/lowerwep.md5anim
+
+	anim rocketlauncher_raise			models/md5/characters/npcs/playermoves/raisewep_left.md5anim
+	anim rocketlauncher_idle			models/md5/characters/npcs/playermoves/rocketlauncher_idle_down.md5anim, models/md5/characters/npcs/playermoves/rocketlauncher_idle.md5anim, models/md5/characters/npcs/playermoves/rocketlauncher_idle_up.md5anim
+	anim rocketlauncher_aim				models/md5/characters/npcs/playermoves/rocketlauncher_aim_down.md5anim, models/md5/characters/npcs/playermoves/rocketlauncher_aim.md5anim, models/md5/characters/npcs/playermoves/rocketlauncher_aim_up.md5anim
+	anim rocketlauncher_fire			models/md5/characters/npcs/playermoves/rocketlauncher_fire_down.md5anim, models/md5/characters/npcs/playermoves/rocketlauncher_fire.md5anim, models/md5/characters/npcs/playermoves/rocketlauncher_fire_up.md5anim
+	anim rocketlauncher_reload			models/md5/characters/npcs/playermoves/rocketlauncher_reload.md5anim
+	anim rocketlauncher_lower			models/md5/characters/npcs/playermoves/lowerwep_left.md5anim
+
+	anim flashlight_raise				models/md5/characters/npcs/playermoves/raisewep.md5anim
+	anim flashlight_idle				models/md5/characters/npcs/playermoves/flashlight_aim_down.md5anim, models/md5/characters/npcs/playermoves/flashlight_idle.md5anim, models/md5/characters/npcs/playermoves/flashlight_aim_up.md5anim
+	anim flashlight_lower				models/md5/characters/npcs/playermoves/lowerwep.md5anim
+	anim flashlight_aim					models/md5/characters/npcs/playermoves/flashlight_aim_down.md5anim, models/md5/characters/npcs/playermoves/flashlight_idle.md5anim, models/md5/characters/npcs/playermoves/flashlight_aim_up.md5anim
+	anim flashlight_fire1				models/md5/characters/npcs/playermoves/flashlight_swing1_down.md5anim, models/md5/characters/npcs/playermoves/flashlight_swing1.md5anim, models/md5/characters/npcs/playermoves/flashlight_swing1_up.md5anim
+	anim flashlight_fire2				models/md5/characters/npcs/playermoves/flashlight_swing2_down.md5anim, models/md5/characters/npcs/playermoves/flashlight_swing2.md5anim, models/md5/characters/npcs/playermoves/flashlight_swing2_up.md5anim
+
+	anim bfg_raise						models/md5/characters/npcs/playermoves/raisewep.md5anim
+	anim bfg_idle						models/md5/characters/npcs/playermoves/bfg_idle_down.md5anim, models/md5/characters/npcs/playermoves/bfg_idle.md5anim, models/md5/characters/npcs/playermoves/bfg_idle_up.md5anim
+	anim bfg_aim						models/md5/characters/npcs/playermoves/bfg_aim_down.md5anim, models/md5/characters/npcs/playermoves/bfg_aim.md5anim, models/md5/characters/npcs/playermoves/bfg_aim_up.md5anim
+	anim bfg_startfire					models/md5/characters/npcs/playermoves/bfg_startfire_down.md5anim, models/md5/characters/npcs/playermoves/bfg_startfire.md5anim, models/md5/characters/npcs/playermoves/bfg_startfire_up.md5anim
+	anim bfg_fire						models/md5/characters/npcs/playermoves/bfg_fire_down.md5anim, models/md5/characters/npcs/playermoves/bfg_fire.md5anim, models/md5/characters/npcs/playermoves/bfg_fire_up.md5anim
+	anim bfg_reload						models/md5/characters/npcs/playermoves/bfg_reload.md5anim
+	anim bfg_lower						models/md5/characters/npcs/playermoves/lowerwep.md5anim
+
+	anim soulcube_raise					models/md5/characters/npcs/playermoves/raisewep.md5anim
+	anim soulcube_idle					models/md5/characters/npcs/playermoves/soulcube_idle_down.md5anim, models/md5/characters/npcs/playermoves/soulcube_idle.md5anim, models/md5/characters/npcs/playermoves/soulcube_idle_up.md5anim
+	anim soulcube_aim					models/md5/characters/npcs/playermoves/soulcube_idle_down.md5anim, models/md5/characters/npcs/playermoves/soulcube_idle.md5anim, models/md5/characters/npcs/playermoves/soulcube_idle_up.md5anim
+	anim soulcube_fire					models/md5/characters/npcs/playermoves/soulcube_fire.md5anim, models/md5/characters/npcs/playermoves/soulcube_fire.md5anim, models/md5/characters/npcs/playermoves/soulcube_fire.md5anim
+	anim soulcube_lower					models/md5/characters/npcs/playermoves/lowerwep.md5anim
+
+	anim bloodstone_passive_raise		models/md5/characters/npcs/playermoves/raisewep.md5anim
+	anim bloodstone_passive_idle		models/md5/characters/npcs/playermoves/soulcube_idle_down.md5anim, models/md5/characters/npcs/playermoves/soulcube_idle.md5anim, models/md5/characters/npcs/playermoves/soulcube_idle_up.md5anim
+	anim bloodstone_passive_aim			models/md5/characters/npcs/playermoves/soulcube_idle_down.md5anim, models/md5/characters/npcs/playermoves/soulcube_idle.md5anim, models/md5/characters/npcs/playermoves/soulcube_idle_up.md5anim
+	anim bloodstone_passive_fire		models/md5/characters/npcs/playermoves/soulcube_fire.md5anim, models/md5/characters/npcs/playermoves/soulcube_fire.md5anim, models/md5/characters/npcs/playermoves/soulcube_fire.md5anim
+	anim bloodstone_passive_lower		models/md5/characters/npcs/playermoves/lowerwep.md5anim
+
+	anim shotgun_double_raise			models/md5/characters/npcs/playermoves/raisewep.md5anim
+	anim shotgun_double_idle			models/md5/characters/npcs/playermoves/shotgun_idle_down.md5anim, models/md5/characters/npcs/playermoves/shotgun_idle.md5anim, models/md5/characters/npcs/playermoves/shotgun_idle_up.md5anim
+	anim shotgun_double_aim				models/md5/characters/npcs/playermoves/shotgun_aim_down.md5anim, models/md5/characters/npcs/playermoves/shotgun_aim.md5anim, models/md5/characters/npcs/playermoves/shotgun_aim_up.md5anim
+	anim shotgun_double_fire1			models/md5/characters/npcs/playermoves/shotgun_fire_down.md5anim, models/md5/characters/npcs/playermoves/shotgun_fire1.md5anim, models/md5/characters/npcs/playermoves/shotgun_fire_up.md5anim
+	anim shotgun_double_reload			models/md5/characters/npcs/playermoves/dbreload.md5anim
+	anim shotgun_double_lower			models/md5/characters/npcs/playermoves/lowerwep.md5anim
+
+	anim grabber_raise					models/md5/characters/npcs/playermoves/raisewep.md5anim
+	anim grabber_idle					models/md5/characters/npcs/playermoves/plasmagun_idle_down.md5anim, models/md5/characters/npcs/playermoves/plasmagun_idle.md5anim, models/md5/characters/npcs/playermoves/plasmagun_idle_up.md5anim
+	anim grabber_aim					models/md5/characters/npcs/playermoves/plasmagun_aim_down.md5anim, models/md5/characters/npcs/playermoves/plasmagun_aim.md5anim, models/md5/characters/npcs/playermoves/plasmagun_aim_up.md5anim
+	anim grabber_fire1					models/md5/characters/npcs/playermoves/plasmagun_fire_down.md5anim, models/md5/characters/npcs/playermoves/plasmagun_fire1.md5anim, models/md5/characters/npcs/playermoves/plasmagun_fire_up.md5anim
+	anim grabber_lower					models/md5/characters/npcs/playermoves/lowerwep.md5anim
+}

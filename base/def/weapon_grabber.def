@@ -1,27 +1,3 @@
-export jay8 {
-	// view model grabber
-	options -prefix PISTOL_ -keep sidelight grabber_root beam guilight light_upper light_lower particle_upper particle_lower smokeparticle -parent sidelight grabber_root -parent smokeparticle grabber_cylinder01 -parent particle_upper grabber_root -parent particle_lower grabber_root -parent light_upper grabber_root -parent light_lower grabber_root -parent guilight grabber_root -rename origin blah -sourcedir models/weapons/grabber/cycles -destdir models/md5/weapons/grabber_view
-
-	mesh	idleopen.ma
-	anim	idleopen.ma
-	anim	idleclosed.ma
-	anim	raise.ma
-	anim	open.ma
-	anim	close.ma
-	anim	fire.ma
-	anim	put_away.ma
-}
-
-export jaygrabworld {
-
-	// world model grabber
-	options -prefix PLAYER_GRABBER_ -keep ATTACHER particle_upper -parent particle_upper body -rename ATTACHER origin -clearorigin
-
-
-	mesh	models/characters/player_character/cycles/grabber_w_idle.mb -dest models/md5/weapons/grabber_world/worldgrabber
-	anim	models/characters/player_character/cycles/grabber_w_idle.mb -range 0 0 -dest models/md5/weapons/grabber_world/grabber_idle
-}
-
 model worldmodel_grabber {
 	mesh						models/md5/weapons/grabber_world/worldgrabber.md5mesh
 
@@ -63,6 +39,7 @@ entityDef weapon_grabber {
 	"model_view"			"viewmodel_grabber"
 	"model_world" 			"worldmodel_grabber"
 	"joint_attach"			"SHOTGUN_ATTACHER"
+	"def_dropItem"			"moveable_item_grabber"
 
 	"inv_name"				"#str_00100207"
 	"inv_weapon"			"weapon_grabber"
@@ -70,7 +47,7 @@ entityDef weapon_grabber {
 	"icon"					"guis/assets/hud/wpn_10"
 	"inv_desc"				"#str_00100210"
 	"display_name"			"#str_00100207"
-	"hudIcon"				"guis/assets/hud/icons/grabberw.tga"	
+	"hudIcon"				"guis/assets/hud/icons/grabberw.tga"
 
 	"gui"					"guis/weapons/grabber.gui"
 
@@ -153,6 +130,15 @@ entityDef weapon_grabber {
 	"mtr_precache6"				"lights/grabberguilightred"
 
 	"skin_invisible"			"skins/grabber_invis"
+}
+
+entityDef moveable_item_grabber {
+	"inherit"					"weapon_grabber"
+	"spawnclass"				"idMoveableItem"
+	"density"					"0.05"
+	"friction"					"0.2"
+	"bouncyness"				"0"
+	"snd_bounce"				"smallbox"
 }
 
 
@@ -289,4 +275,3 @@ entityDef damage_fireball_invul_catch {
 	"dv_time"					"100"
 	"smoke_wound_flesh"				"bloodwound.smoke"
 }
-

@@ -625,7 +625,7 @@ public:		// Turning this on for now, for the sake of getting this up and running
 	const char* 						GetPeerName( int peerNum ) const;
 	virtual const char* 				GetHostUserName() const;
 
-	void								HandleReliableMsg( int p, idBitMsg& msg, const lobbyAddress_t* remoteAddress = NULL );
+	void								HandleReliableMsg( int p, idBitMsg& msg, const lobbyAddress_t& remoteAddress );
 
 	// Bandwidth / Qos / Throttling
 	void								BeginBandwidthTest();

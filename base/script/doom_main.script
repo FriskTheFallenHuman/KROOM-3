@@ -21,12 +21,10 @@ scriptEvent	void	launchHomingMissile();
 #define ENVIROSUIT 6
 #define ENVIROTIME 7
 
-// for dimming flashlight during plasma discharges in alphalabs2
-float global_flashlight_intensity = 1.0;
-
 // base defines and util functions
 #include "script/doom_defs.script"
 #include "script/doom_events.script"
+#include "script/_extra_events.script"
 #include "script/doom_util.script"
 #include "script/weapon_base.script"
 #include "script/ai_base.script"
@@ -86,7 +84,7 @@ float global_flashlight_intensity = 1.0;
 #include "script/ai_cinematic_le.script"
 
 // map scripts
-#include "script/map_admin1.script" 
+#include "script/map_admin1.script"
 #include "script/map_alphalabs1.script"
 #include "script/map_alphalabs2.script"
 #include "script/map_alphalabs3.script"

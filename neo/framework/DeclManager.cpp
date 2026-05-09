@@ -1268,6 +1268,15 @@ const idDecl* idDeclManagerLocal::FindType( declType_t type, const char* name, b
 
 	decl->AllocateSelf();
 
+	if( !insideLevelLoad && type == DECL_SOUND && decl->declState == DS_PARSED )
+	{
+		idSoundShader* shader = static_cast<idSoundShader*>( decl->self );
+		if( shader && shader->HasUnloadedSounds() )
+		{
+			decl->declState = DS_UNPARSED;
+		}
+	}
+
 	// if it hasn't been parsed yet, parse it now
 	if( decl->declState == DS_UNPARSED )
 	{
@@ -2216,6 +2225,7 @@ idDeclLocal::idDeclLocal
 */
 idDeclLocal::idDeclLocal()
 {
+	self = NULL;
 	name = "unnamed";
 	textSource = NULL;
 	textLength = 0;

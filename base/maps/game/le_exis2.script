@@ -1,0 +1,1052 @@
+//////////////////////////////////////////////////////////////
+//
+//		EXIS LABS
+//
+//////////////////////////////////////////////////////////////
+
+float	deconPosition = 0;
+//#modified-fva; BEGIN
+float cst_al_glass_broken = false;
+float cst_al_window_sealed = false;
+float cst_al_warning_on = false;
+float cst_al_check_thread = 0;
+//#modified-fva; END
+
+void setup_objects()
+{
+		$mister1.bind ($mister1_anchor);
+		$mister2.bind ($mister2_anchor);
+		$underlift_doors_bottom.open();
+}
+
+///////////////////////////////////////////////////////////
+//
+//		OUTDOOR ROOM LIFT
+//
+///////////////////////////////////////////////////////////
+
+
+	////////////////////////////////////////////////////
+	//
+	//	underlift moveup
+	//
+	////////////////////////////////////////////////////
+	void underlift_moveup()
+	{
+		//close underlift_doors_bottom
+		sys.wait(.1);
+		$underlift_doors_bottom.close();
+		sys.waitFor ($underlift_doors_bottom);
+
+		//open underlift_doors_top
+		$underlift_doors_top.open();
+		sys.waitFor ($underlift_doors_top);
+
+		//move the lift to underlift_pos_top
+		$underlift.time ( 3 );
+		$underlift.accelTime ( .5 );
+		$underlift.decelTime ( .25 );
+
+		//move the lift to underlift_pos_top
+		//$underlift.startSoundShader ("co_lift_up_3s", SND_CHANNEL_VOICE );			// SOUND
+		sys.trigger( $underlift_speaker );
+		$underlift.moveTo ($underlift_pos_top);
+		sys.waitFor ($underlift);
+		
+		//close the underlift_doors_top
+		$underlift_doors_top.close();
+		sys.waitFor ($underlift_doors_top);
+     }
+
+////////////////////////////////////////////////////////////
+//
+//		ENGINEERING JUNCTION 1 TRAP
+//
+////////////////////////////////////////////////////////////
+
+//Send trigger to trigger_count only after each Maggot is dead
+void eng_junction_trap_maggot1_death()
+{
+if ($eng_junction_maggot_1.getHealth()<=0)
+   (sys.trigger($trigger_count_ejt));
+}
+void eng_junction_trap_maggot2_death()
+{
+if ($eng_junction_maggot_2.getHealth()<=0)
+   (sys.trigger($trigger_count_ejt));
+}
+void eng_junction_trap_maggot3_death()
+{
+if ($eng_junction_maggot_3.getHealth()<=0)
+   (sys.trigger($trigger_count_ejt));
+}
+
+
+///////////////////////////////////////////////////////////
+//
+//		BRUISER FIGHT
+//
+///////////////////////////////////////////////////////////
+
+//Lock ME Entry Door when Player grabs Inducer
+void me_entry_door_lock()
+{
+        $light_me_inducer_blue.remove();
+        $me_inducer_flare_light.remove();
+        $me_inducer_flare.remove();
+        $light_me_inducer_red_2.show();
+	   $me_entry_door.lock(1);
+        $me_entry_doorframe.setShaderParm( 7, 0 );
+        $me_doorcontrol.setGuiParm ( 3, 0 );
+        sys.trigger($speaker_me_entry_door_locked);
+}
+
+//Unlock doors if Bruiser dies
+void bruiser_death()
+{
+if ($me_bruiser.getHealth()<=0)
+   (sys.wait( 4 ));
+   sys.trigger($me_radiochatter);
+   sys.wait( 5.5 );
+   $me_exit_door.lock(0);
+   $me_entry_door.lock(0);
+   sys.trigger($setshaderparm_me_exit_doorframe);
+   sys.trigger($speaker_me_exit_door_unlock);
+   $me_entry_doorframe.setShaderParm( 7, 1 );
+   $me_doorcontrol.setGuiParm ( 3, 1 );
+}
+
+///////////////////////////////////////////////////////////
+//
+//		ENGINEERING SUBSTATION IMP
+//
+///////////////////////////////////////////////////////////
+
+//Spawn Commando after Imp death
+void hole_imp_death()
+{
+if ($hole_imp.getHealth()<=0)
+   (sys.wait(.5));
+   sys.trigger($monster_zombie_commando_3);
+}
+
+////////////////////////////////////////////////////////////
+//
+//		ELEVATOR SCARE 1
+//
+////////////////////////////////////////////////////////////
+
+//Activate speaker trigger when Maintenance Zombie dies
+void eng_elev_zombie_death()
+{
+if ($eng_elev_zombie_maint.getHealth()<=0)
+   (sys.trigger($trigger_once_61));
+}
+
+///////////////////////////////////////////////////////////
+//
+//		ELEVATOR SCARE 2
+//
+///////////////////////////////////////////////////////////
+
+//Unhide ragdoll
+void elevator_ragdoll_drop()
+{
+        $elevator_ragdoll.show();
+}
+
+
+////////////////////////////////////////////////////////////
+//
+//		AIR LEAK EVENTS
+//
+////////////////////////////////////////////////////////////
+
+/*
+void teleport1_klaxxon_on()
+	{
+		if ($klaxxon_speaker1.getFloatKey ("klaxxon1_status") == 0) 
+		{
+			sys.wait (.25);
+			$al_klaxxon_light1.setColor(0.77,0.49,0.00);
+			$al_klaxxon_light2.setColor(0.77,0.49,0.00);
+			$al_klaxxon_light_base.setColor(0.77,0.49,0.00);
+			$al_klaxxon_light_base.rotate ('0 360 0');
+			sys.wait ( .5 );
+			//sys.trigger ($klaxxon_speaker1);
+			//$klaxxon_speaker1.setKey ("klaxxon1_status", "1");
+		}
+	}
+	
+	void teleport1_klaxxon_off()
+	{
+		if ($klaxxon_speaker1.getFloatKey ("klaxxon1_status") == 1)
+		{
+			//reset teleport trigger
+			$teleport_trigger1.setGuiParm ( "gui_parm1" , 0);
+			//turn off blinking blue tp light
+			sys.trigger ($teleport1_blightblink);
+			
+			//trigger off loop sound for fx
+			sys.trigger ($t1_teleporterfx_loop);
+			
+			//turn off floor and arm fx
+			sys.trigger ($teleport1_arm1_fx);
+			sys.trigger ($teleport1_arm2_fx);
+			sys.trigger ($teleport1_warpfx);
+			sys.trigger ($teleport1_floorfx);
+			//turn of klaxxon speaker
+			sys.trigger ($klaxxon_speaker1);
+			//fade klaxxon light off; player can see it winding down after tp
+			thread crossFadeEnt ($klaxxon1_light1, $klaxxon1_light1.getColor(), '0 0 0', 6.0);
+			thread crossFadeEnt ($klaxxon1_light2, $klaxxon1_light2.getColor(), '0 0 0', 6.0);
+			thread crossFadeEnt ($klaxxon1_light_base, $klaxxon1_light_base.getColor(), '0 0 0', 6.0);
+			sys.wait ( 6 );
+			//stop klaxxon rotation
+			$klaxxon1_light_base.rotate ('0 0 0');
+			//reset klaxxon1 light and speaker
+			$klaxxon_speaker1.setKey ("klaxxon1_status", "0");
+			//trigger gui to make useable after teleportation
+			sys.trigger ($teleporter1_controlpanel_gui);
+		}
+	}
+*/
+
+//Revenant fires rockets at windows
+void al_window_breaker()
+{
+	//#modified-fva; BEGIN
+	if (cst_al_glass_broken) {
+		return;
+	}
+	entity cstRevenant = sys.getEntity("revenant_window_breaker");
+	if (cstRevenant == $null_entity || cstRevenant.getHealth() <= 0) {
+		return;
+	}
+	//#modified-fva; END
+
+                //Revenant fires left rocket
+				//#modified-fva; BEGIN
+                //entity projectile1 = $revenant_window_breaker.fireMissileAtTarget( "Lmissile", "bullseye1" );
+				entity projectile1 = cstRevenant.fireMissileAtTarget( "Lmissile", "bullseye1" );
+				//#modified-fva; END
+                projectile1.setKey( "velocity", "600 0 0" );
+                vector origin = projectile1.getOrigin();
+                vector direction = sys.vecNormalize( $bullseye1.getOrigin() - origin );
+                projectile1.projectileLaunchProjectile( origin, direction, '0 0 0' );
+                projectile1.setEnemy($bullseye1);
+
+                //Revenant fires right rocket
+				//#modified-fva; BEGIN
+                //entity projectile = $revenant_window_breaker.fireMissileAtTarget( "Rmissile", "bullseye2" );
+				entity projectile = cstRevenant.fireMissileAtTarget( "Rmissile", "bullseye2" );
+				//#modified-fva; END
+                projectile.setKey( "velocity", "600 0 0" );
+				//#modified-fva; BEGIN
+                origin = projectile.getOrigin();
+                direction = sys.vecNormalize( $bullseye2.getOrigin() - origin );
+				//#modified-fva; END
+                projectile.projectileLaunchProjectile( origin, direction, '0 0 0' );
+                projectile.setEnemy($bullseye2);
+
+	//#modified-fva; BEGIN
+	sys.wait(1.5);
+	if (!cst_al_glass_broken) {
+		cstRevenant = sys.getEntity("revenant_window_breaker");
+		if (cstRevenant != $null_entity && cstRevenant.getHealth() > 0) {
+			cstRevenant.setEnemy($player1);
+		}
+	}
+	//#modified-fva; END
+}
+
+
+//#modified-fva; BEGIN
+void cst_al_crossfade_klaxxon(entity ent, vector source, vector dest, float total_time) {
+	crossFadeEnt(ent, source, dest, total_time);
+}
+
+void cst_al_check() {
+	float last_warning_time = (sys.getTime() - 12) + 1; // initial delay = 1 sec
+
+	while(true) {
+		vector org = $player1.getOrigin();
+		vector mins = $player1.getMins();
+		vector maxs = $player1.getMaxs();
+		vector refPos = org + (maxs + mins) * 0.5;
+
+		// door 1
+		float behind_al_nd_lvl_1 = false;
+		if (refPos_x >= 2160 && refPos_x <= 2302 &&
+			refPos_y >= 1536 && refPos_y <= 1664 &&
+			refPos_z >= 160.25 && refPos_z <= 319) {
+			behind_al_nd_lvl_1 = true;
+		}
+		if (behind_al_nd_lvl_1) {
+			if ($al_nd_lvl_1.isLocked()) {
+				$al_nd_lvl_1.lock( 0 );
+				sys.trigger($setshaderparm_al_nd_lvl_1);
+			}
+		} else {
+			if (!$al_nd_lvl_1.isLocked() && !$al_nd_lvl_1.isOpen()) {
+				$al_nd_lvl_1.lock( 1 );
+				sys.trigger($setshaderparm_al_nd_lvl_1);
+			}
+		}
+
+		// door 2
+		float behind_al_sd_lvl_1 = false;
+		if (refPos_x >= 3504 && refPos_x <= 3632 &&
+			refPos_y >= 1216 && refPos_y <= 1422 &&
+			refPos_z >= 224.25 && refPos_z <= 447) {
+			behind_al_sd_lvl_1 = true;
+		}
+		if (behind_al_sd_lvl_1) {
+			if ($al_sd_lvl_1.isLocked()) {
+				$al_sd_lvl_1.lock( 0 );
+				sys.trigger($setshaderparm_al_sd_lvl_1);
+			}
+		} else {
+			if (!$al_sd_lvl_1.isLocked() && !$al_sd_lvl_1.isOpen()) {
+				$al_sd_lvl_1.lock( 1 );
+				sys.trigger($setshaderparm_al_sd_lvl_1);
+			}
+		}
+
+		// door 3
+		float behind_al_sd_lvl_2 = false;
+		if (refPos_x >= 3056 && refPos_x <= 3294 &&
+			refPos_y >= 1200 && refPos_y <= 1360 &&
+			refPos_z >= 288.25 && refPos_z <= 447) {
+			behind_al_sd_lvl_2 = true;
+		}
+		if (behind_al_sd_lvl_2) {
+			if ($al_sd_lvl_2.isLocked()) {
+				$al_sd_lvl_2.lock( 0 );
+				sys.trigger($setshaderparm_al_sd_lvl_2);
+			}
+		} else {
+			if (!$al_sd_lvl_2.isLocked() && !$al_sd_lvl_2.isOpen()) {
+				$al_sd_lvl_2.lock( 1 );
+				sys.trigger($setshaderparm_al_sd_lvl_2);
+			}
+		}
+
+		// door 4
+		float behind_al_nd_lvl_2 = false;
+		if (refPos_x >= 2480 && refPos_x <= 2686 &&
+			refPos_y >= 1216 && refPos_y <= 1344 &&
+			refPos_z >= 288.25 && refPos_z <= 447) {
+			behind_al_nd_lvl_2 = true;
+		}
+		if (behind_al_nd_lvl_2) {
+			if ($al_nd_lvl_2.isLocked()) {
+				$al_nd_lvl_2.lock( 0 );
+				sys.trigger($setshaderparm_al_nd_lvl_2);
+			}
+		} else {
+			if (!$al_nd_lvl_2.isLocked() && !$al_nd_lvl_2.isOpen()) {
+				$al_nd_lvl_2.lock( 1 );
+				sys.trigger($setshaderparm_al_nd_lvl_2);
+			}
+		}
+
+		// warning sounds
+		if (!cst_al_window_sealed) {
+			float inside_al_area = false;
+			if (
+				refPos_x >= 2306 && refPos_x <= 3696 &&
+				refPos_y >= 1360 && refPos_y <= 2127 &&
+				refPos_z >= -479.75 && refPos_z <= 800) {
+				inside_al_area = true;
+			} else if (
+				refPos_x >= 2690 && refPos_x <= 3696 &&
+				refPos_y >= 1152 && refPos_y <= 1361 &&
+				refPos_z >= -479.75 && refPos_z <= 800) {
+				inside_al_area = true;
+			} else if (
+				refPos_x >= 3312 && refPos_x <= 3696 &&
+				refPos_y >= 1024 && refPos_y <= 1153 &&
+				refPos_z >= -479.75 && refPos_z <= 800) {
+				inside_al_area = true;
+			}
+			if (inside_al_area) {
+				if (!cst_al_warning_on) {
+					cst_al_warning_on = true;
+					$speaker_klaxxon.On();
+				}
+			} else {
+				if (cst_al_warning_on) {
+					cst_al_warning_on = false;
+					$speaker_klaxxon.Off();
+				}
+			}
+			float cur_time = sys.getTime();
+			if (cst_al_warning_on && cur_time >= last_warning_time + 12) {
+				last_warning_time = cur_time;
+				$speaker_al_warning.On();
+			}
+		}
+
+		sys.waitFrame();
+	}
+}
+//#modified-fva; END
+
+void windshutter1_open()
+{
+		/*start the kitchen lights fading
+			thread kitchenlightsoff();
+
+		/// starting shutter sound
+		thread sound_shutter1_start();
+
+		//might need this later
+		//$windshutter1_gui.setGuiParm( "gui_parm1" , windstatus1);
+
+		//fade in the bounce lightlight
+		$shutter_bounce_light.fadeInLight(1.5);
+                */
+
+		//#modified-fva; BEGIN
+		/*
+                //times for shutters opening
+		$windshutter1_1.time(1.5);
+		$windshutter1_1.accelTime(1);
+		$windshutter1_1.decelTime(.5);
+
+		$windshutter1_2.time(1.5);
+		$windshutter1_2.accelTime(1);
+		$windshutter1_2.decelTime(.5);
+		
+		$windshutter2_1.time(1.5);
+		$windshutter2_1.accelTime(1);
+		$windshutter2_1.decelTime(.5);
+
+		$windshutter2_2.time(1.5);
+		$windshutter2_2.accelTime(1);
+		$windshutter2_2.decelTime(.5);
+
+		// Going up
+		$windshutter1_1.rotateOnce( '0 0 180' );
+		sys.wait(0.5);
+
+		// Open Sky Door - Let vacuum in room
+		sys.trigger($sky_door);
+
+		//Start klaxxon
+	        $al_klaxxon_light1.setColor(0.77,0.49,0.00);
+	        $al_klaxxon_light2.setColor(0.77,0.49,0.00);
+	        $al_klaxxon_light_base.setColor(0.77,0.49,0.00);
+	        $al_klaxxon_light_base.rotate ('0 360 0');
+	        sys.trigger($trigger_al_warning_speaker_on);
+
+		$windshutter1_2.rotateOnce( '0 0 180' );
+		sys.wait(0.5);
+		$windshutter2_1.rotateOnce( '0 0 180' );
+		sys.wait(0.5);
+		$windshutter2_2.rotateOnce( '0 0 180' );
+		sys.waitFor($windshutter2_2);
+
+		//Lock all side doors and turn doorframe lights to red
+                $al_nd_lvl_1.lock( 1 );
+                sys.trigger($setshaderparm_al_nd_lvl_1);
+                $al_sd_lvl_1.lock( 1 );
+                sys.trigger($setshaderparm_al_sd_lvl_1);
+                $al_nd_lvl_2.lock( 1 );
+                sys.trigger($setshaderparm_al_nd_lvl_2);
+                $al_sd_lvl_2.lock( 1 );
+                sys.trigger($setshaderparm_al_sd_lvl_2);
+
+		//stopping shutter sound
+		//thread sound_shutter1_stop();
+		*/
+		sys.killthread("windshutter1_close");
+
+		cst_al_window_sealed = false;
+		float cst_al_glass_broken_latched = cst_al_glass_broken;
+
+                //times for shutters opening
+		$windshutter1_1.time(1.5);
+		$windshutter1_1.accelTime(1);
+		$windshutter1_1.decelTime(.5);
+
+		$windshutter1_2.time(1.5);
+		$windshutter1_2.accelTime(1);
+		$windshutter1_2.decelTime(.5);
+		
+		$windshutter2_1.time(1.5);
+		$windshutter2_1.accelTime(1);
+		$windshutter2_1.decelTime(.5);
+
+		$windshutter2_2.time(1.5);
+		$windshutter2_2.accelTime(1);
+		$windshutter2_2.decelTime(.5);
+
+		// Going up
+		//$windshutter1_1.rotateOnce( '0 0 180' );
+		$windshutter1_1.rotateUpTo(Z_AXIS, 0);
+		sys.wait(0.5);
+
+		if (cst_al_glass_broken_latched) {
+		// Open Sky Door - Let vacuum in room
+		//sys.trigger($sky_door);
+			$sky_door.open();
+
+		//Start klaxxon
+			sys.killthread("cst_al_crossfade_klaxxon");
+
+	        $al_klaxxon_light1.setColor(0.77,0.49,0.00);
+	        $al_klaxxon_light2.setColor(0.77,0.49,0.00);
+	        $al_klaxxon_light_base.setColor(0.77,0.49,0.00);
+	        $al_klaxxon_light_base.rotate ('0 360 0');
+	        //sys.trigger($trigger_al_warning_speaker_on);
+
+			if (!cst_al_check_thread) {
+				cst_al_check_thread = thread cst_al_check();
+			}
+		}
+
+		//$windshutter1_2.rotateOnce( '0 0 180' );
+		$windshutter1_2.rotateUpTo(Z_AXIS, 0);
+		sys.wait(0.5);
+		//$windshutter2_1.rotateOnce( '0 0 180' );
+		$windshutter2_1.rotateUpTo(Z_AXIS, 0);
+		sys.wait(0.5);
+		//$windshutter2_2.rotateOnce( '0 0 180' );
+		$windshutter2_2.rotateUpTo(Z_AXIS, 0);
+		//sys.waitFor($windshutter2_2);
+		//#modified-fva; END
+}
+
+void glass_break_trig()
+{
+	//#modified-fva; BEGIN
+	/*
+	//Open sky_door (let vacuum in room) and delete trigger relay to avoid multiple door triggers
+        $trigger_relay_al_2.remove();
+	sys.trigger($sky_door);
+	
+	//Start klaxxon
+	$al_klaxxon_light1.setColor(0.77,0.49,0.00);
+	$al_klaxxon_light2.setColor(0.77,0.49,0.00);
+	$al_klaxxon_light_base.setColor(0.77,0.49,0.00);
+	$al_klaxxon_light_base.rotate ('0 360 0');
+	sys.wait ( .5 );
+	//Start VO warning
+	sys.trigger($trigger_al_warning_speaker_on);
+
+        //Lock all side doors and turn doorframe lights to red
+        $al_nd_lvl_1.lock( 1 );
+        sys.trigger($setshaderparm_al_nd_lvl_1);
+        $al_sd_lvl_1.lock( 1 );
+        sys.trigger($setshaderparm_al_sd_lvl_1);
+        $al_nd_lvl_2.lock( 1 );
+        sys.trigger($setshaderparm_al_nd_lvl_2);
+        $al_sd_lvl_2.lock( 1 );
+        sys.trigger($setshaderparm_al_sd_lvl_2);
+        
+        //Turn revenant as enemy to player
+	$revenant_window_breaker.setEnemy($player1);
+	*/
+	if (cst_al_glass_broken) {
+		return;
+	}
+	cst_al_glass_broken = true;
+
+	if (!cst_al_window_sealed) {
+		// Open Sky Door - Let vacuum in room
+		//sys.trigger($sky_door);
+		$sky_door.open();
+
+	//Start klaxxon
+	$al_klaxxon_light1.setColor(0.77,0.49,0.00);
+	$al_klaxxon_light2.setColor(0.77,0.49,0.00);
+	$al_klaxxon_light_base.setColor(0.77,0.49,0.00);
+	$al_klaxxon_light_base.rotate ('0 360 0');
+
+		if (!cst_al_check_thread) {
+			cst_al_check_thread = thread cst_al_check();
+		}
+	}
+
+	entity cstRevenant = sys.getEntity("revenant_window_breaker");
+	if (cstRevenant != $null_entity && cstRevenant.getHealth() > 0) {
+		cstRevenant.setEnemy($player1);
+	}
+	//#modified-fva; END
+}
+
+void windshutter1_close()
+{
+
+		/*start the kitchen lights fading
+			thread kitchenlightson();
+
+		// starting shutter sound
+		thread sound_shutter1_start();
+
+		// Fade bounce light
+		$shutter_bounce_light.fadeOutLight(3);
+	        */
+
+		//#modified-fva; BEGIN
+		/*
+                //times for shutters closing
+		$windshutter1_1.time(3);
+		$windshutter1_1.accelTime(2);
+		$windshutter1_1.decelTime(1);
+
+		$windshutter1_2.time(3);
+		$windshutter1_2.accelTime(2);
+		$windshutter1_2.decelTime(1);
+
+		$windshutter2_1.time(3);
+		$windshutter2_1.accelTime(2);
+		$windshutter2_1.decelTime(1);
+
+		$windshutter2_2.time(3);
+		$windshutter2_2.accelTime(2);
+		$windshutter2_2.decelTime(1);
+
+		// Going down
+		$windshutter1_1.rotateOnce( '0 0 -180' );
+		sys.wait(0.25);
+		$windshutter1_2.rotateOnce( '0 0 -180' );
+		sys.wait(0.25);
+		$windshutter2_1.rotateOnce( '0 0 -180' );
+		sys.wait(0.25);
+		$windshutter2_2.rotateOnce( '0 0 -180' );
+		sys.waitFor($windshutter2_2);
+
+                // Close Sky Door - Shut vacuum out of room
+		sys.trigger($sky_door);
+		sys.trigger($trigger_al_warning_speaker_off);
+		//fade klaxxon light off; player can see it winding down after tp
+		thread crossFadeEnt ($al_klaxxon_light1, $al_klaxxon_light1.getColor(), '0 0 0', 3.0);
+		thread crossFadeEnt ($al_klaxxon_light2, $al_klaxxon_light2.getColor(), '0 0 0', 3.0);
+		thread crossFadeEnt ($al_klaxxon_light_base, $al_klaxxon_light_base.getColor(), '0 0 0', 3.0);
+		sys.wait(3);
+		//stop klaxxon rotation
+		$al_klaxxon_light_base.rotate ('0 0 0');
+		sys.trigger($trigger_breach_contained_speaker);
+
+		//Unlock side doors and turn doorframe lights to green
+		$al_nd_lvl_1.lock( 0 );
+                sys.trigger($setshaderparm_al_nd_lvl_1);
+                $al_sd_lvl_1.lock( 0 );
+                sys.trigger($setshaderparm_al_sd_lvl_1);
+                $al_nd_lvl_2.lock( 0 );
+                sys.trigger($setshaderparm_al_nd_lvl_2);
+                $al_sd_lvl_2.lock( 0 );
+                sys.trigger($setshaderparm_al_sd_lvl_2);
+                // stopping shutter sound
+		//thread sound_shutter1_stop();
+		*/
+		sys.killthread("windshutter1_open");
+
+                //times for shutters closing
+		$windshutter1_1.time(3);
+		$windshutter1_1.accelTime(2);
+		$windshutter1_1.decelTime(1);
+
+		$windshutter1_2.time(3);
+		$windshutter1_2.accelTime(2);
+		$windshutter1_2.decelTime(1);
+
+		$windshutter2_1.time(3);
+		$windshutter2_1.accelTime(2);
+		$windshutter2_1.decelTime(1);
+
+		$windshutter2_2.time(3);
+		$windshutter2_2.accelTime(2);
+		$windshutter2_2.decelTime(1);
+
+		// Going down
+		//$windshutter1_1.rotateOnce( '0 0 -180' );
+		$windshutter1_1.rotateDownTo(Z_AXIS, -180);
+		sys.wait(0.25);
+		//$windshutter1_2.rotateOnce( '0 0 -180' );
+		$windshutter1_2.rotateDownTo(Z_AXIS, -180);
+		sys.wait(0.25);
+		//$windshutter2_1.rotateOnce( '0 0 -180' );
+		$windshutter2_1.rotateDownTo(Z_AXIS, -180);
+		sys.wait(0.25);
+		//$windshutter2_2.rotateOnce( '0 0 -180' );
+		$windshutter2_2.rotateDownTo(Z_AXIS, -180);
+		sys.waitFor($windshutter2_2);
+
+		cst_al_window_sealed = true;
+		if (!cst_al_glass_broken) {
+			return;
+		}
+
+                // Close Sky Door - Shut vacuum out of room
+		//sys.trigger($sky_door);
+		//sys.trigger($trigger_al_warning_speaker_off);
+		$sky_door.close();
+		if (cst_al_warning_on) {
+			cst_al_warning_on = false;
+			$speaker_klaxxon.Off();
+		}
+
+		//fade klaxxon light off; player can see it winding down after tp
+		sys.killthread("cst_al_crossfade_klaxxon");
+
+		thread cst_al_crossfade_klaxxon($al_klaxxon_light1, $al_klaxxon_light1.getColor(), '0 0 0', 3.0);
+		thread cst_al_crossfade_klaxxon($al_klaxxon_light2, $al_klaxxon_light2.getColor(), '0 0 0', 3.0);
+		thread cst_al_crossfade_klaxxon($al_klaxxon_light_base, $al_klaxxon_light_base.getColor(), '0 0 0', 3.0);
+		sys.wait(3);
+		//stop klaxxon rotation
+		$al_klaxxon_light_base.rotate ('0 0 0');
+
+		//sys.trigger($trigger_breach_contained_speaker);
+		$speaker_breach_contained.On();
+
+		if (cst_al_check_thread) {
+			sys.terminate(cst_al_check_thread);
+			cst_al_check_thread = 0;
+		}
+		if ($al_nd_lvl_1.isLocked()) {
+			$al_nd_lvl_1.lock( 0 );
+			sys.trigger($setshaderparm_al_nd_lvl_1);
+		}
+		if ($al_sd_lvl_1.isLocked()) {
+			$al_sd_lvl_1.lock( 0 );
+			sys.trigger($setshaderparm_al_sd_lvl_1);
+		}
+		if ($al_nd_lvl_2.isLocked()) {
+			$al_nd_lvl_2.lock( 0 );
+			sys.trigger($setshaderparm_al_nd_lvl_2);
+		}
+		if ($al_sd_lvl_2.isLocked()) {
+			$al_sd_lvl_2.lock( 0 );
+			sys.trigger($setshaderparm_al_sd_lvl_2);
+		}
+		//#modified-fva; END
+}
+
+	// function for starting shutters1 sound
+	void sound_shutter1_start()
+	{
+	sys.trigger ($speaker_shutters);
+	}
+
+	// function for stopping shutters1 sound
+	void sound_shutter1_stop()
+	{
+	//sys.trigger ($speaker_shutters);
+	}
+
+//Player takes Air Leak Route 1
+void delete_trigger_al_route_2()
+{
+               $trigger_al_route_2.remove();
+               $imp1_al_route_2.remove();
+               $imp2_al_route_2.remove();
+}
+
+//Player takes Air Leak Route 2
+void delete_trigger_al_route_1()
+{
+               $trigger_al_route_1.remove();
+               $imp1_al_route_1.remove();
+               $imp2_al_route_1.remove();
+}
+
+///////////////////////////////////////////////////////////
+//
+//		OPERATIONS LOBBY FIGHT
+//
+///////////////////////////////////////////////////////////
+
+//Lock OP Lobby Door when Player hits trigger
+void op_lobby_door_lock()
+{
+        $op_lobby_door.lock(1);
+        $op_lobby_doorframe.setShaderParm( 7, 0 );
+        sys.trigger($speaker_op_lobby_door_locked);
+}
+
+//Unlock door if Archvile dies
+void op_archvile_death()
+{
+if ($op_lobby_archvile.getHealth()<=0)
+   (sys.wait(2));
+   $op_lobby_door.lock(0);
+   $op_lobby_doorframe.setShaderParm( 7, 1 );
+   sys.trigger($speaker_op_lobby_door_locked);
+}
+
+
+///////////////////////////////////////////////////////////
+//
+//		BRUISER FINAL FIGHT
+//
+///////////////////////////////////////////////////////////
+
+//Unlock Induction_Entry_door if Bruiser dies
+void tele_bruiser_death()
+{
+if ($monster_demon_d3xp_bruiser_2.getHealth()<=0)
+   (sys.wait(2));
+   $induction_entry_door.lock(0);
+   $induction_entry_doorframe.setShaderParm( 7, 1 );
+}
+
+
+////////////////////////////////////////////////////////////
+//
+//		RETURN INDUCER TO EXIS INDUCER ROOM
+//
+////////////////////////////////////////////////////////////
+
+//Player inserts inducer in Receiver
+void exis_inducer_receiver_light()
+{
+        $light_inducer_red_final.remove();
+        $light_inducer_blue_final.show();
+        $induction_entry_door.lock(1);
+   	   $induction_entry_doorframe.setShaderParm( 7, 0 );
+        sys.trigger($speaker_induction_entry_door_locked);
+}
+
+////////////////////////////////////////////////////////////
+//
+//		OPEN DECON ENTRY DOOR
+//
+////////////////////////////////////////////////////////////
+
+//Unlock Decon Entry Door when VideoCD is Available
+void open_decon_entry_door()
+{
+        sys.trigger($mal_trigger_multiple_2);
+	   $decon_entry_door.lock(0);
+        $decon_entry_doorframe.setShaderParm( 7, 1 );
+        sys.trigger($speaker_decon_entry_door_unlocked);
+}
+
+////////////////////////////////////////////////////////////
+//
+// 		DECON CHAMBER
+//
+////////////////////////////////////////////////////////////
+
+	void decon_cycle1()
+	{
+		$decon_trigger1.enable ();
+		deconPosition = 1;
+	}
+
+	void decon_cycle2()
+	{
+		$decon_trigger1.enable ();
+		deconPosition = 0;
+	}
+	
+	void mister_move ()
+	{
+		$decon_entry_door.lock (1);
+		$decon_exit_door.lock (1);
+		
+		//start decon1 computer voice
+		sys.trigger ($decon1_start_speaker);
+		sys.wait (1.5);
+
+		thread crossFadeEnt ($misterlight_white, '1 1 1', '1 0 0', 1.0);
+		thread crossFadeEnt ($decontop_fade, '1 1 1', '1 0 0', 1.0);
+		thread crossFadeEnt ($decon_toplight_red, '0 0 0', '1 0 0', 1.0);
+		thread crossFadeEnt ($decon_entry_doorframe, '1 1 1', '1 0 0', 1.0);
+		thread crossFadeEnt ($decon_entry_doorframe_light, '1 1 1', '1 0 0', 1.0);
+		thread crossFadeEnt ($decon_exit_doorframe, '1 1 1', '1 0 0', 1.0);
+		thread crossFadeEnt ($decon_exit_doorframe_light, '1 1 1', '1 0 0', 1.0);
+		
+			
+		sys.trigger ($decon1_mister1start_spkr);
+		sys.trigger ($decon1_mister2start_spkr);
+		sys.wait (.15);
+		sys.trigger ($decon1_mister1loop_spkr);
+		sys.trigger ($decon1_mister2loop_spkr);
+		
+		$mister1_anchor.moveTo ($mister1_spot2);
+		$mister2_anchor.moveTo ($mister2_spot2);
+		sys.waitFor ($mister1_anchor);
+		
+		$mister1_anchor.rotateOnce ('0 0 -60');
+		$mister2_anchor.rotateOnce ('0 0 60');
+		sys.waitFor ($mister1_anchor);
+
+		$mister1_anchor.rotateOnce ('0 0 60');
+		$mister2_anchor.rotateOnce ('0 0 -60');
+		sys.waitFor ($mister1_anchor);
+		
+		$mister1_anchor.moveTo ($mister1_spot1);
+		$mister2_anchor.moveTo ($mister2_spot1);
+		sys.waitFor ($mister1_anchor);
+		
+		sys.trigger ($decon1_mister1stop_spkr);
+		sys.trigger ($decon1_mister2stop_spkr);
+		//trigger looping speaker again to turn off
+		sys.trigger ($decon1_mister1loop_spkr);
+		sys.trigger ($decon1_mister2loop_spkr);
+		
+		//turn off emitter
+		sys.trigger($mister1_emitter);
+		sys.trigger($mister2_emitter);
+
+		sys.wait (.5);
+		thread crossFadeEnt ($misterlight_white, '1 0 0', '1 1 1', 1.0);
+		thread crossFadeEnt ($decontop_fade, '1 0 0', '1 1 1', 1.0);
+		thread crossFadeEnt ($decon_toplight_red, '1 0 0', '0 0 0', 1.0);
+		thread crossFadeEnt ($decon_entry_doorframe, '1 0 0', '1 1 1', 1.0);
+		thread crossFadeEnt ($decon_entry_doorframe_light, '1 0 0', '1 1 1', 1.0);
+		thread crossFadeEnt ($decon_exit_doorframe, '1 0 0', '1 1 1', 1.0);
+		thread crossFadeEnt ($decon_exit_doorframe_light, '1 0 0', '1 1 1', 1.0);
+	}
+
+	void mister1()
+	{
+		$decon_entry_door.close ();
+		$decon_exit_door.close ();
+		$decon_trigger1.disable ();
+
+		$decon_entry_doorframe.setShaderParm (7, 0);
+		$decon_exit_doorframe.setShaderParm (7, 0);
+		
+		//turn on emitter
+		sys.trigger($mister1_emitter);
+		sys.trigger($mister2_emitter);
+
+		float i;
+			i = thread mister_move();
+			sys.waitForThread (i);
+
+		//complete decon1 computer voice
+		sys.trigger ($decon1_complete_speaker);
+		
+		sys.wait (.25);
+		if (deconPosition == 0)
+		{
+			$decon_entry_doorframe.setShaderParm (7, 1);
+			$decon_entry_door.lock (0);
+		}
+		if (deconPosition == 1)
+		{
+			$decon_exit_doorframe.setShaderParm (7, 1);
+			$decon_exit_door.lock (0);
+		}
+	}
+
+
+////////////////////////////////////////////////////////////
+//
+//		TELEPORTER ROOM
+//
+////////////////////////////////////////////////////////////
+
+
+  		//////////////////////////////////////////////////
+		//
+		//		TELEPORTER SETUP
+		//
+		//////////////////////////////////////////////////
+
+void raise_teleporter_control()
+{
+		$teleporter_control_door.time ( 1 );
+		sys.trigger ($speaker_teleporter_control_doors);
+		$teleporter_control_door.move( 180, 80);
+		sys.wait( 1 );
+
+		sys.trigger ($speaker_teleporter_control);
+		$teleporter_control.time ( 1.5 );
+		$teleporter_control.move( -1, 80);
+}
+
+void raise_barricade()
+{
+		$teleporter_barricade.time ( 2 );
+		sys.trigger ($speaker_barricade);
+		sys.trigger ($speaker_barricade_2);
+		$teleporter_barricade.move( -1, 64);
+}
+
+		//////////////////////////////////////////////////
+		//
+		//		PLAYER STARTS TELEPORTER
+		//
+		//////////////////////////////////////////////////
+		
+void lower_teleporter_control()
+{
+		//$teleporter_control.speed( 30 );
+		$teleporter_control.time ( 1.5 );
+		$teleporter_control.move( -2, 80);
+		sys.trigger ($speaker_teleporter_control);
+		sys.wait( 1.5 );
+		
+		//$teleporter_control_door.speed( 50 );
+		$teleporter_control_door.time ( 1 );
+		sys.trigger ($speaker_teleporter_control_doors);
+		$teleporter_control_door.move( 0, 80);
+}
+
+void start_teleporter_beams()
+{
+		sys.trigger ($speaker_teleporter_on);		
+	
+		sys.trigger($teleporter_emitter1);
+		sys.trigger($teleporter_beam_source_light01);
+		sys.trigger ($speaker_beam_01);
+
+		sys.wait(.2);
+		sys.trigger($teleporter_beam_start_1);
+		sys.trigger($emitter_teleporter_small_ball);//on
+		sys.trigger($teleporter_small_ball_light);//on
+		sys.wait( 1);
+
+		sys.trigger($teleporter_emitter2);
+		sys.trigger($teleporter_beam_source_light02);
+		sys.trigger ($speaker_beam_02);
+		sys.wait(.2);
+		sys.trigger($teleporter_beam_start_2);
+		sys.wait( 1);
+
+		sys.trigger($teleporter_emitter3);
+		sys.trigger($teleporter_beam_source_light03);
+		sys.trigger ($speaker_beam_03);
+		sys.wait(.2);
+		sys.trigger($teleporter_beam_start_3);
+		sys.wait( 1);
+
+		sys.trigger($teleporter_emitter4);
+		sys.trigger($teleporter_beam_source_light04);
+		sys.trigger ($speaker_beam_04);
+		sys.wait(.2);
+		sys.trigger($teleporter_beam_start_4);
+		sys.wait( 2);
+         
+		sys.trigger($exis_telesphere_small);//on
+		sys.trigger($speaker_sphere);
+		
+		sys.wait(2);
+
+		sys.trigger($exis_telesphere_small);//off
+		sys.trigger($exis_telesphere);//on
+		sys.trigger($exis_teletrans);//on
+		sys.trigger($tele_explode_speaker);//on
+		sys.trigger ($speaker_hellnoise);
+		sys.trigger ($speaker_teleport_ignition);		
+}
+
+////////////////////////////////////////////////////////////
+//
+//		SCRIPT START
+//
+////////////////////////////////////////////////////////////
+
+void main()
+{
+	setup_objects();
+ 	underlift_moveup();
+}

@@ -40,6 +40,7 @@ If you have questions concerning this license or the applicable additional terms
 */
 
 extern idCVar com_engineHz;
+extern idCVar com_hiResClock;
 extern float com_engineHz_latched;
 extern const int64 com_engineHz_numerator;
 extern int64 com_engineHz_denominator;
@@ -202,7 +203,7 @@ public:
 	// Initialize everything.
 	// if the OS allows, pass argc/argv directly (without executable name)
 	// otherwise pass the command line in a single string (without executable name)
-	virtual void				Init( int argc, char* const* argv ) = 0;
+	virtual void				Init( int argc, const char* const* argv, const char* cmdline ) = 0;
 
 	// Shuts down everything.
 	virtual void				Shutdown() = 0;
@@ -359,6 +360,12 @@ public:
 	virtual bool				JapaneseCensorship() const = 0;
 
 	virtual void				QueueShowShell() = 0;		// Will activate the shell on the next frame.
+
+	// Headless Server
+	virtual bool				GetServerDedicated() = 0;
+	virtual void				SetServerDedicated( bool dedicated ) = 0;
+
+	virtual void				SetQuitRequested( bool quitRequested ) = 0;
 };
 
 extern idCommon* 		common;

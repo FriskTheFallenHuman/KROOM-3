@@ -583,6 +583,24 @@ bool idMenuHandler_PDA::HandleAction( idWidgetAction& action, const idWidgetEven
 
 /*
 ========================
+idMenuHandler_PDA::HandleGuiEvent
+========================
+*/
+bool idMenuHandler_PDA::HandleGuiEvent( const sysEvent_t* sev )
+{
+	if( sev->evType == SE_KEY && sev->evValue2 == 1 && sev->evValue >= K_F1 && sev->evValue <= K_F12 )
+	{
+		if( idStr::Icmp( idKeyInput::GetBinding( sev->evValue ), "screenshot" ) == 0 )
+		{
+			idKeyInput::ExecKeyBinding( sev->evValue );
+			return true;
+		}
+	}
+	return idMenuHandler::HandleGuiEvent( sev );
+}
+
+/*
+========================
 idMenuHandler_PDA::PlayPDAAudioLog
 ========================
 */

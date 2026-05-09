@@ -650,11 +650,6 @@ void idCommonLocal::Error( const char* fmt, ... )
 		Printf( "********************\nERROR: %s\n********************\n", errorMessage );
 	}
 
-	if( cvarSystem->GetCVarBool( "r_fullscreen" ) )
-	{
-		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "vid_restart partial windowed\n" );
-	}
-
 	Sys_Error( "%s", errorMessage );
 
 }
@@ -698,11 +693,6 @@ void idCommonLocal::FatalError( const char* fmt, ... )
 	idStr::vsnPrintf( errorMessage, sizeof( errorMessage ), fmt, argptr );
 	va_end( argptr );
 	errorMessage[sizeof( errorMessage ) - 1] = '\0';
-
-	if( cvarSystem->GetCVarBool( "r_fullscreen" ) )
-	{
-		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "vid_restart partial windowed\n" );
-	}
 
 	throw idFatalException( errorMessage );
 }

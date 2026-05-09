@@ -554,7 +554,7 @@ void idEntityFx::Run( int time )
 						{
 							if( !common->IsMultiplayer() || !fxaction.shakeIgnoreMaster || GetBindMaster() != player )
 							{
-								player->playerView.DamageImpulse( fxaction.offset, &args );
+								player->playerView.DamageImpulse( fxaction.offset, &args, false );
 							}
 						}
 					}
@@ -901,6 +901,7 @@ void idEntityFx::ReadFromSnapshot( const idBitMsg& msg )
 	ReadBindFromSnapshot( msg );
 	fx_index = gameLocal.ClientRemapDecl( DECL_FX, msg.ReadLong() );
 	start_time = msg.ReadLong();
+	start_time = gameLocal.time - ( gameLocal.serverTime - start_time );
 
 	if( fx_index != -1 && start_time > 0 && !fxEffect && started < 0 )
 	{
@@ -932,7 +933,7 @@ void idEntityFx::ClientThink( const int curTime, const float fraction, const boo
 
 	if( gameLocal.isNewFrame )
 	{
-		Run( gameLocal.serverTime );
+		Run( gameLocal.time );
 	}
 
 	InterpolatePhysics( fraction );

@@ -277,6 +277,7 @@ public:
 class idCommonDialog
 {
 public:
+	idCommonDialog();
 	void	Init();
 	void	Render( bool loading );
 	void	Shutdown();

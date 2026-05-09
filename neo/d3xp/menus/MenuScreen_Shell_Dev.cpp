@@ -96,7 +96,7 @@ void idMenuScreen_Shell_Dev::Initialize( idMenuHandler* data )
 
 	btnBack = new( TAG_SWF ) idMenuWidget_Button();
 	btnBack->Initialize( data );
-	btnBack->SetLabel( "MAIN MENU" );
+	btnBack->SetLabel( "#str_swf_campaign" );
 	btnBack->SetSpritePath( GetSpritePath(), "info", "btnBack" );
 	btnBack->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_GO_BACK );
 
@@ -125,7 +125,7 @@ void idMenuScreen_Shell_Dev::SetupDevOptions()
 	idHashIndex seenMaps;
 	idStrList   seenMapNames;
 
-	auto TryAddMap = [&]( const idStr& mapName, const idStr& displayName, bool isMP )
+	auto TryAddMap = [&]( const idStr & mapName, const idStr & displayName, bool isMP )
 	{
 		if( mapName.IsEmpty() )
 		{
@@ -154,7 +154,7 @@ void idMenuScreen_Shell_Dev::SetupDevOptions()
 	for( int i = 0; i < numMaps; i++ )
 	{
 		const idDeclEntityDef* mapDef = static_cast<const idDeclEntityDef*>(
-			declManager->DeclByIndex( DECL_MAPDEF, i ) );
+											declManager->DeclByIndex( DECL_MAPDEF, i ) );
 		if( mapDef == NULL )
 		{
 			continue;
@@ -162,7 +162,7 @@ void idMenuScreen_Shell_Dev::SetupDevOptions()
 
 		idStr mapName    = mapDef->GetName();
 		idStr displayName = idLocalization::GetString(
-			mapDef->dict.GetString( "name", mapName ) );
+								mapDef->dict.GetString( "name", mapName ) );
 		bool  isMP       = MapDefIsMultiplayer( mapDef );
 
 		TryAddMap( mapName, displayName, isMP );
@@ -186,11 +186,11 @@ void idMenuScreen_Shell_Dev::SetupDevOptions()
 			bool  isMP        = false;
 
 			const idDeclEntityDef* mapDef = static_cast<const idDeclEntityDef*>(
-				declManager->FindType( DECL_MAPDEF, shortName, false ) );
+												declManager->FindType( DECL_MAPDEF, shortName, false ) );
 			if( mapDef != NULL )
 			{
 				displayName = idLocalization::GetString(
-					mapDef->dict.GetString( "name", shortName ) );
+								  mapDef->dict.GetString( "name", shortName ) );
 				isMP = MapDefIsMultiplayer( mapDef );
 			}
 			else
@@ -198,11 +198,11 @@ void idMenuScreen_Shell_Dev::SetupDevOptions()
 				idStr alt = shortName;
 				alt.StripLeading( "game/" );
 				const idDeclEntityDef* mapDef2 = static_cast<const idDeclEntityDef*>(
-					declManager->FindType( DECL_MAPDEF, alt, false ) );
+													 declManager->FindType( DECL_MAPDEF, alt, false ) );
 				if( mapDef2 != NULL )
 				{
 					displayName = idLocalization::GetString(
-						mapDef2->dict.GetString( "name", alt ) );
+									  mapDef2->dict.GetString( "name", alt ) );
 					isMP = MapDefIsMultiplayer( mapDef2 );
 				}
 			}
@@ -325,7 +325,7 @@ bool idMenuScreen_Shell_Dev::HandleAction( idWidgetAction& action, const idWidge
 	{
 		case WIDGET_ACTION_GO_BACK:
 		{
-			menuData->SetNextScreen( SHELL_AREA_ROOT, MENU_TRANSITION_SIMPLE );
+			menuData->SetNextScreen( SHELL_AREA_CAMPAIGN, MENU_TRANSITION_SIMPLE );
 			return true;
 		}
 		case WIDGET_ACTION_PRESS_FOCUSED:
@@ -357,10 +357,14 @@ bool idMenuScreen_Shell_Dev::HandleAction( idWidgetAction& action, const idWidge
 				}
 				else
 				{
-					if ( developer.GetBool() )
+					if( developer.GetBool() )
+					{
 						cmdSystem->AppendCommandText( va( "devmap %s\n", opt.map.c_str() ) );
+					}
 					else
+					{
 						cmdSystem->AppendCommandText( va( "map %s\n", opt.map.c_str() ) );
+					}
 				}
 			}
 

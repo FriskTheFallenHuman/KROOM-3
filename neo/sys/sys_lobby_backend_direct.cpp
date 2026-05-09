@@ -135,6 +135,7 @@ idLobbyBackendDirect::BecomeHost
 */
 void idLobbyBackendDirect::BecomeHost( int numInvites )
 {
+	isHost = true;
 }
 
 /*
@@ -144,7 +145,6 @@ idLobbyBackendDirect::FinishBecomeHost
 */
 void idLobbyBackendDirect::FinishBecomeHost()
 {
-	isHost = true;
 }
 
 /*
@@ -179,21 +179,10 @@ lobbyConnectInfo_t idLobbyBackendDirect::GetConnectInfo()
 	// If we aren't the host, this lobby should have been joined through JoinFromConnectInfo
 	if( IsHost() )
 	{
-		// If we are the host, give them our ip address
-		// DG: always using the first IP doesn't work, because on linux that's 127.0.0.1
-		// and even if not, this causes trouble with NAT.
-		// So either use net_ip or, if it's not set ("localhost"), use 0.0.0.0 which is
-		// a special case the client will treat as "just use the IP I used for the lobby"
-		// (which is the right behavior for the Direct backend, I guess).
-		// the client special case is in idLobby::HandleReliableMsg
-		const char* ip = net_ip.GetString();
-		if( ip == NULL || idStr::Length( ip ) == 0 || idStr::Icmp( ip, "localhost" ) == 0 )
-		{
-			ip = "0.0.0.0";
-		}
-		// DG end
-		Sys_StringToNetAdr( ip, &address, false );
-		address.port = net_port.GetInteger();
+		// send a dummy address; clients will pick the host's address from the sender of the received
+		// message; see the handling of OOB_MIGRATE_INVITE and RELIABLE_CONNECT_AND_MOVE_TO_LOBBY.
+		memset( &address, 0, sizeof( address ) );
+		address.type = NA_IP;
 	}
 
 	connectInfo.netAddr = address;

@@ -4,29 +4,6 @@
 
 ***********************************************************************/
 
-export fred {
-	// View Model Grenade
-	options -prefix NADE_ -keep barrel -parent barrel Rhand -sourcedir models/weapons/grenades/cycles -destdir models/md5/weapons/grenade_view
-	mesh	idle1.mb -dest viewgrenade
-	anim	idle1.mb -xyzprecision 0.01 -quatprecision 0.00006 -dest grenade_idle
-	anim	raise.mb -xyzprecision 0.01 -quatprecision 0.00006 -dest grenade_raise
-	anim	lower.mb -xyzprecision 0.01 -quatprecision 0.00006 -dest grenade_lower
-	//anim	fire1.mb -xyzprecision 0.01 -quatprecision 0.00006 -dest grenade_fire1
-	anim	fire2.mb -xyzprecision 0.01 -quatprecision 0.00006 -dest grenade_fire2
-	anim	start.mb -xyzprecision 0.01 -quatprecision 0.00006 -range 20 130 -dest grenade_start
-	anim	start.mb -xyzprecision 0.01 -quatprecision 0.00006 -range 152 180 -dest grenade_throw
-	//anim	models/weapons/grenades/cycles/fire2.mb -xyzprecision 0.01 -quatprecision 0.00006 -range 99 132 -dest throw
-	//anim	models/weapons/grenades/cycles/fire3.mb -xyzprecision 0.01 -quatprecision 0.00006 -range 98 132 -dest grenade_lowthrow
-	anim	fastthrow.mb -xyzprecision 0.01 -quatprecision 0.00006 -dest grenade_fastthrow
-
-
-	// World Model Grenade	
-	options -prefix PLAYER_NADE_ -keep ATTACHER barrel -parent barrel gbody -rename ATTACHER origin -clearorigin -sourcedir models/characters/player/mocap -destdir models/md5/weapons/grenade_world
-	mesh	grenade_idle.mb -dest worldgrenade
-	anim	grenade_idle.mb -dest grenade_idle
-	anim	grenade_throw.mb -dest grenade_throw
-}
-
 entityDef weapon_handgrenade {
 	"editor_color"				".3 .3 1"
 	"editor_mins"				"-16 -16 0"
@@ -51,7 +28,7 @@ entityDef weapon_handgrenade {
 
 	"icon"						"guis/assets/hud/wpn_4"
 	"pdaIcon"					"guis/assets/hud/icons/grenade_new.tga"
-	"hudIcon"					"guis/assets/hud/icons/grenadew.tga"	
+	"hudIcon"					"guis/assets/hud/icons/grenadew.tga"
 
 	"weapon_scriptobject"		"weapon_handgrenade"
 	"def_projectile"			"projectile_grenade"
@@ -74,9 +51,9 @@ entityDef weapon_handgrenade {
 	"skin_nade_invis"			"skins/models/weapons/nade_invis"
 	"skin_nonade"				"skins/models/weapons/nonade"
 	"skin_nonade_invis"			"skins/models/weapons/nonade_invis"
-	
+
 	"spread"					"0"
-	
+
 	"primed_fuse"				"3"
 
 	"controllerShakeHighMag"	"0.3"
@@ -88,6 +65,9 @@ entityDef weapon_handgrenade {
 entityDef env_grenade_explodeinhand {
 	"spawnclass"				"idAnimatedEntity"
 	"model"						"grenadeExplosion.prt"
+	"networkSync"				"1"
+	"use_spawntime"				"1"
+	"sync_origin"				"1"
 }
 
 entityDef moveable_item_grenades {
@@ -122,11 +102,11 @@ model viewmodel_grenade {
 		frame 1					object_call GrenadeNade
 	}
 	anim putaway 				models/md5/weapons/grenade_view/grenade_lower.md5anim
-	anim fire 					models/md5/weapons/grenade_view/grenade_fire2.md5anim 
+	anim fire 					models/md5/weapons/grenade_view/grenade_fire2.md5anim
 	anim throw_start 			models/md5/weapons/grenade_view/grenade_start.md5anim {
 		// frame 1 				sound_body player_handgrenade_throw
 		// Was frame 6 -Xian
-	}		
+	}
 	anim throw 					models/md5/weapons/grenade_view/grenade_throw.md5anim {
 		frame 1					object_call GrenadeNade
 		frame 8					object_call GrenadeNoNade
@@ -172,7 +152,7 @@ entityDef projectile_grenade {
 
 	"def_damage"				"damage_grenadeDirect"
 	"def_splash_damage"			"damage_grenadeSplash"
-								
+
 	"launchFromBarrel"			"1"
 	"health"					"0"					// amount of damage projectile can take if damaged (0 means it can't be destroyed)
 	"velocity"					"300 0 40"			// how fast the projectile leaves the gun (or distance if fuse is 0)
@@ -187,18 +167,18 @@ entityDef projectile_grenade {
 	"mass"						"10"
 	"gravity"					"1066"				// how much gravity affects the trajectory.  gravity direction is same as the entity that fired it.
 	"fuse"						"3"					// how long before the projectile is removed or self-detonates.  Use 0 for beam weapons (velocity == distance).
-						
+
 	"detonate_on_fuse"			"1"					// whether projectile should detonate when it's fuse runs out
 	"detonate_on_death"			"0"					// whether projectile should detonate when it's "killed" (health runs out)
 	"detonate_on_world"			"0"					// whether projectile should detonate when it hits an obstacle
 	"detonate_on_actor"			"1"					// whether projectile should detonate when it hits a character in the game
 	"detonate_on_trigger"		"1"					// whether projectile should detonate when triggered by a character in the game
-								
+
 	"impact_damage_effect"		"1"					// whether projectile causes blood splats from characters that bleed
 	"impact_gib"				"1"					// whether projectile can gib a character or not (for example: bullets don't gib, but rockets do)
 
 	"mtr_detonate"				"textures/decals/ballburn01"
-	"decal_size"				"300" 
+	"decal_size"				"300"
 
 	"model_detonate"			"grenadeExplosion.prt"			// parametric particles -- temp
 
@@ -221,7 +201,7 @@ entityDef projectile_grenade {
 	"explode_light_color"		"1 0.8 0.4"
 	"explode_light_radius"		"200"
 	"explode_light_fadetime"	"0.25"
-	
+
 	"detonation_axis"			"0 0 1"
 
 	"snd_impact"				"player_handgrenade_bounce"

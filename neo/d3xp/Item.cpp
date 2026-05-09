@@ -1100,6 +1100,8 @@ void idItemTeam::PrivateReturn()
 {
 	Unbind();
 
+	SetUseClientInterpolation( true );
+
 	if( common->IsServer() && carried && !dropped )
 	{
 		int playerIdx = gameLocal.mpGame.GetFlagCarrier( 1 - team );
@@ -1148,7 +1150,7 @@ void idItemTeam::Event_TakeFlag( idPlayer* player )
 
 	assert( player != NULL );
 
-	if( player->carryingFlag )
+	if( common->IsServer() && player->carryingFlag )
 	{
 		// Don't do anything if the player is already carrying the flag.
 		// Prevents duplicate messages.
@@ -1180,6 +1182,8 @@ void idItemTeam::Event_TakeFlag( idPlayer* player )
 	idAngles angle( g_flagAttachAngleX.GetFloat(), g_flagAttachAngleY.GetFloat(), g_flagAttachAngleZ.GetFloat() );
 	SetAngles( angle );
 	SetOrigin( origin );
+
+	SetUseClientInterpolation( false );
 
 	// Turn the light on
 	/*itemGlow.shaderParms[ SHADERPARM_RED ] = 1.0f;
@@ -1274,6 +1278,8 @@ void idItemTeam::Event_DropFlag( bool death )
 
 		SetOrigin( origin );
 	}
+
+	SetUseClientInterpolation( true );
 
 	idAngles angle = GetPhysics()->GetAxis().ToAngles();
 	angle.roll	= 0;
@@ -1919,7 +1925,7 @@ void idMoveableItem::Spawn()
 	if( *smokeName != '\0' )
 	{
 		smoke = static_cast<const idDeclParticle*>( declManager->FindType( DECL_PARTICLE, smokeName ) );
-		smokeTime = gameLocal.time;
+		smokeTime = gameLocal.slow.time;
 		BecomeActive( TH_UPDATEPARTICLES );
 	}
 
@@ -1963,7 +1969,7 @@ void idMoveableItem::Think()
 
 	if( thinkFlags & TH_UPDATEPARTICLES )
 	{
-		if( !gameLocal.smokeParticles->EmitSmoke( smoke, smokeTime, gameLocal.random.CRandomFloat(), GetPhysics()->GetOrigin(), GetPhysics()->GetAxis(), timeGroup /*_D3XP*/ ) )
+		if( !gameLocal.smokeParticles->EmitSmoke( smoke, smokeTime, gameLocal.random.CRandomFloat(), GetPhysics()->GetOrigin(), GetPhysics()->GetAxis(), TIME_GROUP1 /*_D3XP*/ ) )
 		{
 			if( !repeatSmoke )
 			{
@@ -1972,7 +1978,7 @@ void idMoveableItem::Think()
 			}
 			else
 			{
-				smokeTime = gameLocal.time;
+				smokeTime = gameLocal.slow.time;
 			}
 		}
 	}
@@ -2157,6 +2163,7 @@ void idMoveableItem::WriteToSnapshot( idBitMsg& msg ) const
 {
 	physicsObj.WriteToSnapshot( msg );
 	msg.WriteBool( IsHidden() );
+	msg.WriteBool( canPickUp );
 }
 
 /*
@@ -2168,6 +2175,8 @@ void idMoveableItem::ReadFromSnapshot( const idBitMsg& msg )
 {
 	physicsObj.ReadFromSnapshot( msg );
 	const bool snapshotHidden = msg.ReadBool();
+
+	canPickUp = msg.ReadBool();
 
 	if( snapshotHidden )
 	{

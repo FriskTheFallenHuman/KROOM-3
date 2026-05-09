@@ -89,8 +89,6 @@ void idLocalUser::ResetStorageDevice()
 idLocalUser::StorageSizeAvailable
 ========================
 */
-// RB: disabled savegame and profile storage checks, because it fails sometimes without any clear reason
-/*
 bool idLocalUser::StorageSizeAvailable( uint64 minSizeInBytes, int64& neededBytes )
 {
 	int64 size = Sys_GetDriveFreeSpaceInBytes( fs_savepath.GetString() );
@@ -103,8 +101,6 @@ bool idLocalUser::StorageSizeAvailable( uint64 minSizeInBytes, int64& neededByte
 
 	return neededBytes == 0;
 }
-*/
-// RB end
 
 /*
 ========================

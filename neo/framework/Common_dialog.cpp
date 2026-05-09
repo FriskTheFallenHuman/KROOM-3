@@ -802,6 +802,24 @@ void idCommonDialog::Render( bool loading )
 
 /*
 ================================================
+idCommonDialog::idCommonDialog
+================================================
+*/
+idCommonDialog::idCommonDialog()
+{
+	dialogPause = false;
+	dialog = NULL;
+	saveIndicator = NULL;
+	dialogShowingSaveIndicatorRequested = false;
+	dialogShowingSaveIndicatorTimeRemaining = 0;
+
+	startSaveTime = 0;
+	stopSaveTime = 0;
+	dialogInUse = false;
+}
+
+/*
+================================================
 idCommonDialog::Init
 ================================================
 */

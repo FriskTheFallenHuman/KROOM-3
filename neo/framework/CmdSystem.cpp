@@ -29,11 +29,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
-#ifdef ID_RETAIL
-	idCVar net_allowCheats( "net_allowCheats", "0", CVAR_BOOL | CVAR_ROM, "Allow cheats in multiplayer" );
-#else
-	idCVar net_allowCheats( "net_allowCheats", "0", CVAR_BOOL | CVAR_NOCHEAT, "Allow cheats in multiplayer" );
-#endif
+idCVar net_allowCheats( "net_allowCheats", "0", CVAR_SYSTEM | CVAR_BOOL | CVAR_NETWORKSYNC, "Allow cheats in multiplayer" );
 
 /*
 ===============================================================================
@@ -858,13 +854,6 @@ void idCmdSystemLocal::ArgCompletion_FolderExtension( const idCmdArgs& args, voi
 				{
 					name.Strip( "/" );
 				}
-
-				// RB: skip entries that we don't need
-				if( idStr::FindText( name, "autosave" ) != -1 || idStr::FindText( name, "_extra_ents" ) != -1 )
-				{
-					continue;
-				}
-
 				name = args.Argv( 0 ) + ( " " + name );
 				completionParms.Append( name );
 			}

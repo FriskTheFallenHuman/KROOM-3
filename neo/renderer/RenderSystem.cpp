@@ -1005,7 +1005,7 @@ const emptyCommand_t* idRenderSystemLocal::SwapCommandBuffers_FinishCommandBuffe
 #else
 	cmd2->buffer = ( int )GL_BACK;
 #endif
-
+	cmd2->canClear = session->GetState() != idSession::LOADING;
 #endif
 
 	// the old command buffer can now be rendered, while the new one can

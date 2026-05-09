@@ -1,0 +1,363 @@
+// map script for le_underground
+
+//namespace le_underground {
+
+
+///////////////////////////////////////
+//
+//	Level State variables
+//
+//////////////////////////////////////
+
+	float ambushLiftPos = 0;	//position of ambush lift up = 0, down = 1
+	float ambushLiftDoors = 0;	//position of cage doors closed = 0
+	//#modified-fva; BEGIN
+	float cst_ambush_lift_called = false;
+	//#modified-fva; END
+	
+	
+
+
+	void cacheSounds()
+	{
+		sys.cacheSoundShader( "m1_start" );
+		sys.cacheSoundShader( "m1_loop" );
+		sys.cacheSoundShader( "m1_end" );
+		sys.cacheSoundShader( "1shot_buzzer_01" );
+	}
+
+
+
+////////////////////////////////////////
+//
+//	Trite ambush room	
+//
+////////////////////////////////////////	
+	
+	
+	void ambush_lift_startSound()
+	{
+		sys.trigger($ambush_move_start);
+		sys.wait( .75 );
+		sys.trigger($ambush_move_loop);
+	}
+	
+	void ambush_lift_stopSound()
+	{
+		sys.trigger($ambush_move_loop);		
+		sys.trigger($ambush_move_stop);
+	}
+		
+	
+	//#modified-fva; BEGIN
+	void ambush_lift_move();
+	//#modified-fva; END
+
+	void ambush_lift_start()
+	{
+		//#modified-fva; BEGIN
+		if (ambushLiftPos == 1) {
+			ambush_lift_move();
+			return;
+		}
+		if (cst_ambush_lift_called) {
+			return;
+		}
+		cst_ambush_lift_called = true;
+
+		$func_door_62.lock(1);
+		//#modified-fva; END
+
+		$da_func_static_2456.setGuiParm( "noninteractive", "1" );
+		//#modified-fva; BEGIN
+		//sys.trigger($ambushDoorSafety);
+		//#modified-fva; END
+		
+		$ambush_mover.time(3);
+		$ambush_mover.accelTime(.5);
+		//#modified-fva; BEGIN
+		$ambush_mover.decelTime(.5);
+		//#modified-fva; END
+		$ambush_mover.moveTo( $ambushLift_mid );
+		thread ambush_lift_startSound();
+		sys.waitFor($ambush_mover);
+		
+		$da_func_static_2456.setGuiParm( "gui_parm5", "2" );
+		$da_func_static_2456.setGuiParm( "gui_parm7", "0" );
+		
+		//#modified-fva; BEGIN
+		//$ambushDoorSafety.remove();
+		//#modified-fva; END
+		
+		thread ambush_lift_stopSound();
+		
+		//#modified-fva; BEGIN
+		//$func_door_62.lock(1);
+		//#modified-fva; END
+		sys.trigger($func_static_53106);
+		
+		$da_func_static_2456.setShaderParm( 7, 0 );
+		
+		sys.wait(.5);
+		sys.trigger($ambush_lights_sndOff);
+		sys.trigger($ambush_mainLightOff);
+		$triteAmbush_doorLight.Off();
+				
+		sys.wait(1);
+		sys.trigger($trite_alertRelay);
+		
+		sys.wait(2);
+		sys.trigger($ambush_emLightOn);
+		$triteAmbush_doorLight.setShader( "lights/square_flicker2" );
+		$triteAmbush_doorLight.On();
+				
+		sys.wait(2);
+		sys.trigger($trite_ambush_start);
+		sys.trigger($trite_ambush_influence);
+		sys.trigger($trigger_once_55);
+				
+		
+	}
+		
+
+	void ambush_lift_resume()
+	{
+				
+		sys.trigger($ambush_lights_sndOn);
+		sys.trigger($trite_ambush_influence);
+		sys.trigger($ambush_emLightOff);
+		sys.trigger($ambush_mainLightOn);
+		
+		//door light and panel back to normal
+		$triteAmbush_doorLight.setShader( "lights/square" );
+		sys.trigger($func_static_53106);
+		$func_door_62.lock(0);
+		
+		sys.wait( 2.0 );
+		
+		$da_func_static_2456.setGuiParm( "gui_parm5", "0" );
+		$da_func_static_2456.setShaderParm( 7, 1 );
+		
+		sys.trigger($liftResume_buzzer);
+		sys.wait( 2.0 );
+		
+		$ambush_mover.time(3.5);
+		$ambush_mover.accelTime(.5);
+		$ambush_mover.decelTime(1);
+		$ambush_mover.moveTo( $ambushLift_bottom );
+		
+		thread ambush_lift_startSound();
+		
+		sys.waitFor($ambush_mover);
+		
+		thread ambush_lift_stopSound();
+		
+		sys.wait( 0.5 );
+		
+		$triteAmbushLift_doorLeft.time(1.5);
+		$triteAmbushLift_doorLeft.accelTime(.5);
+		$triteAmbushLift_doorLeft.decelTime(.5);
+		
+		$triteAmbushLift_doorRight.time(1.5);
+		$triteAmbushLift_doorRight.accelTime(.5);
+		$triteAmbushLift_doorRight.decelTime(.5);
+		
+		$triteAmbushLift_doorLeft.rotate( '0 -120 0' );
+		$triteAmbushLift_doorRight.rotate( '0 120 0' );
+		
+		sys.waitFor($triteAmbushLift_doorRight);
+
+		$da_func_static_2456.setGuiParm( "noninteractive", "0" );
+		$da_func_static_2456.setGuiParm( "gui_parm7", "1" );
+
+		ambushLiftDoors = 1;		
+		ambushLiftPos = 1;
+		
+		$da_func_static_2456.setGuiParm( "gui_parm6", "ambush_lift_move" );
+		
+		//#modified-fva; BEGIN
+		cst_ambush_lift_called = false;
+		//#modified-fva; END
+	}
+
+
+	void ambush_lift_move()
+	{
+		//#modified-fva; BEGIN
+		if (cst_ambush_lift_called) {
+			return;
+		}
+		cst_ambush_lift_called = true;
+
+		$triteAmbushLift_doorLeft.time(1.5);
+		$triteAmbushLift_doorLeft.accelTime(.5);
+		$triteAmbushLift_doorLeft.decelTime(.5);
+		
+		$triteAmbushLift_doorRight.time(1.5);
+		$triteAmbushLift_doorRight.accelTime(.5);
+		$triteAmbushLift_doorRight.decelTime(.5);
+		//#modified-fva; END
+
+		$ambush_mover.time(5);
+		$ambush_mover.accelTime(.5);
+		$ambush_mover.decelTime(1);
+
+		$func_static_53110.setGuiParm( "noninteractive", "1" );
+		//#modified-fva; BEGIN
+		/*
+		$da_func_static_2455.setGuiParm( "noninteractive", "1" );
+		$da_func_static_2455.setGuiParm( "gui_parm7", "0" );
+		*/
+		$func_static_55759.setGuiParm( "noninteractive", "1" );
+		$func_static_55759.setGuiParm( "gui_parm7", "0" );
+		//#modified-fva; END
+		$da_func_static_2456.setGuiParm( "noninteractive", "1" );
+		$da_func_static_2456.setGuiParm( "gui_parm7", "0" );
+
+		// What position is the lift currently in?
+		if (ambushLiftPos == 1)
+		{
+			
+			$triteAmbushLift_doorLeft.rotate( '0 120 0' );
+			$triteAmbushLift_doorRight.rotate( '0 -120 0' );
+			sys.waitFor($triteAmbushLift_doorRight);
+
+			ambushLiftDoors = 0;
+			
+			sys.wait(.5);			
+			
+			thread ambush_lift_startSound();
+			
+			$ambush_mover.moveTo( $ambushLift_top );
+			sys.waitFor($ambush_mover);
+			
+			thread ambush_lift_stopSound();
+			
+			ambushLiftPos = 0;
+		}
+		else
+		{
+			thread ambush_lift_startSound();
+		
+			$ambush_mover.moveTo( $ambushLift_bottom );
+			sys.waitFor($ambush_mover);
+			
+			thread ambush_lift_stopSound();
+			
+			sys.wait(.5);
+
+			$triteAmbushLift_doorLeft.rotate( '0 -120 0' );
+			$triteAmbushLift_doorRight.rotate( '0 120 0' );
+			sys.waitFor($triteAmbushLift_doorRight);
+			
+			ambushLiftDoors = 1;
+			ambushLiftPos = 1;
+		}
+		
+		sys.wait( 1 );
+		
+		$func_static_53110.setGuiParm( "noninteractive", "0" );
+		//#modified-fva; BEGIN
+		/*
+		$da_func_static_2455.setGuiParm( "noninteractive", "0" );
+		$da_func_static_2455.setGuiParm( "gui_parm7", "1" );
+		*/
+		$func_static_55759.setGuiParm( "noninteractive", "0" );
+		$func_static_55759.setGuiParm( "gui_parm7", "1" );
+		//#modified-fva; END
+		$da_func_static_2456.setGuiParm( "noninteractive", "0" );
+		$da_func_static_2456.setGuiParm( "gui_parm7", "1" );
+
+		//#modified-fva; BEGIN
+		cst_ambush_lift_called = false;
+		//#modified-fva; END
+	}
+
+
+
+
+////////////////////////////////////////
+//
+//	Paint Shaker Tank	
+//
+////////////////////////////////////////	
+
+	void tank_shaker()
+	{
+		while( 1 )
+		{
+			$tank_shaker_pivot.rotateOnce( '0 0 -.25' );
+			sys.waitFor( $tank_shaker_pivot );
+			$tank_shaker_pivot.rotateOnce( '0 0 .25' );
+			sys.waitFor( $tank_shaker_pivot );
+			
+
+		}
+	}
+		
+			
+
+
+
+
+
+///////////////////////////////////////
+//
+//	World Init Stuff
+//
+///////////////////////////////////////
+
+
+		
+	
+	void setup_world()
+	{
+	
+		thread cacheSounds();
+	
+		$cagedLift_lowerGui.setGuiParm( "noninteractive", "1" );
+		$cagedLift_uuperGui.setGuiParm( "noninteractive", "1" );
+	
+		sys.trigger($func_static_53107);
+		sys.trigger($func_static_53106);
+		
+		//start entry klaxon light
+		sys.trigger( $entryKlaxon_bulb );
+		$entryKlaxon_spot.On();
+		$entryKlaxon_ambient.On();
+		
+		//setup emergency lighting for trite ambush
+		sys.trigger($ambush_emLightOff);
+		
+		$tank_shaker_pivot.time( .05 );
+		$tank_shaker_pivot.rotateOnce( '0 0 .125' );
+		
+	}
+
+
+		
+	//#modified-fva; BEGIN
+	void cst_setup_hiss_pipe() {
+		if (sys.getcvar("cst_mapLeUnderground_noHissPipe") == "1") {
+			$speaker_71.Off();
+			$speaker_72.Off();
+			$speaker_73.Off();
+			$speaker_74.Off();
+		}
+	}
+	//#modified-fva; END
+
+	void main()
+	{
+		setup_world();
+		//#modified-fva; BEGIN
+		cst_setup_hiss_pipe();
+		//#modified-fva; END
+		
+		sys.wait( 5 );
+		
+		thread tank_shaker();
+		
+	}
+	
+//}

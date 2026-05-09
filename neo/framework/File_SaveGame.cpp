@@ -1195,6 +1195,7 @@ int idFile_SaveGamePipelined::Read( void* buffer, int length )
 	return ioCount;
 }
 
+#if 0
 /*
 ===================================================================================
 
@@ -1322,4 +1323,4 @@ CONSOLE_COMMAND( TestCompressionSpeeds, "Compares zlib and our code", 0 )
 				   writeMicroseconds, testDataLength, readDataLength, ( float )readDataLength / writeMicroseconds );
 
 }
-
+#endif

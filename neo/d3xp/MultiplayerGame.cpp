@@ -2485,8 +2485,9 @@ idMultiplayerGame::PlayGlobalSound
 */
 void idMultiplayerGame::PlayGlobalSound( int toPlayerNum, snd_evt_t evt, const char* shader )
 {
+	int localClientNum = gameLocal.GetLocalClientNum();
 
-	if( toPlayerNum < 0 || toPlayerNum == gameLocal.GetLocalClientNum() )
+	if( localClientNum >= 0 && ( toPlayerNum < 0 || toPlayerNum == localClientNum ) )
 	{
 		if( shader )
 		{
@@ -2504,7 +2505,7 @@ void idMultiplayerGame::PlayGlobalSound( int toPlayerNum, snd_evt_t evt, const c
 		}
 	}
 
-	if( !common->IsClient() && toPlayerNum != gameLocal.GetLocalClientNum() )
+	if( common->IsServer() && ( toPlayerNum < 0 || toPlayerNum != localClientNum ) )
 	{
 		idBitMsg outMsg;
 		byte msgBuf[1024];
@@ -2971,12 +2972,7 @@ idMultiplayerGame::MessageMode
 */
 void idMultiplayerGame::MessageMode( const idCmdArgs& args )
 {
-	idEntity* ent = gameLocal.entities[ gameLocal.GetLocalClientNum() ];
-	if( !ent || !ent->IsType( idPlayer::Type ) )
-	{
-		return;
-	}
-	idPlayer* player = static_cast< idPlayer* >( ent );
+	idPlayer* player = gameLocal.GetLocalPlayer();
 	if( player && !player->spectating )
 	{
 		if( args.Argc() != 2 )
@@ -3616,7 +3612,6 @@ void idMultiplayerGame::ServerWriteInitialReliableMessages( int clientNum, lobby
 	if( gameState == COUNTDOWN )
 	{
 		outMsg.BeginWriting();
-		outMsg.WriteByte( GAME_RELIABLE_MESSAGE_WARMUPTIME );
 		outMsg.WriteLong( warmupEndTime );
 		session->GetActingGameStateLobbyBase().SendReliableToLobbyUser( lobbyUserID, GAME_RELIABLE_MESSAGE_WARMUPTIME, outMsg );
 	}

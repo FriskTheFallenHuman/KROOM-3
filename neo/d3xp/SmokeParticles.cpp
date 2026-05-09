@@ -215,8 +215,11 @@ bool idSmokeParticles::EmitSmoke( const idDeclParticle* smoke, const int systemS
 
 	idRandom steppingRandom( 0xffff * diversity );
 
+	activeSmokeStage_t localActiveStages[MAX_PARTICLE_STAGES];
+	idStaticList<int, MAX_PARTICLE_STAGES> activeIndices;
+
 	// for each stage in the smoke that is still emitting particles, emit a new singleSmoke_t
-	for( int stageNum = 0; stageNum < smoke->stages.Num(); stageNum++ )
+	for( int stageNum = smoke->stages.Num() - 1; stageNum >= 0; --stageNum )
 	{
 		const idParticleStage* stage = smoke->stages[stageNum];
 
@@ -285,9 +288,12 @@ bool idSmokeParticles::EmitSmoke( const idDeclParticle* smoke, const int systemS
 		int i;
 		for( i = 0 ; i < activeStages.Num() ; i++ )
 		{
-			active = &activeStages[i];
-			if( active->stage == stage )
+			if( activeStages[i].stage == stage )
 			{
+				activeIndices.Append( i );
+				active = &localActiveStages[activeIndices.Num() - 1];
+				active->smokes = activeStages[i].smokes;
+				active->stage = stage;
 				break;
 			}
 		}
@@ -296,10 +302,11 @@ bool idSmokeParticles::EmitSmoke( const idDeclParticle* smoke, const int systemS
 			// add a new one
 			activeSmokeStage_t	newActive;
 
-			newActive.smokes = NULL;
-			newActive.stage = stage;
 			i = activeStages.Append( newActive );
-			active = &activeStages[i];
+			activeIndices.Append( i );
+			active = &localActiveStages[activeIndices.Num() - 1];
+			active->smokes = NULL;
+			active->stage = stage;
 		}
 
 		// add all the required particles
@@ -325,6 +332,17 @@ bool idSmokeParticles::EmitSmoke( const idDeclParticle* smoke, const int systemS
 
 			steppingRandom.RandomInt();	// advance the random
 		}
+	}
+
+	if( activeIndices.Num() > 1 )
+	{
+		activeIndices.Sort();
+	}
+
+	for( int i = 0; i < activeIndices.Num(); ++i )
+	{
+		int index = activeIndices[i];
+		activeStages[index] = localActiveStages[i];
 	}
 
 	return continues;

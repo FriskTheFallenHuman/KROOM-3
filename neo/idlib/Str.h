@@ -1399,7 +1399,7 @@ ID_INLINE int idStr::IHash( const char* string, int length )
 
 ID_INLINE bool idStr::IsColor( const char* s )
 {
-	return ( s[0] == C_COLOR_ESCAPE && s[1] != '\0' && s[1] != ' ' );
+	return ( s[0] == C_COLOR_ESCAPE && s[1] >= '0' && s[1] <= '9' );
 }
 
 ID_INLINE char idStr::ToLower( char c )

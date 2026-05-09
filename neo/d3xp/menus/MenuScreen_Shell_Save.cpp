@@ -199,7 +199,7 @@ void idMenuScreen_Shell_Save::UpdateSaveEnumerations()
 				{
 					slotSaveName =  va( S_COLOR_RED "%s", idLocalization::GetString( "#str_swf_corrupt_file" ) );
 				}
-				else if( details.GetSaveVersion() > BUILD_NUMBER )
+				else if( details.GetSaveVersion() != SAVEGAME_VERSION )
 				{
 					slotSaveName =  va( S_COLOR_RED "%s", idLocalization::GetString( "#str_swf_wrong_version" ) );
 				}

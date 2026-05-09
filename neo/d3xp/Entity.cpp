@@ -205,7 +205,7 @@ void UpdateGuiParms( idUserInterface* gui, const idDict* args )
 		kv = args->MatchPrefix( "gui_parm", kv );
 	}
 	gui->SetStateBool( "noninteractive",  args->GetBool( "gui_noninteractive" ) ) ;
-	gui->StateChanged( gameLocal.time );
+	gui->StateChanged( gameLocal.fast.time );
 }
 
 /*
@@ -544,6 +544,11 @@ void idEntity::Spawn()
 	if( spawnArgs.GetString( "skin_xray", "", str ) )
 	{
 		xraySkin = declManager->FindSkin( str.c_str() );
+	}
+
+	if( spawnArgs.GetBool( "use_spawntime" ) )
+	{
+		renderEntity.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.realClientTime );
 	}
 
 	// go dormant within 100ms so that when the map starts most monsters are dormant
@@ -4139,7 +4144,7 @@ void idEntity::TriggerGuis()
 	{
 		if( renderEntity.gui[ i ] )
 		{
-			renderEntity.gui[ i ]->Trigger( gameLocal.time );
+			renderEntity.gui[i]->Trigger( gameLocal.fast.time );
 		}
 	}
 }
@@ -4438,7 +4443,7 @@ void idEntity::ActivateTargets( idEntity* activator ) const
 		{
 			if( ent->renderEntity.gui[ j ] )
 			{
-				ent->renderEntity.gui[ j ]->Trigger( gameLocal.time );
+				ent->renderEntity.gui[j]->Trigger( gameLocal.fast.time );
 			}
 		}
 	}
@@ -5234,7 +5239,7 @@ void idEntity::Event_SetGuiParm( const char* key, const char* val )
 				spawnArgs.Set( key, val );
 			}
 			renderEntity.gui[ i ]->SetStateString( key, val );
-			renderEntity.gui[ i ]->StateChanged( gameLocal.time );
+			renderEntity.gui[i]->StateChanged( gameLocal.fast.time );
 		}
 	}
 }
@@ -5251,7 +5256,7 @@ void idEntity::Event_SetGuiFloat( const char* key, float f )
 		if( renderEntity.gui[ i ] )
 		{
 			renderEntity.gui[ i ]->SetStateString( key, va( "%f", f ) );
-			renderEntity.gui[ i ]->StateChanged( gameLocal.time );
+			renderEntity.gui[i]->StateChanged( gameLocal.fast.time );
 		}
 	}
 }
@@ -5674,7 +5679,6 @@ void idEntity::Event_GuiNamedEvent( int guiNum, const char* event )
 	}
 }
 
-
 /***********************************************************************
 
    Network
@@ -5855,6 +5859,13 @@ idEntity::WriteToSnapshot
 */
 void idEntity::WriteToSnapshot( idBitMsg& msg ) const
 {
+	if( spawnArgs.GetBool( "sync_origin" ) )
+	{
+		const idVec3& syncOrigin = GetPhysics()->GetOrigin();
+		msg.WriteFloat( syncOrigin.x );
+		msg.WriteFloat( syncOrigin.y );
+		msg.WriteFloat( syncOrigin.z );
+	}
 }
 
 /*
@@ -5864,6 +5875,18 @@ idEntity::ReadFromSnapshot
 */
 void idEntity::ReadFromSnapshot( const idBitMsg& msg )
 {
+	if( spawnArgs.GetBool( "sync_origin" ) )
+	{
+		idVec3 syncOrigin;
+		syncOrigin.x = msg.ReadFloat();
+		syncOrigin.y = msg.ReadFloat();
+		syncOrigin.z = msg.ReadFloat();
+		GetPhysics()->SetOrigin( syncOrigin );
+		if( msg.HasChanged() )
+		{
+			UpdateVisuals();
+		}
+	}
 }
 
 /*

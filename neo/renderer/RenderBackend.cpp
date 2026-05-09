@@ -40,11 +40,8 @@ If you have questions concerning this license or the applicable additional terms
 
 
 idCVar r_motionBlur( "r_motionBlur", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "1 - 5, log2 of the number of motion blur samples" );
-idCVar r_forceZPassStencilShadows( "r_forceZPassStencilShadows", "0", CVAR_RENDERER | CVAR_BOOL, "force Z-pass rendering for performance testing" );
-idCVar r_useStencilShadowPreload( "r_useStencilShadowPreload", "0", CVAR_RENDERER | CVAR_BOOL, "use stencil shadow preload algorithm instead of Z-fail" );
 idCVar r_skipShaderPasses( "r_skipShaderPasses", "0", CVAR_RENDERER | CVAR_BOOL, "" );
 idCVar r_skipInteractionFastPath( "r_skipInteractionFastPath", "1", CVAR_RENDERER | CVAR_BOOL, "" );
-idCVar r_useLightStencilSelect( "r_useLightStencilSelect", "0", CVAR_RENDERER | CVAR_BOOL, "use stencil select pass" );
 
 /*
 ================
@@ -5341,12 +5338,6 @@ void idRenderBackend::DrawViewInternal( const viewDef_t* _viewDef )
 	}
 
 	//-------------------------------------------------
-	// darken the scene using the screen space ambient occlusion
-	//-------------------------------------------------
-	//DrawScreenSpaceAmbientOcclusion( _viewDef );
-	//RB_SSGI( _viewDef );
-
-	//-------------------------------------------------
 	// now draw any non-light dependent shading passes
 	//-------------------------------------------------
 	int processed = 0;
@@ -5360,7 +5351,7 @@ void idRenderBackend::DrawViewInternal( const viewDef_t* _viewDef )
 	//-------------------------------------------------
 	// use direct light and emissive light contributions to add indirect screen space light
 	//-------------------------------------------------
-	//RB_SSGI( viewDef );
+	DrawScreenSpaceGlobalIllumination( viewDef );
 
 	//-------------------------------------------------
 	// fog and blend lights, drawn after emissive surfaces

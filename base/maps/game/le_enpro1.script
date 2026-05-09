@@ -1,0 +1,646 @@
+
+//***************************
+//	global script functions
+//***************************
+
+void setMoveParms( entity mover, float nTime, float accelT, float decelT ){
+	mover.time( nTime );
+	mover.accelTime( accelT );
+	mover.decelTime( decelT );
+}
+
+void world_init (){
+	$fan01_anchor.rotateOnce ( '0 0 45' );
+	$fan02_anchor.rotateOnce ( '0 0 45' );
+	sys.waitFor ($fan01_anchor);
+	//$fanblade01.rotate ( '480 0 0' );
+	$fanblade02.rotate ( '480 0 0' );
+	sys.trigger( $start_machine1 );
+	sys.trigger( $start_machine2 );
+}
+
+void hall_light_sway1() {
+	$swing_light01.sway( 15, 0, '10 5 5' );
+}
+
+void door01_red_to_green() {
+	thread crossFadeEnt ($door_light1a, $door_light1a.getColor(), '0 1 0', 0.5);
+	thread crossFadeEnt ($door_light1b, $door_light1b.getColor(), '0 1 0', 0.5);
+	//$door_light1a.setColor( 0,1,0 );
+	//$door_light1b.setColor( 0,1,0 );
+}
+
+float	lightState = 0;
+float	strobeTime = 0.065;
+
+void strobeLight_on() {
+	lightState = 1;
+		while( lightState == 1 ){
+			sys.trigger( $stroby );
+			sys.wait( strobeTime );
+			sys.trigger( $stroby );
+			sys.wait( strobeTime );
+			}
+		}
+
+void strobeLight_off() {	
+	if( lightState == 1 ) {
+		thread crossFadeEnt( $stroby, $stroby.getColor(), '0 0 0', 0.015 );
+		lightState = 0;
+	}
+}
+
+void strobeLight_toggle() {
+	if( lightState == 1 ) {
+		strobeLight_off();
+	} else {
+		thread crossFadeEnt( $stroby, $stroby.getColor(), '.6 .6 .6', 0.015 );
+		sys.trigger( $stroby ); //trigger light from start_off
+		strobeLight_on();
+	}
+}
+
+void move_can_on_track( entity can, entity can_start_pos, entity clight1, entity rotate_anchor, entity pos1, entity pos2 ) {
+	setMoveParms( can, 0.5, 0.5, 0 );
+	can.moveTo( pos1 );
+	sys.waitFor( can );
+	can.bind( rotate_anchor );
+	setMoveParms( rotate_anchor, .75, 0, 0 );
+	rotate_anchor.rotateOnce( '0 0 45' );
+	sys.waitFor( rotate_anchor );
+	can.unbind();
+	setMoveParms( can, 6, 0, 0 );
+	can.moveTo( pos2 );
+	sys.waitFor( can );
+	//thread change_can_color( can ); //reset canister to black
+	thread crossFadeEnt( can, can.getColor(), '0 0 0', .1 );
+	thread crossFadeEnt( clight1, clight1.getColor(), '0 0 0', .1 );
+	//thread crossFadeEnt( clight2, clight2.getColor(), '0 0 0', .1 );
+	can.hide();
+	sys.wait( 0.125 );
+	setMoveParms( can, 0.015, 0, 0 );
+	can.moveTo( can_start_pos );
+	sys.waitFor( can );
+	can.show();
+}
+
+void spawn_canister() 
+{
+	float can2StartState = 0;
+	
+	setMoveParms( $spinner1, .75, .75, 0 );
+	setMoveParms( $spinner2, .75, .75, 0 );
+	setMoveParms( $pivot_point, .75, .75, 0 );
+	setMoveParms( $body, 1, 1, 0 );
+	setMoveParms( $middle_arm, .75, .75, 0 );
+	setMoveParms( $clamp_arm, .75, .75, 0 );
+	setMoveParms( $can_door1, .5, .5, 0 );
+	setMoveParms( $can_door2, .5, .5, 0 );
+	setMoveParms( $can_door3, .5, .5, 0 );
+	setMoveParms( $can_door4, .5, .5, 0 );
+	while( 1 ) 
+	{
+		//NOTE - machine starts in lowered position
+		//$canister1.show();
+		$canister1.bind( $clamp_arm );
+		//move arms up
+		$spinner1.rotateOnce( '0 720 0' );
+		$spinner2.rotateOnce( '0 720 0' );
+		$clamp_arm.move( REL_UP, 40 );
+
+		sys.trigger ($speaker_clamp_arm);			// Sound
+
+		$middle_arm.move( REL_UP, 60 );
+
+		sys.trigger ($speaker_middle_arm_in);			// Sound
+
+		$pivot_point.moveTo( $p2 );
+		sys.waitFor( $pivot_point );
+		//close doors
+		$can_door1.rotateOnce( '0 0 90' );
+		$can_door2.rotateOnce( '0 0 90' );
+		//rotate machine
+		$body.rotateOnce( ' 0 0 45 ' );
+		sys.waitFor( $body );
+		
+		$can_door3.rotateOnce( '0 0 90' );
+		$can_door4.rotateOnce( '0 0 90' );	
+		
+		//move arms into filler -extend
+		$spinner1.rotateOnce( '0 -720 0' );
+		$spinner2.rotateOnce( '0 -720 0' );
+		$middle_arm.move( REL_DOWN, 60 );
+
+		sys.trigger ($speaker_middle_arm_out);			// Sound
+
+		$clamp_arm.move( REL_DOWN, 40 );
+
+		sys.trigger ($speaker_clamp_arm);			// Sound
+		
+		sys.waitFor( $clamp_arm );
+		
+		//thread change_can_color( $canister1 ); //set canister to blue
+		thread crossFadeEnt( $canister1, $canister1.getColor(), '1 1 1', 1.5 );
+		thread crossFadeEnt( $can_light1, $can_light1.getColor(), '0.64 0.92 1', 1.5 );
+		//thread crossFadeEnt( $can_light2, $can_light2.getColor(), '0.64 0.92 1', 1.5 );
+		sys.wait( 2.0 ); //wait for canister
+		
+		//move arms out from filler -retract
+		$spinner1.rotateOnce( '0 720 0' );
+		$spinner2.rotateOnce( '0 720 0' );
+		$middle_arm.move( REL_UP, 60 );
+
+		sys.trigger ($speaker_middle_arm_in);			// Sound
+
+		$clamp_arm.move( REL_UP, 40 );
+
+		sys.trigger ($speaker_clamp_arm);			// Sound
+
+		sys.waitFor( $clamp_arm );
+		
+		$can_door3.rotateOnce( '0 0 -90' );
+		$can_door4.rotateOnce( '0 0 -90' );		
+		
+		$body.rotateOnce( ' 0 0 -180 ' );
+		sys.waitFor( $body );
+		
+		$spinner1.rotateOnce( '0 -720 0' );
+		$spinner2.rotateOnce( '0 -720 0' );
+		$middle_arm.move( REL_DOWN, 60 );
+
+		sys.trigger ($speaker_middle_arm_out);			// Sound
+
+		$clamp_arm.move( REL_DOWN, 40 );
+
+		sys.trigger ($speaker_clamp_arm);			// Sound
+
+		sys.waitFor( $clamp_arm );
+		
+		//release canister
+		$canister1.unbind();
+		//move canister along upper track
+		thread move_can_on_track( $canister1, $can_start_pos1, $can_light1, $can_rotate_anchor1, $c1, $c2 );
+		
+		//move canister2 into start position - one and only time
+		if( can2StartState == 0 ) {
+			$canister2.moveTo( $can_start_pos1 );
+			can2StartState = 1;
+		}
+		
+		$spinner1.rotateOnce( '0 720 0' );
+		$spinner2.rotateOnce( '0 720 0' );
+		$middle_arm.move( REL_UP, 60 );
+
+		sys.trigger ($speaker_middle_arm_in);			// Sound
+
+		$clamp_arm.move( REL_UP, 40 );
+
+		sys.trigger ($speaker_clamp_arm);			// Sound
+
+		sys.wait( 0.5 );		
+		//$can_door3.rotateOnce( '0 0 -90' );
+		//$can_door4.rotateOnce( '0 0 -90' );
+		
+		sys.waitFor( $clamp_arm );
+		sys.waitFor( $can_door4 );
+		
+		$body.rotateOnce( ' 0 0 135 ' );
+		sys.waitFor( $body );
+					
+		//move canister back to start position
+		//$canister1.setWorldOrigin( startlocation );
+			
+		//open doors and move arms down
+		$canister2.show();
+		$can_door1.rotateOnce( '0 0 -90' );
+		$can_door2.rotateOnce( '0 0 -90' );
+		$spinner1.rotateOnce( '0 -720 0' );
+		$spinner2.rotateOnce( '0 -720 0' );
+		$pivot_point.moveTo( $p1 );
+		$middle_arm.move( DOWN, 60 );
+
+		sys.trigger ($speaker_middle_arm_out);			// Sound
+
+		$clamp_arm.move( DOWN, 40 );
+
+		sys.trigger ($speaker_clamp_arm);			// Sound
+
+		sys.waitFor( $clamp_arm );
+		//simulate wait time for clamp
+		sys.wait( 0.75 );
+		
+		//CANISTER2 MOVEMENT
+		$canister2.bind( $clamp_arm );
+		//move arms up
+		$spinner1.rotateOnce( '0 720 0' );
+		$spinner2.rotateOnce( '0 720 0' );
+		$clamp_arm.move( REL_UP, 40 );
+
+		sys.trigger ($speaker_clamp_arm);			// Sound
+
+		$middle_arm.move( REL_UP, 60 );
+
+		sys.trigger ($speaker_middle_arm_in);			// Sound
+
+		$pivot_point.moveTo( $p2 );
+		sys.waitFor( $pivot_point );
+		//close doors
+		$can_door1.rotateOnce( '0 0 90' );
+		$can_door2.rotateOnce( '0 0 90' );
+		//rotate machine
+		$body.rotateOnce( ' 0 0 45 ' );
+		sys.waitFor( $body );
+		
+		$can_door3.rotateOnce( '0 0 90' );
+		$can_door4.rotateOnce( '0 0 90' );
+		
+		//move arms in -extend
+		$spinner1.rotateOnce( '0 -720 0' );
+		$spinner2.rotateOnce( '0 -720 0' );
+		$middle_arm.move( REL_DOWN, 60 );
+
+		sys.trigger ($speaker_middle_arm_out);			// Sound
+
+		$clamp_arm.move( REL_DOWN, 40 );
+
+		sys.trigger ($speaker_clamp_arm);			// Sound
+
+		sys.waitFor( $clamp_arm );
+		
+		//thread change_can_color( $canister1 ); //set canister to blue
+		thread crossFadeEnt( $canister2, $canister2.getColor(), '1 1 1', 1.25 );
+		thread crossFadeEnt( $can_light3, $can_light3.getColor(), '0.64 0.92 1', 1.25 );
+		//thread crossFadeEnt( $can_light4, $can_light4.getColor(), '0.64 0.92 1', 1.25 );
+		sys.wait( 1.5 ); //wait for canister
+		
+		//move arms out from filler -retract
+		$spinner1.rotateOnce( '0 720 0' );
+		$spinner2.rotateOnce( '0 720 0' );
+		$middle_arm.move( REL_UP, 60 );
+
+		sys.trigger ($speaker_middle_arm_in);			// Sound
+
+		$clamp_arm.move( REL_UP, 40 );
+
+		sys.trigger ($speaker_clamp_arm);			// Sound
+
+		sys.waitFor( $clamp_arm );
+				
+		$body.rotateOnce( ' 0 0 -180 ' );
+		sys.waitFor( $body );
+		
+		$can_door3.rotateOnce( '0 0 -90' );
+		$can_door4.rotateOnce( '0 0 -90' );
+		
+		$spinner1.rotateOnce( '0 -720 0' );
+		$spinner2.rotateOnce( '0 -720 0' );
+		$middle_arm.move( REL_DOWN, 60 );
+
+		sys.trigger ($speaker_middle_arm_out);			// Sound
+
+		$clamp_arm.move( REL_DOWN, 40 );
+
+		sys.trigger ($speaker_clamp_arm);			// Sound
+
+		sys.waitFor( $clamp_arm );
+		
+		//release canister
+		$canister2.unbind();
+		//move canister along upper track
+		thread move_can_on_track( $canister2, $can_start_pos1, $can_light3, $can_rotate_anchor1, $c1, $c2 );
+		//move canister2 into start position
+		//$canister1.moveTo( $can_start_pos );
+		
+		$spinner1.rotateOnce( '0 720 0' );
+		$spinner2.rotateOnce( '0 720 0' );
+		$middle_arm.move( REL_UP, 60 );
+
+		sys.trigger ($speaker_middle_arm_in);			// Sound
+
+		$clamp_arm.move( REL_UP, 40 );
+
+		sys.trigger ($speaker_clamp_arm);			// Sound
+
+		sys.wait( 0.5 );		
+		//$can_door3.rotateOnce( '0 0 -90' );
+		//$can_door4.rotateOnce( '0 0 -90' );
+		
+		sys.waitFor( $clamp_arm );
+		sys.waitFor( $can_door4 );
+		
+		$body.rotateOnce( ' 0 0 135 ' );
+		sys.waitFor( $body );
+					
+		//move canister back to start position
+		//$canister1.setWorldOrigin( startlocation );
+		//move arms down
+		$can_door1.rotateOnce( '0 0 -90' );
+		$can_door2.rotateOnce( '0 0 -90' );
+		$spinner1.rotateOnce( '0 -720 0' );
+		$spinner2.rotateOnce( '0 -720 0' );
+		$pivot_point.moveTo( $p1 );
+		$middle_arm.move( DOWN, 60 );
+
+		sys.trigger ($speaker_middle_arm_out);			// Sound
+
+		$clamp_arm.move( DOWN, 40 );
+
+		sys.trigger ($speaker_clamp_arm);			// Sound
+
+		sys.waitFor( $clamp_arm );
+		//simulate wait time for clamp
+		sys.wait( .75 );
+	}
+}
+
+
+void spawn_canister2() 
+{
+	float can2aStartState = 0;
+	
+	setMoveParms( $spinner1a, .75, .75, 0 );
+	setMoveParms( $spinner2a, .75, .75, 0 );
+	setMoveParms( $pivot_point2, .75, .75, 0 );
+	setMoveParms( $body2, 1, 1, 0 );
+	setMoveParms( $middle_arm2, .75, .75, 0 );
+	setMoveParms( $clamp_arm2, .75, .75, 0 );
+	setMoveParms( $can_door1a, .5, .5, 0 );
+	setMoveParms( $can_door2a, .5, .5, 0 );
+	setMoveParms( $can_door3a, .5, .5, 0 );
+	setMoveParms( $can_door4a, .5, .5, 0 );
+
+	while( 1 ) 
+	{
+		//NOTE - machine starts in lowered position
+		//$canister1.show();
+		$canister1a.bind( $clamp_arm2 );
+		//move arms up
+		$spinner1a.rotateOnce( '0 720 0' );
+		$spinner2a.rotateOnce( '0 720 0' );
+
+		sys.trigger ($speaker_clamp_arm2);			// Sound
+		
+		$clamp_arm2.move( REL_UP, 40 );
+		$middle_arm2.move( REL_UP, 60 );
+
+		sys.trigger ($speaker_middle_arm2_in);			// Sound
+
+		$pivot_point2.moveTo( $p2a );
+		sys.waitFor( $pivot_point2 );
+		//close doors
+		$can_door1a.rotateOnce( '0 0 90' );
+		$can_door2a.rotateOnce( '0 0 90' );
+		//rotate machine
+		$body2.rotateOnce( ' 0 0 45 ' );
+		sys.waitFor( $body2 );
+		
+		$can_door3a.rotateOnce( '0 0 90' );
+		$can_door4a.rotateOnce( '0 0 90' );	
+		
+		//move arms into filler -extend
+		$spinner1a.rotateOnce( '0 -720 0' );
+		$spinner2a.rotateOnce( '0 -720 0' );
+		$middle_arm2.move( REL_DOWN, 60 );
+
+		sys.trigger ($speaker_middle_arm2_out);			// Sound
+
+		$clamp_arm2.move( REL_DOWN, 40 );
+
+		sys.trigger ($speaker_clamp_arm2);			// Sound
+
+		sys.waitFor( $clamp_arm2 );
+		
+		//thread change_can_color( $canister1 ); //set canister to blue
+		thread crossFadeEnt( $canister1a, $canister1a.getColor(), '1 1 1', 1.5 );
+		thread crossFadeEnt( $can_light1a, $can_light1a.getColor(), '0.64 0.92 1', 1.5 );
+		//thread crossFadeEnt( $can_light2a, $can_light2a.getColor(), '0.64 0.92 1', 1.5 );
+		sys.wait( 2.0 ); //wait for canister
+		
+		//move arms out from filler -retract
+		$spinner1a.rotateOnce( '0 720 0' );
+		$spinner2a.rotateOnce( '0 720 0' );
+		$middle_arm2.move( REL_UP, 60 );
+
+		sys.trigger ($speaker_middle_arm2_in);			// Sound
+
+		$clamp_arm2.move( REL_UP, 40 );
+
+		sys.trigger ($speaker_clamp_arm2);			// Sound
+
+		sys.waitFor( $clamp_arm2 );
+		
+		$can_door3a.rotateOnce( '0 0 -90' );
+		$can_door4a.rotateOnce( '0 0 -90' );		
+		
+		$body2.rotateOnce( ' 0 0 -180 ' );
+		sys.waitFor( $body2 );
+		
+		$spinner1a.rotateOnce( '0 -720 0' );
+		$spinner2a.rotateOnce( '0 -720 0' );
+		$middle_arm2.move( REL_DOWN, 60 );
+
+		sys.trigger ($speaker_middle_arm2_out);			// Sound
+
+		$clamp_arm2.move( REL_DOWN, 40 );
+
+		sys.trigger ($speaker_clamp_arm2);			// Sound
+
+		sys.waitFor( $clamp_arm2 );
+		
+		//release canister
+		$canister1a.unbind();
+		//move canister along upper track
+		thread move_can_on_track( $canister1a, $can_start_pos2, $can_light1a, $can_rotate_anchor2, $c1a, $c2a );
+		
+		//move canister2 into start position - one and only time
+		if( can2aStartState == 0 ) {
+			$canister2a.moveTo( $can_start_pos2 );
+			can2aStartState = 1;
+		}
+		
+		$spinner1a.rotateOnce( '0 720 0' );
+		$spinner2a.rotateOnce( '0 720 0' );
+		$middle_arm2.move( REL_UP, 60 );
+
+		sys.trigger ($speaker_middle_arm2_in);			// Sound
+
+		$clamp_arm2.move( REL_UP, 40 );
+
+		sys.trigger ($speaker_clamp_arm2);			// Sound
+
+		sys.wait( 0.5 );		
+		//$can_door3.rotateOnce( '0 0 -90' );
+		//$can_door4.rotateOnce( '0 0 -90' );
+		
+		sys.waitFor( $clamp_arm2 );
+		sys.waitFor( $can_door4a );
+		
+		$body2.rotateOnce( ' 0 0 135 ' );
+		sys.waitFor( $body2 );
+					
+		//move canister back to start position
+		//$canister1.setWorldOrigin( startlocation );
+			
+		//open doors and move arms down
+		$canister2a.show();
+		$can_door1a.rotateOnce( '0 0 -90' );
+		$can_door2a.rotateOnce( '0 0 -90' );
+		$spinner1a.rotateOnce( '0 -720 0' );
+		$spinner2a.rotateOnce( '0 -720 0' );
+		$pivot_point2.moveTo( $p1a );
+		$middle_arm2.move( DOWN, 60 );
+
+		sys.trigger ($speaker_middle_arm2_out);			// Sound
+
+		$clamp_arm2.move( DOWN, 40 );
+
+		sys.trigger ($speaker_clamp_arm2);			// Sound
+
+		sys.waitFor( $clamp_arm2 );
+		//simulate wait time for clamp
+		sys.wait( 0.75 );
+		
+		//CANISTER2 MOVEMENT
+		$canister2a.bind( $clamp_arm2 );
+		//move arms up
+		$spinner1a.rotateOnce( '0 720 0' );
+		$spinner2a.rotateOnce( '0 720 0' );
+		$clamp_arm2.move( REL_UP, 40 );
+
+		sys.trigger ($speaker_clamp_arm2);			// Sound
+
+		$middle_arm2.move( REL_UP, 60 );
+
+		sys.trigger ($speaker_middle_arm2_in);			// Sound
+
+		$pivot_point2.moveTo( $p2a );
+		sys.waitFor( $pivot_point2 );
+		//close doors
+		$can_door1a.rotateOnce( '0 0 90' );
+		$can_door2a.rotateOnce( '0 0 90' );
+		//rotate machine
+		$body2.rotateOnce( ' 0 0 45 ' );
+		sys.waitFor( $body2 );
+		
+		$can_door3a.rotateOnce( '0 0 90' );
+		$can_door4a.rotateOnce( '0 0 90' );
+		
+		//move arms in -extend
+		$spinner1a.rotateOnce( '0 -720 0' );
+		$spinner2a.rotateOnce( '0 -720 0' );
+		$middle_arm2.move( REL_DOWN, 60 );
+
+		sys.trigger ($speaker_middle_arm2_out);			// Sound
+
+		$clamp_arm2.move( REL_DOWN, 40 );
+
+		sys.trigger ($speaker_clamp_arm2);			// Sound
+
+		sys.waitFor( $clamp_arm2 );
+		
+		//thread change_can_color( $canister2 ); //set canister to blue
+		thread crossFadeEnt( $canister2a, $canister2a.getColor(), '1 1 1', 1.25 );
+		thread crossFadeEnt( $can_light3a, $can_light3a.getColor(), '0.64 0.92 1', 1.25 );
+		//thread crossFadeEnt( $can_light4a, $can_light4a.getColor(), '0.64 0.92 1', 1.25 );
+		sys.wait( 1.5 ); //wait for canister
+		
+		//move arms out from filler -retract
+		$spinner1a.rotateOnce( '0 720 0' );
+		$spinner2a.rotateOnce( '0 720 0' );
+		$middle_arm2.move( REL_UP, 60 );
+
+		sys.trigger ($speaker_middle_arm2_in);			// Sound
+
+		$clamp_arm2.move( REL_UP, 40 );
+
+		sys.trigger ($speaker_clamp_arm2);			// Sound
+
+		sys.waitFor( $clamp_arm2 );
+				
+		$body2.rotateOnce( ' 0 0 -180 ' );
+		sys.waitFor( $body2 );
+		
+		$can_door3a.rotateOnce( '0 0 -90' );
+		$can_door4a.rotateOnce( '0 0 -90' );
+		
+		$spinner1a.rotateOnce( '0 -720 0' );
+		$spinner2a.rotateOnce( '0 -720 0' );
+		$middle_arm2.move( REL_DOWN, 60 );
+
+		sys.trigger ($speaker_middle_arm2_out);			// Sound
+
+		$clamp_arm2.move( REL_DOWN, 40 );
+
+		sys.trigger ($speaker_clamp_arm2);			// Sound
+
+		sys.waitFor( $clamp_arm2 );
+		
+		//release canister
+		$canister2a.unbind();
+		//move canister along upper track
+		thread move_can_on_track( $canister2a, $can_start_pos2, $can_light3a, $can_rotate_anchor2, $c1a, $c2a );
+		//move canister2 into start position
+		//$canister1.moveTo( $can_start_pos );
+		
+		$spinner1a.rotateOnce( '0 720 0' );
+		$spinner2a.rotateOnce( '0 720 0' );
+		$middle_arm2.move( REL_UP, 60 );
+
+		sys.trigger ($speaker_middle_arm2_in);			// Sound
+
+		$clamp_arm2.move( REL_UP, 40 );
+
+		sys.trigger ($speaker_clamp_arm2);			// Sound
+
+		sys.wait( 0.5 );		
+		//$can_door3.rotateOnce( '0 0 -90' );
+		//$can_door4.rotateOnce( '0 0 -90' );
+		
+		sys.waitFor( $clamp_arm2 );
+		sys.waitFor( $can_door4a );
+		
+		$body2.rotateOnce( ' 0 0 135 ' );
+		sys.waitFor( $body2 );
+					
+		//move canister back to start position
+		//$canister1.setWorldOrigin( startlocation );
+		//move arms down
+		$can_door1a.rotateOnce( '0 0 -90' );
+		$can_door2a.rotateOnce( '0 0 -90' );
+		$spinner1a.rotateOnce( '0 -720 0' );
+		$spinner2a.rotateOnce( '0 -720 0' );
+		$pivot_point2.moveTo( $p1a );
+		$middle_arm2.move( DOWN, 60 );
+
+		sys.trigger ($speaker_middle_arm2_out);			// Sound
+
+		$clamp_arm2.move( DOWN, 40 );
+
+		sys.trigger ($speaker_clamp_arm2);			// Sound
+
+		sys.waitFor( $clamp_arm2 );
+		//simulate wait time for clamp
+		sys.wait( .75 );
+	}
+}
+
+//#modified-fva; BEGIN
+void cst_spawn_weapons() {
+	if ($player1.cstGetAwChainsawLM() > 0) {
+		sys.spawn("cst_le_enpro1_chainsaw_1");
+	}
+}
+//#modified-fva; END
+
+void main() {
+	
+	world_init();
+	//spawn_canister();
+	hall_light_sway1();
+
+	//#modified-fva; BEGIN
+	cst_spawn_weapons();
+	//#modified-fva; END
+}
+
+

@@ -313,7 +313,7 @@ void idSessionLocal::OnSaveCompleted( idSaveLoadParms* parms )
 	}
 
 	// Only turn off the indicator if we're not also going to save the profile settings
-	if( master != NULL && master->GetProfile() != NULL && !master->GetProfile()->IsDirty() )
+	if( parms->GetError() != SAVEGAME_E_NONE || !master || !master->GetProfile() || !master->GetProfile()->IsDirty() )
 	{
 		common->Dialog().ShowSaveIndicator( false );
 	}
@@ -396,7 +396,7 @@ saveGameHandle_t idSessionLocal::LoadGameSync( const char* name, saveFileEntryLi
 		{
 			if( idStr::Cmp( name, details[i].slotName ) == 0 )
 			{
-				if( details[i].GetSaveVersion() > BUILD_NUMBER )
+				if( details[i].GetSaveVersion() != SAVEGAME_VERSION )
 				{
 					parms.errorCode = SAVEGAME_E_INCOMPATIBLE_NEWER_VERSION;
 					return 0;
@@ -794,7 +794,7 @@ bool idSessionLocal::LoadGameCheckDescriptionFile( idSaveLoadParms& parms )
 	}
 	else
 	{
-		if( parms.description.GetSaveVersion() > BUILD_NUMBER )
+		if( parms.description.GetSaveVersion() != SAVEGAME_VERSION )
 		{
 			parms.errorCode = SAVEGAME_E_INCOMPATIBLE_NEWER_VERSION;
 		}

@@ -1,0 +1,3 @@
+skin skins/characters/male_npc/e6_bottech_gib {
+	models/characters/male_npc/soldier/soldier models/characters/male_npc/bot_tech/cst_bot_tech_gib
+}

@@ -342,7 +342,8 @@ void Cmd_Give_f( const idCmdArgs& args )
 			{
 				if( gameLocal.entities[ i ] )
 				{
-					gameLocal.entities[ i ]->PostEventSec( &EV_Player_SelectWeapon, 0.5f, gameLocal.entities[ i ]->spawnArgs.GetString( "def_weapon1" ) );
+					gameLocal.entities[i]->ProcessEvent( &EV_Player_EnableWeapon ); // see idTarget_EnableLevelWeapons::Event_Activate
+					gameLocal.entities[i]->PostEventSec( &EV_Player_SelectWeapon, 0.5f, gameLocal.entities[i]->spawnArgs.GetString( "def_weapon2" ) );
 				}
 			}
 		}
@@ -550,6 +551,41 @@ void Cmd_God_f( const idCmdArgs& args )
 	}
 
 	gameLocal.Printf( "%s", msg );
+}
+
+/*
+==================
+Cmd_Demigod_f
+
+Sets client to demigod
+
+argv(0) demigod
+==================
+*/
+static void Cmd_Demigod_f( const idCmdArgs& args )
+{
+	// see Cmd_God_f code
+	const char*		msg;
+	idPlayer*	player;
+
+	player = gameLocal.GetLocalPlayer();
+	if( !player || !gameLocal.CheatsOk() )
+	{
+		return;
+	}
+
+	if( player->demigodmode )
+	{
+		player->demigodmode = false;
+		msg = "demigod OFF\n";
+	}
+	else
+	{
+		player->demigodmode = true;
+		msg = "demigod ON\n";
+	}
+
+	gameLocal.Printf( msg );
 }
 
 /*
@@ -952,6 +988,45 @@ void Cmd_Spawn_f( const idCmdArgs& args )
 	}
 
 	gameLocal.SpawnEntityDef( dict );
+}
+
+/*
+===============
+Cmd_SpawnAdvanced_f
+Spawn but can only speciy the angles and origin
+===============
+*/
+static void Cmd_SpawnAdvanced_f( const idCmdArgs& args )
+{
+	if( !gameLocal.CheatsOk( true ) )
+	{
+		return;
+	}
+
+	if( args.Argc() != 4 )
+	{
+		gameLocal.Printf( "usage: spawnAdvanced classname \'OrgX OrgY OrgZ\' \'AngX AngY AngZ\'\n" );
+		return;
+	}
+
+	idDict dict;
+	dict.Set( "classname", args.Argv( 1 ) );
+	dict.Set( "origin", args.Argv( 2 ) );
+
+	idDict aux;
+	aux.Set( "angles", args.Argv( 3 ) );
+	idMat3 mat = aux.GetAngles( "angles" ).ToMat3();
+
+	idStr rotA;
+	idStr rotB;
+	idStr rotC;
+	sprintf( rotA, "%.6g %.6g %.6g", mat[0].x, mat[0].y, mat[0].z );
+	sprintf( rotB, "%.6g %.6g %.6g", mat[1].x, mat[1].y, mat[1].z );
+	sprintf( rotC, "%.6g %.6g %.6g", mat[2].x, mat[2].y, mat[2].z );
+
+	dict.Set( "rotation", ( rotA + " " + rotB + " " + rotC ).c_str() );
+	gameLocal.SpawnEntityDef( dict );
+	gameLocal.Printf( "rotation:\n %s\n %s\n %s\n", rotA.c_str(), rotB.c_str(), rotC.c_str() );
 }
 
 /*
@@ -2573,6 +2648,133 @@ void Cmd_TestId_f( const idCmdArgs& args )
 }
 
 /*
+===============
+Cmd_PrintEntityInfo_f
+===============
+*/
+void Cmd_PrintEntityInfo_f( const idCmdArgs& args )
+{
+	// see g_dragEntity code
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	if( !player || !gameLocal.CheatsOk( true ) )
+	{
+		return;
+	}
+
+	idVec3 origin;
+	idMat3 axis;
+	player->GetViewPos( origin, axis );
+
+	trace_t trace;
+	const float maxDistance = 2048.0f;
+	gameLocal.clip.TracePoint( trace, origin, origin + axis[0] * maxDistance, ( CONTENTS_SOLID | CONTENTS_RENDERMODEL | CONTENTS_BODY ), player );
+	if( trace.fraction < 1.0f )
+	{
+		idEntity* ent = gameLocal.entities[trace.c.entityNum];
+		if( ent )
+		{
+			idStr msgA = idStr( "entityDef: " ) + ent->GetEntityDefName();
+			idStr msgB = idStr( " name:     " ) + ent->name;
+			idStr msgC = idStr( " origin:   " ) + ent->GetPhysics()->GetOrigin().ToString();
+			idStr msgD = idStr( " angles:   " ) + ent->GetPhysics()->GetAxis().ToAngles().ToString();
+
+			idMat3 mat = ent->GetPhysics()->GetAxis();
+			idStr rotA;
+			rotA.Format( "%.9g %.9g %.9g", mat[0].x, mat[0].y, mat[0].z );
+			idStr rotB;
+			rotB.Format( "%.9g %.9g %.9g", mat[1].x, mat[1].y, mat[1].z );
+			idStr rotC;
+			rotC.Format( "%.9g %.9g %.9g", mat[2].x, mat[2].y, mat[2].z );
+			idStr msgE;
+			msgE.Format( " rotation:\n  %s\n  %s\n  %s\n", rotA.c_str(), rotB.c_str(), rotC.c_str() );
+
+			gameLocal.Printf( "%s\n", msgA.c_str() );
+			gameLocal.Printf( "%s\n", msgB.c_str() );
+			gameLocal.Printf( "%s\n", msgC.c_str() );
+			gameLocal.Printf( "%s\n", msgD.c_str() );
+			gameLocal.Printf( "%s\n", msgE.c_str() );
+		}
+	}
+}
+
+/*
+===============
+exportRagdolls
+export all ragdolls matching the specified classname
+===============
+*/
+CONSOLE_COMMAND_SHIP( exportRagdolls, "export all ragdolls matching the specified classname", idCmdSystem::ArgCompletion_Decl<DECL_ENTITYDEF> )
+{
+	if( args.Argc() != 3 )
+	{
+		common->Printf( "Usage: exportRagdolls <classname> <outfile>\n" );
+		return;
+	}
+	idStr classname = args.Argv( 1 );
+	idStr outfile = args.Argv( 2 );
+
+	idStr text;
+	int count = 0;
+	for( int i = 0; i < MAX_GENTITIES; ++i )
+	{
+		idEntity* ent = gameLocal.entities[i];
+		if( !ent )
+		{
+			continue;
+		}
+		if( idStr::Icmp( ent->spawnArgs.GetString( "classname" ), classname.c_str() ) != 0 )
+		{
+			continue;
+		}
+		if( !ent->IsType( idAFEntity_Base::Type ) )
+		{
+			continue;
+		}
+		count++;
+		idAFEntity_Base* af = static_cast<idAFEntity_Base*>( ent );
+		text += "{\n";
+		text += "\"classname\" \"" + classname + "\"\n";
+		text += "\"name\" \"" + af->name + "\"\n";
+		idDict state;
+		af->SaveState( state );
+		const idKeyValue* kv = state.MatchPrefix( "body ", NULL );
+		while( kv )
+		{
+			text += "\"" + kv->GetKey() + "\" \"" + kv->GetValue() + "\"\n";
+			kv = state.MatchPrefix( "body ", kv );
+		}
+		text += "\"origin\" \"" + idStr( af->GetPhysics()->GetOrigin().ToString( 8 ) ) + "\"\n";
+		text += "}\n";
+	}
+
+	if( count == 0 )
+	{
+		common->Printf( "No ragdolls matching '%s' have been found.\n", classname.c_str() );
+		return;
+	}
+
+	idStr outFilePath = "exported";
+	if( !outFilePath.IsEmpty() )
+	{
+		outFilePath += '/';
+	}
+	outFilePath += outfile;
+	outFilePath.SetFileExtension( ".txt" );
+
+	idFile* file = fileSystem->OpenFileWrite( outFilePath.c_str(), "fs_basepath" );
+	if( !file )
+	{
+		idStr msg;
+		msg.Format( "Couldn't open '%s' for writing.", outFilePath.c_str() );
+		idLib::Warning( msg.c_str() );
+		return;
+	}
+	file->Write( text.c_str(), text.Length() );
+	delete file;
+	common->Printf( "Exported %d ragdolls.\n", count );
+}
+
+/*
 =================
 idGameLocal::InitConsoleCommands
 
@@ -2676,6 +2878,10 @@ void idGameLocal::InitConsoleCommands()
 	cmdSystem->AddCommand( "testid",				Cmd_TestId_f,				CMD_FL_GAME | CMD_FL_CHEAT,	"output the string for the specified id." );
 
 	cmdSystem->AddCommand( "setActorState",			Cmd_SetActorState_f,		CMD_FL_GAME | CMD_FL_CHEAT,	"Manually sets an actors script state", idGameLocal::ArgCompletion_EntityName );
+
+	cmdSystem->AddCommand( "spawnAdvanced",			Cmd_SpawnAdvanced_f,		CMD_FL_GAME | CMD_FL_CHEAT, "spawns a game entity", idCmdSystem::ArgCompletion_Decl<DECL_ENTITYDEF> );
+	cmdSystem->AddCommand( "printEntityInfo",		Cmd_PrintEntityInfo_f,		CMD_FL_GAME | CMD_FL_CHEAT, "prints info about the pointed entity" );
+	cmdSystem->AddCommand( "demigod",				Cmd_Demigod_f, CMD_FL_GAME | CMD_FL_CHEAT, "enables demigod mode" );
 }
 
 /*

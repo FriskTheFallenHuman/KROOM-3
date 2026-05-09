@@ -377,7 +377,7 @@ void idRenderWorldLocal::AddAreaViewLights( int areaNum, const portalStack_t* ps
 
 		// check for being closed off behind a door
 		// a light that doesn't cast shadows will still light even if it is behind a door
-		if( r_useLightAreaCulling.GetBool() && !light->LightCastsShadows()
+		if( r_useLightAreaCulling.GetBool() && light->LightCastsShadows()
 				&& light->areaNum != -1 && !tr.viewDef->connectedAreas[ light->areaNum ] )
 		{
 			continue;

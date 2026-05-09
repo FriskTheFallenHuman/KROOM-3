@@ -4,28 +4,6 @@
 
 ***********************************************************************/
 
-export fred {
-	// view model soulCube
-	options -prefix SOUL_ -keep guilight toplftnub toprtnub midnub botlftnub botrtnub -rename origin blah
-	mesh	models/weapons/soulcube/cycles/idle.mb -dest models/md5/weapons/soulcube_view/soulcube
-	anim	models/weapons/soulcube/cycles/raise.mb -dest models/md5/weapons/soulcube_view/raise
-	anim	models/weapons/soulcube/cycles/idle.mb -xyzprecision .01 -dest models/md5/weapons/soulcube_view/idle
-	anim	models/weapons/soulcube/cycles/idle2.mb -xyzprecision .01 -dest models/md5/weapons/soulcube_view/idle2
-	anim	models/weapons/soulcube/cycles/fire2.mb -dest models/md5/weapons/soulcube_view/fire
-	anim	models/weapons/soulcube/cycles/dryfire.mb -dest models/md5/weapons/soulcube_view/dryfire
-	anim	models/weapons/soulcube/cycles/lower.mb -dest models/md5/weapons/soulcube_view/lower
-}
-
-export fred {
-	// world model soulCube
-
-	options -ignorescale -prefix PLAYER_SOUL_ -rename ATTACHER origin -clearorigin -keepmesh soulfx1 -keepmesh soulfx2 -keepmesh soulfx3 -keepmesh soulfx4 -keepmesh soulfx5 -keepmesh soulknife -keepmesh soulcube
-
-	mesh	models/characters/male_npc/cycles/tweakedplayermoves/soulcube_idle.mb -dest models/md5/weapons/soulcube_world/worldsoulcube
-	anim	models/characters/male_npc/cycles/tweakedplayermoves/soulcube_idle.mb -dest models/md5/weapons/soulcube_world/soulcube_idle
-
-}
-
 entityDef weapon_soulcube {
 	"editor_color"				".3 .3 1"
 	"editor_mins"				"-16 -16 0"
@@ -59,10 +37,10 @@ entityDef weapon_soulcube {
 	"flashColor"				"1 0.8 0.4"
 	"flashRadius"				"120"
 	"silent_fire"				"0"
-	
+
 	"hide_time"					"0.3"								// time to hide weapon when talking to npcs or looking at guis
 	"hide_distance"				"-15"								// distance to offset weapon when talking to npcs or looking at guis
-	
+
 	"spread"					"0"
 
 	"weaponAngleOffsetAverages" "10"
@@ -88,7 +66,7 @@ model viewmodel_soulcube {
 	mesh						models/md5/weapons/soulcube_view/soulcube.md5mesh
 	offset						( 12 0 -63 )
 	skin 						skins/models/weapons/soulcubeidle
-	
+
 	anim raise					models/md5/weapons/soulcube_view/raise.md5anim {
 		frame 1 				skin skins/models/weapons/soulcubeidle
 		frame 1					sound_weapon soulcube_raise
@@ -109,11 +87,11 @@ model viewmodel_soulcube {
 model worldmodel_soulcube {
 	mesh						models/md5/weapons/soulcube_world/worldsoulcube.md5mesh
 
-	anim raise					models/md5/weapons/soulcube_world/soulcube_idle.md5anim	
+	anim raise					models/md5/weapons/soulcube_world/soulcube_idle.md5anim
 	anim idle 					models/md5/weapons/soulcube_world/soulcube_idle.md5anim
 	anim aim					models/md5/weapons/soulcube_world/soulcube_idle.md5anim
-	anim fire 					models/md5/weapons/soulcube_world/soulcube_idle.md5anim 
-	anim reload					models/md5/weapons/soulcube_world/soulcube_idle.md5anim 
+	anim fire 					models/md5/weapons/soulcube_world/soulcube_idle.md5anim
+	anim reload					models/md5/weapons/soulcube_world/soulcube_idle.md5anim
 	anim putaway				models/md5/weapons/soulcube_world/soulcube_idle.md5anim
 }
 
@@ -159,7 +137,7 @@ entityDef projectile_soulblast {
 	"random"					"0 0 0"
 	"clamp_dist"				"64"
 	"turn_max"					"1000"
-	"startingVelocity"			"250"			
+	"startingVelocity"			"250"
 	"endingVelocity"			"700"
 	"accelTime"					"3"
 
@@ -173,7 +151,7 @@ entityDef projectile_soulblast {
 	"detonate_on_death"			"0"					// whether projectile should detonate when it's "killed" (health runs out)
 	"detonate_on_world"			"0"					// whether projectile should detonate when it hits an obstacle
 	"detonate_on_actor"			"1"					// whether projectile should detonate when it hits a character in the game
-	
+
 	"model_detonate"			"grenadeExplosion.prt"			// parametric particles -- temp
 	"model_dissolve"			"soulcubedissolve.prt"
 
@@ -181,7 +159,7 @@ entityDef projectile_soulblast {
 	"impact_gib"				"1"					// whether projectile can gib a character or not (for example: bullets don't gib, but rockets do)
 
 	"mtr_detonate"				""					// decal to leave on world when detonates
-	
+
 	"smoke_kill"									"soulcubedamage3.prt"
 
 	"smoke_fly"										"soulcubetrail.prt"

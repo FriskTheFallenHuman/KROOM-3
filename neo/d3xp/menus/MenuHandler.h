@@ -39,6 +39,7 @@ enum shellAreas_t
 	SHELL_AREA_NEW_GAME,
 	SHELL_AREA_GAME_OPTIONS,
 	SHELL_AREA_SYSTEM_OPTIONS,
+	SHELL_AREA_GRAPHICS_OPTIONS,
 	SHELL_AREA_MULTIPLAYER,
 	SHELL_AREA_GAME_LOBBY,
 	SHELL_AREA_PARTY_LOBBY,
@@ -452,6 +453,10 @@ public:
 	{
 		return gameComplete;
 	}
+	bool					IsShowingIntro()
+	{
+		return showingIntro;
+	}
 
 private:
 
@@ -506,6 +511,7 @@ public:
 	virtual void			TriggerMenu();
 	virtual void			Initialize( const char* swfFile, idSoundWorld* sw );
 	virtual bool			HandleAction( idWidgetAction& action, const idWidgetEvent& event, idMenuWidget* widget, bool forceHandled = false );
+	virtual bool			HandleGuiEvent( const sysEvent_t* sev );
 	virtual idMenuScreen* 	GetMenuScreen( int index );
 	void					UpdateAudioLogPlaying( bool playing );
 	void					UdpateVideoPlaying( bool playing );
@@ -559,6 +565,10 @@ public:
 	{
 		radioMessage = show;
 	}
+	bool					IsRadioActive()
+	{
+		return radioMessage;
+	}
 
 protected:
 
@@ -591,6 +601,7 @@ public:
 	virtual void			Initialize( const char* swfFile, idSoundWorld* sw );
 	virtual idMenuScreen* 	GetMenuScreen( int index );
 	virtual bool			HandleAction( idWidgetAction& action, const idWidgetEvent& event, idMenuWidget* widget, bool forceHandled = false );
+	virtual bool			HandleGuiEvent( const sysEvent_t* sev );
 
 	void					AddPlayerInfo( int index, voiceStateDisplay_t voiceState, int team, idStr name, int score, int wins, int ping, idStr spectateData );
 	void					UpdateScoreboard( idList< mpScoreboardInfo >& data, idStr gameInfo );

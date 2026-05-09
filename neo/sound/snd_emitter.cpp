@@ -609,7 +609,7 @@ void idSoundEmitterLocal::Update( int currentTime )
 		return;
 	}
 	float maxDistance = 0.0f;
-	bool maxDistanceValid = false;
+	bool hasGlobalChannel = false;
 	bool useOcclusion = false;
 	if( emitterId != soundWorld->listener.id )
 	{
@@ -618,21 +618,23 @@ void idSoundEmitterLocal::Update( int currentTime )
 			idSoundChannel* chan = channels[i];
 			if( ( chan->parms.soundShaderFlags & SSF_GLOBAL ) != 0 )
 			{
+				hasGlobalChannel = true;
 				continue;
 			}
 			useOcclusion = useOcclusion || ( ( chan->parms.soundShaderFlags & SSF_NO_OCCLUSION ) == 0 );
-			maxDistanceValid = true;
 			if( maxDistance < channels[i]->parms.maxDistance )
 			{
 				maxDistance = channels[i]->parms.maxDistance;
 			}
 		}
+
+		if( !hasGlobalChannel && directDistance >= maxDistance )
+		{
+			// too far away to possibly hear it
+			return;
+		}
 	}
-	if( maxDistanceValid && directDistance >= maxDistance )
-	{
-		// too far away to possibly hear it
-		return;
-	}
+
 	if( useOcclusion && s_useOcclusion.GetBool() )
 	{
 		// work out virtual origin and distance, which may be from a portal instead of the actual origin

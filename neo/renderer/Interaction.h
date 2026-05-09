@@ -44,10 +44,6 @@ If you have questions concerning this license or the applicable additional terms
 #define LIGHT_CULL_ALL_FRONT		((byte *)-1)
 #define	LIGHT_CLIP_EPSILON			0.1f
 
-// enabling this define allows the precise inside shadow volume test
-// to be performed on interaction (static) shadow volumes
-#define KEEP_INTERACTION_CPU_DATA
-
 struct srfCullInfo_t
 {
 	// For each triangle a byte set to 1 if facing the light origin.

@@ -56,7 +56,7 @@ which should also be nicely contained.
 idCVar com_deltaTimeClamp( "com_deltaTimeClamp", "50", CVAR_INTEGER, "don't process more than this time in a single frame" );
 
 idCVar com_fixedTic( "com_fixedTic", DEFAULT_FIXED_TIC, CVAR_BOOL, "run a single game frame per render frame" );
-idCVar com_noSleep( "com_noSleep", DEFAULT_NO_SLEEP, CVAR_BOOL, "don't sleep if the game is running too fast" );
+idCVar com_noSleep( "com_noSleep", DEFAULT_NO_SLEEP, CVAR_BOOL | CVAR_NOCHEAT, "don't sleep if the game is running too fast" );
 idCVar com_smp( "com_smp", "1", CVAR_INTEGER | CVAR_SYSTEM | CVAR_NOCHEAT, "run the game and draw code in a separate thread" );
 idCVar com_aviDemoSamples( "com_aviDemoSamples", "16", CVAR_SYSTEM, "" );
 idCVar com_aviDemoWidth( "com_aviDemoWidth", "256", CVAR_SYSTEM, "" );
@@ -134,7 +134,8 @@ int idGameThread::Run()
 	// we should have consumed all of our usercmds
 	if( userCmdMgr )
 	{
-		if( userCmdMgr->HasUserCmdForPlayer( game->GetLocalClientNum() ) )
+		int localClientNum = game->GetLocalClientNum();
+		if( localClientNum >= 0 && userCmdMgr->HasUserCmdForPlayer( localClientNum ) )
 		{
 			idLib::Printf( "idGameThread::Run: didn't consume all usercmds\n" );
 		}
@@ -527,13 +528,6 @@ void idCommonLocal::Frame()
 		// DG: prepare new ImGui frame - I guess this is a good place, as all new events should be available?
 		ImGuiHook::NewFrame();
 
-		// Activate the shell if it's been requested
-		if( showShellRequested && game )
-		{
-			game->Shell_Show( true );
-			showShellRequested = false;
-		}
-
 		// if the console or another gui is down, we don't need to hold the mouse cursor
 		bool chatting = false;
 
@@ -649,53 +643,89 @@ void idCommonLocal::Frame()
 
 		// How many game frames to run
 		int numGameFrames = 0;
+		const double framePeriodMsec_hr = 1000.0 / ( double )com_engineHz_latched;
+		const int hiResClockOption = com_hiResClock.GetInteger();
 
+		Sys_EnableThreadAffinity( hiResClockOption == 2 );
+
+		for( ;; )
 		{
+			const int thisFrameTime = Sys_Milliseconds();
+			static int lastFrameTime = thisFrameTime;	// initialized only the first time
+			const int deltaMilliseconds = thisFrameTime - lastFrameTime;
+			lastFrameTime = thisFrameTime;
 
-			for( ;; )
+			const int64 thisFrameTime_hr = Sys_HiResClockCount();
+			static int64 lastFrameTime_hr = thisFrameTime_hr; // initialized only the first time
+			double deltaMilliseconds_hr = Sys_HiResClockCountToMilliseconds( thisFrameTime_hr - lastFrameTime_hr );
+			if( deltaMilliseconds_hr < 0.0 )
 			{
-				const int thisFrameTime = Sys_Milliseconds();
-				static int lastFrameTime = thisFrameTime;	// initialized only the first time
-				const int deltaMilliseconds = thisFrameTime - lastFrameTime;
-				lastFrameTime = thisFrameTime;
+				// should never happen
+				deltaMilliseconds_hr = 0.0;
+			}
+			lastFrameTime_hr = thisFrameTime_hr;
 
-				// if there was a large gap in time since the last frame, or the frame
-				// rate is very very low, limit the number of frames we will run
+			// if there was a large gap in time since the last frame, or the frame
+			// rate is very very low, limit the number of frames we will run
+			if( hiResClockOption > 0 )
+			{
+				const double clampedDeltaMilliseconds_hr = Min( deltaMilliseconds_hr, ( double )com_deltaTimeClamp.GetInteger() );
+
+				gameTimeResidual += clampedDeltaMilliseconds_hr * timescale.GetFloat();
+			}
+			else
+			{
 				const int clampedDeltaMilliseconds = Min( deltaMilliseconds, com_deltaTimeClamp.GetInteger() );
 
 				gameTimeResidual += clampedDeltaMilliseconds * timescale.GetFloat();
+			}
 
-				// don't run any frames when paused
-				/*
-				RB moved down
+			// don't run any frames when paused
+			/*
+			RB moved down
 
-				if( pauseGame )
+			if( pauseGame )
+			{
+				gameFrame++;
+				gameTimeResidual = 0;
+				break;
+			}
+			*/
+
+			// debug cvar to force multiple game tics
+			if( com_fixedTic.GetInteger() > 0 )
+			{
+				numGameFrames = com_fixedTic.GetInteger();
+				gameFrame += numGameFrames;
+				gameTimeResidual = 0;
+				break;
+			}
+
+			if( syncNextGameFrame )
+			{
+				// don't sleep at all
+				syncNextGameFrame = false;
+				gameFrame++;
+				numGameFrames++;
+				gameTimeResidual = 0;
+				break;
+			}
+
+			if( hiResClockOption > 0 )
+			{
+				for( ;; )
 				{
-					gameFrame++;
-					gameTimeResidual = 0;
-					break;
-				}
-				*/
-
-				// debug cvar to force multiple game tics
-				if( com_fixedTic.GetInteger() > 0 )
-				{
-					numGameFrames = com_fixedTic.GetInteger();
-					gameFrame += numGameFrames;
-					gameTimeResidual = 0;
-					break;
-				}
-
-				if( syncNextGameFrame )
-				{
-					// don't sleep at all
-					syncNextGameFrame = false;
+					if( gameTimeResidual < framePeriodMsec_hr )
+					{
+						break;
+					}
+					gameTimeResidual -= framePeriodMsec_hr;
 					gameFrame++;
 					numGameFrames++;
-					gameTimeResidual = 0;
-					break;
 				}
-
+			}
+			else
+			{
 				for( ;; )
 				{
 					// How much time to wait before running the next frame,
@@ -708,29 +738,36 @@ void idCommonLocal::Frame()
 					gameTimeResidual -= frameDelay;
 					gameFrame++;
 					numGameFrames++;
-					// if there is enough residual left, we may run additional frames
 				}
+			}
 
-				if( numGameFrames > 0 )
-				{
-					// ready to actually run them
-					break;
-				}
+			if( numGameFrames > 0 )
+			{
+				// ready to actually run them
+				break;
+			}
 
-				// if we are vsyncing, we always want to run at least one game
-				// frame and never sleep, which might happen due to scheduling issues
-				// if we were just looking at real time.
-				if( com_noSleep.GetBool() )
-				{
-					numGameFrames = 1;
-					gameFrame += numGameFrames;
-					gameTimeResidual = 0;
-					break;
-				}
+			// if we are vsyncing, we always want to run at least one game
+			// frame and never sleep, which might happen due to scheduling issues
+			// if we were just looking at real time.
+			if( com_noSleep.GetBool() )
+			{
+				numGameFrames = 1;
+				gameFrame += numGameFrames;
+				gameTimeResidual = 0;
+				break;
+			}
 
-				// not enough time has passed to run a frame, as might happen if
-				// we don't have vsync on, or the monitor is running at 120hz while
-				// com_engineHz is 60, so sleep a bit and check again
+			// not enough time has passed to run a frame, as might happen if
+			// we don't have vsync on, or the monitor is running at 120hz while
+			// com_engineHz is 60, so sleep a bit and check again
+			if( hiResClockOption > 0 )
+			{
+				double waitMsec = framePeriodMsec_hr - gameTimeResidual;
+				Sys_SleepHiRes( waitMsec );
+			}
+			else
+			{
 				Sys_Sleep( 0 );
 			}
 		}
@@ -847,15 +884,28 @@ void idCommonLocal::Frame()
 			newCmd.serverGameMilliseconds = Game()->GetServerGameTimeMs();
 		}
 
-		userCmdMgr.MakeReadPtrCurrentForPlayer( Game()->GetLocalClientNum() );
+		int localClientNum = Game()->GetLocalClientNum();
+		if( localClientNum >= 0 )
+		{
+			userCmdMgr.MakeReadPtrCurrentForPlayer( localClientNum );
+		}
 
 		// Stuff a copy of this userCmd for each game frame we are going to run.
 		// Ideally, the usercmds would be built in another thread so you could
 		// still get 60hz control accuracy when the game is running slower.
-		for( int i = 0 ; i < numGameFrames ; i++ )
+		if( localClientNum >= 0 )
 		{
-			newCmd.clientGameMilliseconds = FRAME_TO_MSEC( gameFrame - numGameFrames + i + 1 );
-			userCmdMgr.PutUserCmdForPlayer( game->GetLocalClientNum(), newCmd );
+			for( int i = 0 ; i < numGameFrames ; i++ )
+			{
+				newCmd.clientGameMilliseconds = FRAME_TO_MSEC( gameFrame - numGameFrames + i + 1 );
+				userCmdMgr.PutUserCmdForPlayer( localClientNum, newCmd );
+			}
+		}
+
+		if( !IsClient() && mapSpawned && game )
+		{
+			// moved from idGameLocal::RunFrame
+			game->SyncPlayersWithLobbyUsers();
 		}
 
 		// start the game / draw command generation thread going in the background
@@ -898,7 +948,10 @@ void idCommonLocal::Frame()
 
 		// Send local usermds to the server.
 		// This happens after the game frame has run so that prediction data is up to date.
-		SendUsercmds( Game()->GetLocalClientNum() );
+		if( localClientNum >= 0 )
+		{
+			SendUsercmds( localClientNum );
+		}
 
 		// Now that we have an updated game frame, we can send out new snapshots to our clients
 		session->Pump(); // Pump to get updated usercmds to relay
@@ -925,6 +978,13 @@ void idCommonLocal::Frame()
 		}
 
 		soundSystem->Render();
+
+		// Activate the shell if it's been requested
+		if( showShellRequested && game )
+		{
+			game->Shell_Show( true );
+			showShellRequested = false;
+		}
 
 		// process the game return for map changes, etc
 		ProcessGameReturn( ret );

@@ -30,14 +30,15 @@ If you have questions concerning this license or the applicable additional terms
 #include "../Game_local.h"
 #include "../../renderer/RenderCommon.h"
 
-const static int NUM_SETTING_OPTIONS = 7;
+const static int NUM_VISIBLE_OPTIONS = 8;
 
-enum settingMenuCmds_t
-{
-	SETTING_CMD_CONTROLS,
-	SETTING_CMD_GAMEPLAY,
-	SETTING_CMD_SYSTEM,
-};
+void R_AdjustFramerateFromDisplayHz( int displayHz ); // this is in neo/renderer/RenderSystem_init.cpp
+
+extern idCVar r_vidMode;
+extern idCVar r_vidMonitor;
+extern idCVar r_vidWidth;
+extern idCVar r_vidHeight;
+extern idCVar r_vidDisplayRefresh;
 
 /*
 ========================
@@ -56,19 +57,25 @@ void idMenuScreen_Shell_Resolution::Initialize( idMenuHandler* data )
 	SetSpritePath( "menuResolution" );
 
 	options = new( TAG_SWF ) idMenuWidget_DynamicList();
-	options->SetNumVisibleOptions( NUM_SETTING_OPTIONS );
+	options->SetNumVisibleOptions( NUM_VISIBLE_OPTIONS );
 	options->SetSpritePath( GetSpritePath(), "info", "options" );
 	options->SetWrappingAllowed( true );
 
-	while( options->GetChildren().Num() < NUM_SETTING_OPTIONS )
+	scrollbar = new( TAG_SWF ) idMenuWidget_ScrollBar();
+	scrollbar->SetSpritePath( GetSpritePath(), "info", "scrollbar" );
+	scrollbar->RegisterEventObserver( this );
+	scrollbar->Initialize( data );
+
+	while( options->GetChildren().Num() < NUM_VISIBLE_OPTIONS )
 	{
 		idMenuWidget_Button* const buttonWidget = new( TAG_SWF ) idMenuWidget_Button();
-		buttonWidget->Initialize( data );
 		buttonWidget->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_PRESS_FOCUSED, options->GetChildren().Num() );
+		buttonWidget->RegisterEventObserver( scrollbar );
+		buttonWidget->Initialize( data );
 		options->AddChild( buttonWidget );
 	}
 	options->Initialize( data );
-
+	options->AddChild( scrollbar );
 	AddChild( options );
 
 	btnBack = new( TAG_SWF ) idMenuWidget_Button();
@@ -152,43 +159,46 @@ idMenuScreen_Shell_Resolution::ShowScreen
 */
 void idMenuScreen_Shell_Resolution::ShowScreen( const mainMenuTransition_t transitionType )
 {
-
-
-	originalOption.fullscreen = r_fullscreen.GetInteger();
-	originalOption.vidmode = r_vidMode.GetInteger();
+	originalOption.monitor = r_vidMonitor.GetInteger();
+	originalOption.width = r_vidWidth.GetInteger();
+	originalOption.height = r_vidHeight.GetInteger();
+	originalOption.displayHz = r_vidDisplayRefresh.GetInteger();
+	originalFullscreen = r_vidFullscreen.GetInteger();
+	originalVidMode = r_vidMode.GetInteger();
 
 	idList< idList< idStr, TAG_IDLIB_LIST_MENU >, TAG_IDLIB_LIST_MENU > menuOptions;
 	menuOptions.Alloc().Alloc() = "#str_swf_disabled";
-	optionData.Append( optionData_t( 0, 0 ) );
+	optionData.Clear();
+	optionData.Append( optionData_t( 0, 0, 0, 0 ) ); // monitor == 0 in optionData_t means fullscreen disabled
 
 	int viewIndex = 0;
 	idList< idList<vidMode_t> > displays;
-	for( int displayNum = 0 ; ; displayNum++ )
+	for( int displayNum = 0; ; displayNum++ )
 	{
 		idList<vidMode_t>& modeList = displays.Alloc();
-		if( !R_GetModeListForDisplay( displayNum, modeList ) )
+		if( !R_GetModeListForDisplay( displayNum, modeList, 600 ) ) // get modes with height >= 600 only
 		{
 			displays.RemoveIndex( displays.Num() - 1 );
 			break;
 		}
 	}
-	for( int displayNum = 0 ; displayNum < displays.Num(); displayNum++ )
+	for( int displayNum = 0; displayNum < displays.Num(); displayNum++ )
 	{
 		idList<vidMode_t>& modeList = displays[displayNum];
 		for( int i = 0; i < modeList.Num(); i++ )
 		{
-			const optionData_t thisOption( displayNum + 1, i );
-			if( originalOption == thisOption )
+			const optionData_t thisOption( displayNum + 1, modeList[i].width, modeList[i].height, modeList[i].displayHz );
+			if( originalFullscreen == 1 && originalVidMode == 0 && originalOption == thisOption )
 			{
 				viewIndex = menuOptions.Num();
 			}
 			idStr str;
 			if( displays.Num() > 1 )
 			{
-				str.Append( va( "%s %i: ", idLocalization::GetString( "#str_swf_monitor" ), displayNum + 1 ) );
+				str.Append( va( "%s %d: ", idLocalization::GetString( "#str_swf_monitor" ), displayNum + 1 ) );
 			}
-			str.Append( va( "%4i x %4i", modeList[i].width, modeList[i].height ) );
-			if( modeList[i].displayHz != 60 )
+			str.Append( va( "%d x %d", modeList[i].width, modeList[i].height ) );
+			if( modeList[i].displayHz > 0 )
 			{
 				str.Append( va( " @ %dhz", modeList[i].displayHz ) );
 			}
@@ -199,8 +209,8 @@ void idMenuScreen_Shell_Resolution::ShowScreen( const mainMenuTransition_t trans
 
 	options->SetListData( menuOptions );
 	options->SetViewIndex( viewIndex );
-	const int topOfLastPage = menuOptions.Num() - NUM_SETTING_OPTIONS;
-	if( viewIndex < NUM_SETTING_OPTIONS )
+	const int topOfLastPage = menuOptions.Num() - NUM_VISIBLE_OPTIONS;
+	if( viewIndex < NUM_VISIBLE_OPTIONS )
 	{
 		options->SetViewOffset( 0 );
 		options->SetFocusIndex( viewIndex );
@@ -226,12 +236,16 @@ idMenuScreen_Shell_Resolution::HideScreen
 */
 void idMenuScreen_Shell_Resolution::HideScreen( const mainMenuTransition_t transitionType )
 {
+	if( scrollbar && scrollbar->dragging )
+	{
+		scrollbar->dragging = false;
+	}
 	idMenuScreen::HideScreen( transitionType );
 }
 
 /*
 ========================
-idMenuScreen_Shell_Resolution::HandleAction h
+idMenuScreen_Shell_Resolution::HandleAction
 ========================
 */
 bool idMenuScreen_Shell_Resolution::HandleAction( idWidgetAction& action, const idWidgetEvent& event, idMenuWidget* widget, bool forceHandled )
@@ -274,34 +288,42 @@ bool idMenuScreen_Shell_Resolution::HandleAction( idWidgetAction& action, const 
 				}
 				const optionData_t& currentOption = optionData[options->GetViewIndex()];
 
-				if( currentOption == originalOption )
+				if( ( originalFullscreen == 0 && currentOption.monitor == 0 ) || ( originalFullscreen == 1 && originalVidMode == 0 && currentOption == originalOption ) )
 				{
-					// No change
+					// Adjust framerate only
+					R_AdjustFramerateFromDisplayHz( currentOption.displayHz ); // in case currentOption.monitor is 0 (windowed), currentOption.displayHz is also 0 and the default framerate will be set
 					menuData->SetNextScreen( SHELL_AREA_SYSTEM_OPTIONS, MENU_TRANSITION_SIMPLE );
 				}
-				else if( currentOption.fullscreen == 0 )
+				else if( currentOption.monitor == 0 )
 				{
 					// Changing to windowed mode
-					r_fullscreen.SetInteger( 0 );
+					r_vidFullscreen.SetInteger( 0 );
 					cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "vid_restart\n" );
+					R_AdjustFramerateFromDisplayHz( 0 ); // set the default framerate
 					menuData->SetNextScreen( SHELL_AREA_SYSTEM_OPTIONS, MENU_TRANSITION_SIMPLE );
 				}
 				else
 				{
 					// Changing to fullscreen mode
-					r_fullscreen.SetInteger( currentOption.fullscreen );
-					r_vidMode.SetInteger( currentOption.vidmode );
+					r_vidFullscreen.SetInteger( 1 );
+					r_vidMode.SetInteger( 0 );
+					r_vidMonitor.SetInteger( currentOption.monitor );
+					r_vidWidth.SetInteger( currentOption.width );
+					r_vidHeight.SetInteger( currentOption.height );
+					r_vidDisplayRefresh.SetInteger( currentOption.displayHz );
 					cvarSystem->ClearModifiedFlags( CVAR_ARCHIVE );
 					cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "vid_restart\n" );
 
 					class idSWFFuncAcceptVideoChanges : public idSWFScriptFunction_RefCounted
 					{
 					public:
-						idSWFFuncAcceptVideoChanges( idMenuHandler* _menu, gameDialogMessages_t _msg, const optionData_t& _optionData, bool _accept )
+						idSWFFuncAcceptVideoChanges( idMenuHandler* _menu, gameDialogMessages_t _msg, const optionData_t& _optionData, int _fullscreen, int _vidMode, bool _accept )
 						{
 							menuHandler = _menu;
 							msg = _msg;
 							optionData = _optionData;
+							fullscreen = _fullscreen;
+							vidMode = _vidMode;
 							accept = _accept;
 						}
 						idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
@@ -309,6 +331,7 @@ bool idMenuScreen_Shell_Resolution::HandleAction( idWidgetAction& action, const 
 							common->Dialog().ClearDialog( msg );
 							if( accept )
 							{
+								R_AdjustFramerateFromDisplayHz( optionData.displayHz );
 								cvarSystem->SetModifiedFlags( CVAR_ARCHIVE );
 								if( menuHandler != NULL )
 								{
@@ -317,9 +340,16 @@ bool idMenuScreen_Shell_Resolution::HandleAction( idWidgetAction& action, const 
 							}
 							else
 							{
-								r_fullscreen.SetInteger( optionData.fullscreen );
-								r_vidMode.SetInteger( optionData.vidmode );
+								r_vidFullscreen.SetInteger( fullscreen );
+								r_vidMode.SetInteger( vidMode );
+								r_vidMonitor.SetInteger( optionData.monitor );
+								r_vidWidth.SetInteger( optionData.width );
+								r_vidHeight.SetInteger( optionData.height );
+								r_vidDisplayRefresh.SetInteger( optionData.displayHz );
 								cvarSystem->ClearModifiedFlags( CVAR_ARCHIVE );
+								// this callback is called from the game thread if the revert timer expires, and since
+								// vid_restart must be called from the main thread, CMD_EXEC_APPEND "must be" used here
+								// with BufferCommandText instead of CMD_EXEC_NOW
 								cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "vid_restart\n" );
 							}
 							return idSWFScriptVar();
@@ -328,15 +358,43 @@ bool idMenuScreen_Shell_Resolution::HandleAction( idWidgetAction& action, const 
 						idMenuHandler* menuHandler;
 						gameDialogMessages_t msg;
 						optionData_t optionData;
+						int fullscreen;
+						int vidMode;
 						bool accept;
 					};
-					common->Dialog().AddDialog( GDM_CONFIRM_VIDEO_CHANGES, DIALOG_TIMER_ACCEPT_REVERT, new( TAG_SWF ) idSWFFuncAcceptVideoChanges( menuData, GDM_CONFIRM_VIDEO_CHANGES, currentOption, true ), new( TAG_SWF ) idSWFFuncAcceptVideoChanges( menuData, GDM_CONFIRM_VIDEO_CHANGES, originalOption, false ), false );
+					common->Dialog().AddDialog( GDM_CONFIRM_VIDEO_CHANGES, DIALOG_TIMER_ACCEPT_REVERT, new( TAG_SWF ) idSWFFuncAcceptVideoChanges( menuData, GDM_CONFIRM_VIDEO_CHANGES, currentOption, 1, 0, true ), new( TAG_SWF ) idSWFFuncAcceptVideoChanges( menuData, GDM_CONFIRM_VIDEO_CHANGES, originalOption, originalFullscreen, originalVidMode, false ), true );
 				}
 				return true;
 			}
 			return true;
 		}
+		case WIDGET_ACTION_SCROLL_VERTICAL_VARIABLE:
+		{
+			if( parms.Num() == 0 || options == NULL || ( scrollbar && scrollbar->dragging ) )
+			{
+				return true;
+			}
+			int scroll = parms[0].ToInteger();
+			options->Scroll( scroll, true );
+			return true;
+		}
 	}
 
 	return idMenuWidget::HandleAction( action, event, widget, forceHandled );
+}
+
+/*
+========================
+idMenuScreen_Shell_Resolution::ObserveEvent
+========================
+*/
+void idMenuScreen_Shell_Resolution::ObserveEvent( const idMenuWidget& widget, const idWidgetEvent& event )
+{
+	const idMenuWidget_ScrollBar* eventScrollbar = dynamic_cast<const idMenuWidget_ScrollBar*>( &widget );
+	if( scrollbar != NULL && scrollbar == eventScrollbar && event.type == WIDGET_EVENT_DRAG_START )
+	{
+		return;
+	}
+
+	idMenuScreen::ObserveEvent( widget, event );
 }

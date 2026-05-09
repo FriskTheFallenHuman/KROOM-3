@@ -1113,6 +1113,7 @@ void Sys_InitNetworking()
 		idLib::Printf( "Sys_InitNetworking: adding loopback interface\n" );
 		netint[num_interfaces].ip = ntohl( inet_addr( "127.0.0.1" ) );
 		netint[num_interfaces].mask = ntohl( inet_addr( "255.0.0.0" ) );
+		idStr::Copynz( netint[num_interfaces].addr, "127.0.0.1", sizeof( netint[num_interfaces].addr ) );
 		num_interfaces++;
 	}
 }
@@ -1264,7 +1265,10 @@ bool Sys_CompareNetAdrBase( const netadr_t a, const netadr_t b )
 	{
 		if( a.ip[0] == b.ip[0] && a.ip[1] == b.ip[1] && a.ip[2] == b.ip[2] && a.ip[3] == b.ip[3] )
 		{
-			return true;
+			if( a.port == b.port )
+			{
+				return true;
+			}
 		}
 		return false;
 	}

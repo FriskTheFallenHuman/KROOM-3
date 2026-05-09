@@ -6,6 +6,9 @@ Base object for weapons that has an attached light on it.  inheriths from weapon
 
 ***********************************************************************/
 
+// for dimming flashlight during plasma discharges in alphalabs2
+float global_flashlight_intensity = 1.0;
+
 object weapon_base_flashlight : weapon_base {
 	boolean		on;
 	boolean		onBeforeCinematic;
@@ -20,7 +23,6 @@ object weapon_base_flashlight : weapon_base {
 
 				// called by the game
 	void		init();
-	void		UpdateSkin();
 	void		EnterCinematic();
 	void		ExitCinematic();
 };
@@ -47,7 +49,6 @@ void weapon_base_flashlight::updateLightIntensity() {
 		intensity = global_flashlight_intensity;
 		setLightParm( 3, intensity );
 		setShaderParm( 3, intensity );
-		UpdateSkin();
 	}
 }
 
@@ -109,31 +110,4 @@ void weapon_base_flashlight::ExitCinematic() {
 	SetLight( onBeforeCinematic );
 	intensity = 1.0;
 	updateLightIntensity();
-}
-
-/*
-=====================
-weapon_base_flashlight::UpdateSkin
-=====================
-*/
-void weapon_base_flashlight::UpdateSkin() {
-	if ( isInvisible() ) {
-		setSkin( getKey( "skin_invisible" ) );
-	} else {
-		setSkin( "" );
-	}
-	
-	if ( on && ( global_flashlight_intensity > 0 ) ) {
-		if ( !isInvisible() ) {
-			setSkin( getKey( "skin_on" ) );
-		} else {
-			setSkin( getKey( "skin_on_invis" ) );
-		}
-	} else {
-		if ( !isInvisible() ) {
-			setSkin( getKey( "skin_off" ) );
-		} else {
-			setSkin( getKey( "skin_off_invis" ) );
-		}
-	}
 }

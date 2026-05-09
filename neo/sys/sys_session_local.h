@@ -885,6 +885,8 @@ public:
 		sessionLocal = sessionLocal_;
 	}
 
+	virtual							~idSessionLocalCallbacks() {}
+
 	virtual idLobby& 				GetPartyLobby()
 	{
 		return sessionLocal->GetPartyLobby();

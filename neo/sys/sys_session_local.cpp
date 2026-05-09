@@ -60,8 +60,8 @@ idCVar net_testPartyMemberConnectFail( "net_testPartyMemberConnectFail", "-1", C
 //FIXME: this could use a better name.
 idCVar net_offlineTransitionThreshold( "net_offlineTransitionThreshold", "1000", CVAR_INTEGER, "Time, in milliseconds, to wait before kicking back to the main menu when a profile losses backend connection during an online game" );
 
-idCVar net_port( "net_port", PORT_SERVER, CVAR_INTEGER | CVAR_NOCHEAT, "host port number" ); // Port to host when using dedicated servers, port to broadcast on when looking for a dedicated server to connect to
-idCVar net_headlessServer( "net_headlessServer", "0", CVAR_BOOL, "toggle to automatically host a game and allow peer[0] to control menus" );
+idCVar net_port( "net_port", PORT_SERVER, CVAR_INTEGER | CVAR_NOCHEAT, "port number" );
+idCVar net_headlessServer( "net_headlessServer", "0", CVAR_BOOL | CVAR_NOCHEAT, "dedicated server" );
 
 const char* idSessionLocal::stateToString[ NUM_STATES ] =
 {
@@ -88,7 +88,7 @@ struct netVersion_s
 {
 	netVersion_s()
 	{
-		idStr::snPrintf( string, sizeof( string ), "%s.%d", ENGINE_VERSION, BUILD_NUMBER );
+		idStr::snPrintf( string, sizeof( string ), "%s.%d", ENGINE_VERSION, NET_VERSION );
 	}
 	char	string[256];
 } netVersion;
@@ -408,12 +408,6 @@ idSessionLocal::StartMatch
 void idSessionLocal::StartMatch()
 {
 	NET_VERBOSE_PRINT( "NET: StartMatch\n" );
-
-	if( net_headlessServer.GetBool() )
-	{
-		StartLoading();		// This is so we can force start matches on headless servers to test performance using bots
-		return;
-	}
 
 	if( localState != STATE_GAME_LOBBY_HOST )
 	{
@@ -1596,7 +1590,7 @@ idSession::~idSession()
 	dedicatedServerSearch = NULL;
 }
 
-idCVar net_verbose( "net_verbose", "0", CVAR_BOOL | CVAR_NOCHEAT, "Print a bunch of message about the network session" );
+idCVar net_verbose( "net_verbose", "0", CVAR_BOOL, "Print a bunch of message about the network session" );
 idCVar net_verboseResource( "net_verboseResource", "0", CVAR_BOOL, "Prints a bunch of message about network resources" );
 idCVar net_verboseReliable( "net_verboseReliable", "0", CVAR_BOOL, "Prints the more spammy messages about reliable network msgs" );
 idCVar si_splitscreen( "si_splitscreen", "0", CVAR_INTEGER, "force splitscreen" );
@@ -1964,7 +1958,8 @@ void idSessionLocal::ValidateLobbies()
 	{
 		ValidateLobby( GetPartyLobby() );
 	}
-	if( GetState() >= idSession::GAME_LOBBY && !net_headlessServer.GetBool() )
+
+	if( GetState() >= idSession::GAME_LOBBY )
 	{
 		ValidateLobby( GetGameLobby() );
 	}
@@ -2484,11 +2479,6 @@ idSessionLocal::UpdateSignInManager
 void idSessionLocal::UpdateSignInManager()
 {
 	if( !HasSignInManager() )
-	{
-		return;
-	}
-
-	if( net_headlessServer.GetBool() )
 	{
 		return;
 	}
@@ -4671,7 +4661,7 @@ void idSessionLocal::HandleDedicatedServerQueryRequest( lobbyAddress_t& remoteAd
 
 	idLocalUser* masterUser = GetSignInManager().GetMasterLocalUser();
 
-	if( masterUser == NULL && !net_headlessServer.GetBool() )
+	if( masterUser == NULL && !common->GetServerDedicated() )
 	{
 		canJoin = false;
 	}
@@ -4684,7 +4674,7 @@ void idSessionLocal::HandleDedicatedServerQueryRequest( lobbyAddress_t& remoteAd
 		serverInfo_t serverInfo;
 		serverInfo.joinable = ( session->GetState() >= idSession::LOADING );
 
-		if( !net_headlessServer.GetBool() )
+		if( !common->GetServerDedicated() )
 		{
 			serverInfo.serverName = masterUser->GetGamerTag();
 		}

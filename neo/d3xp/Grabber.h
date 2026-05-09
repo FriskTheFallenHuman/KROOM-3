@@ -54,6 +54,8 @@ public:
 	void					SetDragDistance( float dist );
 	int						Update( idPlayer* player, bool hide );
 
+	void					Reload( int grabberState );
+
 private:
 	idEntityPtr<idEntity>	dragEnt;			// entity being dragged
 	idForce_Grab			drag;
@@ -83,6 +85,9 @@ private:
 	void					StopDrag( bool dropOnly );
 	void					UpdateBeams();
 	void					ApplyShake();
+
+	bool					drop;
+	bool					setDragPhysics;
 };
 
-#endif
+#endif /* !__GAME_GRABBER_H__ */

@@ -212,8 +212,7 @@ idPlayerView::ClearEffects
 */
 void idPlayerView::ClearEffects()
 {
-	lastDamageTime = MS2SEC( gameLocal.slow.time - 99999 );
-
+	lastDamageTime = MS2SEC( gameLocal.fast.time - 99999 );
 	dvFinishTime = ( gameLocal.fast.time - 99999 );
 	kickFinishTime = ( gameLocal.slow.time - 99999 );
 
@@ -253,12 +252,12 @@ LocalKickDir is the direction of force in the player's coordinate system,
 which will determine the head kick direction
 ==============
 */
-void idPlayerView::DamageImpulse( idVec3 localKickDir, const idDict* damageDef )
+void idPlayerView::DamageImpulse( idVec3 localKickDir, const idDict* damageDef, bool isDamage )
 {
 	//
 	// double vision effect
 	//
-	if( lastDamageTime > 0.0f && SEC2MS( lastDamageTime ) + IMPULSE_DELAY > gameLocal.slow.time )
+	if( lastDamageTime > 0.0f && SEC2MS( lastDamageTime ) + IMPULSE_DELAY > gameLocal.fast.time )
 	{
 		// keep shotgun from obliterating the view
 		return;
@@ -282,27 +281,30 @@ void idPlayerView::DamageImpulse( idVec3 localKickDir, const idDict* damageDef )
 	//
 	// head angle kick
 	//
-	float kickTime = damageDef->GetFloat( "kick_time" );
-	if( kickTime )
+	if( !isDamage )
 	{
-		kickFinishTime = gameLocal.slow.time + g_kickTime.GetFloat() * kickTime;
-
-		// forward / back kick will pitch view
-		kickAngles[0] = localKickDir[0];
-
-		// side kick will yaw view
-		kickAngles[1] = localKickDir[1] * 0.5f;
-
-		// up / down kick will pitch view
-		kickAngles[0] += localKickDir[2];
-
-		// roll will come from  side
-		kickAngles[2] = localKickDir[1];
-
-		float kickAmplitude = damageDef->GetFloat( "kick_amplitude" );
-		if( kickAmplitude )
+		float kickTime = damageDef->GetFloat( "kick_time" );
+		if( kickTime )
 		{
-			kickAngles *= kickAmplitude;
+			kickFinishTime = gameLocal.slow.time + g_kickTime.GetFloat() * kickTime;
+
+			// forward / back kick will pitch view
+			kickAngles[0] = localKickDir[0];
+
+			// side kick will yaw view
+			kickAngles[1] = localKickDir[1] * 0.5f;
+
+			// up / down kick will pitch view
+			kickAngles[0] += localKickDir[2];
+
+			// roll will come from  side
+			kickAngles[2] = localKickDir[1];
+
+			float kickAmplitude = damageDef->GetFloat( "kick_amplitude" );
+			if( kickAmplitude )
+			{
+				kickAngles *= kickAmplitude;
+			}
 		}
 	}
 

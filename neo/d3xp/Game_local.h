@@ -436,6 +436,11 @@ public:
 	virtual void			GetAimAssistAngles( idAngles& angles );
 	virtual float			GetAimAssistSensitivity();
 
+	virtual void			SyncPlayersWithLobbyUsers()
+	{
+		SyncPlayersWithLobbyUsers( false );
+	}
+
 	// ---------------------- Public idGameLocal Interface -------------------
 
 	void					Printf( VERIFY_FORMAT_STRING const char* fmt, ... ) const;
@@ -613,6 +618,8 @@ public:
 	virtual void				Shell_UpdateClientCountdown( int countdown );
 	virtual void				Shell_UpdateLeaderboard( const idLeaderboardCallback* callback );
 	virtual void				Shell_SetGameComplete();
+	virtual bool				Shell_IsShowingIntro();
+	virtual bool				Shell_IsGameComplete();
 
 	virtual bool				SkipCinematicScene();
 	virtual bool				CheckInCinematic();

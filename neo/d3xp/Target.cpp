@@ -294,6 +294,7 @@ void idTarget_EndLevel::Event_Activate( idEntity* activator )
 			}
 		}
 		gameLocal.Shell_SetGameComplete();
+		common->QueueShowShell();
 		return;
 	}
 
@@ -1545,7 +1546,7 @@ void idTarget_SetKeyVal::Event_Activate( idEntity* activator )
 							if( idStr::Icmpn( key, "gui_", 4 ) == 0 )
 							{
 								ent->GetRenderEntity()->gui[ j ]->SetStateString( key, val );
-								ent->GetRenderEntity()->gui[ j ]->StateChanged( gameLocal.time );
+								ent->GetRenderEntity()->gui[j]->StateChanged( gameLocal.fast.time );
 							}
 						}
 					}

@@ -59,12 +59,7 @@ struct version_s
 idCVar com_version( "si_version", version.string, CVAR_SYSTEM | CVAR_ROM | CVAR_SERVERINFO, "engine version" );
 idCVar com_forceGenericSIMD( "com_forceGenericSIMD", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "force generic platform independent SIMD" );
 
-#ifdef ID_RETAIL
-	idCVar com_allowConsole( "com_allowConsole", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_INIT, "allow toggling console with the tilde key" );
-#else
-	idCVar com_allowConsole( "com_allowConsole", "1", CVAR_BOOL | CVAR_SYSTEM | CVAR_INIT, "allow toggling console with the tilde key" );
-#endif
-
+idCVar com_allowConsole( "com_allowConsole", "1", CVAR_BOOL | CVAR_SYSTEM | CVAR_ARCHIVE, "allow toggling the console with the tilde key" );
 idCVar com_developer( "developer", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "developer mode" );
 idCVar com_speeds( "com_speeds", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "show engine timings" );
 // DG: support "com_showFPS 1" for fps-only view like in classic doom3 => make it CVAR_INTEGER
@@ -89,6 +84,7 @@ idCVar com_activeApp( "com_activeApp", "1", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHE
 extern idCVar g_demoMode;
 
 idCVar com_engineHz( "com_engineHz", "60", CVAR_FLOAT | CVAR_ARCHIVE, "Frames per second the engine runs at", 10.0f, 1024.0f );
+idCVar com_hiResClock( "com_hiResClock", "2", CVAR_INTEGER | CVAR_ARCHIVE, "high resolution clock: 0 = disabled, 1 = enabled, 2 = enabled + thread affinity", 0, 2 );
 float com_engineHz_latched = 60.0f; // Latched version of cvar, updated between map loads
 const int64 com_engineHz_numerator = 100LL * 1000LL;
 int64 com_engineHz_denominator = 100LL * 60LL;
@@ -179,6 +175,8 @@ idCommonLocal::idCommonLocal() :
 	saveFile = NULL;
 	stringsFile = NULL;
 
+	isQuitRequested = false;
+
 	ClearWipe();
 }
 
@@ -221,7 +219,7 @@ doom set test blah + map test
 idCommonLocal::ParseCommandLine
 ==================
 */
-void idCommonLocal::ParseCommandLine( int argc, char* const* argv )
+void idCommonLocal::ParseCommandLine( int argc, const char* const* argv )
 {
 	int i, current_count;
 
@@ -609,10 +607,7 @@ idCommonLocal::CheckStartupStorageRequirements
 */
 void idCommonLocal::CheckStartupStorageRequirements()
 {
-	// RB: disabled savegame and profile storage checks, because it fails sometimes without any clear reason
-#if 0
 	int64 availableSpace = 0;
-
 	// ------------------------------------------------------------------------
 	// Savegame and Profile required storage
 	// ------------------------------------------------------------------------
@@ -689,8 +684,7 @@ void idCommonLocal::CheckStartupStorageRequirements()
 
 		common->Dialog().AddDynamicDialog( GDM_INSUFFICENT_STORAGE_SPACE, callbacks, optionText, true, msg );
 	}
-#endif
-	// RB end
+
 
 	session->GetAchievementSystem().Start();
 }
@@ -1106,7 +1100,7 @@ bool idCommonLocal::IsInitialized() const
 idCommonLocal::Init
 =================
 */
-void idCommonLocal::Init( int argc, char* const* argv )
+void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline )
 {
 	try
 	{
@@ -1122,6 +1116,16 @@ void idCommonLocal::Init( int argc, char* const* argv )
 		// clear warning buffer
 		ClearWarnings( GAME_NAME " initialization" );
 
+		idLib::Printf( "Command line: %s\n", cmdline );
+		//::MessageBox( NULL, cmdline, "blah", MB_OK );
+		// parse command line options
+		idCmdArgs args;
+		if( cmdline )
+		{
+			// tokenize if the OS doesn't do it for us
+			args.TokenizeString( cmdline, true );
+			argv = args.GetArgs( &argc );
+		}
 		ParseCommandLine( argc, argv );
 
 		// init console command system
@@ -1211,8 +1215,8 @@ void idCommonLocal::Init( int argc, char* const* argv )
 		// re-override anything from the config files with command line args
 		StartupVariable( NULL );
 
-		// if any archived cvars are modified after this, we will trigger a writing of the config file
-		cvarSystem->ClearModifiedFlags( CVAR_ARCHIVE );
+		extern idCVar net_headlessServer;
+		SetServerDedicated( net_headlessServer.GetBool() );
 
 		// init OpenGL, which will open a window and connect sound and input hardware
 		renderSystem->InitOpenGL();
@@ -1220,6 +1224,7 @@ void idCommonLocal::Init( int argc, char* const* argv )
 		// Support up to 2 digits after the decimal point
 		com_engineHz_denominator = 100LL * com_engineHz.GetFloat();
 		com_engineHz_latched = com_engineHz.GetFloat();
+		Sys_EnableThreadAffinity( com_hiResClock.GetInteger() == 2 );
 
 		// start the sound system, but don't do any hardware operations yet
 		soundSystem->Init();
@@ -1364,7 +1369,7 @@ void idCommonLocal::Init( int argc, char* const* argv )
 		StartMenu( true );
 // SRS - changed ifndef to ifdef since legalMinTime should apply to retail builds, not dev builds
 #ifdef ID_RETAIL
-		while( Sys_Milliseconds() - legalStartTime < legalMinTime )
+		while( Sys_Milliseconds() - legalStartTime < legalMinTime && !isQuitRequested )
 		{
 			if( ( Sys_Milliseconds() - legalStartTime ) >= legalMinTime / 2.0 )
 			{
@@ -1713,6 +1718,11 @@ bool idCommonLocal::ProcessEvent( const sysEvent_t* event )
 			if( game->CheckInCinematic() )
 			{
 				game->SkipCinematicScene();
+			}
+			else if( game->Shell_IsShowingIntro() )
+			{
+				game->Shell_HandleGuiEvent( event );
+				return true;
 			}
 			else
 			{

@@ -61,7 +61,7 @@ FastF32toF16
 #if defined(USE_INTRINSICS_SSE)
 ID_INLINE_EXTERN __m128i FastF32toF16( __m128i f32_bits )
 {
-	__m128i f16_sign     = _mm_srli_epi32( _mm_and_si128( f32_bits, vector_int_f32_sign_mask ), f32_to_f16_sign_shift );
+	__m128i f16_sign = _mm_srai_epi32( _mm_and_si128( f32_bits, vector_int_f32_sign_mask ), f32_to_f16_sign_shift );
 	__m128i f16_exponent = _mm_srli_epi32( _mm_and_si128( f32_bits, vector_int_f32_exponent_mask ), f32_to_f16_exponent_shift );
 	__m128i f16_mantissa = _mm_srli_epi32( _mm_and_si128( f32_bits, vector_int_f32_mantissa_mask ), f32_to_f16_mantissa_shift );
 
