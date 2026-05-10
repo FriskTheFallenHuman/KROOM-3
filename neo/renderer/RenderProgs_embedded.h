@@ -475,9 +475,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	return color;\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/skinning.inc.hlsl",
 		"/*\n"
@@ -558,9 +558,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"result.position.y = dot4( modelPosition, rpMVPmatrixY );\n"
 		"result.position.z = dot4( modelPosition, rpMVPmatrixZ );\n"
 		"result.position.w = dot4( modelPosition, rpMVPmatrixW );\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/post/SMAA.inc.hlsl",
 		"/**\n"
@@ -2011,9 +2011,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"//-----------------------------------------------------------------------------\n"
 		"#endif // SMAA_INCLUDE_PS\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/BRDF.inc.hlsl",
 		"/*\n"
@@ -2179,9 +2179,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/debug/debug_shadowmap.ps.hlsl",
 		"/*\n"
@@ -2239,9 +2239,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.color = texture( samp0, tc );// * rpColor;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/debug/debug_shadowmap.vs.hlsl",
 		"/*\n"
@@ -2309,262 +2309,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"		result.texcoord0.y = dot4( vertex.texcoord.xy, rpTextureMatrixT );\n"
 		"	}\n"
 		"}\n"
-
+		
 	},
-
-	{
-		"renderprogs/builtin/debug/shadowDebug.ps.hlsl",
-		"/*\n"
-		"===========================================================================\n"
-		"\n"
-		"Doom 3 BFG Edition GPL Source Code\n"
-		"Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.\n"
-		"\n"
-		"This file is part of the Doom 3 BFG Edition GPL Source Code (\"Doom 3 BFG Edition Source Code\").\n"
-		"\n"
-		"Doom 3 BFG Edition Source Code is free software: you can redistribute it and/or modify\n"
-		"it under the terms of the GNU General Public License as published by\n"
-		"the Free Software Foundation, either version 3 of the License, or\n"
-		"(at your option) any later version.\n"
-		"\n"
-		"Doom 3 BFG Edition Source Code is distributed in the hope that it will be useful,\n"
-		"but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
-		"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
-		"GNU General Public License for more details.\n"
-		"\n"
-		"You should have received a copy of the GNU General Public License\n"
-		"along with Doom 3 BFG Edition Source Code.  If not, see <http://www.gnu.org/licenses/>.\n"
-		"\n"
-		"In addition, the Doom 3 BFG Edition Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 BFG Edition Source Code.  If not, please request a copy in writing from id Software at the address below.\n"
-		"\n"
-		"If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.\n"
-		"\n"
-		"===========================================================================\n"
-		"*/\n"
-		"\n"
-		"#include \"renderprogs/global.inc.hlsl\"\n"
-		"\n"
-		"\n"
-		"// *INDENT-OFF*\n"
-		"uniform sampler2D samp0 : register(s0);\n"
-		"\n"
-		"struct PS_OUT {\n"
-		"	float4 color : COLOR;\n"
-		"};\n"
-		"// *INDENT-ON*\n"
-		"\n"
-		"void main( out PS_OUT result )\n"
-		"{\n"
-		"	result.color = rpColor;\n"
-		"}\n"
-
-	},
-
-	{
-		"renderprogs/builtin/debug/shadowDebug.vs.hlsl",
-		"/*\n"
-		"===========================================================================\n"
-		"\n"
-		"Doom 3 BFG Edition GPL Source Code\n"
-		"Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.\n"
-		"\n"
-		"This file is part of the Doom 3 BFG Edition GPL Source Code (\"Doom 3 BFG Edition Source Code\").\n"
-		"\n"
-		"Doom 3 BFG Edition Source Code is free software: you can redistribute it and/or modify\n"
-		"it under the terms of the GNU General Public License as published by\n"
-		"the Free Software Foundation, either version 3 of the License, or\n"
-		"(at your option) any later version.\n"
-		"\n"
-		"Doom 3 BFG Edition Source Code is distributed in the hope that it will be useful,\n"
-		"but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
-		"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
-		"GNU General Public License for more details.\n"
-		"\n"
-		"You should have received a copy of the GNU General Public License\n"
-		"along with Doom 3 BFG Edition Source Code.  If not, see <http://www.gnu.org/licenses/>.\n"
-		"\n"
-		"In addition, the Doom 3 BFG Edition Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 BFG Edition Source Code.  If not, please request a copy in writing from id Software at the address below.\n"
-		"\n"
-		"If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.\n"
-		"\n"
-		"===========================================================================\n"
-		"*/\n"
-		"\n"
-		"#include \"renderprogs/global.inc.hlsl\"\n"
-		"\n"
-		"\n"
-		"// *INDENT-OFF*\n"
-		"struct VS_IN {\n"
-		"	float4 position : POSITION;\n"
-		"};\n"
-		"\n"
-		"struct VS_OUT {\n"
-		"	float4 position : POSITION;\n"
-		"};\n"
-		"// *INDENT-ON*\n"
-		"\n"
-		"void main( VS_IN vertex, out VS_OUT result )\n"
-		"{\n"
-		"	float4 vPos = vertex.position - rpLocalLightOrigin;\n"
-		"	vPos = ( vPos.wwww * rpLocalLightOrigin ) + vPos;\n"
-		"\n"
-		"	result.position.x = dot4( vPos, rpMVPmatrixX );\n"
-		"	result.position.y = dot4( vPos, rpMVPmatrixY );\n"
-		"	result.position.z = dot4( vPos, rpMVPmatrixZ );\n"
-		"	result.position.w = dot4( vPos, rpMVPmatrixW );\n"
-		"}\n"
-
-	},
-
-	{
-		"renderprogs/builtin/debug/shadowDebug_skinned.ps.hlsl",
-		"/*\n"
-		"===========================================================================\n"
-		"\n"
-		"Doom 3 BFG Edition GPL Source Code\n"
-		"Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.\n"
-		"\n"
-		"This file is part of the Doom 3 BFG Edition GPL Source Code (\"Doom 3 BFG Edition Source Code\").\n"
-		"\n"
-		"Doom 3 BFG Edition Source Code is free software: you can redistribute it and/or modify\n"
-		"it under the terms of the GNU General Public License as published by\n"
-		"the Free Software Foundation, either version 3 of the License, or\n"
-		"(at your option) any later version.\n"
-		"\n"
-		"Doom 3 BFG Edition Source Code is distributed in the hope that it will be useful,\n"
-		"but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
-		"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
-		"GNU General Public License for more details.\n"
-		"\n"
-		"You should have received a copy of the GNU General Public License\n"
-		"along with Doom 3 BFG Edition Source Code.  If not, see <http://www.gnu.org/licenses/>.\n"
-		"\n"
-		"In addition, the Doom 3 BFG Edition Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 BFG Edition Source Code.  If not, please request a copy in writing from id Software at the address below.\n"
-		"\n"
-		"If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.\n"
-		"\n"
-		"===========================================================================\n"
-		"*/\n"
-		"\n"
-		"#include \"renderprogs/global.inc.hlsl\"\n"
-		"\n"
-		"\n"
-		"// *INDENT-OFF*\n"
-		"uniform sampler2D samp0 : register(s0);\n"
-		"\n"
-		"struct PS_OUT {\n"
-		"	float4 color : COLOR;\n"
-		"};\n"
-		"// *INDENT-ON*\n"
-		"\n"
-		"void main( out PS_OUT result )\n"
-		"{\n"
-		"	result.color = rpColor;\n"
-		"}\n"
-
-	},
-
-	{
-		"renderprogs/builtin/debug/shadowDebug_skinned.vs.hlsl",
-		"/*\n"
-		"===========================================================================\n"
-		"\n"
-		"Doom 3 BFG Edition GPL Source Code\n"
-		"Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.\n"
-		"Copyright (C) 2014 Robert Beckebans\n"
-		"\n"
-		"This file is part of the Doom 3 BFG Edition GPL Source Code (\"Doom 3 BFG Edition Source Code\").\n"
-		"\n"
-		"Doom 3 BFG Edition Source Code is free software: you can redistribute it and/or modify\n"
-		"it under the terms of the GNU General Public License as published by\n"
-		"the Free Software Foundation, either version 3 of the License, or\n"
-		"(at your option) any later version.\n"
-		"\n"
-		"Doom 3 BFG Edition Source Code is distributed in the hope that it will be useful,\n"
-		"but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
-		"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
-		"GNU General Public License for more details.\n"
-		"\n"
-		"You should have received a copy of the GNU General Public License\n"
-		"along with Doom 3 BFG Edition Source Code.  If not, see <http://www.gnu.org/licenses/>.\n"
-		"\n"
-		"In addition, the Doom 3 BFG Edition Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 BFG Edition Source Code.  If not, please request a copy in writing from id Software at the address below.\n"
-		"\n"
-		"If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.\n"
-		"\n"
-		"===========================================================================\n"
-		"*/\n"
-		"\n"
-		"#include \"renderprogs/global.inc.hlsl\"\n"
-		"\n"
-		"\n"
-		"uniform matrices_ubo { float4 matrices[408]; };\n"
-		"\n"
-		"// *INDENT-OFF*\n"
-		"struct VS_IN {\n"
-		"	float4 position : POSITION;\n"
-		"	float4 color : COLOR0;\n"
-		"	float4 color2 : COLOR1;\n"
-		"};\n"
-		"\n"
-		"struct VS_OUT {\n"
-		"	float4 position : POSITION;\n"
-		"};\n"
-		"// *INDENT-ON*\n"
-		"\n"
-		"void main( VS_IN vertex, out VS_OUT result )\n"
-		"{\n"
-		"	//--------------------------------------------------------------\n"
-		"	// GPU transformation of the normal / binormal / bitangent\n"
-		"	//\n"
-		"	// multiplying with 255.1 give us the same result and is faster than floor( w * 255 + 0.5 )\n"
-		"	//--------------------------------------------------------------\n"
-		"	const float w0 = vertex.color2.x;\n"
-		"	const float w1 = vertex.color2.y;\n"
-		"	const float w2 = vertex.color2.z;\n"
-		"	const float w3 = vertex.color2.w;\n"
-		"\n"
-		"	float4 matX, matY, matZ;	// must be float4 for vec4\n"
-		"	int joint = int( vertex.color.x * 255.1 * 3.0 );\n"
-		"	matX = matrices[int( joint + 0 )] * w0;\n"
-		"	matY = matrices[int( joint + 1 )] * w0;\n"
-		"	matZ = matrices[int( joint + 2 )] * w0;\n"
-		"\n"
-		"	joint = int( vertex.color.y * 255.1 * 3.0 );\n"
-		"	matX += matrices[int( joint + 0 )] * w1;\n"
-		"	matY += matrices[int( joint + 1 )] * w1;\n"
-		"	matZ += matrices[int( joint + 2 )] * w1;\n"
-		"\n"
-		"	joint = int( vertex.color.z * 255.1 * 3.0 );\n"
-		"	matX += matrices[int( joint + 0 )] * w2;\n"
-		"	matY += matrices[int( joint + 1 )] * w2;\n"
-		"	matZ += matrices[int( joint + 2 )] * w2;\n"
-		"\n"
-		"	joint = int( vertex.color.w * 255.1 * 3.0 );\n"
-		"	matX += matrices[int( joint + 0 )] * w3;\n"
-		"	matY += matrices[int( joint + 1 )] * w3;\n"
-		"	matZ += matrices[int( joint + 2 )] * w3;\n"
-		"\n"
-		"	float4 vertexPosition = vertex.position;\n"
-		"	vertexPosition.w = 1.0;\n"
-		"\n"
-		"	float4 modelPosition;\n"
-		"	modelPosition.x = dot4( matX, vertexPosition );\n"
-		"	modelPosition.y = dot4( matY, vertexPosition );\n"
-		"	modelPosition.z = dot4( matZ, vertexPosition );\n"
-		"	modelPosition.w = vertex.position.w;\n"
-		"\n"
-		"	float4 vPos = modelPosition - rpLocalLightOrigin;\n"
-		"	vPos = ( vPos.wwww * rpLocalLightOrigin ) + vPos;\n"
-		"\n"
-		"	result.position.x = dot4( vPos, rpMVPmatrixX );\n"
-		"	result.position.y = dot4( vPos, rpMVPmatrixY );\n"
-		"	result.position.z = dot4( vPos, rpMVPmatrixZ );\n"
-		"	result.position.w = dot4( vPos, rpMVPmatrixW );\n"
-		"}\n"
-
-	},
-
+	
 	{
 		"renderprogs/builtin/debug/octahedron.ps.hlsl",
 		"/*\n"
@@ -2644,9 +2391,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = float4( envMap.xyz, 1.0f ) * fragment.color * 1.0;\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/debug/octahedron.vs.hlsl",
 		"/*\n"
@@ -2770,9 +2517,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = sRGBAToLinearRGBA( rpColor );\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/debug/lightgrid.ps.hlsl",
 		"/*\n"
@@ -2905,9 +2652,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = float4( envMap.xyz, 1.0f ) * 1.0 * fragment.color;\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/debug/lightgrid.vs.hlsl",
 		"/*\n"
@@ -3037,9 +2784,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = sRGBAToLinearRGBA( rpColor );\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/fog/blendLight.ps.hlsl",
 		"/*\n"
@@ -3102,9 +2849,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = c;\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/fog/blendLight.vs.hlsl",
 		"/*\n"
@@ -3171,9 +2918,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.texcoord1.y = 0.5;\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/fog/fog.ps.hlsl",
 		"/*\n"
@@ -3237,9 +2984,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"}\n"
 		"\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/fog/fog.vs.hlsl",
 		"/*\n"
@@ -3303,9 +3050,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.texcoord1.y = dot4( vertex.position, rpTexGen1T );\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/fog/fog_skinned.ps.hlsl",
 		"/*\n"
@@ -3369,9 +3116,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"}\n"
 		"\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/fog/fog_skinned.vs.hlsl",
 		"/*\n"
@@ -3478,9 +3225,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.texcoord1.y = dot4( modelPosition, rpTexGen1T );\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/legacy/bumpyenvironment.ps.hlsl",
 		"/*\n"
@@ -3563,9 +3310,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = float4( sRGBToLinearRGB( envMap.xyz ), 1.0f ) * fragment.color;\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/legacy/bumpyenvironment.vs.hlsl",
 		"/*\n"
@@ -3652,9 +3399,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.color = rpColor;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/legacy/bumpyenvironment_skinned.ps.hlsl",
 		"/*\n"
@@ -3738,9 +3485,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = float4( sRGBToLinearRGB( envMap.xyz ), 1.0f ) * fragment.color;\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/legacy/bumpyenvironment_skinned.vs.hlsl",
 		"/*\n"
@@ -3885,9 +3632,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.color = rpColor;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/legacy/environment.ps.hlsl",
 		"/*\n"
@@ -3951,9 +3698,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = float4( sRGBToLinearRGB( envMap.xyz ), 1.0f ) * fragment.color;\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/legacy/environment.vs.hlsl",
 		"/*\n"
@@ -4020,9 +3767,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = sRGBAToLinearRGBA( rpColor );\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/legacy/environment_skinned.ps.hlsl",
 		"/*\n"
@@ -4086,9 +3833,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = float4( sRGBToLinearRGB( envMap.xyz ), 1.0f ) * fragment.color;\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/legacy/environment_skinned.vs.hlsl",
 		"/*\n"
@@ -4203,9 +3950,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = rpColor;\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/legacy/skybox.ps.hlsl",
 		"/*\n"
@@ -4258,9 +4005,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = sRGBAToLinearRGBA( texCUBE( samp0, fragment.texcoord0 ) ) * fragment.color;\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/legacy/skybox.vs.hlsl",
 		"/*\n"
@@ -4322,9 +4069,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = ( swizzleColor( vertex.color ) * rpVertexColorModulate ) + rpVertexColorAdd;\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/legacy/wobblesky.ps.hlsl",
 		"/*\n"
@@ -4377,9 +4124,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = sRGBAToLinearRGBA( texCUBE( samp0, fragment.texcoord0 ) ) * fragment.color;\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/legacy/wobblesky.vs.hlsl",
 		"/*\n"
@@ -4444,9 +4191,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = ( swizzleColor( vertex.color ) * rpVertexColorModulate ) + rpVertexColorAdd;\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/lighting/ambient_lighting.ps.hlsl",
 		"/*\n"
@@ -4552,9 +4299,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color.w = fragment.color.a;\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/lighting/ambient_lighting.vs.hlsl",
 		"/*\n"
@@ -4760,9 +4507,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = ( swizzleColor( vertex.color ) * rpVertexColorModulate ) + rpVertexColorAdd;\n"
 		"#endif\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/lighting/ambient_lighting_IBL.ps.hlsl",
 		"/*\n"
@@ -5077,9 +4824,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color.w = fragment.color.a;\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/lighting/ambient_lighting_IBL.vs.hlsl",
 		"/*\n"
@@ -5282,9 +5029,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = ( swizzleColor( vertex.color ) * rpVertexColorModulate ) + rpVertexColorAdd;\n"
 		"#endif\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/lighting/ambient_lightgrid_IBL.ps.hlsl",
 		"/*\n"
@@ -5559,14 +5306,12 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"		gridCoord[i] = int( floor( v ) );\n"
 		"		frac[ i ] = v - gridCoord[ i ];\n"
 		"\n"
-		"		/*\n"
 		"		if( gridCoord[i] < 0 )\n"
+		"\n"
 		"		{\n"
 		"			gridCoord[i] = 0;\n"
 		"		}\n"
-		"		else\n"
-		"		*/\n"
-		"		if( gridCoord[i] >= lightGridBounds[i] - 1 )\n"
+		"		else if( gridCoord[i] >= lightGridBounds[i] - 1 )\n"
 		"		{\n"
 		"			gridCoord[i] = lightGridBounds[i] - 1;\n"
 		"		}\n"
@@ -5725,9 +5470,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color.w = fragment.color.a;\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/lighting/ambient_lightgrid_IBL.vs.hlsl",
 		"/*\n"
@@ -5926,9 +5671,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = ( swizzleColor( vertex.color ) * rpVertexColorModulate ) + rpVertexColorAdd;\n"
 		"#endif\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/lighting/interaction.ps.hlsl",
 		"/*\n"
@@ -6100,9 +5845,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color.a = 1.0;\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/lighting/interaction.vs.hlsl",
 		"/*\n"
@@ -6304,9 +6049,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = ( swizzleColor( vertex.color ) * rpVertexColorModulate ) + rpVertexColorAdd;\n"
 		"#endif\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/lighting/interactionAmbient.ps.hlsl",
 		"/*\n"
@@ -6414,9 +6159,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color.w = 1.0;\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/lighting/interactionAmbient.vs.hlsl",
 		"/*\n"
@@ -6536,9 +6281,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	//# for 1.0-color : env[16] = -1, env[17] = 1\n"
 		"	result.color = ( swizzleColor( vertex.color ) * rpVertexColorModulate ) + rpVertexColorAdd;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/lighting/interactionAmbient_skinned.ps.hlsl",
 		"/*\n"
@@ -6646,9 +6391,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color.w = 1.0;\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/lighting/interactionAmbient_skinned.vs.hlsl",
 		"/*\n"
@@ -6827,9 +6572,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	//# for 1.0-color : env[16] = -1, env[17] = 1\n"
 		"	result.color = ( swizzleColor( vertex.color ) * rpVertexColorModulate ) + rpVertexColorAdd;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/lighting/interactionSM.ps.hlsl",
 		"/*\n"
@@ -7046,15 +6791,15 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	shadowTexcoord.z = dot4( modelPosition, shadowMatrixZ );\n"
 		"	shadowTexcoord.w = dot4( modelPosition, shadowMatrixW );\n"
 		"\n"
-		"	//float bias = 0.005 * tan( acos( ldotN ) );\n"
-		"	//bias = clamp( bias, 0, 0.01 );\n"
-		"	float bias = 0.001;\n"
+		"	float bias = 0.001 * tan( acos( ldotN ) );\n"
+		"	bias = clamp( bias, 0, 0.01 ); //GK: Putting that limit seems to resolve shadow acne but still many shadows are missing\n"
+		"	//float bias = 0.001;\n"
 		"\n"
 		"	shadowTexcoord.xyz /= shadowTexcoord.w;\n"
 		"\n"
 		"	shadowTexcoord.z = shadowTexcoord.z * rpScreenCorrectionFactor.w;\n"
 		"	//shadowTexcoord.z = shadowTexcoord.z * 0.999991;\n"
-		"	//shadowTexcoord.z = shadowTexcoord.z - bias;\n"
+		"	shadowTexcoord.z = shadowTexcoord.z - bias;\n"
 		"	shadowTexcoord.w = float( shadowIndex );\n"
 		"\n"
 		"#if 0\n"
@@ -7291,9 +7036,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color.a = 1.0;\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/lighting/interactionSM.vs.hlsl",
 		"/*\n"
@@ -7518,262 +7263,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = ( swizzleColor( vertex.color ) * rpVertexColorModulate ) + rpVertexColorAdd;\n"
 		"#endif\n"
 		"}\n"
-
+		
 	},
-
-	{
-		"renderprogs/builtin/lighting/shadow.ps.hlsl",
-		"/*\n"
-		"===========================================================================\n"
-		"\n"
-		"Doom 3 BFG Edition GPL Source Code\n"
-		"Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.\n"
-		"\n"
-		"This file is part of the Doom 3 BFG Edition GPL Source Code (\"Doom 3 BFG Edition Source Code\").\n"
-		"\n"
-		"Doom 3 BFG Edition Source Code is free software: you can redistribute it and/or modify\n"
-		"it under the terms of the GNU General Public License as published by\n"
-		"the Free Software Foundation, either version 3 of the License, or\n"
-		"(at your option) any later version.\n"
-		"\n"
-		"Doom 3 BFG Edition Source Code is distributed in the hope that it will be useful,\n"
-		"but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
-		"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
-		"GNU General Public License for more details.\n"
-		"\n"
-		"You should have received a copy of the GNU General Public License\n"
-		"along with Doom 3 BFG Edition Source Code.  If not, see <http://www.gnu.org/licenses/>.\n"
-		"\n"
-		"In addition, the Doom 3 BFG Edition Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 BFG Edition Source Code.  If not, please request a copy in writing from id Software at the address below.\n"
-		"\n"
-		"If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.\n"
-		"\n"
-		"===========================================================================\n"
-		"*/\n"
-		"\n"
-		"#include \"renderprogs/global.inc.hlsl\"\n"
-		"\n"
-		"\n"
-		"// *INDENT-OFF*\n"
-		"uniform sampler2D samp0 : register(s0);\n"
-		"\n"
-		"struct PS_OUT {\n"
-		"	float4 color : COLOR;\n"
-		"};\n"
-		"// *INDENT-ON*\n"
-		"\n"
-		"void main( out PS_OUT result )\n"
-		"{\n"
-		"	result.color = rpColor;\n"
-		"}\n"
-
-	},
-
-	{
-		"renderprogs/builtin/lighting/shadow.vs.hlsl",
-		"/*\n"
-		"===========================================================================\n"
-		"\n"
-		"Doom 3 BFG Edition GPL Source Code\n"
-		"Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.\n"
-		"\n"
-		"This file is part of the Doom 3 BFG Edition GPL Source Code (\"Doom 3 BFG Edition Source Code\").\n"
-		"\n"
-		"Doom 3 BFG Edition Source Code is free software: you can redistribute it and/or modify\n"
-		"it under the terms of the GNU General Public License as published by\n"
-		"the Free Software Foundation, either version 3 of the License, or\n"
-		"(at your option) any later version.\n"
-		"\n"
-		"Doom 3 BFG Edition Source Code is distributed in the hope that it will be useful,\n"
-		"but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
-		"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
-		"GNU General Public License for more details.\n"
-		"\n"
-		"You should have received a copy of the GNU General Public License\n"
-		"along with Doom 3 BFG Edition Source Code.  If not, see <http://www.gnu.org/licenses/>.\n"
-		"\n"
-		"In addition, the Doom 3 BFG Edition Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 BFG Edition Source Code.  If not, please request a copy in writing from id Software at the address below.\n"
-		"\n"
-		"If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.\n"
-		"\n"
-		"===========================================================================\n"
-		"*/\n"
-		"\n"
-		"#include \"renderprogs/global.inc.hlsl\"\n"
-		"\n"
-		"\n"
-		"// *INDENT-OFF*\n"
-		"struct VS_IN {\n"
-		"	float4 position : POSITION;\n"
-		"};\n"
-		"\n"
-		"struct VS_OUT {\n"
-		"	float4 position : POSITION;\n"
-		"};\n"
-		"// *INDENT-ON*\n"
-		"\n"
-		"void main( VS_IN vertex, out VS_OUT result )\n"
-		"{\n"
-		"	float4 vPos = vertex.position - rpLocalLightOrigin;\n"
-		"	vPos = ( vPos.wwww * rpLocalLightOrigin ) + vPos;\n"
-		"\n"
-		"	result.position.x = dot4( vPos, rpMVPmatrixX );\n"
-		"	result.position.y = dot4( vPos, rpMVPmatrixY );\n"
-		"	result.position.z = dot4( vPos, rpMVPmatrixZ );\n"
-		"	result.position.w = dot4( vPos, rpMVPmatrixW );\n"
-		"}\n"
-
-	},
-
-	{
-		"renderprogs/builtin/lighting/shadow_skinned.ps.hlsl",
-		"/*\n"
-		"===========================================================================\n"
-		"\n"
-		"Doom 3 BFG Edition GPL Source Code\n"
-		"Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.\n"
-		"\n"
-		"This file is part of the Doom 3 BFG Edition GPL Source Code (\"Doom 3 BFG Edition Source Code\").\n"
-		"\n"
-		"Doom 3 BFG Edition Source Code is free software: you can redistribute it and/or modify\n"
-		"it under the terms of the GNU General Public License as published by\n"
-		"the Free Software Foundation, either version 3 of the License, or\n"
-		"(at your option) any later version.\n"
-		"\n"
-		"Doom 3 BFG Edition Source Code is distributed in the hope that it will be useful,\n"
-		"but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
-		"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
-		"GNU General Public License for more details.\n"
-		"\n"
-		"You should have received a copy of the GNU General Public License\n"
-		"along with Doom 3 BFG Edition Source Code.  If not, see <http://www.gnu.org/licenses/>.\n"
-		"\n"
-		"In addition, the Doom 3 BFG Edition Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 BFG Edition Source Code.  If not, please request a copy in writing from id Software at the address below.\n"
-		"\n"
-		"If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.\n"
-		"\n"
-		"===========================================================================\n"
-		"*/\n"
-		"\n"
-		"#include \"renderprogs/global.inc.hlsl\"\n"
-		"\n"
-		"\n"
-		"// *INDENT-OFF*\n"
-		"uniform sampler2D samp0 : register(s0);\n"
-		"\n"
-		"struct PS_OUT {\n"
-		"	float4 color : COLOR;\n"
-		"};\n"
-		"// *INDENT-ON*\n"
-		"\n"
-		"void main( out PS_OUT result )\n"
-		"{\n"
-		"	result.color = rpColor;\n"
-		"}\n"
-
-	},
-
-	{
-		"renderprogs/builtin/lighting/shadow_skinned.vs.hlsl",
-		"/*\n"
-		"===========================================================================\n"
-		"\n"
-		"Doom 3 BFG Edition GPL Source Code\n"
-		"Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.\n"
-		"Coypright (C) 2014 Robert Beckebans\n"
-		"\n"
-		"This file is part of the Doom 3 BFG Edition GPL Source Code (\"Doom 3 BFG Edition Source Code\").\n"
-		"\n"
-		"Doom 3 BFG Edition Source Code is free software: you can redistribute it and/or modify\n"
-		"it under the terms of the GNU General Public License as published by\n"
-		"the Free Software Foundation, either version 3 of the License, or\n"
-		"(at your option) any later version.\n"
-		"\n"
-		"Doom 3 BFG Edition Source Code is distributed in the hope that it will be useful,\n"
-		"but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
-		"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
-		"GNU General Public License for more details.\n"
-		"\n"
-		"You should have received a copy of the GNU General Public License\n"
-		"along with Doom 3 BFG Edition Source Code.  If not, see <http://www.gnu.org/licenses/>.\n"
-		"\n"
-		"In addition, the Doom 3 BFG Edition Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 BFG Edition Source Code.  If not, please request a copy in writing from id Software at the address below.\n"
-		"\n"
-		"If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.\n"
-		"\n"
-		"===========================================================================\n"
-		"*/\n"
-		"\n"
-		"#include \"renderprogs/global.inc.hlsl\"\n"
-		"\n"
-		"\n"
-		"// *INDENT-OFF*\n"
-		"uniform matrices_ubo { float4 matrices[408]; };\n"
-		"\n"
-		"struct VS_IN {\n"
-		"	float4 position : POSITION;\n"
-		"	float4 color : COLOR0;\n"
-		"	float4 color2 : COLOR1;\n"
-		"};\n"
-		"\n"
-		"struct VS_OUT {\n"
-		"	float4 position : POSITION;\n"
-		"};\n"
-		"// *INDENT-ON*\n"
-		"\n"
-		"void main( VS_IN vertex, out VS_OUT result )\n"
-		"{\n"
-		"	//--------------------------------------------------------------\n"
-		"	// GPU transformation of the normal / binormal / bitangent\n"
-		"	//\n"
-		"	// multiplying with 255.1 give us the same result and is faster than floor( w * 255 + 0.5 )\n"
-		"	//--------------------------------------------------------------\n"
-		"	const float w0 = vertex.color2.x;\n"
-		"	const float w1 = vertex.color2.y;\n"
-		"	const float w2 = vertex.color2.z;\n"
-		"	const float w3 = vertex.color2.w;\n"
-		"\n"
-		"	float4 matX, matY, matZ;	// must be float4 for vec4\n"
-		"	int joint = int( vertex.color.x * 255.1 * 3.0 );\n"
-		"	matX = matrices[int( joint + 0 )] * w0;\n"
-		"	matY = matrices[int( joint + 1 )] * w0;\n"
-		"	matZ = matrices[int( joint + 2 )] * w0;\n"
-		"\n"
-		"	joint = int( vertex.color.y * 255.1 * 3.0 );\n"
-		"	matX += matrices[int( joint + 0 )] * w1;\n"
-		"	matY += matrices[int( joint + 1 )] * w1;\n"
-		"	matZ += matrices[int( joint + 2 )] * w1;\n"
-		"\n"
-		"	joint = int( vertex.color.z * 255.1 * 3.0 );\n"
-		"	matX += matrices[int( joint + 0 )] * w2;\n"
-		"	matY += matrices[int( joint + 1 )] * w2;\n"
-		"	matZ += matrices[int( joint + 2 )] * w2;\n"
-		"\n"
-		"	joint = int( vertex.color.w * 255.1 * 3.0 );\n"
-		"	matX += matrices[int( joint + 0 )] * w3;\n"
-		"	matY += matrices[int( joint + 1 )] * w3;\n"
-		"	matZ += matrices[int( joint + 2 )] * w3;\n"
-		"\n"
-		"	float4 vertexPosition = vertex.position;\n"
-		"	vertexPosition.w = 1.0;\n"
-		"\n"
-		"	float4 modelPosition;\n"
-		"	modelPosition.x = dot4( matX, vertexPosition );\n"
-		"	modelPosition.y = dot4( matY, vertexPosition );\n"
-		"	modelPosition.z = dot4( matZ, vertexPosition );\n"
-		"	modelPosition.w = vertex.position.w;\n"
-		"\n"
-		"	float4 vPos = modelPosition - rpLocalLightOrigin;\n"
-		"	vPos = ( vPos.wwww * rpLocalLightOrigin ) + vPos;\n"
-		"\n"
-		"	result.position.x = dot4( vPos, rpMVPmatrixX );\n"
-		"	result.position.y = dot4( vPos, rpMVPmatrixY );\n"
-		"	result.position.z = dot4( vPos, rpMVPmatrixZ );\n"
-		"	result.position.w = dot4( vPos, rpMVPmatrixW );\n"
-		"}\n"
-
-	},
-
+	
 	{
 		"renderprogs/builtin/post/fxaa.ps.hlsl",
 		"/*\n"
@@ -7890,9 +7382,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.color = colorSample;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/post/fxaa.vs.hlsl",
 		"/*\n"
@@ -7946,9 +7438,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.position = vertex.position;\n"
 		"	result.texcoord0 =  vertex.texcoord;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/post/hdr_glare_chromatic.ps.hlsl",
 		"/*\n"
@@ -8083,9 +7575,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	//result.color = float4( sumColor / sumSpectrum, 1.0 );\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/post/hdr_glare_chromatic.vs.hlsl",
 		"/*\n"
@@ -8144,9 +7636,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	//result.position.w = dot4( vertex.position, rpMVPmatrixW );\n"
 		"	result.texcoord0 =  vertex.texcoord;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/post/motionBlur.ps.hlsl",
 		"/*\n"
@@ -8250,9 +7742,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = float4( sum * invScale, 1.0 );\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/post/motionBlur.vs.hlsl",
 		"/*\n"
@@ -8303,9 +7795,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.position = vertex.position;\n"
 		"	result.texcoord0 = vertex.texcoord;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/post/postprocess.ps.hlsl",
 		"/*\n"
@@ -8933,9 +8425,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = color;\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/post/postprocess.vs.hlsl",
 		"/*\n"
@@ -8994,9 +8486,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	//result.position.w = dot4( vertex.position, rpMVPmatrixW );\n"
 		"	result.texcoord0 =  vertex.texcoord;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/post/screen.ps.hlsl",
 		"/*\n"
@@ -9054,9 +8546,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = color;\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/post/screen.vs.hlsl",
 		"/*\n"
@@ -9115,9 +8607,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	//result.position.w = dot4( vertex.position, rpMVPmatrixW );\n"
 		"	result.texcoord0 =  vertex.texcoord;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/post/SMAA_blending_weight_calc.ps.hlsl",
 		"/*\n"
@@ -9206,9 +8698,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = color;\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/post/SMAA_blending_weight_calc.vs.hlsl",
 		"/*\n"
@@ -9286,9 +8778,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.texcoord4.st = pixcoord;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/post/SMAA_edge_detection.ps.hlsl",
 		"/*\n"
@@ -9368,9 +8860,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = color;\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/post/SMAA_edge_detection.vs.hlsl",
 		"/*\n"
@@ -9445,9 +8937,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.texcoord2 = offset[1];\n"
 		"	result.texcoord3 = offset[2];\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/post/SMAA_final.ps.hlsl",
 		"/*\n"
@@ -9525,9 +9017,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = color;\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/post/SMAA_final.vs.hlsl",
 		"/*\n"
@@ -9595,9 +9087,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.texcoord1 = offset;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/post/tonemap.ps.hlsl",
 		"/*\n"
@@ -9871,9 +9363,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"#endif\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/post/tonemap.vs.hlsl",
 		"/*\n"
@@ -9932,9 +9424,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	//result.position.w = dot4( vertex.position, rpMVPmatrixW );\n"
 		"	result.texcoord0 =  vertex.texcoord;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/SSAO/AmbientOcclusion_AO.ps.hlsl",
 		"/**\n"
@@ -10410,9 +9902,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"#endif\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/SSAO/AmbientOcclusion_AO.vs.hlsl",
 		"/*\n"
@@ -10465,9 +9957,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.position = vertex.position;\n"
 		"	result.texcoord0 = vertex.texcoord;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/SSAO/AmbientOcclusion_blur.ps.hlsl",
 		"/**\n"
@@ -10863,9 +10355,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"#endif\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/SSAO/AmbientOcclusion_blur.vs.hlsl",
 		"/*\n"
@@ -10918,9 +10410,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.position = vertex.position;\n"
 		"	result.texcoord0 = vertex.texcoord;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/SSAO/AmbientOcclusion_minify.ps.hlsl",
 		"/**\n"
@@ -11007,9 +10499,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"#endif\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/SSAO/AmbientOcclusion_minify.vs.hlsl",
 		"/*\n"
@@ -11062,9 +10554,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.position = vertex.position;\n"
 		"	result.texcoord0 = vertex.texcoord;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/SSGI/DeepGBufferRadiosity_radiosity.ps.hlsl",
 		"\n"
@@ -11626,9 +11118,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"#endif\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/SSGI/DeepGBufferRadiosity_radiosity.vs.hlsl",
 		"/*\n"
@@ -11681,9 +11173,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.position = vertex.position;\n"
 		"	result.texcoord0 = vertex.texcoord;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/SSGI/DeepGBufferRadiosity_blur.ps.hlsl",
 		"/**\n"
@@ -12066,9 +11558,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	blurResult = sum / ( totalWeight + epsilon );\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/SSGI/DeepGBufferRadiosity_blur.vs.hlsl",
 		"/*\n"
@@ -12121,9 +11613,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.position = vertex.position;\n"
 		"	result.texcoord0 = vertex.texcoord;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/video/bink.ps.hlsl",
 		"/*\n"
@@ -12193,9 +11685,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.color = sRGBAToLinearRGBA( color );\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/video/bink.vs.hlsl",
 		"/*\n"
@@ -12253,9 +11745,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.texcoord0 = vertex.texcoord;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/video/bink_gui.ps.hlsl",
 		"/*\n"
@@ -12328,9 +11820,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color.xyz = color.xyz * color.w;\n"
 		"	result.color.w = color.w;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/video/bink_gui.vs.hlsl",
 		"/*\n"
@@ -12395,9 +11887,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color =  swizzleColor( vertex.color );\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/color.ps.hlsl",
 		"/*\n"
@@ -12443,9 +11935,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"{\n"
 		"	result.color = rpColor;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/color.vs.hlsl",
 		"/*\n"
@@ -12550,9 +12042,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.position.w = dot4( vertex.position, rpMVPmatrixW );\n"
 		"#endif\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/depth.ps.hlsl",
 		"/*\n"
@@ -12598,9 +12090,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"{\n"
 		"	result.color = float4( 0.0, 0.0, 0.0, 1.0 );\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/depth.vs.hlsl",
 		"/*\n"
@@ -12651,9 +12143,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.position.z = dot4( vertex.position, rpMVPmatrixZ );\n"
 		"	result.position.w = dot4( vertex.position, rpMVPmatrixW );\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/depth_skinned.ps.hlsl",
 		"/*\n"
@@ -12699,9 +12191,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"{\n"
 		"	result.color = float4( 0.0, 0.0, 0.0, 1.0 );\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/depth_skinned.vs.hlsl",
 		"/*\n"
@@ -12797,9 +12289,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.position.z = dot4( modelPosition, rpMVPmatrixZ );\n"
 		"	result.position.w = dot4( modelPosition, rpMVPmatrixW );\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/gbuffer.ps.hlsl",
 		"/*\n"
@@ -12888,9 +12380,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color.a = 1.0;\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/gbuffer.vs.hlsl",
 		"/*\n"
@@ -13076,9 +12568,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = ( swizzleColor( vertex.color ) * rpVertexColorModulate ) + rpVertexColorAdd;\n"
 		"#endif\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/gui.ps.hlsl",
 		"/*\n"
@@ -13133,9 +12625,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color.xyz = color.xyz * color.w;\n"
 		"	result.color.w = color.w;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/gui.vs.hlsl",
 		"/*\n"
@@ -13200,9 +12692,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color =  swizzleColor( vertex.color );\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/texture.ps.hlsl",
 		"/*\n"
@@ -13255,9 +12747,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	//result.color = textureLod( samp0, fragment.texcoord0, 2.0 ) * rpColor;\n"
 		"	//result.color = float4( 0.0, 1.0, 0.0, 1.0 ) * rpColor;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/texture.vs.hlsl",
 		"/*\n"
@@ -13325,9 +12817,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"		result.texcoord0.y = dot4( vertex.texcoord.xy, rpTextureMatrixT );\n"
 		"	}\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/texture_color.ps.hlsl",
 		"/*\n"
@@ -13381,9 +12873,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	clip( color.a - rpAlphaTest.x );\n"
 		"	result.color = sRGBAToLinearRGBA( color );\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/texture_color.vs.hlsl",
 		"/*\n"
@@ -13455,9 +12947,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	float4 vertexColor = ( swizzleColor( vertex.color ) * rpVertexColorModulate ) + rpVertexColorAdd;\n"
 		"	result.color =  vertexColor * rpColor;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/texture_color_skinned.ps.hlsl",
 		"/*\n"
@@ -13511,9 +13003,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	clip( color.a - rpAlphaTest.x );\n"
 		"	result.color = sRGBAToLinearRGBA( color );\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/texture_color_skinned.vs.hlsl",
 		"/*\n"
@@ -13626,9 +13118,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	float4 vertexColor = ( swizzleColor( vertex.color ) * rpVertexColorModulate ) + rpVertexColorAdd;\n"
 		"	result.color =  vertexColor * rpColor;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/texture_color_texgen.ps.hlsl",
 		"/*\n"
@@ -13688,9 +13180,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.color = sRGBAToLinearRGBA( texSample ) * fragment.color;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/texture_color_texgen.vs.hlsl",
 		"/*\n"
@@ -13763,9 +13255,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	float4 vertexColor = ( swizzleColor( vertex.color ) * rpVertexColorModulate ) + rpVertexColorAdd;\n"
 		"	result.color =  vertexColor * rpColor;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/vertex_color.ps.hlsl",
 		"/*\n"
@@ -13818,9 +13310,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"{\n"
 		"	result.color = sRGBAToLinearRGBA( fragment.color );\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/builtin/vertex_color.vs.hlsl",
 		"/*\n"
@@ -13881,9 +13373,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.color =  swizzleColor( vertex.color );\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/bloodorb1_capture.ps.hlsl",
 		"/*\n"
@@ -13942,9 +13434,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.color = lerp( accumSample, currentRenderSample, maskSample.a );\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/bloodorb1_capture.vs.hlsl",
 		"/*\n"
@@ -14010,9 +13502,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	// pass through texcoords\n"
 		"	result.texcoord1 = vertex.texcoord;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/bloodorb2_capture.ps.hlsl",
 		"/*\n"
@@ -14077,9 +13569,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.color = lerp( accumSample, currentRenderSample, maskSample.a );\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/bloodorb2_capture.vs.hlsl",
 		"/*\n"
@@ -14155,9 +13647,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	// pass through for currentrender\n"
 		"	result.texcoord2 = vertex.texcoord;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/bloodorb3_capture.ps.hlsl",
 		"/*\n"
@@ -14234,9 +13726,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	accumColor = lerp( accumColor, currentRenderSample, maskSample.a );\n"
 		"	result.color = accumColor;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/bloodorb3_capture.vs.hlsl",
 		"/*\n"
@@ -14319,9 +13811,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	const float4 colorFactor = rpUser2;\n"
 		"	result.texcoord4 = colorFactor.xx;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/bloodorb_draw.ps.hlsl",
 		"/*\n"
@@ -14379,9 +13871,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.color = lerp( accumSample, currentRenderSample, maskSample.a );\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/bloodorb_draw.vs.hlsl",
 		"/*\n"
@@ -14440,9 +13932,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	// pass through texcoords\n"
 		"	result.texcoord0 = vertex.texcoord;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/colorProcess.ps.hlsl",
 		"/*\n"
@@ -14497,9 +13989,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = lerp( src, target, fragment.texcoord0.z );\n"
 		"}\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/colorProcess.vs.hlsl",
 		"/*\n"
@@ -14569,9 +14061,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"}\n"
 		"\n"
 		"\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/enviroSuit.ps.hlsl",
 		"/*\n"
@@ -14635,9 +14127,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = tex2D( samp0, screenTexCoord );\n"
 		"\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/enviroSuit.vs.hlsl",
 		"/*\n"
@@ -14705,9 +14197,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	const float4 deformMagnitude = rpUser1;\n"
 		"	result.color = deformMagnitude;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/heatHazeWithMask.ps.hlsl",
 		"/*\n"
@@ -14780,9 +14272,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.color = ( tex2D( samp0, screenTexCoord ) );\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/heatHazeWithMask.vs.hlsl",
 		"/*\n"
@@ -14879,9 +14371,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	const float4 deformMagnitude = rpUser1;\n"
 		"	result.texcoord2 = x * deformMagnitude;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/heatHazeWithMaskAndVertex.ps.hlsl",
 		"/*\n"
@@ -14956,9 +14448,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.color = ( tex2D( samp0, screenTexCoord ) );\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/heatHazeWithMaskAndVertex.vs.hlsl",
 		"/*\n"
@@ -15057,9 +14549,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.texcoord2 = x * deformMagnitude;\n"
 		"	result.color = swizzleColor( vertex.color );\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/heathaze.ps.hlsl",
 		"/*\n"
@@ -15124,9 +14616,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	// load the screen render\n"
 		"	result.color = ( tex2D( samp0, screenTexCoord.xy ) );\n"
 		"}\n"
-
+		
 	},
-
+	
 	{
 		"renderprogs/heathaze.vs.hlsl",
 		"/*\n"
@@ -15221,9 +14713,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	const float4 deformMagnitude = rpUser1;\n"
 		"	result.texcoord1 = x * deformMagnitude;\n"
 		"}\n"
-
+		
 	},
-
+	
 	{0, 0},
-
+	
 };

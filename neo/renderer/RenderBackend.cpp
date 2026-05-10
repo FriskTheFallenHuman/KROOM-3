@@ -5631,17 +5631,6 @@ void idRenderBackend::DrawView( const void* data )
 		return;
 	}
 
-	// skip render context sets the wgl context to NULL,
-	// which should factor out the API cost, under the assumption
-	// that all gl calls just return if the context isn't valid
-
-	// RB: not really needed
-	//if( r_skipRenderContext.GetBool() && backEnd.viewDef->viewEntitys )
-	//{
-	//	GLimp_DeactivateContext();
-	//}
-	// RB end
-
 	pc.c_surfaces += viewDef->numDrawSurfs;
 
 	DBG_ShowOverdraw();
@@ -5650,15 +5639,6 @@ void idRenderBackend::DrawView( const void* data )
 	DrawViewInternal( cmd->viewDef );
 
 	MotionBlur();
-
-	// restore the context for 2D drawing if we were stubbing it out
-	// RB: not really needed
-	//if( r_skipRenderContext.GetBool() && backEnd.viewDef->viewEntitys )
-	//{
-	//	GLimp_ActivateContext();
-	//	GL_SetDefaultState();
-	//}
-	// RB end
 }
 
 /*
