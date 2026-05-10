@@ -1565,15 +1565,10 @@ void idRenderBackend::CheckCVars()
 	{
 		bool needShaderReload = false;
 
-		if( r_usePBR.GetBool() && r_useHalfLambertLighting.GetBool() )
-		{
-			r_useHalfLambertLighting.SetBool( false );
-
-			needShaderReload = true;
-		}
-
 		needShaderReload |= r_useHDR.IsModified();
 		needShaderReload |= r_pbrDebug.IsModified();
+		needShaderReload |= r_useHalfLambertLighting.IsModified();
+		needShaderReload |= r_usePBR.IsModified();
 
 		r_usePBR.ClearModified();
 		r_useHDR.ClearModified();
