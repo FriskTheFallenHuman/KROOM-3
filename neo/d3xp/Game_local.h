@@ -441,6 +441,50 @@ public:
 		SyncPlayersWithLobbyUsers( false );
 	}
 
+	virtual void			SetInterpolation( const float fraction, const int serverGameMS, const int ssStartTime, const int ssEndTime );
+
+	virtual void			SetServerGameTimeMs( const int time );
+	virtual int				GetServerGameTimeMs() const;
+
+	virtual bool			GetActiveTonemapState( int& preset, float& exposure, float& saturation, float& contrast, float& hdrKey );
+
+	virtual bool			InhibitControls();
+	virtual bool			IsPDAOpen() const;
+	virtual bool			IsPlayerChatting() const;
+
+	// Creates leaderboards for each map/mode defined.
+	virtual void			Leaderboards_Init();
+	virtual void			Leaderboards_Shutdown();
+
+	// MAIN MENU FUNCTIONS
+	virtual void			Shell_Init( const char* filename, idSoundWorld* sw );
+	virtual void			Shell_InitMenu();
+	virtual bool			Shell_IsLoadingActive() const;
+	virtual void			Shell_LoadingGui( const char* mapName, bool& hellMap );
+	virtual void			Shell_RenderLoadingShell();
+	virtual void			Shell_Cleanup( bool onlyLoading = false );
+	virtual void			Shell_Show( bool show );
+	virtual void			Shell_ClosePause();
+	virtual void			Shell_CreateMenu( bool inGame );
+	virtual bool			Shell_IsActive() const;
+	virtual bool			Shell_HandleGuiEvent( const sysEvent_t* sev );
+	virtual void			Shell_Render();
+	virtual void			Shell_ResetMenu();
+	virtual void			Shell_SyncWithSession() ;
+	virtual void			Shell_SetCanContinue( bool valid );
+	virtual void			Shell_UpdateSavedGames();
+	virtual void			Shell_UpdateClientCountdown( int countdown );
+	virtual void			Shell_UpdateLeaderboard( const idLeaderboardCallback* callback );
+	virtual void			Shell_SetGameComplete();
+	virtual bool			Shell_IsShowingIntro();
+	virtual bool			Shell_IsGameComplete();
+
+	virtual bool			SkipCinematicScene();
+	virtual bool			CheckInCinematic();
+
+	virtual void			StartDemoPlayback( idRenderWorld* renderworld );
+	virtual bool			ProcessDemoCommand( idDemoFile* readDemo );
+
 	// ---------------------- Public idGameLocal Interface -------------------
 
 	void					Printf( VERIFY_FORMAT_STRING const char* fmt, ... ) const;
@@ -552,8 +596,6 @@ public:
 	void					ServerWriteInitialReliableMessages( int clientNum, lobbyUserID_t lobbyUserID );
 	void					ServerSendNetworkSyncCvars();
 
-	virtual void			SetInterpolation( const float fraction, const int serverGameMS, const int ssStartTime, const int ssEndTime );
-
 	void					ServerProcessReliableMessage( int clientNum, int type, const idBitMsg& msg );
 	void					ClientProcessReliableMessage( int type, const idBitMsg& msg );
 
@@ -566,9 +608,6 @@ public:
 	{
 		return netInterpolationInfo.ssStartTime;
 	}
-
-	virtual void			SetServerGameTimeMs( const int time );
-	virtual int				GetServerGameTimeMs() const;
 
 	idEntity* 				FindPredictedEntity( uint32 predictedKey, idTypeInfo* type );
 	uint32					GeneratePredictionKey( idWeapon* weapon, idPlayer* playerAttacker, int overrideKey );
@@ -590,42 +629,6 @@ public:
 		return nextGibTime;
 	};
 
-	virtual bool				InhibitControls();
-	virtual bool				IsPDAOpen() const;
-	virtual bool				IsPlayerChatting() const;
-
-	// Creates leaderboards for each map/mode defined.
-	virtual void				Leaderboards_Init();
-	virtual void				Leaderboards_Shutdown();
-
-	// MAIN MENU FUNCTIONS
-	virtual void				Shell_Init( const char* filename, idSoundWorld* sw );
-	virtual void				Shell_InitMenu();
-	virtual bool				Shell_IsLoadingActive() const;
-	virtual void				Shell_LoadingGui( const char* mapName, bool& hellMap );
-	virtual void				Shell_RenderLoadingShell();
-	virtual void				Shell_Cleanup( bool onlyLoading = false );
-	virtual void				Shell_Show( bool show );
-	virtual void				Shell_ClosePause();
-	virtual void				Shell_CreateMenu( bool inGame );
-	virtual bool				Shell_IsActive() const;
-	virtual bool				Shell_HandleGuiEvent( const sysEvent_t* sev );
-	virtual void				Shell_Render();
-	virtual void				Shell_ResetMenu();
-	virtual void				Shell_SyncWithSession() ;
-	virtual void				Shell_SetCanContinue( bool valid );
-	virtual void				Shell_UpdateSavedGames();
-	virtual void				Shell_UpdateClientCountdown( int countdown );
-	virtual void				Shell_UpdateLeaderboard( const idLeaderboardCallback* callback );
-	virtual void				Shell_SetGameComplete();
-	virtual bool				Shell_IsShowingIntro();
-	virtual bool				Shell_IsGameComplete();
-
-	virtual bool				SkipCinematicScene();
-	virtual bool				CheckInCinematic();
-
-	virtual void					StartDemoPlayback( idRenderWorld* renderworld );
-
 	void							DemoWriteGameInfo();
 
 	enum gameDemoCommand_t
@@ -633,7 +636,6 @@ public:
 		GCMD_UNKNOWN,
 		GCMD_GAMETIME,
 	};
-	virtual bool					ProcessDemoCommand( idDemoFile* readDemo );
 
 	void					Shell_ClearRepeater();
 
@@ -932,6 +934,7 @@ const int	CINEMATIC_SKIP_DELAY	= SEC2MS( 2.0f );
 #include "Weapon.h"
 #include "Light.h"
 #include "EnvironmentProbe.h"
+#include "ToneMapController.h"
 #include "WorldSpawn.h"
 #include "Item.h"
 #include "PlayerView.h"

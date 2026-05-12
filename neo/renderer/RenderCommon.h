@@ -1201,6 +1201,10 @@ extern idCVar r_useLightGrid;
 extern idCVar r_exposure;
 
 extern idCVar r_useMaskedOcclusionCulling;
+
+extern idCVar r_tonemapPreset;
+extern idCVar r_tonemapSaturation;
+extern idCVar r_tonemapContrast;
 // RB end
 
 /*

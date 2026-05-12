@@ -310,8 +310,11 @@ idCVar r_useLightGrid( "r_useLightGrid", "1", CVAR_RENDERER | CVAR_BOOL, "" );
 idCVar r_exposure( "r_exposure", "0.5", CVAR_ARCHIVE | CVAR_RENDERER | CVAR_FLOAT, "HDR exposure or LDR brightness [0.0 .. 1.0]", 0.0f, 1.0f );
 
 idCVar r_useMaskedOcclusionCulling( "r_useMaskedOcclusionCulling", "1", CVAR_RENDERER | CVAR_BOOL, "SIMD optimized software culling by Intel" );
-
 // RB end
+
+idCVar r_tonemapPreset( "r_tonemapPreset", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "0=ACES, 1=Filmic Blender, 2=AgX, 3=Reinhard, 4=Uncharted2, 5=None", 0, 5 );
+idCVar r_tonemapSaturation( "r_tonemapSaturation", "1.0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "color saturation after tonemapping [0=grayscale, 1=natural, 2=boosted]", 0.0f, 3.0f );
+idCVar r_tonemapContrast( "r_tonemapContrast", "1.0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "contrast power curve after tonemapping", 0.1f, 3.0f );
 
 const char* fileExten[4] = { "tga", "png", "jpg", "exr" };
 const char* envDirection[6] = { "_px", "_nx", "_py", "_ny", "_pz", "_nz" };

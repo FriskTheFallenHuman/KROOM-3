@@ -475,9 +475,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	return color;\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/skinning.inc.hlsl",
 		"/*\n"
@@ -558,9 +558,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"result.position.y = dot4( modelPosition, rpMVPmatrixY );\n"
 		"result.position.z = dot4( modelPosition, rpMVPmatrixZ );\n"
 		"result.position.w = dot4( modelPosition, rpMVPmatrixW );\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/post/SMAA.inc.hlsl",
 		"/**\n"
@@ -2011,9 +2011,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"//-----------------------------------------------------------------------------\n"
 		"#endif // SMAA_INCLUDE_PS\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/BRDF.inc.hlsl",
 		"/*\n"
@@ -2179,9 +2179,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/debug/debug_shadowmap.ps.hlsl",
 		"/*\n"
@@ -2239,9 +2239,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.color = texture( samp0, tc );// * rpColor;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/debug/debug_shadowmap.vs.hlsl",
 		"/*\n"
@@ -2309,9 +2309,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"		result.texcoord0.y = dot4( vertex.texcoord.xy, rpTextureMatrixT );\n"
 		"	}\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/debug/octahedron.ps.hlsl",
 		"/*\n"
@@ -2391,9 +2391,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = float4( envMap.xyz, 1.0f ) * fragment.color * 1.0;\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/debug/octahedron.vs.hlsl",
 		"/*\n"
@@ -2517,9 +2517,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = sRGBAToLinearRGBA( rpColor );\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/debug/lightgrid.ps.hlsl",
 		"/*\n"
@@ -2652,9 +2652,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = float4( envMap.xyz, 1.0f ) * 1.0 * fragment.color;\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/debug/lightgrid.vs.hlsl",
 		"/*\n"
@@ -2784,9 +2784,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = sRGBAToLinearRGBA( rpColor );\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/fog/blendLight.ps.hlsl",
 		"/*\n"
@@ -2849,9 +2849,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = c;\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/fog/blendLight.vs.hlsl",
 		"/*\n"
@@ -2918,9 +2918,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.texcoord1.y = 0.5;\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/fog/fog.ps.hlsl",
 		"/*\n"
@@ -2984,9 +2984,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"}\n"
 		"\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/fog/fog.vs.hlsl",
 		"/*\n"
@@ -3050,9 +3050,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.texcoord1.y = dot4( vertex.position, rpTexGen1T );\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/fog/fog_skinned.ps.hlsl",
 		"/*\n"
@@ -3116,9 +3116,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"}\n"
 		"\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/fog/fog_skinned.vs.hlsl",
 		"/*\n"
@@ -3225,9 +3225,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.texcoord1.y = dot4( modelPosition, rpTexGen1T );\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/legacy/bumpyenvironment.ps.hlsl",
 		"/*\n"
@@ -3310,9 +3310,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = float4( sRGBToLinearRGB( envMap.xyz ), 1.0f ) * fragment.color;\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/legacy/bumpyenvironment.vs.hlsl",
 		"/*\n"
@@ -3399,9 +3399,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.color = rpColor;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/legacy/bumpyenvironment_skinned.ps.hlsl",
 		"/*\n"
@@ -3485,9 +3485,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = float4( sRGBToLinearRGB( envMap.xyz ), 1.0f ) * fragment.color;\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/legacy/bumpyenvironment_skinned.vs.hlsl",
 		"/*\n"
@@ -3632,9 +3632,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.color = rpColor;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/legacy/environment.ps.hlsl",
 		"/*\n"
@@ -3698,9 +3698,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = float4( sRGBToLinearRGB( envMap.xyz ), 1.0f ) * fragment.color;\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/legacy/environment.vs.hlsl",
 		"/*\n"
@@ -3767,9 +3767,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = sRGBAToLinearRGBA( rpColor );\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/legacy/environment_skinned.ps.hlsl",
 		"/*\n"
@@ -3833,9 +3833,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = float4( sRGBToLinearRGB( envMap.xyz ), 1.0f ) * fragment.color;\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/legacy/environment_skinned.vs.hlsl",
 		"/*\n"
@@ -3950,9 +3950,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = rpColor;\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/legacy/skybox.ps.hlsl",
 		"/*\n"
@@ -4005,9 +4005,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = sRGBAToLinearRGBA( texCUBE( samp0, fragment.texcoord0 ) ) * fragment.color;\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/legacy/skybox.vs.hlsl",
 		"/*\n"
@@ -4069,9 +4069,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = ( swizzleColor( vertex.color ) * rpVertexColorModulate ) + rpVertexColorAdd;\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/legacy/wobblesky.ps.hlsl",
 		"/*\n"
@@ -4124,9 +4124,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = sRGBAToLinearRGBA( texCUBE( samp0, fragment.texcoord0 ) ) * fragment.color;\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/legacy/wobblesky.vs.hlsl",
 		"/*\n"
@@ -4191,9 +4191,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = ( swizzleColor( vertex.color ) * rpVertexColorModulate ) + rpVertexColorAdd;\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/lighting/ambient_lighting.ps.hlsl",
 		"/*\n"
@@ -4299,9 +4299,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color.w = fragment.color.a;\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/lighting/ambient_lighting.vs.hlsl",
 		"/*\n"
@@ -4507,9 +4507,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = ( swizzleColor( vertex.color ) * rpVertexColorModulate ) + rpVertexColorAdd;\n"
 		"#endif\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/lighting/ambient_lighting_IBL.ps.hlsl",
 		"/*\n"
@@ -4824,9 +4824,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color.w = fragment.color.a;\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/lighting/ambient_lighting_IBL.vs.hlsl",
 		"/*\n"
@@ -5029,9 +5029,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = ( swizzleColor( vertex.color ) * rpVertexColorModulate ) + rpVertexColorAdd;\n"
 		"#endif\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/lighting/ambient_lightgrid_IBL.ps.hlsl",
 		"/*\n"
@@ -5470,9 +5470,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color.w = fragment.color.a;\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/lighting/ambient_lightgrid_IBL.vs.hlsl",
 		"/*\n"
@@ -5671,9 +5671,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = ( swizzleColor( vertex.color ) * rpVertexColorModulate ) + rpVertexColorAdd;\n"
 		"#endif\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/lighting/interaction.ps.hlsl",
 		"/*\n"
@@ -5845,9 +5845,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color.a = 1.0;\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/lighting/interaction.vs.hlsl",
 		"/*\n"
@@ -6049,9 +6049,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = ( swizzleColor( vertex.color ) * rpVertexColorModulate ) + rpVertexColorAdd;\n"
 		"#endif\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/lighting/interactionAmbient.ps.hlsl",
 		"/*\n"
@@ -6159,9 +6159,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color.w = 1.0;\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/lighting/interactionAmbient.vs.hlsl",
 		"/*\n"
@@ -6281,9 +6281,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	//# for 1.0-color : env[16] = -1, env[17] = 1\n"
 		"	result.color = ( swizzleColor( vertex.color ) * rpVertexColorModulate ) + rpVertexColorAdd;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/lighting/interactionAmbient_skinned.ps.hlsl",
 		"/*\n"
@@ -6391,9 +6391,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color.w = 1.0;\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/lighting/interactionAmbient_skinned.vs.hlsl",
 		"/*\n"
@@ -6572,9 +6572,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	//# for 1.0-color : env[16] = -1, env[17] = 1\n"
 		"	result.color = ( swizzleColor( vertex.color ) * rpVertexColorModulate ) + rpVertexColorAdd;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/lighting/interactionSM.ps.hlsl",
 		"/*\n"
@@ -7036,9 +7036,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color.a = 1.0;\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/lighting/interactionSM.vs.hlsl",
 		"/*\n"
@@ -7263,9 +7263,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = ( swizzleColor( vertex.color ) * rpVertexColorModulate ) + rpVertexColorAdd;\n"
 		"#endif\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/post/fxaa.ps.hlsl",
 		"/*\n"
@@ -7382,9 +7382,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.color = colorSample;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/post/fxaa.vs.hlsl",
 		"/*\n"
@@ -7438,9 +7438,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.position = vertex.position;\n"
 		"	result.texcoord0 =  vertex.texcoord;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/post/hdr_glare_chromatic.ps.hlsl",
 		"/*\n"
@@ -7575,9 +7575,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	//result.color = float4( sumColor / sumSpectrum, 1.0 );\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/post/hdr_glare_chromatic.vs.hlsl",
 		"/*\n"
@@ -7636,9 +7636,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	//result.position.w = dot4( vertex.position, rpMVPmatrixW );\n"
 		"	result.texcoord0 =  vertex.texcoord;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/post/motionBlur.ps.hlsl",
 		"/*\n"
@@ -7742,9 +7742,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = float4( sum * invScale, 1.0 );\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/post/motionBlur.vs.hlsl",
 		"/*\n"
@@ -7795,9 +7795,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.position = vertex.position;\n"
 		"	result.texcoord0 = vertex.texcoord;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/post/postprocess.ps.hlsl",
 		"/*\n"
@@ -8425,9 +8425,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = color;\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/post/postprocess.vs.hlsl",
 		"/*\n"
@@ -8486,9 +8486,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	//result.position.w = dot4( vertex.position, rpMVPmatrixW );\n"
 		"	result.texcoord0 =  vertex.texcoord;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/post/screen.ps.hlsl",
 		"/*\n"
@@ -8546,9 +8546,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = color;\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/post/screen.vs.hlsl",
 		"/*\n"
@@ -8607,9 +8607,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	//result.position.w = dot4( vertex.position, rpMVPmatrixW );\n"
 		"	result.texcoord0 =  vertex.texcoord;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/post/SMAA_blending_weight_calc.ps.hlsl",
 		"/*\n"
@@ -8698,9 +8698,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = color;\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/post/SMAA_blending_weight_calc.vs.hlsl",
 		"/*\n"
@@ -8778,9 +8778,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.texcoord4.st = pixcoord;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/post/SMAA_edge_detection.ps.hlsl",
 		"/*\n"
@@ -8860,9 +8860,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = color;\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/post/SMAA_edge_detection.vs.hlsl",
 		"/*\n"
@@ -8937,9 +8937,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.texcoord2 = offset[1];\n"
 		"	result.texcoord3 = offset[2];\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/post/SMAA_final.ps.hlsl",
 		"/*\n"
@@ -9017,9 +9017,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = color;\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/post/SMAA_final.vs.hlsl",
 		"/*\n"
@@ -9087,9 +9087,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.texcoord1 = offset;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/post/tonemap.ps.hlsl",
 		"/*\n"
@@ -9127,6 +9127,7 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"// *INDENT-OFF*\n"
 		"uniform sampler2D	samp0 : register(s0); // texture 0 is _currentRender\n"
 		"uniform sampler2D	samp1 : register(s1); // texture 1 is heatmap\n"
+		"uniform float4  rpUser0 : register(c128); // x=preset, y=saturation, z=contrast, w=exposure_bias\n"
 		"\n"
 		"struct PS_IN\n"
 		"{\n"
@@ -9140,20 +9141,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"};\n"
 		"// *INDENT-ON*\n"
 		"\n"
-		"float3 Uncharted2Tonemap( float3 x )\n"
-		"{\n"
-		"	float A = 0.22; // shoulder strength\n"
-		"	float B = 0.3;	// linear strength\n"
-		"	float C = 0.10;	// linear angle\n"
-		"	float D = 0.20;	// toe strength\n"
-		"	float E = 0.01;	// toe numerator\n"
-		"	float F = 0.30;	// toe denominator\n"
-		"	float W = 11.2;	// linear white point\n"
-		"\n"
-		"	return ( ( x * ( A * x + C * B ) + D * E ) / ( x * ( A * x + B ) + D * F ) ) - E / F;\n"
-		"}\n"
-		"\n"
-		"// https://knarkowicz.wordpress.com/2016/01/06/aces-filmic-tone-mapping-curve/\n"
+		"//\n"
+		"// https://github.com/colour-science/aces-dev\n"
+		"//\n"
 		"float3 ACESFilm( float3 x )\n"
 		"{\n"
 		"	float a = 2.51;\n"
@@ -9164,208 +9154,248 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	return saturate( ( x * ( a * x + b ) ) / ( x * ( c * x + d ) + e ) );\n"
 		"}\n"
 		"\n"
-		"#define USE_DITHERING 0\n"
+		"//\n"
+		"// https://gamedev.stackexchange.com/questions/62917/uncharted-2-tone-mapping-and-an-eye-adaptation\n"
+		"//\n"
+		"float3 Uncharted2Tonemap( float3 x )\n"
+		"{\n"
+		"	float A = 0.22;\n"
+		"	float B = 0.3;\n"
+		"	float C = 0.10;\n"
+		"	float D = 0.20;\n"
+		"	float E = 0.01;\n"
+		"	float F = 0.30;\n"
+		"	return ( ( x * ( A * x + C * B ) + D * E ) / ( x * ( A * x + B ) + D * F ) ) - E / F;\n"
+		"}\n"
+		"\n"
+		"//\n"
+		"// Filmic Blender (Blender 2.x - 3.x default)\n"
+		"//\n"
+		"float3 FilmicBlender( float3 x )\n"
+		"{\n"
+		"	float3 c = max( float3( 0.0, 0.0, 0.0 ), x - float3( 0.004, 0.004, 0.004 ) );\n"
+		"	return ( c * ( 6.2 * c + 0.5 ) ) / ( c * ( 6.2 * c + 1.7 ) + 0.06 );\n"
+		"}\n"
+		"\n"
+		"//\n"
+		"// AgX by Troy Sobotka (Blender 4.0+ default)\n"
+		"//\n"
+		"float3 AgXDefaultContrastApprox( float3 x )\n"
+		"{\n"
+		"	float3 x2 = x * x;\n"
+		"	float3 x4 = x2 * x2;\n"
+		"	float3 x6 = x4 * x2;\n"
+		"\n"
+		"	return + 15.5     * x6 * x\n"
+		"	       - 40.14    * x6\n"
+		"	       + 31.96    * x4 * x\n"
+		"	       - 6.868    * x4\n"
+		"	       + 0.4298   * x2 * x\n"
+		"	       + 0.1191   * x2\n"
+		"	       - 0.00232  * x\n"
+		"	       + 0.0;\n"
+		"}\n"
+		"\n"
+		"float3 AgX( float3 color )\n"
+		"{\n"
+		"	// Input transform: linear sRGB -> AgX Log (Rec.2020 primaries)\n"
+		"	const float3x3 AgXInputMatrix = float3x3(\n"
+		"		float3( 0.842479062253094,  0.0423282422610123, 0.0423756549057051 ),\n"
+		"		float3( 0.0784335999999992, 0.878468636469772,  0.0784336 ),\n"
+		"		float3( 0.0792237451477643, 0.0791661274605434, 0.879520573507657 )\n"
+		"	);\n"
+		"\n"
+		"	color = mul( AgXInputMatrix, color );\n"
+		"\n"
+		"	// Log encoding\n"
+		"	const float AgXMinEV = -12.47393;\n"
+		"	const float AgXMaxEV = 4.026069;\n"
+		"\n"
+		"	color = clamp( color, float3( 0.0, 0.0, 0.0 ), float3( 1.0, 1.0, 1.0 ) );\n"
+		"	color = max( color, 1e-10 );\n"
+		"	color = log2( color );\n"
+		"	color = ( color - AgXMinEV ) / ( AgXMaxEV - AgXMinEV );\n"
+		"	color = clamp( color, float3( 0.0, 0.0, 0.0 ), float3( 1.0, 1.0, 1.0 ) );\n"
+		"\n"
+		"	// S-curve look\n"
+		"	color = AgXDefaultContrastApprox( color );\n"
+		"\n"
+		"	// Output transform: AgX -> linear sRGB\n"
+		"	const float3x3 AgXOutputMatrix = float3x3(\n"
+		"		float3(  1.19687900512017,   -0.0528968517574562, -0.0529716355144438 ),\n"
+		"		float3( -0.0980208811401368,  1.15190312990417,   -0.0980434501171241 ),\n"
+		"		float3( -0.0990297440797205, -0.0989611768448433,  1.15107028411220 )\n"
+		"	);\n"
+		"\n"
+		"	color = mul( AgXOutputMatrix, color );\n"
+		"	return saturate( color );\n"
+		"}\n"
+		"\n"
+		"//\n"
+		"// https://www-old.cs.utah.edu/docs/techreports/2002/pdf/UUCS-02-001.pdf\n"
+		"//\n"
+		"float3 ReinhardExtended( float3 x, float maxWhite )\n"
+		"{\n"
+		"	return ( x * ( 1.0 + x / ( maxWhite * maxWhite ) ) ) / ( 1.0 + x );\n"
+		"}\n"
+		"\n"
+		"//\n"
+		"// Color grading\n"
+		"//\n"
+		"float3 ApplySaturation( float3 color, float saturation )\n"
+		"{\n"
+		"	float lum = dot( color, float3( 0.2126, 0.7152, 0.0722 ) );\n"
+		"	return lerp( float3( lum, lum, lum ), color, saturation );\n"
+		"}\n"
+		"\n"
+		"float3 ApplyContrast( float3 color, float contrast )\n"
+		"{\n"
+		"	// Pivot around linear mid-gray (0.18)\n"
+		"	const float pivot = 0.18;\n"
+		"	return ( color - pivot ) * contrast + pivot;\n"
+		"}\n"
 		"\n"
 		"void main( PS_IN fragment, out PS_OUT result )\n"
 		"{\n"
 		"	float2 tCoords = fragment.texcoord0;\n"
 		"\n"
-		"#if defined(BRIGHTPASS_FILTER)\n"
-		"	// multiply with 4 because the FBO is only 1/4th of the screen resolution\n"
+		"#if defined( BRIGHTPASS_FILTER )\n"
 		"	tCoords *= float2( 4.0, 4.0 );\n"
 		"#endif\n"
 		"\n"
 		"	float4 color = tex2D( samp0, tCoords );\n"
+		"	float  Y = dot( LUMINANCE_SRGB, color );\n"
 		"\n"
-		"	// get the luminance of the current pixel\n"
-		"	float Y = dot( LUMINANCE_SRGB, color );\n"
+		"	// Read tone mapping parameters\n"
+		"	// rpScreenCorrectionFactor carries hdr key/lum data (set by CalculateAutomaticExposure)\n"
+		"	float hdrKey = rpScreenCorrectionFactor.x;\n"
+		"	float hdrAverageLum = rpScreenCorrectionFactor.y;\n"
+		"	float hdrMaxLum = rpScreenCorrectionFactor.z;\n"
 		"\n"
-		"	const float hdrGamma = 2.2;\n"
-		"	float gamma = hdrGamma;\n"
+		"	// rpUser0 carries our new controls (set by idRenderBackend::Tonemap)\n"
+		"	int   tonemapPreset = int( rpUser0.x );\n"
+		"	float saturation = rpUser0.y;\n"
+		"	float contrast = rpUser0.z;\n"
+		"	float exposureBias = rpUser0.w;  // extra exposure offset in stops\n"
 		"\n"
-		"#if 0\n"
-		"	// convert from sRGB to linear RGB\n"
-		"	color.r = pow( color.r, gamma );\n"
-		"	color.g = pow( color.g, gamma );\n"
-		"	color.b = pow( color.b, gamma );\n"
-		"#endif\n"
+		"	// Exposure\n"
+		"	float avgLum = max( hdrAverageLum, 0.001 );\n"
+		"	float linExp = ( hdrKey / avgLum );\n"
+		"	float exposure = log2( max( linExp, 0.0001 ) ) + exposureBias;\n"
 		"\n"
-		"#if USE_DITHERING\n"
-		"\n"
-		"	const float quantSteps = 256.0;\n"
-		"\n"
-		"	// dither\n"
-		"	color.rgb = ditherRGB( color.rgb, fragment.position.xy, quantSteps );\n"
-		"#endif\n"
-		"\n"
-		"#if defined(BRIGHTPASS)\n"
+		"#if defined( BRIGHTPASS )\n"
+		"	// Bright pass: used for bloom extraction\n"
 		"	if( Y < 0.1 )\n"
 		"	{\n"
-		"		//discard;\n"
 		"		result.color = float4( 0.0, 0.0, 0.0, 1.0 );\n"
 		"		return;\n"
 		"	}\n"
 		"#endif\n"
 		"\n"
-		"	float hdrKey = rpScreenCorrectionFactor.x;\n"
-		"	float hdrAverageLuminance = rpScreenCorrectionFactor.y;\n"
-		"	float hdrMaxLuminance = rpScreenCorrectionFactor.z;\n"
-		"\n"
-		"	// calculate the relative luminance\n"
-		"	float Yr = ( hdrKey * Y ) / hdrAverageLuminance;\n"
-		"\n"
-		"	float Ymax = hdrMaxLuminance;\n"
-		"\n"
-		"#define OPERATOR 2\n"
-		"\n"
-		"#if OPERATOR == 0\n"
-		"	// advanced Reinhard operator, artistically desirable to burn out bright areas\n"
-		"	//float L = Yr * ( 1.0 + Yr / ( Ymax * Ymax ) ) / ( 1.0 + Yr );\n"
-		"\n"
-		"	// exponential tone mapper that is very similar to the Uncharted one\n"
-		"	// very good in keeping the colors natural\n"
-		"	float L = 1.0 - exp( -Yr );\n"
-		"	color.rgb *= L;\n"
-		"\n"
-		"#elif OPERATOR == 1\n"
-		"	// http://freespace.virgin.net/hugo.elias/graphics/x_posure.htm\n"
-		"	// exponential tone mapper that is very similar to the Uncharted one\n"
-		"	// very good in keeping the colors natural\n"
-		"	float exposure = 1.0;\n"
-		"	float L = ( 1.0 - exp( -Yr * exposure ) );\n"
-		"	color.rgb *= L;\n"
-		"\n"
-		"	// Kodak filmic tone mappping, includes gamma correction\n"
-		"	//float3 rgb = max( float3( 0 ), color.rgb - float3( 0.004 ) );\n"
-		"	//color.rgb = rgb * ( float3( 0.5 ) + 6.2 * rgb ) / ( float3( 0.06 ) + rgb * ( float3( 1.7 ) + 6.2 * rgb ) );\n"
-		"\n"
-		"	// http://iwasbeingirony.blogspot.de/2010/04/approximating-film-with-tonemapping.html\n"
-		"	//const float cutoff = 0.025;\n"
-		"	//color.rgb += ( cutoff * 2.0 - color.rgb ) * saturate( cutoff * 2 - color.rgb ) * ( 0.25 / cutoff ) - cutoff;\n"
-		"	//color.rgb = color.rgb * ( float3( 0.5 ) + 6.2 * color.rgb ) / ( float3( 0.06 ) + color.rgb * ( float3( 1.7 ) + 6.2 * color.rgb ) );\n"
-		"\n"
-		"#elif OPERATOR == 2\n"
-		"\n"
-		"	// can be in range [-4.0 .. 4.0]\n"
-		"	//float exposureOffset = rpScreenCorrectionFactor.w;\n"
-		"\n"
-		"	float avgLuminance = max( hdrAverageLuminance, 0.001 );\n"
-		"	float linearExposure = ( hdrKey / avgLuminance );\n"
-		"	float exposure = log2( max( linearExposure, 0.0001 ) );\n"
-		"\n"
-		"	//exposure = -2.0;\n"
 		"	float3 exposedColor = exp2( exposure ) * color.rgb;\n"
 		"\n"
-		"	color.rgb = ACESFilm( exposedColor );\n"
+		"	// Tone mapping presset\n"
+		"	float3 mapped;\n"
 		"\n"
-		"#elif OPERATOR == 3\n"
+		"	if( tonemapPreset == 1 )\n"
+		"	{\n"
+		"		mapped = FilmicBlender( exposedColor );\n"
+		"	}\n"
+		"	else if( tonemapPreset == 2 )\n"
+		"	{\n"
+		"		mapped = AgX( exposedColor );\n"
+		"	}\n"
+		"	else if( tonemapPreset == 3 )\n"
+		"	{\n"
+		"		mapped = ReinhardExtended( exposedColor, hdrMaxLum );\n"
+		"	}\n"
+		"	else if( tonemapPreset == 4 )\n"
+		"	{\n"
+		"		float3 curr = Uncharted2Tonemap( exposedColor );\n"
+		"		float3 whiteScale = 1.0 / Uncharted2Tonemap( float3( hdrMaxLum, hdrMaxLum, hdrMaxLum ) );\n"
+		"		mapped = curr * whiteScale;\n"
+		"	}\n"
+		"	else if( tonemapPreset == 5 )\n"
+		"	{\n"
+		"		mapped = saturate( exposedColor );\n"
+		"	}\n"
+		"	else\n"
+		"	{\n"
+		"		mapped = ACESFilm( exposedColor );\n"
+		"	}\n"
 		"\n"
-		"	// can be in range [-4.0 .. 4.0]\n"
-		"	float exposure = rpScreenCorrectionFactor.w;\n"
+		"	mapped = max( float3( 0.0, 0.0, 0.0 ), mapped );\n"
 		"\n"
-		"	// exposure curves ranges from 0.0625 to 16.0\n"
-		"	float3 exposedColor = exp2( exposure ) * color.rgb;\n"
-		"	//float3 exposedColor = exposure * color.rgb;\n"
+		"	// Color grading (applied in tonemapped space, before gamma)\n"
+		"	if( saturation != 1.0 )\n"
+		"	{\n"
+		"		mapped = ApplySaturation( mapped, saturation );\n"
+		"		mapped = max( float3( 0.0, 0.0, 0.0 ), mapped );\n"
+		"	}\n"
 		"\n"
-		"	float3 curr = ACESFilm( exposedColor );\n"
+		"	if( contrast != 1.0 )\n"
+		"	{\n"
+		"		mapped = ApplyContrast( mapped, contrast );\n"
+		"		mapped = max( float3( 0.0, 0.0, 0.0 ), mapped );\n"
+		"	}\n"
 		"\n"
-		"	float3 whiteScale = 1.0 / ACESFilm( float3( Ymax ) );\n"
-		"	color.rgb = curr * whiteScale;\n"
-		"\n"
-		"#elif OPERATOR == 4\n"
-		"	// Uncharted 2 tone mapping based on Kodak film curve\n"
-		"\n"
-		"	//float exposure = ( hdrKey / hdrAverageLuminance ) * 0.2;\n"
-		"	//float exposure = Yr * 1.0;\n"
-		"	float exposure = rpScreenCorrectionFactor.w;\n"
-		"	float3 exposedColor = exposure * color.rgb;\n"
-		"\n"
-		"	float3 curr = Uncharted2Tonemap( exposedColor );\n"
-		"\n"
-		"	float3 whiteScale = 1.0 / Uncharted2Tonemap( float3( Ymax ) );\n"
-		"	color.rgb = curr * whiteScale;\n"
-		"#endif\n"
-		"\n"
-		"#if defined(BRIGHTPASS)\n"
-		"	// adjust contrast\n"
-		"	//L = pow( L, 1.32 );\n"
-		"\n"
+		"#if defined( BRIGHTPASS )\n"
 		"	const half hdrContrastThreshold = rpOverbright.x;\n"
 		"	const half hdrContrastOffset = rpOverbright.y;\n"
 		"\n"
-		"	//float T = max( ( Yr * ( 1.0 + Yr / ( Ymax * Ymax * 2.0 ) ) ) - hdrContrastThreshold, 0.0 );\n"
-		"	//float T = max( 1.0 - exp( -Yr ) - hdrContrastThreshold, 0.0 );\n"
+		"	float Yr = ( hdrKey * Y ) / hdrAverageLum;\n"
 		"	float T = max( Yr - hdrContrastThreshold, 0.0 );\n"
-		"\n"
 		"	float B = T > 0.0 ? T / ( hdrContrastOffset + T ) : T;\n"
-		"\n"
-		"	color.rgb *= clamp( B, 0.0, 1.0 );\n"
+		"	mapped *= clamp( B, 0.0, 1.0 );\n"
 		"#endif\n"
 		"\n"
-		"#if USE_DITHERING\n"
-		"	// The following represents hardware linear->sRGB xform\n"
-		"	// which happens on sRGB formatted render targets,\n"
-		"	// except using a lot less bits/pixel.\n"
-		"	color.rgb = max( float3( 0.0 ), color.rgb );\n"
-		"	color.rgb = Srgb3( color.rgb );\n"
-		"	color.rgb = floor( color.rgb * quantSteps ) * ( 1.0 / ( quantSteps - 1.0 ) );\n"
+		"	// AgX and Filmic Blender already encode an approximate gamma.\n"
+		"	// ACES, Reinhard, Uncharted need explicit sRGB gamma.\n"
+		"	if( tonemapPreset == 1 || tonemapPreset == 2 )\n"
+		"	{\n"
+		"		// Filmic/AgX: already perceptually encoded, just clamp\n"
+		"		result.color = float4( saturate( mapped ), 1.0 );\n"
+		"	}\n"
+		"	else\n"
+		"	{\n"
+		"		float gamma = 1.0 / 2.2;\n"
+		"		mapped.r = pow( mapped.r, gamma );\n"
+		"		mapped.g = pow( mapped.g, gamma );\n"
+		"		mapped.b = pow( mapped.b, gamma );\n"
+		"		result.color = float4( mapped, 1.0 );\n"
+		"	}\n"
 		"\n"
-		"#else\n"
-		"\n"
-		"	// convert from linear RGB to sRGB\n"
-		"\n"
-		"	//float hdrGamma = 2.2;\n"
-		"	gamma = 1.0 / hdrGamma;\n"
-		"	color.r = pow( color.r, gamma );\n"
-		"	color.g = pow( color.g, gamma );\n"
-		"	color.b = pow( color.b, gamma );\n"
-		"\n"
-		"#endif\n"
-		"\n"
-		"#if defined(HDR_DEBUG)\n"
-		"	// https://google.github.io/filament/Filament.md.html#figure_luminanceviz\n"
-		"\n"
-		"	const float3 debugColors[16] = float3[](\n"
-		"									   float3( 0.0, 0.0, 0.0 ), // black\n"
-		"									   float3( 0.0, 0.0, 0.1647 ),    // darkest blue\n"
-		"									   float3( 0.0, 0.0, 0.3647 ),    // darker blue\n"
-		"									   float3( 0.0, 0.0, 0.6647 ),    // dark blue\n"
-		"									   float3( 0.0, 0.0, 0.9647 ),    // blue\n"
-		"									   float3( 0.0, 0.9255, 0.9255 ), // cyan\n"
-		"									   float3( 0.0, 0.5647, 0.0 ),    // dark green\n"
-		"									   float3( 0.0, 0.7843, 0.0 ),    // green\n"
-		"									   float3( 1.0, 1.0, 0.0 ),       // yellow\n"
-		"									   float3( 0.90588, 0.75294, 0.0 ), // yellow-orange\n"
-		"									   float3( 1.0, 0.5647, 0.0 ),    // orange\n"
-		"									   float3( 1.0, 0.0, 0.0 ),       // bright red\n"
-		"									   float3( 0.8392, 0.0, 0.0 ),    // red\n"
-		"									   float3( 1.0, 0.0, 1.0 ),       // magenta\n"
-		"									   float3( 0.6, 0.3333, 0.7882 ), // purple\n"
-		"									   float3( 1.0, 1.0, 1.0 )        // white\n"
-		"								   );\n"
-		"\n"
-		"	// The 5th color in the array (cyan) represents middle gray (18%)\n"
-		"	// Every stop above or below middle gray causes a color shift\n"
+		"#if defined( HDR_DEBUG )\n"
+		"	// Luminance heat map visualization\n"
+		"	const float3 debugColors[16] =\n"
+		"	{\n"
+		"		float3( 0.0,   0.0,    0.0    ),\n"
+		"		float3( 0.0,   0.0,    0.1647 ),\n"
+		"		float3( 0.0,   0.0,    0.3647 ),\n"
+		"		float3( 0.0,   0.0,    0.6647 ),\n"
+		"		float3( 0.0,   0.0,    0.9647 ),\n"
+		"		float3( 0.0,   0.9255, 0.9255 ),\n"
+		"		float3( 0.0,   0.5647, 0.0    ),\n"
+		"		float3( 0.0,   0.7843, 0.0    ),\n"
+		"		float3( 1.0,   1.0,    0.0    ),\n"
+		"		float3( 0.906, 0.753,  0.0    ),\n"
+		"		float3( 1.0,   0.5647, 0.0    ),\n"
+		"		float3( 1.0,   0.0,    0.0    ),\n"
+		"		float3( 0.839, 0.0,    0.0    ),\n"
+		"		float3( 1.0,   0.0,    1.0    ),\n"
+		"		float3( 0.6,   0.333,  0.788  ),\n"
+		"		float3( 1.0,   1.0,    1.0    )\n"
+		"	};\n"
 		"	float v = log2( Y / 0.18 );\n"
 		"	v = clamp( v + 5.0, 0.0, 15.0 );\n"
-		"	int index = int( floor( v ) );\n"
-		"\n"
-		"	color.rgb = lerp( debugColors[index], debugColors[ min( 15, index + 1 ) ], fract( v ) );\n"
-		"\n"
-		"	//color = tex2D( samp1, float2( L, 0.0 ) );\n"
-		"	//color = tex2D( samp1, float2( dot( LUMINANCE_SRGB, color ), 0.0 ) );\n"
-		"#endif\n"
-		"\n"
-		"	result.color = color;\n"
-		"\n"
-		"#if 0\n"
-		"	result.color = float4( L, L, L, 1.0 );\n"
+		"	int idx = int( floor( v ) );\n"
+		"	result.color = float4( lerp( debugColors[idx], debugColors[min( 15, idx + 1 )], fract( v ) ), 1.0 );\n"
 		"#endif\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/post/tonemap.vs.hlsl",
 		"/*\n"
@@ -9424,9 +9454,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	//result.position.w = dot4( vertex.position, rpMVPmatrixW );\n"
 		"	result.texcoord0 =  vertex.texcoord;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/SSAO/AmbientOcclusion_AO.ps.hlsl",
 		"/**\n"
@@ -9902,9 +9932,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"#endif\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/SSAO/AmbientOcclusion_AO.vs.hlsl",
 		"/*\n"
@@ -9957,9 +9987,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.position = vertex.position;\n"
 		"	result.texcoord0 = vertex.texcoord;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/SSAO/AmbientOcclusion_blur.ps.hlsl",
 		"/**\n"
@@ -10355,9 +10385,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"#endif\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/SSAO/AmbientOcclusion_blur.vs.hlsl",
 		"/*\n"
@@ -10410,9 +10440,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.position = vertex.position;\n"
 		"	result.texcoord0 = vertex.texcoord;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/SSAO/AmbientOcclusion_minify.ps.hlsl",
 		"/**\n"
@@ -10499,9 +10529,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"#endif\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/SSAO/AmbientOcclusion_minify.vs.hlsl",
 		"/*\n"
@@ -10554,9 +10584,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.position = vertex.position;\n"
 		"	result.texcoord0 = vertex.texcoord;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/SSGI/DeepGBufferRadiosity_radiosity.ps.hlsl",
 		"\n"
@@ -11118,9 +11148,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"#endif\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/SSGI/DeepGBufferRadiosity_radiosity.vs.hlsl",
 		"/*\n"
@@ -11173,9 +11203,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.position = vertex.position;\n"
 		"	result.texcoord0 = vertex.texcoord;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/SSGI/DeepGBufferRadiosity_blur.ps.hlsl",
 		"/**\n"
@@ -11558,9 +11588,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	blurResult = sum / ( totalWeight + epsilon );\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/SSGI/DeepGBufferRadiosity_blur.vs.hlsl",
 		"/*\n"
@@ -11613,9 +11643,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.position = vertex.position;\n"
 		"	result.texcoord0 = vertex.texcoord;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/video/bink.ps.hlsl",
 		"/*\n"
@@ -11685,9 +11715,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.color = sRGBAToLinearRGBA( color );\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/video/bink.vs.hlsl",
 		"/*\n"
@@ -11745,9 +11775,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.texcoord0 = vertex.texcoord;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/video/bink_gui.ps.hlsl",
 		"/*\n"
@@ -11820,9 +11850,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color.xyz = color.xyz * color.w;\n"
 		"	result.color.w = color.w;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/video/bink_gui.vs.hlsl",
 		"/*\n"
@@ -11887,9 +11917,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color =  swizzleColor( vertex.color );\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/color.ps.hlsl",
 		"/*\n"
@@ -11935,9 +11965,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"{\n"
 		"	result.color = rpColor;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/color.vs.hlsl",
 		"/*\n"
@@ -12042,9 +12072,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.position.w = dot4( vertex.position, rpMVPmatrixW );\n"
 		"#endif\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/depth.ps.hlsl",
 		"/*\n"
@@ -12090,9 +12120,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"{\n"
 		"	result.color = float4( 0.0, 0.0, 0.0, 1.0 );\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/depth.vs.hlsl",
 		"/*\n"
@@ -12143,9 +12173,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.position.z = dot4( vertex.position, rpMVPmatrixZ );\n"
 		"	result.position.w = dot4( vertex.position, rpMVPmatrixW );\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/depth_skinned.ps.hlsl",
 		"/*\n"
@@ -12191,9 +12221,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"{\n"
 		"	result.color = float4( 0.0, 0.0, 0.0, 1.0 );\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/depth_skinned.vs.hlsl",
 		"/*\n"
@@ -12289,9 +12319,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.position.z = dot4( modelPosition, rpMVPmatrixZ );\n"
 		"	result.position.w = dot4( modelPosition, rpMVPmatrixW );\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/gbuffer.ps.hlsl",
 		"/*\n"
@@ -12380,9 +12410,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color.a = 1.0;\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/gbuffer.vs.hlsl",
 		"/*\n"
@@ -12568,9 +12598,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = ( swizzleColor( vertex.color ) * rpVertexColorModulate ) + rpVertexColorAdd;\n"
 		"#endif\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/gui.ps.hlsl",
 		"/*\n"
@@ -12625,9 +12655,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color.xyz = color.xyz * color.w;\n"
 		"	result.color.w = color.w;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/gui.vs.hlsl",
 		"/*\n"
@@ -12692,9 +12722,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color =  swizzleColor( vertex.color );\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/texture.ps.hlsl",
 		"/*\n"
@@ -12747,9 +12777,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	//result.color = textureLod( samp0, fragment.texcoord0, 2.0 ) * rpColor;\n"
 		"	//result.color = float4( 0.0, 1.0, 0.0, 1.0 ) * rpColor;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/texture.vs.hlsl",
 		"/*\n"
@@ -12817,9 +12847,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"		result.texcoord0.y = dot4( vertex.texcoord.xy, rpTextureMatrixT );\n"
 		"	}\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/texture_color.ps.hlsl",
 		"/*\n"
@@ -12873,9 +12903,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	clip( color.a - rpAlphaTest.x );\n"
 		"	result.color = sRGBAToLinearRGBA( color );\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/texture_color.vs.hlsl",
 		"/*\n"
@@ -12947,9 +12977,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	float4 vertexColor = ( swizzleColor( vertex.color ) * rpVertexColorModulate ) + rpVertexColorAdd;\n"
 		"	result.color =  vertexColor * rpColor;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/texture_color_skinned.ps.hlsl",
 		"/*\n"
@@ -13003,9 +13033,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	clip( color.a - rpAlphaTest.x );\n"
 		"	result.color = sRGBAToLinearRGBA( color );\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/texture_color_skinned.vs.hlsl",
 		"/*\n"
@@ -13118,9 +13148,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	float4 vertexColor = ( swizzleColor( vertex.color ) * rpVertexColorModulate ) + rpVertexColorAdd;\n"
 		"	result.color =  vertexColor * rpColor;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/texture_color_texgen.ps.hlsl",
 		"/*\n"
@@ -13180,9 +13210,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.color = sRGBAToLinearRGBA( texSample ) * fragment.color;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/texture_color_texgen.vs.hlsl",
 		"/*\n"
@@ -13255,9 +13285,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	float4 vertexColor = ( swizzleColor( vertex.color ) * rpVertexColorModulate ) + rpVertexColorAdd;\n"
 		"	result.color =  vertexColor * rpColor;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/vertex_color.ps.hlsl",
 		"/*\n"
@@ -13310,9 +13340,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"{\n"
 		"	result.color = sRGBAToLinearRGBA( fragment.color );\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/builtin/vertex_color.vs.hlsl",
 		"/*\n"
@@ -13373,9 +13403,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.color =  swizzleColor( vertex.color );\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/bloodorb1_capture.ps.hlsl",
 		"/*\n"
@@ -13434,9 +13464,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.color = lerp( accumSample, currentRenderSample, maskSample.a );\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/bloodorb1_capture.vs.hlsl",
 		"/*\n"
@@ -13502,9 +13532,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	// pass through texcoords\n"
 		"	result.texcoord1 = vertex.texcoord;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/bloodorb2_capture.ps.hlsl",
 		"/*\n"
@@ -13569,9 +13599,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.color = lerp( accumSample, currentRenderSample, maskSample.a );\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/bloodorb2_capture.vs.hlsl",
 		"/*\n"
@@ -13647,9 +13677,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	// pass through for currentrender\n"
 		"	result.texcoord2 = vertex.texcoord;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/bloodorb3_capture.ps.hlsl",
 		"/*\n"
@@ -13726,9 +13756,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	accumColor = lerp( accumColor, currentRenderSample, maskSample.a );\n"
 		"	result.color = accumColor;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/bloodorb3_capture.vs.hlsl",
 		"/*\n"
@@ -13811,9 +13841,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	const float4 colorFactor = rpUser2;\n"
 		"	result.texcoord4 = colorFactor.xx;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/bloodorb_draw.ps.hlsl",
 		"/*\n"
@@ -13871,9 +13901,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.color = lerp( accumSample, currentRenderSample, maskSample.a );\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/bloodorb_draw.vs.hlsl",
 		"/*\n"
@@ -13932,9 +13962,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	// pass through texcoords\n"
 		"	result.texcoord0 = vertex.texcoord;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/colorProcess.ps.hlsl",
 		"/*\n"
@@ -13989,9 +14019,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = lerp( src, target, fragment.texcoord0.z );\n"
 		"}\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/colorProcess.vs.hlsl",
 		"/*\n"
@@ -14061,9 +14091,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"}\n"
 		"\n"
 		"\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/enviroSuit.ps.hlsl",
 		"/*\n"
@@ -14127,9 +14157,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.color = tex2D( samp0, screenTexCoord );\n"
 		"\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/enviroSuit.vs.hlsl",
 		"/*\n"
@@ -14197,9 +14227,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	const float4 deformMagnitude = rpUser1;\n"
 		"	result.color = deformMagnitude;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/heatHazeWithMask.ps.hlsl",
 		"/*\n"
@@ -14272,9 +14302,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.color = ( tex2D( samp0, screenTexCoord ) );\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/heatHazeWithMask.vs.hlsl",
 		"/*\n"
@@ -14371,9 +14401,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	const float4 deformMagnitude = rpUser1;\n"
 		"	result.texcoord2 = x * deformMagnitude;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/heatHazeWithMaskAndVertex.ps.hlsl",
 		"/*\n"
@@ -14448,9 +14478,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"\n"
 		"	result.color = ( tex2D( samp0, screenTexCoord ) );\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/heatHazeWithMaskAndVertex.vs.hlsl",
 		"/*\n"
@@ -14549,9 +14579,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	result.texcoord2 = x * deformMagnitude;\n"
 		"	result.color = swizzleColor( vertex.color );\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/heathaze.ps.hlsl",
 		"/*\n"
@@ -14616,9 +14646,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	// load the screen render\n"
 		"	result.color = ( tex2D( samp0, screenTexCoord.xy ) );\n"
 		"}\n"
-		
+
 	},
-	
+
 	{
 		"renderprogs/heathaze.vs.hlsl",
 		"/*\n"
@@ -14713,9 +14743,9 @@ static const cgShaderDef_t cg_renderprogs[] =
 		"	const float4 deformMagnitude = rpUser1;\n"
 		"	result.texcoord1 = x * deformMagnitude;\n"
 		"}\n"
-		
+
 	},
-	
+
 	{0, 0},
-	
+
 };

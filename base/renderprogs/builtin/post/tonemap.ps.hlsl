@@ -33,6 +33,7 @@ If you have questions concerning this license or the applicable additional terms
 // *INDENT-OFF*
 uniform sampler2D	samp0 : register(s0); // texture 0 is _currentRender
 uniform sampler2D	samp1 : register(s1); // texture 1 is heatmap
+uniform float4  rpUser0 : register(c128); // x=preset, y=saturation, z=contrast, w=exposure_bias
 
 struct PS_IN
 {
@@ -46,20 +47,9 @@ struct PS_OUT
 };
 // *INDENT-ON*
 
-float3 Uncharted2Tonemap( float3 x )
-{
-	float A = 0.22; // shoulder strength
-	float B = 0.3;	// linear strength
-	float C = 0.10;	// linear angle
-	float D = 0.20;	// toe strength
-	float E = 0.01;	// toe numerator
-	float F = 0.30;	// toe denominator
-	float W = 11.2;	// linear white point
-
-	return ( ( x * ( A * x + C * B ) + D * E ) / ( x * ( A * x + B ) + D * F ) ) - E / F;
-}
-
-// https://knarkowicz.wordpress.com/2016/01/06/aces-filmic-tone-mapping-curve/
+//
+// https://github.com/colour-science/aces-dev
+//
 float3 ACESFilm( float3 x )
 {
 	float a = 2.51;
@@ -70,201 +60,241 @@ float3 ACESFilm( float3 x )
 	return saturate( ( x * ( a * x + b ) ) / ( x * ( c * x + d ) + e ) );
 }
 
-#define USE_DITHERING 0
+//
+// https://gamedev.stackexchange.com/questions/62917/uncharted-2-tone-mapping-and-an-eye-adaptation
+//
+float3 Uncharted2Tonemap( float3 x )
+{
+	float A = 0.22;
+	float B = 0.3;
+	float C = 0.10;
+	float D = 0.20;
+	float E = 0.01;
+	float F = 0.30;
+	return ( ( x * ( A * x + C * B ) + D * E ) / ( x * ( A * x + B ) + D * F ) ) - E / F;
+}
+
+//
+// Filmic Blender (Blender 2.x - 3.x default)
+//
+float3 FilmicBlender( float3 x )
+{
+	float3 c = max( float3( 0.0, 0.0, 0.0 ), x - float3( 0.004, 0.004, 0.004 ) );
+	return ( c * ( 6.2 * c + 0.5 ) ) / ( c * ( 6.2 * c + 1.7 ) + 0.06 );
+}
+
+//
+// AgX by Troy Sobotka (Blender 4.0+ default)
+//
+float3 AgXDefaultContrastApprox( float3 x )
+{
+	float3 x2 = x * x;
+	float3 x4 = x2 * x2;
+	float3 x6 = x4 * x2;
+
+	return + 15.5     * x6 * x
+	       - 40.14    * x6
+	       + 31.96    * x4 * x
+	       - 6.868    * x4
+	       + 0.4298   * x2 * x
+	       + 0.1191   * x2
+	       - 0.00232  * x
+	       + 0.0;
+}
+
+float3 AgX( float3 color )
+{
+	// Input transform: linear sRGB -> AgX Log (Rec.2020 primaries)
+	const float3x3 AgXInputMatrix = float3x3(
+		float3( 0.842479062253094,  0.0423282422610123, 0.0423756549057051 ),
+		float3( 0.0784335999999992, 0.878468636469772,  0.0784336 ),
+		float3( 0.0792237451477643, 0.0791661274605434, 0.879520573507657 )
+	);
+
+	color = AgXInputMatrix * color;
+
+	// Log encoding
+	const float AgXMinEV = -12.47393;
+	const float AgXMaxEV = 4.026069;
+
+	color = clamp( color, float3( 0.0, 0.0, 0.0 ), float3( 1.0, 1.0, 1.0 ) );
+	color = max( color, 1e-10 );
+	color = log2( color );
+	color = ( color - AgXMinEV ) / ( AgXMaxEV - AgXMinEV );
+	color = clamp( color, float3( 0.0, 0.0, 0.0 ), float3( 1.0, 1.0, 1.0 ) );
+
+	// S-curve look
+	color = AgXDefaultContrastApprox( color );
+
+	// Output transform: AgX -> linear sRGB
+	const float3x3 AgXOutputMatrix = float3x3(
+		float3(  1.19687900512017,   -0.0528968517574562, -0.0529716355144438 ),
+		float3( -0.0980208811401368,  1.15190312990417,   -0.0980434501171241 ),
+		float3( -0.0990297440797205, -0.0989611768448433,  1.15107028411220 )
+	);
+
+	color = AgXOutputMatrix * color;
+	return saturate( color );
+}
+
+//
+// https://www-old.cs.utah.edu/docs/techreports/2002/pdf/UUCS-02-001.pdf
+//
+float3 ReinhardExtended( float3 x, float maxWhite )
+{
+	return ( x * ( 1.0 + x / ( maxWhite * maxWhite ) ) ) / ( 1.0 + x );
+}
+
+//
+// Color grading
+//
+float3 ApplySaturation( float3 color, float saturation )
+{
+	float lum = dot( color, float3( 0.2126, 0.7152, 0.0722 ) );
+	return lerp( float3( lum, lum, lum ), color, saturation );
+}
+
+float3 ApplyContrast( float3 color, float contrast )
+{
+	// Pivot around linear mid-gray (0.18)
+	const float pivot = 0.18;
+	return ( color - pivot ) * contrast + pivot;
+}
 
 void main( PS_IN fragment, out PS_OUT result )
 {
 	float2 tCoords = fragment.texcoord0;
 
-#if defined(BRIGHTPASS_FILTER)
-	// multiply with 4 because the FBO is only 1/4th of the screen resolution
+#if defined( BRIGHTPASS_FILTER )
 	tCoords *= float2( 4.0, 4.0 );
 #endif
 
 	float4 color = tex2D( samp0, tCoords );
+	float  Y = dot( LUMINANCE_SRGB, color );
 
-	// get the luminance of the current pixel
-	float Y = dot( LUMINANCE_SRGB, color );
+	// Read tone mapping parameters
+	// rpScreenCorrectionFactor carries hdr key/lum data (set by CalculateAutomaticExposure)
+	float hdrKey = rpScreenCorrectionFactor.x;
+	float hdrAverageLum = rpScreenCorrectionFactor.y;
+	float hdrMaxLum = rpScreenCorrectionFactor.z;
 
-	const float hdrGamma = 2.2;
-	float gamma = hdrGamma;
+	// rpUser0 carries our new controls (set by idRenderBackend::Tonemap)
+	int   tonemapPreset = int( rpUser0.x );
+	float saturation = rpUser0.y;
+	float contrast = rpUser0.z;
+	float exposureBias = rpUser0.w;  // extra exposure offset in stops
 
-#if 0
-	// convert from sRGB to linear RGB
-	color.r = pow( color.r, gamma );
-	color.g = pow( color.g, gamma );
-	color.b = pow( color.b, gamma );
-#endif
+	// Exposure
+	float avgLum = max( hdrAverageLum, 0.001 );
+	float linExp = ( hdrKey / avgLum );
+	float exposure = log2( max( linExp, 0.0001 ) ) + exposureBias;
 
-#if USE_DITHERING
-
-	const float quantSteps = 256.0;
-
-	// dither
-	color.rgb = ditherRGB( color.rgb, fragment.position.xy, quantSteps );
-#endif
-
-#if defined(BRIGHTPASS)
+#if defined( BRIGHTPASS )
+	// Bright pass: used for bloom extraction
 	if( Y < 0.1 )
 	{
-		//discard;
 		result.color = float4( 0.0, 0.0, 0.0, 1.0 );
 		return;
 	}
 #endif
 
-	float hdrKey = rpScreenCorrectionFactor.x;
-	float hdrAverageLuminance = rpScreenCorrectionFactor.y;
-	float hdrMaxLuminance = rpScreenCorrectionFactor.z;
-
-	// calculate the relative luminance
-	float Yr = ( hdrKey * Y ) / hdrAverageLuminance;
-
-	float Ymax = hdrMaxLuminance;
-
-#define OPERATOR 2
-
-#if OPERATOR == 0
-	// advanced Reinhard operator, artistically desirable to burn out bright areas
-	//float L = Yr * ( 1.0 + Yr / ( Ymax * Ymax ) ) / ( 1.0 + Yr );
-
-	// exponential tone mapper that is very similar to the Uncharted one
-	// very good in keeping the colors natural
-	float L = 1.0 - exp( -Yr );
-	color.rgb *= L;
-
-#elif OPERATOR == 1
-	// http://freespace.virgin.net/hugo.elias/graphics/x_posure.htm
-	// exponential tone mapper that is very similar to the Uncharted one
-	// very good in keeping the colors natural
-	float exposure = 1.0;
-	float L = ( 1.0 - exp( -Yr * exposure ) );
-	color.rgb *= L;
-
-	// Kodak filmic tone mappping, includes gamma correction
-	//float3 rgb = max( float3( 0 ), color.rgb - float3( 0.004 ) );
-	//color.rgb = rgb * ( float3( 0.5 ) + 6.2 * rgb ) / ( float3( 0.06 ) + rgb * ( float3( 1.7 ) + 6.2 * rgb ) );
-
-	// http://iwasbeingirony.blogspot.de/2010/04/approximating-film-with-tonemapping.html
-	//const float cutoff = 0.025;
-	//color.rgb += ( cutoff * 2.0 - color.rgb ) * saturate( cutoff * 2 - color.rgb ) * ( 0.25 / cutoff ) - cutoff;
-	//color.rgb = color.rgb * ( float3( 0.5 ) + 6.2 * color.rgb ) / ( float3( 0.06 ) + color.rgb * ( float3( 1.7 ) + 6.2 * color.rgb ) );
-
-#elif OPERATOR == 2
-
-	// can be in range [-4.0 .. 4.0]
-	//float exposureOffset = rpScreenCorrectionFactor.w;
-
-	float avgLuminance = max( hdrAverageLuminance, 0.001 );
-	float linearExposure = ( hdrKey / avgLuminance );
-	float exposure = log2( max( linearExposure, 0.0001 ) );
-
-	//exposure = -2.0;
 	float3 exposedColor = exp2( exposure ) * color.rgb;
 
-	color.rgb = ACESFilm( exposedColor );
+	// Tone mapping presset
+	float3 mapped;
 
-#elif OPERATOR == 3
+	if( tonemapPreset == 1 )
+	{
+		mapped = FilmicBlender( exposedColor );
+	}
+	else if( tonemapPreset == 2 )
+	{
+		mapped = AgX( exposedColor );
+	}
+	else if( tonemapPreset == 3 )
+	{
+		mapped = ReinhardExtended( exposedColor, hdrMaxLum );
+	}
+	else if( tonemapPreset == 4 )
+	{
+		float3 curr = Uncharted2Tonemap( exposedColor );
+		float3 whiteScale = 1.0 / Uncharted2Tonemap( float3( hdrMaxLum, hdrMaxLum, hdrMaxLum ) );
+		mapped = curr * whiteScale;
+	}
+	else if( tonemapPreset == 5 )
+	{
+		mapped = saturate( exposedColor );
+	}
+	else
+	{
+		mapped = ACESFilm( exposedColor );
+	}
 
-	// can be in range [-4.0 .. 4.0]
-	float exposure = rpScreenCorrectionFactor.w;
+	mapped = max( float3( 0.0, 0.0, 0.0 ), mapped );
 
-	// exposure curves ranges from 0.0625 to 16.0
-	float3 exposedColor = exp2( exposure ) * color.rgb;
-	//float3 exposedColor = exposure * color.rgb;
+	// Color grading (applied in tonemapped space, before gamma)
+	if( saturation != 1.0 )
+	{
+		mapped = ApplySaturation( mapped, saturation );
+		mapped = max( float3( 0.0, 0.0, 0.0 ), mapped );
+	}
 
-	float3 curr = ACESFilm( exposedColor );
+	if( contrast != 1.0 )
+	{
+		mapped = ApplyContrast( mapped, contrast );
+		mapped = max( float3( 0.0, 0.0, 0.0 ), mapped );
+	}
 
-	float3 whiteScale = 1.0 / ACESFilm( float3( Ymax ) );
-	color.rgb = curr * whiteScale;
-
-#elif OPERATOR == 4
-	// Uncharted 2 tone mapping based on Kodak film curve
-
-	//float exposure = ( hdrKey / hdrAverageLuminance ) * 0.2;
-	//float exposure = Yr * 1.0;
-	float exposure = rpScreenCorrectionFactor.w;
-	float3 exposedColor = exposure * color.rgb;
-
-	float3 curr = Uncharted2Tonemap( exposedColor );
-
-	float3 whiteScale = 1.0 / Uncharted2Tonemap( float3( Ymax ) );
-	color.rgb = curr * whiteScale;
-#endif
-
-#if defined(BRIGHTPASS)
-	// adjust contrast
-	//L = pow( L, 1.32 );
-
+#if defined( BRIGHTPASS )
 	const half hdrContrastThreshold = rpOverbright.x;
 	const half hdrContrastOffset = rpOverbright.y;
 
-	//float T = max( ( Yr * ( 1.0 + Yr / ( Ymax * Ymax * 2.0 ) ) ) - hdrContrastThreshold, 0.0 );
-	//float T = max( 1.0 - exp( -Yr ) - hdrContrastThreshold, 0.0 );
+	float Yr = ( hdrKey * Y ) / hdrAverageLum;
 	float T = max( Yr - hdrContrastThreshold, 0.0 );
-
 	float B = T > 0.0 ? T / ( hdrContrastOffset + T ) : T;
-
-	color.rgb *= clamp( B, 0.0, 1.0 );
+	mapped *= clamp( B, 0.0, 1.0 );
 #endif
 
-#if USE_DITHERING
-	// The following represents hardware linear->sRGB xform
-	// which happens on sRGB formatted render targets,
-	// except using a lot less bits/pixel.
-	color.rgb = max( float3( 0.0 ), color.rgb );
-	color.rgb = Srgb3( color.rgb );
-	color.rgb = floor( color.rgb * quantSteps ) * ( 1.0 / ( quantSteps - 1.0 ) );
+	// AgX and Filmic Blender already encode an approximate gamma.
+	// ACES, Reinhard, Uncharted need explicit sRGB gamma.
+	if( tonemapPreset == 1 || tonemapPreset == 2 )
+	{
+		// Filmic/AgX: already perceptually encoded, just clamp
+		result.color = float4( saturate( mapped ), 1.0 );
+	}
+	else
+	{
+		float gamma = 1.0 / 2.2;
+		mapped.r = pow( mapped.r, gamma );
+		mapped.g = pow( mapped.g, gamma );
+		mapped.b = pow( mapped.b, gamma );
+		result.color = float4( mapped, 1.0 );
+	}
 
-#else
-
-	// convert from linear RGB to sRGB
-
-	//float hdrGamma = 2.2;
-	gamma = 1.0 / hdrGamma;
-	color.r = pow( color.r, gamma );
-	color.g = pow( color.g, gamma );
-	color.b = pow( color.b, gamma );
-
-#endif
-
-#if defined(HDR_DEBUG)
-	// https://google.github.io/filament/Filament.md.html#figure_luminanceviz
-
-	const float3 debugColors[16] = float3[](
-									   float3( 0.0, 0.0, 0.0 ), // black
-									   float3( 0.0, 0.0, 0.1647 ),    // darkest blue
-									   float3( 0.0, 0.0, 0.3647 ),    // darker blue
-									   float3( 0.0, 0.0, 0.6647 ),    // dark blue
-									   float3( 0.0, 0.0, 0.9647 ),    // blue
-									   float3( 0.0, 0.9255, 0.9255 ), // cyan
-									   float3( 0.0, 0.5647, 0.0 ),    // dark green
-									   float3( 0.0, 0.7843, 0.0 ),    // green
-									   float3( 1.0, 1.0, 0.0 ),       // yellow
-									   float3( 0.90588, 0.75294, 0.0 ), // yellow-orange
-									   float3( 1.0, 0.5647, 0.0 ),    // orange
-									   float3( 1.0, 0.0, 0.0 ),       // bright red
-									   float3( 0.8392, 0.0, 0.0 ),    // red
-									   float3( 1.0, 0.0, 1.0 ),       // magenta
-									   float3( 0.6, 0.3333, 0.7882 ), // purple
-									   float3( 1.0, 1.0, 1.0 )        // white
-								   );
-
-	// The 5th color in the array (cyan) represents middle gray (18%)
-	// Every stop above or below middle gray causes a color shift
+#if defined( HDR_DEBUG )
+	// Luminance heat map visualization
+	const float3 debugColors[16] =
+	{
+		float3( 0.0,   0.0,    0.0    ),
+		float3( 0.0,   0.0,    0.1647 ),
+		float3( 0.0,   0.0,    0.3647 ),
+		float3( 0.0,   0.0,    0.6647 ),
+		float3( 0.0,   0.0,    0.9647 ),
+		float3( 0.0,   0.9255, 0.9255 ),
+		float3( 0.0,   0.5647, 0.0    ),
+		float3( 0.0,   0.7843, 0.0    ),
+		float3( 1.0,   1.0,    0.0    ),
+		float3( 0.906, 0.753,  0.0    ),
+		float3( 1.0,   0.5647, 0.0    ),
+		float3( 1.0,   0.0,    0.0    ),
+		float3( 0.839, 0.0,    0.0    ),
+		float3( 1.0,   0.0,    1.0    ),
+		float3( 0.6,   0.333,  0.788  ),
+		float3( 1.0,   1.0,    1.0    )
+	};
 	float v = log2( Y / 0.18 );
 	v = clamp( v + 5.0, 0.0, 15.0 );
-	int index = int( floor( v ) );
-
-	color.rgb = lerp( debugColors[index], debugColors[ min( 15, index + 1 ) ], fract( v ) );
-
-	//color = tex2D( samp1, float2( L, 0.0 ) );
-	//color = tex2D( samp1, float2( dot( LUMINANCE_SRGB, color ), 0.0 ) );
-#endif
-
-	result.color = color;
-
-#if 0
-	result.color = float4( L, L, L, 1.0 );
+	int idx = int( floor( v ) );
+	result.color = float4( lerp( debugColors[idx], debugColors[min( 15, idx + 1 )], fract( v ) ), 1.0 );
 #endif
 }

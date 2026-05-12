@@ -161,7 +161,12 @@ public:
 	virtual void				GetAimAssistAngles( idAngles& angles ) = 0;
 	virtual float				GetAimAssistSensitivity() = 0;
 
+	// Syncs the player entities with the lobby users, so that the correct player models and names show up in the lobby and pause menu.
 	virtual void				SyncPlayersWithLobbyUsers() = 0;
+
+	// Get the current tonemap settings for the player's view, used for syncing with the backend.
+	virtual bool				GetActiveTonemapState( int& preset, float& exposure, float& saturation, float& contrast, float& hdrKey ) = 0;
+
 	// Release the mouse when the PDA is open
 	virtual bool				IsPDAOpen() const = 0;
 	virtual bool				IsPlayerChatting() const = 0;

@@ -4348,6 +4348,38 @@ void idRenderBackend::Tonemap( const viewDef_t* _viewDef )
 
 	SetFragmentParm( RENDERPARM_SCREENCORRECTIONFACTOR, screenCorrectionParm ); // rpScreenCorrectionFactor
 
+	// We read the active tonemap state. The controller entity writes to
+	// g_tonemapActive* globals; if no controller is active we fall back to cvars.
+	int activePreset = r_tonemapPreset.GetInteger();
+	float activeSaturation = r_tonemapSaturation.GetFloat();
+	float activeContrast = r_tonemapContrast.GetFloat();
+	float activeExpBias = 0.0f; // extra exposure offset in stops
+
+	// If a game-side TonemapController is blending in, its values override cvars.
+	// GetActiveTonemapState() returns false when no controller is active.
+	{
+		int ctrlPreset;
+		float ctrlExposure, ctrlSaturation, ctrlContrast, ctrlKey;
+		if( common->Game() != NULL && common->Game()->GetActiveTonemapState( ctrlPreset, ctrlExposure, ctrlSaturation, ctrlContrast, ctrlKey ) )
+		{
+			activePreset = ctrlPreset;
+			activeSaturation = ctrlSaturation;
+			activeContrast = ctrlContrast;
+			activeExpBias = ctrlExposure - r_exposure.GetFloat();
+			screenCorrectionParm[0] = ctrlKey;
+			SetFragmentParm( RENDERPARM_SCREENCORRECTIONFACTOR, screenCorrectionParm );
+		}
+	}
+
+	float userParm0[4] =
+	{
+		( float ) activePreset,     // x: preset index (0=ACES,1=FilmicBlender,2=AgX,3=Reinhard,4=Uncharted2,5=None)
+		activeSaturation,           // y: saturation [0..3]
+		activeContrast,             // z: contrast power [0.1..3]
+		activeExpBias               // w: exposure offset in stops
+	};
+	renderProgManager.SetRenderParm( RENDERPARM_USER0, userParm0 );
+
 	// Draw
 	DrawElementsWithCounters( &unitSquareSurface );
 

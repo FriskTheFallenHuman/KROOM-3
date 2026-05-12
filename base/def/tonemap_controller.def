@@ -1,0 +1,29 @@
+entityDef func_tonemap_controller
+{
+	"editor_color"			"0 1 1"
+	"editor_mins"			"-8 -8 -8"
+	"editor_maxs"			"8 8 8"
+	"editor_usage"			"Smoothly blends tonemap parameters when the player enters the radius, or when triggered via target/relay."
+	"editor_displayFolder"	"Lights/Post"
+
+	"spawnclass"			"idTonemapController"
+
+	"editor_var radius"			"Proximity activation radius in units. Only used when auto_activate is 1."
+	"editor_var auto_activate"	"1 = activate by proximity, 0 = activate only via trigger."
+	"editor_var blend_time"		"Blend duration in seconds."
+
+	"editor_var preset"			"Tonemap preset: 0=ACES  1=FilmicBlender  2=AgX  3=Reinhard  4=Uncharted2  5=None"
+	"editor_var exposure"		"Target exposure value [0..1] matching r_exposure range."
+	"editor_var saturation"		"Target saturation [0=grey, 1=natural, 2=boosted]."
+	"editor_var contrast"		"Target contrast power curve [0.1..3.0, 1.0=neutral]."
+	"editor_var hdr_key"		"Target HDR key value. Default 0.015 matches stock look."
+
+	"radius"			"256"
+	"auto_activate"		"0"
+	"blend_time"		"2.0"
+	"preset"			"0"
+	"exposure"			"0.5"
+	"saturation"		"1.0"
+	"contrast"			"1.0"
+	"hdr_key"			"0.015"
+}
