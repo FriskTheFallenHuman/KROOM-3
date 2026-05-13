@@ -35,9 +35,10 @@ If you have questions concerning this license or the applicable additional terms
 // *INDENT-OFF*
 uniform sampler2D				samp0 : register(s0); // texture 1 is the per-surface normal map
 uniform sampler2D				samp1 : register(s1); // texture 3 is the per-surface specular or roughness/metallic/AO mixer map
-uniform sampler2D				samp2 : register(s2); // texture 2 is the per-surface baseColor map 
+uniform sampler2D				samp2 : register(s2); // texture 2 is the per-surface baseColor map
 uniform sampler2D				samp3 : register(s3); // texture 4 is the light falloff texture
 uniform sampler2D				samp4 : register(s4); // texture 5 is the light projection texture
+uniform sampler2D				samp5 : register(s5); // texture 6 is the coat/sheen texture
 
 struct PS_IN
 {
@@ -58,19 +59,97 @@ struct PS_OUT
 };
 // *INDENT-ON*
 
+// Sheen (Zeltner et al. 2022 Charlie NDF)
+float SheenLookup( float x, float alphaG )
+{
+	float oneMinusAlphaSq = ( 1.0 - alphaG ) * ( 1.0 - alphaG );
+	float a = lerp( 25.3245, 21.5473, oneMinusAlphaSq );
+	float b = lerp(  3.3244,  3.8299, oneMinusAlphaSq );
+	float c = lerp(  0.1680,  0.1982, oneMinusAlphaSq );
+	float d = lerp( -1.2739, -1.9736, oneMinusAlphaSq );
+	float e = lerp( -4.8597, -4.3205, oneMinusAlphaSq );
+	return a / ( 1.0 + b * pow( abs( x ), c ) ) + d * x + e;
+}
+
+float D_Charlie( float roughness, float NdotH )
+{
+	float alpha  = roughness * roughness;
+	float invAlpha = 1.0 / max( alpha, 0.001 );
+	float sin2h  = max( 1.0 - NdotH * NdotH, 0.0078125 );
+	return ( 2.0 + invAlpha ) * pow( sin2h, invAlpha * 0.5 ) / ( 2.0 * PI );
+}
+
+float V_Sheen( float NdotL, float NdotV, float roughness )
+{
+	float alphaG  = roughness * roughness;
+	float lambdaV = exp( SheenLookup( NdotV, alphaG ) );
+	float lambdaL = exp( SheenLookup( NdotL, alphaG ) );
+	return 1.0 / ( ( 1.0 + lambdaV + lambdaL ) * ( 4.0 * max( NdotV * NdotL, 0.0001 ) ) );
+}
+
+half3 EvaluateSheen( half3 sheenColor, float sheenRoughness, float NdotL, float NdotV, float NdotH )
+{
+	if( dot( sheenColor, sheenColor ) < 0.0001 )
+		return half3( 0.0, 0.0, 0.0 );
+	float D = D_Charlie( sheenRoughness, NdotH );
+	float V = V_Sheen( NdotL, NdotV, sheenRoughness );
+	return sheenColor * D * V;
+}
+
+//
+// Coat (GGX clearcoat, IOR 1.5, F0 = 0.04)
+//
+half3 EvaluateCoat( float coatWeight, float coatRoughness, float NdotL, float NdotV, float NdotH, float VdotH )
+{
+	if( coatWeight < 0.001 )
+		return half3( 0.0, 0.0, 0.0 );
+
+	float alpha = coatRoughness * coatRoughness;
+	float alpha2 = alpha * alpha;
+	float denom = NdotH * NdotH * ( alpha2 - 1.0 ) + 1.0;
+	float D = alpha2 / ( PI * denom * denom );
+
+	float k = ( coatRoughness + 1.0 );
+	float k2 = ( k * k ) / 8.0;
+	float GV = NdotV / ( NdotV * ( 1.0 - k2 ) + k2 );
+	float GL = NdotL / ( NdotL * ( 1.0 - k2 ) + k2 );
+	float G = GV * GL;
+
+	// Schlick F, F0 = 0.04
+	float Fc = pow( 1.0 - VdotH, 5.0 );
+	float3 Fcoat = float3( 0.04 + ( 1.0 - 0.04 ) * Fc );
+
+	return coatWeight * Fcoat * D * G / max( 4.0 * NdotL * NdotV, 0.0001 );
+}
+
+//
+// Energy conservation: coat attenuates the base layer
+//
+float CoatAttenuation( float coatWeight, float NdotV )
+{
+	float Fc = pow( 1.0 - NdotV, 5.0 );
+	float F = 0.04 + ( 1.0 - 0.04 ) * Fc;
+	return 1.0 - coatWeight * F;
+}
+
 void main( PS_IN fragment, out PS_OUT result )
 {
-	half4 bumpMap =			tex2D( samp0, fragment.texcoord1.xy );
-	half4 lightFalloff =	( idtex2Dproj( samp3, fragment.texcoord2 ) );
-	half4 lightProj	=	( idtex2Dproj( samp4, fragment.texcoord3 ) );
-	half4 YCoCG =			tex2D( samp2, fragment.texcoord4.xy );
-	half4 specMapSRGB =		tex2D( samp1, fragment.texcoord5.xy );
-	half4 specMap =			sRGBAToLinearRGBA( specMapSRGB );
+	half4 bumpMap      = tex2D( samp0, fragment.texcoord1.xy );
+	half4 lightFalloff = idtex2Dproj( samp3, fragment.texcoord2 );
+	half4 lightProj    = idtex2Dproj( samp4, fragment.texcoord3 );
+	half4 YCoCG        = tex2D( samp2, fragment.texcoord4.xy );
+	half4 specMapSRGB  = tex2D( samp1, fragment.texcoord5.xy );
+	half4 specMap      = sRGBAToLinearRGBA( specMapSRGB );
 
-	half3 lightVector = normalize( fragment.texcoord0.xyz );
-	half3 viewVector = normalize( fragment.texcoord6.xyz );
-	half3 diffuseMap = sRGBToLinearRGB( ConvertYCoCgToRGB( YCoCG ) );
+	// OpenPBR layer map (zero when not bound — safe default)
+	// R = coat weight, G = coat roughness, B = sheen weight, A = sheen roughness
+	half4 layerMap     = tex2D( samp5, fragment.texcoord5.xy );
 
+	half3 lightVector  = normalize( fragment.texcoord0.xyz );
+	half3 viewVector   = normalize( fragment.texcoord6.xyz );
+	half3 diffuseMap   = sRGBToLinearRGB( ConvertYCoCgToRGB( YCoCG ) );
+
+	// ---- Normal ----
 	half3 localNormal;
 	// RB begin
 #if defined(USE_NORMAL_FMT_RGB8)
@@ -82,10 +161,16 @@ void main( PS_IN fragment, out PS_OUT result )
 	localNormal.z = sqrt( abs( dot( localNormal.xy, localNormal.xy ) - 0.25 ) );
 	localNormal = normalize( localNormal );
 
-	// traditional very dark Lambert light model used in Doom 3
+	// dot products
 	half ldotN = saturate( dot3( localNormal, lightVector ) );
+	half NdotV = clamp( dot3( localNormal, viewVector ),  0.001, 1.0 );
 
-#if defined(USE_HALF_LAMBERT)
+	half3 halfAngle = normalize( lightVector + viewVector );
+	half NdotH = clamp( dot3( localNormal, halfAngle ),  0.0, 1.0 );
+	half VdotH = clamp( dot3( viewVector,  halfAngle ),  0.0, 1.0 );
+	half ldotH = clamp( dot3( lightVector, halfAngle ),  0.0, 1.0 );
+
+#if defined( USE_HALF_LAMBERT )
 	// RB: http://developer.valvesoftware.com/wiki/Half_Lambert
 	half halfLdotN = dot3( localNormal, lightVector ) * 0.5 + 0.5;
 	halfLdotN *= halfLdotN;
@@ -96,73 +181,69 @@ void main( PS_IN fragment, out PS_OUT result )
 	half lambert = ldotN;
 #endif
 
-
-	half3 halfAngleVector = normalize( lightVector + viewVector );
-	half hdotN = clamp( dot3( halfAngleVector, localNormal ), 0.0, 1.0 );
-
-#if defined( USE_PBR )
-	const half metallic = specMapSRGB.g;
-	const half roughness = specMapSRGB.r;
-	const half glossiness = 1.0 - roughness;
-
-	// the vast majority of real-world materials (anything not metal or gems) have F(0�)
-	// values in a very narrow range (~0.02 - 0.08)
-
-	// approximate non-metals with linear RGB 0.04 which is 0.08 * 0.5 (default in UE4)
-	const half3 dielectricColor = half3( 0.04 );
-
-	// derive diffuse and specular from albedo(m) base color
-	const half3 baseColor = diffuseMap;
-
-	half3 diffuseColor = baseColor * ( 1.0 - metallic );
-	half3 specularColor = lerp( dielectricColor, baseColor, metallic );
-#else
-	const float roughness = EstimateLegacyRoughness( specMapSRGB.rgb );
-
-	half3 diffuseColor = diffuseMap;
-	half3 specularColor = specMapSRGB.rgb; // RB: should be linear but it looks too flat
-#endif
-
-
-	// RB: compensate r_lightScale 3 and the division of Pi
-	//lambert *= 1.3;
-
-	// rpDiffuseModifier contains light color multiplier
+	// Light color
 	half3 lightColor = sRGBToLinearRGB( lightProj.xyz * lightFalloff.xyz );
 
-	half vdotN = clamp( dot3( viewVector, localNormal ), 0.0, 1.0 );
-	half vdotH = clamp( dot3( viewVector, halfAngleVector ), 0.0, 1.0 );
-	half ldotH = clamp( dot3( lightVector, halfAngleVector ), 0.0, 1.0 );
+	// Material model selection
+	half3 diffuseLight;
+	half3 specularLight;
 
-	// compensate r_lightScale 3 * 2
-	half3 reflectColor = specularColor * rpSpecularModifier.rgb * 1.0;// * 0.5;
+#if defined( USE_PBR )
+	const half  metallic = specMapSRGB.g;
+	const half  roughness = max( specMapSRGB.r, 0.045 );
+	const half3 dielectricF0 = half3( 0.04, 0.04, 0.04 );
+	const half3 baseColor = diffuseMap;
 
-	// cheap approximation by ARM with only one division
-	// http://community.arm.com/servlet/JiveServlet/download/96891546-19496/siggraph2015-mmg-renaldas-slides.pdf
-	// page 26
+	half3 diffuseColor  = baseColor * ( 1.0 - metallic );
+	half3 specularColor = lerp( dielectricF0, baseColor, metallic );
+
+	// GGX specular (ARM approximation — cheap single-division form)
+	float rr = roughness * roughness;
+	float rrrr = rr * rr;
+	float D = ( NdotH * NdotH ) * ( rrrr - 1.0 ) + 1.0;
+	float VF = ( ldotH * ldotH ) * ( roughness + 0.5 );
+	half3 reflectColor = specularColor * rpSpecularModifier.rgb;
+
+	specularLight = ( rrrr / ( 4.0 * PI * D * D * VF ) ) * ldotN * reflectColor;
+	diffuseLight = diffuseColor * lambert * rpDiffuseModifier.xyz;
+
+	// coat layer
+	float coatWeight = layerMap.r;
+	float coatRoughness = max( layerMap.g, 0.045 );
+
+	half3 coatBRDF = EvaluateCoat( coatWeight, coatRoughness, ldotN, NdotV, NdotH, VdotH );
+	float baseAtten = CoatAttenuation( coatWeight, NdotV );
+
+	// sheen layer
+	// Sheen color is base color tinted by sheen weight
+	half3 sheenColor = baseColor * layerMap.b;
+	float sheenRoughness = max( layerMap.a, 0.07 );
+
+	half3 sheenBRDF = EvaluateSheen( sheenColor, sheenRoughness, ldotN, NdotV, NdotH );
+
+	// Layer order (outside in): coat -> sheen -> base
+	// Coat attenuates base. Sheen sits between coat and base.
+	half3 baseLayer = ( diffuseLight + specularLight ) * baseAtten;
+	half3 combined = ( baseLayer + sheenBRDF * lambert + coatBRDF ) * lightColor;
+
+	result.color.rgb = combined * fragment.color.rgb;
+	result.color.a = 1.0;
+
+#else
+	const float roughness = EstimateLegacyRoughness( specMapSRGB.rgb );
+	half3 diffuseColor = diffuseMap;
+	half3 specularColor = specMapSRGB.rgb; // not linear, intentionally flat look
 
 	float rr = roughness * roughness;
 	float rrrr = rr * rr;
+	float D = ( NdotH * NdotH ) * ( rrrr - 1.0 ) + 1.0;
+	float VF = ( ldotH * ldotH ) * ( roughness + 0.5 );
+	half3 reflectColor = specularColor * rpSpecularModifier.rgb;
 
-	// disney GGX
-	float D = ( hdotN * hdotN ) * ( rrrr - 1.0 ) + 1.0;
-	float VFapprox = ( ldotH * ldotH ) * ( roughness + 0.5 );
-	half3 specularLight = ( rrrr / ( 4.0 * PI * D * D * VFapprox ) ) * ldotN * reflectColor;
-	//specularLight = half3( 0.0 );
+	specularLight = ( rrrr / ( 4.0 * PI * D * D * VF ) ) * ldotN * reflectColor;
+	diffuseLight = diffuseColor * lambert * rpDiffuseModifier.xyz;
 
-#if 0
-	result.color = float4( _half3( VFapprox ), 1.0 );
-	return;
-#endif
-
-	// see http://seblagarde.wordpress.com/2012/01/08/pi-or-not-to-pi-in-game-lighting-equation/
-	//lambert /= PI;
-
-	//half3 diffuseColor = mix( diffuseMap, F0, metal ) * rpDiffuseModifier.xyz;
-	half3 diffuseLight = diffuseColor * lambert * ( rpDiffuseModifier.xyz );
-
-	float3 color = ( diffuseLight + specularLight ) * lightColor * fragment.color.rgb;
-
-	result.color.rgb = color;
+	result.color.rgb = ( diffuseLight + specularLight ) * lightColor * fragment.color.rgb;
 	result.color.a = 1.0;
+#endif
 }

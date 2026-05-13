@@ -35,11 +35,12 @@ If you have questions concerning this license or the applicable additional terms
 // *INDENT-OFF*
 uniform sampler2D				samp0 : register(s0); // texture 1 is the per-surface normal map
 uniform sampler2D				samp1 : register(s1); // texture 3 is the per-surface specular or roughness/metallic/AO mixer map
-uniform sampler2D				samp2 : register(s2); // texture 2 is the per-surface baseColor map 
+uniform sampler2D				samp2 : register(s2); // texture 2 is the per-surface baseColor map
 uniform sampler2D				samp3 : register(s3); // texture 4 is the light falloff texture
 uniform sampler2D				samp4 : register(s4); // texture 5 is the light projection texture
 uniform sampler2DArrayShadow	samp5 : register(s5); // texture 6 is the shadowmap array
-uniform sampler2D				samp6 : register(s6); // texture 7 is the jitter texture 
+uniform sampler2D				samp6 : register(s6); // texture 7 is the jitter texture
+uniform sampler2D				samp7 : register(s7); // texture 8 is the layer map
 
 struct PS_IN
 {
@@ -88,6 +89,73 @@ float2 VogelDiskSample( float sampleIndex, float samplesCount, float phi )
 	float cosine = cos( theta );
 
 	return float2( r * cosine, r * sine );
+}
+
+// Sheen (Zeltner et al. 2022 Charlie NDF)
+float SheenLookup( float x, float alphaG )
+{
+	float oneMinusAlphaSq = ( 1.0 - alphaG ) * ( 1.0 - alphaG );
+	float a = lerp( 25.3245, 21.5473, oneMinusAlphaSq );
+	float b = lerp(  3.3244,  3.8299, oneMinusAlphaSq );
+	float c = lerp(  0.1680,  0.1982, oneMinusAlphaSq );
+	float d = lerp( -1.2739, -1.9736, oneMinusAlphaSq );
+	float e = lerp( -4.8597, -4.3205, oneMinusAlphaSq );
+	return a / ( 1.0 + b * pow( abs( x ), c ) ) + d * x + e;
+}
+
+float D_Charlie( float roughness, float NdotH )
+{
+	float alpha    = roughness * roughness;
+	float invAlpha = 1.0 / max( alpha, 0.001 );
+	float sin2h    = max( 1.0 - NdotH * NdotH, 0.0078125 );
+	return ( 2.0 + invAlpha ) * pow( sin2h, invAlpha * 0.5 ) / ( 2.0 * PI );
+}
+
+float V_Sheen( float NdotL, float NdotV, float roughness )
+{
+	float alphaG  = roughness * roughness;
+	float lambdaV = exp( SheenLookup( NdotV, alphaG ) );
+	float lambdaL = exp( SheenLookup( NdotL, alphaG ) );
+	return 1.0 / ( ( 1.0 + lambdaV + lambdaL ) * ( 4.0 * max( NdotV * NdotL, 0.0001 ) ) );
+}
+
+half3 EvaluateSheen( half3 sheenColor, float sheenRoughness, float NdotL, float NdotV, float NdotH )
+{
+	if( dot( sheenColor, sheenColor ) < 0.0001 )
+		return half3( 0.0, 0.0, 0.0 );
+	float D = D_Charlie( sheenRoughness, NdotH );
+	float V = V_Sheen( NdotL, NdotV, sheenRoughness );
+	return sheenColor * D * V;
+}
+
+// Coat (GGX clearcoat, IOR 1.5, F0 = 0.04)
+half3 EvaluateCoat( float coatWeight, float coatRoughness, float NdotL, float NdotV, float NdotH, float VdotH )
+{
+	if( coatWeight < 0.001 )
+		return half3( 0.0, 0.0, 0.0 );
+
+	float alpha  = coatRoughness * coatRoughness;
+	float alpha2 = alpha * alpha;
+	float denom  = NdotH * NdotH * ( alpha2 - 1.0 ) + 1.0;
+	float D      = alpha2 / ( PI * denom * denom );
+
+	float k  = ( coatRoughness + 1.0 );
+	float k2 = ( k * k ) / 8.0;
+	float GV = NdotV / ( NdotV * ( 1.0 - k2 ) + k2 );
+	float GL = NdotL / ( NdotL * ( 1.0 - k2 ) + k2 );
+	float G  = GV * GL;
+
+	float Fc    = pow( 1.0 - VdotH, 5.0 );
+	float3 Fcoat = float3( 0.04 + ( 1.0 - 0.04 ) * Fc );
+
+	return coatWeight * Fcoat * D * G / max( 4.0 * NdotL * NdotV, 0.0001 );
+}
+
+float CoatAttenuation( float coatWeight, float NdotV )
+{
+	float Fc = pow( 1.0 - NdotV, 5.0 );
+	float F  = 0.04 + ( 1.0 - 0.04 ) * Fc;
+	return 1.0 - coatWeight * F;
 }
 
 void main( PS_IN fragment, out PS_OUT result )
@@ -451,7 +519,19 @@ void main( PS_IN fragment, out PS_OUT result )
 	//half3 diffuseColor = mix( diffuseMap, F0, metal ) * rpDiffuseModifier.xyz;
 	half3 diffuseLight = diffuseColor * lambert * ( rpDiffuseModifier.xyz );
 
-	float3 color = ( diffuseLight + specularLight ) * lightColor * fragment.color.rgb * shadow;
+	// layers
+	half4 layerMap = tex2D( samp7, fragment.texcoord5.xy );
+	float coatWeight = layerMap.r;
+	float coatRoughness = max( layerMap.g, 0.045 );
+	half3 sheenColor = diffuseColor * layerMap.b;
+	float sheenRoughness = max( layerMap.a, 0.07 );
+	half NdotV = clamp( dot3( localNormal, viewVector ), 0.001, 1.0 );
+	half3 coatBRDF  = EvaluateCoat( coatWeight, coatRoughness, ldotN, NdotV, hdotN, vdotH );
+	float baseAtten = CoatAttenuation( coatWeight, NdotV );
+	half3 sheenBRDF = EvaluateSheen( sheenColor, sheenRoughness, ldotN, NdotV, hdotN );
+	half3 baseLayer = ( diffuseLight + specularLight ) * baseAtten;
+
+	float3 color = ( baseLayer + sheenBRDF * lambert + coatBRDF ) * lightColor * fragment.color.rgb * shadow;
 
 	result.color.rgb = color;
 	result.color.a = 1.0;
