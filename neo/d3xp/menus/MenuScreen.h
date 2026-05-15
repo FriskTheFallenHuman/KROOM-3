@@ -1032,6 +1032,10 @@ public:
 			GRAPHICS_FIELD_HDR_AUTOEXPOSURE,
 			GRAPHICS_FIELD_SSGI,
 			GRAPHICS_FIELD_HALF_LIGHT,
+			GRAPHICS_FIELD_PBR,
+			GRAPHICS_FIELD_LIGHTGRID,
+			GRAPHICS_FIELD_MOC,
+			GRAPHICS_FIELD_TONEMAP_PRESETS,
 			// RB end
 			GRAPHICS_FIELD_MOTIONBLUR,
 			GRAPHICS_FIELD_BRIGHTNESS,
@@ -1054,6 +1058,8 @@ public:
 		virtual idSWFScriptVar		GetField( const int fieldIndex ) const;
 
 		virtual void				AdjustField( const int fieldIndex, const int adjustAmount );
+
+		bool						IsRestartRequired() const;
 
 	private:
 		idStaticList< idSWFScriptVar, MAX_GRAPHICS_FIELDS >	fields;

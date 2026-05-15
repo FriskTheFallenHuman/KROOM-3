@@ -392,11 +392,9 @@ void idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings::LoadData
 	if( !wentToFullscreenMenu )
 	{
 		originalFramerate = com_engineHz.GetFloat();
-		//originalAntialias = r_multiSamples.GetInteger();
 	}
 	else
 	{
-		// keep the old values of originalFramerate and originalAntialias if coming back from the Fullscreen menu
 		wentToFullscreenMenu = false;
 	}
 	originalHighResolutionClock = com_hiResClock.GetInteger();
@@ -410,8 +408,7 @@ idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings::IsRestartRequ
 */
 bool idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings::IsRestartRequired() const
 {
-	if( /*originalAntialias != r_multiSamples.GetInteger() ||*/
-		originalFramerate != com_engineHz.GetFloat() )
+	if( originalFramerate != com_engineHz.GetFloat() )
 	{
 		return true;
 	}
@@ -612,7 +609,6 @@ bool idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings::IsDataCh
 {
 	if( originalFramerate != com_engineHz.GetFloat() ||
 			originalHighResolutionClock != com_hiResClock.GetInteger() ||
-			//originalAntialias != r_multiSamples.GetInteger() ||
 			originalVsync != r_swapInterval.GetInteger() )
 	{
 		return true;

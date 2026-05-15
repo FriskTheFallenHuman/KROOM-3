@@ -160,6 +160,38 @@ void idMenuScreen_Shell_GraphicsOptions::Initialize( idMenuHandler* data )
 	control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, idMenuDataSource_GraphicsSettings::GRAPHICS_FIELD_HALF_LIGHT );
 	options->AddChild( control );
 
+	control = new( TAG_SWF ) idMenuWidget_ControlButton();
+	control->SetOptionType( OPTION_SLIDER_TEXT );
+	control->SetLabel( "Physically-Based Rendering" ); // Physically-Based Rendering
+	control->SetDataSource( &renderData, idMenuDataSource_GraphicsSettings::GRAPHICS_FIELD_PBR );
+	control->SetupEvents( DEFAULT_REPEAT_TIME, options->GetChildren().Num() );
+	control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, idMenuDataSource_GraphicsSettings::GRAPHICS_FIELD_PBR );
+	options->AddChild( control );
+
+	control = new( TAG_SWF ) idMenuWidget_ControlButton();
+	control->SetOptionType( OPTION_SLIDER_TEXT );
+	control->SetLabel( "Light Grids" ); // Light Grids
+	control->SetDataSource( &renderData, idMenuDataSource_GraphicsSettings::GRAPHICS_FIELD_LIGHTGRID );
+	control->SetupEvents( DEFAULT_REPEAT_TIME, options->GetChildren().Num() );
+	control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, idMenuDataSource_GraphicsSettings::GRAPHICS_FIELD_LIGHTGRID );
+	options->AddChild( control );
+
+	control = new( TAG_SWF ) idMenuWidget_ControlButton();
+	control->SetOptionType( OPTION_SLIDER_TEXT );
+	control->SetLabel( "Masked Occlusion Culling" ); // Masked Occlusion Culling
+	control->SetDataSource( &renderData, idMenuDataSource_GraphicsSettings::GRAPHICS_FIELD_MOC );
+	control->SetupEvents( DEFAULT_REPEAT_TIME, options->GetChildren().Num() );
+	control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, idMenuDataSource_GraphicsSettings::GRAPHICS_FIELD_MOC );
+	options->AddChild( control );
+
+	control = new( TAG_SWF ) idMenuWidget_ControlButton();
+	control->SetOptionType( OPTION_SLIDER_TEXT );
+	control->SetLabel( "Tonemap Presets" ); // Tonemap Presets
+	control->SetDataSource( &renderData, idMenuDataSource_GraphicsSettings::GRAPHICS_FIELD_TONEMAP_PRESETS );
+	control->SetupEvents( DEFAULT_REPEAT_TIME, options->GetChildren().Num() );
+	control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, idMenuDataSource_GraphicsSettings::GRAPHICS_FIELD_TONEMAP_PRESETS );
+	options->AddChild( control );
+
 	options->AddEventAction( WIDGET_EVENT_SCROLL_DOWN ).Set( new( TAG_SWF ) idWidgetActionHandler( options, WIDGET_ACTION_EVENT_SCROLL_DOWN_START_REPEATER, WIDGET_EVENT_SCROLL_DOWN ) );
 	options->AddEventAction( WIDGET_EVENT_SCROLL_UP ).Set( new( TAG_SWF ) idWidgetActionHandler( options, WIDGET_ACTION_EVENT_SCROLL_UP_START_REPEATER, WIDGET_EVENT_SCROLL_UP ) );
 	options->AddEventAction( WIDGET_EVENT_SCROLL_DOWN_RELEASE ).Set( new( TAG_SWF ) idWidgetActionHandler( options, WIDGET_ACTION_EVENT_STOP_REPEATER, WIDGET_EVENT_SCROLL_DOWN_RELEASE ) );
@@ -240,10 +272,54 @@ idMenuScreen_Shell_GraphicsOptions::HideScreen
 */
 void idMenuScreen_Shell_GraphicsOptions::HideScreen( const mainMenuTransition_t transitionType )
 {
+	if( renderData.IsRestartRequired() )
+	{
+		class idSWFScriptFunction_Restart : public idSWFScriptFunction_RefCounted
+		{
+		public:
+			idSWFScriptFunction_Restart( gameDialogMessages_t _msg, bool _restart )
+			{
+				msg = _msg;
+				restart = _restart;
+			}
+			idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
+			{
+				common->Dialog().ClearDialog( msg );
+				if( restart )
+				{
+					/*
+					idStr cmdLine = Sys_GetCmdLine();
+					if( cmdLine.Find( "com_skipIntroVideos" ) < 0 )
+					{
+						cmdLine.Append( " +set com_skipIntroVideos 1" );
+					}
+					Sys_ReLaunch( ( void* )cmdLine.c_str(), cmdLine.Length() );
+					*/
+					// DG: Sys_ReLaunch() doesn't need any options anymore
+					//     (the old way would have been unnecessarily painful on POSIX systems)
+					Sys_ReLaunch();
+					// DG end
+				}
+				return idSWFScriptVar();
+			}
+		private:
+			gameDialogMessages_t msg;
+			bool restart;
+		};
+		idStaticList<idSWFScriptFunction*, 4> callbacks;
+		idStaticList<idStrId, 4> optionText;
+		callbacks.Append( new idSWFScriptFunction_Restart( GDM_GAME_RESTART_REQUIRED, false ) );
+		callbacks.Append( new idSWFScriptFunction_Restart( GDM_GAME_RESTART_REQUIRED, true ) );
+		optionText.Append( idStrId( "#str_00100113" ) ); // Continue
+		optionText.Append( idStrId( "#str_02487" ) ); // Restart Now
+		common->Dialog().AddDynamicDialog( GDM_GAME_RESTART_REQUIRED, callbacks, optionText, true, idStr() );
+	}
+
 	if( renderData.IsDataChanged() )
 	{
 		renderData.CommitData();
 	}
+
 	idMenuScreen::HideScreen( transitionType );
 }
 
@@ -333,10 +409,14 @@ extern idCVar r_lodBias;
 extern idCVar r_useSSGI;
 extern idCVar r_useHalfLambertLighting;
 extern idCVar r_shadowMapLodScale;
+extern idCVar r_usePBR;
+extern idCVar r_useLightGrid;
+extern idCVar r_useMaskedOcclusionCulling;
+extern idCVar r_tonemapPreset;
 
 /*
 ========================
-idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_AudioSettings::idMenuDataSource_AudioSettings
+idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_GraphicsSettings::idMenuDataSource_GraphicsSettings
 ========================
 */
 idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_GraphicsSettings::idMenuDataSource_GraphicsSettings()
@@ -347,7 +427,7 @@ idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_GraphicsSettings::idMenuDat
 
 /*
 ========================
-idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_AudioSettings::LoadData
+idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_GraphicsSettings::LoadData
 ========================
 */
 void idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_GraphicsSettings::LoadData()
@@ -364,13 +444,32 @@ void idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_GraphicsSettings::Load
 	fields[ GRAPHICS_FIELD_SHADOWMAP_LOD ].SetFloat( r_shadowMapLodScale.GetFloat() );
 	fields[ GRAPHICS_FIELD_SSGI ].SetBool( r_useSSGI.GetBool() );
 	fields[ GRAPHICS_FIELD_HALF_LIGHT ].SetBool( r_useHalfLambertLighting.GetBool() );
+	fields[ GRAPHICS_FIELD_PBR ].SetBool( r_usePBR.GetBool() );
+	fields[ GRAPHICS_FIELD_LIGHTGRID ].SetBool( r_useLightGrid.GetBool() );
+	fields[ GRAPHICS_FIELD_MOC ].SetBool( r_useMaskedOcclusionCulling.GetBool() );
+	fields[ GRAPHICS_FIELD_TONEMAP_PRESETS ].SetInteger( r_tonemapPreset.GetInteger() );
 
 	originalFields = fields;
 }
 
 /*
 ========================
-idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_AudioSettings::CommitData
+idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_GraphicsSettings::IsRestartRequired
+========================
+*/
+bool idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_GraphicsSettings::IsRestartRequired() const
+{
+	if( originalFields[ GRAPHICS_FIELD_ANTIALIASING ].ToInteger() != fields[ GRAPHICS_FIELD_ANTIALIASING ].ToInteger() )
+	{
+		return true;
+	}
+
+	return false;
+}
+
+/*
+========================
+idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_GraphicsSettings::CommitData
 ========================
 */
 void idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_GraphicsSettings::CommitData()
@@ -387,6 +486,10 @@ void idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_GraphicsSettings::Comm
 	r_shadowMapLodScale.SetFloat( fields[ GRAPHICS_FIELD_SHADOWMAP_LOD ].ToFloat() );
 	r_useSSGI.SetBool( fields[ GRAPHICS_FIELD_SSGI ].ToBool() );
 	r_useHalfLambertLighting.SetBool( fields[ GRAPHICS_FIELD_HALF_LIGHT ].ToBool() );
+	r_usePBR.SetBool( fields[ GRAPHICS_FIELD_PBR ].ToBool() );
+	r_useLightGrid.SetBool( fields[ GRAPHICS_FIELD_LIGHTGRID ].ToBool() );
+	r_useMaskedOcclusionCulling.SetBool( fields[ GRAPHICS_FIELD_MOC ].ToBool() );
+	r_tonemapPreset.SetInteger( fields[ GRAPHICS_FIELD_TONEMAP_PRESETS ].ToInteger() );
 
 	cvarSystem->SetModifiedFlags( CVAR_ARCHIVE );
 
@@ -399,12 +502,18 @@ extern float LinearAdjust( float input, float currentMin, float currentMax, floa
 
 /*
 ========================
-idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_AudioSettings::AdjustField
+idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_GraphicsSettings::AdjustField
 ========================
 */
 void idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_GraphicsSettings::AdjustField( const int fieldIndex, const int adjustAmount )
 {
-	if( fieldIndex == GRAPHICS_FIELD_SHADOWMAP_LOD )
+	if( fieldIndex == GRAPHICS_FIELD_TONEMAP_PRESETS )
+	{
+		static const int numValues = 6;
+		static const int values[numValues] = { 0, 1, 2, 3, 4, 5 };
+		fields[ fieldIndex ].SetInteger( AdjustOption( fields[ GRAPHICS_FIELD_TONEMAP_PRESETS ].ToInteger(), values, numValues, adjustAmount ) );
+	}
+	else if( fieldIndex == GRAPHICS_FIELD_SHADOWMAP_LOD )
 	{
 		fields[ fieldIndex ].SetFloat( fields[ GRAPHICS_FIELD_SHADOWMAP_LOD ].ToFloat() + adjustAmount * 0.1f );
 	}
@@ -464,12 +573,59 @@ void idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_GraphicsSettings::Adju
 
 /*
 ========================
-idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_AudioSettings::GetField
+idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_GraphicsSettings::GetField
 ========================
 */
 idSWFScriptVar idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_GraphicsSettings::GetField( const int fieldIndex ) const
 {
-	if( fieldIndex == GRAPHICS_FIELD_SHADOWMAP_LOD )
+	if( fieldIndex == GRAPHICS_FIELD_TONEMAP_PRESETS )
+	{
+		static const int numValues = 6;
+		static const char* values[numValues] =
+		{
+			"ACES",
+			"Filmic",
+			"AgX",
+			"Reinhard",
+			"Uncharted2",
+			"None"
+		};
+		return values[ fields[ GRAPHICS_FIELD_TONEMAP_PRESETS ].ToInteger() ];
+	}
+	else if( fieldIndex == GRAPHICS_FIELD_PBR )
+	{
+		if( fields[ GRAPHICS_FIELD_PBR ].ToBool() == true )
+		{
+			return "#str_swf_enabled";
+		}
+		else
+		{
+			return "#str_swf_disabled";
+		}
+	}
+	else if( fieldIndex == GRAPHICS_FIELD_LIGHTGRID )
+	{
+		if( fields[ GRAPHICS_FIELD_LIGHTGRID ].ToBool() == true )
+		{
+			return "#str_swf_enabled";
+		}
+		else
+		{
+			return "#str_swf_disabled";
+		}
+	}
+	else if( fieldIndex == GRAPHICS_FIELD_MOC )
+	{
+		if( fields[ GRAPHICS_FIELD_MOC ].ToBool() == true )
+		{
+			return "#str_swf_enabled";
+		}
+		else
+		{
+			return "#str_swf_disabled";
+		}
+	}
+	else if( fieldIndex == GRAPHICS_FIELD_SHADOWMAP_LOD )
 	{
 		return LinearAdjust( fields[ GRAPHICS_FIELD_SHADOWMAP_LOD ].ToFloat(), 0.1f, 2.0f, 0.0f, 100.0f );
 	}
@@ -586,7 +742,7 @@ idSWFScriptVar idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_GraphicsSett
 
 /*
 ========================
-idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_AudioSettings::IsDataChanged
+idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_GraphicsSettings::IsDataChanged
 ========================
 */
 bool idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_GraphicsSettings::IsDataChanged() const
@@ -648,6 +804,26 @@ bool idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_GraphicsSettings::IsDa
 	}
 
 	if( fields[ GRAPHICS_FIELD_HALF_LIGHT ].ToBool() != originalFields[ GRAPHICS_FIELD_HALF_LIGHT ].ToBool() )
+	{
+		return true;
+	}
+
+	if( fields[ GRAPHICS_FIELD_PBR ].ToBool() != originalFields[ GRAPHICS_FIELD_PBR ].ToBool() )
+	{
+		return true;
+	}
+
+	if( fields[ GRAPHICS_FIELD_LIGHTGRID ].ToBool() != originalFields[ GRAPHICS_FIELD_LIGHTGRID ].ToBool() )
+	{
+		return true;
+	}
+
+	if( fields[ GRAPHICS_FIELD_MOC ].ToBool() != originalFields[ GRAPHICS_FIELD_MOC ].ToBool() )
+	{
+		return true;
+	}
+
+	if( fields[ GRAPHICS_FIELD_TONEMAP_PRESETS ].ToInteger() != originalFields[ GRAPHICS_FIELD_TONEMAP_PRESETS ].ToInteger() )
 	{
 		return true;
 	}
