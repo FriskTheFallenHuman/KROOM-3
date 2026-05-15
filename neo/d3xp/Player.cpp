@@ -7615,21 +7615,14 @@ void idPlayer::PerformImpulse( int impulse )
 			// otherwise it opens the pda
 			if( !common->IsMultiplayer() )
 			{
-#if !defined(ID_RETAIL) && !defined(ID_RETAIL_INTERNAL)
-				if( !common->KeyState( 56 ) )  		// don't toggle PDA when LEFT ALT is down
+				if( objectiveSystemOpen )
 				{
-#endif
-					if( objectiveSystemOpen )
-					{
-						TogglePDA();
-					}
-					else if( weapon_pda >= 0 )
-					{
-						SelectWeapon( weapon_pda, true );
-					}
-#if !defined(ID_RETAIL) && !defined(ID_RETAIL_INTERNAL)
+					TogglePDA();
 				}
-#endif
+				else if( weapon_pda >= 0 )
+				{
+					SelectWeapon( weapon_pda, true );
+				}
 			}
 			else
 			{
