@@ -112,13 +112,11 @@ void idImage::Bind()
 		{
 			tmu->current2DMap = texnum;
 
-#if !defined(USE_GLES2) && !defined(USE_GLES3)
 			if( glConfig.directStateAccess )
 			{
 				glBindMultiTextureEXT( GL_TEXTURE0 + texUnit, GL_TEXTURE_2D, texnum );
 			}
 			else
-#endif
 			{
 				glActiveTexture( GL_TEXTURE0 + texUnit );
 				glBindTexture( GL_TEXTURE_2D, texnum );
@@ -131,13 +129,11 @@ void idImage::Bind()
 		{
 			tmu->currentCubeMap = texnum;
 
-#if !defined(USE_GLES2) && !defined(USE_GLES3)
 			if( glConfig.directStateAccess )
 			{
 				glBindMultiTextureEXT( GL_TEXTURE0 + texUnit, GL_TEXTURE_CUBE_MAP, texnum );
 			}
 			else
-#endif
 			{
 				glActiveTexture( GL_TEXTURE0 + texUnit );
 				glBindTexture( GL_TEXTURE_CUBE_MAP, texnum );
@@ -150,13 +146,11 @@ void idImage::Bind()
 		{
 			tmu->current2DArray = texnum;
 
-#if !defined(USE_GLES2) && !defined(USE_GLES3)
 			if( glConfig.directStateAccess )
 			{
 				glBindMultiTextureEXT( GL_TEXTURE0 + texUnit, GL_TEXTURE_2D_ARRAY, texnum );
 			}
 			else
-#endif
 			{
 				glActiveTexture( GL_TEXTURE0 + texUnit );
 				glBindTexture( GL_TEXTURE_2D_ARRAY, texnum );
@@ -169,13 +163,11 @@ void idImage::Bind()
 		{
 			tmu->current2DMap = texnum;
 
-#if !defined(USE_GLES2) && !defined(USE_GLES3)
 			if( glConfig.directStateAccess )
 			{
 				glBindMultiTextureEXT( GL_TEXTURE0 + texUnit, GL_TEXTURE_2D_MULTISAMPLE, texnum );
 			}
 			else
-#endif
 			{
 				glActiveTexture( GL_TEXTURE0 + texUnit );
 				glBindTexture( GL_TEXTURE_2D_MULTISAMPLE, texnum );
@@ -214,19 +206,14 @@ void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight )
 
 	glBindTexture( target, texnum );
 
-#if !defined(USE_GLES2)
 	if( Framebuffer::IsDefaultFramebufferActive() )
 	{
 		glReadBuffer( GL_BACK );
 	}
-#endif
 
 	opts.width = imageWidth;
 	opts.height = imageHeight;
 
-#if defined(USE_GLES2)
-	glCopyTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, x, y, imageWidth, imageHeight, 0 );
-#else
 	if( r_useHDR.GetBool() && globalFramebuffers.hdrFBO->IsBound() )
 	{
 
@@ -258,7 +245,6 @@ void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight )
 	{
 		glCopyTexImage2D( target, 0, GL_RGBA8, x, y, imageWidth, imageHeight, 0 );
 	}
-#endif
 
 	// these shouldn't be necessary if the image was initialized properly
 	glTexParameterf( target, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
@@ -354,12 +340,10 @@ void idImage::SubImageUpload( int mipLevel, int x, int y, int z, int width, int 
 
 	if( opts.format == FMT_RGB565 )
 	{
-#if !defined(USE_GLES3)
 		glPixelStorei( GL_UNPACK_SWAP_BYTES, GL_TRUE );
-#endif
 	}
 
-#if defined(DEBUG) || defined(__ANDROID__)
+#if defined(DEBUG)
 	GL_CheckErrors();
 #endif
 	if( IsCompressed() )
@@ -385,7 +369,7 @@ void idImage::SubImageUpload( int mipLevel, int x, int y, int z, int width, int 
 		glTexSubImage2D( uploadTarget, mipLevel, x, y, width, height, dataFormat, dataType, pic );
 	}
 
-#if defined(DEBUG) || defined(__ANDROID__)
+#if defined(DEBUG)
 	GL_CheckErrors();
 #endif
 

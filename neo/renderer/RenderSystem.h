@@ -209,7 +209,7 @@ struct glconfig_t
 	int					multisamples;
 
 	// RB begin
-#if !defined(__ANDROID__) && !defined(USE_VULKAN)
+#if !defined(USE_VULKAN)
 	GLuint				global_vao;
 #endif
 	// RB end

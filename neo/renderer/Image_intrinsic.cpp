@@ -225,9 +225,7 @@ static void R_DepthImage( idImage* image )
 {
 	// RB: NULL data and MSAA support
 #if defined(USE_HDR_MSAA)
-	textureSamples_t msaaSamples = glConfig.multisamples;
-#else
-	int msaaSamples = 0;
+	textureSamples_t msaaSamples = r_useHDR.GetBool() ? static_cast<textureSamples_t>( glConfig.multisamples ) : SAMPLE_1;
 #endif
 	image->GenerateImage( NULL, renderSystem->GetWidth(), renderSystem->GetHeight(), TF_NEAREST, TR_CLAMP, TD_DEPTH );//, msaaSamples );
 	// RB end
@@ -238,9 +236,7 @@ static void R_HDR_RGBA16FImage_ResNative( idImage* image )
 {
 	// FIXME
 #if defined(USE_HDR_MSAA)
-	int msaaSamples = glConfig.multisamples;
-#else
-	int msaaSamples = 0;
+	textureSamples_t msaaSamples = r_useHDR.GetBool() ? static_cast<textureSamples_t>(glConfig.multisamples) : SAMPLE_1;
 #endif
 	image->GenerateImage( NULL, renderSystem->GetWidth(), renderSystem->GetHeight(), TF_NEAREST, TR_CLAMP, TD_RGBA16F );//, msaaSamples );
 }

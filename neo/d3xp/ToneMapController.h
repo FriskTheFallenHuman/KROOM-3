@@ -75,7 +75,10 @@ public:
 	virtual void	ClientPredictionThink();
 	virtual bool	ClientReceiveEvent( int event, int time, const idBitMsg& msg );
 
-	static bool		IsControllerActive() { return ( tonemapBlendAlpha < 1.0f ); }
+	static bool		IsControllerActive()
+	{
+		return ( tonemapBlendAlpha < 1.0f );
+	}
 
 private:
 	static tonemapState_t	tonemapCurrent;	// the current tonemap settings for the player's view, used for syncing with the backend
