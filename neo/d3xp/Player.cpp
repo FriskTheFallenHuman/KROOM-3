@@ -6693,6 +6693,12 @@ void idPlayer::CrashLand( const idVec3& oldOrigin, const idVec3& oldVelocity )
 		return;
 	}
 
+	// no falling damage if we are in godmode or demigod
+	if( godmode || (demigodmode && health == 1) )
+	{
+		return;
+	}
+
 	gravityNormal = physicsObj.GetGravityNormal();
 
 	// if the player wasn't going down
@@ -7249,6 +7255,11 @@ idPlayer::UpdateAir
 void idPlayer::UpdateAir()
 {
 	if( health <= 0 )
+	{
+		return;
+	}
+
+	if( godmode || (demigodmode && health == 1) )
 	{
 		return;
 	}
@@ -9820,7 +9831,7 @@ void idPlayer::Damage( idEntity* inflictor, idEntity* attacker, const idVec3& di
 
 	SetTimeState ts( timeGroup );
 
-	if( !fl.takedamage || noclip || spectating || gameLocal.inCinematic )
+	if( !fl.takedamage || noclip || spectating || gameLocal.inCinematic || godmode )
 	{
 		return;
 	}
