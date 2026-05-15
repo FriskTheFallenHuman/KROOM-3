@@ -796,57 +796,62 @@ bool idRenderWorldLocal::InitFromMap( const char* name )
 	FreeWorld();
 
 	bool loaded = false;
-	idFileLocal file( fileSystem->OpenFileReadMemory( generatedFileName ) );
-	if( file != NULL )
+
+	//GK: Avoid loading from pre generated bproc if the proc file exist (What could possibly go wrong?)
+	if( currentTimeStamp == FILE_NOT_FOUND_TIMESTAMP )
 	{
-		int numEntries = 0;
-		int magic = 0;
-		file->ReadBig( magic );
-		if( magic == BPROC_MAGIC_BFG || magic == BPROC_MAGIC )
+		idFileLocal file( fileSystem->OpenFileReadMemory( generatedFileName ) );
+		if( file != NULL )
 		{
-			file->ReadBig( numEntries );
-			file->ReadString( mapName );
-			file->ReadBig( mapTimeStamp );
-			loaded = true;
-			for( int i = 0; i < numEntries; i++ )
+			int numEntries = 0;
+			int magic = 0;
+			file->ReadBig( magic );
+			if( magic == BPROC_MAGIC_BFG || magic == BPROC_MAGIC )
 			{
-				idStrStatic< MAX_OSPATH > type;
-				file->ReadString( type );
-				type.ToLower();
-				if( type == "model" )
+				file->ReadBig( numEntries );
+				file->ReadString( mapName );
+				file->ReadBig( mapTimeStamp );
+				loaded = true;
+				for( int i = 0; i < numEntries; i++ )
 				{
-					idRenderModel* lastModel = ReadBinaryModel( file );
-					if( lastModel == NULL )
+					idStrStatic< MAX_OSPATH > type;
+					file->ReadString( type );
+					type.ToLower();
+					if( type == "model" )
 					{
-						loaded = false;
-						break;
+						idRenderModel* lastModel = ReadBinaryModel( file );
+						if( lastModel == NULL )
+						{
+							loaded = false;
+							break;
+						}
+						renderModelManager->AddModel( lastModel );
+						localModels.Append( lastModel );
 					}
-					renderModelManager->AddModel( lastModel );
-					localModels.Append( lastModel );
-				}
-				else if( type == "shadowmodel" && magic == BPROC_MAGIC_BFG )
-				{
-					// RB: the original BFG .bproc just saved all models as "shadowmodel"
-					idRenderModel* lastModel = ReadBinaryModel( file );
-					if( lastModel == NULL )
+					else if( type == "shadowmodel" && magic == BPROC_MAGIC_BFG )
 					{
-						loaded = false;
-						break;
+						// RB: the original BFG .bproc just saved all models as "shadowmodel"
+						idRenderModel* lastModel = ReadBinaryModel( file );
+						if( lastModel == NULL )
+						{
+							loaded = false;
+							break;
+						}
+						renderModelManager->AddModel( lastModel );
+						localModels.Append( lastModel );
 					}
-					renderModelManager->AddModel( lastModel );
-					localModels.Append( lastModel );
-				}
-				else if( type == "interareaportals" )
-				{
-					ReadBinaryAreaPortals( file );
-				}
-				else if( type == "nodes" )
-				{
-					ReadBinaryNodes( file );
-				}
-				else
-				{
-					idLib::Error( "Binary proc file failed, unexpected type %s\n", type.c_str() );
+					else if( type == "interareaportals" )
+					{
+						ReadBinaryAreaPortals( file );
+					}
+					else if( type == "nodes" )
+					{
+						ReadBinaryNodes( file );
+					}
+					else
+					{
+						idLib::Error( "Binary proc file failed, unexpected type %s\n", type.c_str() );
+					}
 				}
 			}
 		}
