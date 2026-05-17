@@ -1062,7 +1062,7 @@ If ref == NULL, common->UpdateScreen will be used
 // RB: changed .tga to .png
 void idRenderSystemLocal::TakeScreenshot( int width, int height, const char* fileName, int blends, renderView_t* ref, int exten )
 {
-	byte*		buffer;
+	byte*		buffer = nullptr;
 	int			i, j, c, temp;
 	idStr finalFileName;
 
@@ -2457,6 +2457,7 @@ void idRenderSystemLocal::Shutdown()
 
 	delete guiModel;
 
+	parallelJobManager->FreeJobList( envprobeJobList );
 	parallelJobManager->FreeJobList( frontEndJobList );
 
 	Clear();
