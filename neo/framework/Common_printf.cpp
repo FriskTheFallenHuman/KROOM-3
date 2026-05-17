@@ -582,8 +582,8 @@ void idCommonLocal::Error( const char* fmt, ... )
 		code = ERP_FATAL;
 	}
 
-	// if we don't have GL running, make it a fatal error
-	if( !renderSystem->IsOpenGLRunning() )
+	// if we don't have a backend running, make it a fatal error
+	if( !renderSystem->IsBackendRunning() )
 	{
 		code = ERP_FATAL;
 	}

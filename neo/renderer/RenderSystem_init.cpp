@@ -1297,12 +1297,14 @@ void R_ScreenShot_f( const idCmdArgs& args )
 			blends = 1;
 			R_ScreenshotFilename( lastNumber, "screenshots/", checkname );
 			break;
+
 		case 2:
 			width = renderSystem->GetWidth();
 			height = renderSystem->GetHeight();
 			blends = 1;
 			checkname = args.Argv( 1 );
 			break;
+
 		case 3:
 			width = atoi( args.Argv( 1 ) );
 			height = atoi( args.Argv( 2 ) );
@@ -2462,7 +2464,7 @@ void idRenderSystemLocal::Shutdown()
 
 	Clear();
 
-	ShutdownOpenGL();
+	ShutdownBackend();
 
 	bInitialized = false;
 }
@@ -2593,10 +2595,10 @@ void idRenderSystemLocal::ResetFonts()
 }
 /*
 ========================
-idRenderSystemLocal::InitOpenGL
+idRenderSystemLocal::InitBackend
 ========================
 */
-void idRenderSystemLocal::InitOpenGL()
+void idRenderSystemLocal::InitBackend()
 {
 	// if OpenGL isn't started, start it now
 	if( !IsInitialized() )
@@ -2618,10 +2620,10 @@ void idRenderSystemLocal::InitOpenGL()
 
 /*
 ========================
-idRenderSystemLocal::ShutdownOpenGL
+idRenderSystemLocal::ShutdownBackend
 ========================
 */
-void idRenderSystemLocal::ShutdownOpenGL()
+void idRenderSystemLocal::ShutdownBackend()
 {
 	// free the context and close the window
 	R_ShutdownFrameData();
@@ -2631,10 +2633,10 @@ void idRenderSystemLocal::ShutdownOpenGL()
 
 /*
 ========================
-idRenderSystemLocal::IsOpenGLRunning
+idRenderSystemLocal::IsBackendRunning
 ========================
 */
-bool idRenderSystemLocal::IsOpenGLRunning() const
+bool idRenderSystemLocal::IsBackendRunning() const
 {
 	return IsInitialized();
 }

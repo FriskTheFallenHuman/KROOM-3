@@ -825,9 +825,9 @@ public:
 		return bInitialized;
 	}
 	virtual void			ResetGuiModels();
-	virtual void			InitOpenGL();
-	virtual void			ShutdownOpenGL();
-	virtual bool			IsOpenGLRunning() const;
+	virtual void			InitBackend();
+	virtual void			ShutdownBackend();
+	virtual bool			IsBackendRunning() const;
 	virtual bool			IsFullScreen() const;
 	virtual int				GetWidth() const;
 	virtual int				GetHeight() const;
@@ -901,7 +901,7 @@ public:
 
 public:
 	// renderer globals
-	bool					registered;		// cleared at shutdown, set at InitOpenGL
+	bool					registered;		// cleared at shutdown, set at InitBackend
 
 	bool					takingScreenshot;
 	bool					takingEnvprobe;

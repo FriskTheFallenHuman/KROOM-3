@@ -1237,8 +1237,8 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 		extern idCVar net_headlessServer;
 		SetServerDedicated( net_headlessServer.GetBool() );
 
-		// init OpenGL, which will open a window and connect sound and input hardware
-		renderSystem->InitOpenGL();
+		// init the backend, which will open a window and connect sound and input hardware
+		renderSystem->InitBackend();
 
 		// Support up to 2 digits after the decimal point
 		com_engineHz_denominator = 100LL * com_engineHz.GetFloat();
