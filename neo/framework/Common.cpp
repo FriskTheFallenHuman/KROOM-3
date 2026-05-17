@@ -338,6 +338,25 @@ void idCommonLocal::AddStartupCommands()
 
 /*
 ==================
+idCommonLocal::WriteFlaggedCVarsToFile
+==================
+*/
+void idCommonLocal::WriteFlaggedCVarsToFile( const char* filename, int flags, const char* setCmd )
+{
+	idFile* f;
+
+	f = fileSystem->OpenFileWrite( filename );
+	if( !f )
+	{
+		Printf( "Couldn't write %s.\n", filename );
+		return;
+	}
+	cvarSystem->WriteFlaggedVariables( flags, setCmd, f );
+	fileSystem->CloseFile( f );
+}
+
+/*
+==================
 idCommonLocal::WriteConfigToFile
 ==================
 */

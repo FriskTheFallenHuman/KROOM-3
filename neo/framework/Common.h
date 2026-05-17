@@ -224,26 +224,8 @@ public:
 	virtual void				UpdateScreen( bool captureToImage, bool releaseMouse = true ) = 0;
 	// DG end
 
+	// Updates the pacifier for level loading.
 	virtual void				UpdateLevelLoadPacifier() = 0;
-	// RB begin
-	virtual void				LoadPacifierInfo( VERIFY_FORMAT_STRING const char* fmt, ... ) = 0;
-	virtual void				LoadPacifierProgressTotal( int total ) = 0;
-	virtual void				LoadPacifierProgressIncrement( int step ) = 0;
-	virtual bool				LoadPacifierRunning() = 0;
-	// RB end
-
-	// foresthale 2014-05-30: a special binarize pacifier has to be shown in
-	// some cases, which includes filename and ETA information, note that
-	// the progress function takes 0-1 float, not 0-100, and can be called
-	// very quickly (it will check that enough time has passed when updating)
-	virtual void				LoadPacifierBinarizeFilename( const char* filename, const char* reason ) = 0;
-	virtual void				LoadPacifierBinarizeInfo( const char* info ) = 0;
-	virtual void				LoadPacifierBinarizeMiplevel( int level, int maxLevel ) = 0;
-	virtual void				LoadPacifierBinarizeProgress( float progress ) = 0;
-	virtual void				LoadPacifierBinarizeEnd() = 0;
-	// for images in particular we can measure more accurately this way (to deal with mipmaps)
-	virtual void				LoadPacifierBinarizeProgressTotal( int total ) = 0;
-	virtual void				LoadPacifierBinarizeProgressIncrement( int step ) = 0;
 
 	// Checks for and removes command line "+set var arg" constructs.
 	// If match is NULL, all set commands will be executed, otherwise
@@ -255,6 +237,13 @@ public:
 
 	// Activates or deactivates a tool.
 	virtual void				ActivateTool( bool active ) = 0;
+
+	// Writes the user's configuration to a file
+	virtual void				WriteConfigToFile( const char* filename ) = 0;
+
+	// Writes cvars with the given flags to a file.
+	virtual void				WriteFlaggedCVarsToFile( const char* filename, int flags, const char* setCmd ) = 0;
+
 
 	// Begins redirection of console output to the given buffer.
 	virtual void				BeginRedirect( char* buffer, int buffersize, void ( *flush )( const char* ) ) = 0;
@@ -366,6 +355,26 @@ public:
 	virtual void				SetServerDedicated( bool dedicated ) = 0;
 
 	virtual void				SetQuitRequested( bool quitRequested ) = 0;
+
+	// RB begin
+	virtual void				LoadPacifierInfo( VERIFY_FORMAT_STRING const char* fmt, ... ) = 0;
+	virtual void				LoadPacifierProgressTotal( int total ) = 0;
+	virtual void				LoadPacifierProgressIncrement( int step ) = 0;
+	virtual bool				LoadPacifierRunning() = 0;
+	// RB end
+
+	// foresthale 2014-05-30: a special binarize pacifier has to be shown in
+	// some cases, which includes filename and ETA information, note that
+	// the progress function takes 0-1 float, not 0-100, and can be called
+	// very quickly (it will check that enough time has passed when updating)
+	virtual void				LoadPacifierBinarizeFilename( const char* filename, const char* reason ) = 0;
+	virtual void				LoadPacifierBinarizeInfo( const char* info ) = 0;
+	virtual void				LoadPacifierBinarizeMiplevel( int level, int maxLevel ) = 0;
+	virtual void				LoadPacifierBinarizeProgress( float progress ) = 0;
+	virtual void				LoadPacifierBinarizeEnd() = 0;
+	// for images in particular we can measure more accurately this way (to deal with mipmaps)
+	virtual void				LoadPacifierBinarizeProgressTotal( int total ) = 0;
+	virtual void				LoadPacifierBinarizeProgressIncrement( int step ) = 0;
 };
 
 extern idCommon* 		common;

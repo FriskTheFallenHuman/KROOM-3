@@ -6694,7 +6694,7 @@ void idPlayer::CrashLand( const idVec3& oldOrigin, const idVec3& oldVelocity )
 	}
 
 	// no falling damage if we are in godmode or demigod
-	if( godmode || (demigodmode && health == 1) )
+	if( godmode || ( demigodmode && health == 1 ) )
 	{
 		return;
 	}
@@ -7259,7 +7259,7 @@ void idPlayer::UpdateAir()
 		return;
 	}
 
-	if( godmode || (demigodmode && health == 1) )
+	if( godmode || ( demigodmode && health == 1 ) )
 	{
 		return;
 	}
