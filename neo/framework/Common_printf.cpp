@@ -194,11 +194,11 @@ void idCommonLocal::VPrintf( const char* fmt, va_list args )
 	// echo to console buffer
 	console->Print( msg );
 
-	// echo to dedicated console and early console
-	Sys_Printf( "%s", msg );
-
 	// remove any color codes
 	idStr::RemoveColors( msg );
+
+	// echo to dedicated console and early console
+	Sys_Printf( "%s", msg );
 
 	// print to script debugger server
 	// DebuggerServerPrint( msg );
