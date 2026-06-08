@@ -1455,9 +1455,9 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 
 		idLib::Printf( "QA Timing IIS: %06dms\n", Sys_Milliseconds() );
 	}
-	catch( idException& e )
+	catch( idException& )
 	{
-		Sys_Error( e.GetError() );
+		Sys_Error( "Error during initialization" );
 	}
 }
 
