@@ -28,6 +28,8 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __FONT_H__
 #define __FONT_H__
 
+extern const char* DEFAULT_FONT;
+
 struct scaledGlyphInfo_t
 {
 	float	top, left;

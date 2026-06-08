@@ -201,7 +201,7 @@ void listDevices_f( const idCmdArgs& args )
 
 	for( size_t i = 0; i < vAudioDevices.size(); ++i )
 	{
-		idLib::Printf( "%s %3d: %S %S\n", vAudioDevices[i].id == defaultDevice.id ? "*" : " ", i, vAudioDevices[i].name.c_str(), vAudioDevices[i].id.c_str() );
+		idLib::Printf( "%s %3d: %S\n", vAudioDevices[i].id == defaultDevice.id ? "*" : " ", i, vAudioDevices[i].name.c_str() );
 	}
 #else
 	UINT32 deviceCount = 0;

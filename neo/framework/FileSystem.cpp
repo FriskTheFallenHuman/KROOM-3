@@ -2788,24 +2788,33 @@ idFileSystemLocal::Path_f
 */
 void idFileSystemLocal::Path_f( const idCmdArgs& args )
 {
+	// Search paths
 	common->Printf( "Current search path:\n" );
+
 	for( int sp = fileSystemLocal.searchPaths.Num() - 1; sp >= 0; sp-- )
 	{
 		const searchpath_t& search = fileSystemLocal.searchPaths[sp];
+		common->Printf( "   %s/%s\n", search.path.c_str(), search.gamedir.c_str() );
+	}
 
-		common->Printf( "%s/%s\n", search.path.c_str(), search.gamedir.c_str() );
+	// Files in game directories
+	common->Printf( "Files in game directory:\n" );
+
+	for( int files = fileSystemLocal.searchPaths.Num() - 1; files >= 0; files-- )
+	{
+		const searchpath_t& search = fileSystemLocal.searchPaths[files];
 
 		int idx = search.zipFiles.Num() - 1;
 		while( idx >= 0 )
 		{
-			common->Printf( "%s (%i files)\n", search.zipFiles[idx]->GetFileName(), search.zipFiles[idx]->GetNumFileResources() );
+			common->Printf( "   %s (%i files)\n", search.zipFiles[idx]->GetFileName(), search.zipFiles[idx]->GetNumFileResources() );
 			idx--;
 		}
 
 		idx = search.resourceFiles.Num() - 1;
 		while( idx >= 0 )
 		{
-			common->Printf( "%s/%s/%s (%i files)\n", search.path.c_str(), search.gamedir.c_str(), search.resourceFiles[idx]->GetFileName(), search.resourceFiles[idx]->GetNumFileResources() );
+			common->Printf( "   %s/%s (%i files)\n", search.gamedir.c_str(), search.resourceFiles[idx]->GetFileName(), search.resourceFiles[idx]->GetNumFileResources() );
 			idx--;
 		}
 	}

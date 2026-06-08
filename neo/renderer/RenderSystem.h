@@ -224,6 +224,11 @@ const int SMALLCHAR_HEIGHT		= 16;
 const int BIGCHAR_WIDTH			= 16;
 const int BIGCHAR_HEIGHT		= 16;
 
+const float SMALL_FONT_SCALE	= 0.255f;
+const float SMALL_CHAR_PAD		= 0.75f;
+const float BIG_FONT_SCALE		= 0.33f;
+const float BIG_CHAR_PAD		= 0.75f;
+
 // all drawing is done to a 640 x 480 virtual screen size
 // and will be automatically scaled to the real resolution
 const int SCREEN_WIDTH			= 640;

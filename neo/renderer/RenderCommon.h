@@ -899,6 +899,9 @@ public:
 
 	void					OnFrame();
 
+	void					DrawFontChar( float x, float y, float scale, float baselineOffset, int ch );
+	float					FontGlyphAdvance( float scale, int ch );
+
 public:
 	// renderer globals
 	bool					registered;		// cleared at shutdown, set at InitBackend
@@ -922,7 +925,6 @@ public:
 	// many console commands need to know which world they should operate on
 
 	const idMaterial* 		whiteMaterial;
-	const idMaterial* 		charSetMaterial;
 	const idMaterial*		imgGuiMaterial; // RB
 	const idMaterial* 		defaultPointLight;
 	const idMaterial* 		defaultProjectedLight;

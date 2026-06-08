@@ -29,6 +29,8 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
+#include "../renderer/RenderCommon.h"
+
 static autoComplete_t	globalAutoComplete;
 
 /*
@@ -612,6 +614,52 @@ void idEditField::SetBuffer( const char* buf )
 
 /*
 ===============
+EditFieldSmallStringWidth
+===============
+*/
+static int EditFieldSmallStringWidth( const char *text, int length ) {
+	if ( text == NULL || length <= 0 ) {
+		return 0;
+	}
+
+	idFont *font = renderSystem->RegisterFont( "Arial_Narrow" );
+	if ( font == NULL ) {
+		return length * SMALLCHAR_WIDTH;
+	}
+
+	int width = 0;
+	for ( int i = 0; text[i] != '\0' && i < length; i++ ) {
+		if ( idStr::IsColor( text + i ) ) {
+			i++;
+			continue;
+		}
+		float advance = font->GetGlyphWidth( 0.255f, (const unsigned char)text[i] );
+		if ( advance <= 0.0f ) {
+			advance = SMALLCHAR_WIDTH;
+		}
+		width += idMath::Ftoi( advance + 0.75f );
+	}
+	return width;
+}
+
+/*
+===============
+EditFieldSmallCharLeft
+===============
+*/
+static int EditFieldSmallCharLeft( int ch ) {
+	idFont *font = renderSystem->RegisterFont( "Arial_Narrow" );
+	if ( font == NULL ) {
+		return 0;
+	}
+
+	scaledGlyphInfo_t glyphInfo;
+	font->GetScaledGlyph( 0.255f, ch & 255, glyphInfo );
+	return idMath::Ftoi( glyphInfo.left );
+}
+
+/*
+===============
 idEditField::Draw
 ===============
 */
@@ -622,9 +670,6 @@ void idEditField::Draw( int x, int y, int width, bool showCursor )
 	int		prestep;
 	int		cursorChar;
 	char	str[MAX_EDIT_LINE];
-	int		size;
-
-	size = SMALLCHAR_WIDTH;
 
 	drawLen = widthInChars;
 	len = strlen( buffer ) + 1;
@@ -685,13 +730,10 @@ void idEditField::Draw( int x, int y, int width, bool showCursor )
 		return;		// off blink
 	}
 
-	if( idKeyInput::GetOverstrikeMode() )
-	{
-		cursorChar = 11;
-	}
-	else
-	{
-		cursorChar = 10;
+	if ( idKeyInput::GetOverstrikeMode() ) {
+		cursorChar = '_';
+	} else {
+		cursorChar = '|';
 	}
 
 	// Move the cursor back to account for color codes
@@ -704,5 +746,5 @@ void idEditField::Draw( int x, int y, int width, bool showCursor )
 		}
 	}
 
-	renderSystem->DrawSmallChar( x + ( cursor - prestep ) * size, y, cursorChar );
+	renderSystem->DrawSmallChar( x + EditFieldSmallStringWidth( str, cursor - prestep ) - EditFieldSmallCharLeft( cursorChar ), y, cursorChar );
 }

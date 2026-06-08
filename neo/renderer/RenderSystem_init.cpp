@@ -1697,7 +1697,6 @@ void R_InitMaterials()
 	tr.defaultPointLight = declManager->FindMaterial( "lights/defaultPointLight" );
 	tr.defaultProjectedLight = declManager->FindMaterial( "lights/defaultProjectedLight" );
 	tr.whiteMaterial = declManager->FindMaterial( "_white", false );
-	tr.charSetMaterial = declManager->FindMaterial( "textures/bigchars" );
 
 	// RB: create implicit material
 	tr.imgGuiMaterial = declManager->FindMaterial( "_imguiFont", true );

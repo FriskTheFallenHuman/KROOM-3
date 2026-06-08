@@ -30,6 +30,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 #include "ConsoleHistory.h"
+#include "../renderer/RenderCommon.h"
 #include "../renderer/ResolutionScale.h"
 #include "Common_local.h"
 #include "../imgui/BFGimgui.h"
@@ -105,7 +106,7 @@ private:
 	void				DrawDebugGraphs();
 
 	//============================
-
+public:
 	// allow these constants to be adjusted for HMD
 	int					LOCALSAFE_LEFT;
 	int					LOCALSAFE_RIGHT;
@@ -116,6 +117,27 @@ private:
 	int					LINE_WIDTH;
 	int					TOTAL_LINES;
 
+	const idVec4 &		ColorForIndex( int colorIndex );
+	int					SmallStringWidth( const char *text );
+	int					BigStringWidth( const char *text );
+
+	void				DrawTextLine( const short *text_p, int y );
+	void				DrawSmallStringRightAlign( float y, const idVec4 &color, const char *text );
+
+	static const float	CONSOLE_SMALL_FONT_SCALE;
+	static const float	CONSOLE_SMALL_CHAR_PAD;
+	static const float	CONSOLE_BIG_FONT_SCALE;
+	static const float	CONSOLE_BIG_CHAR_PAD;
+
+	static const idVec4 CONSOLE_COLOR_TEXT;
+	static const idVec4 CONSOLE_COLOR_DIM_TEXT;
+	static const idVec4 CONSOLE_COLOR_WARNING;
+	static const idVec4 CONSOLE_COLOR_ERROR;
+	static const idVec4 CONSOLE_COLOR_CYAN;
+	static const idVec4 CONSOLE_COLOR_GREEN;
+	static const idVec4 CONSOLE_COLOR_COMPLETE;
+
+private:
 	bool				keyCatching;
 
 	short				text[CON_TEXTSIZE];
@@ -169,6 +191,155 @@ idCVar idConsoleLocal::con_notifyTime( "con_notifyTime", "3", CVAR_SYSTEM, "time
 
 =============================================================================
 */
+
+const float idConsoleLocal::CONSOLE_SMALL_FONT_SCALE = 0.255f;
+const float idConsoleLocal::CONSOLE_SMALL_CHAR_PAD = 0.75f;
+const float idConsoleLocal::CONSOLE_BIG_FONT_SCALE = 0.33f;
+const float idConsoleLocal::CONSOLE_BIG_CHAR_PAD = 0.75f;
+
+const idVec4 idConsoleLocal::CONSOLE_COLOR_TEXT( 0.00f, 1.00f, 1.00f, 1.00f );
+const idVec4 idConsoleLocal::CONSOLE_COLOR_DIM_TEXT( 0.75f, 0.75f, 0.75f, 1.00f );
+const idVec4 idConsoleLocal::CONSOLE_COLOR_WARNING( 1.00f, 1.00f, 0.00f, 1.00f );
+const idVec4 idConsoleLocal::CONSOLE_COLOR_ERROR( 1.00f, 0.00f, 0.00f, 1.00f );
+const idVec4 idConsoleLocal::CONSOLE_COLOR_CYAN( 0.00f, 1.00f, 1.00f, 1.00f );
+const idVec4 idConsoleLocal::CONSOLE_COLOR_GREEN( 0.00f, 1.00f, 0.00f, 1.00f );
+const idVec4 idConsoleLocal::CONSOLE_COLOR_COMPLETE( 0.00f, 1.00f, 1.00f, 1.00f );
+
+/*
+==================
+idConsoleLocal::ColorForIndex
+==================
+*/
+const idVec4 &idConsoleLocal::ColorForIndex( int colorIndex ) {
+	switch ( colorIndex ) {
+		case ( C_COLOR_RED & 15 ):
+		//case ( C_COLOR_MAGENTA & 15 ):
+			return CONSOLE_COLOR_ERROR;
+		case ( C_COLOR_GREEN & 15 ):
+			return CONSOLE_COLOR_GREEN;
+		case ( C_COLOR_YELLOW & 15 ):
+			return CONSOLE_COLOR_WARNING;
+		case ( C_COLOR_GRAY & 15 ):
+			return CONSOLE_COLOR_DIM_TEXT;
+		case ( C_COLOR_BLACK & 15 ):
+			return colorBlack;
+		case ( C_COLOR_DEFAULT & 15 ):
+		case ( C_COLOR_WHITE & 15 ):
+		case ( C_COLOR_CYAN & 15 ):
+		case ( C_COLOR_BLUE & 15 ):
+		default:
+			return CONSOLE_COLOR_TEXT;
+	}
+}
+
+/*
+==================
+idConsoleLocal::SmallStringWidth
+==================
+*/
+int idConsoleLocal::SmallStringWidth( const char *text ) {
+	if ( text == NULL ) {
+		return 0;
+	}
+
+	idFont *font = renderSystem->RegisterFont( DEFAULT_FONT );
+	if ( font == NULL ) {
+		return idStr::Length( text ) * SMALLCHAR_WIDTH;
+	}
+
+	int width = 0;
+	for ( const unsigned char *s = (const unsigned char *)text; *s != '\0'; s++ ) {
+		if ( idStr::IsColor( (const char *)s ) ) {
+			s++;
+			continue;
+		}
+		float advance = font->GetGlyphWidth( CONSOLE_SMALL_FONT_SCALE, *s );
+		if ( advance <= 0.0f ) {
+			advance = SMALLCHAR_WIDTH;
+		}
+		width += idMath::Ftoi( advance + CONSOLE_SMALL_CHAR_PAD );
+	}
+
+	return width;
+}
+
+/*
+==================
+idConsoleLocal::BigStringWidth
+==================
+*/
+int idConsoleLocal::BigStringWidth( const char *text ) {
+	if ( text == NULL ) {
+		return 0;
+	}
+
+	idFont *font = renderSystem->RegisterFont( DEFAULT_FONT );
+	if ( font == NULL ) {
+		return idStr::Length( text ) * BIGCHAR_WIDTH;
+	}
+
+	int width = 0;
+	for ( const unsigned char *s = (const unsigned char *)text; *s != '\0'; s++ ) {
+		if ( idStr::IsColor( (const char *)s ) ) {
+			s++;
+			continue;
+		}
+		float advance = font->GetGlyphWidth( CONSOLE_BIG_FONT_SCALE, *s );
+		if ( advance <= 0.0f ) {
+			advance = BIGCHAR_WIDTH;
+		}
+		width += idMath::Ftoi( advance + CONSOLE_BIG_CHAR_PAD );
+	}
+
+	return width;
+}
+
+/*
+==================
+idConsoleLocal::DrawTextLine
+==================
+*/
+void idConsoleLocal::DrawTextLine( const short *text_p, int y ) {
+	idTempArray<char> run( localConsole.LINE_WIDTH + 1 );
+	int runLen = 0;
+	int runColor = idStr::ColorIndex( C_COLOR_WHITE );
+	int last = localConsole.LINE_WIDTH - 1;
+	int penX = localConsole.LOCALSAFE_LEFT + 1 * SMALLCHAR_WIDTH;
+
+	while ( last >= 0 && ( text_p[last] & 0xff ) == ' ' ) {
+		last--;
+	}
+
+	for ( int x = 0; x <= last; x++ ) {
+		const int ch = text_p[x] & 0xff;
+		const int color = idStr::ColorIndex( text_p[x] >> 8 );
+
+		if ( runLen > 0 && color != runColor ) {
+			run[runLen] = '\0';
+			renderSystem->DrawSmallStringExt( penX, y, run.Ptr(), ColorForIndex( runColor ), true, false, 0 );
+			penX += SmallStringWidth( run.Ptr() );
+			runLen = 0;
+		}
+
+		runColor = color;
+		run[runLen++] = ch;
+	}
+
+	if ( runLen > 0 ) {
+		run[runLen] = '\0';
+		renderSystem->DrawSmallStringExt( penX, y, run.Ptr(), ColorForIndex( runColor ), true, false, 0 );
+	}
+}
+
+/*
+==================
+idConsoleLocal::DrawSmallStringRightAlign
+==================
+*/
+void idConsoleLocal::DrawSmallStringRightAlign( float y, const idVec4 &color, const char *text ) {
+	const int w = SmallStringWidth( text );
+	renderSystem->DrawSmallStringExt( localConsole.LOCALSAFE_WIDTH - w, idMath::Ftoi( y ) + 2, text, color, true, false, 0 );
+}
 
 /*
 ==================
@@ -511,8 +682,8 @@ void idConsoleLocal::Init()
 
 	keyCatching = false;
 
-	LOCALSAFE_LEFT		= 32;
-	LOCALSAFE_RIGHT		= 608;
+	LOCALSAFE_LEFT		= 22;
+	LOCALSAFE_RIGHT		= 645;
 	LOCALSAFE_TOP		= 24;
 	LOCALSAFE_BOTTOM	= 456;
 	LOCALSAFE_WIDTH		= LOCALSAFE_RIGHT - LOCALSAFE_LEFT;
@@ -1204,13 +1375,13 @@ void idConsoleLocal::DrawInput()
 
 		if( autoCompleteLength > 0 )
 		{
-			renderSystem->DrawFilled( idVec4( 0.8f, 0.2f, 0.2f, 0.45f ),
+			renderSystem->DrawFilled( CONSOLE_COLOR_COMPLETE,
 									  LOCALSAFE_LEFT + 2 * SMALLCHAR_WIDTH + consoleField.GetAutoCompleteLength() * SMALLCHAR_WIDTH,
 									  y + 2, autoCompleteLength * SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT - 2 );
 		}
 	}
 
-	renderSystem->SetColor( idStr::ColorForIndex( C_COLOR_CYAN ) );
+	renderSystem->SetColor( CONSOLE_COLOR_CYAN );
 
 	renderSystem->DrawSmallChar( LOCALSAFE_LEFT + 1 * SMALLCHAR_WIDTH, y, ']' );
 
@@ -1227,19 +1398,15 @@ Draws the last few lines of output transparently over the game top
 */
 void idConsoleLocal::DrawNotify()
 {
-	int		x, v;
+	int		v;
 	short*	text_p;
 	int		i;
 	int		time;
-	int		currentColor;
 
 	if( con_noPrint.GetBool() )
 	{
 		return;
 	}
-
-	currentColor = idStr::ColorIndex( C_COLOR_WHITE );
-	renderSystem->SetColor( idStr::ColorForIndex( currentColor ) );
 
 	v = 0;
 	for( i = current - NUM_CON_TIMES + 1; i <= current; i++ )
@@ -1259,26 +1426,12 @@ void idConsoleLocal::DrawNotify()
 			continue;
 		}
 		text_p = text + ( i % TOTAL_LINES ) * LINE_WIDTH;
-
-		for( x = 0; x < LINE_WIDTH; x++ )
-		{
-			if( ( text_p[x] & 0xff ) == ' ' )
-			{
-				continue;
-			}
-			if( idStr::ColorIndex( text_p[x] >> 8 ) != currentColor )
-			{
-				currentColor = idStr::ColorIndex( text_p[x] >> 8 );
-				renderSystem->SetColor( idStr::ColorForIndex( currentColor ) );
-			}
-			int length = idStr::Length( va( "%c", text_p[x] & 0xff ) );
-			renderSystem->DrawSmallStringExt( LOCALSAFE_LEFT + ( x + 1 )*SMALLCHAR_WIDTH, v, va( "%c", text_p[x] & 0xff ), idStr::ColorForIndex( currentColor ), false, true, length );
-		}
+		DrawTextLine( text_p, v );
 
 		v += SMALLCHAR_HEIGHT;
 	}
 
-	renderSystem->SetColor( colorCyan );
+	renderSystem->SetColor( CONSOLE_COLOR_TEXT );
 }
 
 /*
@@ -1290,13 +1443,12 @@ Draws the console with the solid background
 */
 void idConsoleLocal::DrawSolidConsole( float frac )
 {
-	int				i, x;
+	int				i, x = 0;
 	float			y;
 	int				rows;
 	short*			text_p;
 	int				row;
 	int				lines;
-	int				currentColor;
 
 	lines = idMath::Ftoi( SCREEN_HEIGHT * frac );
 	if( lines <= 0 )
@@ -1320,22 +1472,19 @@ void idConsoleLocal::DrawSolidConsole( float frac )
 		renderSystem->DrawFilled( idVec4( 0.0f, 0.0f, 0.0f, 0.75f ), 0, 0, SCREEN_WIDTH, y );
 	}
 
-	renderSystem->DrawFilled( colorCyan, 0, y, SCREEN_WIDTH, 2 );
+	renderSystem->DrawFilled( CONSOLE_COLOR_CYAN, 0, y, SCREEN_WIDTH, 2 );
 
 	// draw the version number
 
-	renderSystem->SetColor( idStr::ColorForIndex( C_COLOR_CYAN ) );
-
-	idStr version = va( "%s (Build:v%i.%i)", ENGINE_VERSION, BUILD_NUMBER, BUILD_NUMBER_MINOR );
-	i = version.Length();
-
-	for( x = 0; x < i; x++ )
-	{
-		renderSystem->DrawSmallChar( LOCALSAFE_WIDTH - ( i - x ) * SMALLCHAR_WIDTH,
-									 ( lines - ( SMALLCHAR_HEIGHT + SMALLCHAR_HEIGHT / 4 ) ), version[x] );
-
+	y = lines - ( SMALLCHAR_HEIGHT * 2 ) - 6;
+	if ( y < SMALLCHAR_HEIGHT ) {
+		y = SMALLCHAR_HEIGHT;
 	}
 
+	idStr version = va( "%s (Build:v%i.%i)", ENGINE_VERSION, BUILD_NUMBER, BUILD_NUMBER_MINOR );
+	version.StripLeading( ' ' );
+	i = version.Length();
+	DrawSmallStringRightAlign( y + 10, CONSOLE_COLOR_CYAN, version.c_str() );
 
 	// draw the text
 	vislines = lines;
@@ -1347,7 +1496,7 @@ void idConsoleLocal::DrawSolidConsole( float frac )
 	if( display != current )
 	{
 		// draw arrows to show the buffer is backscrolled
-		renderSystem->SetColor( idStr::ColorForIndex( C_COLOR_CYAN ) );
+		renderSystem->SetColor( CONSOLE_COLOR_CYAN );
 		for( x = 0; x < LINE_WIDTH; x += 4 )
 		{
 			renderSystem->DrawSmallChar( LOCALSAFE_LEFT + ( x + 1 )*SMALLCHAR_WIDTH, idMath::Ftoi( y ), '^' );
@@ -1363,9 +1512,6 @@ void idConsoleLocal::DrawSolidConsole( float frac )
 		row--;
 	}
 
-	currentColor = idStr::ColorIndex( C_COLOR_WHITE );
-	renderSystem->SetColor( idStr::ColorForIndex( currentColor ) );
-
 	for( i = 0; i < rows; i++, y -= SMALLCHAR_HEIGHT, row-- )
 	{
 		if( row < 0 )
@@ -1379,27 +1525,13 @@ void idConsoleLocal::DrawSolidConsole( float frac )
 		}
 
 		text_p = text + ( row % TOTAL_LINES ) * LINE_WIDTH;
-
-		for( x = 0; x < LINE_WIDTH; x++ )
-		{
-			if( ( text_p[x] & 0xff ) == ' ' )
-			{
-				continue;
-			}
-
-			if( idStr::ColorIndex( text_p[x] >> 8 ) != currentColor )
-			{
-				currentColor = idStr::ColorIndex( text_p[x] >> 8 );
-				renderSystem->SetColor( idStr::ColorForIndex( currentColor ) );
-			}
-			renderSystem->DrawSmallChar( LOCALSAFE_LEFT + ( x + 1 )*SMALLCHAR_WIDTH, idMath::Ftoi( y ), text_p[x] & 0xff );
-		}
+		DrawTextLine( text_p, idMath::Ftoi( y ) );
 	}
 
 	// draw the input prompt, user text, and cursor if desired
 	DrawInput();
 
-	renderSystem->SetColor( colorCyan );
+	renderSystem->SetColor( CONSOLE_COLOR_TEXT );
 }
 
 

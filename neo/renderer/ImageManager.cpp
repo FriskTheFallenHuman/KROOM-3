@@ -381,6 +381,7 @@ idImage*	idImageManager::ImageFromFile( const char* _name, textureFilter_t filte
 	}
 	if( idStr::Icmpn( _name, "fonts", 5 ) == 0 || idStr::Icmpn( _name, "newfonts", 8 ) == 0 )
 	{
+		filter = ( filter == TF_DEFAULT ) ? TF_LINEAR : filter;
 		usage = TD_FONT;
 	}
 	if( idStr::Icmpn( _name, "lights", 6 ) == 0 )

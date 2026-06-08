@@ -453,6 +453,48 @@ idDrawVert* idRenderSystemLocal::AllocTris( int numVerts, const triIndex_t* inde
 
 /*
 =====================
+idRenderSystemLocal::DrawFontChar
+=====================
+*/
+void idRenderSystemLocal::DrawFontChar( float x, float y, float scale, float baselineOffset, int ch ) {
+	idFont *font = RegisterFont( DEFAULT_FONT );
+	if ( font == NULL || ch == ' ' ) {
+		return;
+	}
+
+	scaledGlyphInfo_t glyphInfo;
+	font->GetScaledGlyph( scale, ch & 255, glyphInfo );
+	if ( glyphInfo.material == NULL ) {
+		return;
+	}
+
+	float baseline = y + baselineOffset;
+	DrawStretchPic( x + glyphInfo.left, baseline - glyphInfo.top,
+		glyphInfo.width, glyphInfo.height,
+		glyphInfo.s1, glyphInfo.t1, glyphInfo.s2, glyphInfo.t2,
+		glyphInfo.material );
+}
+
+/*
+=====================
+idRenderSystemLocal::FontGlyphAdvance
+=====================
+*/
+float idRenderSystemLocal::FontGlyphAdvance( float scale, int ch ) {
+	idFont *font = RegisterFont( DEFAULT_FONT );
+	if ( font == NULL ) {
+		return SMALLCHAR_WIDTH;
+	}
+
+	float advance = font->GetGlyphWidth( scale, ch & 255 );
+	if ( advance <= 0.0f ) {
+		advance = SMALLCHAR_WIDTH;
+	}
+	return advance;
+}
+
+/*
+=====================
 idRenderSystemLocal::DrawSmallChar
 
 small chars are drawn at native screen resolution
@@ -460,10 +502,6 @@ small chars are drawn at native screen resolution
 */
 void idRenderSystemLocal::DrawSmallChar( int x, int y, int ch )
 {
-	int row, col;
-	float frow, fcol;
-	float size;
-
 	ch &= 255;
 
 	if( ch == ' ' )
@@ -476,17 +514,7 @@ void idRenderSystemLocal::DrawSmallChar( int x, int y, int ch )
 		return;
 	}
 
-	row = ch >> 4;
-	col = ch & 15;
-
-	frow = row * 0.0625f;
-	fcol = col * 0.0625f;
-	size = 0.0625f;
-
-	DrawStretchPic( x, y, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT,
-					fcol, frow,
-					fcol + size, frow + size,
-					charSetMaterial );
+	DrawFontChar( x, y, SMALL_FONT_SCALE, SMALLCHAR_HEIGHT - 2.0f, ch );
 }
 
 /*
@@ -529,7 +557,7 @@ void idRenderSystemLocal::DrawSmallStringExt( int x, int y, const char* string, 
 			}
 			DrawSmallChar( xx + 2, y + 2 /*,charWidth, charHeight*/, *s );
 			cnt++;
-			xx += SMALLCHAR_WIDTH;
+			xx += idMath::Ftoi( FontGlyphAdvance( SMALL_FONT_SCALE, *s ) + SMALL_CHAR_PAD );
 			s++;
 		}
 	}
@@ -560,7 +588,7 @@ void idRenderSystemLocal::DrawSmallStringExt( int x, int y, const char* string, 
 			continue;
 		}
 		DrawSmallChar( xx, y, *s );
-		xx += SMALLCHAR_WIDTH;
+		xx += idMath::Ftoi( FontGlyphAdvance( SMALL_FONT_SCALE, *s ) + SMALL_CHAR_PAD );
 		s++;
 	}
 	SetColor( colorWhite );
@@ -573,10 +601,6 @@ idRenderSystemLocal::DrawBigChar
 */
 void idRenderSystemLocal::DrawBigChar( int x, int y, int ch )
 {
-	int row, col;
-	float frow, fcol;
-	float size;
-
 	ch &= 255;
 
 	if( ch == ' ' )
@@ -589,17 +613,7 @@ void idRenderSystemLocal::DrawBigChar( int x, int y, int ch )
 		return;
 	}
 
-	row = ch >> 4;
-	col = ch & 15;
-
-	frow = row * 0.0625f;
-	fcol = col * 0.0625f;
-	size = 0.0625f;
-
-	DrawStretchPic( x, y, BIGCHAR_WIDTH, BIGCHAR_HEIGHT,
-					fcol, frow,
-					fcol + size, frow + size,
-					charSetMaterial );
+	DrawFontChar( x, y, BIG_FONT_SCALE, BIGCHAR_HEIGHT - 1.0f, ch );
 }
 
 /*
@@ -642,7 +656,7 @@ void idRenderSystemLocal::DrawBigStringExt( int x, int y, const char* string, co
 			}
 			DrawBigChar( xx + 2, y + 2 /*,charWidth, charHeight*/, *s );
 			cnt++;
-			xx += BIGCHAR_WIDTH;
+			xx += idMath::Ftoi( FontGlyphAdvance( BIG_FONT_SCALE, *s ) + BIG_CHAR_PAD );
 			s++;
 		}
 	}
@@ -673,7 +687,7 @@ void idRenderSystemLocal::DrawBigStringExt( int x, int y, const char* string, co
 			continue;
 		}
 		DrawBigChar( xx, y, *s );
-		xx += BIGCHAR_WIDTH;
+		xx += idMath::Ftoi( FontGlyphAdvance( BIG_FONT_SCALE, *s ) + BIG_CHAR_PAD );
 		s++;
 	}
 	SetColor( colorWhite );
