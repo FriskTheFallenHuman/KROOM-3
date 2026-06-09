@@ -97,6 +97,9 @@ public:
 	virtual void 			HandleServerQueryAck( lobbyAddress_t& remoteAddr, idBitMsg& msg );
 
 	// Leaderboards
+	virtual const leaderboardDefinition_t* LeaderboardFindDef( int id );
+	virtual leaderboardDefinition_t* LeaderboardCreateDef( int id_, int numColumns_, const columnDef_t* columnDefs_, int rankOrder_, bool supportsAttachments_, bool checkAgainstCurrent_ );
+	virtual void			LeaderboardDestroyDefs();
 	virtual void			LeaderboardUpload( lobbyUserID_t lobbyUserID, const leaderboardDefinition_t* leaderboard, const column_t* stats, const idFile_Memory* attachment = NULL );
 	virtual void			LeaderboardDownload( int sessionUserIndex, const leaderboardDefinition_t* leaderboard, int startingRank, int numRows, const idLeaderboardCallback& callback );
 	virtual void			LeaderboardDownloadAttachment( int sessionUserIndex, const leaderboardDefinition_t* leaderboard, int64 attachmentID );
@@ -589,6 +592,37 @@ idSessionLocalWin::EnumerateDownloadableContent
 */
 void idSessionLocalWin::EnumerateDownloadableContent()
 {
+}
+
+/*
+========================
+idSessionLocalWin::LeaderboardFindDef
+========================
+*/
+const leaderboardDefinition_t* idSessionLocalWin::LeaderboardFindDef( int id )
+{
+	return Sys_FindLeaderboardDef( id );
+}
+
+/*
+========================
+idSessionLocalWin::LeaderboardCreateDef
+========================
+*/
+leaderboardDefinition_t* idSessionLocalWin::LeaderboardCreateDef( int id_, int numColumns_, const columnDef_t* columnDefs_,
+		int rankOrder_, bool supportsAttachments_, bool checkAgainstCurrent_ )
+{
+	return Sys_CreateLeaderboardDef( id_, numColumns_, columnDefs_, ( rankOrder_t )rankOrder_, supportsAttachments_, checkAgainstCurrent_ );
+}
+
+/*
+========================
+idSessionLocalWin::LeaderboardDestroyDefs
+========================
+*/
+void idSessionLocalWin::LeaderboardDestroyDefs()
+{
+	Sys_DestroyLeaderboardDefs();
 }
 
 /*

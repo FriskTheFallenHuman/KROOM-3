@@ -178,7 +178,7 @@ void idMenuScreen_Shell_Leaderboards::Initialize( idMenuHandler* data )
 			// Check the supported modes on the map.
 			if( maps[ mapIndex ].supportedModes & BIT( modeIndex ) )
 			{
-				int boardID = LeaderboardLocal_GetID( mapIndex, modeIndex );
+				int boardID = leaderBoards->GetID( mapIndex, modeIndex );
 				const leaderboardDefinition_t* lbDef = Sys_FindLeaderboardDef( boardID );
 				if( lbDef != NULL )
 				{

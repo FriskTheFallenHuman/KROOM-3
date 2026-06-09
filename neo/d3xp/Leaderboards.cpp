@@ -30,8 +30,10 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "Game_local.h"
-#include "Leaderboards.h"
-#include "MultiplayerGame.h"
+
+// the rest of the engine will only reference the "leaderBoardsLocal" variable, while all local aspects stay hidden
+idLeaderboardsLocal				leaderBoardsLocal;
+idLeaderboards* 				leaderBoards = &leaderBoardsLocal;	// statically pointed at an idLeaderboardsLocal
 
 /*
 ================================================================================================
@@ -81,6 +83,15 @@ const columnGameMode_t gameMode_columnDefs[] =
 };
 
 /*
+===========
+idLeaderboardsLocal::idLeaderboardsLocal
+============
+*/
+idLeaderboardsLocal::idLeaderboardsLocal()
+{
+}
+
+/*
 =====================================
 RetreiveLeaderboardID
 
@@ -92,7 +103,7 @@ ex. map 0 will have 0 - 4 Leaderboard id's blocked out.
 
 =====================================
 */
-int LeaderboardLocal_GetID( int mapIndex, int gametype )
+int idLeaderboardsLocal::GetID( int mapIndex, int gametype )
 {
 	assert( gametype > GAME_RANDOM );
 
@@ -101,10 +112,10 @@ int LeaderboardLocal_GetID( int mapIndex, int gametype )
 
 /*
 =====================================
-LeaderboardLocal_Init
+idLeaderboardsLocal::Init
 =====================================
 */
-void LeaderboardLocal_Init()
+void idLeaderboardsLocal::Init()
 {
 
 	const idList< mpMap_t > maps = common->GetMapList();
@@ -127,11 +138,11 @@ void LeaderboardLocal_Init()
 				const columnGameMode_t gamemode = gameMode_columnDefs[ modeIdx ];
 
 				// Generate a Leaderboard ID for the map/mode
-				int boardID = LeaderboardLocal_GetID( mapIdx, modeIdx );
+				int boardID = GetID( mapIdx, modeIdx );
 
 
 				// Create and Register the leaderboard with the sys_stats registered Leaderboards
-				leaderboardDefinition_t* newLeaderboardDef = Sys_CreateLeaderboardDef( boardID,
+				leaderboardDefinition_t* newLeaderboardDef = session->LeaderboardCreateDef( boardID,
 						gamemode.numColumns,
 						gamemode.columnDef,
 						gamemode.rankOrder,
@@ -145,9 +156,9 @@ void LeaderboardLocal_Init()
 				newLeaderboardDef->boardName.Format( "%s %s", mapname, gamemode.abrevName );
 
 				// sanity check.
-				if( Sys_FindLeaderboardDef( boardID ) != newLeaderboardDef )
+				if( session->LeaderboardFindDef( boardID ) != newLeaderboardDef )
 				{
-					idLib::Error( "Leaderboards_Init leaderboard creation failed" );
+					idLib::Error( "idLeaderboardsLocal::Init leaderboard creation failed" );
 				}
 
 			}
@@ -158,18 +169,17 @@ void LeaderboardLocal_Init()
 
 /*
 =====================================
-LeaderboardLocal_Shutdown
+idLeaderboardsLocal::Shutdown
 =====================================
 */
-void LeaderboardLocal_Shutdown()
+void idLeaderboardsLocal::Shutdown()
 {
-
-	Sys_DestroyLeaderboardDefs();
+	session->LeaderboardDestroyDefs();
 }
 
 /*
 =====================================
-LeaderboardLocal_Upload
+idLeaderboardsLocal::Upload
 =====================================
 */
 
@@ -177,7 +187,7 @@ const static int FRAG_MULTIPLIER  = 100;
 const static int DEATH_MULTIPLIER = -50;
 const static int WINS_MULTIPLIER  = 20;
 
-void LeaderboardLocal_Upload( lobbyUserID_t lobbyUserID, int gameType, leaderboardStats_t& stats )
+void idLeaderboardsLocal::Upload( lobbyUserID_t lobbyUserID, int gameType, leaderboardStats_t& stats )
 {
 	assert( gameType > GAME_RANDOM );
 
@@ -249,8 +259,8 @@ void LeaderboardLocal_Upload( lobbyUserID_t lobbyUserID, int gameType, leaderboa
 		}
 	}
 
-	int boardID = LeaderboardLocal_GetID( mapIdx, gameType );
-	const leaderboardDefinition_t* board =  Sys_FindLeaderboardDef( boardID );
+	int boardID = GetID( mapIdx, gameType );
+	const leaderboardDefinition_t* board = session->LeaderboardFindDef( boardID );
 
 	if( board )
 	{
@@ -258,7 +268,7 @@ void LeaderboardLocal_Upload( lobbyUserID_t lobbyUserID, int gameType, leaderboa
 	}
 	else
 	{
-		idLib::Warning( "LeaderboardLocal_Upload invalid leaderboard with id of %d", boardID );
+		idLib::Warning( "idLeaderboardsLocal::Upload invalid leaderboard with id of %d", boardID );
 	}
 }
 
@@ -307,7 +317,7 @@ CONSOLE_COMMAND( testLeaderboardDownload, "<id 0 - n > <start = 1> <end = 100>",
 		end = atoi( args.Argv( 3 ) );
 	}
 
-	const leaderboardDefinition_t* leaderboardDef = Sys_FindLeaderboardDef( leaderboardID );
+	const leaderboardDefinition_t* leaderboardDef = session->LeaderboardFindDef( leaderboardID );
 
 	if( leaderboardDef )
 	{
@@ -315,7 +325,7 @@ CONSOLE_COMMAND( testLeaderboardDownload, "<id 0 - n > <start = 1> <end = 100>",
 	}
 	else
 	{
-		idLib::Warning( "Sys_FindLeaderboardDef() Unable to find board %d\n", leaderboardID );
+		idLib::Warning( "session->LeaderboardFindDef() Unable to find board %d\n", leaderboardID );
 	}
 
 }
@@ -347,7 +357,7 @@ CONSOLE_COMMAND( testLeaderboardUpload, "<gameType 0 - 4 > <frags = 0> <wins = 1
 
 	leaderboardStats_t stats = { frags, wins, 0, 0 };
 
-	LeaderboardLocal_Upload( user, gameType , stats );
+	leaderBoards->Upload( user, gameType , stats );
 
 	session->LeaderboardFlush();
 
@@ -363,7 +373,7 @@ CONSOLE_COMMAND( testLeaderboardUpload_SendToClients, "<gameType 0 - 4 > <frags 
 
 		leaderboardStats_t stats = { 1, 1, 1, 1 };
 
-		LeaderboardLocal_Upload( gameLocal.lobbyUserIDs[ playerIdx ], gameLocal.gameType, stats );
+		leaderBoards->Upload( gameLocal.lobbyUserIDs[ playerIdx ], gameLocal.gameType, stats );
 	}
 
 	// Dont do this more than once.
