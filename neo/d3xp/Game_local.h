@@ -760,6 +760,10 @@ private:
 //============================================================================
 
 extern idGameLocal			gameLocal;
+
+#include "Game_edit.h"
+extern idGameEditLocal		gameEditLocal;
+
 extern idAnimManager		animationLib;
 
 //============================================================================
@@ -919,7 +923,7 @@ const int	CINEMATIC_SKIP_DELAY	= SEC2MS( 2.0f );
 #include "SmokeParticles.h"
 
 #include "Entity.h"
-#include "GameEdit.h"
+#include "EditorEntity.h"
 #include "Grabber.h"
 #include "AF.h"
 #include "IK.h"

@@ -26,9 +26,8 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#ifndef __GAME_EDIT_H__
-#define __GAME_EDIT_H__
-
+#ifndef __EDITORENTITY_H__
+#define __EDITORENTITY_H__
 
 /*
 ===============================================================================
@@ -123,4 +122,4 @@ private:
 	idList<idEntity*>		selectedEntities;
 };
 
-#endif /* !__GAME_EDIT_H__ */
+#endif /* !__EDITORENTITY_H__ */

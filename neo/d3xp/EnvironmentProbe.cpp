@@ -48,25 +48,6 @@ EVENT( EV_Hide,							idEnvProbes::Event_Hide )
 EVENT( EV_Show,							idEnvProbes::Event_Show )
 END_CLASS
 
-
-/*
-================
-idGameEdit::ParseSpawnArgsToRenderLight
-
-parse the light parameters
-this is the canonical renderLight parm parsing,
-which should be used by dmap and the editor
-================
-*/
-void idGameEdit::ParseSpawnArgsToRenderEnvprobe( const idDict* args, renderEnvironmentProbe_t* renderEnvprobe )
-{
-	idVec3	color;
-
-	memset( renderEnvprobe, 0, sizeof( *renderEnvprobe ) );
-
-	args->GetVector( "origin", "", renderEnvprobe->origin );
-}
-
 /*
 ================
 idEnvProbes::UpdateChangeableSpawnArgs
@@ -81,7 +62,7 @@ void idEnvProbes::UpdateChangeableSpawnArgs( const idDict* source )
 		source->Print();
 	}
 
-	gameEdit->ParseSpawnArgsToRenderEnvprobe( source ? source : &spawnArgs, &renderEnvprobe );
+	gameEditLocal.ParseSpawnArgsToRenderEnvprobe( source ? source : &spawnArgs, &renderEnvprobe );
 
 	UpdateVisuals();
 }
@@ -152,7 +133,7 @@ idEnvProbes::Spawn
 void idEnvProbes::Spawn()
 {
 	// do the parsing the same way dmap and the editor do
-	gameEdit->ParseSpawnArgsToRenderEnvprobe( &spawnArgs, &renderEnvprobe );
+	gameEditLocal.ParseSpawnArgsToRenderEnvprobe( &spawnArgs, &renderEnvprobe );
 
 	// we need the origin and axis relative to the physics origin/axis
 	localEnvprobeOrigin = ( renderEnvprobe.origin - GetPhysics()->GetOrigin() ) * GetPhysics()->GetAxis().Transpose();
