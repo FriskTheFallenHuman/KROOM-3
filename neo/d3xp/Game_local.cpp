@@ -1296,7 +1296,7 @@ void idGameLocal::PopulateEnvironmentProbes()
 
 		idStr name;
 		name.Format( "env_probe_area_%i", i );
-		name = gameEdit->GetUniqueEntityName( name );
+		name = gameEditLocal.GetUniqueEntityName( name );
 
 		args.Set( "name", name );
 

@@ -974,7 +974,7 @@ bool idAF::Load( idEntity* ent, const char* fileName )
 	// create the animation frame used to setup the articulated figure
 	numJoints = animator->NumJoints();
 	joints = ( idJointMat* )_alloca16( numJoints * sizeof( joints[0] ) );
-	gameEdit->ANIM_CreateAnimFrame( model, animator->GetAnim( modifiedAnim )->MD5Anim( 0 ), numJoints, joints, 1, animator->ModelDef()->GetVisualOffset(), animator->RemoveOrigin() );
+	gameEditLocal.ANIM_CreateAnimFrame( model, animator->GetAnim( modifiedAnim )->MD5Anim( 0 ), numJoints, joints, 1, animator->ModelDef()->GetVisualOffset(), animator->RemoveOrigin() );
 
 	// set all vector positions from model joints
 	file->Finish( GetJointTransform, joints, animator );
