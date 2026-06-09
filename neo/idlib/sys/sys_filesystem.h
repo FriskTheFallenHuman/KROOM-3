@@ -43,6 +43,10 @@ enum sysFolder_t
 // returns FOLDER_YES if the specified path is a folder
 sysFolder_t		Sys_IsFolder( const char* path );
 
+// is the file located on HDD?
+// (or other device with slow seeking)
+bool			Sys_IsFileOnHdd( const char* path );
+
 // use fs_debug to verbose Sys_ListFiles
 // returns -1 if directory was not found (the list is cleared)
 int				Sys_ListFiles( const char* directory, const char* extension, idList<class idStr>& list );
