@@ -935,7 +935,7 @@ CONSOLE_COMMAND( bakeEnvironmentProbes, "Bake environment probes", NULL )
 	int sysHeight = renderSystem->GetHeight();
 
 	bool useThreads = true;
-	int numThreads = JOBLIST_PARALLELISM_MAX_CORES;
+	int numThreads = JOBLIST_PARALLELISM_NONINTERACTIVE;
 
 	bool helpRequested = false;
 	idStr option;

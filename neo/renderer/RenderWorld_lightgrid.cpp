@@ -1039,7 +1039,7 @@ CONSOLE_COMMAND( bakeLightGrids, "Bake irradiance/vis light grid data", NULL )
 	idVec3 gridSize = defaultLightGridSize;
 
 	bool useThreads = true;
-	int numThreads = JOBLIST_PARALLELISM_MAX_CORES;
+	int numThreads = JOBLIST_PARALLELISM_NONINTERACTIVE;
 
 	bool helpRequested = false;
 	idStr option;
