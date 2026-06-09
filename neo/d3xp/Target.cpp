@@ -293,7 +293,7 @@ void idTarget_EndLevel::Event_Activate( idEntity* activator )
 				}
 			}
 		}
-		gameLocal.Shell_SetGameComplete();
+		mainMenuLocal.SetGameComplete();
 		common->QueueShowShell();
 		return;
 	}

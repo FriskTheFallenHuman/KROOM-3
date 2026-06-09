@@ -341,10 +341,10 @@ void idCommonLocal::ExecuteMapChange()
 
 	// load / program a gui to stay up on the screen while loading
 	// set the loading gui that we will wipe to
-	if( game != NULL )
+	if( mainMenu != NULL )
 	{
 		bool hellMap = false;
-		game->Shell_LoadingGui( currentMapName, hellMap );
+		mainMenu->LoadingGui( currentMapName, hellMap );
 	}
 
 	// Stop rendering the wipe
@@ -422,7 +422,10 @@ void idCommonLocal::ExecuteMapChange()
 		game->InitFromNewMap( fullMapName, renderWorld, soundWorld, matchParameters.gameMode, Sys_Milliseconds() );
 	}
 
-	game->Shell_CreateMenu( true );
+	if( mainMenu )
+	{
+		mainMenu->CreateMenu( true );
+	}
 
 	// Reset some values important to multiplayer
 	ResetNetworkingState();
@@ -530,9 +533,9 @@ void idCommonLocal::ExecuteMapChange()
 	Sys_SetPhysicalWorkMemory( -1, -1 );
 
 	// at this point we should be done with the loading gui so we kill it
-	if( game != NULL )
+	if( mainMenu != NULL )
 	{
-		game->Shell_Cleanup( true );
+		mainMenu->Cleanup( true );
 	}
 
 
@@ -862,9 +865,9 @@ bool idCommonLocal::SaveGame( const char* saveName )
 		return false;
 	}
 
-	if( game->Shell_IsGameComplete() )
+	if( mainMenu->IsGameComplete() )
 	{
-		common->Printf( "Can't save on game complete\n" );
+		common->Printf( "Can't save on game completion\n" );
 		return false;
 	}
 
@@ -1125,7 +1128,10 @@ void idCommonLocal::OnSaveCompleted( idSaveLoadParms& parms )
 
 	if( parms.GetError() == SAVEGAME_E_NONE )
 	{
-		game->Shell_UpdateSavedGames();
+		if ( mainMenu )
+		{
+			mainMenu->UpdateSavedGames();
+		}
 	}
 
 	if( !HandleCommonErrors( parms ) )
@@ -1228,7 +1234,10 @@ void idCommonLocal::OnEnumerationCompleted( idSaveLoadParms& parms )
 {
 	if( parms.GetError() == SAVEGAME_E_NONE )
 	{
-		game->Shell_UpdateSavedGames();
+		if( mainMenu )
+		{
+			mainMenu->UpdateSavedGames();
+		}
 	}
 }
 
@@ -1241,7 +1250,10 @@ void idCommonLocal::OnDeleteCompleted( idSaveLoadParms& parms )
 {
 	if( parms.GetError() == SAVEGAME_E_NONE )
 	{
-		game->Shell_UpdateSavedGames();
+		if( mainMenu )
+		{
+			mainMenu->UpdateSavedGames();
+		}
 	}
 }
 

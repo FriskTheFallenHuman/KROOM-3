@@ -268,9 +268,9 @@ void idCommonLocal::Draw()
 
 		// render the loading gui (idSWF actually) if it is loaded
 		// (we want to see progress of the loading gui binarize too)
-		if( game )
+		if( mainMenu )
 		{
-			game->Shell_RenderLoadingShell();
+			mainMenu->RenderLoadingShell();
 		}
 
 		if( loadPacifierBinarizeActive )
@@ -318,7 +318,7 @@ void idCommonLocal::Draw()
 			}
 		}
 	}
-	else if( game && game->Shell_IsActive() )
+	else if( game )
 	{
 		bool gameDraw = game->Draw( game->GetLocalClientNum() );
 		if( !gameDraw )
@@ -326,7 +326,11 @@ void idCommonLocal::Draw()
 			renderSystem->SetColor( colorBlack );
 			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 1, 1, whiteMaterial );
 		}
-		game->Shell_Render();
+
+		if( mainMenu->IsActive() )
+		{
+			mainMenu->Render();
+		}
 	}
 	else if( readDemo )
 	{
@@ -378,7 +382,7 @@ void idCommonLocal::Draw()
 		// draw the wipe material on top of this if it hasn't completed yet
 		DrawWipeModel();
 
-		bool isLoadingGUI = ( game != NULL && game->Shell_IsLoadingActive() );
+		bool isLoadingGUI = ( mainMenu != NULL && mainMenu->IsLoadingActive() );
 		Dialog().Render( isLoadingGUI );
 
 		// draw the half console / notify console on top of everything
@@ -440,7 +444,7 @@ idCommonLocal::ProcessGameReturn
 void idCommonLocal::ProcessGameReturn( const gameReturn_t& ret )
 {
 	// set joystick rumble
-	if( in_useJoystick.GetBool() && in_joystickRumble.GetBool() && !game->Shell_IsActive() && session->GetSignInManager().GetMasterInputDevice() >= 0 )
+	if( in_useJoystick.GetBool() && in_joystickRumble.GetBool() && !mainMenu->IsActive() && session->GetSignInManager().GetMasterInputDevice() >= 0 )
 	{
 		Sys_SetRumble( session->GetSignInManager().GetMasterInputDevice(), ret.vibrationLow, ret.vibrationHigh );		// Only set the rumble on the active controller
 	}
@@ -472,7 +476,7 @@ void idCommonLocal::ProcessGameReturn( const gameReturn_t& ret )
 		{
 			if( !IsMultiplayer() )
 			{
-				game->Shell_Show( true );
+				mainMenu->Show( true );
 			}
 		}
 		else if( !idStr::Icmp( args.Argv( 0 ), "disconnect" ) )
@@ -554,7 +558,7 @@ void idCommonLocal::Frame()
 		const bool pauseGame = ( !mapSpawned
 								 || ( !IsMultiplayer()
 									  && ( Dialog().IsDialogPausing() || session->IsSystemUIShowing()
-										   || ( game && game->Shell_IsActive() ) || com_pause.GetInteger() ) ) );
+										   || ( mainMenu && mainMenu->IsActive() ) || com_pause.GetInteger() ) ) );
 
 		// save the screenshot and audio from the last draw if needed
 		if( aviCaptureMode )
@@ -831,9 +835,9 @@ void idCommonLocal::Frame()
 		ExecuteReliableMessages();
 
 		// send frame and mouse events to active guis
-		if( game )
+		if( mainMenu )
 		{
-			game->Shell_SyncWithSession();
+			mainMenu->SyncWithSession();
 		}
 
 		// SRS - Advance demos inside Frame() vs. Draw() to support smp mode playback
@@ -980,9 +984,9 @@ void idCommonLocal::Frame()
 		soundSystem->Render();
 
 		// Activate the shell if it's been requested
-		if( showShellRequested && game )
+		if( showShellRequested && mainMenu )
 		{
-			game->Shell_Show( true );
+			mainMenu->Show( true );
 			showShellRequested = false;
 		}
 
@@ -1022,9 +1026,9 @@ void idCommonLocal::Frame()
 	catch( idException& err )
 	{
 		// kill loading gui
-		if( game != NULL )
+		if( mainMenu != NULL )
 		{
-			game->Shell_Cleanup( true );
+			mainMenu->Cleanup( true );
 		}
 
 		// drop back to main menu

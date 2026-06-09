@@ -93,6 +93,7 @@ int64 com_engineHz_denominator = 100LL * 60LL;
 	idGame* 		game = NULL;
 	idGameEdit* 	gameEdit = NULL;
 	idLeaderboards*	leaderBoards = NULL;
+	idGameMainMenu*	mainMenu = NULL;
 #endif
 
 idCommonLocal	commonLocal;
@@ -1065,6 +1066,7 @@ void idCommonLocal::LoadGameDLL()
 	game								= gameExport.game;
 	gameEdit							= gameExport.gameEdit;
 	leaderBoards						= gameExport.leaderBoards;
+	mainMenu							= gameExport.mainMenu;
 
 #endif
 
@@ -1099,6 +1101,7 @@ void idCommonLocal::UnloadGameDLL()
 	game = NULL;
 	gameEdit = NULL;
 	leaderBoards = NULL;
+	mainMenu = NULL;
 
 #endif
 }
@@ -1376,9 +1379,10 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 			leaderBoards->Init();
 		}
 
-		if( game != NULL )
+		// Initialize the main menu
+		if( mainMenu != NULL )
 		{
-			game->Shell_InitMenu();
+			mainMenu->InitMenu();
 		}
 
 		commonDialog.Init();
@@ -1499,10 +1503,10 @@ void idCommonLocal::Shutdown()
 	printf( "Stop();\n" );
 	Stop();
 
-	printf( "game->Shell_Cleanup();\n" );
-	if( game != NULL )
+	printf( "mainMenu->Shell_Cleanup();\n" );
+	if( mainMenu != NULL )
 	{
-		game->Shell_Cleanup();
+		mainMenu->Cleanup();
 	}
 
 	printf( "ImGuiHook::Destroy();\n" );
@@ -1637,9 +1641,9 @@ void idCommonLocal::Stop( bool resetSession )
 	insideExecuteMapChange = false;
 
 	// drop all guis
-	if( game )
+	if( mainMenu )
 	{
-		game->Shell_Show( false );
+		mainMenu->Show( false );
 	}
 
 	if( resetSession )
@@ -1714,9 +1718,9 @@ void idCommonLocal::LeaveGame()
 
 	Stop( false );
 
-	if( game != NULL )
+	if( mainMenu != NULL )
 	{
-		game->Shell_InitMenu();
+		mainMenu->InitMenu();
 	}
 
 	StartMenu();
@@ -1741,14 +1745,14 @@ bool idCommonLocal::ProcessEvent( const sysEvent_t* event )
 			{
 				game->SkipCinematicScene();
 			}
-			else if( game->Shell_IsShowingIntro() )
+			else if( mainMenu->IsShowingIntro() )
 			{
-				game->Shell_HandleGuiEvent( event );
+				mainMenu->HandleGuiEvent( event );
 				return true;
 			}
 			else
 			{
-				if( !game->Shell_IsActive() )
+				if( !mainMenu->IsActive() )
 				{
 
 					// menus / etc
@@ -1780,7 +1784,7 @@ bool idCommonLocal::ProcessEvent( const sysEvent_t* event )
 						return true;
 					}
 
-					game->Shell_ClosePause();
+					mainMenu->ClosePause();
 				}
 			}
 		}

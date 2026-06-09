@@ -254,9 +254,9 @@ void idCommonLocal::StartPlayingRenderDemo( idStr demoName )
 		readDemo = NULL;
 
 		// SRS - drop back to main menu if demo playback fails
-		if( game != NULL )
+		if( mainMenu != NULL )
 		{
-			game->Shell_InitMenu();
+			mainMenu->InitMenu();
 		}
 		StartMenu();
 		return;
@@ -272,9 +272,9 @@ void idCommonLocal::StartPlayingRenderDemo( idStr demoName )
 		readDemo = NULL;
 
 		// SRS - drop back to main menu if demo playback fails
-		if( game != NULL )
+		if( mainMenu != NULL )
 		{
-			game->Shell_InitMenu();
+			mainMenu->InitMenu();
 		}
 		StartMenu();
 		return;
@@ -289,9 +289,9 @@ void idCommonLocal::StartPlayingRenderDemo( idStr demoName )
 		readDemo = NULL;
 
 		// SRS - drop back to main menu if demo playback fails
-		if( game != NULL )
+		if( mainMenu != NULL )
 		{
-			game->Shell_InitMenu();
+			mainMenu->InitMenu();
 		}
 		StartMenu();
 		return;

@@ -167,33 +167,10 @@ public:
 	// Get the current tonemap settings for the player's view, used for syncing with the backend.
 	virtual bool				GetActiveTonemapState( int& preset, float& exposure, float& saturation, float& contrast, float& hdrKey ) = 0;
 
-	// Release the mouse when the PDA is open
+	// Release the mouse when the PDA/Chat area is open
 	virtual bool				IsPDAOpen() const = 0;
 	virtual bool				IsPlayerChatting() const = 0;
-
-	// MAIN MENU FUNCTIONS
 	virtual bool				InhibitControls() = 0;
-	virtual void				Shell_Init( const char* filename, idSoundWorld* sw ) = 0;
-	virtual void				Shell_InitMenu() = 0;
-	virtual bool				Shell_IsLoadingActive() const = 0;
-	virtual void				Shell_LoadingGui( const char* mapName, bool& hellMap ) = 0;
-	virtual void				Shell_RenderLoadingShell() = 0;
-	virtual void				Shell_Cleanup( bool onlyLoading = false ) = 0;
-	virtual void				Shell_CreateMenu( bool inGame ) = 0;
-	virtual void				Shell_ClosePause() = 0;
-	virtual void				Shell_Show( bool show ) = 0;
-	virtual bool				Shell_IsActive() const = 0;
-	virtual bool				Shell_HandleGuiEvent( const sysEvent_t* sev ) = 0;
-	virtual void				Shell_Render() = 0;
-	virtual void				Shell_ResetMenu() = 0;
-	virtual void				Shell_SyncWithSession() = 0;
-	virtual void				Shell_UpdateSavedGames() = 0;
-	virtual void				Shell_SetCanContinue( bool valid ) = 0;
-	virtual void				Shell_UpdateClientCountdown( int countdown ) = 0;
-	virtual void				Shell_UpdateLeaderboard( const idLeaderboardCallback* callback ) = 0;
-	virtual void				Shell_SetGameComplete() = 0;
-	virtual bool				Shell_IsShowingIntro() = 0;
-	virtual bool				Shell_IsGameComplete() = 0;
 
 	// Skip Cinematic process
 	virtual bool				SkipCinematicScene() = 0;
@@ -205,6 +182,48 @@ public:
 };
 
 extern idGame* 					game;
+
+/*
+================================================================================================
+
+	Main Menu
+
+================================================================================================
+*/
+
+class idGameMainMenu {
+public:
+	virtual						~idGameMainMenu() {}
+
+	// Initiallize the menu system.
+	virtual void				Initialize() = 0;
+	virtual void				Shutdown() = 0;
+
+	// MAIN MENU FUNCTIONS
+	virtual void				Init( const char* filename, idSoundWorld* sw ) = 0;
+	virtual void				InitMenu() = 0;
+	virtual bool				IsLoadingActive() const = 0;
+	virtual void				LoadingGui( const char* mapName, bool& hellMap ) = 0;
+	virtual void				RenderLoadingShell() = 0;
+	virtual void				Cleanup( bool onlyLoading = false ) = 0;
+	virtual void				CreateMenu( bool inGame ) = 0;
+	virtual void				ClosePause() = 0;
+	virtual void				Show( bool show ) = 0;
+	virtual bool				IsActive() const = 0;
+	virtual bool				HandleGuiEvent( const sysEvent_t* sev ) = 0;
+	virtual void				Render() = 0;
+	virtual void				ResetMenu() = 0;
+	virtual void				SyncWithSession() = 0;
+	virtual void				UpdateSavedGames() = 0;
+	virtual void				SetCanContinue( bool valid ) = 0;
+	virtual void				UpdateClientCountdown( int countdown ) = 0;
+	virtual void				UpdateLeaderboard( const idLeaderboardCallback* callback ) = 0;
+	virtual void				SetGameComplete() = 0;
+	virtual bool				IsShowingIntro() = 0;
+	virtual bool				IsGameComplete() = 0;
+};
+
+extern idGameMainMenu* 		mainMenu;
 
 /*
 ================================================================================================
@@ -391,7 +410,8 @@ typedef struct
 	int							version;				// API version
 	idGame* 					game;					// interface to run the game
 	idGameEdit* 				gameEdit;				// interface for in-game editing
-	idLeaderboards* 			leadBoards;				// interface for leaderboards
+	idLeaderboards* 			leaderBoards;			// interface for leaderboards
+	idGameMainMenu*				mainMenu;				// interface for the main menu
 
 } gameExport_t;
 

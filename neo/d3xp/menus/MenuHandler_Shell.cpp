@@ -627,7 +627,7 @@ void idMenuHandler_Shell::Initialize( const char* swfFile, idSoundWorld* sw )
 	public:
 		idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
 		{
-			gameLocal.Shell_Show( false );
+			mainMenuLocal.Show( false );
 			return idSWFScriptVar();
 		}
 	};

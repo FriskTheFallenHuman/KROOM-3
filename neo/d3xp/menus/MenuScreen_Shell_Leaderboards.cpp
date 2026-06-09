@@ -821,7 +821,7 @@ public:
 
 	void Call()
 	{
-		gameLocal.Shell_UpdateLeaderboard( this );
+		mainMenuLocal.UpdateLeaderboard( this );
 	}
 
 	LBCallback* Clone() const

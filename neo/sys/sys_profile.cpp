@@ -308,9 +308,9 @@ void idProfileMgr::OnSaveSettingsCompleted( idSaveLoadParms* parms )
 	{
 		common->Dialog().AddDialog( GDM_PROFILE_SAVE_ERROR, DIALOG_CONTINUE, NULL, NULL, false );
 	}
-	if( game )
+	if( mainMenu )
 	{
-		game->Shell_UpdateSavedGames();
+		mainMenu->UpdateSavedGames();
 	}
 }
 
