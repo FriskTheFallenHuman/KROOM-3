@@ -117,12 +117,12 @@ public:
 	int					LINE_WIDTH;
 	int					TOTAL_LINES;
 
-	const idVec4 &		ColorForIndex( int colorIndex );
-	int					SmallStringWidth( const char *text );
-	int					BigStringWidth( const char *text );
+	const idVec4& 		ColorForIndex( int colorIndex );
+	int					SmallStringWidth( const char* text );
+	int					BigStringWidth( const char* text );
 
-	void				DrawTextLine( const short *text_p, int y );
-	void				DrawSmallStringRightAlign( float y, const idVec4 &color, const char *text );
+	void				DrawTextLine( const short* text_p, int y );
+	void				DrawSmallStringRightAlign( float y, const idVec4& color, const char* text );
 
 	static const float	CONSOLE_SMALL_FONT_SCALE;
 	static const float	CONSOLE_SMALL_CHAR_PAD;
@@ -210,23 +210,25 @@ const idVec4 idConsoleLocal::CONSOLE_COLOR_COMPLETE( 0.00f, 1.00f, 1.00f, 1.00f 
 idConsoleLocal::ColorForIndex
 ==================
 */
-const idVec4 &idConsoleLocal::ColorForIndex( int colorIndex ) {
-	switch ( colorIndex ) {
-		case ( C_COLOR_RED & 15 ):
-		//case ( C_COLOR_MAGENTA & 15 ):
+const idVec4& idConsoleLocal::ColorForIndex( int colorIndex )
+{
+	switch( colorIndex )
+	{
+		case( C_COLOR_RED & 15 ):
+			//case ( C_COLOR_MAGENTA & 15 ):
 			return CONSOLE_COLOR_ERROR;
-		case ( C_COLOR_GREEN & 15 ):
+		case( C_COLOR_GREEN & 15 ):
 			return CONSOLE_COLOR_GREEN;
-		case ( C_COLOR_YELLOW & 15 ):
+		case( C_COLOR_YELLOW & 15 ):
 			return CONSOLE_COLOR_WARNING;
-		case ( C_COLOR_GRAY & 15 ):
+		case( C_COLOR_GRAY & 15 ):
 			return CONSOLE_COLOR_DIM_TEXT;
-		case ( C_COLOR_BLACK & 15 ):
+		case( C_COLOR_BLACK & 15 ):
 			return colorBlack;
-		case ( C_COLOR_DEFAULT & 15 ):
-		case ( C_COLOR_WHITE & 15 ):
-		case ( C_COLOR_CYAN & 15 ):
-		case ( C_COLOR_BLUE & 15 ):
+		case( C_COLOR_DEFAULT & 15 ):
+		case( C_COLOR_WHITE & 15 ):
+		case( C_COLOR_CYAN & 15 ):
+		case( C_COLOR_BLUE & 15 ):
 		default:
 			return CONSOLE_COLOR_TEXT;
 	}
@@ -237,24 +239,30 @@ const idVec4 &idConsoleLocal::ColorForIndex( int colorIndex ) {
 idConsoleLocal::SmallStringWidth
 ==================
 */
-int idConsoleLocal::SmallStringWidth( const char *text ) {
-	if ( text == NULL ) {
+int idConsoleLocal::SmallStringWidth( const char* text )
+{
+	if( text == NULL )
+	{
 		return 0;
 	}
 
-	idFont *font = renderSystem->RegisterFont( DEFAULT_FONT );
-	if ( font == NULL ) {
+	idFont* font = renderSystem->RegisterFont( DEFAULT_FONT );
+	if( font == NULL )
+	{
 		return idStr::Length( text ) * SMALLCHAR_WIDTH;
 	}
 
 	int width = 0;
-	for ( const unsigned char *s = (const unsigned char *)text; *s != '\0'; s++ ) {
-		if ( idStr::IsColor( (const char *)s ) ) {
+	for( const unsigned char* s = ( const unsigned char* )text; *s != '\0'; s++ )
+	{
+		if( idStr::IsColor( ( const char* )s ) )
+		{
 			s++;
 			continue;
 		}
 		float advance = font->GetGlyphWidth( CONSOLE_SMALL_FONT_SCALE, *s );
-		if ( advance <= 0.0f ) {
+		if( advance <= 0.0f )
+		{
 			advance = SMALLCHAR_WIDTH;
 		}
 		width += idMath::Ftoi( advance + CONSOLE_SMALL_CHAR_PAD );
@@ -268,24 +276,30 @@ int idConsoleLocal::SmallStringWidth( const char *text ) {
 idConsoleLocal::BigStringWidth
 ==================
 */
-int idConsoleLocal::BigStringWidth( const char *text ) {
-	if ( text == NULL ) {
+int idConsoleLocal::BigStringWidth( const char* text )
+{
+	if( text == NULL )
+	{
 		return 0;
 	}
 
-	idFont *font = renderSystem->RegisterFont( DEFAULT_FONT );
-	if ( font == NULL ) {
+	idFont* font = renderSystem->RegisterFont( DEFAULT_FONT );
+	if( font == NULL )
+	{
 		return idStr::Length( text ) * BIGCHAR_WIDTH;
 	}
 
 	int width = 0;
-	for ( const unsigned char *s = (const unsigned char *)text; *s != '\0'; s++ ) {
-		if ( idStr::IsColor( (const char *)s ) ) {
+	for( const unsigned char* s = ( const unsigned char* )text; *s != '\0'; s++ )
+	{
+		if( idStr::IsColor( ( const char* )s ) )
+		{
 			s++;
 			continue;
 		}
 		float advance = font->GetGlyphWidth( CONSOLE_BIG_FONT_SCALE, *s );
-		if ( advance <= 0.0f ) {
+		if( advance <= 0.0f )
+		{
 			advance = BIGCHAR_WIDTH;
 		}
 		width += idMath::Ftoi( advance + CONSOLE_BIG_CHAR_PAD );
@@ -299,22 +313,26 @@ int idConsoleLocal::BigStringWidth( const char *text ) {
 idConsoleLocal::DrawTextLine
 ==================
 */
-void idConsoleLocal::DrawTextLine( const short *text_p, int y ) {
+void idConsoleLocal::DrawTextLine( const short* text_p, int y )
+{
 	idTempArray<char> run( localConsole.LINE_WIDTH + 1 );
 	int runLen = 0;
 	int runColor = idStr::ColorIndex( C_COLOR_WHITE );
 	int last = localConsole.LINE_WIDTH - 1;
 	int penX = localConsole.LOCALSAFE_LEFT + 1 * SMALLCHAR_WIDTH;
 
-	while ( last >= 0 && ( text_p[last] & 0xff ) == ' ' ) {
+	while( last >= 0 && ( text_p[last] & 0xff ) == ' ' )
+	{
 		last--;
 	}
 
-	for ( int x = 0; x <= last; x++ ) {
+	for( int x = 0; x <= last; x++ )
+	{
 		const int ch = text_p[x] & 0xff;
 		const int color = idStr::ColorIndex( text_p[x] >> 8 );
 
-		if ( runLen > 0 && color != runColor ) {
+		if( runLen > 0 && color != runColor )
+		{
 			run[runLen] = '\0';
 			renderSystem->DrawSmallStringExt( penX, y, run.Ptr(), ColorForIndex( runColor ), true, false, 0 );
 			penX += SmallStringWidth( run.Ptr() );
@@ -325,7 +343,8 @@ void idConsoleLocal::DrawTextLine( const short *text_p, int y ) {
 		run[runLen++] = ch;
 	}
 
-	if ( runLen > 0 ) {
+	if( runLen > 0 )
+	{
 		run[runLen] = '\0';
 		renderSystem->DrawSmallStringExt( penX, y, run.Ptr(), ColorForIndex( runColor ), true, false, 0 );
 	}
@@ -336,7 +355,8 @@ void idConsoleLocal::DrawTextLine( const short *text_p, int y ) {
 idConsoleLocal::DrawSmallStringRightAlign
 ==================
 */
-void idConsoleLocal::DrawSmallStringRightAlign( float y, const idVec4 &color, const char *text ) {
+void idConsoleLocal::DrawSmallStringRightAlign( float y, const idVec4& color, const char* text )
+{
 	const int w = SmallStringWidth( text );
 	renderSystem->DrawSmallStringExt( localConsole.LOCALSAFE_WIDTH - w, idMath::Ftoi( y ) + 2, text, color, true, false, 0 );
 }
@@ -1477,7 +1497,8 @@ void idConsoleLocal::DrawSolidConsole( float frac )
 	// draw the version number
 
 	y = lines - ( SMALLCHAR_HEIGHT * 2 ) - 6;
-	if ( y < SMALLCHAR_HEIGHT ) {
+	if( y < SMALLCHAR_HEIGHT )
+	{
 		y = SMALLCHAR_HEIGHT;
 	}
 

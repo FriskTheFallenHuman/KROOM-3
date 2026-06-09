@@ -96,8 +96,8 @@ float SheenLookup( float x, float alphaG )
 {
 	float oneMinusAlphaSq = ( 1.0 - alphaG ) * ( 1.0 - alphaG );
 	float a = lerp( 25.3245, 21.5473, oneMinusAlphaSq );
-	float b = lerp(  3.3244,  3.8299, oneMinusAlphaSq );
-	float c = lerp(  0.1680,  0.1982, oneMinusAlphaSq );
+	float b = lerp( 3.3244,  3.8299, oneMinusAlphaSq );
+	float c = lerp( 0.1680,  0.1982, oneMinusAlphaSq );
 	float d = lerp( -1.2739, -1.9736, oneMinusAlphaSq );
 	float e = lerp( -4.8597, -4.3205, oneMinusAlphaSq );
 	return a / ( 1.0 + b * pow( abs( x ), c ) ) + d * x + e;
@@ -122,7 +122,9 @@ float V_Sheen( float NdotL, float NdotV, float roughness )
 half3 EvaluateSheen( half3 sheenColor, float sheenRoughness, float NdotL, float NdotV, float NdotH )
 {
 	if( dot( sheenColor, sheenColor ) < 0.0001 )
+	{
 		return half3( 0.0, 0.0, 0.0 );
+	}
 	float D = D_Charlie( sheenRoughness, NdotH );
 	float V = V_Sheen( NdotL, NdotV, sheenRoughness );
 	return sheenColor * D * V;
@@ -132,7 +134,9 @@ half3 EvaluateSheen( half3 sheenColor, float sheenRoughness, float NdotL, float 
 half3 EvaluateCoat( float coatWeight, float coatRoughness, float NdotL, float NdotV, float NdotH, float VdotH )
 {
 	if( coatWeight < 0.001 )
+	{
 		return half3( 0.0, 0.0, 0.0 );
+	}
 
 	float alpha  = coatRoughness * coatRoughness;
 	float alpha2 = alpha * alpha;

@@ -456,23 +456,26 @@ idDrawVert* idRenderSystemLocal::AllocTris( int numVerts, const triIndex_t* inde
 idRenderSystemLocal::DrawFontChar
 =====================
 */
-void idRenderSystemLocal::DrawFontChar( float x, float y, float scale, float baselineOffset, int ch ) {
-	idFont *font = RegisterFont( DEFAULT_FONT );
-	if ( font == NULL || ch == ' ' ) {
+void idRenderSystemLocal::DrawFontChar( float x, float y, float scale, float baselineOffset, int ch )
+{
+	idFont* font = RegisterFont( DEFAULT_FONT );
+	if( font == NULL || ch == ' ' )
+	{
 		return;
 	}
 
 	scaledGlyphInfo_t glyphInfo;
 	font->GetScaledGlyph( scale, ch & 255, glyphInfo );
-	if ( glyphInfo.material == NULL ) {
+	if( glyphInfo.material == NULL )
+	{
 		return;
 	}
 
 	float baseline = y + baselineOffset;
 	DrawStretchPic( x + glyphInfo.left, baseline - glyphInfo.top,
-		glyphInfo.width, glyphInfo.height,
-		glyphInfo.s1, glyphInfo.t1, glyphInfo.s2, glyphInfo.t2,
-		glyphInfo.material );
+					glyphInfo.width, glyphInfo.height,
+					glyphInfo.s1, glyphInfo.t1, glyphInfo.s2, glyphInfo.t2,
+					glyphInfo.material );
 }
 
 /*
@@ -480,14 +483,17 @@ void idRenderSystemLocal::DrawFontChar( float x, float y, float scale, float bas
 idRenderSystemLocal::FontGlyphAdvance
 =====================
 */
-float idRenderSystemLocal::FontGlyphAdvance( float scale, int ch ) {
-	idFont *font = RegisterFont( DEFAULT_FONT );
-	if ( font == NULL ) {
+float idRenderSystemLocal::FontGlyphAdvance( float scale, int ch )
+{
+	idFont* font = RegisterFont( DEFAULT_FONT );
+	if( font == NULL )
+	{
 		return SMALLCHAR_WIDTH;
 	}
 
 	float advance = font->GetGlyphWidth( scale, ch & 255 );
-	if ( advance <= 0.0f ) {
+	if( advance <= 0.0f )
+	{
 		advance = SMALLCHAR_WIDTH;
 	}
 	return advance;

@@ -617,24 +617,30 @@ void idEditField::SetBuffer( const char* buf )
 EditFieldSmallStringWidth
 ===============
 */
-static int EditFieldSmallStringWidth( const char *text, int length ) {
-	if ( text == NULL || length <= 0 ) {
+static int EditFieldSmallStringWidth( const char* text, int length )
+{
+	if( text == NULL || length <= 0 )
+	{
 		return 0;
 	}
 
-	idFont *font = renderSystem->RegisterFont( "Arial_Narrow" );
-	if ( font == NULL ) {
+	idFont* font = renderSystem->RegisterFont( DEFAULT_FONT );
+	if( font == NULL )
+	{
 		return length * SMALLCHAR_WIDTH;
 	}
 
 	int width = 0;
-	for ( int i = 0; text[i] != '\0' && i < length; i++ ) {
-		if ( idStr::IsColor( text + i ) ) {
+	for( int i = 0; text[i] != '\0' && i < length; i++ )
+	{
+		if( idStr::IsColor( text + i ) )
+		{
 			i++;
 			continue;
 		}
-		float advance = font->GetGlyphWidth( 0.255f, (const unsigned char)text[i] );
-		if ( advance <= 0.0f ) {
+		float advance = font->GetGlyphWidth( 0.255f, ( const unsigned char )text[i] );
+		if( advance <= 0.0f )
+		{
 			advance = SMALLCHAR_WIDTH;
 		}
 		width += idMath::Ftoi( advance + 0.75f );
@@ -647,9 +653,11 @@ static int EditFieldSmallStringWidth( const char *text, int length ) {
 EditFieldSmallCharLeft
 ===============
 */
-static int EditFieldSmallCharLeft( int ch ) {
-	idFont *font = renderSystem->RegisterFont( "Arial_Narrow" );
-	if ( font == NULL ) {
+static int EditFieldSmallCharLeft( int ch )
+{
+	idFont* font = renderSystem->RegisterFont( DEFAULT_FONT );
+	if( font == NULL )
+	{
 		return 0;
 	}
 
@@ -730,9 +738,12 @@ void idEditField::Draw( int x, int y, int width, bool showCursor )
 		return;		// off blink
 	}
 
-	if ( idKeyInput::GetOverstrikeMode() ) {
+	if( idKeyInput::GetOverstrikeMode() )
+	{
 		cursorChar = '_';
-	} else {
+	}
+	else
+	{
 		cursorChar = '|';
 	}
 
