@@ -30,8 +30,8 @@ If you have questions concerning this license or the applicable additional terms
 */
 #include "precompiled.h"
 #pragma hdrstop
+
 #include "framework/Common_local.h"
-#include "DXTCodec_local.h"
 #include "DXTCodec.h"
 
 #define INSET_COLOR_SHIFT		4		// inset the bounding box with ( range >> shift )

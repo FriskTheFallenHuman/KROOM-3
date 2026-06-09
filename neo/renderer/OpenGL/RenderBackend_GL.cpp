@@ -178,6 +178,7 @@ R_CheckPortableExtensions
 static void R_CheckPortableExtensions()
 {
 	glConfig.glVersion = atof( glConfig.version_string );
+
 	const char* badVideoCard = idLocalization::GetString( "#str_06780" );
 	if( glConfig.glVersion < 2.0f )
 	{
