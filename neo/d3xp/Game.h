@@ -171,10 +171,6 @@ public:
 	virtual bool				IsPDAOpen() const = 0;
 	virtual bool				IsPlayerChatting() const = 0;
 
-	// Creates leaderboards for each map/mode defined.
-	virtual void				Leaderboards_Init() = 0;
-	virtual void				Leaderboards_Shutdown() = 0;
-
 	// MAIN MENU FUNCTIONS
 	virtual bool				InhibitControls() = 0;
 	virtual void				Shell_Init( const char* filename, idSoundWorld* sw ) = 0;
@@ -210,6 +206,36 @@ public:
 
 extern idGame* 					game;
 
+/*
+================================================================================================
+
+	Leaderboards
+
+================================================================================================
+*/
+
+struct lobbyUserID_t;
+struct leaderboardStats_t;
+
+class idLeaderboards
+{
+public:
+	virtual						~idLeaderboards() {}
+
+	// creates and stores all the leaderboards inside the internal map ( see Sys_FindLeaderboardDef on retrieving definition )
+	virtual void				Init() = 0;
+
+	// Destroys any leaderboard definitions allocated by Init()
+	virtual void				Shutdown() = 0;
+
+	// Gets a leaderboard ID with map index and game type.
+	virtual int					GetID( int mapIndex, int gametype ) = 0;
+
+	// Do it all function. Will create the column_t with the correct stats from the game type, and upload it to the leaderboard system.
+	virtual void				Upload( lobbyUserID_t lobbyUserID, int gameType, leaderboardStats_t& stats ) = 0;
+};
+
+extern idLeaderboards* 		leaderBoards;
 
 /*
 ===============================================================================
@@ -365,6 +391,7 @@ typedef struct
 	int							version;				// API version
 	idGame* 					game;					// interface to run the game
 	idGameEdit* 				gameEdit;				// interface for in-game editing
+	idLeaderboards* 			leadBoards;				// interface for leaderboards
 
 } gameExport_t;
 

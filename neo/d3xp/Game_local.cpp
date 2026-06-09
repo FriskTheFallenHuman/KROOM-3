@@ -5672,26 +5672,6 @@ bool idGameLocal::InhibitControls()
 }
 
 /*
-===============================
-idGameLocal::Leaderboards_Init
-===============================
-*/
-void idGameLocal::Leaderboards_Init()
-{
-	LeaderboardLocal_Init();
-}
-
-/*
-===============================
-idGameLocal::Leaderboards_Shutdown
-===============================
-*/
-void idGameLocal::Leaderboards_Shutdown()
-{
-	LeaderboardLocal_Shutdown();
-}
-
-/*
 ========================
 idGameLocal::Shell_ClearRepeater
 ========================

@@ -99,6 +99,7 @@ class idLeaderboardCallback;
 
 struct leaderboardDefinition_t;
 struct column_t;
+struct columnDef_t;
 
 const int8 GAME_MODE_RANDOM = -1;
 const int8 GAME_MODE_SINGLEPLAYER = -2;
@@ -581,6 +582,9 @@ public:
 	//=====================================================================================================
 	// Leaderboard
 	//=====================================================================================================
+	virtual const leaderboardDefinition_t* LeaderboardFindDef( int id ) = 0;
+	virtual leaderboardDefinition_t* LeaderboardCreateDef( int id_, int numColumns_, const columnDef_t* columnDefs_, int rankOrder_, bool supportsAttachments_, bool checkAgainstCurrent_ ) = 0;
+	virtual void			LeaderboardDestroyDefs() = 0;
 	virtual void			LeaderboardUpload( lobbyUserID_t lobbyUserID, const leaderboardDefinition_t* leaderboard, const column_t* stats, const idFile_Memory* attachment = NULL ) = 0;
 	virtual void			LeaderboardDownload( int sessionUserIndex, const leaderboardDefinition_t* leaderboard, int startingRank, int numRows, const idLeaderboardCallback& callback ) = 0;
 	virtual void			LeaderboardDownloadAttachment( int sessionUserIndex, const leaderboardDefinition_t* leaderboard, int64 attachmentID ) = 0;
