@@ -55,6 +55,11 @@ UnbindBufferObjects
 */
 void UnbindBufferObjects()
 {
+	if( !glBindBufferARB )
+	{
+		return;
+	}
+
 	glBindBuffer( GL_ARRAY_BUFFER, 0 );
 	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
 }
@@ -216,7 +221,7 @@ void* idVertexBuffer::MapBuffer( bufferMapType_t mapType )
 	glBindBuffer( GL_ARRAY_BUFFER, apiObject );
 	if( mapType == BM_READ )
 	{
-		buffer = glMapBufferRange( GL_ARRAY_BUFFER_ARB, 0, GetAllocedSize(), GL_MAP_READ_BIT | GL_MAP_UNSYNCHRONIZED_BIT );
+		buffer = glMapBufferRange( GL_ARRAY_BUFFER_ARB, 0, GetAllocedSize(), GL_MAP_READ_BIT /*| GL_MAP_UNSYNCHRONIZED_BIT*/ );
 		if( buffer != NULL )
 		{
 			buffer = ( byte* )buffer + GetOffset();
@@ -225,7 +230,7 @@ void* idVertexBuffer::MapBuffer( bufferMapType_t mapType )
 	else if( mapType == BM_WRITE )
 	{
 		// RB: removed GL_MAP_INVALIDATE_RANGE_BIT as it breaks with an optimization in the Nvidia WHQL drivers >= 344.11
-		buffer = glMapBufferRange( GL_ARRAY_BUFFER, 0, GetAllocedSize(), GL_MAP_WRITE_BIT /*| GL_MAP_INVALIDATE_RANGE_BIT*/ | GL_MAP_UNSYNCHRONIZED_BIT );
+		buffer = glMapBufferRange( GL_ARRAY_BUFFER, 0, GetAllocedSize(), GL_MAP_WRITE_BIT /*| GL_MAP_INVALIDATE_RANGE_BIT | GL_MAP_UNSYNCHRONIZED_BIT*/ );
 		if( buffer != NULL )
 		{
 			buffer = ( byte* )buffer + GetOffset();
@@ -435,7 +440,7 @@ void* idIndexBuffer::MapBuffer( bufferMapType_t mapType )
 	if( mapType == BM_READ )
 	{
 		//buffer = glMapBufferARB( GL_ELEMENT_ARRAY_BUFFER_ARB, GL_READ_ONLY_ARB );
-		buffer = glMapBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, GetAllocedSize(), GL_MAP_READ_BIT | GL_MAP_UNSYNCHRONIZED_BIT );
+		buffer = glMapBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, GetAllocedSize(), GL_MAP_READ_BIT /*| GL_MAP_UNSYNCHRONIZED_BIT*/ );
 		if( buffer != NULL )
 		{
 			buffer = ( byte* )buffer + GetOffset();
@@ -446,7 +451,7 @@ void* idIndexBuffer::MapBuffer( bufferMapType_t mapType )
 		//buffer = glMapBufferARB( GL_ELEMENT_ARRAY_BUFFER_ARB, GL_WRITE_ONLY_ARB );
 
 		// RB: removed GL_MAP_INVALIDATE_RANGE_BIT as it breaks with an optimization in the Nvidia WHQL drivers >= 344.11
-		buffer = glMapBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, GetAllocedSize(), GL_MAP_WRITE_BIT /*| GL_MAP_INVALIDATE_RANGE_BIT*/ | GL_MAP_UNSYNCHRONIZED_BIT );
+		buffer = glMapBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, GetAllocedSize(), GL_MAP_WRITE_BIT /*| GL_MAP_INVALIDATE_RANGE_BIT | GL_MAP_UNSYNCHRONIZED_BIT*/ );
 		if( buffer != NULL )
 		{
 			buffer = ( byte* )buffer + GetOffset();
@@ -646,7 +651,7 @@ void* idUniformBuffer::MapBuffer( bufferMapType_t mapType )
 	assert( GetOffset() == 0 );
 
 	// RB: removed GL_MAP_INVALIDATE_RANGE_BIT as it breaks with an optimization in the Nvidia WHQL drivers >= 344.11
-	buffer = glMapBufferRange( GL_UNIFORM_BUFFER, 0, GetAllocedSize(), GL_MAP_WRITE_BIT /*| GL_MAP_INVALIDATE_RANGE_BIT*/ | GL_MAP_UNSYNCHRONIZED_BIT );
+	buffer = glMapBufferRange( GL_UNIFORM_BUFFER, 0, GetAllocedSize(), GL_MAP_WRITE_BIT /*| GL_MAP_INVALIDATE_RANGE_BIT | GL_MAP_UNSYNCHRONIZED_BIT*/ );
 	if( buffer != NULL )
 	{
 		buffer = ( byte* )buffer + GetOffset();
