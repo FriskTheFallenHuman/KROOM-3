@@ -437,7 +437,7 @@ void idMenuScreen_Shell_PartyLobby::ShowLeaderboards()
 
 	if( !canPlayOnline )
 	{
-		common->Dialog().AddDialog( GDM_LEADERBOARD_ONLINE_NO_PROFILE, DIALOG_CONTINUE, NULL, NULL, true, __FUNCTION__, __LINE__, false );
+		dialogs->AddDialog( GDM_LEADERBOARD_ONLINE_NO_PROFILE, DIALOG_CONTINUE, NULL, NULL, true, __FUNCTION__, __LINE__, false );
 	}
 	else if( menuData != NULL )
 	{
@@ -481,26 +481,23 @@ bool idMenuScreen_Shell_PartyLobby::HandleAction( idWidgetAction& action, const 
 		}
 		case WIDGET_ACTION_GO_BACK:
 		{
-			class idSWFScriptFunction_Accept : public idSWFScriptFunction_RefCounted
+			class idDialogAcceptCallback : public idDialogCallback
 			{
 			public:
-				idSWFScriptFunction_Accept() { }
-				idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
+				idDialogAcceptCallback() { }
+				void Call() override
 				{
-					common->Dialog().ClearDialog( GDM_LEAVE_LOBBY_RET_MAIN );
+					dialogs->ClearDialog( GDM_LEAVE_LOBBY_RET_MAIN );
 					session->Cancel();
-
-					return idSWFScriptVar();
 				}
 			};
-			class idSWFScriptFunction_Cancel : public idSWFScriptFunction_RefCounted
+			class idDialogCancelCallback : public idDialogCallback
 			{
 			public:
-				idSWFScriptFunction_Cancel() { }
-				idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
+				idDialogCancelCallback() { }
+				void Call() override
 				{
-					common->Dialog().ClearDialog( GDM_LEAVE_LOBBY_RET_MAIN );
-					return idSWFScriptVar();
+					dialogs->ClearDialog( GDM_LEAVE_LOBBY_RET_MAIN );
 				}
 			};
 
@@ -508,7 +505,7 @@ bool idMenuScreen_Shell_PartyLobby::HandleAction( idWidgetAction& action, const 
 
 			if( activeLobby.GetNumActiveLobbyUsers() > 1 )
 			{
-				common->Dialog().AddDialog( GDM_LEAVE_LOBBY_RET_MAIN, DIALOG_ACCEPT_CANCEL, new( TAG_SWF ) idSWFScriptFunction_Accept(), new( TAG_SWF ) idSWFScriptFunction_Cancel(), false );
+				ADD_DIALOG( GDM_LEAVE_LOBBY_RET_MAIN, DIALOG_ACCEPT_CANCEL, new( TAG_SWF ) idDialogAcceptCallback(), new( TAG_SWF ) idDialogCancelCallback(), false );
 			}
 			else
 			{
@@ -638,7 +635,7 @@ bool idMenuScreen_Shell_PartyLobby::HandleAction( idWidgetAction& action, const 
 				{
 					if( session->GetPartyLobbyBase().IsLobbyFull() )
 					{
-						common->Dialog().AddDialog( GDM_CANNOT_INVITE_LOBBY_FULL, DIALOG_CONTINUE, NULL, NULL, true, __FUNCTION__, __LINE__, false );
+						dialogs->AddDialog( GDM_CANNOT_INVITE_LOBBY_FULL, DIALOG_CONTINUE, NULL, NULL, true, __FUNCTION__, __LINE__, false );
 						return true;
 					}
 

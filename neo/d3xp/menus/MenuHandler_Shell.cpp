@@ -44,11 +44,11 @@ void idMenuHandler_Shell::Update()
 //#if defined ( ID_360 )
 //	if ( deviceRequestedSignal.Wait( 0 ) ) {
 //		// This clears the delete save dialog to catch the case of a delete confirmation for an old device after we've changed the device.
-//		common->Dialog().ClearDialog( GDM_DELETE_SAVE );
-//		common->Dialog().ClearDialog( GDM_DELETE_CORRUPT_SAVEGAME );
-//		common->Dialog().ClearDialog( GDM_RESTORE_CORRUPT_SAVEGAME );
-//		common->Dialog().ClearDialog( GDM_LOAD_DAMAGED_FILE );
-//		common->Dialog().ClearDialog( GDM_OVERWRITE_SAVE );
+//		dialogs->ClearDialog( GDM_DELETE_SAVE );
+//		dialogs->ClearDialog( GDM_DELETE_CORRUPT_SAVEGAME );
+//		dialogs->ClearDialog( GDM_RESTORE_CORRUPT_SAVEGAME );
+//		dialogs->ClearDialog( GDM_LOAD_DAMAGED_FILE );
+//		dialogs->ClearDialog( GDM_OVERWRITE_SAVE );
 //
 //	}
 //#endif
@@ -58,7 +58,7 @@ void idMenuHandler_Shell::Update()
 		return;
 	}
 
-	if( ( IsPacifierVisible() || common->Dialog().IsDialogActive() ) && actionRepeater.isActive )
+	if( ( IsPacifierVisible() || dialogs->IsDialogActive() ) && actionRepeater.isActive )
 	{
 		ClearWidgetActionRepeater();
 	}
@@ -200,7 +200,7 @@ void idMenuHandler_Shell::Update()
 
 	if( cmdBar != NULL && cmdBar->GetSprite() )
 	{
-		if( common->Dialog().IsDialogActive() )
+		if( dialogs->IsDialogActive() )
 		{
 			cmdBar->GetSprite()->SetVisible( false );
 		}
@@ -272,7 +272,7 @@ void idMenuHandler_Shell::Update()
 		if( !session->GetSaveGameManager().IsWorking() )
 		{
 			continueWaitForEnumerate = false;
-			common->Dialog().ClearDialog( GDM_REFRESHING );
+			dialogs->ClearDialog( GDM_REFRESHING );
 			idMenuScreen_Shell_Singleplayer* screen = dynamic_cast< idMenuScreen_Shell_Singleplayer* >( menuScreens[ SHELL_AREA_CAMPAIGN ] );
 			if( screen != NULL )
 			{
@@ -393,10 +393,10 @@ bool idMenuHandler_Shell::HandleGuiEvent( const sysEvent_t* sev )
 						idMenuScreen_Shell_Bindings* bindScreen = dynamic_cast< idMenuScreen_Shell_Bindings* >( menuScreens[ SHELL_AREA_KEYBOARD ] );
 						if( bindScreen != NULL )
 						{
-							class idSWFScriptFunction_RebindKey : public idSWFScriptFunction_RefCounted
+							class idDialogRebindKeyCallback : public idDialogCallback
 							{
 							public:
-								idSWFScriptFunction_RebindKey( idMenuScreen_Shell_Bindings* _menu, gameDialogMessages_t _msg, bool _accept, idMenuHandler_Shell* _mgr, int _key, const char* _bind )
+								idDialogRebindKeyCallback( idMenuScreen_Shell_Bindings* _menu, gameDialogMessages_t _msg, bool _accept, idMenuHandler_Shell* _mgr, int _key, const char* _bind )
 								{
 									menu = _menu;
 									msg = _msg;
@@ -405,9 +405,9 @@ bool idMenuHandler_Shell::HandleGuiEvent( const sysEvent_t* sev )
 									key = _key;
 									bind = _bind;
 								}
-								idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
+								void Call() override
 								{
-									common->Dialog().ClearDialog( msg );
+									dialogs->ClearDialog( msg );
 									mgr->ClearWaitForBinding();
 									menu->ToggleWait( false );
 									if( accept )
@@ -417,7 +417,6 @@ bool idMenuHandler_Shell::HandleGuiEvent( const sysEvent_t* sev )
 										menu->UpdateBindingDisplay();
 										menu->Update();
 									}
-									return idSWFScriptVar();
 								}
 							private:
 								idMenuScreen_Shell_Bindings* menu;
@@ -428,7 +427,7 @@ bool idMenuHandler_Shell::HandleGuiEvent( const sysEvent_t* sev )
 								const char* bind;
 							};
 
-							common->Dialog().AddDialog( GDM_BINDING_ALREDY_SET, DIALOG_ACCEPT_CANCEL, new idSWFScriptFunction_RebindKey( bindScreen, GDM_BINDING_ALREDY_SET, true, this, sev->evValue, waitBind ), new idSWFScriptFunction_RebindKey( bindScreen, GDM_BINDING_ALREDY_SET, false, this, sev->evValue, waitBind ), false );
+							ADD_DIALOG( GDM_BINDING_ALREDY_SET, DIALOG_ACCEPT_CANCEL, new idDialogRebindKeyCallback( bindScreen, GDM_BINDING_ALREDY_SET, true, this, sev->evValue, waitBind ), new idDialogRebindKeyCallback( bindScreen, GDM_BINDING_ALREDY_SET, false, this, sev->evValue, waitBind ), false );
 						}
 
 					}
@@ -748,7 +747,7 @@ void idMenuHandler_Shell::ActivateMenu( bool show )
 		largeFrameShowing = false;
 		bgShowing = true;
 
-		common->Dialog().ClearDialog( GDM_LEAVE_LOBBY_RET_NEW_PARTY );
+		dialogs->ClearDialog( GDM_LEAVE_LOBBY_RET_NEW_PARTY );
 	}
 }
 
@@ -909,37 +908,37 @@ idMenuHandler_Shell::HandleExitGameBtn
 */
 void idMenuHandler_Shell::HandleExitGameBtn()
 {
-	class idSWFScriptFunction_QuitDialog : public idSWFScriptFunction_RefCounted
+	class idDialogQuitDialogCallback : public idDialogCallback
 	{
 	public:
-		idSWFScriptFunction_QuitDialog( gameDialogMessages_t _msg, int _accept )
+		idDialogQuitDialogCallback( gameDialogMessages_t _msg, int _accept )
 		{
 			msg = _msg;
 			accept = _accept;
 		}
-		idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
+
+		void Call() override
 		{
-			common->Dialog().ClearDialog( msg );
+			dialogs->ClearDialog( msg );
 			if( accept == 1 )
 			{
 				common->Quit();
 			}
-			return idSWFScriptVar();
 		}
 	private:
 		gameDialogMessages_t msg;
 		int accept;
 	};
 
-	idStaticList< idSWFScriptFunction*, 4 > callbacks;
+	idStaticList< idDialogCallback*, 4 > callbacks;
 	idStaticList< idStrId, 4 > optionText;
-	callbacks.Append( new( TAG_SWF ) idSWFScriptFunction_QuitDialog( GDM_QUIT_GAME, 1 ) );
-	callbacks.Append( new( TAG_SWF ) idSWFScriptFunction_QuitDialog( GDM_QUIT_GAME, 0 ) );
-	callbacks.Append( new( TAG_SWF ) idSWFScriptFunction_QuitDialog( GDM_QUIT_GAME, -1 ) );
+	callbacks.Append( new( TAG_SWF ) idDialogQuitDialogCallback( GDM_QUIT_GAME, 1 ) );
+	callbacks.Append( new( TAG_SWF ) idDialogQuitDialogCallback( GDM_QUIT_GAME, 0 ) );
+	callbacks.Append( new( TAG_SWF ) idDialogQuitDialogCallback( GDM_QUIT_GAME, -1 ) );
 	optionText.Append( idStrId( "#STR_SWF_ACCEPT" ) );
 	optionText.Append( idStrId( "#STR_SWF_CANCEL" ) );
 
-	common->Dialog().AddDynamicDialog( GDM_QUIT_GAME, callbacks, optionText, true, "" );
+	ADD_DYNAMIC_DIALOG( GDM_QUIT_GAME, callbacks, optionText, true, "" );
 }
 
 /*

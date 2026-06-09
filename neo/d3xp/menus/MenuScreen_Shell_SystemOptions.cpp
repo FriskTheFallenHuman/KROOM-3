@@ -226,17 +226,17 @@ void idMenuScreen_Shell_SystemOptions::HideScreen( const mainMenuTransition_t tr
 
 	if( !skipRestart && systemData.IsRestartRequired() )
 	{
-		class idSWFScriptFunction_Restart : public idSWFScriptFunction_RefCounted
+		class idDialogRestartCallback : public idDialogCallback
 		{
 		public:
-			idSWFScriptFunction_Restart( gameDialogMessages_t _msg, bool _restart )
+			idDialogRestartCallback( gameDialogMessages_t _msg, bool _restart )
 			{
 				msg = _msg;
 				restart = _restart;
 			}
-			idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
+			void Call() override
 			{
-				common->Dialog().ClearDialog( msg );
+				dialogs->ClearDialog( msg );
 				if( restart )
 				{
 					/*
@@ -252,19 +252,18 @@ void idMenuScreen_Shell_SystemOptions::HideScreen( const mainMenuTransition_t tr
 					Sys_ReLaunch();
 					// DG end
 				}
-				return idSWFScriptVar();
 			}
 		private:
 			gameDialogMessages_t msg;
 			bool restart;
 		};
-		idStaticList<idSWFScriptFunction*, 4> callbacks;
+		idStaticList<idDialogCallback*, 4> callbacks;
 		idStaticList<idStrId, 4> optionText;
-		callbacks.Append( new idSWFScriptFunction_Restart( GDM_GAME_RESTART_REQUIRED, false ) );
-		callbacks.Append( new idSWFScriptFunction_Restart( GDM_GAME_RESTART_REQUIRED, true ) );
+		callbacks.Append( new idDialogRestartCallback( GDM_GAME_RESTART_REQUIRED, false ) );
+		callbacks.Append( new idDialogRestartCallback( GDM_GAME_RESTART_REQUIRED, true ) );
 		optionText.Append( idStrId( "#str_00100113" ) ); // Continue
 		optionText.Append( idStrId( "#str_02487" ) ); // Restart Now
-		common->Dialog().AddDynamicDialog( GDM_GAME_RESTART_REQUIRED, callbacks, optionText, true, idStr() );
+		ADD_DYNAMIC_DIALOG( GDM_GAME_RESTART_REQUIRED, callbacks, optionText, true, idStr() );
 	}
 
 	if( systemData.IsDataChanged() )

@@ -383,7 +383,7 @@ void idCommonLocal::Draw()
 		DrawWipeModel();
 
 		bool isLoadingGUI = ( mainMenu != NULL && mainMenu->IsLoadingActive() );
-		Dialog().Render( isLoadingGUI );
+		dialogs->Render( isLoadingGUI );
 
 		// draw the half console / notify console on top of everything
 		console->Draw( false );
@@ -536,7 +536,7 @@ void idCommonLocal::Frame()
 		bool chatting = false;
 
 		// DG: Add pause from com_pause cvar
-		if( com_pause.GetInteger() || console->Active() || Dialog().IsDialogActive() || session->IsSystemUIShowing()
+		if( com_pause.GetInteger() || console->Active() || dialogs->IsDialogActive() || session->IsSystemUIShowing()
 				|| ( game && game->InhibitControls() ) || ImGuiHook::UseInput() )
 			// DG end
 		{
@@ -557,7 +557,7 @@ void idCommonLocal::Frame()
 
 		const bool pauseGame = ( !mapSpawned
 								 || ( !IsMultiplayer()
-									  && ( Dialog().IsDialogPausing() || session->IsSystemUIShowing()
+									  && ( dialogs->IsDialogPausing() || session->IsSystemUIShowing()
 										   || ( mainMenu && mainMenu->IsActive() ) || com_pause.GetInteger() ) ) );
 
 		// save the screenshot and audio from the last draw if needed
@@ -976,7 +976,7 @@ void idCommonLocal::Frame()
 			soundSystem->SetMute( false );
 		}
 		// SRS - Mute all sound output when dialog waiting or window not in focus (mutes Doom3, Classic, Cinematic Audio)
-		if( Dialog().IsDialogPausing() || session->IsSystemUIShowing() || com_pause.GetInteger() )
+		if( dialogs->IsDialogPausing() || session->IsSystemUIShowing() || com_pause.GetInteger() )
 		{
 			soundSystem->SetMute( true );
 		}
@@ -1035,12 +1035,12 @@ void idCommonLocal::Frame()
 		LeaveGame();
 
 		// Show the message box
-		idStaticList< idSWFScriptFunction*, 4 > callbacks;
+		idStaticList< idDialogCallback*, 4 > callbacks;
 		idStaticList< idStrId, 4 > optionText;
 		optionText.Append( idStrId( "#str_02013" ) );
 		idStrStatic<560> errorname = err.GetError();
 
-		Dialog().AddDynamicDialog( GDM_GAME_ERROR, callbacks, optionText, true, errorname, false, true );
+		ADD_DYNAMIC_DIALOG( GDM_GAME_ERROR, callbacks, optionText, true, errorname, false, true );
 		return;
 	}
 }

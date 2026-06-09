@@ -146,6 +146,7 @@ extern "C" gameExport_t* GetGameAPI( gameImport_t* import )
 	gameExport.gameEdit = gameEdit;
 	gameExport.leaderBoards = leaderBoards;
 	gameExport.mainMenu = mainMenu;
+	gameExport.dialogs = dialogs;
 
 	return &gameExport;
 }

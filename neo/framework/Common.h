@@ -71,7 +71,6 @@ class idEntity;
 class idRenderWorld;
 class idSoundWorld;
 class idSession;
-class idCommonDialog;
 class idDemoFile;
 class idUserInterface;
 class idSaveLoadParms;
@@ -326,7 +325,6 @@ public:
 	virtual idSoundWorld* 		SW() = 0;
 	virtual idSoundWorld* 		MenuSW() = 0;
 	virtual idSession* 			Session() = 0;
-	virtual idCommonDialog& 	Dialog() = 0;
 
 	virtual void				OnSaveCompleted( idSaveLoadParms& parms ) = 0;
 	virtual void				OnLoadCompleted( idSaveLoadParms& parms ) = 0;
@@ -378,5 +376,13 @@ public:
 };
 
 extern idCommon* 		common;
+
+#define ADD_DIALOG( ... ) if( dialogs ) { \
+    dialogs->AddDialog( __VA_ARGS__ ); \
+}
+
+#define ADD_DYNAMIC_DIALOG( ... ) if( dialogs ) { \
+    dialogs->AddDynamicDialog( __VA_ARGS__ ); \
+}
 
 #endif /* !__COMMON_H__ */

@@ -42,7 +42,8 @@ const int LOAD_TIP_COUNT		= 26;
 ===============================================================================
 */
 
-class idGameMainMenuLocal : public idGameMainMenu {
+class idGameMainMenuLocal : public idGameMainMenu
+{
 public:
 	// ---------------------- Public idGameMainMenu Interface -------------------
 

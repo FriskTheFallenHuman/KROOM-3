@@ -315,24 +315,23 @@ void idMenuScreen_Shell_Load::LoadDamagedGame( int index )
 		return;
 	}
 
-	class idSWFScriptFunction_LoadDamaged : public idSWFScriptFunction_RefCounted
+	class idDialogLoadDamagedCallback : public idDialogCallback
 	{
 	public:
-		idSWFScriptFunction_LoadDamaged( gameDialogMessages_t _msg, bool _accept, int _index, idMenuScreen_Shell_Load* _screen )
+		idDialogLoadDamagedCallback( gameDialogMessages_t _msg, bool _accept, int _index, idMenuScreen_Shell_Load* _screen )
 		{
 			msg = _msg;
 			accept = _accept;
 			index = _index;
 			screen = _screen;
 		}
-		idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
+		void Call() override
 		{
-			common->Dialog().ClearDialog( msg );
+			dialogs->ClearDialog( msg );
 			if( accept )
 			{
 				screen->DeleteGame( index );
 			}
-			return idSWFScriptVar();
 		}
 	private:
 		gameDialogMessages_t msg;
@@ -341,14 +340,14 @@ void idMenuScreen_Shell_Load::LoadDamagedGame( int index )
 		idMenuScreen_Shell_Load* screen;
 	};
 
-	idStaticList< idSWFScriptFunction*, 4 > callbacks;
-	callbacks.Append( new( TAG_SWF ) idSWFScriptFunction_LoadDamaged( GDM_LOAD_DAMAGED_FILE, true, index, this ) );
-	callbacks.Append( new( TAG_SWF ) idSWFScriptFunction_LoadDamaged( GDM_LOAD_DAMAGED_FILE, false, index, this ) );
+	idStaticList< idDialogCallback*, 4 > callbacks;
+	callbacks.Append( new( TAG_SWF ) idDialogLoadDamagedCallback( GDM_LOAD_DAMAGED_FILE, true, index, this ) );
+	callbacks.Append( new( TAG_SWF ) idDialogLoadDamagedCallback( GDM_LOAD_DAMAGED_FILE, false, index, this ) );
 	idStaticList< idStrId, 4 > optionText;
 	optionText.Append( idStrId( "#str_02315" ) );	// DELETE
 	optionText.Append( idStrId( "#STR_SWF_CANCEL" ) );
 
-	common->Dialog().AddDynamicDialog( GDM_LOAD_DAMAGED_FILE, callbacks, optionText, false, "" );
+	ADD_DYNAMIC_DIALOG( GDM_LOAD_DAMAGED_FILE, callbacks, optionText, false, "" );
 }
 
 /*
@@ -381,24 +380,23 @@ void idMenuScreen_Shell_Load::LoadGame( int index )
 	if( mgr != NULL && mgr->GetInGame() && !isDead )
 	{
 
-		class idSWFScriptFunction_LoadDialog : public idSWFScriptFunction_RefCounted
+		class idDialogLoadDialogCallback : public idDialogCallback
 		{
 		public:
-			idSWFScriptFunction_LoadDialog( gameDialogMessages_t _msg, bool _accept, const char* _name )
+			idDialogLoadDialogCallback( gameDialogMessages_t _msg, bool _accept, const char* _name )
 			{
 				msg = _msg;
 				accept = _accept;
 				name = _name;
 			}
-			idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
+			void Call() override
 			{
-				common->Dialog().ClearDialog( msg );
+				dialogs->ClearDialog( msg );
 				if( accept && name != NULL )
 				{
 
 					cmdSystem->AppendCommandText( va( "loadgame %s\n", name ) );
 				}
-				return idSWFScriptVar();
 			}
 		private:
 			gameDialogMessages_t msg;
@@ -409,7 +407,7 @@ void idMenuScreen_Shell_Load::LoadGame( int index )
 		if( index < sortedSaves.Num() )
 		{
 			const idStr& name = sortedSaves[ index ].slotName;
-			common->Dialog().AddDialog( GDM_SP_LOAD_SAVE, DIALOG_ACCEPT_CANCEL, new idSWFScriptFunction_LoadDialog( GDM_SP_LOAD_SAVE, true, name.c_str() ), new idSWFScriptFunction_LoadDialog( GDM_SP_LOAD_SAVE, false, name.c_str() ), false );
+			ADD_DIALOG( GDM_SP_LOAD_SAVE, DIALOG_ACCEPT_CANCEL, new idDialogLoadDialogCallback( GDM_SP_LOAD_SAVE, true, name.c_str() ), new idDialogLoadDialogCallback( GDM_SP_LOAD_SAVE, false, name.c_str() ), false );
 		}
 
 	}
@@ -432,19 +430,19 @@ idMenuScreen_Shell_Save::DeleteGame
 void idMenuScreen_Shell_Load::DeleteGame( int index )
 {
 
-	class idSWFScriptFunction_DeleteGame : public idSWFScriptFunction_RefCounted
+	class idDialogDeleteGameCallback : public idDialogCallback
 	{
 	public:
-		idSWFScriptFunction_DeleteGame( gameDialogMessages_t _msg, bool _accept, int _index, idMenuScreen_Shell_Load* _screen )
+		idDialogDeleteGameCallback( gameDialogMessages_t _msg, bool _accept, int _index, idMenuScreen_Shell_Load* _screen )
 		{
 			msg = _msg;
 			accept = _accept;
 			index = _index;
 			screen = _screen;
 		}
-		idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
+		void Call() override
 		{
-			common->Dialog().ClearDialog( msg );
+			dialogs->ClearDialog( msg );
 			if( accept && screen != NULL )
 			{
 				if( index < screen->GetSortedSaves().Num() )
@@ -452,7 +450,6 @@ void idMenuScreen_Shell_Load::DeleteGame( int index )
 					session->DeleteSaveGameSync( screen->GetSortedSaves()[ index ].slotName );
 				}
 			}
-			return idSWFScriptVar();
 		}
 	private:
 		gameDialogMessages_t msg;
@@ -461,7 +458,7 @@ void idMenuScreen_Shell_Load::DeleteGame( int index )
 		idMenuScreen_Shell_Load* screen;
 	};
 
-	common->Dialog().AddDialog( GDM_DELETE_SAVE, DIALOG_ACCEPT_CANCEL, new idSWFScriptFunction_DeleteGame( GDM_DELETE_SAVE, true, index, this ), new idSWFScriptFunction_DeleteGame( GDM_DELETE_SAVE, false, index, this ), false );
+	ADD_DIALOG( GDM_DELETE_SAVE, DIALOG_ACCEPT_CANCEL, new idDialogDeleteGameCallback( GDM_DELETE_SAVE, true, index, this ), new idDialogDeleteGameCallback( GDM_DELETE_SAVE, false, index, this ), false );
 
 }
 

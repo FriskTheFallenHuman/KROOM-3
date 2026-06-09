@@ -232,10 +232,6 @@ public:
 	{
 		return session;
 	}
-	virtual idCommonDialog& 	Dialog()
-	{
-		return commonDialog;
-	}
 
 	virtual void				OnSaveCompleted( idSaveLoadParms& parms );
 	virtual void				OnLoadCompleted( idSaveLoadParms& parms );
@@ -463,8 +459,6 @@ private:
 	idStrList					errorList;
 
 	int							gameDLL;
-
-	idCommonDialog				commonDialog;
 
 	idFile_SaveGame 			saveFile;
 	idFile_SaveGame 			stringsFile;

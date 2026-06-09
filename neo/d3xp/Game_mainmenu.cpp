@@ -42,7 +42,8 @@ idGameMainMenu* 			mainMenu = &mainMenuLocal;	// statically pointed at an idGame
 idGameMainMenuLocal::idGameMainMenuLocal
 ========================
 */
-idGameMainMenuLocal::idGameMainMenuLocal() {
+idGameMainMenuLocal::idGameMainMenuLocal()
+{
 	shellHandler = NULL;
 	loadGUI = NULL;
 	nextLoadTip = 0;
@@ -55,7 +56,8 @@ idGameMainMenuLocal::idGameMainMenuLocal() {
 idGameMainMenuLocal::Initialize
 ========================
 */
-void idGameMainMenuLocal::Initialize() {
+void idGameMainMenuLocal::Initialize()
+{
 	shellHandler = new( TAG_SWF ) idMenuHandler_Shell();
 }
 
@@ -64,7 +66,8 @@ void idGameMainMenuLocal::Initialize() {
 idGameMainMenuLocal::Shutdown
 ========================
 */
-void idGameMainMenuLocal::Shutdown() {
+void idGameMainMenuLocal::Shutdown()
+{
 	Cleanup();
 }
 

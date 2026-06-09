@@ -252,7 +252,7 @@ void idCommonLocal::ExecuteMapChange()
 	}
 
 	// Clear all dialogs before beginning the load
-	common->Dialog().ClearDialogs( true );
+	dialogs->ClearDialogs( true );
 
 	// Remember the current load ID.
 	// This is so we can tell if we had a new loadmap request from within an existing loadmap call
@@ -596,7 +596,7 @@ void idCommonLocal::UpdateLevelLoadPacifier()
 	if( autoswapsRunning )
 	{
 		// If autoswaps are running, only update if a Dialog is shown/dismissed
-		bool dialogState = Dialog().HasAnyActiveDialog();
+		bool dialogState = dialogs->HasAnyActiveDialog();
 		if( lastPacifierDialogState != dialogState )
 		{
 			lastPacifierDialogState = dialogState;
@@ -880,7 +880,7 @@ bool idCommonLocal::SaveGame( const char* saveName )
 		soundSystem->Render();
 	}
 
-	Dialog().ShowSaveIndicator( autosave );
+	dialogs->ShowSaveIndicator( autosave );
 	if( insideExecuteMapChange )
 	{
 		UpdateLevelLoadPacifier();
@@ -987,19 +987,36 @@ bool idCommonLocal::LoadGame( const char* saveName )
 		{
 			if( sgdl[i].GetLanguage() != sys_lang.GetString() )
 			{
-				idStaticList< idSWFScriptFunction*, 4 > callbacks;
+				idStaticList< idDialogCallback*, 4 > callbacks;
 				idStaticList< idStrId, 4 > optionText;
 				optionText.Append( idStrId( "#str_swf_continue" ) );
 				idStrStatic<256> langName = "#str_lang_" + sgdl[i].GetLanguage();
 				idStrStatic<256> msg;
 				msg.Format( idLocalization::GetString( "#str_dlg_wrong_language" ), idLocalization::GetString( langName ) );
-				Dialog().AddDynamicDialog( GDM_SAVEGAME_WRONG_LANGUAGE, callbacks, optionText, true, msg, false, true );
+				ADD_DYNAMIC_DIALOG( GDM_SAVEGAME_WRONG_LANGUAGE, callbacks, optionText, true, msg, false, true );
 				if( wipeForced )
 				{
 					ClearWipe();
 				}
 				return false;
 			}
+
+			/*
+			if( sgdl[i].GetArchiteture() != CPUSTRING )
+			{
+				idStaticList< idDialogCallback*, 4 > callbacks;
+				idStaticList< idStrId, 4 > optionText;
+				optionText.Append( idStrId( "#str_swf_continue" ) );
+				idStrStatic<256> msg;
+				msg.Format( "This save file was created in %s build and cannot be loaded in this build", sgdl[i].GetArchiteture().c_str() );
+				ADD_DYNAMIC_DIALOG( GDM_SAVEGAME_WRONG_LANGUAGE, callbacks, optionText, true, msg, false, true );
+				if( wipeForced )
+				{
+					ClearWipe();
+				}
+				return false;
+			}
+			*/
 			found = true;
 			break;
 		}
@@ -1058,7 +1075,7 @@ HandleCommonErrors
 */
 bool HandleCommonErrors( const idSaveLoadParms& parms )
 {
-	common->Dialog().ShowSaveIndicator( false );
+	dialogs->ShowSaveIndicator( false );
 
 	if( parms.GetError() == SAVEGAME_E_NONE )
 	{
@@ -1068,7 +1085,7 @@ bool HandleCommonErrors( const idSaveLoadParms& parms )
 	if( parms.GetError() & SAVEGAME_E_CORRUPTED )
 	{
 		// This one might need to be handled by the game
-		common->Dialog().AddDialog( GDM_CORRUPT_CONTINUE, DIALOG_CONTINUE, NULL, NULL, false );
+		dialogs->AddDialog( GDM_CORRUPT_CONTINUE, DIALOG_CONTINUE, NULL, NULL, false );
 
 		// Find the game in the enumerated details, mark as corrupt so the menus can show as corrupt
 		saveGameDetailsList_t& list = session->GetSaveGameManager().GetEnumeratedSavegamesNonConst();
@@ -1088,7 +1105,7 @@ bool HandleCommonErrors( const idSaveLoadParms& parms )
 	}
 	else if( parms.GetError() & SAVEGAME_E_UNABLE_TO_SELECT_STORAGE_DEVICE && saveGame_enable.GetBool() )
 	{
-		common->Dialog().AddDialog( GDM_UNABLE_TO_USE_SELECTED_STORAGE_DEVICE, DIALOG_CONTINUE, NULL, NULL, false );
+		dialogs->AddDialog( GDM_UNABLE_TO_USE_SELECTED_STORAGE_DEVICE, DIALOG_CONTINUE, NULL, NULL, false );
 		return true;
 	}
 	else if( parms.GetError() & SAVEGAME_E_INVALID_FILENAME )
@@ -1098,17 +1115,17 @@ bool HandleCommonErrors( const idSaveLoadParms& parms )
 	}
 	else if( parms.GetError() & SAVEGAME_E_DLC_NOT_FOUND )
 	{
-		common->Dialog().AddDialog( GDM_DLC_ERROR_MISSING_GENERIC, DIALOG_CONTINUE, NULL, NULL, false );
+		dialogs->AddDialog( GDM_DLC_ERROR_MISSING_GENERIC, DIALOG_CONTINUE, NULL, NULL, false );
 		return true;
 	}
 	else if( parms.GetError() & SAVEGAME_E_DISC_SWAP )
 	{
-		common->Dialog().AddDialog( GDM_DISC_SWAP, DIALOG_CONTINUE, NULL, NULL, false );
+		dialogs->AddDialog( GDM_DISC_SWAP, DIALOG_CONTINUE, NULL, NULL, false );
 		return true;
 	}
 	else if( parms.GetError() & SAVEGAME_E_INCOMPATIBLE_NEWER_VERSION )
 	{
-		common->Dialog().AddDialog( GDM_INCOMPATIBLE_NEWER_SAVE, DIALOG_CONTINUE, NULL, NULL, false );
+		dialogs->AddDialog( GDM_INCOMPATIBLE_NEWER_SAVE, DIALOG_CONTINUE, NULL, NULL, false );
 		return true;
 	}
 
@@ -1128,7 +1145,7 @@ void idCommonLocal::OnSaveCompleted( idSaveLoadParms& parms )
 
 	if( parms.GetError() == SAVEGAME_E_NONE )
 	{
-		if ( mainMenu )
+		if( mainMenu )
 		{
 			mainMenu->UpdateSavedGames();
 		}
@@ -1136,7 +1153,7 @@ void idCommonLocal::OnSaveCompleted( idSaveLoadParms& parms )
 
 	if( !HandleCommonErrors( parms ) )
 	{
-		common->Dialog().AddDialog( GDM_ERROR_SAVING_SAVEGAME, DIALOG_CONTINUE, NULL, NULL, false );
+		dialogs->AddDialog( GDM_ERROR_SAVING_SAVEGAME, DIALOG_CONTINUE, NULL, NULL, false );
 	}
 }
 
@@ -1149,7 +1166,7 @@ void idCommonLocal::OnLoadCompleted( idSaveLoadParms& parms )
 {
 	if( !HandleCommonErrors( parms ) )
 	{
-		common->Dialog().AddDialog( GDM_ERROR_LOADING_SAVEGAME, DIALOG_CONTINUE, NULL, NULL, false );
+		dialogs->AddDialog( GDM_ERROR_LOADING_SAVEGAME, DIALOG_CONTINUE, NULL, NULL, false );
 	}
 }
 

@@ -258,7 +258,7 @@ void idAchievementManager::EventCompletesAchievement( const achievement_t eventI
 	{
 		if( !cheatingDialogShown )
 		{
-			common->Dialog().AddDialog( GDM_ACHIEVEMENTS_DISABLED_DUE_TO_CHEATING, DIALOG_ACCEPT, NULL, NULL, true );
+			dialogs->AddDialog( GDM_ACHIEVEMENTS_DISABLED_DUE_TO_CHEATING, DIALOG_ACCEPT, NULL, NULL, true );
 			cheatingDialogShown = true;
 		}
 		return;
@@ -342,7 +342,7 @@ void idAchievementManager::LocalUser_CompleteAchievement( achievement_t id )
 	{
 		if( !cheatingDialogShown )
 		{
-			common->Dialog().AddDialog( GDM_ACHIEVEMENTS_DISABLED_DUE_TO_CHEATING, DIALOG_ACCEPT, NULL, NULL, true );
+			dialogs->AddDialog( GDM_ACHIEVEMENTS_DISABLED_DUE_TO_CHEATING, DIALOG_ACCEPT, NULL, NULL, true );
 			cheatingDialogShown = true;
 		}
 		return;

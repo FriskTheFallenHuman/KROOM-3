@@ -685,7 +685,7 @@ idSaveGameManager::RetrySave
 */
 void idSaveGameManager::RetrySave()
 {
-	if( DeviceSelectorWaitingOnSaveRetry() && !common->Dialog().HasDialogMsg( GDM_WARNING_FOR_NEW_DEVICE_ABOUT_TO_LOSE_PROGRESS, NULL ) )
+	if( DeviceSelectorWaitingOnSaveRetry() && !dialogs->HasDialogMsg( GDM_WARNING_FOR_NEW_DEVICE_ABOUT_TO_LOSE_PROGRESS, NULL ) )
 	{
 		cmdSystem->AppendCommandText( "savegame autosave\n" );
 	}
@@ -709,21 +709,20 @@ idSaveGameManager::ShowRetySaveDialog
 void idSaveGameManager::ShowRetySaveDialog( const char* folder, const int64 bytes )
 {
 
-	idStaticList< idSWFScriptFunction*, 4 > callbacks;
+	idStaticList< idDialogCallback*, 4 > callbacks;
 	idStaticList< idStrId, 4 > optionText;
 
-	class idSWFScriptFunction_Continue : public idSWFScriptFunction_RefCounted
+	class idDialogContinueCallback : public idDialogCallback
 	{
 	public:
-		idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
+		void Call() override
 		{
-			common->Dialog().ClearDialog( GDM_INSUFFICENT_STORAGE_SPACE );
+			dialogs->ClearDialog( GDM_INSUFFICENT_STORAGE_SPACE );
 			session->GetSaveGameManager().ClearRetryInfo();
-			return idSWFScriptVar();
 		}
 	};
 
-	callbacks.Append( new( TAG_SWF ) idSWFScriptFunction_Continue() );
+	callbacks.Append( new idDialogContinueCallback() );
 	optionText.Append( idStrId( "#str_dlg_continue_without_saving" ) );
 
 
@@ -744,7 +743,7 @@ void idSaveGameManager::ShowRetySaveDialog( const char* folder, const int64 byte
 	}
 	idStr msg = va( format.c_str(), size.c_str() );
 
-	common->Dialog().AddDynamicDialog( GDM_INSUFFICENT_STORAGE_SPACE, callbacks, optionText, true, msg, true );
+	ADD_DYNAMIC_DIALOG( GDM_INSUFFICENT_STORAGE_SPACE, callbacks, optionText, true, msg, true );
 }
 
 /*
@@ -992,29 +991,28 @@ void idSaveGameManager::Pump()
 
 		CancelAllProcessors( true );
 
-		class idSWFScriptFunction_TryAgain : public idSWFScriptFunction_RefCounted
+		class idDialogTryAgainCallback : public idDialogCallback
 		{
 		public:
-			idSWFScriptFunction_TryAgain( idSaveGameManager* manager, idSaveGameProcessor* processor )
+			idDialogTryAgainCallback( idSaveGameManager* manager, idSaveGameProcessor* processor )
 			{
 				this->manager = manager;
 				this->processor = processor;
 			}
-			idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
+			void Call() override
 			{
-				common->Dialog().ClearDialog( GDM_ERROR_SAVING_SAVEGAME );
+				dialogs->ClearDialog( GDM_ERROR_SAVING_SAVEGAME );
 				manager->ExecuteProcessor( processor );
-				return idSWFScriptVar();
 			}
 		private:
 			idSaveGameManager* manager;
 			idSaveGameProcessor* processor;
 		};
 
-		idStaticList< idSWFScriptFunction*, 4 > callbacks;
+		idStaticList< idDialogCallback*, 4 > callbacks;
 		idStaticList< idStrId, 4 > optionText;
-		callbacks.Append( new( TAG_SWF ) idSWFScriptFunction_TryAgain( this, tempProcessor ) );
+		callbacks.Append( new( TAG_SWF ) idDialogTryAgainCallback( this, tempProcessor ) );
 		optionText.Append( idStrId( "#STR_SWF_RETRY" ) );
-		common->Dialog().AddDynamicDialog( GDM_ERROR_SAVING_SAVEGAME, callbacks, optionText, true, "" );
+		ADD_DYNAMIC_DIALOG( GDM_ERROR_SAVING_SAVEGAME, callbacks, optionText, true, "" );
 	}
 }

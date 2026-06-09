@@ -94,6 +94,7 @@ int64 com_engineHz_denominator = 100LL * 60LL;
 	idGameEdit* 	gameEdit = NULL;
 	idLeaderboards*	leaderBoards = NULL;
 	idGameMainMenu*	mainMenu = NULL;
+	idGameDialogs*	dialogs = NULL;
 #endif
 
 idCommonLocal	commonLocal;
@@ -672,21 +673,19 @@ void idCommonLocal::CheckStartupStorageRequirements()
 
 	if( ( int64 )( requiredSizeBytes - availableSpace ) > 0 )
 	{
-		class idSWFScriptFunction_Continue : public idSWFScriptFunction_RefCounted
+		class idDialogContinueCallback : public idDialogCallback
 		{
 		public:
-			virtual ~idSWFScriptFunction_Continue() {}
-			idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
+			void Call() override
 			{
-				common->Dialog().ClearDialog( GDM_INSUFFICENT_STORAGE_SPACE );
+				dialogs->ClearDialog( GDM_INSUFFICENT_STORAGE_SPACE );
 				common->Quit();
-				return idSWFScriptVar();
 			}
 		};
 
-		idStaticList< idSWFScriptFunction*, 4 > callbacks;
+		idStaticList< idDialogCallback*, 4 > callbacks;
 		idStaticList< idStrId, 4 > optionText;
-		callbacks.Append( new( TAG_SWF ) idSWFScriptFunction_Continue() );
+		callbacks.Append( new( TAG_SWF ) idDialogContinueCallback() );
 		optionText.Append( idStrId( "#STR_SWF_ACCEPT" ) );
 
 		// build custom space required string
@@ -703,7 +702,7 @@ void idCommonLocal::CheckStartupStorageRequirements()
 		}
 		idStr msg = va( format.c_str(), size.c_str() );
 
-		common->Dialog().AddDynamicDialog( GDM_INSUFFICENT_STORAGE_SPACE, callbacks, optionText, true, msg );
+		ADD_DYNAMIC_DIALOG( GDM_INSUFFICENT_STORAGE_SPACE, callbacks, optionText, true, msg );
 	}
 
 
@@ -1067,6 +1066,7 @@ void idCommonLocal::LoadGameDLL()
 	gameEdit							= gameExport.gameEdit;
 	leaderBoards						= gameExport.leaderBoards;
 	mainMenu							= gameExport.mainMenu;
+	dialogs								= gameExport.dialogs;
 
 #endif
 
@@ -1102,6 +1102,7 @@ void idCommonLocal::UnloadGameDLL()
 	gameEdit = NULL;
 	leaderBoards = NULL;
 	mainMenu = NULL;
+	dialogs = NULL;
 
 #endif
 }
@@ -1385,7 +1386,11 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 			mainMenu->InitMenu();
 		}
 
-		commonDialog.Init();
+		// Initialize the dialog system
+		if( dialogs != NULL )
+		{
+			dialogs->Init();
+		}
 
 		// load the console history file
 		consoleHistory.LoadHistoryFile();
@@ -1568,8 +1573,11 @@ void idCommonLocal::Shutdown()
 	printf( "soundSystem->Shutdown();\n" );
 	soundSystem->Shutdown();
 
-	printf( "commonDialog.Shutdown();\n" );
-	commonDialog.Shutdown();
+	printf( "dialogs->Shutdown();\n" );
+	if( dialogs != NULL )
+	{
+		dialogs->Shutdown();
+	}
 
 	// unload the game dll
 	printf( "UnloadGameDLL();\n" );
@@ -1800,9 +1808,9 @@ bool idCommonLocal::ProcessEvent( const sysEvent_t* event )
 		return true;
 	}
 
-	if( Dialog().IsDialogActive() )
+	if( dialogs->IsDialogActive() )
 	{
-		Dialog().HandleDialogEvent( event );
+		dialogs->HandleDialogEvent( event );
 		return true;
 	}
 

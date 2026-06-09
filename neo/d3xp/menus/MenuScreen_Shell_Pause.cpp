@@ -394,23 +394,22 @@ idMenuScreen_Shell_Pause::HandleExitGameBtn
 */
 void idMenuScreen_Shell_Pause::HandleExitGameBtn()
 {
-	class idSWFScriptFunction_QuitDialog : public idSWFScriptFunction_RefCounted
+	class idDialogQuitCallback : public idDialogCallback
 	{
 	public:
-		idSWFScriptFunction_QuitDialog( idMenuScreen_Shell_Pause* _menu, gameDialogMessages_t _msg, bool _accept )
+		idDialogQuitCallback( idMenuScreen_Shell_Pause* _menu, gameDialogMessages_t _msg, bool _accept )
 		{
 			menu = _menu;
 			msg = _msg;
 			accept = _accept;
 		}
-		idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
+		void Call() override
 		{
-			common->Dialog().ClearDialog( msg );
+			dialogs->ClearDialog( msg );
 			if( accept )
 			{
 				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "disconnect\n" );
 			}
-			return idSWFScriptVar();
 		}
 	private:
 		idMenuScreen_Shell_Pause* menu;
@@ -432,7 +431,7 @@ void idMenuScreen_Shell_Pause::HandleExitGameBtn()
 		}
 	}
 
-	common->Dialog().AddDialog( msg, DIALOG_ACCEPT_CANCEL, new idSWFScriptFunction_QuitDialog( this, msg, true ), new idSWFScriptFunction_QuitDialog( this, msg, false ), false );
+	ADD_DIALOG( msg, DIALOG_ACCEPT_CANCEL, new idDialogQuitCallback( this, msg, true ), new idDialogQuitCallback( this, msg, false ), false );
 }
 
 /*
@@ -442,23 +441,22 @@ idMenuScreen_Shell_Pause::HandleRestartBtn
 */
 void idMenuScreen_Shell_Pause::HandleRestartBtn()
 {
-	class idSWFScriptFunction_RestartDialog : public idSWFScriptFunction_RefCounted
+	class idDialogRestartCallback : public idDialogCallback
 	{
 	public:
-		idSWFScriptFunction_RestartDialog( idMenuScreen_Shell_Pause* _menu, gameDialogMessages_t _msg, bool _accept )
+		idDialogRestartCallback( idMenuScreen_Shell_Pause* _menu, gameDialogMessages_t _msg, bool _accept )
 		{
 			menu = _menu;
 			msg = _msg;
 			accept = _accept;
 		}
-		idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
+		void Call() override
 		{
-			common->Dialog().ClearDialog( msg );
+			dialogs->ClearDialog( msg );
 			if( accept )
 			{
 				cmdSystem->AppendCommandText( "restartMap\n" );
 			}
-			return idSWFScriptVar();
 		}
 	private:
 		idMenuScreen_Shell_Pause* menu;
@@ -466,7 +464,7 @@ void idMenuScreen_Shell_Pause::HandleRestartBtn()
 		bool accept;
 	};
 
-	common->Dialog().AddDialog( GDM_SP_RESTART_SAVE, DIALOG_ACCEPT_CANCEL, new idSWFScriptFunction_RestartDialog( this, GDM_SP_RESTART_SAVE, true ), new idSWFScriptFunction_RestartDialog( this, GDM_SP_RESTART_SAVE, false ), false );
+	ADD_DIALOG( GDM_SP_RESTART_SAVE, DIALOG_ACCEPT_CANCEL, new idDialogRestartCallback( this, GDM_SP_RESTART_SAVE, true ), new idDialogRestartCallback( this, GDM_SP_RESTART_SAVE, false ), false );
 }
 
 /*

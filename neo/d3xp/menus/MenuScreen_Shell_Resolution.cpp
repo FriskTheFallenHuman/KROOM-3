@@ -314,10 +314,10 @@ bool idMenuScreen_Shell_Resolution::HandleAction( idWidgetAction& action, const 
 					cvarSystem->ClearModifiedFlags( CVAR_ARCHIVE );
 					cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "vid_restart\n" );
 
-					class idSWFFuncAcceptVideoChanges : public idSWFScriptFunction_RefCounted
+					class idDialogAcceptVideoChanges : public idDialogCallback
 					{
 					public:
-						idSWFFuncAcceptVideoChanges( idMenuHandler* _menu, gameDialogMessages_t _msg, const optionData_t& _optionData, int _fullscreen, int _vidMode, bool _accept )
+						idDialogAcceptVideoChanges( idMenuHandler* _menu, gameDialogMessages_t _msg, const optionData_t& _optionData, int _fullscreen, int _vidMode, bool _accept )
 						{
 							menuHandler = _menu;
 							msg = _msg;
@@ -326,9 +326,9 @@ bool idMenuScreen_Shell_Resolution::HandleAction( idWidgetAction& action, const 
 							vidMode = _vidMode;
 							accept = _accept;
 						}
-						idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
+						void Call() override
 						{
-							common->Dialog().ClearDialog( msg );
+							dialogs->ClearDialog( msg );
 							if( accept )
 							{
 								R_AdjustFramerateFromDisplayHz( optionData.displayHz );
@@ -352,7 +352,6 @@ bool idMenuScreen_Shell_Resolution::HandleAction( idWidgetAction& action, const 
 								// with BufferCommandText instead of CMD_EXEC_NOW
 								cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "vid_restart\n" );
 							}
-							return idSWFScriptVar();
 						}
 					private:
 						idMenuHandler* menuHandler;
@@ -362,7 +361,7 @@ bool idMenuScreen_Shell_Resolution::HandleAction( idWidgetAction& action, const 
 						int vidMode;
 						bool accept;
 					};
-					common->Dialog().AddDialog( GDM_CONFIRM_VIDEO_CHANGES, DIALOG_TIMER_ACCEPT_REVERT, new( TAG_SWF ) idSWFFuncAcceptVideoChanges( menuData, GDM_CONFIRM_VIDEO_CHANGES, currentOption, 1, 0, true ), new( TAG_SWF ) idSWFFuncAcceptVideoChanges( menuData, GDM_CONFIRM_VIDEO_CHANGES, originalOption, originalFullscreen, originalVidMode, false ), true );
+					ADD_DIALOG( GDM_CONFIRM_VIDEO_CHANGES, DIALOG_TIMER_ACCEPT_REVERT, new( TAG_SWF ) idDialogAcceptVideoChanges( menuData, GDM_CONFIRM_VIDEO_CHANGES, currentOption, 1, 0, true ), new( TAG_SWF ) idDialogAcceptVideoChanges( menuData, GDM_CONFIRM_VIDEO_CHANGES, originalOption, originalFullscreen, originalVidMode, false ), true );
 				}
 				return true;
 			}

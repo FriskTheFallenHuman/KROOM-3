@@ -406,24 +406,24 @@ void idMenuScreen_Shell_Save::SaveGame( int index )
 		cmdSystem->AppendCommandText( va( "savegame %s\n", name.c_str() ) );
 
 		// Throw up the saving message...
-		common->Dialog().ShowSaveIndicator( true );
+		dialogs->ShowSaveIndicator( true );
 	}
 	else
 	{
 
-		class idSWFScriptFunction_OverwriteSave : public idSWFScriptFunction_RefCounted
+		class idDialogOverwriteSaveCallback : public idDialogCallback
 		{
 		public:
-			idSWFScriptFunction_OverwriteSave( gameDialogMessages_t _msg, bool _accept, int _index, idMenuScreen_Shell_Save* _screen )
+			idDialogOverwriteSaveCallback( gameDialogMessages_t _msg, bool _accept, int _index, idMenuScreen_Shell_Save* _screen )
 			{
 				msg = _msg;
 				accept = _accept;
 				index = _index;
 				screen = _screen;
 			}
-			idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
+			void Call() override
 			{
-				common->Dialog().ClearDialog( msg );
+				dialogs->ClearDialog( msg );
 				if( accept && screen != NULL )
 				{
 					// Replace the save
@@ -433,10 +433,9 @@ void idMenuScreen_Shell_Save::SaveGame( int index )
 						cmdSystem->AppendCommandText( va( "savegame %s\n", name.c_str() ) );
 
 						// Throw up the saving message...
-						common->Dialog().ShowSaveIndicator( true );
+						dialogs->ShowSaveIndicator( true );
 					}
 				}
-				return idSWFScriptVar();
 			}
 		private:
 			gameDialogMessages_t msg;
@@ -450,7 +449,7 @@ void idMenuScreen_Shell_Save::SaveGame( int index )
 			index--;
 		}
 
-		common->Dialog().AddDialog( GDM_OVERWRITE_SAVE, DIALOG_ACCEPT_CANCEL, new idSWFScriptFunction_OverwriteSave( GDM_OVERWRITE_SAVE, true, index, this ), new idSWFScriptFunction_OverwriteSave( GDM_OVERWRITE_SAVE, false, index, this ), false );
+		ADD_DIALOG( GDM_OVERWRITE_SAVE, DIALOG_ACCEPT_CANCEL, new idDialogOverwriteSaveCallback( GDM_OVERWRITE_SAVE, true, index, this ), new idDialogOverwriteSaveCallback( GDM_OVERWRITE_SAVE, false, index, this ), false );
 	}
 
 }
@@ -463,19 +462,19 @@ idMenuScreen_Shell_Save::DeleteGame
 void idMenuScreen_Shell_Save::DeleteGame( int index )
 {
 
-	class idSWFScriptFunction_DeleteGame : public idSWFScriptFunction_RefCounted
+	class idDialogDeleteGameCallback : public idDialogCallback
 	{
 	public:
-		idSWFScriptFunction_DeleteGame( gameDialogMessages_t _msg, bool _accept, int _index, idMenuScreen_Shell_Save* _screen )
+		idDialogDeleteGameCallback( gameDialogMessages_t _msg, bool _accept, int _index, idMenuScreen_Shell_Save* _screen )
 		{
 			msg = _msg;
 			accept = _accept;
 			index = _index;
 			screen = _screen;
 		}
-		idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
+		void Call() override
 		{
-			common->Dialog().ClearDialog( msg );
+			dialogs->ClearDialog( msg );
 			if( accept && screen != NULL )
 			{
 				if( index < screen->GetSortedSaves().Num() )
@@ -483,7 +482,6 @@ void idMenuScreen_Shell_Save::DeleteGame( int index )
 					session->DeleteSaveGameSync( screen->GetSortedSaves()[ index ].slotName );
 				}
 			}
-			return idSWFScriptVar();
 		}
 	private:
 		gameDialogMessages_t msg;
@@ -505,7 +503,7 @@ void idMenuScreen_Shell_Save::DeleteGame( int index )
 
 	index--;	// Subtract 1 from the index for 'New Game'
 
-	common->Dialog().AddDialog( GDM_DELETE_SAVE, DIALOG_ACCEPT_CANCEL, new idSWFScriptFunction_DeleteGame( GDM_DELETE_SAVE, true, index, this ), new idSWFScriptFunction_DeleteGame( GDM_DELETE_SAVE, false, index, this ), false );
+	ADD_DIALOG( GDM_DELETE_SAVE, DIALOG_ACCEPT_CANCEL, new idDialogDeleteGameCallback( GDM_DELETE_SAVE, true, index, this ), new idDialogDeleteGameCallback( GDM_DELETE_SAVE, false, index, this ), false );
 
 }
 
