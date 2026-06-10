@@ -33,11 +33,11 @@ extern "C"
 }
 #endif
 
-#if defined(USE_BINKDEC)
-	#include <BinkDecoder.h>
-#endif
+#include "libbinkdec/include/BinkDecoder.h"
 
 extern idCVar s_volume_dB;
+
+static bool isBink = false;
 
 CinematicAudio_OpenAL::CinematicAudio_OpenAL():
 	av_rate_cin( 0 ),
@@ -54,55 +54,75 @@ CinematicAudio_OpenAL::CinematicAudio_OpenAL():
 	alGenBuffers( NUM_BUFFERS, &alMusicBuffercin[0] );
 }
 
+CinematicAudio_OpenAL::CinematicAudio_OpenAL( bool bBinkFile ):
+	av_rate_cin( 0 ),
+	av_sample_cin( 0 ),
+	offset( 0 ),
+	trigger( false )
+{
+	isBink = bBinkFile;
+
+	alGenSources( 1, &alMusicSourceVoicecin );
+
+	alSource3i( alMusicSourceVoicecin, AL_POSITION, 0, 0, 0 );
+	alSourcei( alMusicSourceVoicecin, AL_SOURCE_RELATIVE, AL_TRUE );
+	alSourcei( alMusicSourceVoicecin, AL_ROLLOFF_FACTOR, 0 );
+	alListenerf( AL_GAIN, DBtoLinear( s_volume_dB.GetFloat() ) ); //GK: Set the sound volume the same that is used in DOOM 3
+	alGenBuffers( NUM_BUFFERS, &alMusicBuffercin[0] );
+}
+
 void CinematicAudio_OpenAL::InitAudio( void* audioContext )
 {
-#if defined(USE_FFMPEG)
-	AVCodecContext* dec_ctx2 = ( AVCodecContext* )audioContext;
-	av_rate_cin = dec_ctx2->sample_rate;
-
-	switch( dec_ctx2->sample_fmt )
+	if ( isBink )
 	{
-		case AV_SAMPLE_FMT_U8:
-		case AV_SAMPLE_FMT_U8P:
+		AudioInfo* binkInfo = ( AudioInfo* )audioContext;
+		av_rate_cin = binkInfo->sampleRate;
+		av_sample_cin = binkInfo->nChannels == 2 ? AL_FORMAT_STEREO16 : AL_FORMAT_MONO16;
+	}
+	else
+	{
+		AVCodecContext* dec_ctx2 = ( AVCodecContext* )audioContext;
+		av_rate_cin = dec_ctx2->sample_rate;
+
+		switch( dec_ctx2->sample_fmt )
 		{
+			case AV_SAMPLE_FMT_U8:
+			case AV_SAMPLE_FMT_U8P:
+			{
 #if	LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59,37,100)
-			av_sample_cin = dec_ctx2->ch_layout.nb_channels == 2 ? AL_FORMAT_STEREO8 : AL_FORMAT_MONO8;
+				av_sample_cin = dec_ctx2->ch_layout.nb_channels == 2 ? AL_FORMAT_STEREO8 : AL_FORMAT_MONO8;
 #else
-			av_sample_cin = dec_ctx2->channels == 2 ? AL_FORMAT_STEREO8 : AL_FORMAT_MONO8;
+				av_sample_cin = dec_ctx2->channels == 2 ? AL_FORMAT_STEREO8 : AL_FORMAT_MONO8;
 #endif
-			break;
-		}
-		case AV_SAMPLE_FMT_S16:
-		case AV_SAMPLE_FMT_S16P:
-		{
+				break;
+			}
+			case AV_SAMPLE_FMT_S16:
+			case AV_SAMPLE_FMT_S16P:
+			{
 #if	LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59,37,100)
-			av_sample_cin = dec_ctx2->ch_layout.nb_channels == 2 ? AL_FORMAT_STEREO16 : AL_FORMAT_MONO16;
+				av_sample_cin = dec_ctx2->ch_layout.nb_channels == 2 ? AL_FORMAT_STEREO16 : AL_FORMAT_MONO16;
 #else
-			av_sample_cin = dec_ctx2->channels == 2 ? AL_FORMAT_STEREO16 : AL_FORMAT_MONO16;
+				av_sample_cin = dec_ctx2->channels == 2 ? AL_FORMAT_STEREO16 : AL_FORMAT_MONO16;
 #endif
-			break;
-		}
-		case AV_SAMPLE_FMT_FLT:
-		case AV_SAMPLE_FMT_FLTP:
-		{
+				break;
+			}
+			case AV_SAMPLE_FMT_FLT:
+			case AV_SAMPLE_FMT_FLTP:
+			{
 #if	LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59,37,100)
-			av_sample_cin = dec_ctx2->ch_layout.nb_channels == 2 ? AL_FORMAT_STEREO_FLOAT32 : AL_FORMAT_MONO_FLOAT32;
+				av_sample_cin = dec_ctx2->ch_layout.nb_channels == 2 ? AL_FORMAT_STEREO_FLOAT32 : AL_FORMAT_MONO_FLOAT32;
 #else
-			av_sample_cin = dec_ctx2->channels == 2 ? AL_FORMAT_STEREO_FLOAT32 : AL_FORMAT_MONO_FLOAT32;
+				av_sample_cin = dec_ctx2->channels == 2 ? AL_FORMAT_STEREO_FLOAT32 : AL_FORMAT_MONO_FLOAT32;
 #endif
-			break;
-		}
-		default:
-		{
-			common->Warning( "Unknown or incompatible cinematic audio format for OpenAL, sample_fmt = %d\n", dec_ctx2->sample_fmt );
-			return;
+				break;
+			}
+			default:
+			{
+				common->Warning( "Unknown or incompatible cinematic audio format for OpenAL, sample_fmt = %d\n", dec_ctx2->sample_fmt );
+				return;
+			}
 		}
 	}
-#elif defined(USE_BINKDEC)
-	AudioInfo* binkInfo = ( AudioInfo* )audioContext;
-	av_rate_cin = binkInfo->sampleRate;
-	av_sample_cin = binkInfo->nChannels == 2 ? AL_FORMAT_STEREO16 : AL_FORMAT_MONO16;
-#endif
 
 	alSourceRewind( alMusicSourceVoicecin );
 	alSourcei( alMusicSourceVoicecin, AL_BUFFER, 0 );
@@ -146,13 +166,21 @@ void CinematicAudio_OpenAL::PlayAudio( uint8_t* data, int size )
 					bufid = bufids.front();
 					bufids.pop();
 					alBufferData( bufid, av_sample_cin, tempdata, tempSize, av_rate_cin );
+
 					// SRS - We must free the audio buffer once it has been copied into an alBuffer
+					if ( isBink )
+					{
+						Mem_Free( tempdata );
+					}
+					else
+					{
 #if defined(USE_FFMPEG)
-					av_freep( &tempdata );
-#elif defined(USE_BINKDEC)
-					Mem_Free( tempdata );
+						av_freep( &tempdata );
 #endif
+					}
+
 					CheckALErrors();
+
 					alSourceQueueBuffers( alMusicSourceVoicecin, 1, &bufid );
 					if( CheckALErrors() != AL_NO_ERROR )
 					{
@@ -171,14 +199,22 @@ void CinematicAudio_OpenAL::PlayAudio( uint8_t* data, int size )
 	else
 	{
 		alBufferData( alMusicBuffercin[offset], av_sample_cin, data, size, av_rate_cin );
+
 		// SRS - We must free the audio buffer once it has been copied into an alBuffer
+		if ( isBink )
+		{
+			Mem_Free( data );
+			data = NULL;
+		}
+		else
+		{
 #if defined(USE_FFMPEG)
-		av_freep( &data );
-#elif defined(USE_BINKDEC)
-		Mem_Free( data );
-		data = NULL;
+			av_freep( &data );
 #endif
+		}
+
 		offset++;
+
 		// SRS - Initiate playback trigger once we have MIN_BUFFERS filled: limit startup latency
 		if( offset == MIN_BUFFERS )
 		{
@@ -235,11 +271,16 @@ void CinematicAudio_OpenAL::ResetAudio()
 		if( tempdata )
 		{
 			// SRS - We must free any audio buffers that have not been copied into an alBuffer
+			if ( isBink )
+			{
+				Mem_Free( tempdata );
+			}
+			else
+			{
 #if defined(USE_FFMPEG)
-			av_freep( &tempdata );
-#elif defined(USE_BINKDEC)
-			Mem_Free( tempdata );
+				av_freep( &tempdata );
 #endif
+			}
 		}
 	}
 
@@ -288,11 +329,16 @@ void CinematicAudio_OpenAL::ShutdownAudio()
 		if( tempdata )
 		{
 			// SRS - We must free any audio buffers that have not been copied into an alBuffer
+			if ( isBink )
+			{
+				Mem_Free( tempdata );
+			}
+			else
+			{
 #if defined(USE_FFMPEG)
-			av_freep( &tempdata );
-#elif defined(USE_BINKDEC)
-			Mem_Free( tempdata );
+				av_freep( &tempdata );
 #endif
+			}
 		}
 	}
 

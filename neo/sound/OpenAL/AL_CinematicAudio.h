@@ -40,6 +40,7 @@ class CinematicAudio_OpenAL: public CinematicAudio
 {
 public:
 	CinematicAudio_OpenAL();
+	CinematicAudio_OpenAL( bool bBinkFile );
 	void InitAudio( void* audioContext );
 	void PlayAudio( uint8_t* data, int size );
 	void ResetAudio();
