@@ -879,9 +879,9 @@ public:
 
 	void					PrintPerformanceCounters();
 
-	void					SetInitialized()
+	void					SetInitialized( bool state )
 	{
-		bInitialized = true;
+		bInitialized = state;
 	}
 
 public:
@@ -1208,6 +1208,12 @@ extern idCVar r_useMaskedOcclusionCulling;
 extern idCVar r_tonemapPreset;
 extern idCVar r_tonemapSaturation;
 extern idCVar r_tonemapContrast;
+
+#if !defined( USE_VULKAN )
+	extern idCVar r_glVersionMajor;
+	extern idCVar r_glVersionMinor;
+	extern idCVar r_glProfile;
+#endif
 
 /*
 ====================================================================

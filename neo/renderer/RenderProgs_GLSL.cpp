@@ -763,12 +763,6 @@ struct typeConversion_t
 
 const char* vertexInsert =
 {
-// SRS - OSX OpenGL only supports up to GLSL 4.1, but current RenderProgs shaders seem to work as-is on OSX OpenGL drivers
-#if defined(__APPLE__) && !defined(USE_VULKAN)
-	"#version 410\n"
-#else
-	"#version 450\n"
-#endif
 	"#pragma shader_stage( vertex )\n"
 	"#extension GL_ARB_separate_shader_objects : enable\n"
 	//"#define PC\n"
@@ -783,12 +777,6 @@ const char* vertexInsert =
 
 const char* fragmentInsert =
 {
-// SRS - OSX OpenGL only supports up to GLSL 4.1, but current RenderProgs shaders seem to work as-is on OSX OpenGL drivers
-#if defined(__APPLE__) && !defined(USE_VULKAN)
-	"#version 410\n"
-#else
-	"#version 450\n"
-#endif
 	"#pragma shader_stage( fragment )\n"
 	"#extension GL_ARB_separate_shader_objects : enable\n"
 	//"#define PC\n"
@@ -1491,6 +1479,65 @@ idStr idRenderProgManager::ConvertCG2GLSL( const idStr& in, const char* name, rp
 	// RB: tell shader debuggers what shader we look at
 	idStr filenameHint = "// filename " + idStr( name ) + "\n";
 
+// SRS - OSX OpenGL only supports up to GLSL 4.1, but current RenderProgs shaders seem to work as-is on OSX OpenGL drivers
+#if defined(__APPLE__) && !defined(USE_VULKAN)
+	idStr filenameVersion = "#version 410\n";
+#else
+	idStr filenameVersionNumber;
+	idStr filenameProfile;
+	switch( glConfig.driverVersion )
+	{
+		default:
+		case GL_OPENGL_31:
+			filenameVersionNumber = "140";
+			break;
+		case GL_OPENGL_32:
+			filenameVersionNumber = "150";
+			break;
+		case GL_OPENGL_33:
+			filenameVersionNumber = "330";
+			break;
+		case GL_OPENGL_40:
+			filenameVersionNumber = "400";
+			break;
+		case GL_OPENGL_41:
+			filenameVersionNumber = "410";
+			break;
+		case GL_OPENGL_42:
+			filenameVersionNumber = "420";
+			break;
+		case GL_OPENGL_43:
+			filenameVersionNumber = "430";
+			break;
+		case GL_OPENGL_44:
+			filenameVersionNumber = "440";
+			break;
+		case GL_OPENGL_45:
+			filenameVersionNumber = "450";
+			break;
+		case GL_OPENGL_46:
+			filenameVersionNumber = "460";
+			break;
+	}
+	switch( glConfig.driverType )
+	{
+		case GLDRV_OPENGL_CORE_PROFILE:
+		case GLDRV_OPENGL_MESA_CORE_PROFILE:
+			filenameProfile = " core";
+			break;
+
+		case GLDRV_OPENGL_COMPATIBILITY_PROFILE:	
+		case GLDRV_OPENGL_MESA_COMPATIBILITY_PROFILE:
+			filenameProfile = " compatibility";
+			break;
+
+		default:
+			filenameProfile = " ";
+			break;
+	}
+	idStr filenameVersion = "#version " + filenameVersionNumber + filenameProfile + "\n";
+#endif
+
 	// RB: changed to allow multiple versions of GLSL
 	if( stage == SHADER_STAGE_VERTEX )
 	{
@@ -1500,6 +1547,7 @@ idStr idRenderProgManager::ConvertCG2GLSL( const idStr& in, const char* name, rp
 			{
 				out.ReAllocate( idStr::Length( vertexInsert_GLSL_ES_3_00 ) + in.Length() * 2, false );
 				out += filenameHint;
+				out += filenameVersion;
 				out += vertexInsert_GLSL_ES_3_00;
 				break;
 			}
@@ -1508,6 +1556,7 @@ idStr idRenderProgManager::ConvertCG2GLSL( const idStr& in, const char* name, rp
 			{
 				out.ReAllocate( idStr::Length( vertexInsert ) + in.Length() * 2, false );
 				out += filenameHint;
+				out += filenameVersion;
 				out += vertexInsert;
 				break;
 			}
@@ -1521,6 +1570,7 @@ idStr idRenderProgManager::ConvertCG2GLSL( const idStr& in, const char* name, rp
 			{
 				out.ReAllocate( idStr::Length( fragmentInsert_GLSL_ES_3_00 ) + in.Length() * 2, false );
 				out += filenameHint;
+				out += filenameVersion;
 				out += fragmentInsert_GLSL_ES_3_00;
 				break;
 			}
@@ -1529,6 +1579,7 @@ idStr idRenderProgManager::ConvertCG2GLSL( const idStr& in, const char* name, rp
 			{
 				out.ReAllocate( idStr::Length( fragmentInsert ) + in.Length() * 2, false );
 				out += filenameHint;
+				out += filenameVersion;
 				out += fragmentInsert;
 				break;
 			}

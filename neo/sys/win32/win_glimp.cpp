@@ -48,8 +48,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "rc/doom_resource.h"
 #include "../../renderer/RenderCommon.h"
 
-idCVar r_useOpenGL45( "r_useOpenGL45", "1", CVAR_INTEGER, "0 = OpenGL 4.0, 1 = OpenGL 4.5 compatibility profile, 2 = OpenGL 4.5 core profile", 0, 2 );
-
 #if !defined(USE_VULKAN)
 /*
 ========================
@@ -312,7 +310,7 @@ static void GLW_GetWGLExtensionsWithFakeWindow()
 
 /*
 ====================
-GLW_WM_CREATE
+static
 ====================
 */
 void GLW_WM_CREATE( HWND hWnd )
@@ -327,7 +325,8 @@ CreateOpenGLContextOnDC
 #if !defined(USE_VULKAN)
 static HGLRC CreateOpenGLContextOnDC( const HDC hdc, const bool debugContext )
 {
-	int useCoreProfile = r_useOpenGL45.GetInteger();
+	int useCoreProfile = r_glProfile.GetInteger();
+
 	HGLRC m_hrc = NULL;
 
 	// RB: for GLintercept 1.2.0 or otherwise we can't diff the framebuffers using the XML log
@@ -339,8 +338,8 @@ static HGLRC CreateOpenGLContextOnDC( const HDC hdc, const bool debugContext )
 
 	for( int i = 0; i < 2; i++ )
 	{
-		const int glMajorVersion = ( useCoreProfile != 0 ) ? 4 : 4;
-		const int glMinorVersion = ( useCoreProfile != 0 ) ? 5 : 3;
+		const int glMajorVersion = r_glVersionMajor.GetInteger();
+		const int glMinorVersion = r_glVersionMinor.GetInteger();
 		const int glDebugFlag = debugContext ? WGL_CONTEXT_DEBUG_BIT_ARB : 0;
 		const int glProfileMask = ( useCoreProfile != 0 ) ? WGL_CONTEXT_PROFILE_MASK_ARB : 0;
 		const int glProfile = ( useCoreProfile == 1 ) ? WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB : ( ( useCoreProfile == 2 ) ? WGL_CONTEXT_CORE_PROFILE_BIT_ARB : 0 );
@@ -356,19 +355,61 @@ static HGLRC CreateOpenGLContextOnDC( const HDC hdc, const bool debugContext )
 		m_hrc = wglCreateContextAttribsARB( hdc, 0, attribs );
 		if( m_hrc != NULL )
 		{
+			// Krispy: This is Mega stupid, im sorry
+			if( glMajorVersion >= 3 && glMajorVersion >= 1 )
+			{
+				glConfig.driverVersion = GL_OPENGL_31;
+			}
+			else if( glMajorVersion >= 3 && glMajorVersion >= 2 )
+			{
+				glConfig.driverVersion = GL_OPENGL_32;
+			}
+			else if( glMajorVersion >= 3 && glMajorVersion >= 3 )
+			{
+				glConfig.driverVersion = GL_OPENGL_33;
+			}
+			else if( glMajorVersion >= 4 && glMajorVersion >= 0 )
+			{
+				glConfig.driverVersion = GL_OPENGL_40;
+			}
+			else if( glMajorVersion >= 4 && glMajorVersion >= 1 )
+			{
+				glConfig.driverVersion = GL_OPENGL_41;
+			}
+			else if( glMajorVersion >= 4 && glMajorVersion >= 2 )
+			{
+				glConfig.driverVersion = GL_OPENGL_42;
+			}
+			else if( glMajorVersion >= 4 && glMajorVersion >= 3 )
+			{
+				glConfig.driverVersion = GL_OPENGL_43;
+			}
+			else if( glMajorVersion >= 4 && glMajorVersion >= 4 )
+			{
+				glConfig.driverVersion = GL_OPENGL_44;
+			}
+			else if( glMajorVersion >= 4 && glMajorVersion >= 5 )
+			{
+				glConfig.driverVersion = GL_OPENGL_45;
+			}
+			else if( glMajorVersion >= 4 && glMajorVersion >= 6 )
+			{
+				glConfig.driverVersion = GL_OPENGL_46;
+			}
+
 			idLib::Printf( "created OpenGL %d.%d context\n", glMajorVersion, glMinorVersion );
 
 			if( useCoreProfile == 2 )
 			{
-				glConfig.driverType = GLDRV_OPENGL32_CORE_PROFILE;
+				glConfig.driverType = GLDRV_OPENGL_CORE_PROFILE;
 			}
 			else if( useCoreProfile == 1 )
 			{
-				glConfig.driverType = GLDRV_OPENGL32_COMPATIBILITY_PROFILE;
+				glConfig.driverType = GLDRV_OPENGL_COMPATIBILITY_PROFILE;
 			}
 			else
 			{
-				glConfig.driverType = GLDRV_OPENGL3X;
+				glConfig.driverType = GLDRV_OPENGL;
 			}
 
 			break;

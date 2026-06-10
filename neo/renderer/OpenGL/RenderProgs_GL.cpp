@@ -133,8 +133,8 @@ void idRenderProgManager::LoadShader( shader_t& shader )
 			outFileGLSL.Format( "renderprogs/glsl-4_10/%s%s", shader.name.c_str(), shader.nameOutSuffix.c_str() );
 			outFileUniforms.Format( "renderprogs/glsl-4_10/%s%s", shader.name.c_str(), shader.nameOutSuffix.c_str() );
 #else
-			outFileGLSL.Format( "renderprogs/glsl-4_50/%s%s", shader.name.c_str(), shader.nameOutSuffix.c_str() );
-			outFileUniforms.Format( "renderprogs/glsl-4_50/%s%s", shader.name.c_str(), shader.nameOutSuffix.c_str() );
+			outFileGLSL.Format( "renderprogs/glsl/%s%s", shader.name.c_str(), shader.nameOutSuffix.c_str() );
+			outFileUniforms.Format( "renderprogs/glsl/%s%s",shader.name.c_str(), shader.nameOutSuffix.c_str() );
 #endif
 		}
 	}
@@ -220,9 +220,9 @@ void idRenderProgManager::LoadShader( shader_t& shader )
 		_outFileGLSL.ToLower();
 		_outFileUniforms.ToLower();
 
-		fileSystem->WriteFile( _outFileHLSL.c_str(), programHLSL.c_str(), programHLSL.Length(), "fs_basepath" );
-		fileSystem->WriteFile( _outFileGLSL.c_str(), programGLSL.c_str(), programGLSL.Length(), "fs_basepath" );
-		fileSystem->WriteFile( _outFileUniforms.c_str(), programUniforms.c_str(), programUniforms.Length(), "fs_basepath" );
+		fileSystem->WriteFile( _outFileHLSL.c_str(), programHLSL.c_str(), programHLSL.Length(), "fs_savepath" );
+		fileSystem->WriteFile( _outFileGLSL.c_str(), programGLSL.c_str(), programGLSL.Length(), "fs_savepath" );
+		fileSystem->WriteFile( _outFileUniforms.c_str(), programUniforms.c_str(), programUniforms.Length(), "fs_savepath" );
 	}
 	else
 	{

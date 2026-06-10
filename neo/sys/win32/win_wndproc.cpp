@@ -177,11 +177,6 @@ LONG WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 		}
 		case WM_CREATE:
 			win32.hWnd = hWnd;
-
-			// do the OpenGL setup
-			void GLW_WM_CREATE( HWND hWnd );
-			GLW_WM_CREATE( hWnd );
-
 			break;
 
 		case WM_DESTROY:
