@@ -1082,6 +1082,7 @@ extern idCVar r_skipDynamicTextures;		// don't dynamically create textures
 extern idCVar r_skipBump;					// uses a flat surface instead of the bump map
 extern idCVar r_skipSpecular;				// use black for specular
 extern idCVar r_skipDiffuse;				// use black for diffuse
+extern idCVar r_skipVideo;					// skip Cinematic video decoding
 extern idCVar r_skipDecals;					// skip decal surfaces
 extern idCVar r_skipOverlays;				// skip overlay surfaces
 extern idCVar r_skipShadows;				// disable shadows

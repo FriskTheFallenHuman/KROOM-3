@@ -100,8 +100,11 @@ int64 com_engineHz_denominator = 100LL * 60LL;
 idCommonLocal	commonLocal;
 idCommon* 		common = &commonLocal;
 
-// RB: defaulted this to 1 because we don't have a sound for the intro .bik video
+#ifdef ID_RETAIL
+idCVar com_skipIntroVideos( "com_skipIntroVideos", "0", CVAR_BOOL , "skips intro videos" );
+#else
 idCVar com_skipIntroVideos( "com_skipIntroVideos", "1", CVAR_BOOL , "skips intro videos" );
+#endif
 
 /*
 ==================

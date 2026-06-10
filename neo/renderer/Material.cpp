@@ -1469,8 +1469,9 @@ void idMaterial::ParseStage( idLexer& src, const textureRepeat_t trpDefault )
 					continue;
 				}
 			}
-			ts->cinematic = idCinematic::Alloc();
-			ts->cinematic->InitFromFile( token.c_str(), loop );
+			idStr fileName = token.c_str();
+			ts->cinematic = idCinematic::Alloc( fileName );
+			ts->cinematic->InitFromFile( fileName.c_str(), loop );
 			continue;
 		}
 

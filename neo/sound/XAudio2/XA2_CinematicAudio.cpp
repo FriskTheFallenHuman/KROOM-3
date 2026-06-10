@@ -33,13 +33,19 @@ extern "C"
 }
 #endif
 
-#if defined(USE_BINKDEC)
-	#include "libbinkdec/include/BinkDecoder.h"
-#endif
+#include "libbinkdec/include/BinkDecoder.h"
+
+static bool isBink = false;
 
 CinematicAudio_XAudio2::CinematicAudio_XAudio2():
 	pMusicSourceVoice1( NULL )
 {
+}
+
+CinematicAudio_XAudio2::CinematicAudio_XAudio2( bool bBinkFile ):
+	pMusicSourceVoice1( NULL )
+{
+	isBink = bBinkFile;
 }
 
 // SRS - Implement the voice callback interface to determine when audio buffers can be freed
@@ -49,14 +55,20 @@ public:
 	// SRS - We must free the audio buffer once it has finished playing
 	void OnBufferEnd( void* data )
 	{
+		if ( isBink )
+		{
+			Mem_Free( data );
+			data = NULL;
+		}
+		else
+		{
 #if defined(USE_FFMPEG)
-		av_freep( &data );
-#elif defined(USE_BINKDEC)
-		Mem_Free( data );
-		data = NULL;
+			av_freep( &data );
 #endif
+		}
 	}
-	//Unused methods are stubs
+
+	// Unused methods are stubs
 	void OnBufferStart( void* pBufferContext ) { }
 	void OnLoopEnd( void* pBufferContext ) { }
 	void OnStreamEnd( ) { }
@@ -70,57 +82,66 @@ VoiceCallback voiceCallback;
 
 void CinematicAudio_XAudio2::InitAudio( void* audioContext )
 {
-#if defined(USE_FFMPEG)
-	AVCodecContext* dec_ctx2 = ( AVCodecContext* )audioContext;
-	int format_byte = 0;
-	bool use_ext = false;
+	int format_byte;
+	bool use_ext;
 
-	switch( dec_ctx2->sample_fmt )
+	if ( isBink )
 	{
-		case AV_SAMPLE_FMT_U8:
-		case AV_SAMPLE_FMT_U8P:
-		{
-			format_byte = 1;
-			break;
-		}
-		case AV_SAMPLE_FMT_S16:
-		case AV_SAMPLE_FMT_S16P:
-		{
-			format_byte = 2;
-			break;
-		}
-		case AV_SAMPLE_FMT_S32:
-		case AV_SAMPLE_FMT_S32P:
-		{
-			format_byte = 4;
-			break;
-		}
-		case AV_SAMPLE_FMT_FLT:
-		case AV_SAMPLE_FMT_FLTP:
-		{
-			format_byte = 4;
-			use_ext = true;
-			break;
-		}
-		default:
-		{
-			common->Warning( "Unknown or incompatible cinematic audio format for XAudio2, sample_fmt = %d\n", dec_ctx2->sample_fmt );
-			return;
-		}
+		AudioInfo* binkInfo = ( AudioInfo* )audioContext;
+		format_byte = 2;
+		use_ext = false;
+
+		voiceFormatcine.nChannels = binkInfo->nChannels; //fixed
+		voiceFormatcine.nSamplesPerSec = binkInfo->sampleRate; //fixed
 	}
+	else
+	{
+#if defined(USE_FFMPEG)
+		AVCodecContext* dec_ctx2 = ( AVCodecContext* )audioContext;
+		format_byte = 0;
+		use_ext = false;
+
+		switch( dec_ctx2->sample_fmt )
+		{
+			case AV_SAMPLE_FMT_U8:
+			case AV_SAMPLE_FMT_U8P:
+			{
+				format_byte = 1;
+				break;
+			}
+			case AV_SAMPLE_FMT_S16:
+			case AV_SAMPLE_FMT_S16P:
+			{
+				format_byte = 2;
+				break;
+			}
+			case AV_SAMPLE_FMT_S32:
+			case AV_SAMPLE_FMT_S32P:
+			{
+				format_byte = 4;
+				break;
+			}
+			case AV_SAMPLE_FMT_FLT:
+			case AV_SAMPLE_FMT_FLTP:
+			{
+				format_byte = 4;
+				use_ext = true;
+				break;
+			}
+			default:
+			{
+				common->Warning( "Unknown or incompatible cinematic audio format for XAudio2, sample_fmt = %d\n", dec_ctx2->sample_fmt );
+				return;
+			}
+		}
 #if	LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59,37,100)
-	voiceFormatcine.nChannels = dec_ctx2->ch_layout.nb_channels; //fixed
+		voiceFormatcine.nChannels = dec_ctx2->ch_layout.nb_channels; //fixed
 #else
-	voiceFormatcine.nChannels = dec_ctx2->channels; //fixed
+		voiceFormatcine.nChannels = dec_ctx2->channels; //fixed
 #endif
-	voiceFormatcine.nSamplesPerSec = dec_ctx2->sample_rate; //fixed
-#elif defined(USE_BINKDEC)
-	AudioInfo* binkInfo = ( AudioInfo* )audioContext;
-	int format_byte = 2;
-	bool use_ext = false;
-	voiceFormatcine.nChannels = binkInfo->nChannels; //fixed
-	voiceFormatcine.nSamplesPerSec = binkInfo->sampleRate; //fixed
+		voiceFormatcine.nSamplesPerSec = dec_ctx2->sample_rate; //fixed
 #endif
+	}
 
 	WAVEFORMATEXTENSIBLE exvoice = { 0 };
 	voiceFormatcine.wFormatTag = WAVE_FORMAT_EXTENSIBLE; //Use extensible wave format in order to handle properly the audio
@@ -178,12 +199,18 @@ void CinematicAudio_XAudio2::PlayAudio( uint8_t* data, int size )
 	if( FAILED( hr = pMusicSourceVoice1->SubmitSourceBuffer( &Packet ) ) )
 	{
 		// SRS - We should free the audio buffer if XAudio2 buffer submit failed
+		if ( isBink )
+		{
+			Mem_Free( data );
+			data = NULL;
+		}
+		else
+		{
 #if defined(USE_FFMPEG)
-		av_freep( &data );
-#elif defined(USE_BINKDEC)
-		Mem_Free( data );
-		data = NULL;
+			av_freep( &data );
 #endif
+		}
+
 		int fail = 1;
 	}
 

@@ -3,7 +3,6 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
-Copyright (C) 2014 Carl Kenner
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -60,10 +59,10 @@ typedef struct
 {
 	int					imageWidth;
 	int					imageHeight;	// will be a power of 2
-	idImage*			imageY;
+	idImage*			image;			// legacy roq videos
+	idImage*			imageY;			// bink videos down to imageCb
 	idImage*			imageCr;
 	idImage*			imageCb;
-	idImage*			image;
 	int					status;
 } cinData_t;
 
@@ -78,23 +77,19 @@ public:
 
 	// allocates and returns a private subclass that implements the methods
 	// This should be used instead of new
-	static idCinematic*	Alloc();
+	static idCinematic*	Alloc( idStr& qpath );
 
 	// frees all allocated memory
 	virtual				~idCinematic();
 
 	// returns false if it failed to load
-	virtual bool		InitFromFile( const char* qpath, bool looping );
+	virtual bool		InitFromFile( const char* qpath, bool amilooping );
 
 	// returns the length of the animation in milliseconds
 	virtual int			AnimationLength();
 
-	// RB: let us know wether this video went EOF or is still active
-	virtual bool        IsPlaying() const;
-	// RB end
-
 	// the pointers in cinData_t will remain valid until the next UpdateForTime() call
-	virtual cinData_t	ImageForTime( int milliseconds );
+	virtual cinData_t	ImageForTime( int thisTime );
 
 	// closes the file and frees all allocated memory
 	virtual void		Close();
@@ -104,6 +99,9 @@ public:
 
 	// gets the time the cinematic started
 	virtual int			GetStartTime();
+
+	// let us know wether this video went EOF or is still active
+	virtual bool        IsPlaying() const;
 
 	virtual void		ExportToTGA( bool skipExisting = true );
 
