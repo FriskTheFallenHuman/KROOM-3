@@ -55,16 +55,32 @@ enum graphicsVendor_t
 	VENDOR_APPLE                            // SRS - Added support for Apple GPUs
 };
 
-// RB: similar to Q3A - allow separate codepaths between OpenGL 3.x, OpenGL ES versions
+// RB: similar to Q3A - allow separate codepaths between OpenGL versions
 enum graphicsDriverType_t
 {
-	GLDRV_OPENGL3X,							// best for development with legacy OpenGL tools
-	GLDRV_OPENGL32_COMPATIBILITY_PROFILE,
-	GLDRV_OPENGL32_CORE_PROFILE,			// best for shipping to PC
+	GLDRV_OPENGL,							// best for development with legacy OpenGL tools
+	GLDRV_OPENGL_COMPATIBILITY_PROFILE,
+	GLDRV_OPENGL_CORE_PROFILE,			// best for shipping to PC
 	GLDRV_OPENGL_MESA,						// fear this, it is probably the best to disable GPU skinning and run shaders in GLSL ES 1.0
 	GLDRV_OPENGL_MESA_CORE_PROFILE,
+	GLDRV_OPENGL_MESA_COMPATIBILITY_PROFILE,
 	GLDRV_DIRECTX,
 	GLDRV_VULKAN
+};
+
+// Krispy: Yes i know this is stupid, but i never said i was smart either :p
+enum graphicsVersionType_t
+{
+	GL_OPENGL_31,	// Minimun supported version, for the shaders
+	GL_OPENGL_32,
+	GL_OPENGL_33,
+	GL_OPENGL_40,
+	GL_OPENGL_41,
+	GL_OPENGL_42,
+	GL_OPENGL_43,
+	GL_OPENGL_44,
+	GL_OPENGL_45,
+	GL_OPENGL_46,	// I think this should work rigth?
 };
 
 enum antiAliasingMode_t
@@ -147,6 +163,7 @@ struct glconfig_t
 {
 	graphicsVendor_t	vendor;
 	graphicsDriverType_t driverType;
+	graphicsVersionType_t driverVersion;
 
 	const char* 		renderer_string;
 	const char* 		vendor_string;
@@ -177,7 +194,6 @@ struct glconfig_t
 	bool				drawElementsBaseVertexAvailable;
 	bool				glslAvailable;
 	bool				uniformBufferAvailable;
-	bool				twoSidedStencilAvailable;
 	bool				depthBoundsTestAvailable;
 	bool				syncAvailable;
 	bool				timerQueryAvailable;

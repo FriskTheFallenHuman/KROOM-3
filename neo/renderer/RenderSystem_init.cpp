@@ -309,6 +309,12 @@ idCVar r_tonemapPreset( "r_tonemapPreset", "0", CVAR_RENDERER | CVAR_ARCHIVE | C
 idCVar r_tonemapSaturation( "r_tonemapSaturation", "1.0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "color saturation after tonemapping [0=grayscale, 1=natural, 2=boosted]", 0.0f, 3.0f );
 idCVar r_tonemapContrast( "r_tonemapContrast", "1.0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "contrast power curve after tonemapping", 0.1f, 3.0f );
 
+#if !defined( USE_VULKAN )
+	idCVar r_glVersionMajor( "r_glVersionMajor", "4", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "OpenGL major version (>= 3.2 is the minimun supported level!)", 3, 4 );
+	idCVar r_glVersionMinor( "r_glVersionMinor", "5", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "OpenGL minor version (>= 3.2 is the minimun supported level!)", 2, 5 );
+	idCVar r_glProfile( "r_glProfile", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "0 = no profile, 1 = prefer compatibility, 2 = prefer core", 0, 2 );
+#endif
+
 const char* fileExten[4] = { "tga", "png", "jpg", "exr" };
 const char* envDirection[6] = { "_px", "_nx", "_py", "_ny", "_pz", "_nz" };
 const char* skyDirection[6] = { "_forward", "_back", "_left", "_right", "_up", "_down" };
@@ -322,10 +328,10 @@ const char* skyDirection[6] = { "_forward", "_back", "_left", "_right", "_up", "
 =============================
 R_SetNewMode
 
-r_fullScreen -1		borderless window at exact desktop coordinates
-r_fullScreen 0		bordered window at exact desktop coordinates
-r_fullScreen 1		fullscreen on monitor 1 at r_vidMode
-r_fullScreen 2		fullscreen on monitor 2 at r_vidMode
+r_vidFullscreen -1		borderless window at exact desktop coordinates
+r_vidFullscreen 0		bordered window at exact desktop coordinates
+r_vidFullscreen 1		fullscreen on monitor 1 at r_vidMode
+r_vidFullscreen 2		fullscreen on monitor 2 at r_vidMode
 ...
 
 r_vidMode -1		use r_customWidth / r_customHeight, even if they don't appear on the mode list

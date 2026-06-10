@@ -180,7 +180,9 @@ static void R_CheckPortableExtensions()
 	glConfig.glVersion = atof( glConfig.version_string );
 
 	const char* badVideoCard = idLocalization::GetString( "#str_06780" );
-	if( glConfig.glVersion < 2.0f )
+
+	// OpenGL 3.1 is the minimun supported OpenGL version!
+	if( glConfig.glVersion < 3.1f )
 	{
 		idLib::FatalError( "%s", badVideoCard );
 	}
@@ -208,9 +210,13 @@ static void R_CheckPortableExtensions()
 			strcmp( glConfig.vendor_string, "X.Org" ) == 0 ||
 			idStr::Icmpn( glConfig.renderer_string, "llvmpipe", 8 ) == 0 )
 	{
-		if( glConfig.driverType == GLDRV_OPENGL32_CORE_PROFILE )
+		if( glConfig.driverType == GLDRV_OPENGL_CORE_PROFILE )
 		{
 			glConfig.driverType = GLDRV_OPENGL_MESA_CORE_PROFILE;
+		}
+		else if( glConfig.driverType == GLDRV_OPENGL_COMPATIBILITY_PROFILE )
+		{
+			glConfig.driverType = GLDRV_OPENGL_MESA_COMPATIBILITY_PROFILE;
 		}
 		else
 		{
@@ -220,7 +226,7 @@ static void R_CheckPortableExtensions()
 	// RB end
 
 	// GL_ARB_multitexture
-	if( glConfig.driverType != GLDRV_OPENGL3X )
+	if( glConfig.driverType != GLDRV_OPENGL )
 	{
 		glConfig.multitextureAvailable = true;
 	}
@@ -322,10 +328,7 @@ static void R_CheckPortableExtensions()
 		}
 	}
 	// RB: make GPU skinning optional for weak OpenGL drivers
-	glConfig.gpuSkinningAvailable = glConfig.uniformBufferAvailable && ( glConfig.driverType == GLDRV_OPENGL3X || glConfig.driverType == GLDRV_OPENGL32_CORE_PROFILE || glConfig.driverType == GLDRV_OPENGL32_COMPATIBILITY_PROFILE );
-
-	// ATI_separate_stencil / OpenGL 2.0 separate stencil
-	glConfig.twoSidedStencilAvailable = ( glConfig.glVersion >= 2.0f ) || GLEW_ATI_separate_stencil != 0;
+	glConfig.gpuSkinningAvailable = glConfig.uniformBufferAvailable && ( glConfig.driverType == GLDRV_OPENGL || glConfig.driverType == GLDRV_OPENGL_CORE_PROFILE || glConfig.driverType == GLDRV_OPENGL_COMPATIBILITY_PROFILE );
 
 	// GL_EXT_depth_bounds_test
 	glConfig.depthBoundsTestAvailable = GLEW_EXT_depth_bounds_test != 0;
@@ -462,11 +465,6 @@ static void R_CheckPortableExtensions()
 	{
 		idLib::Error( "GL_ARB_uniform_buffer_object not available" );
 	}
-	// GL_EXT_stencil_two_side
-	if( !glConfig.twoSidedStencilAvailable )
-	{
-		idLib::Error( "GL_ATI_separate_stencil not available" );
-	}
 
 	// generate one global Vertex Array Object (VAO)
 	glGenVertexArrays( 1, &glConfig.global_vao );
@@ -564,7 +562,7 @@ void idRenderBackend::Init()
 
 	renderProgManager.Init();
 
-	tr.SetInitialized();
+	tr.SetInitialized(true);
 
 	// allocate the vertex array range or vertex objects
 	vertexCache.Init( glConfig.uniformBufferOffsetAlignment );
@@ -1538,6 +1536,7 @@ void idRenderBackend::CheckCVars()
 	}
 #endif
 	// SRS end
+
 	if( r_antiAliasing.IsModified() )
 	{
 		switch( r_antiAliasing.GetInteger() )
