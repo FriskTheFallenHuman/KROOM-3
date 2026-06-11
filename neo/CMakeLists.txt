@@ -30,7 +30,6 @@ include(CPUDefine)
 
 if(UNIX)
 	set(OPENAL ON)
-	set(FFMPEG ON)
 
 	# SRS - Disable precompiled headers when cross-compiling on OSX, e.g. when creating universal binaries
 	#     - Also disable precompiled headers when using the Ninja Multi-Config generator on linux or macOS

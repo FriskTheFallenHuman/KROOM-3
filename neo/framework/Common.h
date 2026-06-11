@@ -232,7 +232,7 @@ public:
 	virtual void				StartupVariable( const char* match ) = 0;
 
 	// Initializes a tool with the given dictionary.
-	virtual void				InitTool( const toolFlag_t tool, const idDict* dict ) = 0;
+	virtual void				InitTool( const toolFlag_t tool, const idDict* dict, idEntity* entity = NULL ) = 0;
 
 	// Activates or deactivates a tool.
 	virtual void				ActivateTool( bool active ) = 0;
