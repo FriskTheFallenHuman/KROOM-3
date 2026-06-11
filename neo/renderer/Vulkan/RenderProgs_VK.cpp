@@ -28,8 +28,8 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#pragma hdrstop
 #include "precompiled.h"
+#pragma hdrstop
 
 #include "../RenderCommon.h"
 #include "../RenderProgs.h"
@@ -119,53 +119,6 @@ void CreateVertexDescriptions()
 		attribute.format = VK_FORMAT_R8G8B8A8_UNORM;
 		attribute.location = locationNo++;
 		attribute.offset = offset;
-		layout.attributeDesc.Append( attribute );
-	}
-
-	{
-		vertexLayout_t& layout = vertexLayouts[ LAYOUT_DRAW_SHADOW_VERT_SKINNED ];
-		layout.inputState = createInfo;
-
-		uint32 locationNo = 0;
-		uint32 offset = 0;
-
-		binding.stride = sizeof( idShadowVertSkinned );
-		binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-		layout.bindingDesc.Append( binding );
-
-		// Position
-		attribute.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-		attribute.location = locationNo++;
-		attribute.offset = offset;
-		layout.attributeDesc.Append( attribute );
-		offset += sizeof( idShadowVertSkinned::xyzw );
-
-		// Color1
-		attribute.format = VK_FORMAT_R8G8B8A8_UNORM;
-		attribute.location = locationNo++;
-		attribute.offset = offset;
-		layout.attributeDesc.Append( attribute );
-		offset += sizeof( idShadowVertSkinned::color );
-
-		// Color2
-		attribute.format = VK_FORMAT_R8G8B8A8_UNORM;
-		attribute.location = locationNo++;
-		attribute.offset = offset;
-		layout.attributeDesc.Append( attribute );
-	}
-
-	{
-		vertexLayout_t& layout = vertexLayouts[ LAYOUT_DRAW_SHADOW_VERT ];
-		layout.inputState = createInfo;
-
-		binding.stride = sizeof( idShadowVert );
-		binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-		layout.bindingDesc.Append( binding );
-
-		// Position
-		attribute.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-		attribute.location = 0;
-		attribute.offset = 0;
 		layout.attributeDesc.Append( attribute );
 	}
 }
@@ -337,9 +290,6 @@ CompileGLSLtoSPIRV
 ================================================================================================
 */
 
-
-#if defined(SPIRV_SHADERC)
-
 #include <shaderc/shaderc.hpp>
 
 static int CompileGLSLtoSPIRV( const char* filename, const idStr& dataGLSL, const rpStage_t stage, uint32** spirvBuffer )
@@ -352,7 +302,7 @@ static int CompileGLSLtoSPIRV( const char* filename, const idStr& dataGLSL, cons
 
 	//if (optimize)
 	{
-		options.SetOptimizationLevel( shaderc_optimization_level_size );
+		options.SetOptimizationLevel( shaderc_optimization_level_performance );
 	}
 
 	shaderc_shader_kind shaderKind;
@@ -393,202 +343,6 @@ static int CompileGLSLtoSPIRV( const char* filename, const idStr& dataGLSL, cons
 
 
 }
-#else
-
-//#include <glslang/Public/ShaderLang.h>
-//#include <glslang/Include/ResourceLimits.h>
-//#include <SPIRV/GlslangToSpv.h>
-//#include <glslang/StandAlone/DirStackFileIncluder.h>
-
-#include "../../extern/glslang/glslang/Public/ShaderLang.h"
-#include "../../extern/glslang/glslang/Include/ResourceLimits.h"
-#include "../../extern/glslang/SPIRV/GlslangToSpv.h"
-
-static bool glslangInitialized = false;
-
-static int CompileGLSLtoSPIRV( const char* filename, const idStr& dataGLSL, const rpStage_t stage, uint32** spirvBuffer )
-{
-	if( !glslangInitialized )
-	{
-		glslang::InitializeProcess();
-		glslangInitialized = true;
-	}
-
-	const char* inputCString = dataGLSL.c_str();
-
-	EShLanguage shaderType;
-	if( stage == SHADER_STAGE_VERTEX )
-	{
-		shaderType = EShLangVertex;
-	}
-	else if( stage == SHADER_STAGE_COMPUTE )
-	{
-		shaderType = EShLangCompute;
-	}
-	else
-	{
-		shaderType = EShLangFragment;
-	}
-
-	glslang::TShader shader( shaderType );
-	shader.setStrings( &inputCString, 1 );
-
-	int clientInputSemanticsVersion = 100; // maps to, say, #define VULKAN 100
-	glslang::EShTargetClientVersion vulkanClientVersion = glslang::EShTargetVulkan_1_0;
-	glslang::EShTargetLanguageVersion targetVersion = glslang::EShTargetSpv_1_0;
-
-	shader.setEnvInput( glslang::EShSourceGlsl, shaderType, glslang::EShClientVulkan, clientInputSemanticsVersion );
-	shader.setEnvClient( glslang::EShClientVulkan, vulkanClientVersion );
-	shader.setEnvTarget( glslang::EShTargetSpv, targetVersion );
-
-	// RB: see RBDOOM-3-BFG\neo\extern\glslang\StandAlone\ResourceLimits.cpp
-	static TBuiltInResource resources;
-	resources.maxLights = 32;
-	resources.maxClipPlanes = 6;
-	resources.maxTextureUnits = 32;
-	resources.maxTextureCoords = 32;
-	resources.maxVertexAttribs = 64;
-	resources.maxVertexUniformComponents = 4096;
-	resources.maxVaryingFloats = 64;
-	resources.maxVertexTextureImageUnits = 32;
-	resources.maxCombinedTextureImageUnits = 80;
-	resources.maxTextureImageUnits = 32;
-	resources.maxFragmentUniformComponents = 4096;
-	resources.maxDrawBuffers = 32;
-	resources.maxVertexUniformVectors = 128;
-	resources.maxVaryingVectors = 8;
-	resources.maxFragmentUniformVectors = 16;
-	resources.maxVertexOutputVectors = 16;
-	resources.maxFragmentInputVectors = 15;
-	resources.minProgramTexelOffset = -8;
-	resources.maxProgramTexelOffset = 7;
-	resources.maxClipDistances = 8;
-	resources.maxComputeWorkGroupCountX = 65535;
-	resources.maxComputeWorkGroupCountY = 65535;
-	resources.maxComputeWorkGroupCountZ = 65535;
-	resources.maxComputeWorkGroupSizeX = 1024;
-	resources.maxComputeWorkGroupSizeY = 1024;
-	resources.maxComputeWorkGroupSizeZ = 64;
-	resources.maxComputeUniformComponents = 1024;
-	resources.maxComputeTextureImageUnits = 16;
-	resources.maxComputeImageUniforms = 8;
-	resources.maxComputeAtomicCounters = 8;
-	resources.maxComputeAtomicCounterBuffers = 1;
-	resources.maxVaryingComponents = 60;
-	resources.maxVertexOutputComponents = 64;
-	resources.maxGeometryInputComponents = 64;
-	resources.maxGeometryOutputComponents = 128;
-	resources.maxFragmentInputComponents = 128;
-	resources.maxImageUnits = 8;
-	resources.maxCombinedImageUnitsAndFragmentOutputs = 8;
-	resources.maxCombinedShaderOutputResources = 8;
-	resources.maxImageSamples = 0;
-	resources.maxVertexImageUniforms = 0;
-	resources.maxTessControlImageUniforms = 0;
-	resources.maxTessEvaluationImageUniforms = 0;
-	resources.maxGeometryImageUniforms = 0;
-	resources.maxFragmentImageUniforms = 8;
-	resources.maxCombinedImageUniforms = 8;
-	resources.maxGeometryTextureImageUnits = 16;
-	resources.maxGeometryOutputVertices = 256;
-	resources.maxGeometryTotalOutputComponents = 1024;
-	resources.maxGeometryUniformComponents = 1024;
-	resources.maxGeometryVaryingComponents = 64;
-	resources.maxTessControlInputComponents = 128;
-	resources.maxTessControlOutputComponents = 128;
-	resources.maxTessControlTextureImageUnits = 16;
-	resources.maxTessControlUniformComponents = 1024;
-	resources.maxTessControlTotalOutputComponents = 4096;
-	resources.maxTessEvaluationInputComponents = 128;
-	resources.maxTessEvaluationOutputComponents = 128;
-	resources.maxTessEvaluationTextureImageUnits = 16;
-	resources.maxTessEvaluationUniformComponents = 1024;
-	resources.maxTessPatchComponents = 120;
-	resources.maxPatchVertices = 32;
-	resources.maxTessGenLevel = 64;
-	resources.maxViewports = 16;
-	resources.maxVertexAtomicCounters = 0;
-	resources.maxTessControlAtomicCounters = 0;
-	resources.maxTessEvaluationAtomicCounters = 0;
-	resources.maxGeometryAtomicCounters = 0;
-	resources.maxFragmentAtomicCounters = 8;
-	resources.maxCombinedAtomicCounters = 8;
-	resources.maxAtomicCounterBindings = 1;
-	resources.maxVertexAtomicCounterBuffers = 0;
-	resources.maxTessControlAtomicCounterBuffers = 0;
-	resources.maxTessEvaluationAtomicCounterBuffers = 0;
-	resources.maxGeometryAtomicCounterBuffers = 0;
-	resources.maxFragmentAtomicCounterBuffers = 1;
-	resources.maxCombinedAtomicCounterBuffers = 1;
-	resources.maxAtomicCounterBufferSize = 16384;
-	resources.maxTransformFeedbackBuffers = 4;
-	resources.maxTransformFeedbackInterleavedComponents = 64;
-	resources.maxCullDistances = 8;
-	resources.maxCombinedClipAndCullDistances = 8;
-	resources.maxSamples = 4;
-	resources.maxMeshOutputVerticesNV = 256;
-	resources.maxMeshOutputPrimitivesNV = 512;
-	resources.maxMeshWorkGroupSizeX_NV = 32;
-	resources.maxMeshWorkGroupSizeY_NV = 1;
-	resources.maxMeshWorkGroupSizeZ_NV = 1;
-	resources.maxTaskWorkGroupSizeX_NV = 32;
-	resources.maxTaskWorkGroupSizeY_NV = 1;
-	resources.maxTaskWorkGroupSizeZ_NV = 1;
-	resources.maxMeshViewCountNV = 4;
-
-	resources.limits.nonInductiveForLoops = true;
-	resources.limits.whileLoops = true;
-	resources.limits.doWhileLoops = true;
-	resources.limits.generalUniformIndexing = true;
-	resources.limits.generalAttributeMatrixVectorIndexing = true;
-	resources.limits.generalVaryingIndexing = true;
-	resources.limits.generalSamplerIndexing = true;
-	resources.limits.generalVariableIndexing = true;
-	resources.limits.generalConstantMatrixVectorIndexing = true;
-
-	EShMessages messages = ( EShMessages )( EShMsgSpvRules | EShMsgVulkanRules );
-
-	const int defaultVersion = 100;
-
-	if( !shader.parse( &resources, 100, false, messages ) )
-	{
-		idLib::Printf( "GLSL parsing failed for: %s\n", filename );
-		idLib::Printf( "%s\n", shader.getInfoLog() );
-		idLib::Printf( "%s\n", shader.getInfoDebugLog() );
-
-		//*spirvBuffer = NULL;
-		//return 0;
-	}
-
-	glslang::TProgram program;
-	program.addShader( &shader );
-
-	if( !program.link( messages ) )
-	{
-		idLib::Printf( "GLSL linking failed for: %s\n", filename );
-		idLib::Printf( "%s\n", shader.getInfoLog() );
-		idLib::Printf( "%s\n", shader.getInfoDebugLog() );
-	}
-
-	// All that's left to do now is to convert the program's intermediate representation into SpirV:
-	std::vector<unsigned int>	spirV;
-	spv::SpvBuildLogger			logger;
-	glslang::SpvOptions			spvOptions;
-
-	glslang::GlslangToSpv( *program.getIntermediate( shaderType ), spirV, &logger, &spvOptions );
-
-	int32 spirvLen = spirV.size() * sizeof( unsigned int );
-
-	void* buffer = Mem_Alloc( spirvLen, TAG_RENDERPROG );
-	memcpy( buffer, spirV.data(), spirvLen );
-
-	*spirvBuffer = ( uint32* ) buffer;
-	return spirvLen;
-
-
-}
-
-#endif
 
 /*
 ================================================================================================

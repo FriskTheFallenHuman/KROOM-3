@@ -1485,48 +1485,58 @@ idStr idRenderProgManager::ConvertCG2GLSL( const idStr& in, const char* name, rp
 #else
 	idStr filenameVersionNumber;
 	idStr filenameProfile;
-	switch( glConfig.driverVersion )
+
+	// Vulkan requires at least GLSL 4.50
+	if( glConfig.driverType == GLDRV_VULKAN )
 	{
-		default:
-		case GL_OPENGL_31:
-			filenameVersionNumber = "140";
-			break;
-		case GL_OPENGL_32:
-			filenameVersionNumber = "150";
-			break;
-		case GL_OPENGL_33:
-			filenameVersionNumber = "330";
-			break;
-		case GL_OPENGL_40:
-			filenameVersionNumber = "400";
-			break;
-		case GL_OPENGL_41:
-			filenameVersionNumber = "410";
-			break;
-		case GL_OPENGL_42:
-			filenameVersionNumber = "420";
-			break;
-		case GL_OPENGL_43:
-			filenameVersionNumber = "430";
-			break;
-		case GL_OPENGL_44:
-			filenameVersionNumber = "440";
-			break;
-		case GL_OPENGL_45:
-			filenameVersionNumber = "450";
-			break;
-		case GL_OPENGL_46:
-			filenameVersionNumber = "460";
-			break;
+		filenameVersionNumber = "450";
+	}
+	else
+	{
+		switch( glConfig.driverVersion )
+		{
+			default:
+			case GL_OPENGL_31:
+				filenameVersionNumber = "140";
+				break;
+			case GL_OPENGL_32:
+				filenameVersionNumber = "150";
+				break;
+			case GL_OPENGL_33:
+				filenameVersionNumber = "330";
+				break;
+			case GL_OPENGL_40:
+				filenameVersionNumber = "400";
+				break;
+			case GL_OPENGL_41:
+				filenameVersionNumber = "410";
+				break;
+			case GL_OPENGL_42:
+				filenameVersionNumber = "420";
+				break;
+			case GL_OPENGL_43:
+				filenameVersionNumber = "430";
+				break;
+			case GL_OPENGL_44:
+				filenameVersionNumber = "440";
+				break;
+			case GL_OPENGL_45:
+				filenameVersionNumber = "450";
+				break;
+			case GL_OPENGL_46:
+				filenameVersionNumber = "460";
+				break;
+		}
 	}
 	switch( glConfig.driverType )
 	{
 		case GLDRV_OPENGL_CORE_PROFILE:
 		case GLDRV_OPENGL_MESA_CORE_PROFILE:
+		case GLDRV_VULKAN:
 			filenameProfile = " core";
 			break;
 
-		case GLDRV_OPENGL_COMPATIBILITY_PROFILE:	
+		case GLDRV_OPENGL_COMPATIBILITY_PROFILE:
 		case GLDRV_OPENGL_MESA_COMPATIBILITY_PROFILE:
 			filenameProfile = " compatibility";
 			break;

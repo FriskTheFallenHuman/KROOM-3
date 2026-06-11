@@ -41,7 +41,7 @@ If you have questions concerning this license or the applicable additional terms
 #include <vulkan/vulkan.h>
 
 #if defined( USE_AMD_ALLOCATOR )
-	#include "vma.h"
+	#include "vk_mem_alloc.h"
 #endif
 
 #define ID_VK_CHECK( x ) { \
@@ -81,4 +81,4 @@ extern PFN_vkCmdInsertDebugUtilsLabelEXT	qvkCmdInsertDebugUtilsLabelEXT;
 
 #endif
 
-#endif
+#endif /* !__QVK_H__ */

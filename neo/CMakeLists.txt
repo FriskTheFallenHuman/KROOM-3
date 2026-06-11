@@ -19,7 +19,6 @@ option(SDL2 "Use SDL2 instead of platform specific implementations" OFF)
 option(OPENAL "Use OpenAL soft instead of XAudio2" OFF)
 option(FFMPEG "Use FMPEG to render other video formats" OFF)
 option(USE_VULKAN "Use Vulkan instead of OpenGL" OFF)
-option(SPIRV_SHADERC "Compile SPIR-V shader byte code using shaderc instead of using Glslang directly" OFF)
 option(USE_MoltenVK	"Use MoltenVK library directly instead of Vulkan loader on macOS" OFF)
 option(ONATIVE "Optimize for the host CPU" OFF)
 option(REPRODUCIBLE_BUILD "Replace __DATE__ and __TIME__ by hardcoded values for reproducible builds." OFF)
@@ -67,13 +66,16 @@ configure_file("${CMAKE_SOURCE_DIR}/config.h.in" "${CMAKE_BINARY_DIR}/config.h")
 
 if(MSVC)
 	if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-		set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/../bin/x86_64)
+		set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/../bin/x86_64)
+		set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/../bin/x86_64)
 	else()
-		set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/../bin/x86)
+		set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/../bin/x86)
+		set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/../bin/x86)
 	endif()
 
 	message(STATUS "Root: ${CMAKE_ROOT}")
-	message(STATUS "Output Path: ${EXECUTABLE_OUTPUT_PATH}")
+	message(STATUS "Executable Path: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+	message(STATUS "DLL Path: ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
 	message(STATUS "Project Binary Path: ${PROJECT_BINARY_DIR}")
 	message(STATUS "Binary Path: ${CMAKE_BINARY_DIR}")
 else()
@@ -286,9 +288,6 @@ macro(SET_OPTION option value)
 endmacro()
 
 if(USE_VULKAN)
-	# RB: moved this above the general Vulkan part so glslang does not include Vulkan SDK headers
-	# which causes all kinds of weird segmentation faults because struct sizes don't match
-
 	# SRS - Set default VULKAN_SDK location if environment variable not defined on OSX
 	if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin" AND NOT DEFINED ENV{VULKAN_SDK})
 		if(NOT USE_MoltenVK)
@@ -299,46 +298,10 @@ if(USE_VULKAN)
 		endif()
 	endif()
 
-	if(SPIRV_SHADERC)
-		add_definitions(-DSPIRV_SHADERC)
-
-		# SRS - Add case for UNIX/OSX
-		if(CMAKE_CL_64 OR UNIX)
-			link_directories($ENV{VULKAN_SDK}/Lib)
-		else()
-			link_directories($ENV{VULKAN_SDK}/Lib32)
-		endif()
-
-	else()
-		# override Glslang build options
-
-		# options required by November 2018 release
-		SET_OPTION(ENABLE_SPVREMAPPER ON)
-		SET_OPTION(ENABLE_GLSLANG_BINARIES OFF)
-		SET_OPTION(ENABLE_HLSL OFF)
-		SET_OPTION(ENABLE_OPT ON)
-		SET_OPTION(SPIRV_SKIP_EXECUTABLES ON)
-
-		# options required by July 2020 release
-		SET_OPTION(ENABLE_PCH OFF)
-		SET_OPTION(ENABLE_CTEST OFF)
-		SET_OPTION(BUILD_EXTERNAL OFF)
-		SET_OPTION(SKIP_GLSLANG_INSTALL ON)
-
-		#add_definitions(-DGLSLANG_MINOR_VERSION=13)
-
-		set(GLSLANG_DIR ${CMAKE_CURRENT_SOURCE_DIR}/extern/glslang)
-		add_subdirectory(${GLSLANG_DIR})
-
-		include_directories(${GLSLANG_DIR})
-
-		#link_directories($ENV{VULKAN_SDK}/Lib)
-	endif()
-
 	# Use FindVulkan module added with CMAKE 3.7
 	if(NOT CMAKE_VERSION VERSION_LESS 3.7.0)
 		message( STATUS "Using module to find Vulkan" )
-		find_package(Vulkan)
+		find_package(Vulkan REQUIRED COMPONENTS shaderc_combined)
 	endif()
 
 	if(NOT Vulkan_FOUND)
@@ -346,6 +309,16 @@ if(USE_VULKAN)
 	else()
 		add_definitions(-DUSE_VULKAN)
 		include_directories($ENV{VULKAN_SDK}/include)
+
+		add_subdirectory(extern/VulkanMemoryAllocator)
+		include_directories(extern/VulkanMemoryAllocator/include)
+
+		# SRS - Add case for UNIX/OSX
+		if(CMAKE_CL_64 OR UNIX)
+			link_directories($ENV{VULKAN_SDK}/Lib)
+		else()
+			link_directories($ENV{VULKAN_SDK}/Lib32)
+		endif()
 
 		if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 			# SRS - Enable Beta extensions for VULKAN_SDK portability subset features on OSX
@@ -714,17 +687,7 @@ add_definitions(-D__DOOM__)
 
 if(MSVC)
 	if(USE_VULKAN)
-		list(APPEND sys_thirdparty ${Vulkan_LIBRARY})
-
-		if(SPIRV_SHADERC)
-			list(APPEND sys_thirdparty shaderc_combined)
-		else()
-			list(APPEND sys_thirdparty glslang SPIRV)
-
-			if(ENABLE_GLSLANG_BINARIES)
-				list(APPEND sys_thirdparty glslang-default-resource-limits)
-			endif()
-		endif()
+		list(APPEND sys_thirdparty ${Vulkan_LIBRARY} Vulkan::shaderc_combined GPUOpen::VulkanMemoryAllocator)
 
 		file(GLOB src_renderer_vulkan renderer/Vulkan/*.cpp renderer/Vulkan/*.h)
 		source_group("Renderer\\Vulkan" FILES ${src_renderer_vulkan})
@@ -822,18 +785,7 @@ else()
 		endif()
 
 		if(USE_VULKAN)
-			set(Vulkan_LIBRARIES ${Vulkan_LIBRARY})
-
-			# SRS - Added UNIX/OSX support for shaderc
-			if(SPIRV_SHADERC)
-				list(APPEND Vulkan_LIBRARIES shaderc_combined)
-			else()
-				list(APPEND Vulkan_LIBRARIES glslang SPIRV)
-
-				if(ENABLE_GLSLANG_BINARIES)
-					list(APPEND Vulkan_LIBRARIES glslang-default-resource-limits)
-				endif()
-			endif()
+			set(Vulkan_LIBRARIES ${Vulkan_LIBRARY} Vulkan::shaderc_combined GPUOpen::VulkanMemoryAllocator)
 
 			file(GLOB src_renderer_vulkan renderer/Vulkan/*.cpp renderer/Vulkan/*.h)
 			source_group("Renderer\\Vulkan" FILES ${src_renderer_vulkan})
@@ -874,13 +826,14 @@ target_link_libraries(${CMAKE_PROJECT_NAME} idLib external ${sys_libs} ${sys_thi
 if(USE_PRECOMPILED_HEADERS)
 	target_precompile_headers(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/idlib/precompiled.h)
 endif()
+set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY $<1:>${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
 if(MSVC)
-	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES LINK_FLAGS "/MAP:\"${EXECUTABLE_OUTPUT_PATH}/${CMAKE_PROJECT_NAME}.map\"")
+	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES LINK_FLAGS "/MAP:\"${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_PROJECT_NAME}.map\"")
 
 	# set MSVC default debug directory on executable
 	set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${CMAKE_PROJECT_NAME}) # set MSVC startup project
-	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${EXECUTABLE_OUTPUT_PATH}")
+	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>")
 	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES VS_DEBUGGER_COMMAND_ARGUMENTS "+set r_fullscreen 0 +set win_viewlog 1 +set developter 1")
 
 	#CMAKE_BINARY_DIR

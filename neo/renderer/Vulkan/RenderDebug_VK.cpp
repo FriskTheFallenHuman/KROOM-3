@@ -29,14 +29,10 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#pragma hdrstop
 #include "precompiled.h"
+#pragma hdrstop
 
 #include "../RenderCommon.h"
-
-
-
-
 
 /*
 ================
@@ -188,21 +184,6 @@ void idRenderBackend::DBG_RenderDrawSurfListWithFunction( drawSurf_t** drawSurfs
 }
 
 /*
-=================
-idRenderBackend::DBG_ShowSilhouette
-
-Blacks out all edges, then adds color for each edge that a shadow
-plane extends from, allowing you to see doubled edges
-
-FIXME: not thread safe!
-=================
-*/
-void idRenderBackend::DBG_ShowSilhouette()
-{
-
-}
-
-/*
 =====================
 idRenderBackend::DBG_ShowTris
 
@@ -329,18 +310,6 @@ Draw lines from each vertex to the dominant triangle center
 =====================
 */
 void idRenderBackend::DBG_ShowDominantTris( drawSurf_t** drawSurfs, int numDrawSurfs )
-{
-
-}
-
-/*
-=====================
-idRenderBackend::DBG_ShowEdges
-
-Debugging tool
-=====================
-*/
-void idRenderBackend::DBG_ShowEdges( drawSurf_t** drawSurfs, int numDrawSurfs )
 {
 
 }

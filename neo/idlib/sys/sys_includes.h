@@ -153,6 +153,7 @@ If you have questions concerning this license or the applicable additional terms
 #include <cmath>
 #include <climits>
 #include <cstdint>
+#include <inttypes.h>
 
 // STL
 #include <typeinfo>

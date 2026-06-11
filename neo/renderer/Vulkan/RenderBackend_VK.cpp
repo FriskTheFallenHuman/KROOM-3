@@ -31,6 +31,11 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
+#if defined( USE_AMD_ALLOCATOR )
+	#define VMA_IMPLEMENTATION
+	#include "vk_mem_alloc.h"
+#endif
+
 // VK_EXT_debug_marker
 PFN_vkDebugMarkerSetObjectTagEXT	qvkDebugMarkerSetObjectTagEXT = VK_NULL_HANDLE;
 PFN_vkDebugMarkerSetObjectNameEXT	qvkDebugMarkerSetObjectNameEXT = VK_NULL_HANDLE;
@@ -60,7 +65,7 @@ idCVar r_syncEveryFrame( "r_syncEveryFrame", "1", CVAR_BOOL, "Don't let the GPU 
 
 // NEW VULKAN STUFF
 
-idCVar r_vkEnableValidationLayers( "r_vkEnableValidationLayers", "0", CVAR_BOOL | CVAR_INIT | CVAR_NEW, "" );
+idCVar r_vkEnableValidationLayers( "r_vkEnableValidationLayers", "0", CVAR_BOOL | CVAR_INIT, "" );
 
 vulkanContext_t vkcontext;
 
@@ -1318,7 +1323,7 @@ static void CreateRenderTargets()
 		ID_VK_CHECK( vkCreateImage( vkcontext.device, &createInfo, NULL, &vkcontext.msaaImage ) );
 
 #if defined( USE_AMD_ALLOCATOR )
-		VmaMemoryRequirements vmaReq = {};
+		VmaAllocationCreateInfo vmaReq = {};
 		vmaReq.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
 		ID_VK_CHECK( vmaCreateImage( vmaAllocator, &createInfo, &vmaReq, &vkcontext.msaaImage, &vkcontext.msaaVmaAllocation, &vkcontext.msaaAllocation ) );
@@ -1677,13 +1682,13 @@ void idRenderBackend::Init()
 
 	// Setup the allocator
 #if defined( USE_AMD_ALLOCATOR )
-	extern idCVar r_vkHostVisibleMemoryMB;
 	extern idCVar r_vkDeviceLocalMemoryMB;
 
 	VmaAllocatorCreateInfo createInfo = {};
 	createInfo.physicalDevice = vkcontext.physicalDevice;
 	createInfo.device = vkcontext.device;
-	createInfo.preferredSmallHeapBlockSize = r_vkHostVisibleMemoryMB.GetInteger() * 1024 * 1024;
+	createInfo.instance = vkcontext.instance;
+	createInfo.vulkanApiVersion = VK_API_VERSION_1_1;
 	createInfo.preferredLargeHeapBlockSize = r_vkDeviceLocalMemoryMB.GetInteger() * 1024 * 1024;
 
 	vmaCreateAllocator( &createInfo, &vmaAllocator );
@@ -2599,12 +2604,6 @@ See if some cvars that we watch have changed
 */
 void idRenderBackend::CheckCVars()
 {
-	// TODO
-	if( r_useShadowMapping.GetBool() )
-	{
-		r_useShadowMapping.SetBool( false );
-	}
-
 	/*
 	// gamma stuff
 	if( r_gamma.IsModified() || r_brightness.IsModified() )
@@ -2792,195 +2791,10 @@ void idRenderBackend::SetBuffer( const void* data )
 /*
 ==============================================================================================
 
-STENCIL SHADOW RENDERING
-
-==============================================================================================
-*/
-
-/*
-=====================
-idRenderBackend::DrawStencilShadowPass
-=====================
-*/
-extern idCVar r_useStencilShadowPreload;
-
-void idRenderBackend::DrawStencilShadowPass( const drawSurf_t* drawSurf, const bool renderZPass )
-{
-	if( renderZPass )
-	{
-		// Z-pass
-		uint64 stencil = GLS_STENCIL_OP_FAIL_KEEP | GLS_STENCIL_OP_ZFAIL_KEEP | GLS_STENCIL_OP_PASS_INCR
-						 | GLS_BACK_STENCIL_OP_FAIL_KEEP | GLS_BACK_STENCIL_OP_ZFAIL_KEEP | GLS_BACK_STENCIL_OP_PASS_DECR;
-
-		GL_State( ( glStateBits & ~GLS_STENCIL_OP_BITS ) | stencil );
-	}
-	else if( r_useStencilShadowPreload.GetBool() )
-	{
-		// preload + Z-pass
-		uint64 stencil = GLS_STENCIL_OP_FAIL_KEEP | GLS_STENCIL_OP_ZFAIL_DECR | GLS_STENCIL_OP_PASS_DECR
-						 | GLS_BACK_STENCIL_OP_FAIL_KEEP | GLS_BACK_STENCIL_OP_ZFAIL_INCR | GLS_BACK_STENCIL_OP_PASS_INCR;
-
-		GL_State( ( glStateBits & ~GLS_STENCIL_OP_BITS ) | stencil );
-	}
-	else
-	{
-		// Z-fail (Carmack's Reverse)
-		uint64 stencil = GLS_STENCIL_OP_FAIL_KEEP | GLS_STENCIL_OP_ZFAIL_DECR | GLS_STENCIL_OP_PASS_KEEP
-						 | GLS_BACK_STENCIL_OP_FAIL_KEEP | GLS_BACK_STENCIL_OP_ZFAIL_INCR | GLS_BACK_STENCIL_OP_PASS_KEEP;
-
-		GL_State( ( glStateBits & ~GLS_STENCIL_OP_BITS ) | stencil );
-	}
-
-	// get vertex buffer
-	const vertCacheHandle_t vbHandle = drawSurf->shadowCache;
-	idVertexBuffer* vertexBuffer;
-	if( vertexCache.CacheIsStatic( vbHandle ) )
-	{
-		vertexBuffer = &vertexCache.staticData.vertexBuffer;
-	}
-	else
-	{
-		const uint64 frameNum = ( int )( vbHandle >> VERTCACHE_FRAME_SHIFT ) & VERTCACHE_FRAME_MASK;
-		if( frameNum != ( ( vertexCache.currentFrame - 1 ) & VERTCACHE_FRAME_MASK ) )
-		{
-			idLib::Warning( "DrawStencilShadowPass, vertexBuffer == NULL" );
-			return;
-		}
-		vertexBuffer = &vertexCache.frameData[ vertexCache.drawListNum ].vertexBuffer;
-	}
-	const int vertOffset = ( int )( vbHandle >> VERTCACHE_OFFSET_SHIFT ) & VERTCACHE_OFFSET_MASK;
-
-	// get index buffer
-	const vertCacheHandle_t ibHandle = drawSurf->indexCache;
-	idIndexBuffer* indexBuffer;
-	if( vertexCache.CacheIsStatic( ibHandle ) )
-	{
-		indexBuffer = &vertexCache.staticData.indexBuffer;
-	}
-	else
-	{
-		const uint64 frameNum = ( int )( ibHandle >> VERTCACHE_FRAME_SHIFT ) & VERTCACHE_FRAME_MASK;
-		if( frameNum != ( ( vertexCache.currentFrame - 1 ) & VERTCACHE_FRAME_MASK ) )
-		{
-			idLib::Warning( "DrawStencilShadowPass, indexBuffer == NULL" );
-			return;
-		}
-		indexBuffer = &vertexCache.frameData[ vertexCache.drawListNum ].indexBuffer;
-	}
-	const uint64 indexOffset = ( int )( ibHandle >> VERTCACHE_OFFSET_SHIFT ) & VERTCACHE_OFFSET_MASK;
-
-	RENDERLOG_PRINTF( "Binding Buffers(%d): %p:%i %p:%i\n", drawSurf->numIndexes, vertexBuffer, vertOffset, indexBuffer, indexOffset );
-
-	vkcontext.jointCacheHandle = drawSurf->jointCache;
-
-	VkCommandBuffer commandBuffer = vkcontext.commandBuffer[ vkcontext.frameParity ];
-
-	//PrintState( glStateBits, vkcontext.stencilOperations );
-	renderProgManager.CommitUniforms( glStateBits );
-
-	{
-		const VkBuffer buffer = indexBuffer->GetAPIObject();
-		const VkDeviceSize offset = indexBuffer->GetOffset();
-		vkCmdBindIndexBuffer( commandBuffer, buffer, offset, VK_INDEX_TYPE_UINT16 );
-	}
-	{
-		const VkBuffer buffer = vertexBuffer->GetAPIObject();
-		const VkDeviceSize offset = vertexBuffer->GetOffset();
-		vkCmdBindVertexBuffers( commandBuffer, 0, 1, &buffer, &offset );
-	}
-
-	const int baseVertex = vertOffset / ( drawSurf->jointCache ? sizeof( idShadowVertSkinned ) : sizeof( idShadowVert ) );
-
-	vkCmdDrawIndexed( commandBuffer, drawSurf->numIndexes, 1, ( indexOffset >> 1 ), baseVertex, 0 );
-
-	if( !renderZPass && r_useStencilShadowPreload.GetBool() )
-	{
-		// render again with Z-pass
-		uint64 stencil = GLS_STENCIL_OP_FAIL_KEEP | GLS_STENCIL_OP_ZFAIL_KEEP | GLS_STENCIL_OP_PASS_INCR
-						 | GLS_BACK_STENCIL_OP_FAIL_KEEP | GLS_BACK_STENCIL_OP_ZFAIL_KEEP | GLS_BACK_STENCIL_OP_PASS_DECR;
-
-		GL_State( ( glStateBits & ~GLS_STENCIL_OP_BITS ) | stencil );
-
-		//PrintState( glStateBits, vkcontext.stencilOperations );
-		renderProgManager.CommitUniforms( glStateBits );
-
-		vkCmdDrawIndexed( commandBuffer, drawSurf->numIndexes, 1, ( indexOffset >> 1 ), baseVertex, 0 );
-	}
-}
-
-
-/*
-==============================================================================================
-
-OFFSCREEN RENDERING
-
-==============================================================================================
-*/
-
-void Framebuffer::Init()
-{
-	// TODO
-}
-
-void Framebuffer::Shutdown()
-{
-	// TODO
-}
-
-bool Framebuffer::IsDefaultFramebufferActive()
-{
-	// TODO
-	return true;
-}
-
-Framebuffer* Framebuffer::GetActiveFramebuffer()
-{
-	// TODO
-	return NULL;
-}
-
-void Framebuffer::Bind()
-{
-	// TODO
-}
-
-void Framebuffer::Unbind()
-{
-	// TODO
-}
-
-bool Framebuffer::IsBound()
-{
-	// TODO
-	return true;
-}
-
-void Framebuffer::Check()
-{
-	// TODO
-}
-
-void Framebuffer::CheckFramebuffers()
-{
-	// TODO
-}
-
-/*
-==============================================================================================
-
 IMGUI RENDERING
 
 ==============================================================================================
 */
-void idRenderBackend::ImGui_Init()
-{
-	// not needed
-}
-
-void idRenderBackend::ImGui_Shutdown()
-{
-	// not needed
-}
 
 // This is the main rendering function that you have to implement and provide to ImGui (via setting up 'RenderDrawListsFn' in the ImGuiIO structure)
 void idRenderBackend::ImGui_RenderDrawLists( ImDrawData* draw_data )

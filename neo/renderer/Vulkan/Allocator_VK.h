@@ -26,8 +26,8 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#ifndef __HEAP_VK_H__
-#define __HEAP_VK_H__
+#ifndef __ALLOCATOR_VK_H__
+#define __ALLOCATOR_VK_H__
 
 enum vulkanMemoryUsage_t
 {
@@ -172,4 +172,4 @@ private:
 	extern idVulkanAllocator vulkanAllocator;
 #endif
 
-#endif
+#endif /* !__ALLOCATOR_VK_H__ */

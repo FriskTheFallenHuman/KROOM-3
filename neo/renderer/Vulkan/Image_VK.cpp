@@ -27,8 +27,9 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
-#pragma hdrstop
+
 #include "precompiled.h"
+#pragma hdrstop
 
 //#include "../../libs/mesa/format_r11g11b10f.h"
 
@@ -559,7 +560,7 @@ void idImage::AllocImage()
 	imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
 #if defined( USE_AMD_ALLOCATOR )
-	VmaMemoryRequirements vmaReq = {};
+	VmaAllocationCreateInfo vmaReq = {};
 	vmaReq.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
 	ID_VK_CHECK( vmaCreateImage( vmaAllocator, &imageCreateInfo, &vmaReq, &image, &allocation, NULL ) );
@@ -589,8 +590,7 @@ void idImage::AllocImage()
 	viewCreateInfo.viewType = ( opts.textureType == TT_CUBIC ) ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
 	viewCreateInfo.format = internalFormat;
 	viewCreateInfo.components = VK_GetComponentMappingFromTextureFormat( opts.format, opts.colorFormat );
-	// SRS - Added FMT_DEPTH_STENCIL case
-	viewCreateInfo.subresourceRange.aspectMask = ( opts.format == FMT_DEPTH || opts.format == FMT_DEPTH_STENCIL ) ? VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+	viewCreateInfo.subresourceRange.aspectMask = ( opts.format == FMT_DEPTH ) ? VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
 	viewCreateInfo.subresourceRange.levelCount = opts.numLevels;
 	viewCreateInfo.subresourceRange.layerCount = ( opts.textureType == TT_CUBIC ) ? 6 : 1;
 	viewCreateInfo.subresourceRange.baseMipLevel = 0;

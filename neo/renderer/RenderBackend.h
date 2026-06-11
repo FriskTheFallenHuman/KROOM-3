@@ -272,7 +272,6 @@ private:
 	void				DrawFlickerBox();
 
 	void				DrawElementsWithCounters( const drawSurf_t* surf );
-	void				DrawStencilShadowPass( const drawSurf_t* drawSurf, const bool renderZPass );
 
 	void				SetColorMappings();
 	void				ResizeImages();
