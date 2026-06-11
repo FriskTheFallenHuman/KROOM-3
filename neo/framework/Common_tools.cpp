@@ -79,7 +79,7 @@ bool FindEditor()
 idCommonLocal::InitTool
 =================
 */
-void idCommonLocal::InitTool( const toolFlag_t tool, const idDict* dict )
+void idCommonLocal::InitTool( const toolFlag_t tool, const idDict* dict, idEntity* entity )
 {
 #ifdef ID_ALLOW_TOOLS
 	if( tool & EDITOR_SOUND )
@@ -101,7 +101,7 @@ void idCommonLocal::InitTool( const toolFlag_t tool, const idDict* dict )
 #else
 	if( tool & EDITOR_LIGHT )
 	{
-		ImGuiTools::LightEditorInit( dict, /*entity*/ NULL );
+		ImGuiTools::LightEditorInit( dict, entity );
 	}
 #endif
 }

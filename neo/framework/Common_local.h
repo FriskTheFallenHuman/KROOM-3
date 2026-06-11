@@ -155,7 +155,7 @@ public:
 	// DG end
 	virtual void				UpdateLevelLoadPacifier();  // Indefinate
 	virtual void				StartupVariable( const char* match );
-	virtual void				InitTool( const toolFlag_t tool, const idDict* dict );
+	virtual void				InitTool( const toolFlag_t tool, const idDict* dict, idEntity* entity = NULL );
 	virtual void				ActivateTool( bool active );
 	virtual void				WriteConfigToFile( const char* filename );
 	virtual void				WriteFlaggedCVarsToFile( const char* filename, int flags, const char* setCmd );

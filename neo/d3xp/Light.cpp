@@ -830,7 +830,7 @@ idLight::ShowEditingDialog
 */
 void idLight::ShowEditingDialog()
 {
-	common->InitTool( EDITOR_LIGHT, &spawnArgs );
+	common->InitTool( EDITOR_LIGHT, &spawnArgs, this );
 }
 
 /*
