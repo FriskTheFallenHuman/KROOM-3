@@ -85,4 +85,4 @@ private:
 
 extern idVulkanStagingManager stagingManager;
 
-#endif
+#endif /* !__STAGING_VK__ */
