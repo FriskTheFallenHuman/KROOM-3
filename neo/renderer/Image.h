@@ -28,6 +28,9 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
+#ifndef __IMAGES_H__
+#define __IMAGES_H__
+
 enum textureType_t
 {
 	TT_DISABLED,
@@ -689,3 +692,4 @@ IMAGEPROGRAM
 void R_LoadImageProgram( const char* name, byte** pic, int* width, int* height, ID_TIME_T* timestamp, textureUsage_t* usage = NULL );
 const char* R_ParsePastImageProgram( idLexer& src );
 
+#endif /* !__IMAGES_H__ */

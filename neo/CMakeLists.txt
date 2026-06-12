@@ -488,9 +488,6 @@ set_source_files_properties(
 
 #always_optimize_sourcefile(sound/stbvorbis_impl.c)
 
-file(GLOB src_swf swf/*.cpp swf/*.h)
-source_group("SWF" FILES ${src_swf})
-
 file(GLOB src_sys sys/*.cpp sys/*.h)
 source_group("Sys" FILES ${src_sys})
 
@@ -532,7 +529,6 @@ set(src_core
 	${src_renderer_dxt}
 	${src_renderer_smaa}
 	${src_sound}
-	${src_swf}
 	${src_sys}
 	${src_sys_sdl}
 	${src_sys_common}
@@ -560,6 +556,9 @@ source_group("Game-D3XP\\Physics" FILES ${src_d3xp_physics})
 file(GLOB src_d3xp_script d3xp/script/*.cpp d3xp/script/*.h)
 source_group("Game-D3XP\\Script" FILES ${src_d3xp_script})
 
+file(GLOB src_d3xp_swf d3xp/swf/*.cpp d3xp/swf/*.h)
+source_group("Game-D3XP\\SWF" FILES ${src_d3xp_swf})
+
 file(GLOB src_d3xp_menus d3xp/menus/*.cpp d3xp/menus/*.h)
 source_group("Game-D3XP\\Menus" FILES ${src_d3xp_menus})
 
@@ -570,6 +569,7 @@ set(src_d3xp
 	${src_d3xp_gamesys}
 	${src_d3xp_physics}
 	${src_d3xp_script}
+	${src_d3xp_swf}
 	${src_d3xp_menus})
 
 list(APPEND src_core ${src_d3xp})

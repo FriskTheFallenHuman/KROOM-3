@@ -25,39 +25,81 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
+
 #include "precompiled.h"
 #pragma hdrstop
-#include "miniz/miniz.h"
 
-/*
-========================
-idSWF::Inflate
-========================
-*/
-bool idSWF::Inflate( const byte* input, int inputSize, byte* output, int outputSize )
+#include "../Game_local.h"
+
+void idSWFParmList::Append( const idSWFScriptVar& other )
 {
-	struct local_swf_alloc_t
+	idSWFScriptVar* var = Alloc();
+	if( var != NULL )
 	{
-		static void* zalloc( void* opaque, size_t items, size_t size )
-		{
-			return Mem_Alloc( items * size, TAG_SWF );
-		}
-		static void zfree( void* opaque, void* ptr )
-		{
-			Mem_Free( ptr );
-		}
-	};
-	mz_stream stream;
-	memset( &stream, 0, sizeof( stream ) );
-	stream.next_in = ( Bytef* )input;
-	stream.avail_in = inputSize;
-	stream.next_out = ( Bytef* )output;
-	stream.avail_out = outputSize;
-	stream.zalloc = local_swf_alloc_t::zalloc;
-	stream.zfree = local_swf_alloc_t::zfree;
-	mz_inflateInit( &stream );
-	bool success = ( mz_inflate( &stream, MZ_FINISH ) == MZ_STREAM_END );
-	mz_inflateEnd( &stream );
-
-	return success;
+		*var = other;
+	}
+}
+void idSWFParmList::Append( idSWFScriptObject* o )
+{
+	idSWFScriptVar* var = Alloc();
+	if( var != NULL )
+	{
+		var->SetObject( o );
+	}
+}
+void idSWFParmList::Append( idSWFScriptFunction* f )
+{
+	idSWFScriptVar* var = Alloc();
+	if( var != NULL )
+	{
+		var->SetFunction( f );
+	}
+}
+void idSWFParmList::Append( const char* s )
+{
+	idSWFScriptVar* var = Alloc();
+	if( var != NULL )
+	{
+		var->SetString( s );
+	}
+}
+void idSWFParmList::Append( const idStr& s )
+{
+	idSWFScriptVar* var = Alloc();
+	if( var != NULL )
+	{
+		var->SetString( s );
+	}
+}
+void idSWFParmList::Append( idSWFScriptString* s )
+{
+	idSWFScriptVar* var = Alloc();
+	if( var != NULL )
+	{
+		var->SetString( s );
+	}
+}
+void idSWFParmList::Append( const float f )
+{
+	idSWFScriptVar* var = Alloc();
+	if( var != NULL )
+	{
+		var->SetFloat( f );
+	}
+}
+void idSWFParmList::Append( const int32 i )
+{
+	idSWFScriptVar* var = Alloc();
+	if( var != NULL )
+	{
+		var->SetInteger( i );
+	}
+}
+void idSWFParmList::Append( const bool b )
+{
+	idSWFScriptVar* var = Alloc();
+	if( var != NULL )
+	{
+		var->SetBool( b );
+	}
 }

@@ -25,8 +25,12 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
+
 #include "precompiled.h"
 #pragma hdrstop
+
+#include "../Game_local.h"
+
 #include "../renderer/Image.h"
 
 #pragma warning(disable: 4355) // 'this' : used in base member initializer list

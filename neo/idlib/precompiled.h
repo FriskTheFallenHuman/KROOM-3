@@ -122,11 +122,6 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 #include "ui/ListGUI.h"
 #include "ui/UserInterface.h"
 
-// RB: required for SWF extensions
-//#include "rapidjson/document.h"
-
-#include "swf/SWF.h"
-
 // collision detection system
 #include "cm/CollisionModel.h"
 

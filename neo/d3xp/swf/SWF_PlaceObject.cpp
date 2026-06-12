@@ -25,8 +25,11 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
+
 #include "precompiled.h"
 #pragma hdrstop
+
+#include "../Game_local.h"
 
 int c_PlaceObject2;
 int c_PlaceObject3;

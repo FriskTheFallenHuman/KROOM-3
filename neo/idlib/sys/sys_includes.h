@@ -168,6 +168,7 @@ If you have questions concerning this license or the applicable additional terms
 #include <string>
 #include <chrono>
 #include <thread>
+#include <float.h>
 
 //-----------------------------------------------------
 
