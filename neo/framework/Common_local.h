@@ -267,8 +267,6 @@ public:
 
 	virtual void				ResetPlayerInput( int playerIndex );
 
-	virtual bool				JapaneseCensorship() const;
-
 	virtual void				QueueShowShell()
 	{
 		showShellRequested = true;
@@ -440,7 +438,6 @@ private:
 	bool						com_refreshOnPrint;		// update the screen every print for dmap
 	errorParm_t					com_errorEntered;
 	bool						com_shuttingDown;
-	bool						com_isJapaneseSKU;
 
 	idFile* 					logFile;
 
