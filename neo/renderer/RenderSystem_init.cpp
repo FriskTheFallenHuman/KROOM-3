@@ -2541,34 +2541,6 @@ void idRenderSystemLocal::EndLevelLoad()
 }
 
 /*
-========================
-idRenderSystemLocal::BeginAutomaticBackgroundSwaps
-========================
-*/
-void idRenderSystemLocal::BeginAutomaticBackgroundSwaps( autoRenderIconType_t icon )
-{
-}
-
-/*
-========================
-idRenderSystemLocal::EndAutomaticBackgroundSwaps
-========================
-*/
-void idRenderSystemLocal::EndAutomaticBackgroundSwaps()
-{
-}
-
-/*
-========================
-idRenderSystemLocal::AreAutomaticBackgroundSwapsRunning
-========================
-*/
-bool idRenderSystemLocal::AreAutomaticBackgroundSwapsRunning( autoRenderIconType_t* icon ) const
-{
-	return false;
-}
-
-/*
 ============
 idRenderSystemLocal::RegisterFont
 ============

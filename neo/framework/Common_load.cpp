@@ -558,9 +558,7 @@ Pumps the session and if multiplayer, displays dialogs during the loading proces
 */
 void idCommonLocal::UpdateLevelLoadPacifier()
 {
-	autoRenderIconType_t icon = AUTORENDER_DEFAULTICON;
-	bool autoswapsRunning = renderSystem->AreAutomaticBackgroundSwapsRunning( &icon );
-	if( !insideExecuteMapChange && !autoswapsRunning )
+	if( !insideExecuteMapChange )
 	{
 		return;
 	}
@@ -581,33 +579,11 @@ void idCommonLocal::UpdateLevelLoadPacifier()
 		session->ProcessSnapAckQueue();
 	}
 
-	if( autoswapsRunning )
+	// Update at a constant rate for the Steam overlay
+	if( time - lastPacifierGuiTime >= 50 )
 	{
-		// If autoswaps are running, only update if a Dialog is shown/dismissed
-		bool dialogState = dialogs->HasAnyActiveDialog();
-		if( lastPacifierDialogState != dialogState )
-		{
-			lastPacifierDialogState = dialogState;
-			renderSystem->EndAutomaticBackgroundSwaps();
-			if( dialogState )
-			{
-				icon = AUTORENDER_DIALOGICON; // Done this way to handle the rare case of a tip changing at the same time a dialog comes up
-				for( int i = 0; i < NumScreenUpdatesToShowDialog; ++i )
-				{
-					UpdateScreen( false );
-				}
-			}
-			renderSystem->BeginAutomaticBackgroundSwaps( icon );
-		}
-	}
-	else
-	{
-		// On the PC just update at a constant rate for the Steam overlay
-		if( time - lastPacifierGuiTime >= 50 )
-		{
-			lastPacifierGuiTime = time;
-			UpdateScreen( false );
-		}
+		lastPacifierGuiTime = time;
+		UpdateScreen( false );
 	}
 }
 
@@ -884,7 +860,6 @@ bool idCommonLocal::SaveGame( const char* saveName )
 				UpdateScreen( captureToImage );
 			}
 		}
-		renderSystem->BeginAutomaticBackgroundSwaps( AUTORENDER_DIALOGICON );
 	}
 
 	// Make sure the file is writable and the contents are cleared out (Set to write from the start of file)
@@ -930,11 +905,6 @@ bool idCommonLocal::SaveGame( const char* saveName )
 	files.Append( &saveFile );
 
 	session->SaveGameSync( gameDetails.slotName, files, gameDetails );
-
-	if( !insideExecuteMapChange )
-	{
-		renderSystem->EndAutomaticBackgroundSwaps();
-	}
 
 	syncNextGameFrame = true;
 
@@ -1227,7 +1197,6 @@ void idCommonLocal::TriggerScreenWipe( const char* _wipeMaterial, bool hold )
 	StartWipe( _wipeMaterial, hold );
 	CompleteWipe();
 	wipeForced = true;
-	renderSystem->BeginAutomaticBackgroundSwaps( AUTORENDER_DEFAULTICON );
 }
 
 /*
