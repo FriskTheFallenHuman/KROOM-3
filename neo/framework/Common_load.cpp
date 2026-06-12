@@ -503,18 +503,6 @@ void idCommonLocal::ExecuteMapChange()
 		idLib::Printf( "Used %dkb of static index memory (%d%%)\n", indexMemUsedKB, indexMemUsedKB * 100 / ( STATIC_INDEX_MEMORY / 1024 ) );
 	}
 
-	if( common->JapaneseCensorship() )
-	{
-		if( currentMapName.Icmp( "game/mp/d3xpdm3" ) == 0 )
-		{
-			const idMaterial* gizpool2 = declManager->FindMaterial( "textures/hell/gizpool2" );
-			idMaterial* chiglass1bluex = const_cast<idMaterial*>( declManager->FindMaterial( "textures/sfx/chiglass1bluex" ) );
-			idTempArray<char> text( gizpool2->GetTextLength() );
-			gizpool2->GetText( text.Ptr() );
-			chiglass1bluex->Parse( text.Ptr(), text.Num(), false );
-		}
-	}
-
 	common->PrintWarnings();
 
 	session->Pump();
