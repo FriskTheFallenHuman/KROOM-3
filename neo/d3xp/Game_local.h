@@ -86,6 +86,8 @@ const float MAX_FOV				= 120.0f;
 
 void gameError( const char* fmt, ... );
 
+#include "decls/DeclPDA.h"
+
 #include "swf/SWF.h"
 
 #include "gamesys/Event.h"

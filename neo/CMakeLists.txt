@@ -567,6 +567,9 @@ source_group("Game-D3XP\\AI" FILES ${src_d3xp_ai})
 file(GLOB src_d3xp_anim d3xp/anim/*.cpp d3xp/anim/*.h)
 source_group("Game-D3XP\\Anim" FILES ${src_d3xp_anim})
 
+file(GLOB src_d3xp_decls d3xp/decls/*.cpp d3xp/decls/*.h)
+source_group("Game-D3XP\\Decls" FILES ${src_d3xp_decls})
+
 file(GLOB src_d3xp_gamesys d3xp/gamesys/*.cpp d3xp/gamesys/*.h)
 list(REMOVE_ITEM src_d3xp_gamesys ${CMAKE_SOURCE_DIR}/d3xp/gamesys/Callbacks.cpp)
 source_group("Game-D3XP\\GameSys" FILES ${src_d3xp_gamesys})
@@ -587,6 +590,7 @@ set(src_d3xp
 	${src_d3xp_base}
 	${src_d3xp_ai}
 	${src_d3xp_anim}
+	${src_d3xp_decls}
 	${src_d3xp_gamesys}
 	${src_d3xp_physics}
 	${src_d3xp_script}
