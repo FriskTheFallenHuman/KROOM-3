@@ -89,6 +89,8 @@ const int LOAD_TIP_COUNT		= 26;
 
 void gameError( const char* fmt, ... );
 
+#include "decls/DeclPDA.h"
+
 #include "gamesys/Event.h"
 #include "gamesys/Class.h"
 #include "gamesys/SysCvar.h"
