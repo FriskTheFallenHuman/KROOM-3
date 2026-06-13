@@ -73,7 +73,7 @@ CinematicAudio_OpenAL::CinematicAudio_OpenAL( bool bBinkFile ):
 
 void CinematicAudio_OpenAL::InitAudio( void* audioContext )
 {
-	if ( isBink )
+	if( isBink )
 	{
 		AudioInfo* binkInfo = ( AudioInfo* )audioContext;
 		av_rate_cin = binkInfo->sampleRate;
@@ -168,7 +168,7 @@ void CinematicAudio_OpenAL::PlayAudio( uint8_t* data, int size )
 					alBufferData( bufid, av_sample_cin, tempdata, tempSize, av_rate_cin );
 
 					// SRS - We must free the audio buffer once it has been copied into an alBuffer
-					if ( isBink )
+					if( isBink )
 					{
 						Mem_Free( tempdata );
 					}
@@ -201,7 +201,7 @@ void CinematicAudio_OpenAL::PlayAudio( uint8_t* data, int size )
 		alBufferData( alMusicBuffercin[offset], av_sample_cin, data, size, av_rate_cin );
 
 		// SRS - We must free the audio buffer once it has been copied into an alBuffer
-		if ( isBink )
+		if( isBink )
 		{
 			Mem_Free( data );
 			data = NULL;
@@ -271,7 +271,7 @@ void CinematicAudio_OpenAL::ResetAudio()
 		if( tempdata )
 		{
 			// SRS - We must free any audio buffers that have not been copied into an alBuffer
-			if ( isBink )
+			if( isBink )
 			{
 				Mem_Free( tempdata );
 			}
@@ -329,7 +329,7 @@ void CinematicAudio_OpenAL::ShutdownAudio()
 		if( tempdata )
 		{
 			// SRS - We must free any audio buffers that have not been copied into an alBuffer
-			if ( isBink )
+			if( isBink )
 			{
 				Mem_Free( tempdata );
 			}

@@ -99,9 +99,9 @@ idCommonLocal	commonLocal;
 idCommon* 		common = &commonLocal;
 
 #ifdef ID_RETAIL
-idCVar com_skipIntroVideos( "com_skipIntroVideos", "0", CVAR_BOOL , "skips intro videos" );
+	idCVar com_skipIntroVideos( "com_skipIntroVideos", "0", CVAR_BOOL , "skips intro videos" );
 #else
-idCVar com_skipIntroVideos( "com_skipIntroVideos", "1", CVAR_BOOL , "skips intro videos" );
+	idCVar com_skipIntroVideos( "com_skipIntroVideos", "1", CVAR_BOOL , "skips intro videos" );
 #endif
 
 /*

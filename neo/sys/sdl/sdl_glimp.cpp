@@ -537,7 +537,7 @@ bool GLimp_Init( glimpParms_t parms )
 	}
 
 	int originalInterval = SDL_GL_GetSwapInterval();
-	if ( SDL_GL_SetSwapInterval( -1 ) == 0 )
+	if( SDL_GL_SetSwapInterval( -1 ) == 0 )
 	{
 		glConfig.swapControlTearAvailable = true;
 		SDL_GL_SetSwapInterval( originalInterval );

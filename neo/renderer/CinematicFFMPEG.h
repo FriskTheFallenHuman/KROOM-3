@@ -34,16 +34,16 @@ If you have questions concerning this license or the applicable additional terms
 #if defined(USE_FFMPEG)
 extern "C"
 {
-	#ifndef INT64_C
-		#define INT64_C(c) (c ## LL)
-		#define UINT64_C(c) (c ## ULL)
-	#endif
+#ifndef INT64_C
+#define INT64_C(c) (c ## LL)
+#define UINT64_C(c) (c ## ULL)
+#endif
 
-	#include <libavcodec/avcodec.h>
-	#include <libavformat/avformat.h>
-	#include <libswscale/swscale.h>
-	#include <libswresample/swresample.h>
-	#include <libavutil/imgutils.h>
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libswscale/swscale.h>
+#include <libswresample/swresample.h>
+#include <libavutil/imgutils.h>
 }
 
 #include <queue>

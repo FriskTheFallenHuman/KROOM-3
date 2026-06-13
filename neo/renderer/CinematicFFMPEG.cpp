@@ -243,7 +243,7 @@ bool idCinematicFFMPEG::InitFromFFMPEGFile( const char* qpath, bool amilooping )
 
 	dec_ctx->framerate = fmt_ctx->streams[video_stream_index]->avg_frame_rate;
 	dec_ctx->pkt_timebase = fmt_ctx->streams[video_stream_index]->time_base;		// SRS - packet timebase for frame->pts timestamps
-	
+
 	// init the video decoder
 	if( ( ret = avcodec_open2( dec_ctx, dec, NULL ) ) < 0 )
 	{
@@ -266,7 +266,7 @@ bool idCinematicFFMPEG::InitFromFFMPEGFile( const char* qpath, bool amilooping )
 
 		dec_ctx2->framerate = fmt_ctx->streams[audio_stream_index]->avg_frame_rate;
 		dec_ctx2->pkt_timebase = fmt_ctx->streams[audio_stream_index]->time_base;	// SRS - packet timebase for frame3->pts timestamps
-		
+
 		if( ( ret2 = avcodec_open2( dec_ctx2, dec2, NULL ) ) < 0 )
 		{
 			common->Warning( "idCinematicFFMPEG: Cannot open audio decoder for: '%s', %d\n", qpath, looping );
@@ -323,7 +323,7 @@ bool idCinematicFFMPEG::InitFromFFMPEGFile( const char* qpath, bool amilooping )
 
 	// SRS - Must use consistent duration and timebase parameters in the durationSec calculation (don't mix fmt_ctx duration with dec_ctx timebase)
 	float durationSec = static_cast<double>( fmt_ctx->streams[video_stream_index]->duration ) * av_q2d( fmt_ctx->streams[video_stream_index]->time_base );
-	
+
 	// GK: No duration is given. Check if we get at least bitrate to calculate the length, otherwise set it to a fixed 100 seconds (should it be lower ?)
 	if( durationSec < 0 )
 	{
