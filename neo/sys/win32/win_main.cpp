@@ -46,7 +46,7 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 
 #ifdef USE_SDL
-	#include "SDL2/SDL_main.h"
+	#include <SDL2/SDL_main.h>
 #endif
 
 #include "../sys_local.h"

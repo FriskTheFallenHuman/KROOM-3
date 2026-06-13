@@ -45,31 +45,161 @@ If you have questions concerning this license or the applicable additional terms
 #undef vsnprintf
 // DG end
 
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 #include "renderer/RenderCommon.h"
 #include "sdl_local.h"
 
-idCVar in_nograb( "in_nograb", "0", CVAR_SYSTEM | CVAR_NOCHEAT, "prevents input grabbing" );
-
 // RB: FIXME this shit. We need the OpenGL alpha channel for advanced rendering effects
 idCVar r_waylandcompat( "r_waylandcompat", "0", CVAR_SYSTEM | CVAR_NOCHEAT | CVAR_ARCHIVE, "wayland compatible framebuffer" );
 
-// RB: only relevant if using SDL 2.0
-#if defined(__APPLE__)
-	// only core profile is supported on OS X
-	idCVar r_useOpenGL32( "r_useOpenGL32", "2", CVAR_INTEGER, "0 = OpenGL 3.x, 1 = OpenGL 3.2 compatibility profile, 2 = OpenGL 3.2 core profile", 0, 2 );
-#elif defined(__linux__)
-	// Linux open source drivers suck
-	idCVar r_useOpenGL32( "r_useOpenGL32", "0", CVAR_INTEGER, "0 = OpenGL 3.x, 1 = OpenGL 3.2 compatibility profile, 2 = OpenGL 3.2 core profile", 0, 2 );
-#else
-	idCVar r_useOpenGL32( "r_useOpenGL32", "1", CVAR_INTEGER, "0 = OpenGL 3.x, 1 = OpenGL 3.2 compatibility profile, 2 = OpenGL 3.2 core profile", 0, 2 );
-#endif
-// RB end
-
-static bool grabbed = false;
-static SDL_Window* window = NULL;
+// TODO: i really need to make a struct similar to win32 one
+SDL_Window* window = NULL;
 static SDL_GLContext context = NULL;
+static unsigned short oldHardwareGamma[3][256];
+static bool gammaSaved = false;
+
+/*
+========================
+GLimp_TestSwapBuffers
+========================
+*/
+static void GLimp_TestSwapBuffers( const idCmdArgs& args )
+{
+	if( !window )
+	{
+		common->Printf( "No window available.\n" );
+		return;
+	}
+
+	common->Printf( "GLimp_TestSwapBuffers\n" );
+	static const int MAX_FRAMES = 5;
+	uint64 timestamps[MAX_FRAMES];
+
+	int oldInterval = SDL_GL_GetSwapInterval();
+
+	// Disable scissor test for consistent timing
+	GLboolean scissorEnabled = glIsEnabled( GL_SCISSOR_TEST );
+	if( scissorEnabled )
+	{
+		glDisable( GL_SCISSOR_TEST );
+	}
+
+	// Test intervals: -1 (adaptive vsync if available), 0 (vsync off), 1 (vsync on), 2 (double vsync)
+	int intervals[] = { -1, 0, 1, 2 };
+	for( int idx = 0; idx < 4; idx++ )
+	{
+		int swapInterval = intervals[idx];
+
+		// Try to set the interval; skip if unsupported
+		if( SDL_GL_SetSwapInterval( swapInterval ) != 0 )
+		{
+			common->Printf( "Swap interval %d not supported: %s\n", swapInterval, SDL_GetError() );
+			continue;
+		}
+
+		// Allow a few frames to settle
+		for( int i = 0; i < MAX_FRAMES; i++ )
+		{
+			if( swapInterval == -1 && i == 0 )
+			{
+				SDL_Delay( 16 );    // ~60 Hz frame time
+			}
+
+			if( i & 1 )
+			{
+				glClearColor( 0, 1, 0, 1 );
+			}
+			else
+			{
+				glClearColor( 1, 0, 0, 1 );
+			}
+
+			glClear( GL_COLOR_BUFFER_BIT );
+			SDL_GL_SwapWindow( window );
+			glFinish();
+
+			timestamps[i] = SDL_GetPerformanceCounter();
+		}
+
+		common->Printf( "\nswapinterval %i\n", swapInterval );
+		uint64 freq = SDL_GetPerformanceFrequency();
+		for( int i = 1; i < MAX_FRAMES; i++ )
+		{
+			uint64 dt = timestamps[i] - timestamps[i - 1];
+			int microseconds = ( int )( ( dt * 1000000 ) / freq );
+			common->Printf( "%i microseconds\n", microseconds );
+		}
+	}
+
+	SDL_GL_SetSwapInterval( oldInterval );
+
+	if( scissorEnabled )
+	{
+		glEnable( GL_SCISSOR_TEST );
+	}
+}
+
+/*
+========================
+GLimp_SaveGamma
+========================
+*/
+static void GLimp_SaveGamma()
+{
+	if( SDL_GetWindowGammaRamp( window, oldHardwareGamma[0], oldHardwareGamma[1], oldHardwareGamma[2] ) == 0 )
+	{
+		gammaSaved = true;
+		common->Printf( "Saved initial gamma ramp.\n" );
+	}
+	else
+	{
+		common->Printf( "Could not save initial gamma ramp: %s\n", SDL_GetError() );
+	}
+}
+
+/*
+========================
+GLimp_RestoreGamma
+========================
+*/
+static void GLimp_RestoreGamma()
+{
+	if( gammaSaved )
+	{
+		if( SDL_SetWindowGammaRamp( window, oldHardwareGamma[0], oldHardwareGamma[1], oldHardwareGamma[2] ) != 0 )
+		{
+			common->Warning( "Failed to restore gamma ramp: %s", SDL_GetError() );
+		}
+		else
+		{
+			common->Printf( "Restored initial gamma ramp.\n" );
+		}
+		gammaSaved = false;
+	}
+}
+
+
+/*
+========================
+GLimp_SetGamma
+
+The renderer calls this when the user adjusts r_gamma or r_brightness
+========================
+*/
+void GLimp_SetGamma( unsigned short red[256], unsigned short green[256], unsigned short blue[256] )
+{
+	if( !window )
+	{
+		common->Warning( "GLimp_SetGamma called without window" );
+		return;
+	}
+
+	if( SDL_SetWindowGammaRamp( window, red, green, blue ) )
+	{
+		common->Warning( "Couldn't set gamma ramp: %s", SDL_GetError() );
+	}
+}
 
 /*
 ===================
@@ -99,8 +229,10 @@ GLimp_Init
 */
 bool GLimp_Init( glimpParms_t parms )
 {
+	cmdSystem->AddCommand( "testSwapBuffers", GLimp_TestSwapBuffers, CMD_FL_SYSTEM, "Times swapbuffer options" );
 
-	common->Printf( "Initializing OpenGL subsystem\n" );
+	common->Printf( "Initializing OpenGL subsystem with multisamples:%i fullscreen:%i\n",
+					parms.multiSamples, parms.fullScreen );
 
 	GLimp_PreInit(); // DG: make sure SDL is initialized
 
@@ -223,54 +355,119 @@ bool GLimp_Init( glimpParms_t parms )
 		SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, parms.multiSamples ? 1 : 0 );
 		SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, parms.multiSamples );
 
-		// RB begin
-		if( r_useOpenGL32.GetInteger() > 0 )
+		const int glMajorVersion = r_glVersionMajor.GetInteger();
+		const int glMinorVersion = r_glVersionMinor.GetInteger();
+
+		// Krispy: This is Mega stupid, im sorry
+		if( glMajorVersion >= 3 && glMajorVersion >= 1 )
 		{
-			glConfig.driverType = GLDRV_OPENGL32_COMPATIBILITY_PROFILE;
-
-			SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 3 );
-			SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 2 );
-
-			if( r_debugContext.GetBool() )
-			{
-				SDL_GL_SetAttribute( SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG );
-			}
+			glConfig.driverVersion = GL_OPENGL_31;
+		}
+		else if( glMajorVersion >= 3 && glMajorVersion >= 2 )
+		{
+			glConfig.driverVersion = GL_OPENGL_32;
+		}
+		else if( glMajorVersion >= 3 && glMajorVersion >= 3 )
+		{
+			glConfig.driverVersion = GL_OPENGL_33;
+		}
+		else if( glMajorVersion >= 4 && glMajorVersion >= 0 )
+		{
+			glConfig.driverVersion = GL_OPENGL_40;
+		}
+		else if( glMajorVersion >= 4 && glMajorVersion >= 1 )
+		{
+			glConfig.driverVersion = GL_OPENGL_41;
+		}
+		else if( glMajorVersion >= 4 && glMajorVersion >= 2 )
+		{
+			glConfig.driverVersion = GL_OPENGL_42;
+		}
+		else if( glMajorVersion >= 4 && glMajorVersion >= 3 )
+		{
+			glConfig.driverVersion = GL_OPENGL_43;
+		}
+		else if( glMajorVersion >= 4 && glMajorVersion >= 4 )
+		{
+			glConfig.driverVersion = GL_OPENGL_44;
+		}
+		else if( glMajorVersion >= 4 && glMajorVersion >= 5 )
+		{
+			glConfig.driverVersion = GL_OPENGL_45;
+		}
+		else if( glMajorVersion >= 4 && glMajorVersion >= 6 )
+		{
+			glConfig.driverVersion = GL_OPENGL_46;
 		}
 
-		if( r_useOpenGL32.GetInteger() > 1 )
-		{
-			glConfig.driverType = GLDRV_OPENGL32_CORE_PROFILE;
+		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, glMajorVersion );
+		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, glMinorVersion );
 
-			SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
+		int useCoreProfile = r_glProfile.GetInteger();
+		int profileCore = 0;
+
+		if( useCoreProfile == 2 )
+		{
+			glConfig.driverType = GLDRV_OPENGL_CORE_PROFILE;
+			profileCore = SDL_GL_CONTEXT_PROFILE_CORE;
 		}
-		// RB end
+		else if( useCoreProfile == 1 )
+		{
+			glConfig.driverType = GLDRV_OPENGL_COMPATIBILITY_PROFILE;
+			profileCore = SDL_GL_CONTEXT_PROFILE_COMPATIBILITY;
+		}
+		else
+		{
+			glConfig.driverType = GLDRV_OPENGL;
+			profileCore = SDL_GL_CONTEXT_PROFILE_COMPATIBILITY; // ES support?
+		}
+
+		SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, profileCore ); // ES support?
+
+		if( r_debugContext.GetBool() )
+		{
+			SDL_GL_SetAttribute( SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG );
+		}
 
 		// DG: set display num for fullscreen
-		int windowPos = SDL_WINDOWPOS_UNDEFINED;
-		if( parms.fullScreen > 0 )
+		Uint32 flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
+
+		int windowPosX = SDL_WINDOWPOS_UNDEFINED;
+		int windowPosY = SDL_WINDOWPOS_UNDEFINED;
+
+		if( parms.fullScreen == -1 )
 		{
-			if( parms.fullScreen > SDL_GetNumVideoDisplays() )
+			// Borderless window at explicit coordinates (for multi‑monitor spanning)
+			flags |= SDL_WINDOW_BORDERLESS;
+			windowPosX = parms.x;
+			windowPosY = parms.y;
+		}
+		else if( parms.fullScreen > 0 )
+		{
+			// Regular fullscreen on a specific monitor
+			flags |= SDL_WINDOW_FULLSCREEN;
+			if( parms.fullScreen <= SDL_GetNumVideoDisplays() )
 			{
-				common->Warning( "Couldn't set display to num %i because we only have %i displays",
-								 parms.fullScreen, SDL_GetNumVideoDisplays() );
+				windowPosX = SDL_WINDOWPOS_UNDEFINED_DISPLAY( parms.fullScreen - 1 );
+				windowPosY = windowPosX;
 			}
 			else
 			{
-				// -1 because SDL starts counting displays at 0, while parms.fullScreen starts at 1
-				windowPos = SDL_WINDOWPOS_UNDEFINED_DISPLAY( ( parms.fullScreen - 1 ) );
+				common->Warning( "Couldn't set display to num %i because we only have %i displays", parms.fullScreen, SDL_GetNumVideoDisplays() );
 			}
 		}
-		// TODO: if parms.fullScreen == -1 there should be a borderless window spanning multiple displays
-		/*
-		 * NOTE that this implicitly handles parms.fullScreen == -2 (from r_fullscreen -2) meaning
-		 * "do fullscreen, but I don't care on what monitor", at least on my box it's the monitor with
-		 * the mouse cursor.
-		 */
+		else // parms.fullScreen == 0 (windowed) or -2 (fullscreen on current display)
+		{
+			// For windowed mode, use provided coordinates (if any) or let SDL choose
+			windowPosX = ( parms.x != -1 ) ? parms.x : SDL_WINDOWPOS_UNDEFINED;
+			windowPosY = ( parms.y != -1 ) ? parms.y : SDL_WINDOWPOS_UNDEFINED;
+		}
 
+		// Show whether this is a 32-bit or 64-bit binary
+		idStr title = va( "%s - %s %s (x%u Build)", GAME_NAME, ID__DATE__, ID__TIME__, sizeof( void* ) * 8 );
 
-		window = SDL_CreateWindow( GAME_NAME,
-								   windowPos,
-								   windowPos,
+		window = SDL_CreateWindow( title.c_str(),
+								   windowPosX, windowPosY,
 								   parms.width, parms.height, flags );
 		// DG end
 
@@ -285,7 +482,7 @@ bool GLimp_Init( glimpParms_t parms )
 
 		if( SDL_GL_SetSwapInterval( r_swapInterval.GetInteger() ) < 0 )
 		{
-			common->Warning( "SDL_GL_SWAP_CONTROL not supported" );
+			common->Warning( "SDL_GL_SetSwapInterval(%d) failed: %s", r_swapInterval.GetInteger(), SDL_GetError() );
 		}
 
 		Sys_SDLIcon( window );
@@ -294,7 +491,14 @@ bool GLimp_Init( glimpParms_t parms )
 		SDL_GetWindowSize( window, &glConfig.nativeScreenWidth, &glConfig.nativeScreenHeight );
 		// RB end
 
-		glConfig.isFullscreen = ( SDL_GetWindowFlags( window ) & SDL_WINDOW_FULLSCREEN ) == SDL_WINDOW_FULLSCREEN;
+		if( parms.fullScreen == -1 )
+		{
+			glConfig.isFullscreen = -1;
+		}
+		else
+		{
+			glConfig.isFullscreen = ( SDL_GetWindowFlags( window ) & SDL_WINDOW_FULLSCREEN ) ? parms.fullScreen : 0;
+		}
 
 		common->Printf( "Using %d color bits, %d depth, %d stencil display\n",
 						channelcolorbits, tdepthbits, tstencilbits );
@@ -332,6 +536,17 @@ bool GLimp_Init( glimpParms_t parms )
 		common->Printf( "Using GLEW %s\n", glewGetString( GLEW_VERSION ) );
 	}
 
+	int originalInterval = SDL_GL_GetSwapInterval();
+	if ( SDL_GL_SetSwapInterval( -1 ) == 0 )
+	{
+		glConfig.swapControlTearAvailable = true;
+		SDL_GL_SetSwapInterval( originalInterval );
+	}
+	else
+	{
+		glConfig.swapControlTearAvailable = false;
+	}
+
 #if defined(__APPLE__)
 	// SRS - On OSX enable SDL2 relative mouse mode warping to capture mouse properly if outside of window
 	SDL_SetHintWithPriority( SDL_HINT_MOUSE_RELATIVE_MODE_WARP, "1", SDL_HINT_OVERRIDE );
@@ -341,142 +556,7 @@ bool GLimp_Init( glimpParms_t parms )
 	SDL_ShowCursor( SDL_DISABLE );
 	// DG end
 
-	return true;
-}
-/*
-===================
- Helper functions for GLimp_SetScreenParms()
-===================
-*/
-static int ScreenParmsHandleDisplayIndex( glimpParms_t parms )
-{
-	int displayIdx;
-	if( parms.fullScreen > 0 )
-	{
-		displayIdx = parms.fullScreen - 1; // first display for SDL is 0, in parms it's 1
-	}
-	else // -2 == use current display
-	{
-		displayIdx = SDL_GetWindowDisplayIndex( window );
-		if( displayIdx < 0 ) // for some reason the display for the window couldn't be detected
-		{
-			displayIdx = 0;
-		}
-	}
-
-	if( parms.fullScreen > SDL_GetNumVideoDisplays() )
-	{
-		common->Warning( "Can't set fullscreen mode to display number %i, because SDL2 only knows about %i displays!",
-						 parms.fullScreen, SDL_GetNumVideoDisplays() );
-		return -1;
-	}
-
-	if( parms.fullScreen != glConfig.isFullscreen )
-	{
-		// we have to switch to another display
-		if( glConfig.isFullscreen )
-		{
-			// if we're already in fullscreen mode but want to switch to another monitor
-			// we have to go to windowed mode first to move the window.. SDL-oddity.
-			SDL_SetWindowFullscreen( window, SDL_FALSE );
-		}
-		// select display ; SDL_WINDOWPOS_UNDEFINED_DISPLAY() doesn't work.
-		int x = SDL_WINDOWPOS_CENTERED_DISPLAY( displayIdx );
-		// move window to the center of selected display
-		SDL_SetWindowPosition( window, x, x );
-	}
-	return displayIdx;
-}
-
-static bool SetScreenParmsFullscreen( glimpParms_t parms )
-{
-	SDL_DisplayMode m = {0};
-	int displayIdx = ScreenParmsHandleDisplayIndex( parms );
-	if( displayIdx < 0 )
-	{
-		return false;
-	}
-
-	// get current mode of display the window should be full-screened on
-	SDL_GetCurrentDisplayMode( displayIdx, &m );
-
-	// change settings in that display mode according to parms
-	// FIXME: check if refreshrate, width and height are supported?
-	// m.refresh_rate = parms.displayHz;
-	m.w = parms.width;
-	m.h = parms.height;
-
-	// set that displaymode
-	if( SDL_SetWindowDisplayMode( window, &m ) < 0 )
-	{
-		common->Warning( "Couldn't set window mode for fullscreen, reason: %s", SDL_GetError() );
-		return false;
-	}
-
-	// if we're currently not in fullscreen mode, we need to switch to fullscreen
-	if( !( SDL_GetWindowFlags( window ) & SDL_WINDOW_FULLSCREEN ) )
-	{
-		if( SDL_SetWindowFullscreen( window, SDL_TRUE ) < 0 )
-		{
-			common->Warning( "Couldn't switch to fullscreen mode, reason: %s!", SDL_GetError() );
-			return false;
-		}
-	}
-	return true;
-}
-
-static bool SetScreenParmsWindowed( glimpParms_t parms )
-{
-	SDL_SetWindowSize( window, parms.width, parms.height );
-	SDL_SetWindowPosition( window, parms.x, parms.y );
-
-	// if we're currently in fullscreen mode, we need to disable that
-	if( SDL_GetWindowFlags( window ) & SDL_WINDOW_FULLSCREEN )
-	{
-		if( SDL_SetWindowFullscreen( window, SDL_FALSE ) < 0 )
-		{
-			common->Warning( "Couldn't switch to windowed mode, reason: %s!", SDL_GetError() );
-			return false;
-		}
-	}
-	return true;
-}
-
-/*
-===================
-GLimp_SetScreenParms
-===================
-*/
-bool GLimp_SetScreenParms( glimpParms_t parms )
-{
-	if( parms.fullScreen > 0 || parms.fullScreen == -2 )
-	{
-		if( !SetScreenParmsFullscreen( parms ) )
-		{
-			return false;
-		}
-	}
-	else if( parms.fullScreen == 0 ) // windowed mode
-	{
-		if( !SetScreenParmsWindowed( parms ) )
-		{
-			return false;
-		}
-	}
-	else
-	{
-		common->Warning( "GLimp_SetScreenParms: fullScreen -1 (borderless window for multiple displays) currently unsupported!" );
-		return false;
-	}
-
-	SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, parms.multiSamples ? 1 : 0 );
-	SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, parms.multiSamples );
-
-	glConfig.isFullscreen = parms.fullScreen;
-	glConfig.nativeScreenWidth = parms.width;
-	glConfig.nativeScreenHeight = parms.height;
-	glConfig.displayFrequency = parms.displayHz;
-	glConfig.multisamples = parms.multiSamples;
+	GLimp_SaveGamma();
 
 	return true;
 }
@@ -489,6 +569,14 @@ GLimp_Shutdown
 void GLimp_Shutdown()
 {
 	common->Printf( "Shutting down OpenGL subsystem\n" );
+
+	GLimp_RestoreGamma();
+
+	if( SDL_GetWindowFlags( window ) & SDL_WINDOW_FULLSCREEN )
+	{
+		SDL_SetWindowFullscreen( window, SDL_FALSE );
+		SDL_Delay( 100 );
+	}
 
 	if( context )
 	{
@@ -510,61 +598,20 @@ GLimp_SwapBuffers
 */
 void GLimp_SwapBuffers()
 {
+	if( r_swapInterval.IsModified() )
+	{
+		r_swapInterval.ClearModified();
+
+		int interval = r_swapInterval.GetInteger();
+		if( interval == 1 && glConfig.swapControlTearAvailable )
+		{
+			interval = -1;
+		}
+		if( SDL_GL_SetSwapInterval( interval ) < 0 )
+		{
+			common->Warning( "Failed to set swap interval %d: %s", interval, SDL_GetError() );
+		}
+	}
+
 	SDL_GL_SwapWindow( window );
-}
-
-/*
-=================
-GLimp_SetGamma
-=================
-*/
-void GLimp_SetGamma( unsigned short red[256], unsigned short green[256], unsigned short blue[256] )
-{
-	if( !window )
-	{
-		common->Warning( "GLimp_SetGamma called without window" );
-		return;
-	}
-
-	if( SDL_SetWindowGammaRamp( window, red, green, blue ) )
-	{
-		common->Warning( "Couldn't set gamma ramp: %s", SDL_GetError() );
-	}
-}
-
-/*
-===================
-GLimp_GrabInput
-===================
-*/
-void GLimp_GrabInput( int flags )
-{
-	bool grab = flags & GRAB_ENABLE;
-
-	if( grab && ( flags & GRAB_REENABLE ) )
-	{
-		grab = false;
-	}
-
-	if( flags & GRAB_SETSTATE )
-	{
-		grabbed = grab;
-	}
-
-	if( in_nograb.GetBool() )
-	{
-		grab = false;
-	}
-
-	if( !window )
-	{
-		common->Warning( "GLimp_GrabInput called without window" );
-		return;
-	}
-
-	// DG: disabling the cursor is now done once in GLimp_Init() because it should always be disabled
-
-	// DG: check for GRAB_ENABLE instead of GRAB_HIDECURSOR because we always wanna hide it
-	SDL_SetRelativeMouseMode( flags & GRAB_ENABLE ? SDL_TRUE : SDL_FALSE );
-	SDL_SetWindowGrab( window, grab ? SDL_TRUE : SDL_FALSE );
 }

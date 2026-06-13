@@ -39,38 +39,19 @@ If you have questions concerning this license or the applicable additional terms
 #undef vsnprintf
 // DG end
 
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 #include "renderer/RenderCommon.h"
 #include "sdl_local.h"
+
 #ifdef _WIN32
 	#include "../win32/win_local.h"
 #else
 	#include "../posix/posix_public.h"
 #endif
 
-#if !SDL_VERSION_ATLEAST(2, 0, 0)
-	#define SDL_Keycode SDLKey
-	#define SDLK_APPLICATION SDLK_COMPOSE
-	#define SDLK_SCROLLLOCK SDLK_SCROLLOCK
-	#define SDLK_LGUI SDLK_LSUPER
-	#define SDLK_RGUI SDLK_RSUPER
-	#define SDLK_KP_0 SDLK_KP0
-	#define SDLK_KP_1 SDLK_KP1
-	#define SDLK_KP_2 SDLK_KP2
-	#define SDLK_KP_3 SDLK_KP3
-	#define SDLK_KP_4 SDLK_KP4
-	#define SDLK_KP_5 SDLK_KP5
-	#define SDLK_KP_6 SDLK_KP6
-	#define SDLK_KP_7 SDLK_KP7
-	#define SDLK_KP_8 SDLK_KP8
-	#define SDLK_KP_9 SDLK_KP9
-	#define SDLK_NUMLOCKCLEAR SDLK_NUMLOCK
-	#define SDLK_PRINTSCREEN SDLK_PRINT
-	// DG: SDL1 doesn't seem to have defines for scancodes.. add the (only) one we need
-	#define SDL_SCANCODE_GRAVE 49 // in SDL2 this is 53.. but according to two different systems and keyboards this works for SDL1
-	// DG end
-#endif
+static bool grabbed = false;
+extern SDL_Window* window;
 
 // DG: those are needed for moving/resizing windows
 extern idCVar r_windowX;
@@ -83,6 +64,8 @@ const char* kbdNames[] =
 {
 	"english", "french", "german", "italian", "spanish", "turkish", "norwegian", NULL
 };
+
+idCVar in_nograb( "in_nograb", "0", CVAR_SYSTEM | CVAR_NOCHEAT, "prevents input grabbing" );
 
 idCVar in_keyboard( "in_keyboard", "english", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_NOCHEAT, "keyboard layout", kbdNames, idCmdSystem::ArgCompletion_String<kbdNames> );
 
@@ -140,9 +123,6 @@ static idList<joystick_poll_t> joystick_polls;
 SDL_Joystick* joy = NULL;
 int SDL_joystick_has_hat = 0;
 bool buttonStates[K_LAST_KEY];	// For keeping track of button up/down events
-
-
-#if SDL_VERSION_ATLEAST(2, 0, 0)
 
 #include "sdl2_scancode_mappings.h"
 
@@ -205,415 +185,6 @@ static void ConvertUTF8toUTF32( const char* utf8str, int32* utf32buf )
 
 }
 
-#else // SDL1.2
-static int SDL_KeyToDoom3Key( SDL_Keycode key, bool& isChar )
-{
-	isChar = false;
-
-	if( key >= SDLK_SPACE && key < SDLK_DELETE )
-	{
-		isChar = true;
-		//return key;// & 0xff;
-	}
-
-	switch( key )
-	{
-		case SDLK_ESCAPE:
-			return K_ESCAPE;
-
-		case SDLK_SPACE:
-			return K_SPACE;
-
-		//case SDLK_EXCLAIM:
-		/*
-		SDLK_QUOTEDBL:
-		SDLK_HASH:
-		SDLK_DOLLAR:
-		SDLK_AMPERSAND:
-		SDLK_QUOTE		= 39,
-		SDLK_LEFTPAREN		= 40,
-		SDLK_RIGHTPAREN		= 41,
-		SDLK_ASTERISK		= 42,
-		SDLK_PLUS		= 43,
-		SDLK_COMMA		= 44,
-		SDLK_MINUS		= 45,
-		SDLK_PERIOD		= 46,
-		SDLK_SLASH		= 47,
-		*/
-		case SDLK_0:
-			return K_0;
-
-		case SDLK_1:
-			return K_1;
-
-		case SDLK_2:
-			return K_2;
-
-		case SDLK_3:
-			return K_3;
-
-		case SDLK_4:
-			return K_4;
-
-		case SDLK_5:
-			return K_5;
-
-		case SDLK_6:
-			return K_6;
-
-		case SDLK_7:
-			return K_7;
-
-		case SDLK_8:
-			return K_8;
-
-		case SDLK_9:
-			return K_9;
-
-		// DG: add some missing keys..
-		case SDLK_UNDERSCORE:
-			return K_UNDERLINE;
-
-		case SDLK_MINUS:
-			return K_MINUS;
-
-		case SDLK_COMMA:
-			return K_COMMA;
-
-		case SDLK_COLON:
-			return K_COLON;
-
-		case SDLK_SEMICOLON:
-			return K_SEMICOLON;
-
-		case SDLK_PERIOD:
-			return K_PERIOD;
-
-		case SDLK_AT:
-			return K_AT;
-
-		case SDLK_EQUALS:
-			return K_EQUALS;
-		// DG end
-
-		/*
-		SDLK_COLON		= 58,
-		SDLK_SEMICOLON		= 59,
-		SDLK_LESS		= 60,
-		SDLK_EQUALS		= 61,
-		SDLK_GREATER		= 62,
-		SDLK_QUESTION		= 63,
-		SDLK_AT			= 64,
-		*/
-		/*
-		   Skip uppercase letters
-		 */
-		/*
-		SDLK_LEFTBRACKET	= 91,
-		SDLK_BACKSLASH		= 92,
-		SDLK_RIGHTBRACKET	= 93,
-		SDLK_CARET		= 94,
-		SDLK_UNDERSCORE		= 95,
-		SDLK_BACKQUOTE		= 96,
-		*/
-
-		case SDLK_a:
-			return K_A;
-
-		case SDLK_b:
-			return K_B;
-
-		case SDLK_c:
-			return K_C;
-
-		case SDLK_d:
-			return K_D;
-
-		case SDLK_e:
-			return K_E;
-
-		case SDLK_f:
-			return K_F;
-
-		case SDLK_g:
-			return K_G;
-
-		case SDLK_h:
-			return K_H;
-
-		case SDLK_i:
-			return K_I;
-
-		case SDLK_j:
-			return K_J;
-
-		case SDLK_k:
-			return K_K;
-
-		case SDLK_l:
-			return K_L;
-
-		case SDLK_m:
-			return K_M;
-
-		case SDLK_n:
-			return K_N;
-
-		case SDLK_o:
-			return K_O;
-
-		case SDLK_p:
-			return K_P;
-
-		case SDLK_q:
-			return K_Q;
-
-		case SDLK_r:
-			return K_R;
-
-		case SDLK_s:
-			return K_S;
-
-		case SDLK_t:
-			return K_T;
-
-		case SDLK_u:
-			return K_U;
-
-		case SDLK_v:
-			return K_V;
-
-		case SDLK_w:
-			return K_W;
-
-		case SDLK_x:
-			return K_X;
-
-		case SDLK_y:
-			return K_Y;
-
-		case SDLK_z:
-			return K_Z;
-
-		case SDLK_RETURN:
-			return K_ENTER;
-
-		case SDLK_BACKSPACE:
-			return K_BACKSPACE;
-
-		case SDLK_PAUSE:
-			return K_PAUSE;
-
-		// DG: add tab key support
-		case SDLK_TAB:
-			return K_TAB;
-		// DG end
-
-		//case SDLK_APPLICATION:
-		//	return K_COMMAND;
-		case SDLK_CAPSLOCK:
-			return K_CAPSLOCK;
-
-		case SDLK_SCROLLLOCK:
-			return K_SCROLL;
-
-		case SDLK_POWER:
-			return K_POWER;
-
-		case SDLK_UP:
-			return K_UPARROW;
-
-		case SDLK_DOWN:
-			return K_DOWNARROW;
-
-		case SDLK_LEFT:
-			return K_LEFTARROW;
-
-		case SDLK_RIGHT:
-			return K_RIGHTARROW;
-
-		case SDLK_LGUI:
-			return K_LWIN;
-
-		case SDLK_RGUI:
-			return K_RWIN;
-		//case SDLK_MENU:
-		//	return K_MENU;
-
-		case SDLK_LALT:
-			return K_LALT;
-
-		case SDLK_RALT:
-			return K_RALT;
-
-		case SDLK_RCTRL:
-			return K_RCTRL;
-
-		case SDLK_LCTRL:
-			return K_LCTRL;
-
-		case SDLK_RSHIFT:
-			return K_RSHIFT;
-
-		case SDLK_LSHIFT:
-			return K_LSHIFT;
-
-		case SDLK_INSERT:
-			return K_INS;
-
-		case SDLK_DELETE:
-			return K_DEL;
-
-		case SDLK_PAGEDOWN:
-			return K_PGDN;
-
-		case SDLK_PAGEUP:
-			return K_PGUP;
-
-		case SDLK_HOME:
-			return K_HOME;
-
-		case SDLK_END:
-			return K_END;
-
-		case SDLK_F1:
-			return K_F1;
-
-		case SDLK_F2:
-			return K_F2;
-
-		case SDLK_F3:
-			return K_F3;
-
-		case SDLK_F4:
-			return K_F4;
-
-		case SDLK_F5:
-			return K_F5;
-
-		case SDLK_F6:
-			return K_F6;
-
-		case SDLK_F7:
-			return K_F7;
-
-		case SDLK_F8:
-			return K_F8;
-
-		case SDLK_F9:
-			return K_F9;
-
-		case SDLK_F10:
-			return K_F10;
-
-		case SDLK_F11:
-			return K_F11;
-
-		case SDLK_F12:
-			return K_F12;
-		// K_INVERTED_EXCLAMATION;
-
-		case SDLK_F13:
-			return K_F13;
-
-		case SDLK_F14:
-			return K_F14;
-
-		case SDLK_F15:
-			return K_F15;
-
-		case SDLK_KP_7:
-			return K_KP_7;
-
-		case SDLK_KP_8:
-			return K_KP_8;
-
-		case SDLK_KP_9:
-			return K_KP_9;
-
-		case SDLK_KP_4:
-			return K_KP_4;
-
-		case SDLK_KP_5:
-			return K_KP_5;
-
-		case SDLK_KP_6:
-			return K_KP_6;
-
-		case SDLK_KP_1:
-			return K_KP_1;
-
-		case SDLK_KP_2:
-			return K_KP_2;
-
-		case SDLK_KP_3:
-			return K_KP_3;
-
-		case SDLK_KP_ENTER:
-			return K_KP_ENTER;
-
-		case SDLK_KP_0:
-			return K_KP_0;
-
-		case SDLK_KP_PERIOD:
-			return K_KP_DOT;
-
-		case SDLK_KP_DIVIDE:
-			return K_KP_SLASH;
-		// K_SUPERSCRIPT_TWO;
-
-		case SDLK_KP_MINUS:
-			return K_KP_MINUS;
-		// K_ACUTE_ACCENT;
-
-		case SDLK_KP_PLUS:
-			return K_KP_PLUS;
-
-		case SDLK_NUMLOCKCLEAR:
-			return K_NUMLOCK;
-
-		case SDLK_KP_MULTIPLY:
-			return K_KP_STAR;
-
-		case SDLK_KP_EQUALS:
-			return K_KP_EQUALS;
-
-		// K_MASCULINE_ORDINATOR;
-		// K_GRAVE_A;
-		// K_AUX1;
-		// K_CEDILLA_C;
-		// K_GRAVE_E;
-		// K_AUX2;
-		// K_AUX3;
-		// K_AUX4;
-		// K_GRAVE_I;
-		// K_AUX5;
-		// K_AUX6;
-		// K_AUX7;
-		// K_AUX8;
-		// K_TILDE_N;
-		// K_GRAVE_O;
-		// K_AUX9;
-		// K_AUX10;
-		// K_AUX11;
-		// K_AUX12;
-		// K_AUX13;
-		// K_AUX14;
-		// K_GRAVE_U;
-		// K_AUX15;
-		// K_AUX16;
-
-		case SDLK_PRINTSCREEN:
-			return K_PRINTSCREEN;
-
-		case SDLK_MODE:
-			return K_RALT;
-	}
-
-	return 0;
-}
-#endif // SDL2
-
 static void PushConsoleEvent( const char* s )
 {
 	char* b;
@@ -633,8 +204,6 @@ static void PushConsoleEvent( const char* s )
 	SDL_PushEvent( &event );
 }
 
-
-
 /*
 =================
 Sys_InitInput
@@ -649,13 +218,8 @@ void Sys_InitInput()
 
 	memset( buttonStates, 0, sizeof( buttonStates ) );
 
-#if !SDL_VERSION_ATLEAST(2, 0, 0)
-	SDL_EnableUNICODE( 1 );
-	SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
-#endif
 	in_keyboard.SetModified();
 
-#if SDL_VERSION_ATLEAST(2, 0, 0)
 	// GameController
 	if( SDL_Init( SDL_INIT_GAMECONTROLLER ) )
 	{
@@ -680,62 +244,6 @@ void Sys_InitInput()
 
 		}
 	}
-#else
-	// WM0110: Initialise SDL Joystick
-	common->Printf( "Sys_InitInput: Joystick subsystem init\n" );
-	if( SDL_Init( SDL_INIT_JOYSTICK ) )
-	{
-		common->Printf( "Sys_InitInput: Joystic Init ERROR!\n" );
-	}
-
-	numJoysticks = SDL_NumJoysticks();
-	common->Printf( "Sys_InitInput: Joystic - Found %i joysticks\n", numJoysticks );
-#if !SDL_VERSION_ATLEAST(2, 0, 0)
-	for( i = 0; i < numJoysticks; i++ )
-	{
-		common->Printf( " Joystick %i name '%s'\n", i, SDL_JoystickName( i ) );
-	}
-#endif
-
-	// Open first available joystick and use it
-	if( SDL_NumJoysticks() > 0 )
-	{
-		joy = SDL_JoystickOpen( 0 );
-
-		if( joy )
-		{
-			int num_hats;
-
-			num_hats = SDL_JoystickNumHats( joy );
-			common->Printf( "Opened Joystick number 0\n" );
-#if SDL_VERSION_ATLEAST(2, 0, 0)
-			common->Printf( "Name: %s\n", SDL_JoystickName( joy ) );
-#else
-			common->Printf( "Name: %s\n", SDL_JoystickName( 0 ) );
-#endif
-			common->Printf( "Number of Axes: %d\n", SDL_JoystickNumAxes( joy ) );
-			common->Printf( "Number of Buttons: %d\n", SDL_JoystickNumButtons( joy ) );
-			common->Printf( "Number of Hats: %d\n", num_hats );
-			common->Printf( "Number of Balls: %d\n", SDL_JoystickNumBalls( joy ) );
-
-			SDL_joystick_has_hat = 0;
-			if( num_hats )
-			{
-				SDL_joystick_has_hat = 1;
-			}
-		}
-		else
-		{
-			joy = NULL;
-			common->Printf( "Couldn't open Joystick 0\n" );
-		}
-	}
-	else
-	{
-		joy = NULL;
-	}
-	// WM0110
-#endif
 }
 
 /*
@@ -883,7 +391,6 @@ sysEvent_t Sys_GetEvent()
 	// WM0110: previous state of joystick hat
 	static int previous_hat_state = SDL_HAT_CENTERED;
 
-#if SDL_VERSION_ATLEAST(2, 0, 0)
 	// utf-32 version of the textinput event
 	static int32 uniStr[SDL_TEXTINPUTEVENT_TEXT_SIZE] = {0};
 	static size_t uniStrPos = 0;
@@ -916,7 +423,6 @@ sysEvent_t Sys_GetEvent()
 		return res;
 	}
 	// DG end
-#endif // SDL2
 
 	static int32 uniChar = 0;
 
@@ -935,7 +441,6 @@ sysEvent_t Sys_GetEvent()
 	{
 		switch( ev.type )
 		{
-#if SDL_VERSION_ATLEAST(2, 0, 0)
 			case SDL_WINDOWEVENT:
 				switch( ev.window.event )
 				{
@@ -996,62 +501,6 @@ sysEvent_t Sys_GetEvent()
 				}
 
 				continue; // handle next event
-#else // SDL 1.2
-			case SDL_ACTIVEEVENT:
-			{
-				// DG: (un-)pause the game when focus is gained, that also (un-)grabs the input
-				bool pause = true;
-
-				if( ev.active.gain )
-				{
-
-					pause = false;
-
-					// unset modifier, in case alt-tab was used to leave window and ALT is still set
-					// as that can cause fullscreen-toggling when pressing enter...
-					SDLMod currentmod = SDL_GetModState();
-					int newmod = KMOD_NONE;
-					if( currentmod & KMOD_CAPS ) // preserve capslock
-					{
-						newmod |= KMOD_CAPS;
-					}
-
-					SDL_SetModState( ( SDLMod )newmod );
-				}
-
-				cvarSystem->SetCVarBool( "com_pause", pause );
-
-				if( ev.active.state == SDL_APPMOUSEFOCUS && !ev.active.gain )
-				{
-					// the mouse has left the window.
-					res.evType = SE_MOUSE_LEAVE;
-					return res;
-				}
-
-			}
-
-			continue; // handle next event
-
-			case SDL_VIDEOEXPOSE:
-				continue; // handle next event
-
-			// DG: handle resizing and moving of window
-			case SDL_VIDEORESIZE:
-			{
-				int w = ev.resize.w;
-				int h = ev.resize.h;
-				r_windowWidth.SetInteger( w );
-				r_windowHeight.SetInteger( h );
-
-				glConfig.nativeScreenWidth = w;
-				glConfig.nativeScreenHeight = h;
-
-				// for some reason this needs a vid_restart in SDL1 but not SDL2 so GLimp_SetScreenParms() is called
-				PushConsoleEvent( "vid_restart" );
-				continue; // handle next event
-			}
-				// DG end
-#endif // SDL1.2
 
 			case SDL_KEYDOWN:
 				if( ev.key.keysym.sym == SDLK_RETURN && ( ev.key.keysym.mod & KMOD_ALT ) > 0 )
@@ -1078,17 +527,7 @@ sysEvent_t Sys_GetEvent()
 					cvarSystem->SetCVarBool( "in_nograb", grab );
 					continue; // handle next event
 				}
-				// DG end
-
-#if ! SDL_VERSION_ATLEAST(2, 0, 0)
-				// DG: only do this for key-down, don't care about isChar from SDL_KeyToDoom3Key.
-				//     if unicode is not 0  it should work..
-				if( ev.key.state == SDL_PRESSED )
-				{
-					uniChar = ev.key.keysym.unicode; // for SE_CHAR
-				}
-				// DG end
-#endif // SDL 1.2
+			// DG end
 
 			// fall through
 			case SDL_KEYUP:
@@ -1103,7 +542,6 @@ sysEvent_t Sys_GetEvent()
 				} // DG end, the original code is in the else case
 				else
 				{
-#if SDL_VERSION_ATLEAST(2, 0, 0)
 					key = SDLScanCodeToKeyNum( ev.key.keysym.scancode );
 
 					if( key == 0 )
@@ -1116,39 +554,6 @@ sysEvent_t Sys_GetEvent()
 
 						continue; // just handle next event
 					}
-#else // SDL1.2
-					key = SDL_KeyToDoom3Key( ev.key.keysym.sym, isChar );
-
-					if( key == 0 )
-					{
-						unsigned char uc = ev.key.keysym.unicode & 0xff;
-						// check if its an unmapped console key
-						if( uc == Sys_GetConsoleKey( false ) || uc == Sys_GetConsoleKey( true ) )
-						{
-							key = K_GRAVE;
-							uniChar = K_BACKSPACE; // bad hack to get empty console inputline..
-						}
-						else
-						{
-							if( uniChar )
-							{
-								res.evType = SE_CHAR;
-								res.evValue = uniChar;
-
-								uniChar = 0;
-
-								return res;
-							}
-
-							if( ev.type == SDL_KEYDOWN ) // FIXME: don't complain if this was an ASCII char and the console is open?
-							{
-								common->Warning( "unmapped SDL key %d (0x%x) scancode %d", ev.key.keysym.sym, ev.key.keysym.unicode, ev.key.keysym.scancode );
-							}
-
-							continue; // just handle next event
-						}
-					}
-#endif // SDL 1.2
 				}
 
 				res.evType = SE_KEY;
@@ -1165,7 +570,6 @@ sysEvent_t Sys_GetEvent()
 				return res;
 			}
 
-#if SDL_VERSION_ATLEAST(2, 0, 0)
 			case SDL_TEXTINPUT:
 				if( ev.text.text[0] != '\0' )
 				{
@@ -1188,12 +592,11 @@ sysEvent_t Sys_GetEvent()
 				}
 
 				continue; // just handle next event
-#endif // SDL2
 
 			case SDL_MOUSEMOTION:
 				// DG: return event with absolute mouse-coordinates when in menu
 				// to fix cursor problems in windowed mode
-				if( game && ( game->Shell_IsActive() || ImGuiTools::ReleaseMouseForTools() ) )
+				if( mainMenu && ( mainMenu->IsActive() || ImGuiTools::ReleaseMouseForTools() ) )
 				{
 					res.evType = SE_MOUSE_ABSOLUTE;
 					res.evValue = ev.motion.x;
@@ -1212,7 +615,6 @@ sysEvent_t Sys_GetEvent()
 
 				return res;
 
-#if SDL_VERSION_ATLEAST(2, 0, 0)
 			case SDL_FINGERDOWN:
 			case SDL_FINGERUP:
 			case SDL_FINGERMOTION:
@@ -1230,7 +632,6 @@ sysEvent_t Sys_GetEvent()
 				mwheelRel = res.evValue;
 
 				return res;
-#endif // SDL2
 
 			case SDL_MOUSEBUTTONDOWN:
 			case SDL_MOUSEBUTTONUP:
@@ -1251,23 +652,6 @@ sysEvent_t Sys_GetEvent()
 						mouse_polls.Append( mouse_poll_t( M_ACTION2, ev.button.state == SDL_PRESSED ? 1 : 0 ) );
 						break;
 
-#if !SDL_VERSION_ATLEAST(2, 0, 0)
-					case SDL_BUTTON_WHEELUP:
-						res.evValue = K_MWHEELUP;
-						if( ev.button.state == SDL_PRESSED )
-						{
-							mouse_polls.Append( mouse_poll_t( M_DELTAZ, 1 ) );
-						}
-						break;
-					case SDL_BUTTON_WHEELDOWN:
-						res.evValue = K_MWHEELDOWN;
-						if( ev.button.state == SDL_PRESSED )
-						{
-							mouse_polls.Append( mouse_poll_t( M_DELTAZ, -1 ) );
-						}
-						break;
-#endif // SDL1.2
-
 					default:
 						// handle X1 button and above
 						if( ev.button.button <= 16 ) // d3bfg doesn't support more than 16 mouse buttons
@@ -1286,7 +670,6 @@ sysEvent_t Sys_GetEvent()
 
 				return res;
 
-#if SDL_VERSION_ATLEAST(2, 0, 0)
 			// GameController
 			case SDL_JOYAXISMOTION:
 			case SDL_JOYBALLMOTION:
@@ -1295,9 +678,7 @@ sysEvent_t Sys_GetEvent()
 			case SDL_JOYBUTTONUP:
 			case SDL_JOYDEVICEADDED:
 			case SDL_JOYDEVICEREMOVED:
-
-			case SDL_CONTROLLERDEVICEADDED:
-			case SDL_CONTROLLERDEVICEREMOVED:
+			case SDL_JOYBATTERYUPDATED:
 				// Avoid 'unknown event' spam
 				continue;
 
@@ -1373,17 +754,6 @@ sysEvent_t Sys_GetEvent()
 				joystick_polls.Append( joystick_poll_t( controllerButtonRemap[ev.cbutton.button][1], res.evValue2 ) );
 				return res;
 			}
-			case SDL_CONTROLLERDEVICEADDED:
-			case SDL_CONTROLLERDEVICEREMOVED:
-			case SDL_CONTROLLERDEVICEREMAPPED:
-			case SDL_CONTROLLERTOUCHPADDOWN:
-			case SDL_CONTROLLERTOUCHPADMOTION:
-			case SDL_CONTROLLERTOUCHPADUP:
-			case SDL_CONTROLLERSENSORUPDATE:
-				//case SDL_CONTROLLERUPDATECOMPLETE_RESERVED_FOR_SDL3:
-				//case SDL_CONTROLLERSTEAMHANDLEUPDATED:
-				// Avoid more 'unknown event' spam
-				continue;
 
 			case SDL_CONTROLLERDEVICEADDED:
 			case SDL_CONTROLLERDEVICEREMOVED:
@@ -1540,10 +910,6 @@ int Sys_PollMouseInputEvents( int mouseEvents[MAX_MOUSE_EVENTS][2] )
 
 const char* Sys_GetKeyName( keyNum_t keynum )
 {
-	// unfortunately, in SDL1.2 there is no way to get the keycode for a scancode, so this doesn't work there.
-	// so this is SDL2-only.
-#if SDL_VERSION_ATLEAST(2, 0, 0)
-
 	SDL_Scancode scancode = KeyNumToSDLScanCode( ( int )keynum );
 	SDL_Keycode keycode = SDL_GetKeyFromScancode( scancode );
 
@@ -1552,13 +918,12 @@ const char* Sys_GetKeyName( keyNum_t keynum )
 	{
 		return ret;
 	}
-#endif
+
 	return NULL;
 }
 
 char* Sys_GetClipboardData()
 {
-#if SDL_VERSION_ATLEAST(2, 0, 0)
 	char* txt = SDL_GetClipboardText();
 
 	if( txt == NULL )
@@ -1574,18 +939,49 @@ char* Sys_GetClipboardData()
 	char* ret = Mem_CopyString( txt );
 	SDL_free( txt );
 	return ret;
-#else
-	return NULL; // SDL1.2 doesn't support clipboard
-#endif
 }
 
 void Sys_SetClipboardData( const char* string )
 {
-#if SDL_VERSION_ATLEAST(2, 0, 0)
 	SDL_SetClipboardText( string );
-#endif
 }
 
+/*
+===================
+GLimp_GrabInput
+===================
+*/
+void GLimp_GrabInput( int flags )
+{
+	bool grab = flags & GRAB_ENABLE;
+
+	if( grab && ( flags & GRAB_REENABLE ) )
+	{
+		grab = false;
+	}
+
+	if( flags & GRAB_SETSTATE )
+	{
+		grabbed = grab;
+	}
+
+	if( in_nograb.GetBool() )
+	{
+		grab = false;
+	}
+
+	if( !window )
+	{
+		common->Warning( "GLimp_GrabInput called without window" );
+		return;
+	}
+
+	// DG: disabling the cursor is now done once in GLimp_Init() because it should always be disabled
+
+	// DG: check for GRAB_ENABLE instead of GRAB_HIDECURSOR because we always wanna hide it
+	SDL_SetRelativeMouseMode( flags & GRAB_ENABLE ? SDL_TRUE : SDL_FALSE );
+	SDL_SetWindowGrab( window, grab ? SDL_TRUE : SDL_FALSE );
+}
 
 //=====================================================================================
 //	Joystick Input Handling
