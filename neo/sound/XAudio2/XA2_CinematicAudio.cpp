@@ -55,7 +55,7 @@ public:
 	// SRS - We must free the audio buffer once it has finished playing
 	void OnBufferEnd( void* data )
 	{
-		if ( isBink )
+		if( isBink )
 		{
 			Mem_Free( data );
 			data = NULL;
@@ -85,7 +85,7 @@ void CinematicAudio_XAudio2::InitAudio( void* audioContext )
 	int format_byte;
 	bool use_ext;
 
-	if ( isBink )
+	if( isBink )
 	{
 		AudioInfo* binkInfo = ( AudioInfo* )audioContext;
 		format_byte = 2;
@@ -199,7 +199,7 @@ void CinematicAudio_XAudio2::PlayAudio( uint8_t* data, int size )
 	if( FAILED( hr = pMusicSourceVoice1->SubmitSourceBuffer( &Packet ) ) )
 	{
 		// SRS - We should free the audio buffer if XAudio2 buffer submit failed
-		if ( isBink )
+		if( isBink )
 		{
 			Mem_Free( data );
 			data = NULL;

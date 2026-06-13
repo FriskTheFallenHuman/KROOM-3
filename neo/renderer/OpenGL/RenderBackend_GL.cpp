@@ -562,7 +562,7 @@ void idRenderBackend::Init()
 
 	renderProgManager.Init();
 
-	tr.SetInitialized(true);
+	tr.SetInitialized( true );
 
 	// allocate the vertex array range or vertex objects
 	vertexCache.Init( glConfig.uniformBufferOffsetAlignment );
