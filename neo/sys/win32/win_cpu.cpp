@@ -91,7 +91,7 @@ double Sys_ClockTicksPerSecond()
 IsAMD
 ================
 */
-static bool IsAMD()
+bool IsAMD()
 {
 	int  info[4] = {0};
 	char vendor[13];
@@ -109,6 +109,7 @@ static bool IsAMD()
 	return false;
 }
 
+#ifndef USE_SDL
 /*
 ================
 HasMMX
@@ -136,18 +137,20 @@ static bool HasSSE()
 	// bit 25 of EDX denotes SSE existence
 	return ( regs[_REG_EDX] & ( 1 << 25 ) ) != 0;
 }
+#endif
 
 /*
 ================
 HasDAZ
 ================
 */
-static bool HasDAZ()
+bool HasDAZ()
 {
 	unsigned int mxcsr = _mm_getcsr();
 	return ( mxcsr & 0x40 ) != 0;	// Bit 6 (0x40) of MXCSR indicates the DAZ state.
 }
 
+#ifndef USE_SDL
 /*
 ================================================================================================
 
@@ -412,6 +415,7 @@ int Sys_GetProcessorId()
 
 	return flags;
 }
+#endif
 
 /*
 ================

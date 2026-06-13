@@ -161,8 +161,12 @@ static LRESULT CALLBACK ConWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 				}
 				else
 				{
+#ifndef USE_SDL
 					cmdString = Mem_CopyString( "quit" );
 					Sys_QueEvent( SE_CONSOLE, 0, 0, strlen( cmdString ) + 1, cmdString, 0 );
+#else
+					cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "quit\n" );
+#endif
 				}
 			}
 			else if( wParam == CLEAR_ID )

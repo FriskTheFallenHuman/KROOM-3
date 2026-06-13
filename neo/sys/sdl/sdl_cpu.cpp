@@ -37,7 +37,12 @@ If you have questions concerning this license or the applicable additional terms
 #undef vsnprintf
 // DG end
 
-#include <SDL_cpuinfo.h>
+#ifdef _MSC_VER
+	extern bool HasDAZ();
+	extern bool IsAMD();
+#endif
+
+#include <SDL2/SDL_cpuinfo.h>
 
 /*
 ==============================================================
@@ -73,12 +78,26 @@ void Sys_CPUCount( int& numLogicalCPUCores, int& numPhysicalCPUCores, int& numCP
 
 /*
 ================
-SDL_GetProcessorId
+Sys_GetProcessorId
 ================
 */
-int SDL_GetProcessorId()
+int Sys_GetProcessorId()
 {
+#ifdef _WIN32
+	int flags;
+
+	// check for an AMD
+	if( IsAMD() )
+	{
+		flags = CPUID_AMD;
+	}
+	else
+	{
+		flags = CPUID_INTEL;
+	}
+#else
 	int flags = CPUID_GENERIC;
+#endif
 
 	// check for Multi Media Extensions
 	if( SDL_HasMMX() )
@@ -89,8 +108,16 @@ int SDL_GetProcessorId()
 	// check for Streaming SIMD Extensions
 	if( SDL_HasSSE() )
 	{
-		flags |= CPUID_SSE;
+		flags |= CPUID_SSE | CPUID_FTZ;
 	}
+
+#ifdef _WIN32
+	// check for Denormals-Are-Zero mode
+	if( HasDAZ() )
+	{
+		flags |= CPUID_DAZ;
+	}
+#endif
 
 	return flags;
 }
