@@ -782,9 +782,9 @@ else()
 
 	if(UNIX)
 		if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-			list(APPEND src_sys_posix ${CMAKE_CURRENT_SOURCE_DIR}/sys/posix/platform_linux.cpp)
-		else()
 			list(APPEND src_sys_posix ${CMAKE_CURRENT_SOURCE_DIR}/sys/posix/platform_osx.cpp)
+		else()
+			list(APPEND src_sys_posix ${CMAKE_CURRENT_SOURCE_DIR}/sys/posix/platform_linux.cpp)
 		endif()
 	endif()
 
