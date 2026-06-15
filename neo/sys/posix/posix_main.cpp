@@ -142,11 +142,6 @@ void Posix_Exit( int ret )
 	//	Sys_DestroyThread( asyncThread );
 	//}
 
-	// process spawning. it's best when it happens after everything has shut down
-	if( exit_spawn[0] )
-	{
-		Sys_DoStartProcess( exit_spawn, false );
-	}
 	// in case of signal, handler tries a common->Quit
 	// we use set_exit to maintain a correct exit code
 	if( set_exit )
@@ -164,40 +159,6 @@ Posix_SetExit
 void Posix_SetExit( int ret )
 {
 	set_exit = 0;
-}
-
-/*
-===============
-Posix_SetExitSpawn
-set the process to be spawned when we quit
-===============
-*/
-void Posix_SetExitSpawn( const char* exeName )
-{
-	idStr::Copynz( exit_spawn, exeName, 1024 );
-}
-
-/*
-==================
-idSysLocal::StartProcess
-if !quit, start the process asap
-otherwise, push it for execution at exit
-(i.e. let complete shutdown of the game and freeing of resources happen)
-NOTE: might even want to add a small delay?
-==================
-*/
-void idSysLocal::StartProcess( const char* exeName, bool quit )
-{
-	if( quit )
-	{
-		common->DPrintf( "Sys_StartProcess %s (delaying until final exit)\n", exeName );
-		Posix_SetExitSpawn( exeName );
-		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "quit\n" );
-		return;
-	}
-
-	common->DPrintf( "Sys_StartProcess %s\n", exeName );
-	Sys_DoStartProcess( exeName );
 }
 
 /*
@@ -220,189 +181,6 @@ void Sys_Shutdown()
 	basepath.Clear();
 	savepath.Clear();
 	Posix_Shutdown();
-}
-
-/*
-===============
-Sys_FPU_EnableExceptions
-===============
-*/
-//void Sys_FPU_EnableExceptions( int exceptions )
-//{
-//}
-
-/*
-===============
-Sys_FPE_handler
-===============
-*/
-void Sys_FPE_handler( int signum, siginfo_t* info, void* context )
-{
-	assert( signum == SIGFPE );
-	Sys_Printf( "FPE\n" );
-}
-
-/*
-===============
-Sys_GetClockticks
-===============
-*/
-double Sys_GetClockTicks()
-{
-#if defined( __i386__ )
-	unsigned long lo, hi;
-
-	__asm__ __volatile__(
-		"push %%ebx\n"			\
-		"xor %%eax,%%eax\n"		\
-		"cpuid\n"					\
-		"rdtsc\n"					\
-		"mov %%eax,%0\n"			\
-		"mov %%edx,%1\n"			\
-		"pop %%ebx\n"
-		: "=r"( lo ), "=r"( hi ) );
-	return ( double ) lo + ( double ) 0xFFFFFFFF * hi;
-// RB begin
-#elif defined( __x86_64__ )
-	uint32_t lo, hi;
-	__asm__ __volatile__( "rdtsc" : "=a"( lo ), "=d"( hi ) );
-	return ( ( ( uint64_t )hi ) << 32 ) | lo;
-#else
-	//#error unsupported CPU
-	struct timespec now;
-
-	clock_gettime( CLOCK_MONOTONIC, &now );
-
-	return now.tv_sec * 1000000000LL + now.tv_nsec;
-#endif
-// RB end
-}
-
-/*
-===============
-MeasureClockTicks
-===============
-*/
-double MeasureClockTicks()
-{
-	double t0, t1;
-
-	t0 = Sys_GetClockTicks( );
-	Sys_Sleep( 1000 );
-	t1 = Sys_GetClockTicks( );
-	return t1 - t0;
-}
-
-/*
-================
-Sys_Milliseconds
-================
-*/
-/* base time in seconds, that's our origin
-   timeval:tv_sec is an int:
-   assuming this wraps every 0x7fffffff - ~68 years since the Epoch (1970) - we're safe till 2038
-   using unsigned long data type to work right with Sys_XTimeToSysTime */
-
-#ifdef CLOCK_MONOTONIC_RAW
-	// use RAW monotonic clock if available (=> not subject to NTP etc)
-	#define D3_CLOCK_TO_USE CLOCK_MONOTONIC_RAW
-#else
-	#define D3_CLOCK_TO_USE CLOCK_MONOTONIC
-#endif
-
-// RB: changed long to int
-unsigned int sys_timeBase = 0;
-// RB end
-/* current time in ms, using sys_timeBase as origin
-   NOTE: sys_timeBase*1000 + curtime -> ms since the Epoch
-     0x7fffffff ms - ~24 days
-		 or is it 48 days? the specs say int, but maybe it's casted from unsigned int?
-*/
-int Sys_Milliseconds()
-{
-	// DG: use clock_gettime on all platforms
-#if 1
-	int curtime;
-	struct timespec ts;
-
-	clock_gettime( D3_CLOCK_TO_USE, &ts );
-
-	if( !sys_timeBase )
-	{
-		sys_timeBase = ts.tv_sec;
-		return ts.tv_nsec / 1000000;
-	}
-
-	curtime = ( ts.tv_sec - sys_timeBase ) * 1000 + ts.tv_nsec / 1000000;
-
-	return curtime;
-#else
-	// gettimeofday() implementation
-	int curtime;
-	struct timeval tp;
-
-	gettimeofday( &tp, NULL );
-
-	if( !sys_timeBase )
-	{
-		sys_timeBase = tp.tv_sec;
-		return tp.tv_usec / 1000;
-	}
-
-	curtime = ( tp.tv_sec - sys_timeBase ) * 1000 + tp.tv_usec / 1000;
-
-	return curtime;
-	* /
-#endif
-	// DG end
-}
-
-// RB: added for BFG
-
-/*
-================
-Sys_Microseconds
-================
-*/
-static uint64 sys_microTimeBase = 0;
-
-uint64 Sys_Microseconds()
-{
-#if 0
-	static uint64 ticksPerMicrosecondTimes1024 = 0;
-
-	if( ticksPerMicrosecondTimes1024 == 0 )
-	{
-		ticksPerMicrosecondTimes1024 = ( ( uint64 )Sys_ClockTicksPerSecond() << 10 ) / 1000000;
-		assert( ticksPerMicrosecondTimes1024 > 0 );
-	}
-
-	return ( ( uint64 )( ( int64 )Sys_GetClockTicks() << 10 ) ) / ticksPerMicrosecondTimes1024;
-#elif 0
-	uint64 curtime;
-	struct timespec ts;
-
-	clock_gettime( CLOCK_MONOTONIC, &ts );
-
-	curtime = ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
-
-	return curtime;
-#else
-	uint64 curtime;
-	struct timespec ts;
-
-	clock_gettime( D3_CLOCK_TO_USE, &ts );
-
-	if( !sys_microTimeBase )
-	{
-		sys_microTimeBase = ts.tv_sec;
-		return ts.tv_nsec / 1000;
-	}
-
-	curtime = ( ts.tv_sec - sys_microTimeBase ) * 1000000 + ts.tv_nsec / 1000;
-
-	return curtime;
-#endif
 }
 
 /*
@@ -651,95 +429,6 @@ int Sys_ListFiles( const char* directory, const char* extension, idStrList& list
 }
 
 /*
-============================================================================
-EVENT LOOP
-============================================================================
-*/
-/*
-#define	MAX_QUED_EVENTS		256
-#define	MASK_QUED_EVENTS	( MAX_QUED_EVENTS - 1 )
-
-static sysEvent_t eventQue[MAX_QUED_EVENTS];
-static int eventHead, eventTail;
-*/
-
-/*
-================
-Posix_QueEvent
-
-ptr should either be null, or point to a block of data that can be freed later
-================
-*/
-/*
-void Posix_QueEvent( sysEventType_t type, int value, int value2,
-					 int ptrLength, void* ptr )
-{
-	sysEvent_t* ev;
-
-	ev = &eventQue[eventHead & MASK_QUED_EVENTS];
-	if( eventHead - eventTail >= MAX_QUED_EVENTS )
-	{
-		common->Printf( "Posix_QueEvent: overflow\n" );
-		// we are discarding an event, but don't leak memory
-		// TTimo: verbose dropped event types?
-		if( ev->evPtr )
-		{
-			Mem_Free( ev->evPtr );
-			ev->evPtr = NULL;
-		}
-		eventTail++;
-	}
-
-	eventHead++;
-
-	ev->evType = type;
-	ev->evValue = value;
-	ev->evValue2 = value2;
-	ev->evPtrLength = ptrLength;
-	ev->evPtr = ptr;
-
-#if 0
-	common->Printf( "Event %d: %d %d\n", ev->evType, ev->evValue, ev->evValue2 );
-#endif
-}
-*/
-
-/*
-================
-Sys_GetEvent
-================
-*/
-/*
-sysEvent_t Sys_GetEvent()
-{
-	static sysEvent_t ev;
-
-	// return if we have data
-	if( eventHead > eventTail )
-	{
-		eventTail++;
-		return eventQue[( eventTail - 1 ) & MASK_QUED_EVENTS];
-	}
-	// return the empty event with the current time
-	memset( &ev, 0, sizeof( ev ) );
-
-	return ev;
-}
-*/
-
-/*
-================
-Sys_ClearEvents
-================
-*/
-/*
-void Sys_ClearEvents()
-{
-	eventHead = eventTail = 0;
-}
-*/
-
-/*
 ================
 Posix_Cwd
 ================
@@ -752,26 +441,6 @@ const char* Posix_Cwd()
 	cwd[MAX_OSPATH - 1] = 0;
 
 	return cwd;
-}
-
-/*
-=================
-Sys_GetMemoryStatus
-=================
-*/
-void Sys_GetMemoryStatus( sysMemoryStats_t& stats )
-{
-	common->Printf( "FIXME: Sys_GetMemoryStatus stub\n" );
-}
-
-void Sys_GetCurrentMemoryStatus( sysMemoryStats_t& stats )
-{
-	common->Printf( "FIXME: Sys_GetCurrentMemoryStatus\n" );
-}
-
-void Sys_GetExeLaunchMemoryStatus( sysMemoryStats_t& stats )
-{
-	common->Printf( "FIXME: Sys_GetExeLaunchMemoryStatus\n" );
 }
 
 /*
@@ -796,55 +465,6 @@ void Posix_Shutdown()
 }
 
 /*
-=================
-Sys_DLL_Load
-TODO: OSX - use the native API instead? NSModule
-=================
-*/
-// RB: 64 bit fixes, changed int to intptr_t
-intptr_t Sys_DLL_Load( const char* path )
-{
-	void* handle = dlopen( path, RTLD_NOW );
-	if( !handle )
-	{
-		Sys_Printf( "dlopen '%s' failed: %s\n", path, dlerror() );
-	}
-
-	return ( intptr_t )handle;
-}
-// RB end
-
-/*
-=================
-Sys_DLL_GetProcAddress
-=================
-*/
-// RB: 64 bit fixes, changed int to intptr_t
-void* Sys_DLL_GetProcAddress( intptr_t handle, const char* sym )
-{
-// RB end
-	const char* error;
-	void* ret = dlsym( ( void* )handle, sym );
-	if( ( error = dlerror() ) != NULL )
-	{
-		Sys_Printf( "dlsym '%s' failed: %s\n", sym, error );
-	}
-	return ret;
-}
-
-/*
-=================
-Sys_DLL_Unload
-=================
-*/
-// RB: 64 bit fixes, changed int to intptr_t
-void Sys_DLL_Unload( intptr_t handle )
-{
-// RB end
-	dlclose( ( void* )handle );
-}
-
-/*
 ================
 Sys_ShowConsole
 ================
@@ -853,93 +473,11 @@ void Sys_ShowConsole( int visLevel, bool quitOnClose ) { }
 
 // ---------------------------------------------------------------------------
 
-// only relevant when specified on command line
-const char* Sys_DefaultCDPath()
-{
-	return "";
-}
-
 ID_TIME_T Sys_FileTimeStamp( idFileHandle fp )
 {
 	struct stat st;
 	fstat( fileno( fp ), &st );
 	return st.st_mtime;
-}
-
-void Sys_Sleep( int msec )
-{
-#if 0 // DG: I don't really care, this spams the console (and on windows this case isn't handled either)
-	// Furthermore, there are several Sys_Sleep( 10 ) calls throughout the code
-	if( msec < 20 )
-	{
-		static int last = 0;
-		int now = Sys_Milliseconds();
-		if( now - last > 1000 )
-		{
-			Sys_Printf( "WARNING: Sys_Sleep - %d < 20 msec is not portable\n", msec );
-			last = now;
-		}
-		// ignore that sleep call, keep going
-		return;
-	}
-#endif // DG end
-	// use nanosleep? keep sleeping if signal interrupt?
-
-	// RB begin
-#if defined(__ANDROID__)
-	usleep( msec * 1000 );
-#else
-	if( usleep( msec * 1000 ) == -1 )
-	{
-		Sys_Printf( "usleep: %s\n", strerror( errno ) );
-	}
-#endif
-}
-
-// stub pretty much everywhere - heavy calling
-void Sys_FlushCacheMemory( void* base, int bytes )
-{
-//  Sys_Printf("Sys_FlushCacheMemory stub\n");
-}
-
-/*
-bool Sys_FPU_StackIsEmpty()
-{
-	return true;
-}
-
-void Sys_FPU_ClearStack()
-{
-}
-
-const char* Sys_FPU_GetState()
-{
-	return "";
-}
-
-void Sys_FPU_SetPrecision( int precision )
-{
-}
-*/
-
-/*
-================
-Sys_LockMemory
-================
-*/
-bool Sys_LockMemory( void* ptr, int bytes )
-{
-	return true;
-}
-
-/*
-================
-Sys_UnlockMemory
-================
-*/
-bool Sys_UnlockMemory( void* ptr, int bytes )
-{
-	return true;
 }
 
 /*
@@ -1004,17 +542,6 @@ int64 Sys_GetDriveFreeSpaceInBytes( const char* path )
 }
 
 // RB end
-
-/*
-================
-Sys_AlreadyRunning
-return true if there is a copy of D3 running already
-================
-*/
-bool Sys_AlreadyRunning()
-{
-	return false;
-}
 
 /*
 ===============

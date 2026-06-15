@@ -56,7 +56,9 @@ public:
 
 public:
 	void						GrabInput( int flags );
+#if defined(USE_VULKAN)
 	std::vector<const char*>	GetRequiredExtensions();
+#endif
 
 private:
 	static void			TestSwapBuffers( const idCmdArgs& args );

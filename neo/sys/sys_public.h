@@ -501,18 +501,14 @@ int				Sys_GetDriveFreeSpace( const char* path );
 // returns amount of drive space in path in bytes
 int64			Sys_GetDriveFreeSpaceInBytes( const char* path );
 
-// lock and unlock memory
-bool			Sys_LockMemory( void* ptr, int bytes );
-bool			Sys_UnlockMemory( void* ptr, int bytes );
-
 // set amount of physical work memory
 void			Sys_SetPhysicalWorkMemory( int minBytes, int maxBytes );
 
 // DLL loading, the path should be a fully qualified OS path to the DLL file to be loaded
 
 uintptr_t		Sys_DLL_Load( const char* dllName );
-void* 			Sys_DLL_GetProcAddress( intptr_t dllHandle, const char* procName );
-void			Sys_DLL_Unload( intptr_t dllHandle );
+void* 			Sys_DLL_GetProcAddress( uintptr_t dllHandle, const char* procName );
+void			Sys_DLL_Unload( uintptr_t dllHandle );
 
 // event generation
 void			Sys_GenerateEvents();
@@ -768,9 +764,6 @@ public:
 
 	virtual void			FPU_SetFTZ( bool enable ) = 0;
 	virtual void			FPU_SetDAZ( bool enable ) = 0;
-
-	virtual bool			LockMemory( void* ptr, int bytes ) = 0;
-	virtual bool			UnlockMemory( void* ptr, int bytes ) = 0;
 
 	virtual int				DLL_Load( const char* dllName ) = 0;
 	virtual void* 			DLL_GetProcAddress( int dllHandle, const char* procName ) = 0;

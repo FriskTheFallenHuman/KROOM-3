@@ -1049,6 +1049,7 @@ void idDeviceManagerSDL::SetWindowsIcon( void* window )
 	SDL_FreeSurface( icon );
 }
 
+#if defined(USE_VULKAN)
 // Eric: Integrate this into RBDoom3BFG's source code ecosystem.
 // Helper function for using SDL2 and Vulkan on Linux.
 
@@ -1076,3 +1077,4 @@ std::vector<const char*> idDeviceManagerSDL::GetRequiredExtensions()
 
 	return sdlInstanceExtensions;
 }
+#endif

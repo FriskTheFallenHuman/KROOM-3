@@ -137,7 +137,6 @@ void Sys_Error( const char* error, ... )
 
 	Sys_ShutdownInput();
 
-
 	if( idDeviceManager::GetInstance() )
 	{
 		idDeviceManager::GetInstance()->Shutdown();
@@ -658,7 +657,7 @@ uintptr_t Sys_DLL_Load( const char* dllName )
 Sys_DLL_GetProcAddress
 =====================
 */
-void* Sys_DLL_GetProcAddress( intptr_t dllHandle, const char* procName )
+void* Sys_DLL_GetProcAddress( uintptr_t dllHandle, const char* procName )
 {
 	// RB: added missing cast
 	return ( void* ) GetProcAddress( ( HINSTANCE )dllHandle, procName );
@@ -669,7 +668,7 @@ void* Sys_DLL_GetProcAddress( intptr_t dllHandle, const char* procName )
 Sys_DLL_Unload
 =====================
 */
-void Sys_DLL_Unload( intptr_t dllHandle )
+void Sys_DLL_Unload( uintptr_t dllHandle )
 {
 	if( !dllHandle )
 	{

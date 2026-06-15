@@ -43,6 +43,40 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 
 #include <SDL2/SDL_cpuinfo.h>
+#include <SDL2/SDL_timer.h>
+
+/*
+==============================================================
+
+	Clock ticks
+
+==============================================================
+*/
+
+/*
+================
+Sys_GetClockTicks
+================
+*/
+double Sys_GetClockTicks()
+{
+    return (double)SDL_GetPerformanceCounter();
+}
+
+/*
+================
+Sys_ClockTicksPerSecond
+================
+*/
+double Sys_ClockTicksPerSecond()
+{
+    static double ticks = 0.0;
+    if ( !ticks )
+    {
+        ticks = (double)SDL_GetPerformanceFrequency();
+    }
+    return ticks;
+}
 
 /*
 ==============================================================
@@ -83,7 +117,7 @@ Sys_GetProcessorId
 */
 int Sys_GetProcessorId()
 {
-#ifdef _WIN32
+#ifdef _MSC_VER
 	int flags;
 
 	// check for an AMD
@@ -111,7 +145,7 @@ int Sys_GetProcessorId()
 		flags |= CPUID_SSE | CPUID_FTZ;
 	}
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 	// check for Denormals-Are-Zero mode
 	if( HasDAZ() )
 	{
@@ -120,4 +154,25 @@ int Sys_GetProcessorId()
 #endif
 
 	return flags;
+}
+
+/*
+================
+Sys_GetProcessorString
+================
+*/
+const char *Sys_GetProcessorString()
+{
+	int flags = Sys_GetProcessorId();
+
+	if ( flags & CPUID_AMD )
+	{
+		return "AMD CPU";
+	}
+	else if ( flags & CPUID_INTEL )
+	{
+		return "Intel CPU";
+	}
+
+	return "generic CPU";
 }
