@@ -40,6 +40,8 @@ If you have questions concerning this license or the applicable additional terms
 class idSysLocal : public idSys
 {
 public:
+	virtual const char* 	GetCmdLine();
+
 	virtual void			DebugPrintf( VERIFY_FORMAT_STRING const char* fmt, ... );
 	virtual void			DebugVPrintf( const char* fmt, va_list arg );
 
@@ -65,6 +67,13 @@ public:
 
 	virtual void			OpenURL( const char* url, bool quit );
 	virtual void			StartProcess( const char* exeName, bool quit );
+	virtual void			StartProcess( idCmdArgs& args, void* data, bool quit );
+	virtual void			ReLaunch( void* data );
+	virtual bool			Exec( const char* appPath, const char* workingPath, const char* args,
+								  execProcessWorkFunction_t workFn, execOutputFunction_t outputFn,
+								  const int waitMS, unsigned int& exitCode );
 };
+
+extern char	sys_cmdline[MAX_STRING_CHARS];
 
 #endif /* !__SYS_LOCAL__ */

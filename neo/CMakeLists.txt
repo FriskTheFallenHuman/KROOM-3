@@ -434,6 +434,11 @@ if(USE_INTRINSICS_SSE)
 	list(APPEND sys_thirdparty MaskedOcclusionCulling)
 endif()
 
+SET_OPTION(REPROC++ ON)
+add_subdirectory(extern/reproc)
+list(APPEND sys_thirdparty_dependencies reproc++)
+list(APPEND sys_thirdparty reproc++)
+
 # optimize this source file even in debug builds, to make speed (esp. loading times) more bearable
 # used for libs integrated here like stb_* and miniz(ip)
 if(CMAKE_MAJOR_VERSION LESS 3 OR (CMAKE_MAJOR_VERSION EQUAL 3 AND CMAKE_MINOR_VERSION LESS 11))

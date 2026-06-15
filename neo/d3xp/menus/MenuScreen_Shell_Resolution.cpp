@@ -176,7 +176,7 @@ void idMenuScreen_Shell_Resolution::ShowScreen( const mainMenuTransition_t trans
 	for( int displayNum = 0; ; displayNum++ )
 	{
 		idList<vidMode_t>& modeList = displays.Alloc();
-		if( !R_GetModeListForDisplay( displayNum, modeList, 600 ) ) // get modes with height >= 600 only
+		if( !idDeviceManager::GetInstance() && idDeviceManager::GetInstance()->GetModeListForDisplay( displayNum, modeList, 600 ) ) // get modes with height >= 600 only
 		{
 			displays.RemoveIndex( displays.Num() - 1 );
 			break;
