@@ -65,14 +65,18 @@ private:
 	idStr				GetDeviceName( const int deviceNum );
 	idStr				GetDisplayName( const int deviceNum );
 	void				CreateWindowClasses();
+#if !defined(USE_VULKAN)
 	bool				InitDriver( vidParms_t parms );
 	int					ChoosePixelFormat( const HDC hdc, const int multisamples );
 	HGLRC				CreateOpenGLContextOnDC( const HDC hdc, const bool debugContext );
 	void				GetWGLExtensionsWithFakeWindow();
 	void				CheckWGLExtensions( HDC hDC );
+#endif
 
 private:
+#if !defined(USE_VULKAN)
 	HGLRC					hGLRC;						// handle to GL rendering context
+#endif
 
 	int						desktopBitsPixel;
 	int						desktopWidth, desktopHeight;

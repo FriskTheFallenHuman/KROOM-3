@@ -39,6 +39,8 @@ If you have questions concerning this license or the applicable additional terms
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_timer.h>
 
+#include "sdl_local.h"
+
 /*
 ================
 Sys_Milliseconds
@@ -59,4 +61,114 @@ uint64_t Sys_Microseconds()
 	static uint64_t frequency = SDL_GetPerformanceFrequency(); // Frequency of the high-resolution counter
 	uint64_t counter = SDL_GetPerformanceCounter();           // Current counter value
 	return ( counter * 1000000 ) / frequency;                 // Convert to microseconds
+}
+
+/*
+==============
+Sys_Sleep
+==============
+*/
+void Sys_Sleep( int msec )
+{
+	SDL_Delay( msec );
+}
+
+/*
+==============
+Sys_ShowWindow
+==============
+*/
+void Sys_ShowWindow( bool show )
+{
+	if( show )
+	{
+		SDL_ShowWindow( sdl.window );
+	}
+	else
+	{
+		SDL_HideWindow( sdl.window );
+	}
+}
+
+/*
+==============
+Sys_IsWindowVisible
+==============
+*/
+bool Sys_IsWindowVisible()
+{
+	Uint32 flags = SDL_GetWindowFlags( sdl.window );
+	return ( flags & SDL_WINDOW_SHOWN ) != 0;
+}
+
+/*
+========================================================================
+
+DLL Loading
+
+========================================================================
+*/
+
+
+/*
+=====================
+Sys_DLL_Load
+=====================
+*/
+uintptr_t Sys_DLL_Load( const char* dllName )
+{
+	void* handle = SDL_LoadObject( dllName );
+	if( !handle )
+	{
+		const char* err = SDL_GetError();
+		if( err && *err )
+		{
+			common->Warning( "SDL_LoadObject(\"%s\") failed: %s", dllName, err );
+		}
+		else
+		{
+			common->Warning( "SDL_LoadObject(\"%s\") failed without additional info.", dllName );
+		}
+		return 0;
+	}
+
+	return ( uintptr_t )handle;
+}
+
+/*
+=====================
+Sys_DLL_GetProcAddress
+=====================
+*/
+void* Sys_DLL_GetProcAddress( uintptr_t dllHandle, const char* procName )
+{
+	void* adr = SDL_LoadFunction( ( void* )dllHandle, procName );
+	if( !adr )
+	{
+		const char* err = SDL_GetError();
+		if( err && *err )
+		{
+			common->Warning( "SDL_LoadFunction(%p, \"%s\") failed: %s", ( void* )dllHandle, procName, err );
+		}
+		else
+		{
+			common->Warning( "SDL_LoadFunction(%p, \"%s\") failed.", ( void* )dllHandle, procName );
+		}
+	}
+	return adr;
+}
+
+/*
+=====================
+Sys_DLL_Unload
+=====================
+*/
+void Sys_DLL_Unload( uintptr_t dllHandle )
+{
+	if( !dllHandle )
+	{
+		return;
+	}
+
+	SDL_UnloadObject( ( void* )dllHandle );
 }
