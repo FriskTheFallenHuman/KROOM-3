@@ -31,6 +31,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "win_local.h"
 
+#ifndef USE_SDL
 /*
 ==============================================================
 
@@ -71,7 +72,7 @@ double Sys_ClockTicksPerSecond()
 	}
 	return ticks;
 }
-
+#endif
 
 /*
 ==============================================================
@@ -415,7 +416,6 @@ int Sys_GetProcessorId()
 
 	return flags;
 }
-#endif
 
 /*
 ================
@@ -437,6 +437,7 @@ const char *Sys_GetProcessorString()
 
 	return "generic CPU";
 }
+#endif
 
 /*
 ===============================================================================

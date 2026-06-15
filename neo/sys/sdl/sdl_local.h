@@ -29,6 +29,8 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __SDL_LOCAL_H__
 #define __SDL_LOCAL_H__
 
+#include "DeviceInput_SDL.h"
+
 #ifndef _WIN32
 	char*	Sys_ConsoleInput();
 #endif
@@ -57,6 +59,8 @@ struct SDLVars_t
 #if !defined(USE_VULKAN)
 	static idCVar	sdl_waylandcompat;
 #endif
+
+	idJoystickSDL	g_Joystick;
 };
 
 extern SDLVars_t	sdl;

@@ -20,3 +20,5 @@ reproc_example(reproc++ run CXX)
 if(REPROC_MULTITHREADED)
   reproc_example(reproc++ background CXX DEPENDS Threads::Threads)
 endif()
+
+set_target_properties(reproc++ PROPERTIES FOLDER "libs") # Krispy

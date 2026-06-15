@@ -252,26 +252,6 @@ bool Sys_IsFileOnHdd( const char* filePath )
 
 /*
 ================
-Sys_LockMemory
-================
-*/
-bool Sys_LockMemory( void* ptr, int bytes )
-{
-	return ( VirtualLock( ptr, ( SIZE_T )bytes ) != FALSE );
-}
-
-/*
-================
-Sys_UnlockMemory
-================
-*/
-bool Sys_UnlockMemory( void* ptr, int bytes )
-{
-	return ( VirtualUnlock( ptr, ( SIZE_T )bytes ) != FALSE );
-}
-
-/*
-================
 Sys_SetPhysicalWorkMemory
 ================
 */

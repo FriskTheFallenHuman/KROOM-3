@@ -81,6 +81,7 @@ void CinematicAudio_OpenAL::InitAudio( void* audioContext )
 	}
 	else
 	{
+#if defined(USE_FFMPEG)
 		AVCodecContext* dec_ctx2 = ( AVCodecContext* )audioContext;
 		av_rate_cin = dec_ctx2->sample_rate;
 
@@ -122,6 +123,7 @@ void CinematicAudio_OpenAL::InitAudio( void* audioContext )
 				return;
 			}
 		}
+#endif
 	}
 
 	alSourceRewind( alMusicSourceVoicecin );

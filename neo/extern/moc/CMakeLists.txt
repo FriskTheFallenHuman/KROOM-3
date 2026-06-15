@@ -84,3 +84,8 @@ add_library( MaskedOcclusionCulling ${MOC_FILES} )
 # Add folder to include path
 #
 target_include_directories(MaskedOcclusionCulling PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+#
+# add to the folder libs
+#
+set_target_properties(MaskedOcclusionCulling PROPERTIES FOLDER "libs") # Krispy

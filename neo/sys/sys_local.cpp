@@ -220,26 +220,6 @@ void idSysLocal::FPU_SetDAZ( bool enable )
 
 /*
 ==================
-idSysLocal::LockMemory
-==================
-*/
-bool idSysLocal::LockMemory( void* ptr, int bytes )
-{
-	return Sys_LockMemory( ptr, bytes );
-}
-
-/*
-==================
-idSysLocal::UnlockMemory
-==================
-*/
-bool idSysLocal::UnlockMemory( void* ptr, int bytes )
-{
-	return Sys_UnlockMemory( ptr, bytes );
-}
-
-/*
-==================
 idSysLocal::DLL_Load
 ==================
 */

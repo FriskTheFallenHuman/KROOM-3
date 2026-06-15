@@ -104,26 +104,6 @@ struct mouse_poll_t
 static idList<kbd_poll_t> kbd_polls;
 static idList<mouse_poll_t> mouse_polls;
 
-struct joystick_poll_t
-{
-	int action;
-	int value;
-
-	joystick_poll_t()
-	{
-	}
-
-	joystick_poll_t( int a, int v )
-	{
-		action = a;
-		value = v;
-	}
-};
-static idList<joystick_poll_t> joystick_polls;
-SDL_Joystick* joy = NULL;
-int SDL_joystick_has_hat = 0;
-bool buttonStates[K_LAST_KEY];	// For keeping track of button up/down events
-
 #include "sdl2_scancode_mappings.h"
 
 static int SDLScanCodeToKeyNum( SDL_Scancode sc )
@@ -211,39 +191,12 @@ Sys_InitInput
 */
 void Sys_InitInput()
 {
-	int numJoysticks, i;
-
 	kbd_polls.SetGranularity( 64 );
 	mouse_polls.SetGranularity( 64 );
 
-	memset( buttonStates, 0, sizeof( buttonStates ) );
-
 	in_keyboard.SetModified();
 
-	// GameController
-	if( SDL_Init( SDL_INIT_GAMECONTROLLER ) )
-	{
-		common->Printf( "Sys_InitInput: SDL_INIT_GAMECONTROLLER error: %s\n", SDL_GetError() );
-	}
-
-	SDL_GameController* controller = NULL;
-	for( int i = 0; i < SDL_NumJoysticks(); ++i )
-	{
-		if( SDL_IsGameController( i ) )
-		{
-			controller = SDL_GameControllerOpen( i );
-			if( controller )
-			{
-				common->Printf( "GameController %i name: %s\n", i, SDL_GameControllerName( controller ) );
-				common->Printf( "GameController %i is mapped as \"%s\".\n", i, SDL_GameControllerMapping( controller ) );
-			}
-			else
-			{
-				common->Printf( "Could not open gamecontroller %i: %s\n", i, SDL_GetError() );
-			}
-
-		}
-	}
+	sdl.g_Joystick.Init();
 }
 
 /*
@@ -255,33 +208,9 @@ void Sys_ShutdownInput()
 {
 	kbd_polls.Clear();
 	mouse_polls.Clear();
-	joystick_polls.Clear();
 
-	memset( buttonStates, 0, sizeof( buttonStates ) );
-
-	// Close any opened SDL Joystic
-	if( joy )
-	{
-		common->Printf( "Sys_ShutdownInput: closing SDL joystick.\n" );
-		SDL_JoystickClose( joy );
-	}
-	else
-	{
-		common->Printf( "Sys_ShutdownInput: SDL joystick not initialized. Nothing to close.\n" );
-	}
+	sdl.g_Joystick.Shutdown();
 }
-
-/*
-===========
-Sys_InitScanTable
-===========
-*/
-// Windows has its own version due to the tools
-#ifndef _WIN32
-void Sys_InitScanTable()
-{
-}
-#endif
 
 /*
 ===============
@@ -695,11 +624,10 @@ sysEvent_t Sys_GetEvent()
 					{K_NONE, K_NONE},							// Null padding: SDL_CONTROLLER_AXIS_TRIGGERRIGHT
 				};
 
-				res.evType = SE_JOYSTICK;
-				res.evValue = J_AXIS_LEFT_X + ( ev.caxis.axis - SDL_CONTROLLER_AXIS_LEFTX );
-				res.evValue2 = ev.caxis.value;
+				int action = J_AXIS_LEFT_X + ( ev.caxis.axis - SDL_CONTROLLER_AXIS_LEFTX );
+				int value = ev.caxis.value;
 
-				joystick_polls.Append( joystick_poll_t( res.evValue, res.evValue2 ) );
+				sdl.g_Joystick.AddPollEvent( action, value );
 
 				// SRS - Synthesize joystick axis key presses to enable navigation in game menus and the PDA
 				if( ev.caxis.axis <= SDL_CONTROLLER_AXIS_RIGHTY )
@@ -708,22 +636,25 @@ sysEvent_t Sys_GetEvent()
 					bool stickNeg = static_cast<float>( ev.caxis.value ) / 32767.0f < - joy_deadZone.GetFloat();
 					bool stickPos = static_cast<float>( ev.caxis.value ) / 32767.0f >   joy_deadZone.GetFloat();
 
-					if( buttonStates[controllerAxisRemap[axisIndex][0]] != stickNeg )
+					static bool axisButtonStates[4][2] = {{ false }};
+					if( axisButtonStates[axisIndex][0] != stickNeg )
 					{
-						buttonStates[controllerAxisRemap[axisIndex][0]] = stickNeg;
+						axisButtonStates[axisIndex][0] = stickNeg;
 						res.evType = SE_KEY;
 						res.evValue = controllerAxisRemap[axisIndex][0];
 						res.evValue2 = stickNeg ? 1 : 0;
+						return res;
 					}
-					else if( buttonStates[controllerAxisRemap[axisIndex][1]] != stickPos )
+					else if( axisButtonStates[axisIndex][1] != stickPos )
 					{
-						buttonStates[controllerAxisRemap[axisIndex][1]] = stickPos;
+						axisButtonStates[axisIndex][1] = stickPos;
 						res.evType = SE_KEY;
 						res.evValue = controllerAxisRemap[axisIndex][1];
 						res.evValue2 = stickPos ? 1 : 0;
+						return res;
 					}
 				}
-				return res;
+				continue; // no key event generated
 			}
 			case SDL_CONTROLLERBUTTONDOWN:
 			case SDL_CONTROLLERBUTTONUP:
@@ -747,11 +678,15 @@ sysEvent_t Sys_GetEvent()
 					{K_JOY_DPAD_RIGHT, J_DPAD_RIGHT},
 				};
 
+				int action = controllerButtonRemap[ev.cbutton.button][1];
+				int value = ( ev.cbutton.state == SDL_PRESSED ) ? 1 : 0;
+
+				sdl.g_Joystick.AddPollEvent( action, value );
+
+				// Return SE_KEY event for immediate use (e.g., menus)
 				res.evType = SE_KEY;
 				res.evValue = controllerButtonRemap[ev.cbutton.button][0];
-				res.evValue2 = ev.cbutton.state == SDL_PRESSED ? 1 : 0;
-
-				joystick_polls.Append( joystick_poll_t( controllerButtonRemap[ev.cbutton.button][1], res.evValue2 ) );
+				res.evValue2 = value;
 				return res;
 			}
 
@@ -944,46 +879,4 @@ char* Sys_GetClipboardData()
 void Sys_SetClipboardData( const char* string )
 {
 	SDL_SetClipboardText( string );
-}
-
-//=====================================================================================
-//	Joystick Input Handling
-//=====================================================================================
-
-void Sys_SetRumble( int device, int low, int hi )
-{
-	// TODO;
-	// SDL 2.0 required (SDL Haptic subsystem)
-}
-
-int Sys_PollJoystickInputEvents( int deviceNum )
-{
-	int numEvents = joystick_polls.Num();
-
-	return numEvents;
-}
-
-// This funcion called by void idUsercmdGenLocal::Joystick( int deviceNum ) in
-// file UsercmdGen.cpp
-// action - must have values belonging to enum sys_jEvents (sys_public.h)
-// value - must be 1/0 for button or DPAD pressed/released
-//         for joystick axes must be in the range (-32769, 32768)
-//         for joystick trigger must be in the range (0, 32768)
-int Sys_ReturnJoystickInputEvent( const int n, int& action, int& value )
-{
-	// Get last element of the list and copy into argument references
-	const joystick_poll_t& mp = joystick_polls[n];
-	action = mp.action;
-	value = mp.value;
-
-	return 1;
-}
-
-// This funcion called by void idUsercmdGenLocal::Joystick( int deviceNum ) in
-// file UsercmdGen.cpp
-void Sys_EndJoystickInputEvents()
-{
-	// Empty the joystick event container. This is called after
-	// all joystick events have been read using Sys_ReturnJoystickInputEvent()
-	joystick_polls.SetNum( 0 );
 }

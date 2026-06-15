@@ -26,51 +26,38 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#ifndef __SYS_LOCAL__
-#define __SYS_LOCAL__
+#ifndef __DEVICEINPUT_SDL_H__
+#define __DEVICEINPUT_SDL_H__
 
-/*
-==============================================================
-
-	idSysLocal
-
-==============================================================
-*/
-
-class idSysLocal : public idSys
+class idJoystickSDL : public idJoystick
 {
 public:
-	virtual const char* 	GetCmdLine();
+	idJoystickSDL();
+	virtual ~idJoystickSDL();
 
-	virtual void			DebugPrintf( VERIFY_FORMAT_STRING const char* fmt, ... );
-	virtual void			DebugVPrintf( const char* fmt, va_list arg );
+	// idJoystick interface
+	virtual bool Init();
+	virtual void Shutdown();
+	virtual void SetRumble( int deviceNum, int rumbleLow, int rumbleHigh );
+	virtual int  PollInputEvents( int inputDeviceNum );
+	virtual int  ReturnInputEvent( const int n, int& action, int& value );
+	virtual void EndInputEvents();
 
-	virtual unsigned int	GetMilliseconds();
-	virtual double			GetClockTicks();
-	virtual double			ClockTicksPerSecond();
-	virtual int				GetProcessorId();
-	virtual const char* 	GetProcessorString();
+public: // Called on the SDL event loop
+	void AddPollEvent( int action, int value );
 
-	virtual void			FPU_SetFTZ( bool enable );
-	virtual void			FPU_SetDAZ( bool enable );
+private:
+	struct JoystickPollEvent
+	{
+		int action;
+		int value;
+		JoystickPollEvent() {}
+		JoystickPollEvent( int a, int v ) : action( a ), value( v ) {}
+	};
 
-	virtual int				DLL_Load( const char* dllName );
-	virtual void* 			DLL_GetProcAddress( int dllHandle, const char* procName );
-	virtual void			DLL_Unload( int dllHandle );
-	virtual void			DLL_GetFileName( const char* baseName, char* dllName, int maxLength );
-
-	virtual sysEvent_t		GenerateMouseButtonEvent( int button, bool down );
-	virtual sysEvent_t		GenerateMouseMoveEvent( int deltax, int deltay );
-
-	virtual void			OpenURL( const char* url, bool quit );
-	virtual void			StartProcess( const char* exeName, bool quit );
-	virtual void			StartProcess( idCmdArgs& args, void* data, bool quit );
-	virtual void			ReLaunch( void* data );
-	virtual bool			Exec( const char* appPath, const char* workingPath, const char* args,
-								  execProcessWorkFunction_t workFn, execOutputFunction_t outputFn,
-								  const int waitMS, unsigned int& exitCode );
+	SDL_Joystick* m_joy;
+	int m_hasHat;           // 1 if the joystick has a hat
+	idList<JoystickPollEvent> m_pollEvents;
 };
 
-extern char	sys_cmdline[MAX_STRING_CHARS];
-
-#endif /* !__SYS_LOCAL__ */
+#endif /* !__DEVICEINPUT_SDL_H__ */

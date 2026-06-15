@@ -60,3 +60,5 @@ reproc_example(reproc poll C)
 reproc_example(reproc read C)
 reproc_example(reproc parent C)
 reproc_example(reproc run C)
+
+set_target_properties(reproc PROPERTIES FOLDER "libs") # Krispy
