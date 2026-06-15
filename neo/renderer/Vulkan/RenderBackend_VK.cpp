@@ -56,6 +56,9 @@ PFN_vkCmdInsertDebugUtilsLabelEXT	qvkCmdInsertDebugUtilsLabelEXT = VK_NULL_HANDL
 #include "../RenderBackend.h"
 #include "Staging_VK.h"
 //#include "../../framework/Common_local.h"
+#if defined(VULKAN_USE_PLATFORM_SDL)
+	#include "../../sys/sdl/DeviceManager_SDL.h"
+#endif
 
 idCVar r_drawFlickerBox( "r_drawFlickerBox", "0", CVAR_RENDERER | CVAR_BOOL, "visual test for dropping frames" );
 
@@ -287,11 +290,15 @@ static void CreateVulkanInstance()
 		vkcontext.instanceExtensions.Append( g_instanceExtensions[ i ] );
 	}
 #elif defined(VULKAN_USE_PLATFORM_SDL)  // SDL2
-	auto sdl_instanceExtensions = get_required_extensions();
-	// SRS - Populate vkcontext with required SDL instance extensions
-	for( auto instanceExtension : sdl_instanceExtensions )
+	idDeviceManagerSDL* device = dynamic_cast<idDeviceManagerSDL*>( idDeviceManager::GetInstance() );
+	if( device )
 	{
-		vkcontext.instanceExtensions.Append( instanceExtension );
+		auto sdl_instanceExtensions = device->GetRequiredExtensions();
+		// SRS - Populate vkcontext with required SDL instance extensions
+		for( auto instanceExtension : sdl_instanceExtensions )
+		{
+			vkcontext.instanceExtensions.Append( instanceExtension );
+		}
 	}
 #endif
 
@@ -1187,7 +1194,7 @@ static void CreateQueryPool()
 ChooseSupportedFormat
 =============
 */
-static VkFormat ChooseSupportedFormat( VkFormat* formats, int numFormats, VkImageTiling tiling, VkFormatFeatureFlags features )
+VkFormat ChooseSupportedFormat( VkFormat* formats, int numFormats, VkImageTiling tiling, VkFormatFeatureFlags features )
 {
 	for( int i = 0; i < numFormats; ++i )
 	{
@@ -1196,11 +1203,8 @@ static VkFormat ChooseSupportedFormat( VkFormat* formats, int numFormats, VkImag
 		VkFormatProperties props;
 		vkGetPhysicalDeviceFormatProperties( vkcontext.physicalDevice, format, &props );
 
-		if( tiling == VK_IMAGE_TILING_LINEAR && ( props.linearTilingFeatures & features ) == features )
-		{
-			return format;
-		}
-		else if( tiling == VK_IMAGE_TILING_OPTIMAL && ( props.optimalTilingFeatures & features ) == features )
+		if( ( tiling == VK_IMAGE_TILING_LINEAR && ( props.linearTilingFeatures & features ) == features )
+				|| ( tiling == VK_IMAGE_TILING_OPTIMAL && ( props.optimalTilingFeatures & features ) == features ) )
 		{
 			return format;
 		}
@@ -1210,6 +1214,17 @@ static VkFormat ChooseSupportedFormat( VkFormat* formats, int numFormats, VkImag
 
 	return VK_FORMAT_UNDEFINED;
 }
+
+/*
+=============
+formats
+=============
+*/
+VkFormat formats[] =
+{
+	VK_FORMAT_D32_SFLOAT_S8_UINT,
+	VK_FORMAT_D24_UNORM_S8_UINT
+};
 
 /*
 =============
@@ -1271,11 +1286,6 @@ static void CreateRenderTargets()
 
 	// Select Depth Format
 	{
-		VkFormat formats[] =
-		{
-			VK_FORMAT_D32_SFLOAT_S8_UINT,
-			VK_FORMAT_D24_UNORM_S8_UINT
-		};
 		vkcontext.depthFormat = ChooseSupportedFormat(
 									formats, 3,
 									VK_IMAGE_TILING_OPTIMAL,
@@ -1626,13 +1636,10 @@ void idRenderBackend::Init()
 
 
 	// DG: make sure SDL has setup video so getting supported modes in R_SetNewMode() works
-// SRS - Generalized Vulkan SDL platform
-#if defined(VULKAN_USE_PLATFORM_SDL)
-	VKimp_PreInit();
-#else
-	GLimp_PreInit();
-#endif
-	// DG end
+	if( idDeviceManager::GetInstance() )
+	{
+		idDeviceManager::GetInstance()->PreInit();
+	}
 
 	R_SetNewMode( true );
 
@@ -1641,7 +1648,6 @@ void idRenderBackend::Init()
 
 	idLib::Printf( "----- Initializing Vulkan driver -----\n" );
 
-	glConfig.driverType = GLDRV_VULKAN;
 	glConfig.timerQueryAvailable = true;    // SRS - Use glConfig.timerQueryAvailable flag to control Vulkan timestamp capture
 	glConfig.gpuSkinningAvailable = true;
 
@@ -1811,17 +1817,17 @@ void idRenderBackend::Shutdown()
 	ClearContext();
 
 	// destroy main window
-// SRS - Generalized Vulkan SDL platform
-#if defined(VULKAN_USE_PLATFORM_SDL)
-	VKimp_Shutdown( true );
-#else
-	GLimp_Shutdown();
-#endif
+	if( idDeviceManager::GetInstance() )
+	{
+		idDeviceManager::GetInstance()->Shutdown();
+	}
 }
 
-
-
-
+/*
+====================
+GL_CheckErrors_
+====================
+*/
 bool GL_CheckErrors_( const char* filename, int line )
 {
 	return false;
@@ -2507,11 +2513,11 @@ void idRenderBackend::GL_Clear( bool color, bool depth, bool stencil, byte stenc
 		attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		attachment.colorAttachment = 0;
 
-		VkClearColorValue& color = attachment.clearValue.color;
-		color.float32[ 0 ] = r;
-		color.float32[ 1 ] = g;
-		color.float32[ 2 ] = b;
-		color.float32[ 3 ] = a;
+		VkClearColorValue& color_ = attachment.clearValue.color;
+		color_.float32[ 0 ] = r;
+		color_.float32[ 1 ] = g;
+		color_.float32[ 2 ] = b;
+		color_.float32[ 3 ] = a;
 	}
 
 	if( depth || stencil )

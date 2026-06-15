@@ -301,10 +301,6 @@ if (USE_INTRINSICS_SSE)
 	add_definitions(-DUSE_INTRINSICS_SSE)
 endif()
 
-macro(SET_OPTION option value)
-  set(${option} ${value} CACHE STRING "" FORCE)
-endmacro()
-
 if(USE_VULKAN)
 	# SRS - Set default VULKAN_SDK location if environment variable not defined on OSX
 	if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin" AND NOT DEFINED ENV{VULKAN_SDK})
@@ -434,7 +430,6 @@ if(USE_INTRINSICS_SSE)
 	list(APPEND sys_thirdparty MaskedOcclusionCulling)
 endif()
 
-SET_OPTION(REPROC++ ON)
 add_subdirectory(extern/reproc)
 list(APPEND sys_thirdparty_dependencies reproc++)
 list(APPEND sys_thirdparty reproc++)
@@ -761,8 +756,11 @@ if(MSVC)
 		get_filename_component(win_input_h_full_path ${CMAKE_CURRENT_SOURCE_DIR}/sys/win32/win_input.h ABSOLUTE)
 		list(REMOVE_ITEM src_sys_win32 "${win_input_h_full_path}")
 
-		get_filename_component(win_glimp_cpp_full_path ${CMAKE_CURRENT_SOURCE_DIR}/sys/win32/win_glimp.cpp ABSOLUTE)
-		list(REMOVE_ITEM src_sys_win32 "${win_glimp_cpp_full_path}")
+		get_filename_component(devicemanager_win32_cpp_full_path ${CMAKE_CURRENT_SOURCE_DIR}/sys/win32/DeviceManager_Win32.cpp ABSOLUTE)
+		list(REMOVE_ITEM src_sys_win32 "${devicemanager_win32_cpp_full_path}")
+
+		get_filename_component(devicemanager_win32_h_full_path ${CMAKE_CURRENT_SOURCE_DIR}/sys/win32/DeviceManager_Win32.h ABSOLUTE)
+		list(REMOVE_ITEM src_sys_win32 "${devicemanager_win32_h_full_path}")
 
 		get_filename_component(win_wndproc_cpp_full_path ${CMAKE_CURRENT_SOURCE_DIR}/sys/win32/win_wndproc.cpp ABSOLUTE)
 		list(REMOVE_ITEM src_sys_win32 "${win_wndproc_cpp_full_path}")

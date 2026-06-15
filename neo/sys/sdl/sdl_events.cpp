@@ -43,6 +43,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "renderer/RenderCommon.h"
 #include "sdl_local.h"
+#include "DeviceManager_SDL.h"
 
 #ifdef _WIN32
 	#include "../win32/win_local.h"
@@ -50,8 +51,7 @@ If you have questions concerning this license or the applicable additional terms
 	#include "../posix/posix_public.h"
 #endif
 
-static bool grabbed = false;
-extern SDL_Window* window;
+SDLVars_t sdl = {};
 
 // DG: those are needed for moving/resizing windows
 extern idCVar r_windowX;
@@ -65,7 +65,7 @@ const char* kbdNames[] =
 	"english", "french", "german", "italian", "spanish", "turkish", "norwegian", NULL
 };
 
-idCVar in_nograb( "in_nograb", "0", CVAR_SYSTEM | CVAR_NOCHEAT, "prevents input grabbing" );
+idCVar SDLVars_t::in_nograb( "in_nograb", "0", CVAR_SYSTEM | CVAR_NOCHEAT, "prevents input grabbing" );
 
 idCVar in_keyboard( "in_keyboard", "english", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_NOCHEAT, "keyboard layout", kbdNames, idCmdSystem::ArgCompletion_String<kbdNames> );
 
@@ -365,12 +365,12 @@ void Sys_GrabMouseCursor( bool grabIt )
 	{
 		flags = GRAB_SETSTATE;
 	}
-// SRS - Generalized Vulkan SDL platform
-#if defined(VULKAN_USE_PLATFORM_SDL)
-	VKimp_GrabInput( flags );
-#else
-	GLimp_GrabInput( flags );
-#endif
+
+	idDeviceManagerSDL* device = dynamic_cast<idDeviceManagerSDL*>( idDeviceManager::GetInstance() );
+	if( device )
+	{
+		device->GrabInput( flags );
+	}
 }
 
 /*
@@ -944,43 +944,6 @@ char* Sys_GetClipboardData()
 void Sys_SetClipboardData( const char* string )
 {
 	SDL_SetClipboardText( string );
-}
-
-/*
-===================
-GLimp_GrabInput
-===================
-*/
-void GLimp_GrabInput( int flags )
-{
-	bool grab = flags & GRAB_ENABLE;
-
-	if( grab && ( flags & GRAB_REENABLE ) )
-	{
-		grab = false;
-	}
-
-	if( flags & GRAB_SETSTATE )
-	{
-		grabbed = grab;
-	}
-
-	if( in_nograb.GetBool() )
-	{
-		grab = false;
-	}
-
-	if( !window )
-	{
-		common->Warning( "GLimp_GrabInput called without window" );
-		return;
-	}
-
-	// DG: disabling the cursor is now done once in GLimp_Init() because it should always be disabled
-
-	// DG: check for GRAB_ENABLE instead of GRAB_HIDECURSOR because we always wanna hide it
-	SDL_SetRelativeMouseMode( flags & GRAB_ENABLE ? SDL_TRUE : SDL_FALSE );
-	SDL_SetWindowGrab( window, grab ? SDL_TRUE : SDL_FALSE );
 }
 
 //=====================================================================================

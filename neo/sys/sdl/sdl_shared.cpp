@@ -60,37 +60,3 @@ uint64_t Sys_Microseconds()
 	uint64_t counter = SDL_GetPerformanceCounter();           // Current counter value
 	return ( counter * 1000000 ) / frequency;                 // Convert to microseconds
 }
-
-/*
-========================
-Sys_SDLIcon
-========================
-*/
-void Sys_SDLIcon( SDL_Window* window )
-{
-	Uint32 rmask, gmask, bmask, amask;
-
-	// ok, the following is pretty stupid.. SDL_CreateRGBSurfaceFrom() pretends to use a void* for the data,
-	// but it's really treated as endian-specific Uint32* ...
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-	rmask = 0xff000000;
-	gmask = 0x00ff0000;
-	bmask = 0x0000ff00;
-	amask = 0x000000ff;
-#else
-	rmask = 0x000000ff;
-	gmask = 0x0000ff00;
-	bmask = 0x00ff0000;
-	amask = 0xff000000;
-#endif
-
-#include "doom_ico.h" // contains the struct doom_icon
-
-	SDL_Surface* icon = SDL_CreateRGBSurfaceFrom( ( void* )doom_icon.pixel_data, doom_icon.width, doom_icon.height,
-						doom_icon.bytes_per_pixel * 8, doom_icon.bytes_per_pixel * doom_icon.width,
-						rmask, gmask, bmask, amask );
-
-	SDL_SetWindowIcon( window, icon );
-
-	SDL_FreeSurface( icon );
-}
