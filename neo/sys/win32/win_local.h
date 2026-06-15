@@ -66,7 +66,10 @@ void Conbuf_AppendText( const char* msg );
 
 struct Win32Vars_t
 {
+#ifndef USE_SDL
 	HWND			hWnd;
+#endif
+
 	HINSTANCE		hInstance;
 
 	bool			activeApp;			// changed with WM_ACTIVATE messages

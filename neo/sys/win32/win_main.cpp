@@ -234,6 +234,7 @@ void Sys_DebugVPrintf( const char* fmt, va_list arg )
 	OutputDebugString( msg );
 }
 
+#ifndef USE_SDL
 /*
 ==============
 Sys_Sleep
@@ -263,6 +264,7 @@ bool Sys_IsWindowVisible()
 {
 	return ( ::IsWindowVisible( win32.hWnd ) != 0 );
 }
+#endif
 
 /*
 ==============
@@ -579,7 +581,6 @@ void Sys_SetClipboardData( const char* string )
 	// close Clipboard
 	CloseClipboard();
 }
-#endif
 
 /*
 ========================================================================
@@ -594,8 +595,7 @@ DLL Loading
 Sys_DLL_Load
 =====================
 */
-// RB: 64 bit fixes, changed int to intptr_t
-intptr_t Sys_DLL_Load( const char* dllName )
+uintptr_t Sys_DLL_Load( const char* dllName )
 {
 	HINSTANCE	libHandle;
 	libHandle = LoadLibrary( dllName );
@@ -695,7 +695,6 @@ void Sys_DLL_Unload( intptr_t dllHandle )
 }
 // RB end
 
-#ifndef USE_SDL
 /*
 ========================================================================
 

@@ -42,6 +42,7 @@ idDeviceManagerWin32::TestSwapBuffers
 */
 void idDeviceManagerWin32::TestSwapBuffers( const idCmdArgs& args )
 {
+#if !defined(USE_VULKAN)
 	idLib::Printf( "idDeviceManagerWin32::TimeSwapBuffers\n" );
 	static const int MAX_FRAMES = 5;
 	uint64	timestamps[MAX_FRAMES];
@@ -77,6 +78,9 @@ void idDeviceManagerWin32::TestSwapBuffers( const idCmdArgs& args )
 			idLib::Printf( "%i microseconds\n", ( int )( timestamps[i] - timestamps[i - 1] ) );
 		}
 	}
+#else
+	common->Printf( "Not implemented under vulkan\n" );
+#endif
 }
 
 
@@ -148,6 +152,7 @@ void idDeviceManagerWin32::SetGamma( unsigned short red[256], unsigned short gre
 	}
 }
 
+#if !defined(USE_VULKAN)
 /*
 =============================================================================
 
@@ -557,6 +562,7 @@ bool idDeviceManagerWin32::InitDriver( vidParms_t parms )
 
 	return true;
 }
+#endif
 
 /*
 ====================
@@ -594,6 +600,7 @@ void idDeviceManagerWin32::CreateWindowClasses()
 	}
 	common->Printf( "...registered window class\n" );
 
+#if !defined(USE_VULKAN)
 	// now register the fake window class that is only used
 	// to get wgl extensions
 	wc.style         = 0;
@@ -612,6 +619,7 @@ void idDeviceManagerWin32::CreateWindowClasses()
 		common->FatalError( "idDeviceManagerWin32::CreateWindowClasses: could not register window class" );
 	}
 	common->Printf( "...registered fake window class\n" );
+#endif
 
 	windowClassRegistered = true;
 }
@@ -1124,10 +1132,13 @@ bool idDeviceManagerWin32::CreateWindows( vidParms_t parms )
 		stylebits = WINDOW_STYLE | WS_SYSMENU;
 	}
 
+	// Show whether this is a 32-bit or 64-bit binary
+	idStr title = va( "%s - %s %s (x%u Build)", GAME_NAME, ID__DATE__, ID__TIME__, sizeof( void* ) * 8 );
+
 	win32.hWnd = CreateWindowEx(
 					 exstyle,
 					 WIN32_WINDOW_CLASS_NAME,
-					 GAME_NAME,
+					 title.c_str(),
 					 stylebits,
 					 x, y, w, h,
 					 NULL,
@@ -1155,6 +1166,7 @@ bool idDeviceManagerWin32::CreateWindows( vidParms_t parms )
 		return false;
 	}
 
+#if !defined(USE_VULKAN)
 	if( !InitDriver( parms ) )
 	{
 		ShowWindow( win32.hWnd, SW_HIDE );
@@ -1162,6 +1174,9 @@ bool idDeviceManagerWin32::CreateWindows( vidParms_t parms )
 		win32.hWnd = NULL;
 		return false;
 	}
+#else
+	glConfig.driverType = GLDRV_VULKAN;
+#endif
 
 	SetForegroundWindow( win32.hWnd );
 	SetFocus( win32.hWnd );
@@ -1314,7 +1329,7 @@ bool idDeviceManagerWin32::Init( vidParms_t parms )
 
 	cmdSystem->AddCommand( "testSwapBuffers", idDeviceManagerWin32::TestSwapBuffers, CMD_FL_SYSTEM, "Times swapbuffer options" );
 
-	common->Printf( "Initializing OpenGL subsystem with multisamples:%i fullscreen:%i\n",
+	common->Printf( "Initializing render subsystem with multisamples:%i fullscreen:%i\n",
 					parms.multiSamples, parms.fullScreen );
 
 	// check our desktop attributes
@@ -1338,9 +1353,11 @@ bool idDeviceManagerWin32::Init( vidParms_t parms )
 	// create our window classes if we haven't already
 	CreateWindowClasses();
 
+#if !defined(USE_VULKAN)
 	// getting the wgl extensions involves creating a fake window to get a context,
 	// which is pretty disgusting, and seems to mess with the AGP VAR allocation
 	GetWGLExtensionsWithFakeWindow();
+#endif
 
 	// Optionally ChangeDisplaySettings to get a different fullscreen resolution.
 	if( !ChangeDislaySettingsIfNeeded( parms ) )
@@ -1371,6 +1388,7 @@ bool idDeviceManagerWin32::Init( vidParms_t parms )
 	const int mmWide = GetDeviceCaps( win32.hDC, HORZSIZE );
 	DeleteDC( deviceDC );
 
+#if !defined(USE_VULKAN)
 	// RB: we probably have a new OpenGL 3.2 core context so reinitialize GLEW
 	GLenum glewResult = glewInit();
 	if( GLEW_OK != glewResult )
@@ -1382,6 +1400,7 @@ bool idDeviceManagerWin32::Init( vidParms_t parms )
 	{
 		common->Printf( "Using GLEW %s\n", glewGetString( GLEW_VERSION ) );
 	}
+#endif
 
 	return true;
 }
@@ -1447,8 +1466,9 @@ void idDeviceManagerWin32::Shutdown( bool shutdownSDL )
 	const char* success[] = { "failed", "success" };
 	int retVal;
 
-	common->Printf( "Shutting down OpenGL subsystem\n" );
+	common->Printf( "Shutting down render subsystem\n" );
 
+#if !defined(USE_VULKAN)
 	// set current context to NULL
 	//if( wglMakeCurrent )
 	{
@@ -1463,6 +1483,7 @@ void idDeviceManagerWin32::Shutdown( bool shutdownSDL )
 		common->Printf( "...deleting GL context: %s\n", success[retVal] );
 		hGLRC = NULL;
 	}
+#endif
 
 	// release DC
 	if( win32.hDC )
@@ -1504,6 +1525,7 @@ idDeviceManagerWin32::SwapBuffers
 */
 void idDeviceManagerWin32::SwapBuffers()
 {
+#if !defined(USE_VULKAN)
 	if( r_swapInterval.IsModified() )
 	{
 		r_swapInterval.ClearModified();
@@ -1525,4 +1547,5 @@ void idDeviceManagerWin32::SwapBuffers()
 	}
 
 	::SwapBuffers( win32.hDC );
+#endif
 }

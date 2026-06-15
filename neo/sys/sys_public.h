@@ -510,11 +510,9 @@ void			Sys_SetPhysicalWorkMemory( int minBytes, int maxBytes );
 
 // DLL loading, the path should be a fully qualified OS path to the DLL file to be loaded
 
-// RB: 64 bit fixes, changed int to intptr_t
-intptr_t		Sys_DLL_Load( const char* dllName );
+uintptr_t		Sys_DLL_Load( const char* dllName );
 void* 			Sys_DLL_GetProcAddress( intptr_t dllHandle, const char* procName );
 void			Sys_DLL_Unload( intptr_t dllHandle );
-// RB end
 
 // event generation
 void			Sys_GenerateEvents();
