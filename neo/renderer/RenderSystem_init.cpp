@@ -355,7 +355,7 @@ static bool R_SetDefaultVideoParms()
 	vidMode_t defaultMode = {};
 
 	// get the default display and its default mode
-	if( !R_GetDefaultDisplayMode( defaultDisplay, defaultMode ) )
+	if( !idDeviceManager::GetInstance() && idDeviceManager::GetInstance()->GetDefaultDisplayMode( defaultDisplay, defaultMode ) )
 	{
 		idLib::Printf( "Couldn't get default video mode.\n" );
 		return false;
@@ -363,7 +363,7 @@ static bool R_SetDefaultVideoParms()
 
 	// make sure the default mode is on the list of modes for the default display
 	idList<vidMode_t> modeList;
-	if( !R_GetModeListForDisplay( defaultDisplay, modeList, 1 ) )
+	if( !idDeviceManager::GetInstance() && idDeviceManager::GetInstance()->GetModeListForDisplay( defaultDisplay, modeList, 1 ) )
 	{
 		idLib::Printf( "Couldn't get mode list for default display.\n" );
 		return false;
@@ -406,7 +406,7 @@ static void R_SetSafeVideoParms()
 	r_windowHeight.SetString( r_windowHeight.GetDefaultString() );
 }
 
-static void R_FillGlimpParmsForWindowedMode( glimpParms_t& parms )
+static void R_FillParmsForWindowedMode( vidParms_t& parms )
 {
 	memset( &parms, 0, sizeof( parms ) );
 	// use explicit position / size for window
@@ -418,7 +418,7 @@ static void R_FillGlimpParmsForWindowedMode( glimpParms_t& parms )
 	// parms.displayHz: ignored in windowed mode
 }
 
-static void R_FillGlimpParmsForFullscreenMode( glimpParms_t& parms, bool& defaultParmsCalled, bool& safeParmsCalled )
+static void R_FillParmsForFullscreenMode( vidParms_t& parms, bool& defaultParmsCalled, bool& safeParmsCalled )
 {
 	memset( &parms, 0, sizeof( parms ) );
 
@@ -429,7 +429,7 @@ static void R_FillGlimpParmsForFullscreenMode( glimpParms_t& parms, bool& defaul
 	{
 		// get the mode list for this monitor
 		idList<vidMode_t> modeList;
-		if( !defaultParmsCalled && !R_GetModeListForDisplay( r_vidMonitor.GetInteger() - 1, modeList, 1 ) )
+		if( !defaultParmsCalled && !idDeviceManager::GetInstance() && idDeviceManager::GetInstance()->GetModeListForDisplay( r_vidMonitor.GetInteger() - 1, modeList, 1 ) )
 		{
 			idLib::Printf( "Mode list failed for display %d. Using default video parms.\n", r_vidMonitor.GetInteger() );
 			defaultParmsCalled = true;
@@ -439,7 +439,7 @@ static void R_FillGlimpParmsForFullscreenMode( glimpParms_t& parms, bool& defaul
 				idLib::Printf( "Failed to set default video parms. Using safe parms.\n" );
 				safeParmsCalled = true;
 				R_SetSafeVideoParms();
-				R_FillGlimpParmsForWindowedMode( parms );
+				R_FillParmsForWindowedMode( parms );
 				return;
 			}
 		}
@@ -458,7 +458,7 @@ static void R_FillGlimpParmsForFullscreenMode( glimpParms_t& parms, bool& defaul
 				idLib::Printf( "Failed to set default video parms. Using safe parms.\n" );
 				safeParmsCalled = true;
 				R_SetSafeVideoParms();
-				R_FillGlimpParmsForWindowedMode( parms );
+				R_FillParmsForWindowedMode( parms );
 				return;
 			}
 			// R_SetDefaultVideoParms changes the r_vid* cvars, so read them again
@@ -519,15 +519,15 @@ void R_SetNewMode( const bool fullInit )
 		}
 	}
 
-	glimpParms_t parms = {};
+	vidParms_t parms = {};
 	// fill in parms, except for multiSamples and stereo, which are set in the loop below
 	if( r_vidFullscreen.GetInteger() == 1 )
 	{
-		R_FillGlimpParmsForFullscreenMode( parms, defaultParmsCalled, safeParmsCalled ); // may switch to windowed mode if needed
+		R_FillParmsForFullscreenMode( parms, defaultParmsCalled, safeParmsCalled ); // may switch to windowed mode if needed
 	}
 	else
 	{
-		R_FillGlimpParmsForWindowedMode( parms );
+		R_FillParmsForWindowedMode( parms );
 	}
 
 	// try 4 configurations:
@@ -556,12 +556,7 @@ void R_SetNewMode( const bool fullInit )
 		if( fullInit )
 		{
 			// create the context as well as setting up the window
-// SRS - Generalized Vulkan SDL platform
-#if defined(VULKAN_USE_PLATFORM_SDL)
-			if( VKimp_Init( parms ) )
-#else
-			if( GLimp_Init( parms ) )
-#endif
+			if( idDeviceManager::GetInstance() && idDeviceManager::GetInstance()->Init( parms ) )
 			{
 				// it worked
 
@@ -575,12 +570,7 @@ void R_SetNewMode( const bool fullInit )
 		else
 		{
 			// just rebuild the window
-// SRS - Generalized Vulkan SDL platform
-#if defined(VULKAN_USE_PLATFORM_SDL)
-			if( VKimp_SetScreenParms( parms ) )
-#else
-			if( GLimp_SetScreenParms( parms ) )
-#endif
+			if( idDeviceManager::GetInstance() && idDeviceManager::GetInstance()->SetScreenParms( parms ) )
 			{
 				// it worked
 
@@ -618,7 +608,7 @@ void R_SetNewMode( const bool fullInit )
 			{
 				safeParmsCalled = true;
 				R_SetSafeVideoParms();
-				R_FillGlimpParmsForWindowedMode( parms );
+				R_FillParmsForWindowedMode( parms );
 				continue;
 			}
 		}
@@ -692,7 +682,7 @@ static void R_ListModes_f( const idCmdArgs& args )
 	for( int displayNum = 0 ; ; displayNum++ )
 	{
 		idList<vidMode_t> modeList;
-		if( !R_GetModeListForDisplay( displayNum, modeList, 1 ) )
+		if( !idDeviceManager::GetInstance() && idDeviceManager::GetInstance()->GetModeListForDisplay( displayNum, modeList, 1 ) )
 		{
 			break;
 		}
@@ -1602,12 +1592,11 @@ void R_SetColorMappings()
 		int inf = idMath::Ftoi( 0xffff * pow( j / 255.0f, invg ) + 0.5f );
 		tr.gammaTable[i] = idMath::ClampInt( 0, 0xFFFF, inf );
 	}
-// SRS - Generalized Vulkan SDL platform
-#if defined(VULKAN_USE_PLATFORM_SDL)
-	VKimp_SetGamma( tr.gammaTable, tr.gammaTable, tr.gammaTable );
-#else
-	GLimp_SetGamma( tr.gammaTable, tr.gammaTable, tr.gammaTable );
-#endif
+
+	if( idDeviceManager::GetInstance() )
+	{
+		idDeviceManager::GetInstance()->SetGamma( tr.gammaTable, tr.gammaTable, tr.gammaTable );
+	}
 }
 
 /*

@@ -443,9 +443,6 @@ struct sysMemoryStats_t
 void			Sys_Init();
 void			Sys_Shutdown();
 void			Sys_Error( const char* error, ... );
-const char* 	Sys_GetCmdLine();
-void			Sys_ReLaunch();	// DG: Sys_ReLaunch() doesn't need any options (and the old way is painful for POSIX systems)
-void			Sys_Launch( const char* path, idCmdArgs& args,  void* launchData, unsigned int launchDataSize );
 void			Sys_Quit();
 
 // note that this isn't journaled...
@@ -760,6 +757,8 @@ public:
 class idSys
 {
 public:
+	virtual const char* 	GetCmdLine() = 0;
+
 	virtual void			DebugPrintf( VERIFY_FORMAT_STRING const char* fmt, ... ) = 0;
 	virtual void			DebugVPrintf( const char* fmt, va_list arg ) = 0;
 
@@ -785,6 +784,11 @@ public:
 
 	virtual void			OpenURL( const char* url, bool quit ) = 0;
 	virtual void			StartProcess( const char* exePath, bool quit ) = 0;
+	virtual void			StartProcess( idCmdArgs& args, void* data, bool quit ) = 0;
+	virtual void			ReLaunch( void* data ) = 0;
+	virtual bool			Exec( const char* appPath, const char* workingPath, const char* args,
+								  execProcessWorkFunction_t workFn, execOutputFunction_t outputFn,
+								  const int waitMS, unsigned int& exitCode ) = 0;
 };
 
 extern idSys* 				sys;

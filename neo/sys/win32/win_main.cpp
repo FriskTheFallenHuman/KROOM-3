@@ -47,10 +47,14 @@ If you have questions concerning this license or the applicable additional terms
 
 #ifdef USE_SDL
 	#include <SDL2/SDL_main.h>
+	#include "../sdl/DeviceManager_SDL.h"
+#else
+	#include "DeviceManager_Win32.h"
 #endif
 
 #include "../sys_local.h"
 #include "win_local.h"
+#include "win_hirez.h"
 #include "../../renderer/RenderCommon.h"
 
 idCVar Win32Vars_t::in_mouse( "in_mouse", "1", CVAR_SYSTEM | CVAR_BOOL, "enable mouse input" );
@@ -59,174 +63,6 @@ idCVar Win32Vars_t::win_viewlog( "win_viewlog", "0", CVAR_SYSTEM | CVAR_INTEGER,
 idCVar Win32Vars_t::win_timerUpdate( "win_timerUpdate", "0", CVAR_SYSTEM | CVAR_BOOL, "allows the game to be updated while dragging the window" );
 
 Win32Vars_t win32 = {};
-
-static char		sys_cmdline[MAX_STRING_CHARS];
-
-static HANDLE hProcessMutex;
-
-/*
-This class contains code adapted from Blat Blatnik's precise_sleep.c sample
-(retrieved 2024-04-10), which is under the Unlicense license:
-   https://github.com/blat-blatnik/Snippets/blob/main/precise_sleep.c
-   https://github.com/blat-blatnik/Snippets/blob/main/LICENSE
-*/
-extern "C" {
-	__declspec( dllexport ) DWORD NvOptimusEnablement = 0x00000001;
-	__declspec( dllexport ) int AmdPowerXpressRequestHighPerformance = 1;
-}
-
-#ifndef CREATE_WAITABLE_TIMER_HIGH_RESOLUTION
-	#define CREATE_WAITABLE_TIMER_HIGH_RESOLUTION 0x00000002
-#endif
-
-class idTimeHiRes
-{
-public:
-	idTimeHiRes();
-	void		Init();
-	void		Shutdown();
-	int64       ClockCount();
-	double		ClockCountToMilliseconds( int64 count );
-	void		Sleep( double seconds );
-
-private:
-	HANDLE Timer;
-	int SchedulerPeriodMs;
-	int64 QpcPerSecond;
-};
-
-idTimeHiRes::idTimeHiRes()
-{
-	Timer = NULL;
-	SchedulerPeriodMs = 0;
-	QpcPerSecond = 0;
-}
-
-void idTimeHiRes::Init()
-{
-	if( !Timer )
-	{
-		Timer = CreateWaitableTimerEx( NULL, NULL, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS );
-	}
-
-	TIMECAPS timeCaps;
-	bool capsObtained = false;
-	if( timeGetDevCaps( &timeCaps, sizeof( timeCaps ) ) == MMSYSERR_NOERROR )
-	{
-		SchedulerPeriodMs = ( int )timeCaps.wPeriodMin;
-		if( SchedulerPeriodMs > 0 )
-		{
-			timeBeginPeriod( ( UINT )SchedulerPeriodMs );
-			capsObtained = true;
-		}
-	}
-	if( !capsObtained )
-	{
-		SchedulerPeriodMs = 0;
-	}
-
-	LARGE_INTEGER qpf;
-	QueryPerformanceFrequency( &qpf );
-	QpcPerSecond = qpf.QuadPart;
-}
-
-void idTimeHiRes::Shutdown()
-{
-	if( Timer )
-	{
-		CloseHandle( Timer );
-		Timer = NULL;
-	}
-	if( SchedulerPeriodMs > 0 )
-	{
-		timeEndPeriod( ( uint )SchedulerPeriodMs );
-	}
-	SchedulerPeriodMs = 0;
-}
-
-int64 idTimeHiRes::ClockCount()
-{
-	if( !idLib::IsMainThread() )
-	{
-		return 0;
-	}
-	LARGE_INTEGER qpc;
-	QueryPerformanceCounter( &qpc );
-	int64 count = qpc.QuadPart;
-	return count;
-}
-
-double idTimeHiRes::ClockCountToMilliseconds( int64 count )
-{
-	if( !idLib::IsMainThread() )
-	{
-		return 0.0;
-	}
-	double msec = ( ( double )count / ( double )QpcPerSecond ) * 1000.0;
-	return msec;
-}
-
-void idTimeHiRes::Sleep( double milliseconds )
-{
-	if( !idLib::IsMainThread() )
-	{
-		return;
-	}
-	double seconds = milliseconds * 0.001;
-
-	LARGE_INTEGER qpc;
-	QueryPerformanceCounter( &qpc );
-	int64 targetQpc = qpc.QuadPart + (int64)( seconds * ( double )QpcPerSecond );
-
-	if( SchedulerPeriodMs > 0 )
-	{
-		// Try using a high resolution timer first.
-		if( Timer )
-		{
-			const double TOLERANCE = 0.001'02;
-			int64 maxTicks = (int64)SchedulerPeriodMs * 9'500;
-			
-			// Break sleep up into parts that are lower than scheduler period.
-			for( ;; )
-			{
-				double remainingSeconds = ( double )( targetQpc - qpc.QuadPart ) / ( double )QpcPerSecond;
-				int64 sleepTicks = (int64)( ( remainingSeconds - TOLERANCE ) * 10'000'000.0 ); // 100ns intervals
-				if( sleepTicks <= 0 )
-				{
-					break;
-				}
-
-				LARGE_INTEGER due;
-				due.QuadPart = -( sleepTicks > maxTicks ? maxTicks : sleepTicks );
-				SetWaitableTimerEx( Timer, &due, 0, NULL, NULL, NULL, 0 );
-				WaitForSingleObject( Timer, INFINITE );
-				QueryPerformanceCounter( &qpc );
-			}
-		}
-		else
-		{
-			// Fallback to Sleep.
-			const double TOLERANCE = 0.000'02;
-			double sleepMs = (seconds - TOLERANCE) * 1000.0 - (double)SchedulerPeriodMs; // Sleep for 1 scheduler period less than requested.
-			int sleepSlices = (int)(sleepMs / (double)SchedulerPeriodMs);
-			if( sleepSlices > 0 )
-			{
-				Sleep((DWORD)sleepSlices * (DWORD)SchedulerPeriodMs);
-			}
-
-			QueryPerformanceCounter(&qpc);
-		}
-	}
-
-	// Spin for any remaining time.
-	while( qpc.QuadPart < targetQpc )
-	{
-		YieldProcessor();
-		QueryPerformanceCounter(&qpc);
-	}
-}
-
-idTimeHiRes timerHiRes;
 
 /*
 ==================
@@ -301,11 +137,11 @@ void Sys_Error( const char* error, ... )
 
 	Sys_ShutdownInput();
 
-#if defined( USE_VULKAN ) && defined( USE_SDL )
-	VKimp_Shutdown( true );
-#else
-	GLimp_Shutdown();
-#endif
+
+	if( idDeviceManager::GetInstance() )
+	{
+		idDeviceManager::GetInstance()->Shutdown();
+	}
 
 	extern idCVar com_productionMode;
 	if( com_productionMode.GetInteger() == 0 )
@@ -324,77 +160,6 @@ void Sys_Error( const char* error, ... )
 	Sys_DestroyConsole();
 
 	exit( 1 );
-}
-
-/*
-========================
-Sys_Launch
-========================
-*/
-void Sys_Launch( const char* path, idCmdArgs& args,  void* data, unsigned int dataSize )
-{
-
-	TCHAR				szPathOrig[_MAX_PATH];
-	STARTUPINFO			si;
-	PROCESS_INFORMATION	pi;
-
-	ZeroMemory( &si, sizeof( si ) );
-	si.cb = sizeof( si );
-
-	strcpy( szPathOrig, va( "\"%s\" %s", Sys_EXEPath(), ( const char* )data ) );
-
-	if( !CreateProcess( NULL, szPathOrig, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi ) )
-	{
-		idLib::Error( "Could not start process: '%s' ", szPathOrig );
-		return;
-	}
-	cmdSystem->AppendCommandText( "quit\n" );
-}
-
-/*
-========================
-Sys_GetCmdLine
-========================
-*/
-const char* Sys_GetCmdLine()
-{
-	return sys_cmdline;
-}
-
-/*
-========================
-Sys_ReLaunch
-========================
-*/
-void Sys_ReLaunch()
-{
-	TCHAR				szPathOrig[MAX_PRINT_MSG];
-	STARTUPINFO			si;
-	PROCESS_INFORMATION	pi;
-
-	ZeroMemory( &si, sizeof( si ) );
-	si.cb = sizeof( si );
-
-	// DG: we don't have function arguments in Sys_ReLaunch() anymore, everyone only passed
-	//     the command-line +" +set com_skipIntroVideos 1" anyway and it was painful on POSIX systems
-	//     so let's just add it here.
-	idStr cmdLine = Sys_GetCmdLine();
-	if( cmdLine.Find( "com_skipIntroVideos" ) < 0 )
-	{
-		cmdLine.Append( " +set com_skipIntroVideos 1" );
-	}
-
-	strcpy( szPathOrig, va( "\"%s\" %s", Sys_EXEPath(), cmdLine.c_str() ) );
-	// DG end
-
-	CloseHandle( hProcessMutex );
-
-	if( !CreateProcess( NULL, szPathOrig, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi ) )
-	{
-		idLib::Error( "Could not start process: '%s' ", szPathOrig );
-		return;
-	}
-	cmdSystem->AppendCommandText( "quit\n" );
 }
 
 /*
@@ -477,76 +242,6 @@ Sys_Sleep
 void Sys_Sleep( int msec )
 {
 	Sleep( msec );
-}
-
-/*
-==============
-Sys_EnableThreadAffinity
-==============
-*/
-void Sys_EnableThreadAffinity( bool enable )
-{
-	static bool isEnabled = false;
-	static DWORD_PTR previousAffinityMask = 0;
-
-	if( !idLib::IsMainThread() )
-	{
-		return;
-	}
-	if( enable )
-	{
-		if( !isEnabled )
-		{
-			isEnabled = true;
-			HANDLE hThread = GetCurrentThread();
-			previousAffinityMask = SetThreadAffinityMask( hThread, 0x1 ); // previousAffinityMask will be 0 if this call fails
-			Sleep( 0 );
-		}
-	}
-	else
-	{
-		if( isEnabled )
-		{
-			isEnabled = false;
-			if( previousAffinityMask )
-			{
-				HANDLE hThread = GetCurrentThread();
-				SetThreadAffinityMask( hThread, previousAffinityMask );
-				previousAffinityMask = 0;
-				Sleep( 0 );
-			}
-		}
-	}
-}
-
-/*
-==============
-Sys_HiResClockCount
-==============
-*/
-int64 Sys_HiResClockCount()
-{
-	return timerHiRes.ClockCount();
-}
-
-/*
-==============
-Sys_HiResClockCountToMilliseconds
-==============
-*/
-double Sys_HiResClockCountToMilliseconds( int64 count )
-{
-	return timerHiRes.ClockCountToMilliseconds( count );
-}
-
-/*
-==============
-Sys_SleepHiRes
-==============
-*/
-void Sys_SleepHiRes( double milliseconds )
-{
-	timerHiRes.Sleep( milliseconds );
 }
 
 /*
@@ -887,194 +582,6 @@ void Sys_SetClipboardData( const char* string )
 #endif
 
 /*
-========================
-ExecOutputFn
-========================
-*/
-static void ExecOutputFn( const char* text )
-{
-	idLib::Printf( text );
-}
-
-
-/*
-========================
-Sys_Exec
-
-if waitMsec is INFINITE, completely block until the process exits
-If waitMsec is -1, don't wait for the process to exit
-Other waitMsec values will allow the workFn to be called at those intervals.
-========================
-*/
-bool Sys_Exec(	const char* appPath, const char* workingPath, const char* args,
-				execProcessWorkFunction_t workFn, execOutputFunction_t outputFn, const int waitMS,
-				unsigned int& exitCode )
-{
-	exitCode = 0;
-	SECURITY_ATTRIBUTES secAttr;
-	secAttr.nLength = sizeof( SECURITY_ATTRIBUTES );
-	secAttr.bInheritHandle = TRUE;
-	secAttr.lpSecurityDescriptor = NULL;
-
-	HANDLE hStdOutRead;
-	HANDLE hStdOutWrite;
-	CreatePipe( &hStdOutRead, &hStdOutWrite, &secAttr, 0 );
-	SetHandleInformation( hStdOutRead, HANDLE_FLAG_INHERIT, 0 );
-
-	HANDLE hStdInRead;
-	HANDLE hStdInWrite;
-	CreatePipe( &hStdInRead, &hStdInWrite, &secAttr, 0 );
-	SetHandleInformation( hStdInWrite, HANDLE_FLAG_INHERIT, 0 );
-
-	STARTUPINFO si;
-	memset( &si, 0, sizeof( si ) );
-	si.cb = sizeof( si );
-	si.hStdError = hStdOutWrite;
-	si.hStdOutput = hStdOutWrite;
-	si.hStdInput = hStdInRead;
-	si.wShowWindow = FALSE;
-	si.dwFlags |= STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
-
-	PROCESS_INFORMATION pi;
-	memset( &pi, 0, sizeof( pi ) );
-
-	if( outputFn != NULL )
-	{
-		outputFn( va( "^2Executing Process: ^7%s\n^2working path: ^7%s\n^2args: ^7%s\n", appPath, workingPath, args ) );
-	}
-	else
-	{
-		outputFn = ExecOutputFn;
-	}
-
-	// we duplicate args here so we can concatenate the exe name and args into a single command line
-	const char* imageName = appPath;
-	char* cmdLine = NULL;
-	{
-		// if we have any args, we need to copy them to a new buffer because CreateProcess modifies
-		// the command line buffer.
-		if( args != NULL )
-		{
-			if( appPath != NULL )
-			{
-				int len = idStr::Length( args ) + idStr::Length( appPath ) + 1 /* for space */ + 1 /* for NULL terminator */ + 2 /* app quotes */;
-				cmdLine = ( char* )Mem_Alloc( len, TAG_TEMP );
-				// note that we're putting quotes around the appPath here because when AAS2.exe gets an app path with spaces
-				// in the path "w:/zion/build/win32/Debug with Inlines/AAS2.exe" it gets more than one arg for the app name,
-				// which it most certainly should not, so I am assuming this is a side effect of using CreateProcess.
-				idStr::snPrintf( cmdLine, len, "\"%s\" %s", appPath, args );
-			}
-			else
-			{
-				int len = idStr::Length( args ) + 1;
-				cmdLine = ( char* )Mem_Alloc( len, TAG_TEMP );
-				idStr::Copynz( cmdLine, args, len );
-			}
-			// the image name should always be NULL if we have command line arguments because it is already
-			// prefixed to the command line.
-			imageName = NULL;
-		}
-	}
-
-	BOOL result = CreateProcess( imageName, ( LPSTR )cmdLine, NULL, NULL, TRUE, 0, NULL, workingPath, &si, &pi );
-
-	if( result == FALSE )
-	{
-		TCHAR szBuf[1024];
-		LPVOID lpMsgBuf;
-		DWORD dw = GetLastError();
-
-		FormatMessage(
-			FORMAT_MESSAGE_ALLOCATE_BUFFER |
-			FORMAT_MESSAGE_FROM_SYSTEM,
-			NULL,
-			dw,
-			MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),
-			( LPTSTR ) &lpMsgBuf,
-			0, NULL );
-
-		wsprintf( szBuf, "%d: %s", dw, lpMsgBuf );
-		if( outputFn != NULL )
-		{
-			outputFn( szBuf );
-		}
-		LocalFree( lpMsgBuf );
-		if( cmdLine != NULL )
-		{
-			Mem_Free( cmdLine );
-		}
-		return false;
-	}
-	else if( waitMS >= 0 )  	// if waitMS == -1, don't wait for process to exit
-	{
-		DWORD ec = 0;
-		DWORD wait = 0;
-		char buffer[ 4096 ];
-		for( ; ; )
-		{
-			wait = WaitForSingleObject( pi.hProcess, waitMS );
-			GetExitCodeProcess( pi.hProcess, &ec );
-
-			DWORD bytesRead = 0;
-			DWORD bytesAvail = 0;
-			DWORD bytesLeft = 0;
-			BOOL ok = PeekNamedPipe( hStdOutRead, NULL, 0, NULL, &bytesAvail, &bytesLeft );
-			if( ok && bytesAvail != 0 )
-			{
-				ok = ReadFile( hStdOutRead, buffer, sizeof( buffer ) - 3, &bytesRead, NULL );
-				if( ok && bytesRead > 0 )
-				{
-					buffer[ bytesRead ] = '\0';
-					if( outputFn != NULL )
-					{
-						int length = 0;
-						for( int i = 0; buffer[i] != '\0'; i++ )
-						{
-							if( buffer[i] != '\r' )
-							{
-								buffer[length++] = buffer[i];
-							}
-						}
-						buffer[length++] = '\0';
-						outputFn( buffer );
-					}
-				}
-			}
-
-			if( ec != STILL_ACTIVE )
-			{
-				exitCode = ec;
-				break;
-			}
-
-			if( workFn != NULL )
-			{
-				if( !workFn() )
-				{
-					TerminateProcess( pi.hProcess, 0 );
-					break;
-				}
-			}
-		}
-	}
-
-	// this assumes that windows duplicates the command line string into the created process's
-	// environment space.
-	if( cmdLine != NULL )
-	{
-		Mem_Free( cmdLine );
-	}
-
-	CloseHandle( pi.hProcess );
-	CloseHandle( pi.hThread );
-	CloseHandle( hStdOutRead );
-	CloseHandle( hStdOutWrite );
-	CloseHandle( hStdInRead );
-	CloseHandle( hStdInWrite );
-	return true;
-}
-
-/*
 ========================================================================
 
 DLL Loading
@@ -1254,17 +761,6 @@ void Sys_PumpEvents()
 		if( !GetMessage( &msg, NULL, 0, 0 ) )
 		{
 			common->Quit();
-		}
-
-		// save the msg time, because wndprocs don't have access to the timestamp
-		if( win32.sysMsgTime && win32.sysMsgTime > ( int )msg.time )
-		{
-			// don't ever let the event times run backwards
-//			common->Printf( "Sys_PumpEvents: win32.sysMsgTime (%i) > msg.time (%i)\n", win32.sysMsgTime, msg.time );
-		}
-		else
-		{
-			win32.sysMsgTime = msg.time;
 		}
 
 		TranslateMessage( &msg );
@@ -1481,10 +977,10 @@ WinMain
 
 	// combine the args into a windows-style command line
 	sys_cmdline[0] = 0;
-	for ( int i = 1 ; i < argc ; i++ )
+	for( int i = 1 ; i < argc ; i++ )
 	{
 		strcat( sys_cmdline, argv[i] );
-		if ( i < argc - 1 )
+		if( i < argc - 1 )
 		{
 			strcat( sys_cmdline, " " );
 		}
@@ -1504,11 +1000,6 @@ WinMain
 	// no abort/retry/fail errors
 	SetErrorMode( SEM_FAILCRITICALERRORS );
 
-	for( int i = 0; i < MAX_CRITICAL_SECTIONS; i++ )
-	{
-		InitializeCriticalSection( &win32.criticalSections[i] );
-	}
-
 	// make sure the timer is high precision, otherwise
 	// NT gets 18ms resolution
 	timerHiRes.Init();
@@ -1520,6 +1011,13 @@ WinMain
 	// disable the painfully slow MS heap check every 1024 allocs
 	_CrtSetDbgFlag( 0 );
 #endif
+
+#ifdef USE_SDL
+	static idDeviceManagerSDL deviceMgr;
+#else
+	static idDeviceManagerWin32 deviceMgr;
+#endif
+	idDeviceManager::s_instance = &deviceMgr;
 
 	common->Init( 0, NULL, sys_cmdline );
 
@@ -1545,7 +1043,6 @@ WinMain
 	// main game loop
 	while( 1 )
 	{
-
 		Win_Frame();
 
 #ifdef DEBUG
@@ -1558,80 +1055,4 @@ WinMain
 
 	// never gets here
 	return 0;
-}
-
-/*
-==================
-idSysLocal::OpenURL
-==================
-*/
-void idSysLocal::OpenURL( const char* url, bool doexit )
-{
-	static bool doexit_spamguard = false;
-	HWND wnd;
-
-	if( doexit_spamguard )
-	{
-		common->DPrintf( "OpenURL: already in an exit sequence, ignoring %s\n", url );
-		return;
-	}
-
-	common->Printf( "Open URL: %s\n", url );
-
-	if( !ShellExecute( NULL, "open", url, NULL, NULL, SW_RESTORE ) )
-	{
-		common->Error( "Could not open url: '%s' ", url );
-		return;
-	}
-
-	wnd = GetForegroundWindow();
-	if( wnd )
-	{
-		ShowWindow( wnd, SW_MAXIMIZE );
-	}
-
-	if( doexit )
-	{
-		doexit_spamguard = true;
-		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "quit\n" );
-	}
-}
-
-/*
-==================
-idSysLocal::StartProcess
-==================
-*/
-void idSysLocal::StartProcess( const char* exePath, bool doexit )
-{
-	TCHAR				szPathOrig[_MAX_PATH];
-	STARTUPINFO			si;
-	PROCESS_INFORMATION	pi;
-
-	ZeroMemory( &si, sizeof( si ) );
-	si.cb = sizeof( si );
-
-	strncpy( szPathOrig, exePath, _MAX_PATH );
-
-	if( !CreateProcess( NULL, szPathOrig, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi ) )
-	{
-		common->Error( "Could not start process: '%s' ", szPathOrig );
-		return;
-	}
-
-	if( doexit )
-	{
-		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "quit\n" );
-	}
-}
-
-/*
-================
-Sys_SetLanguageFromSystem
-================
-*/
-extern idCVar sys_lang;
-void Sys_SetLanguageFromSystem()
-{
-	sys_lang.SetString( Sys_DefaultLanguage() );
 }

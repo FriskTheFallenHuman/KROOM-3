@@ -3,7 +3,6 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
-Copyright (C) 2013-2014 Robert Beckebans
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -26,37 +25,24 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
-/*
-** WIN_GLIMP.C
-**
-** This file contains ALL Win32 specific stuff having to do with the
-** OpenGL refresh.  When a port is being made the following functions
-** must be implemented by the port:
-**
-** GLimp_SwapBuffers
-** GLimp_Init
-** GLimp_Shutdown
-** GLimp_SetGamma
-**
-** Note that the GLW_xxx functions are Windows specific GL-subsystem
-** related functions that are relevant ONLY to win_glimp.c
-*/
+
 #include "precompiled.h"
 #pragma hdrstop
 
 #include "win_local.h"
 #include "rc/doom_resource.h"
 #include "../../renderer/RenderCommon.h"
+#include "../DeviceManager.h"
+#include "DeviceManager_Win32.h"
 
-#if !defined(USE_VULKAN)
 /*
 ========================
-GLimp_TestSwapBuffers
+idDeviceManagerWin32::TestSwapBuffers
 ========================
 */
-void GLimp_TestSwapBuffers( const idCmdArgs& args )
+void idDeviceManagerWin32::TestSwapBuffers( const idCmdArgs& args )
 {
-	idLib::Printf( "GLimp_TimeSwapBuffers\n" );
+	idLib::Printf( "idDeviceManagerWin32::TimeSwapBuffers\n" );
 	static const int MAX_FRAMES = 5;
 	uint64	timestamps[MAX_FRAMES];
 	glDisable( GL_SCISSOR_TEST );
@@ -80,7 +66,7 @@ void GLimp_TestSwapBuffers( const idCmdArgs& args )
 				glClearColor( 1, 0, 0, 1 );
 			}
 			glClear( GL_COLOR_BUFFER_BIT );
-			SwapBuffers( win32.hDC );
+			::SwapBuffers( win32.hDC );
 			glFinish();
 			timestamps[i] = Sys_Microseconds();
 		}
@@ -92,56 +78,54 @@ void GLimp_TestSwapBuffers( const idCmdArgs& args )
 		}
 	}
 }
-#endif
+
 
 /*
 ========================
-GLimp_GetOldGammaRamp
+idDeviceManagerWin32::SaveGamma
 ========================
 */
-static void GLimp_SaveGamma()
+void idDeviceManagerWin32::SaveGamma()
 {
-	HDC			hDC;
-	BOOL		success;
+	HDC hDC;
+	BOOL success;
 
 	hDC = GetDC( GetDesktopWindow() );
-	success = GetDeviceGammaRamp( hDC, win32.oldHardwareGamma );
+	success = GetDeviceGammaRamp( hDC, oldHardwareGamma );
 	common->DPrintf( "...getting default gamma ramp: %s\n", success ? "success" : "failed" );
 	ReleaseDC( GetDesktopWindow(), hDC );
 }
 
 /*
 ========================
-GLimp_RestoreGamma
+idDeviceManagerWin32::RestoreGamma
 ========================
 */
-static void GLimp_RestoreGamma()
+void idDeviceManagerWin32::RestoreGamma()
 {
 	HDC hDC;
 	BOOL success;
 
 	// if we never read in a reasonable looking
 	// table, don't write it out
-	if( win32.oldHardwareGamma[0][255] == 0 )
+	if( oldHardwareGamma[0][255] == 0 )
 	{
 		return;
 	}
 
 	hDC = GetDC( GetDesktopWindow() );
-	success = SetDeviceGammaRamp( hDC, win32.oldHardwareGamma );
+	success = SetDeviceGammaRamp( hDC, oldHardwareGamma );
 	common->DPrintf( "...restoring hardware gamma: %s\n", success ? "success" : "failed" );
 	ReleaseDC( GetDesktopWindow(), hDC );
 }
-
-
 /*
 ========================
-GLimp_SetGamma
+idDeviceManagerWin32::SetGamma
 
 The renderer calls this when the user adjusts r_gamma or r_brightness
 ========================
 */
-void GLimp_SetGamma( unsigned short red[256], unsigned short green[256], unsigned short blue[256] )
+void idDeviceManagerWin32::SetGamma( unsigned short red[256], unsigned short green[256], unsigned short blue[256] )
 {
 	unsigned short table[3][256];
 	int i;
@@ -181,8 +165,7 @@ FakeWndProc
 Only used to get wglExtensions
 ====================
 */
-#if !defined(USE_VULKAN)
-LONG WINAPI FakeWndProc(
+static LONG WINAPI FakeWndProc(
 	HWND    hWnd,
 	UINT    uMsg,
 	WPARAM  wParam,
@@ -239,17 +222,16 @@ LONG WINAPI FakeWndProc(
 
 /*
 ==================
-GLW_GetWGLExtensionsWithFakeWindow
+idDeviceManagerWin32::GetWGLExtensionsWithFakeWindow
 ==================
 */
-// RB: replaced WGL with GLEW WGL
-void GLW_CheckWGLExtensions( HDC hDC )
+void idDeviceManagerWin32::CheckWGLExtensions( HDC hDC )
 {
 	GLenum glewResult = glewInit();
 	if( GLEW_OK != glewResult )
 	{
 		// glewInit failed, something is seriously wrong
-		common->Printf( "^GLW_CheckWGLExtensions() - GLEW could not load OpenGL subsystem: %s", glewGetErrorString( glewResult ) );
+		common->Printf( "^idDeviceManagerWin32::CheckWGLExtensions() - GLEW could not load OpenGL subsystem: %s", glewGetErrorString( glewResult ) );
 	}
 	else
 	{
@@ -257,7 +239,7 @@ void GLW_CheckWGLExtensions( HDC hDC )
 	}
 
 	// WGL_EXT_swap_control
-	//wglSwapIntervalEXT = ( PFNWGLSWAPINTERVALEXTPROC ) GLimp_ExtensionPointer( "wglSwapIntervalEXT" );
+	//wglSwapIntervalEXT = ( PFNWGLSWAPINTERVALEXTPROC ) ExtensionPointer( "wglSwapIntervalEXT" );
 	r_swapInterval.SetModified();	// force a set next frame
 
 	// WGL_EXT_swap_control_tear
@@ -266,15 +248,13 @@ void GLW_CheckWGLExtensions( HDC hDC )
 	// FIXME
 	// WGLEW_ARB_pixel_format
 }
-#endif
 
 /*
 ==================
-GLW_GetWGLExtensionsWithFakeWindow
+idDeviceManagerWin32::GetWGLExtensionsWithFakeWindow
 ==================
 */
-#if !defined(USE_VULKAN)
-static void GLW_GetWGLExtensionsWithFakeWindow()
+void idDeviceManagerWin32::GetWGLExtensionsWithFakeWindow()
 {
 	HWND	hWnd;
 	MSG		msg;
@@ -289,13 +269,13 @@ static void GLW_GetWGLExtensionsWithFakeWindow()
 						 NULL, NULL, win32.hInstance, NULL );
 	if( !hWnd )
 	{
-		common->FatalError( "GLW_GetWGLExtensionsWithFakeWindow: Couldn't create fake window" );
+		common->FatalError( "idDeviceManagerWin32::GetWGLExtensionsWithFakeWindow: Couldn't create fake window" );
 	}
 
 	HDC hDC = GetDC( hWnd );
 	HGLRC gRC = wglCreateContext( hDC );
 	wglMakeCurrent( hDC, gRC );
-	GLW_CheckWGLExtensions( hDC );
+	CheckWGLExtensions( hDC );
 	wglDeleteContext( gRC );
 	ReleaseDC( hWnd, hDC );
 
@@ -306,24 +286,13 @@ static void GLW_GetWGLExtensionsWithFakeWindow()
 		DispatchMessage( &msg );
 	}
 }
-#endif
-
-/*
-====================
-static
-====================
-*/
-void GLW_WM_CREATE( HWND hWnd )
-{
-}
 
 /*
 ========================
-CreateOpenGLContextOnDC
+idDeviceManagerWin32::CreateOpenGLContextOnDC
 ========================
 */
-#if !defined(USE_VULKAN)
-static HGLRC CreateOpenGLContextOnDC( const HDC hdc, const bool debugContext )
+HGLRC idDeviceManagerWin32::CreateOpenGLContextOnDC( const HDC hdc, const bool debugContext )
 {
 	int useCoreProfile = r_glProfile.GetInteger();
 
@@ -441,12 +410,12 @@ static HGLRC CreateOpenGLContextOnDC( const HDC hdc, const bool debugContext )
 
 /*
 ====================
-GLW_ChoosePixelFormat
+idDeviceManagerWin32::ChoosePixelFormat
 
 Returns -1 on failure, or a pixel format
 ====================
 */
-static int GLW_ChoosePixelFormat( const HDC hdc, const int multisamples )
+int idDeviceManagerWin32::ChoosePixelFormat( const HDC hdc, const int multisamples )
 {
 	FLOAT	fAttributes[] = { 0, 0 };
 	int		iAttributes[] =
@@ -475,13 +444,13 @@ static int GLW_ChoosePixelFormat( const HDC hdc, const int multisamples )
 
 /*
 ====================
-GLW_InitDriver
+idDeviceManagerWin32::InitDriver
 
 Set the pixelformat for the window before it is
 shown, and create the rendering context
 ====================
 */
-static bool GLW_InitDriver( glimpParms_t parms )
+bool idDeviceManagerWin32::InitDriver( vidParms_t parms )
 {
 	PIXELFORMATDESCRIPTOR src =
 	{
@@ -525,7 +494,7 @@ static bool GLW_InitDriver( glimpParms_t parms )
 	// the multisample path uses the wgl
 	if( WGLEW_ARB_pixel_format )
 	{
-		win32.pixelformat = GLW_ChoosePixelFormat( win32.hDC, parms.multiSamples );
+		pixelformat = ChoosePixelFormat( win32.hDC, parms.multiSamples );
 	}
 	else
 	{
@@ -537,19 +506,19 @@ static bool GLW_InitDriver( glimpParms_t parms )
 		// using a minidriver then we need to bypass the GDI functions,
 		// otherwise use the GDI functions.
 		//
-		if( ( win32.pixelformat = ChoosePixelFormat( win32.hDC, &src ) ) == 0 )
+		if( ( pixelformat = ::ChoosePixelFormat( win32.hDC, &src ) ) == 0 )
 		{
-			common->Printf( "...^3GLW_ChoosePFD failed^0\n" );
+			common->Printf( "...^3idDeviceManagerWin32::ChoosePixelFormat failed^0\n" );
 			return false;
 		}
-		common->Printf( "...PIXELFORMAT %d selected\n", win32.pixelformat );
+		common->Printf( "...PIXELFORMAT %d selected\n", pixelformat );
 	}
 
 	// get the full info
-	DescribePixelFormat( win32.hDC, win32.pixelformat, sizeof( win32.pfd ), &win32.pfd );
-	glConfig.colorBits = win32.pfd.cColorBits;
-	glConfig.depthBits = win32.pfd.cDepthBits;
-	glConfig.stencilBits = win32.pfd.cStencilBits;
+	DescribePixelFormat( win32.hDC, pixelformat, sizeof( pfd ), &pfd );
+	glConfig.colorBits = pfd.cColorBits;
+	glConfig.depthBits = pfd.cDepthBits;
+	glConfig.stencilBits = pfd.cStencilBits;
 
 	// XP seems to set this incorrectly
 	if( !glConfig.stencilBits )
@@ -558,7 +527,7 @@ static bool GLW_InitDriver( glimpParms_t parms )
 	}
 
 	// the same SetPixelFormat is used either way
-	if( SetPixelFormat( win32.hDC, win32.pixelformat, &win32.pfd ) == FALSE )
+	if( SetPixelFormat( win32.hDC, pixelformat, &pfd ) == FALSE )
 	{
 		common->Printf( "...^3SetPixelFormat failed^0\n", win32.hDC );
 		return false;
@@ -568,8 +537,8 @@ static bool GLW_InitDriver( glimpParms_t parms )
 	// startup the OpenGL subsystem by creating a context and making it current
 	//
 	common->Printf( "...creating GL context: " );
-	win32.hGLRC = CreateOpenGLContextOnDC( win32.hDC, r_debugContext.GetBool() );
-	if( win32.hGLRC == 0 )
+	hGLRC = CreateOpenGLContextOnDC( win32.hDC, r_debugContext.GetBool() );
+	if( hGLRC == 0 )
 	{
 		common->Printf( "^3failed^0\n" );
 		return false;
@@ -577,10 +546,10 @@ static bool GLW_InitDriver( glimpParms_t parms )
 	common->Printf( "succeeded\n" );
 
 	common->Printf( "...making context current: " );
-	if( !wglMakeCurrent( win32.hDC, win32.hGLRC ) )
+	if( !wglMakeCurrent( win32.hDC, hGLRC ) )
 	{
-		wglDeleteContext( win32.hGLRC );
-		win32.hGLRC = NULL;
+		wglDeleteContext( hGLRC );
+		hGLRC = NULL;
 		common->Printf( "^3failed^0\n" );
 		return false;
 	}
@@ -588,21 +557,20 @@ static bool GLW_InitDriver( glimpParms_t parms )
 
 	return true;
 }
-#endif
 
 /*
 ====================
-GLW_CreateWindowClasses
+idDeviceManagerWin32::CreateWindowClasses
 ====================
 */
-static void GLW_CreateWindowClasses()
+void idDeviceManagerWin32::CreateWindowClasses()
 {
 	WNDCLASS wc;
 
 	//
 	// register the window class if necessary
 	//
-	if( win32.windowClassRegistered )
+	if( windowClassRegistered )
 	{
 		return;
 	}
@@ -622,11 +590,10 @@ static void GLW_CreateWindowClasses()
 
 	if( !RegisterClass( &wc ) )
 	{
-		common->FatalError( "GLW_CreateWindow: could not register window class" );
+		common->FatalError( "idDeviceManagerWin32::CreateWindowClasses: could not register window class" );
 	}
 	common->Printf( "...registered window class\n" );
 
-#if !defined(USE_VULKAN)
 	// now register the fake window class that is only used
 	// to get wgl extensions
 	wc.style         = 0;
@@ -642,12 +609,11 @@ static void GLW_CreateWindowClasses()
 
 	if( !RegisterClass( &wc ) )
 	{
-		common->FatalError( "GLW_CreateWindow: could not register window class" );
+		common->FatalError( "idDeviceManagerWin32::CreateWindowClasses: could not register window class" );
 	}
 	common->Printf( "...registered fake window class\n" );
-#endif
 
-	win32.windowClassRegistered = true;
+	windowClassRegistered = true;
 }
 
 /*
@@ -655,7 +621,7 @@ static void GLW_CreateWindowClasses()
 GetDisplayName
 ========================
 */
-static idStr GetDisplayName( const int deviceNum )
+idStr idDeviceManagerWin32::GetDisplayName( const int deviceNum )
 {
 	DISPLAY_DEVICE device = {};
 	device.cb = sizeof( device );
@@ -672,10 +638,10 @@ static idStr GetDisplayName( const int deviceNum )
 
 /*
 ========================
-GetDeviceName
+idDeviceManagerWin32::GetDeviceName
 ========================
 */
-static idStr GetDeviceName( const int deviceNum )
+idStr idDeviceManagerWin32::GetDeviceName( const int deviceNum )
 {
 	DISPLAY_DEVICE	device = {};
 	device.cb = sizeof( device );
@@ -699,10 +665,10 @@ static idStr GetDeviceName( const int deviceNum )
 
 /*
 ========================
-GetDisplayCoordinates
+idDeviceManagerWin32::GetDisplayCoordinates
 ========================
 */
-static bool GetDisplayCoordinates( const int deviceNum, int& x, int& y, int& width, int& height, int& displayHz, int* bitsPerPixel = NULL )
+bool idDeviceManagerWin32::GetDisplayCoordinates( const int deviceNum, int& x, int& y, int& width, int& height, int& displayHz, int* bitsPerPixel )
 {
 	idStr deviceName = GetDeviceName( deviceNum );
 	if( deviceName.Length() == 0 )
@@ -774,10 +740,10 @@ static bool GetDisplayCoordinates( const int deviceNum, int& x, int& y, int& wid
 
 /*
 ====================
-DMDFO
+idDeviceManagerWin32::DMDFO
 ====================
 */
-static const char* DMDFO( int dmDisplayFixedOutput )
+const char* idDeviceManagerWin32::DMDFO( int dmDisplayFixedOutput )
 {
 	switch( dmDisplayFixedOutput )
 	{
@@ -793,10 +759,10 @@ static const char* DMDFO( int dmDisplayFixedOutput )
 
 /*
 ====================
-PrintDevMode
+idDeviceManagerWin32::PrintDevMode
 ====================
 */
-static void PrintDevMode( DEVMODE& devmode )
+void idDeviceManagerWin32::PrintDevMode( DEVMODE& devmode )
 {
 	common->Printf( "          dmPosition.x        : %i\n", devmode.dmPosition.x );
 	common->Printf( "          dmPosition.y        : %i\n", devmode.dmPosition.y );
@@ -810,10 +776,10 @@ static void PrintDevMode( DEVMODE& devmode )
 
 /*
 ====================
-DumpAllDisplayDevices
+idDeviceManagerWin32::DumpAllDisplayDevices
 ====================
 */
-void DumpAllDisplayDevices()
+void idDeviceManagerWin32::DumpAllDisplayDevices()
 {
 	common->Printf( "\n" );
 	for( int deviceNum = 0 ; ; deviceNum++ )
@@ -899,7 +865,11 @@ void DumpAllDisplayDevices()
 	common->Printf( "\n" );
 }
 
-// RB: moved out of R_GetModeListForDisplay
+/*
+====================
+idSort_VidMode
+====================
+*/
 class idSort_VidMode : public idSort_Quick< vidMode_t, idSort_VidMode >
 {
 public:
@@ -911,14 +881,13 @@ public:
 		return ( hd != 0 ) ? hd : ( wd != 0 ) ? wd : fd;
 	}
 };
-// RB end
 
 /*
 ====================
-R_GetModeListForDisplay
+idDeviceManagerWin32::GetModeListForDisplay
 ====================
 */
-bool R_GetModeListForDisplay( const int requestedDisplayNum, idList<vidMode_t>& modeList, const int minHeight )
+bool idDeviceManagerWin32::GetModeListForDisplay( const int requestedDisplayNum, idList<vidMode_t>& modeList, const int minHeight )
 {
 	modeList.Clear();
 
@@ -994,10 +963,10 @@ bool R_GetModeListForDisplay( const int requestedDisplayNum, idList<vidMode_t>& 
 
 /*
 ====================
-R_GetDefaultDisplayMode
+idDeviceManagerWin32::GetDefaultDisplayMode
 ====================
 */
-bool R_GetDefaultDisplayMode( int& defaultDisplayNum, vidMode_t& defaultMode )
+bool idDeviceManagerWin32::GetDefaultDisplayMode( int& defaultDisplayNum, vidMode_t& defaultMode )
 {
 	defaultDisplayNum = 0;
 	memset( &defaultMode, 0, sizeof( defaultMode ) );
@@ -1074,10 +1043,10 @@ bool R_GetDefaultDisplayMode( int& defaultDisplayNum, vidMode_t& defaultMode )
 
 /*
 ====================
-GLW_GetWindowDimensions
+idDeviceManagerWin32::GetWindowDimensions
 ====================
 */
-static bool GLW_GetWindowDimensions( const glimpParms_t parms, int& x, int& y, int& w, int& h )
+bool idDeviceManagerWin32::GetWindowDimensions( const vidParms_t parms, int& x, int& y, int& w, int& h )
 {
 	//
 	// compute width and height
@@ -1128,16 +1097,16 @@ static bool GLW_GetWindowDimensions( const glimpParms_t parms, int& x, int& y, i
 
 /*
 =======================
-GLW_CreateWindow
+idDeviceManagerWin32::CreateWindows
 
 Responsible for creating the Win32 window.
 If fullscreen, it won't have a border
 =======================
 */
-static bool GLW_CreateWindow( glimpParms_t parms )
+bool idDeviceManagerWin32::CreateWindows( vidParms_t parms )
 {
 	int				x, y, w, h;
-	if( !GLW_GetWindowDimensions( parms, x, y, w, h ) )
+	if( !GetWindowDimensions( parms, x, y, w, h ) )
 	{
 		return false;
 	}
@@ -1168,7 +1137,7 @@ static bool GLW_CreateWindow( glimpParms_t parms )
 
 	if( !win32.hWnd )
 	{
-		common->Printf( "^3GLW_CreateWindow() - Couldn't create window^0\n" );
+		common->Printf( "^3idDeviceManagerWin32::CreateWindows() - Couldn't create window^0\n" );
 		return false;
 	}
 
@@ -1182,19 +1151,17 @@ static bool GLW_CreateWindow( glimpParms_t parms )
 	win32.hDC = GetDC( win32.hWnd );
 	if( !win32.hDC )
 	{
-		common->Printf( "^3GLW_CreateWindow() - GetDC()failed^0\n" );
+		common->Printf( "^3idDeviceManagerWin32::CreateWindows() - GetDC()failed^0\n" );
 		return false;
 	}
 
-#if !defined(USE_VULKAN)
-	if( !GLW_InitDriver( parms ) )
+	if( !InitDriver( parms ) )
 	{
 		ShowWindow( win32.hWnd, SW_HIDE );
 		DestroyWindow( win32.hWnd );
 		win32.hWnd = NULL;
 		return false;
 	}
-#endif
 
 	SetForegroundWindow( win32.hWnd );
 	SetFocus( win32.hWnd );
@@ -1206,46 +1173,46 @@ static bool GLW_CreateWindow( glimpParms_t parms )
 
 /*
 ===================
-PrintCDSError
+idDeviceManagerWin32::PrintCDSError
 ===================
 */
-static void PrintCDSError( int value )
+void idDeviceManagerWin32::PrintCDSError( int value )
 {
 	switch( value )
 	{
 		case DISP_CHANGE_RESTART:
-			common->Printf( "restart required\n" );
+			idLib::Printf( "restart required\n" );
 			break;
 		case DISP_CHANGE_BADPARAM:
-			common->Printf( "bad param\n" );
+			idLib::Printf( "bad param\n" );
 			break;
 		case DISP_CHANGE_BADFLAGS:
-			common->Printf( "bad flags\n" );
+			idLib::Printf( "bad flags\n" );
 			break;
 		case DISP_CHANGE_FAILED:
-			common->Printf( "DISP_CHANGE_FAILED\n" );
+			idLib::Printf( "DISP_CHANGE_FAILED\n" );
 			break;
 		case DISP_CHANGE_BADMODE:
-			common->Printf( "bad mode\n" );
+			idLib::Printf( "bad mode\n" );
 			break;
 		case DISP_CHANGE_NOTUPDATED:
-			common->Printf( "not updated\n" );
+			idLib::Printf( "not updated\n" );
 			break;
 		default:
-			common->Printf( "unknown error %d\n", value );
+			idLib::Printf( "unknown error %d\n", value );
 			break;
 	}
 }
 
 /*
 ===================
-GLW_ChangeDislaySettingsIfNeeded
+idDeviceManagerWin32::ChangeDislaySettingsIfNeeded
 
 Optionally ChangeDisplaySettings to get a different fullscreen resolution.
 Default uses the full desktop resolution.
 ===================
 */
-static bool GLW_ChangeDislaySettingsIfNeeded( glimpParms_t parms )
+bool idDeviceManagerWin32::ChangeDislaySettingsIfNeeded( vidParms_t parms )
 {
 	// If we had previously changed the display settings on a different monitor,
 	// go back to standard.
@@ -1316,14 +1283,19 @@ static bool GLW_ChangeDislaySettingsIfNeeded( glimpParms_t parms )
 	return false;
 }
 
-void GLimp_PreInit()
+/*
+===================
+idDeviceManagerWin32::PreInit
+===================
+*/
+void idDeviceManagerWin32::PreInit()
 {
 	// DG: not needed on this platform, so just do nothing
 }
 
 /*
 ===================
-GLimp_Init
+idDeviceManagerWin32::Init
 
 This is the platform specific OpenGL initialization function.  It
 is responsible for loading OpenGL, initializing it,
@@ -1336,26 +1308,24 @@ If there is any failure, the renderer will revert back to safe
 parameters and try again.
 ===================
 */
-bool GLimp_Init( glimpParms_t parms )
+bool idDeviceManagerWin32::Init( vidParms_t parms )
 {
-	HDC		hDC;
+	HDC hDC;
 
-#if !defined(USE_VULKAN)
-	cmdSystem->AddCommand( "testSwapBuffers", GLimp_TestSwapBuffers, CMD_FL_SYSTEM, "Times swapbuffer options" );
+	cmdSystem->AddCommand( "testSwapBuffers", idDeviceManagerWin32::TestSwapBuffers, CMD_FL_SYSTEM, "Times swapbuffer options" );
 
 	common->Printf( "Initializing OpenGL subsystem with multisamples:%i fullscreen:%i\n",
 					parms.multiSamples, parms.fullScreen );
-#endif
 
 	// check our desktop attributes
 	hDC = GetDC( GetDesktopWindow() );
-	win32.desktopBitsPixel = GetDeviceCaps( hDC, BITSPIXEL );
-	win32.desktopWidth = GetDeviceCaps( hDC, HORZRES );
-	win32.desktopHeight = GetDeviceCaps( hDC, VERTRES );
+	desktopBitsPixel = GetDeviceCaps( hDC, BITSPIXEL );
+	desktopWidth = GetDeviceCaps( hDC, HORZRES );
+	desktopHeight = GetDeviceCaps( hDC, VERTRES );
 	ReleaseDC( GetDesktopWindow(), hDC );
 
 	// we can't run in a window unless it is 32 bpp
-	if( win32.desktopBitsPixel < 32 && parms.fullScreen <= 0 )
+	if( desktopBitsPixel < 32 && parms.fullScreen <= 0 )
 	{
 		common->Printf( "^3Windowed mode requires 32 bit desktop depth^0\n" );
 		return false;
@@ -1363,32 +1333,27 @@ bool GLimp_Init( glimpParms_t parms )
 
 	// save the hardware gamma so it can be
 	// restored on exit
-	GLimp_SaveGamma();
+	SaveGamma();
 
 	// create our window classes if we haven't already
-	GLW_CreateWindowClasses();
-
-#if !defined(USE_VULKAN)
-	// this will load the dll and set all our gl* function pointers,
-	// but doesn't create a window
+	CreateWindowClasses();
 
 	// getting the wgl extensions involves creating a fake window to get a context,
 	// which is pretty disgusting, and seems to mess with the AGP VAR allocation
-	GLW_GetWGLExtensionsWithFakeWindow();
-#endif
+	GetWGLExtensionsWithFakeWindow();
 
 	// Optionally ChangeDisplaySettings to get a different fullscreen resolution.
-	if( !GLW_ChangeDislaySettingsIfNeeded( parms ) )
+	if( !ChangeDislaySettingsIfNeeded( parms ) )
 	{
-		GLimp_Shutdown();
+		Shutdown();
 		return false;
 	}
 
 	// try to create a window with the correct pixel format
 	// and init the renderer context
-	if( !GLW_CreateWindow( parms ) )
+	if( !CreateWindows( parms ) )
 	{
-		GLimp_Shutdown();
+		Shutdown();
 		return false;
 	}
 
@@ -1407,39 +1372,37 @@ bool GLimp_Init( glimpParms_t parms )
 	DeleteDC( deviceDC );
 
 	// RB: we probably have a new OpenGL 3.2 core context so reinitialize GLEW
-#if !defined(USE_VULKAN)
 	GLenum glewResult = glewInit();
 	if( GLEW_OK != glewResult )
 	{
 		// glewInit failed, something is seriously wrong
-		common->Printf( "^3GLimp_Init() - GLEW could not load OpenGL subsystem: %s", glewGetErrorString( glewResult ) );
+		common->Printf( "^3idDeviceManager::Init() - GLEW could not load OpenGL subsystem: %s", glewGetErrorString( glewResult ) );
 	}
 	else
 	{
 		common->Printf( "Using GLEW %s\n", glewGetString( GLEW_VERSION ) );
 	}
-#endif
 
 	return true;
 }
 
 /*
 ===================
-GLimp_SetScreenParms
+idDeviceManagerWin32::SetScreenParms
 
 Sets up the screen based on passed parms..
 ===================
 */
-bool GLimp_SetScreenParms( glimpParms_t parms )
+bool idDeviceManagerWin32::SetScreenParms( vidParms_t parms )
 {
 	// Optionally ChangeDisplaySettings to get a different fullscreen resolution.
-	if( !GLW_ChangeDislaySettingsIfNeeded( parms ) )
+	if( !ChangeDislaySettingsIfNeeded( parms ) )
 	{
 		return false;
 	}
 
 	int x, y, w, h;
-	if( !GLW_GetWindowDimensions( parms, x, y, w, h ) )
+	if( !GetWindowDimensions( parms, x, y, w, h ) )
 	{
 		return false;
 	}
@@ -1473,20 +1436,17 @@ bool GLimp_SetScreenParms( glimpParms_t parms )
 
 /*
 ===================
-GLimp_Shutdown
+idDeviceManagerWin32::Shutdown
 
 This routine does all OS specific shutdown procedures for the OpenGL
 subsystem.
 ===================
 */
-void GLimp_Shutdown()
+void idDeviceManagerWin32::Shutdown()
 {
 	const char* success[] = { "failed", "success" };
 	int retVal;
 
-#if defined(USE_VULKAN)
-	// TODO
-#else
 	common->Printf( "Shutting down OpenGL subsystem\n" );
 
 	// set current context to NULL
@@ -1497,13 +1457,12 @@ void GLimp_Shutdown()
 	}
 
 	// delete HGLRC
-	if( win32.hGLRC )
+	if( hGLRC )
 	{
-		retVal = wglDeleteContext( win32.hGLRC ) != 0;
+		retVal = wglDeleteContext( hGLRC ) != 0;
 		common->Printf( "...deleting GL context: %s\n", success[retVal] );
-		win32.hGLRC = NULL;
+		hGLRC = NULL;
 	}
-#endif
 
 	// release DC
 	if( win32.hDC )
@@ -1535,17 +1494,15 @@ void GLimp_Shutdown()
 	}
 
 	// restore gamma
-	GLimp_RestoreGamma();
+	RestoreGamma();
 }
 
 /*
 =====================
-GLimp_SwapBuffers
+idDeviceManagerWin32::SwapBuffers
 =====================
 */
-// RB: use GLEW for V-Sync
-#if !defined(USE_VULKAN)
-void GLimp_SwapBuffers()
+void idDeviceManagerWin32::SwapBuffers()
 {
 	if( r_swapInterval.IsModified() )
 	{
@@ -1567,10 +1524,5 @@ void GLimp_SwapBuffers()
 		}
 	}
 
-	SwapBuffers( win32.hDC );
+	::SwapBuffers( win32.hDC );
 }
-#endif
-
-
-
-

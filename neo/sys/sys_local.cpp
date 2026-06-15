@@ -28,7 +28,13 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "precompiled.h"
 #pragma hdrstop
+
 #include "sys_local.h"
+
+#include <reproc++/reproc.hpp>
+#include <reproc++/drain.hpp>
+
+char	sys_cmdline[MAX_STRING_CHARS];
 
 idStrList sysLanguageNames;
 
@@ -37,6 +43,92 @@ idCVar sys_lang( "sys_lang", ID_LANG_ENGLISH, CVAR_SYSTEM | CVAR_INIT | CVAR_ARC
 idSysLocal			sysLocal;
 idSys* 				sys = &sysLocal;
 
+/*
+==================
+SplitArgs
+
+Splits exePath + a raw args string into an argv vector.
+Handles double-quoted tokens with spaces inside them.
+==================
+*/
+static std::vector<std::string> SplitArgs( const char* exePath, const char* args )
+{
+	std::vector<std::string> argv;
+
+	if( exePath != nullptr )
+	{
+		argv.push_back( exePath );
+	}
+
+	if( args == nullptr || *args == '\0' )
+	{
+		return argv;
+	}
+
+	const char* p = args;
+	while( *p )
+	{
+		while( *p == ' ' )
+		{
+			++p;
+		}
+		if( *p == '\0' )
+		{
+			break;
+		}
+
+		std::string token;
+		if( *p == '"' )
+		{
+			++p;
+			while( *p && *p != '"' )
+			{
+				token += *p++;
+			}
+			if( *p == '"' )
+			{
+				++p;
+			}
+		}
+		else
+		{
+			while( *p && *p != ' ' )
+			{
+				token += *p++;
+			}
+		}
+
+		if( !token.empty() )
+		{
+			argv.push_back( token );
+		}
+	}
+
+	return argv;
+}
+
+/*
+==================
+MakeDetachOptions
+==================
+*/
+static reproc::options MakeDetachOptions()
+{
+	reproc::options opts;
+	opts.stop =
+	{
+		{ reproc::stop::noop, reproc::milliseconds( 0 ) },
+		{ reproc::stop::noop, reproc::milliseconds( 0 ) },
+		{ reproc::stop::noop, reproc::milliseconds( 0 ) }
+	};
+	return opts;
+}
+
+/*
+==================
+idSysLocal::DebugPrintf
+==================
+*/
 void idSysLocal::DebugPrintf( const char* fmt, ... )
 {
 	va_list argptr;
@@ -46,76 +138,151 @@ void idSysLocal::DebugPrintf( const char* fmt, ... )
 	va_end( argptr );
 }
 
+/*
+==================
+idSysLocal::DebugVPrintf
+==================
+*/
 void idSysLocal::DebugVPrintf( const char* fmt, va_list arg )
 {
 	Sys_DebugVPrintf( fmt, arg );
 }
 
+/*
+==================
+idSysLocal::GetClockTicks
+==================
+*/
 double idSysLocal::GetClockTicks()
 {
 	return Sys_GetClockTicks();
 }
 
+/*
+==================
+idSysLocal::ClockTicksPerSecond
+==================
+*/
 double idSysLocal::ClockTicksPerSecond()
 {
 	return Sys_ClockTicksPerSecond();
 }
 
+/*
+==================
+idSysLocal::GetMilliseconds
+==================
+*/
 unsigned int idSysLocal::GetMilliseconds()
 {
 	return Sys_Milliseconds();
 }
 
+/*
+==================
+idSysLocal::GetProcessorId
+==================
+*/
 int idSysLocal::GetProcessorId()
 {
 	return Sys_GetProcessorId();
 }
 
+/*
+==================
+idSysLocal::GetProcessorString
+==================
+*/
 const char* idSysLocal::GetProcessorString()
 {
 	return Sys_GetProcessorString();
 }
 
+/*
+==================
+idSysLocal::FPU_SetFTZ
+==================
+*/
 void idSysLocal::FPU_SetFTZ( bool enable )
 {
 	Sys_FPU_SetFTZ( enable );
 }
 
+/*
+==================
+idSysLocal::FPU_SetDAZ
+==================
+*/
 void idSysLocal::FPU_SetDAZ( bool enable )
 {
 	Sys_FPU_SetDAZ( enable );
 }
 
+/*
+==================
+idSysLocal::LockMemory
+==================
+*/
 bool idSysLocal::LockMemory( void* ptr, int bytes )
 {
 	return Sys_LockMemory( ptr, bytes );
 }
 
+/*
+==================
+idSysLocal::UnlockMemory
+==================
+*/
 bool idSysLocal::UnlockMemory( void* ptr, int bytes )
 {
 	return Sys_UnlockMemory( ptr, bytes );
 }
 
+/*
+==================
+idSysLocal::DLL_Load
+==================
+*/
 int idSysLocal::DLL_Load( const char* dllName )
 {
 	return Sys_DLL_Load( dllName );
 }
 
+/*
+==================
+idSysLocal::DLL_GetProcAddress
+==================
+*/
 void* idSysLocal::DLL_GetProcAddress( int dllHandle, const char* procName )
 {
 	return Sys_DLL_GetProcAddress( dllHandle, procName );
 }
 
+/*
+==================
+idSysLocal::DLL_Unload
+==================
+*/
 void idSysLocal::DLL_Unload( int dllHandle )
 {
 	Sys_DLL_Unload( dllHandle );
 }
 
+/*
+==================
+idSysLocal::DLL_GetFileName
+==================
+*/
 void idSysLocal::DLL_GetFileName( const char* baseName, char* dllName, int maxLength )
 {
 	idStr::snPrintf( dllName, maxLength, "%s" CPUSTRING ".dll", baseName );
 }
 
+/*
+==================
+idSysLocal::GenerateMouseButtonEvent
+==================
+*/
 sysEvent_t idSysLocal::GenerateMouseButtonEvent( int button, bool down )
 {
 	sysEvent_t ev;
@@ -127,6 +294,11 @@ sysEvent_t idSysLocal::GenerateMouseButtonEvent( int button, bool down )
 	return ev;
 }
 
+/*
+==================
+idSysLocal::GenerateMouseMoveEvent
+==================
+*/
 sysEvent_t idSysLocal::GenerateMouseMoveEvent( int deltax, int deltay )
 {
 	sysEvent_t ev;
@@ -136,6 +308,261 @@ sysEvent_t idSysLocal::GenerateMouseMoveEvent( int deltax, int deltay )
 	ev.evPtrLength = 0;
 	ev.evPtr = NULL;
 	return ev;
+}
+
+/*
+==================
+idSysLocal::OpenURL
+==================
+*/
+void idSysLocal::OpenURL( const char* url, bool quit )
+{
+	// Not sure if this is even used
+#if 0
+	static bool doexit_spamguard = false;
+	HWND wnd;
+
+	if( doexit_spamguard )
+	{
+		common->DPrintf( "OpenURL: already in an exit sequence, ignoring %s\n", url );
+		return;
+	}
+
+	common->Printf( "Open URL: %s\n", url );
+
+	if( !ShellExecute( NULL, "open", url, NULL, NULL, SW_RESTORE ) )
+	{
+		common->Error( "Could not open url: '%s' ", url );
+		return;
+	}
+
+	wnd = GetForegroundWindow();
+	if( wnd )
+	{
+		ShowWindow( wnd, SW_MAXIMIZE );
+	}
+
+	if( quit )
+	{
+		doexit_spamguard = true;
+		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "quit\n" );
+	}
+#endif
+}
+
+/*
+==================
+idSysLocal::StartProcess
+==================
+*/
+void idSysLocal::StartProcess( const char* exePath, bool quit )
+{
+	std::vector<std::string> argv = SplitArgs( exePath, nullptr );
+
+	reproc::process proc;
+	std::error_code ec = proc.start( argv, MakeDetachOptions() );
+	if( ec )
+	{
+		common->Error( "Could not start process: '%s' (%s)", exePath, ec.message().c_str() );
+		return;
+	}
+
+	if( quit )
+	{
+		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "quit\n" );
+	}
+}
+
+/*
+========================
+idSysLocal::StartProcess
+========================
+*/
+void idSysLocal::StartProcess( idCmdArgs& args, void* data, bool quit )
+{
+	const char* extraArgs = static_cast<const char*>( data );
+	std::vector<std::string> argv = SplitArgs( Sys_EXEPath(), extraArgs );
+
+	reproc::process proc;
+	std::error_code ec = proc.start( argv, MakeDetachOptions() );
+	if( ec )
+	{
+		idLib::Error( "Could not start process: '%s' (%s)", Sys_EXEPath(), ec.message().c_str() );
+		return;
+	}
+
+	if( quit )
+	{
+		cmdSystem->AppendCommandText( "quit\n" );
+	}
+}
+
+/*
+========================
+idSysLocal::ReLaunch
+========================
+*/
+void idSysLocal::ReLaunch( void* data )
+{
+	const char* args = static_cast<const char*>( data );
+	std::vector<std::string> argv = SplitArgs( Sys_EXEPath(), args );
+
+#if defined(_WIN32)
+	static HANDLE hProcessMutex;
+	CloseHandle( hProcessMutex );
+#endif
+
+	reproc::process proc;
+	std::error_code ec = proc.start( argv, MakeDetachOptions() );
+	if( ec )
+	{
+		idLib::Error( "Could not start process: '%s' (%s)", Sys_EXEPath(), ec.message().c_str() );
+		return;
+	}
+
+	cmdSystem->AppendCommandText( "quit\n" );
+}
+
+/*
+========================
+idSysLocal::Exec
+
+if waitMsec is INFINITE, completely block until the process exits
+If waitMsec is -1, don't wait for the process to exit
+Other waitMsec values will allow the workFn to be called at those intervals.
+========================
+*/
+bool idSysLocal::Exec( const char* appPath, const char* workingPath, const char* args,
+					   execProcessWorkFunction_t workFn, execOutputFunction_t outputFn,
+					   const int waitMS, unsigned int& exitCode )
+{
+	exitCode = 0;
+
+	auto ExecOutputFn = []( const char* text )
+	{
+		idLib::Printf( text );
+	};
+
+	if( outputFn == nullptr )
+	{
+		outputFn = ExecOutputFn;
+	}
+
+	outputFn( va( "^2Executing Process: ^7%s\n^2working path: ^7%s\n^2args: ^7%s\n",
+				  appPath, workingPath, args ) );
+
+	std::vector<std::string> argv = SplitArgs( appPath, args );
+
+	reproc::options options;
+	options.working_directory = workingPath;
+	options.redirect.out.type = reproc::redirect::pipe;
+	options.redirect.err.type = reproc::redirect::pipe;
+
+	if( waitMS < 0 )
+	{
+		options.stop =
+		{
+			{ reproc::stop::noop, reproc::milliseconds( 0 ) },
+			{ reproc::stop::noop, reproc::milliseconds( 0 ) },
+			{ reproc::stop::noop, reproc::milliseconds( 0 ) }
+		};
+	}
+
+	reproc::process proc;
+	std::error_code ec = proc.start( argv, options );
+	if( ec )
+	{
+		outputFn( va( "idSysLocal::Exec: failed to start '%s': %s\n", appPath, ec.message().c_str() ) );
+		return false;
+	}
+
+	if( waitMS < 0 )
+	{
+		return true;
+	}
+
+	auto readAndOutput = [&]( reproc::stream s )
+	{
+		uint8_t buffer[4096];
+		size_t bytes = 0;
+		std::tie( bytes, std::ignore ) = proc.read( s, buffer, sizeof( buffer ) - 1 );
+		if( bytes == 0 )
+		{
+			return;
+		}
+		buffer[bytes] = '\0';
+		int len = 0;
+		for( int i = 0; buffer[i] != '\0'; i++ )
+		{
+			if( buffer[i] != '\r' )
+			{
+				buffer[len++] = buffer[i];
+			}
+		}
+		buffer[len] = '\0';
+		outputFn( reinterpret_cast<const char*>( buffer ) );
+	};
+
+	// waitMS == 0 means block per poll iteration; positive means workFn interval.
+	reproc::milliseconds pollTimeout = ( waitMS == 0 )
+									   ? reproc::infinite
+									   : reproc::milliseconds( waitMS );
+
+	for( ;; )
+	{
+		int events = 0;
+		std::tie( events, ec ) = proc.poll( reproc::event::out | reproc::event::err, pollTimeout );
+
+		// broken_pipe means the child closed.
+		if( ec )
+		{
+			if( ec != reproc::error::broken_pipe )
+			{
+				outputFn( va( "idSysLocal::Exec: poll error: %s\n", ec.message().c_str() ) );
+			}
+			break;
+		}
+
+		if( events == 0 || ( events & reproc::event::deadline ) )
+		{
+			if( workFn != nullptr && !workFn() )
+			{
+				proc.terminate();
+				break;
+			}
+			continue;
+		}
+
+		if( events & reproc::event::out )
+		{
+			readAndOutput( reproc::stream::out );
+		}
+		if( events & reproc::event::err )
+		{
+			readAndOutput( reproc::stream::err );
+		}
+	}
+
+	int status = 0;
+	std::tie( status, ec ) = proc.stop(
+	{
+		{ reproc::stop::wait,      reproc::milliseconds( 5000 ) },
+		{ reproc::stop::terminate, reproc::milliseconds( 2000 ) },
+		{ reproc::stop::kill,      reproc::milliseconds( 2000 ) }
+	} );
+
+	exitCode = static_cast<unsigned int>( status );
+	return true;
+}
+
+/*
+========================
+idSysLocal::GetCmdLine
+========================
+*/
+const char* idSysLocal::GetCmdLine()
+{
+	return sys_cmdline;
 }
 
 /*
@@ -246,13 +673,25 @@ const char* Sys_SecToStr( int sec )
 	return timeString;
 }
 
-// return number of supported languages
+/*
+================
+Sys_Lang
+
+return number of supported languages
+================
+*/
 int Sys_NumLangs()
 {
 	return sysLanguageNames.Num();
 }
 
-// get language name by index
+/*
+================
+Sys_Lang
+
+get language name by index
+================
+*/
 const char* Sys_Lang( int idx )
 {
 	if( idx >= 0 && idx < sysLanguageNames.Num() )
@@ -262,6 +701,11 @@ const char* Sys_Lang( int idx )
 	return "";
 }
 
+/*
+================
+Sys_LangIndex
+================
+*/
 int Sys_LangIndex( const char* lang )
 {
 	for( int i = 0; i < sysLanguageNames.Num(); i++ )
@@ -274,6 +718,11 @@ int Sys_LangIndex( const char* lang )
 	return -1;
 }
 
+/*
+================
+Sys_DefaultLanguage
+================
+*/
 const char* Sys_DefaultLanguage()
 {
 	// sku breakdowns are as follows
@@ -370,4 +819,14 @@ const char* Sys_DefaultLanguage()
 	fileSystem->FreeFileList( langFiles );
 
 	return sys_lang.GetString();
+}
+
+/*
+================
+Sys_SetLanguageFromSystem
+================
+*/
+void Sys_SetLanguageFromSystem()
+{
+	sys_lang.SetString( Sys_DefaultLanguage() );
 }

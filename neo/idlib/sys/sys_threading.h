@@ -230,14 +230,4 @@ void* 				Sys_InterlockedCompareExchangePointer( void*& ptr, void* comparand, vo
 
 void				Sys_Yield();
 
-const int MAX_CRITICAL_SECTIONS		= 4;
-
-enum
-{
-	CRITICAL_SECTION_ZERO = 0,
-	CRITICAL_SECTION_ONE,
-	CRITICAL_SECTION_TWO,
-	CRITICAL_SECTION_THREE
-};
-
 #endif	// !__SYS_THREADING_H__

@@ -76,37 +76,14 @@ struct Win32Vars_t
 
 	OSVERSIONINFOEX	osversion;
 
-	// when we get a windows message, we store the time off so keyboard processing
-	// can know the exact time of an event (not really needed now that we use async direct input)
-	int				sysMsgTime;
-
-	bool			windowClassRegistered;
-
-	WNDPROC			wndproc;
-
-	HDC				hDC;							// handle to device context
-	HGLRC			hGLRC;						// handle to GL rendering context
-	PIXELFORMATDESCRIPTOR pfd;
-	int				pixelformat;
-
-	HINSTANCE		hinstOpenGL;	// HINSTANCE for the OpenGL library
-
-	int				desktopBitsPixel;
-	int				desktopWidth, desktopHeight;
+	HDC				hDC;				// handle to device context
 
 	int				cdsFullscreen;	// 0 = not fullscreen, otherwise monitor number
-
-	idFileHandle	log_fp;
-
-	unsigned short	oldHardwareGamma[3][256];
-	// desktop gamma is saved here for restoration at exit
 
 	static idCVar	in_mouse;
 	static idCVar	win_outputEditString;
 	static idCVar	win_viewlog;
 	static idCVar	win_timerUpdate;
-
-	CRITICAL_SECTION criticalSections[MAX_CRITICAL_SECTIONS];
 
 #ifndef USE_SDL
 	HINSTANCE		hInstDI;			// direct input

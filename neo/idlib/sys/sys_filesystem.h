@@ -54,6 +54,4 @@ int				Sys_ListFiles( const char* directory, const char* extension, idList<class
 const char* 	Sys_EXEPath();
 const char* 	Sys_CWD();
 
-const char* 	Sys_LaunchPath();
-
 #endif /* !__SYS_FILESYSTEM_H__ */

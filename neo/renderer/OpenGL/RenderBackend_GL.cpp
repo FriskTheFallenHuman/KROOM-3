@@ -56,7 +56,6 @@ idCVar r_intelWorkaroundsSyncType( "r_intelWorkaroundsSyncType", "0", CVAR_RENDE
 static int		swapIndex;		// 0 or 1 into renderSync
 static GLsync	renderSync[2];
 
-void GLimp_SwapBuffers();
 void RB_SetMVP( const idRenderMatrix& mvp );
 
 glContext_t glcontext;
@@ -501,7 +500,10 @@ void idRenderBackend::Init()
 	}
 
 	// DG: make sure SDL has setup video so getting supported modes in R_SetNewMode() works
-	GLimp_PreInit();
+	if( idDeviceManager::GetInstance() )
+	{
+		idDeviceManager::GetInstance()->PreInit();
+	}
 	// DG end
 
 	R_SetNewMode( true );
@@ -574,9 +576,17 @@ void idRenderBackend::Init()
 	R_SetColorMappings();
 }
 
+/*
+=============
+idRenderBackend::Shutdown
+=============
+*/
 void idRenderBackend::Shutdown()
 {
-	GLimp_Shutdown();
+	if( idDeviceManager::GetInstance() )
+	{
+		idDeviceManager::GetInstance()->Shutdown();
+	}
 }
 
 /*
@@ -771,7 +781,10 @@ void idRenderBackend::GL_BlockingSwapBuffers()
 		common->Printf( "%i msec to glFinish\n", beforeSwap - beforeFinish );
 	}
 
-	GLimp_SwapBuffers();
+	if( idDeviceManager::GetInstance() )
+	{
+		idDeviceManager::GetInstance()->SwapBuffers();
+	}
 
 	// RB: at this time the image is presented on the screen
 
