@@ -26,39 +26,52 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
-#ifndef __SDL_LOCAL_H__
-#define __SDL_LOCAL_H__
+#ifndef __DEVICEMANAGER_SDL_H__
+#define __DEVICEMANAGER_SDL_H__
 
-#ifndef _WIN32
-	char*	Sys_ConsoleInput();
-#endif
+#include "../DeviceManager.h"
 
-struct SDLVars_t
+const int GRAB_ENABLE		= BIT( 0 );
+const int GRAB_REENABLE		= BIT( 1 );
+const int GRAB_HIDECURSOR	= BIT( 2 );
+const int GRAB_SETSTATE		= BIT( 3 );
+
+/*
+=================================
+idDeviceManagerSDL
+=================================
+*/
+class idDeviceManagerSDL : public idDeviceManager
 {
-	SDLVars_t()
-	{
-		window = NULL;
-#if !defined(USE_VULKAN)
-		context = NULL;
-#endif
+public:
+	virtual void		PreInit();
+	virtual bool		Init( vidParms_t parms );
+	virtual void		Shutdown( bool shutdownSDL = false );
+	virtual bool		SetScreenParms( vidParms_t parms );
+	virtual bool		GetModeListForDisplay( const int displayNum, idList<vidMode_t>& modeList, const int minHeight );
+	virtual bool		GetDefaultDisplayMode( int& defaultDisplayNum, vidMode_t& defaultMode );
+	virtual void		SetGamma( unsigned short red[256], unsigned short green[256], unsigned short blue[256] );
+	virtual void		SwapBuffers();
+	virtual void		DumpAllDisplayDevices();
 
-		grabbed = false;
-	}
+public:
+	void						GrabInput( int flags );
+	std::vector<const char*>	GetRequiredExtensions();
 
-	SDL_Window* window;
+private:
+	static void			TestSwapBuffers( const idCmdArgs& args );
 
-#if !defined(USE_VULKAN)
-	SDL_GLContext context;
-#endif
+	void				SaveGamma();
+	void				RestoreGamma();
 
-	bool grabbed;
+	void				SetWindowsIcon( void* window );
+	bool				SetScreenParmsWindowed( vidParms_t parms );
+	int					ScreenParmsHandleDisplayIndex( vidParms_t parms );
+	bool				SetScreenParmsFullscreen( vidParms_t parms );
 
-	static idCVar	in_nograb;
-#if !defined(USE_VULKAN)
-	static idCVar	sdl_waylandcompat;
-#endif
+private:
+	unsigned short		oldHardwareGamma[3][256];
+	bool				gammaSaved = false;
 };
 
-extern SDLVars_t	sdl;
-
-#endif /* !__SDL_LOCAL_H__ */
+#endif /* !__DEVICEMANAGER_SDL_H__ */

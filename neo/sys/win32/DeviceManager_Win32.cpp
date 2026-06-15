@@ -1442,7 +1442,7 @@ This routine does all OS specific shutdown procedures for the OpenGL
 subsystem.
 ===================
 */
-void idDeviceManagerWin32::Shutdown()
+void idDeviceManagerWin32::Shutdown( bool shutdownSDL )
 {
 	const char* success[] = { "failed", "success" };
 	int retVal;

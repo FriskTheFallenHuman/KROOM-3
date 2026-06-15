@@ -86,7 +86,7 @@ public:
 
 	// Destroys the rendering context, closes the window, resets the resolution,
 	// and resets the gamma ramps.
-	virtual void		Shutdown() = 0;
+	virtual void		Shutdown( bool shutdownSDL = false ) = 0;
 
 	// will set up gl up with the new parms
 	virtual bool		SetScreenParms( vidParms_t parms ) = 0;

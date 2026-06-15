@@ -52,6 +52,8 @@ idList< VkImage >		idImage::imageGarbage[ NUM_FRAME_DATA ];
 idList< VkImageView >	idImage::viewGarbage[ NUM_FRAME_DATA ];
 idList< VkSampler >		idImage::samplerGarbage[ NUM_FRAME_DATA ];
 
+extern VkFormat ChooseSupportedFormat( VkFormat* formats, int numFormats, VkImageTiling tiling, VkFormatFeatureFlags features );
+extern VkFormat formats[];
 
 /*
 ====================
@@ -79,7 +81,7 @@ static VkFormat VK_GetFormatFromTextureFormat( const textureFormat_t format )
 		case FMT_DXT5:
 			return VK_FORMAT_BC3_UNORM_BLOCK;
 		case FMT_DEPTH:
-			return vkcontext.depthFormat;
+			return ChooseSupportedFormat( formats, 3, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT );
 		case FMT_X16:
 			return VK_FORMAT_R16_UNORM;
 		case FMT_Y16_X16:
@@ -552,7 +554,7 @@ void idImage::AllocImage()
 	imageCreateInfo.extent.height = opts.height;
 	imageCreateInfo.extent.depth = 1;
 	imageCreateInfo.mipLevels = opts.numLevels;
-	imageCreateInfo.arrayLayers = ( opts.textureType == TT_CUBIC ) ? 6 : 1;
+	imageCreateInfo.arrayLayers = ( opts.textureType == TT_CUBIC || opts.textureType == TT_2D_ARRAY ) ? 6 : 1;
 	imageCreateInfo.samples = static_cast< VkSampleCountFlagBits >( opts.samples );
 	imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 	imageCreateInfo.usage = usageFlags;
@@ -592,7 +594,7 @@ void idImage::AllocImage()
 	viewCreateInfo.components = VK_GetComponentMappingFromTextureFormat( opts.format, opts.colorFormat );
 	viewCreateInfo.subresourceRange.aspectMask = ( opts.format == FMT_DEPTH ) ? VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
 	viewCreateInfo.subresourceRange.levelCount = opts.numLevels;
-	viewCreateInfo.subresourceRange.layerCount = ( opts.textureType == TT_CUBIC ) ? 6 : 1;
+	viewCreateInfo.subresourceRange.layerCount = ( opts.textureType == TT_CUBIC || opts.textureType == TT_2D_ARRAY ) ? 6 : 1;
 	viewCreateInfo.subresourceRange.baseMipLevel = 0;
 
 	ID_VK_CHECK( vkCreateImageView( vkcontext.device, &viewCreateInfo, NULL, &view ) );
@@ -635,7 +637,13 @@ idImage::Resize
 */
 void idImage::Resize( int width, int height )
 {
-
+	if( opts.width == width && opts.height == height )
+	{
+		return;
+	}
+	opts.width = width;
+	opts.height = height;
+	AllocImage();
 }
 
 /*

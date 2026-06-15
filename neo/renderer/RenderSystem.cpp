@@ -1255,14 +1255,14 @@ void idRenderSystemLocal::CaptureRenderToFile( const char* fileName, bool fixAlp
 		return;
 	}
 
-	idScreenRect& rc = renderCrops[currentRenderCrop];
-
 	guiModel->EmitFullScreen();
 	guiModel->Clear();
 
 	RenderCommandBuffers( frameData->cmdHead );
 
 #if !defined(USE_VULKAN)
+	idScreenRect& rc = renderCrops[currentRenderCrop];
+
 	glReadBuffer( GL_BACK );
 
 	// include extra space for OpenGL padding to word boundaries

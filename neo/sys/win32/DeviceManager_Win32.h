@@ -41,7 +41,7 @@ class idDeviceManagerWin32 : public idDeviceManager
 public:
 	virtual void		PreInit();
 	virtual bool		Init( vidParms_t parms );
-	virtual void		Shutdown();
+	virtual void		Shutdown( bool shutdownSDL = false );
 	virtual bool		SetScreenParms( vidParms_t parms );
 	virtual bool		GetModeListForDisplay( const int displayNum, idList<vidMode_t>& modeList, const int minHeight );
 	virtual bool		GetDefaultDisplayMode( int& defaultDisplayNum, vidMode_t& defaultMode );
