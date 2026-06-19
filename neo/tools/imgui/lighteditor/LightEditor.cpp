@@ -303,7 +303,7 @@ void LightEditor::Init( const idDict* dict, idEntity* light )
 		gameEdit->EntityGetOrigin( light, entityPos );
 
 		idStr name = dict->GetString( "name", NULL );
-		entityName = name ? name :  gameEdit->GetUniqueEntityName( "light" );
+		entityName = name.Length() ? name.c_str() :  gameEdit->GetUniqueEntityName( "light" );
 		name.Format( "Light Editor: %s at (%s)###LightEditor", entityName.c_str(), entityPos.ToString() );
 		title = name;
 

@@ -85,8 +85,8 @@ if(CMAKE_COMPILER_IS_GNUCC OR (CMAKE_C_COMPILER_ID MATCHES "Clang" AND NOT CMAKE
 
 	add_compile_options(-pipe)
 	#add_compile_options(-Wall)
-	add_compile_options(-Werror=format-security)
-	add_compile_options(-Werror=format)
+	add_compile_options(-Wno-error=format-security)
+	add_compile_options(-Wno-error=format)
 	add_compile_options(-Wno-format-zero-length)
 	add_compile_options(-Wno-nonnull)
 

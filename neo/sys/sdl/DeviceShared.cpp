@@ -58,7 +58,7 @@ unsigned int Sys_Milliseconds()
 Sys_Microseconds
 ========================
 */
-uint64_t Sys_Microseconds()
+uint64 Sys_Microseconds()
 {
 	static uint64_t frequency = SDL_GetPerformanceFrequency();
 	uint64_t counter = SDL_GetPerformanceCounter();

@@ -110,14 +110,14 @@ template<int x> struct compile_time_assert_test {};
 #define compile_time_assert_join( a, b )	compile_time_assert_join2(a,b)
 #define compile_time_assert( x )			typedef compile_time_assert_test<sizeof(compile_time_assert_failed<(bool)(x)>)> compile_time_assert_join(compile_time_assert_typedef_, __LINE__)
 
+#endif
+
 #define assert_sizeof( type, size )						compile_time_assert( sizeof( type ) == size )
 #define assert_sizeof_8_byte_multiple( type )			compile_time_assert( ( sizeof( type ) &  7 ) == 0 )
 #define assert_sizeof_16_byte_multiple( type )			compile_time_assert( ( sizeof( type ) & 15 ) == 0 )
 #define assert_offsetof( type, field, offset )			compile_time_assert( offsetof( type, field ) == offset )
 #define assert_offsetof_8_byte_multiple( type, field )	compile_time_assert( ( offsetof( type, field ) & 7 ) == 0 )
 #define assert_offsetof_16_byte_multiple( type, field )	compile_time_assert( ( offsetof( type, field ) & 15 ) == 0 )
-
-#endif
 
 #else
 

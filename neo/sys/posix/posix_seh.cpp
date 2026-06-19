@@ -130,7 +130,7 @@ void Sys_ShowCrashDialog( const char* summaryText )
 		ImGui::Render();
 		SDL_SetRenderDrawColor( ren, 24, 24, 24, 255 );
 		SDL_RenderClear( ren );
-		ImGui_ImplSDLRenderer2_RenderDrawData( ImGui::GetDrawData() );
+		ImGui_ImplSDLRenderer2_RenderDrawData( ImGui::GetDrawData(), ren );
 		SDL_RenderPresent( ren );
 		SDL_Delay( 16 );
 	}

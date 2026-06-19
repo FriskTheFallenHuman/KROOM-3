@@ -29,9 +29,9 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
-uint8 g_crashStackData[4096];
-int g_crashStackLen = 0;
-uint32 g_crashStackHash = 0;
+extern uint8 g_crashStackData[4096];
+extern int g_crashStackLen;
+extern uint32 g_crashStackHash;
 
 /*
 ====================

@@ -156,7 +156,7 @@ void Sys_InitSigs()
 	{
 		if( siglist[ i ] == SIGFPE )
 		{
-			action.sa_sigaction = Sys_FPE_handler;
+			action.sa_sigaction = sig_handler;
 			if( sigaction( siglist[ i ], &action, NULL ) != 0 )
 			{
 				idLib::Printf( "Failed to set SIGFPE handler: %s\n", strerror( errno ) );

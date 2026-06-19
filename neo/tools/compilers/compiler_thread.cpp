@@ -205,6 +205,7 @@ static void RoQFileEncode_Threaded_f( const idCmdArgs& args )
 Amplitude_Threaded_f
 ========================
 */
+
 static void Amplitude_Threaded_f( const idCmdArgs& args )
 {
 	if( g_compilerThread.IsRunning() )
@@ -214,7 +215,6 @@ static void Amplitude_Threaded_f( const idCmdArgs& args )
 	}
 	g_compilerThread.Dispatch( Amplitude_f, args, "AmplitudeThread" );
 }
-
 /*
 ========================
 Compiler_Wait_f
