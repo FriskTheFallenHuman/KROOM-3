@@ -395,13 +395,16 @@ add_definitions(-DUSE_SDL)
 list(APPEND sys_thirdparty ${SDLX_LIBRARY})
 
 if(NOT USE_VULKAN)
-	find_package(OpenGL REQUIRED)
-	include_directories(${OPENGL_INCLUDE_DIRS})
-	if(UNIX)
-		list(APPEND sys_thirdparty OpenGL::GL)
-	else()
-		list(APPEND sys_thirdparty OpenGL::GL OpenGL::GLU)
-	endif()
+  find_package(OpenGL REQUIRED)
+  include_directories(${OPENGL_INCLUDE_DIRS})
+  if(UNIX)
+    find_package(GLEW REQUIRED)
+    include_directories(${GLEW_INCLUDE_DIRS})
+
+    list(APPEND sys_thirdparty GLEW::GLEW OpenGL::GL)
+  else()
+    list(APPEND sys_thirdparty OpenGL::GL OpenGL::GLU)
+  endif()
 endif()
 
 if(USE_INTRINSICS_SSE)
@@ -722,15 +725,15 @@ else()
 
 	file(GLOB src_sys_posix sys/posix/*.cpp sys/posix/*.h)
 	list(REMOVE_ITEM src_sys_posix
-		${CMAKE_CURRENT_SOURCE_DIR}/sys/posix/platform_linux.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/sys/posix/platform_osx.cpp)
+		${CMAKE_CURRENT_SOURCE_DIR}/sys/posix/linux_main.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/sys/posix/osx_main.cpp)
 	source_group("Sys//Posix" FILES ${src_sys_posix})
 
 	if(UNIX)
 		if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-			list(APPEND src_sys_posix ${CMAKE_CURRENT_SOURCE_DIR}/sys/posix/platform_osx.cpp)
+			list(APPEND src_sys_posix ${CMAKE_CURRENT_SOURCE_DIR}/sys/posix/osx_main.cpp)
 		else()
-			list(APPEND src_sys_posix ${CMAKE_CURRENT_SOURCE_DIR}/sys/posix/platform_linux.cpp)
+			list(APPEND src_sys_posix ${CMAKE_CURRENT_SOURCE_DIR}/sys/posix/linux_main.cpp)
 		endif()
 	endif()
 
