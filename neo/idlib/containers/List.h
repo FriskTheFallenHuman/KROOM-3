@@ -96,8 +96,8 @@ ID_INLINE void* idListArrayResize( void* voldptr, int oldNum, int newNum, bool z
 		int overlap = Min( oldNum, newNum );
 		for( int i = 0; i < overlap; i++ )
 		{
-			//newptr[i] = oldptr[i];
-			newptr[i] = std::move( oldptr[i] );
+			newptr[i] = oldptr[i];
+			//newptr[i] = std::move( oldptr[i] );
 		}
 	}
 	idListArrayDelete<_type_>( voldptr, oldNum );
