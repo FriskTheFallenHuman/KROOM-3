@@ -32,10 +32,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #if defined( USE_VULKAN )
 
-#if defined(VK_USE_PLATFORM_WIN32_KHR)  //_WIN32
-	#include <Windows.h>
-#endif
-
 #define USE_AMD_ALLOCATOR
 
 #include <vulkan/vulkan.h>

@@ -42,6 +42,8 @@ class idSysLocal : public idSys
 public:
 	virtual const char* 	GetCmdLine();
 
+	virtual void			ShowCrashDialog( const char* summaryText );
+
 	virtual void			DebugPrintf( VERIFY_FORMAT_STRING const char* fmt, ... );
 	virtual void			DebugVPrintf( const char* fmt, va_list arg );
 

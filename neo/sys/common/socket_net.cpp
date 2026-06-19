@@ -918,7 +918,7 @@ void Sys_InitNetworking()
 		pAdapter = pAdapterInfo;
 		while( pAdapter )
 		{
-			idLib::Printf( "Found interface: %s %s - ", pAdapter->AdapterName, pAdapter->Description );
+			idLib::Printf( "Found interface: %s", pAdapter->Description );
 			pIPAddrString = &pAdapter->IpAddressList;
 			while( pIPAddrString )
 			{

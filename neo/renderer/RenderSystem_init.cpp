@@ -43,14 +43,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "RenderCommon.h"
 
-// RB begin
-#if defined(_WIN32)
-
-	// Vista OpenGL wrapper check
-	#include "../sys/win32/win_local.h"
-#endif
-// RB end
-
 // foresthale 2014-03-01: fixed custom screenshot resolution by doing a more direct render path
 #define BUGFIXEDSCREENSHOTRESOLUTION 1
 #ifdef BUGFIXEDSCREENSHOTRESOLUTION
@@ -1636,10 +1628,8 @@ void GfxInfo_f( const idCmdArgs& args )
 
 	common->Printf( "-------\n" );
 
-	// RB begin
-#if defined(_WIN32) && !defined(USE_VULKAN)
-	// WGL_EXT_swap_interval
-	if( r_swapInterval.GetInteger() && wglSwapIntervalEXT != NULL )
+#if !defined(USE_VULKAN)
+	if( r_swapInterval.GetInteger() )
 	{
 		common->Printf( "Forcing swapInterval %i\n", r_swapInterval.GetInteger() );
 	}
@@ -1648,7 +1638,6 @@ void GfxInfo_f( const idCmdArgs& args )
 		common->Printf( "swapInterval not forced\n" );
 	}
 #endif
-	// RB end
 
 	idLib::Printf( "%i multisamples\n", glConfig.multisamples );
 

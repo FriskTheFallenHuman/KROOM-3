@@ -29,6 +29,10 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __SYS_STACKTRACE_H__
 #define __SYS_STACKTRACE_H__
 
+extern uint8 g_crashStackData[4096];
+extern int g_crashStackLen;
+extern uint32 g_crashStackHash;
+
 static const int MAX_LEN = 88;
 
 struct debugStackFrame_t
@@ -44,6 +48,12 @@ void Sys_DecodeStackTrace( uint8* data, int len, debugStackFrame_t* frames );
 #ifdef _WIN32
 	void Sys_CaptureExceptionStack( EXCEPTION_POINTERS* exceptionInfo );
 	void Sys_WriteMiniDump( EXCEPTION_POINTERS* exceptionInfo );
+#else
+	#include <signal.h>
+
+	void Sys_CaptureExceptionStack( siginfo_t* info, void* context );
+	void Sys_InitSigs();
+	void Sys_ClearSigs();
 #endif
 
 #endif /* !__SYS_STACKTRACE_H__ */

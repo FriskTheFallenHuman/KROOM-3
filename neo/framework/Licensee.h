@@ -38,7 +38,11 @@ If you have questions concerning this license or the applicable additional terms
 #define GAME_NAME						"KROOM 3: BFG"		// appears on window titles and errors
 #define ENGINE_VERSION					"KROOM 3: BFG"	// printed in console, used for window title
 
-#define SAVE_PATH						"\\FriskTheFallenHuman\\KROOM 3 BFG"
+#ifdef __linux__
+	#define SAVE_PATH						"kroom3bfg"
+#else
+	#define SAVE_PATH						"/My Games/KROOM 3 BFG"
+#endif
 
 #ifdef ID_REPRODUCIBLE_BUILD
 	// for reproducible builds we hardcode values that would otherwise come from __DATE__ and __TIME__
@@ -82,13 +86,10 @@ If you have questions concerning this license or the applicable additional terms
 #define	WIN32_WINDOW_CLASS_NAME			"D3BFG"
 #define	WIN32_FAKE_WINDOW_CLASS_NAME	"D3BFG_WGL_FAKE"
 
-// RB begin
+// FIXME: Doom 3 BFG Edition never had a linux release.
 // Default base path (used only if none could be found)
-#ifdef __APPLE__
-	#define DEFAULT_BASEPATH			"/Applications/KROOM3BFG.app/Contents/Resources"
-#else
-	#define DEFAULT_BASEPATH			"/usr/share/games/kroom3bfg"
-#endif
-// RB end
-
-
+//#ifdef __APPLE__
+//	#define DEFAULT_BASEPATH			"/Applications/KROOM3BFG.app/Contents/Resources"
+//#else
+//	#define DEFAULT_BASEPATH			"/usr/share/games/kroom3bfg"
+//#endif

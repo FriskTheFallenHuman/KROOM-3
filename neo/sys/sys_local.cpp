@@ -361,13 +361,18 @@ idSysLocal::StartProcess
 void idSysLocal::StartProcess( idCmdArgs& args, void* data, bool quit )
 {
 	const char* extraArgs = static_cast<const char*>( data );
-	std::vector<std::string> argv = SplitArgs( Sys_EXEPath(), extraArgs );
+	idStr exePath;
+	if( !Sys_GetPath( PATH_EXE, exePath ) )
+	{
+		idLib::Error( "Could not get executable path" );
+	}
+	std::vector<std::string> argv = SplitArgs( exePath.c_str(), extraArgs );
 
 	reproc::process proc;
 	std::error_code ec = proc.start( argv, MakeDetachOptions() );
 	if( ec )
 	{
-		idLib::Error( "Could not start process: '%s' (%s)", Sys_EXEPath(), ec.message().c_str() );
+		idLib::Error( "Could not start process: '%s' (%s)", exePath.c_str(), ec.message().c_str() );
 		return;
 	}
 
@@ -385,7 +390,12 @@ idSysLocal::ReLaunch
 void idSysLocal::ReLaunch( void* data )
 {
 	const char* args = static_cast<const char*>( data );
-	std::vector<std::string> argv = SplitArgs( Sys_EXEPath(), args );
+	idStr exePath;
+	if( !Sys_GetPath( PATH_EXE, exePath ) )
+	{
+		idLib::Error( "Could not get executable path" );
+	}
+	std::vector<std::string> argv = SplitArgs( exePath.c_str(), args );
 
 #if defined(_WIN32)
 	static HANDLE hProcessMutex;
@@ -396,7 +406,7 @@ void idSysLocal::ReLaunch( void* data )
 	std::error_code ec = proc.start( argv, MakeDetachOptions() );
 	if( ec )
 	{
-		idLib::Error( "Could not start process: '%s' (%s)", Sys_EXEPath(), ec.message().c_str() );
+		idLib::Error( "Could not start process: '%s' (%s)", exePath.c_str(), ec.message().c_str() );
 		return;
 	}
 
@@ -543,6 +553,16 @@ idSysLocal::GetCmdLine
 const char* idSysLocal::GetCmdLine()
 {
 	return sys_cmdline;
+}
+
+/*
+========================
+idSysLocal::ShowCrashDialog
+========================
+*/
+void idSysLocal::ShowCrashDialog( const char* summaryText )
+{
+	Sys_ShowCrashDialog( summaryText );
 }
 
 /*

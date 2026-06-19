@@ -56,9 +56,7 @@ PFN_vkCmdInsertDebugUtilsLabelEXT	qvkCmdInsertDebugUtilsLabelEXT = VK_NULL_HANDL
 #include "../RenderBackend.h"
 #include "Staging_VK.h"
 //#include "../../framework/Common_local.h"
-#if defined(VULKAN_USE_PLATFORM_SDL)
-	#include "../../sys/sdl/DeviceManager_SDL.h"
-#endif
+#include "../../sys/sdl/DeviceManager_SDL.h"
 
 idCVar r_drawFlickerBox( "r_drawFlickerBox", "0", CVAR_RENDERER | CVAR_BOOL, "visual test for dropping frames" );
 
@@ -71,15 +69,6 @@ idCVar r_syncEveryFrame( "r_syncEveryFrame", "1", CVAR_BOOL, "Don't let the GPU 
 idCVar r_vkEnableValidationLayers( "r_vkEnableValidationLayers", "0", CVAR_BOOL | CVAR_INIT, "" );
 
 vulkanContext_t vkcontext;
-
-#if defined(VK_USE_PLATFORM_WIN32_KHR)  //_WIN32
-static const int g_numInstanceExtensions = 2;
-static const char* g_instanceExtensions[ g_numInstanceExtensions ] =
-{
-	VK_KHR_SURFACE_EXTENSION_NAME,
-	VK_KHR_WIN32_SURFACE_EXTENSION_NAME
-};
-#endif
 
 // SRS - optionally needed for runtime access to fullImageViewSwizzle (instead of env var MVK_CONFIG_FULL_IMAGE_VIEW_SWIZZLE = 1)
 #if defined(__APPLE__) && defined(USE_MoltenVK)
@@ -284,12 +273,7 @@ static void CreateVulkanInstance()
 	vkcontext.instanceExtensions.Clear();
 	vkcontext.deviceExtensions.Clear();
 	vkcontext.validationLayers.Clear();
-#if defined(VK_USE_PLATFORM_WIN32_KHR)  //_WIN32
-	for( int i = 0; i < g_numInstanceExtensions; ++i )
-	{
-		vkcontext.instanceExtensions.Append( g_instanceExtensions[ i ] );
-	}
-#elif defined(VULKAN_USE_PLATFORM_SDL)  // SDL2
+
 	idDeviceManagerSDL* device = dynamic_cast<idDeviceManagerSDL*>( idDeviceManager::GetInstance() );
 	if( device )
 	{
@@ -300,7 +284,6 @@ static void CreateVulkanInstance()
 			vkcontext.instanceExtensions.Append( instanceExtension );
 		}
 	}
-#endif
 
 	// SRS - Enumerate available Vulkan instance extensions and test for presence of VK_KHR_get_physical_device_properties2 and VK_EXT_debug_utils
 	idLib::Printf( "Getting available vulkan instance extensions...\n" );
@@ -494,29 +477,12 @@ static void EnumeratePhysicalDevices()
 CreateSurface
 =============
 */
-// SRS - Is this #include still needed?
-#ifdef _WIN32
-	#include "../../sys/win32/win_local.h"
-#endif
-
 static void CreateSurface()
 {
-#if defined(VK_USE_PLATFORM_WIN32_KHR)  //_WIN32
-	VkWin32SurfaceCreateInfoKHR createInfo = {};
-	createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-	createInfo.hinstance = win32.hInstance;
-	createInfo.hwnd = win32.hWnd;
-
-	ID_VK_CHECK( vkCreateWin32SurfaceKHR( vkcontext.instance, &createInfo, NULL, &vkcontext.surface ) );
-
-// SRS - Generalized Vulkan SDL platform
-#elif defined(VULKAN_USE_PLATFORM_SDL)
 	if( !SDL_Vulkan_CreateSurface( vkcontext.sdlWindow, vkcontext.instance, &vkcontext.surface ) )
 	{
 		idLib::FatalError( "Error while creating Vulkan surface: %s", SDL_GetError() );
 	}
-#endif
-
 }
 
 /*
@@ -999,13 +965,11 @@ static VkExtent2D ChooseSurfaceExtent( VkSurfaceCapabilitiesKHR& caps )
 	int width = glConfig.nativeScreenWidth;
 	int height = glConfig.nativeScreenHeight;
 
-// SRS - Generalized Vulkan SDL platform
-#if defined(VULKAN_USE_PLATFORM_SDL)
+	// SRS - Generalized Vulkan SDL platform
 	SDL_Vulkan_GetDrawableSize( vkcontext.sdlWindow, &width, &height );
 
 	width = idMath::ClampInt( caps.minImageExtent.width, caps.maxImageExtent.width, width );
 	height = idMath::ClampInt( caps.minImageExtent.height, caps.maxImageExtent.height, height );
-#endif
 
 	if( caps.currentExtent.width == -1 )
 	{
@@ -1295,17 +1259,12 @@ static void CreateRenderTargets()
 	depthOptions.format = FMT_DEPTH;
 
 	// Eric: See if this fixes resizing
-// SRS - Generalized Vulkan SDL platform
-#if defined(VULKAN_USE_PLATFORM_SDL)
+	// SRS - Generalized Vulkan SDL platform
 	gpuInfo_t& gpu = *vkcontext.gpu;
 	VkExtent2D extent = ChooseSurfaceExtent( gpu.surfaceCaps );
 
 	depthOptions.width = extent.width;
 	depthOptions.height = extent.height;
-#else
-	depthOptions.width = renderSystem->GetWidth();
-	depthOptions.height = renderSystem->GetHeight();
-#endif
 
 	depthOptions.numLevels = 1;
 	depthOptions.samples = static_cast< textureSamples_t >( vkcontext.sampleCount );
@@ -1538,9 +1497,7 @@ ClearContext
 */
 static void ClearContext()
 {
-#if defined(VULKAN_USE_PLATFORM_SDL)
 	vkcontext.sdlWindow = nullptr;
-#endif
 	vkcontext.frameCounter = 0;
 	vkcontext.frameParity = 0;
 	vkcontext.jointCacheHandle = 0;

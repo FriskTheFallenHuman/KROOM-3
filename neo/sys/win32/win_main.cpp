@@ -3,7 +3,6 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
-Copyright (C) 2012 Robert Beckebans
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -30,1027 +29,202 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
-#include <errno.h>
-#include <float.h>
-#include <fcntl.h>
-#include <direct.h>
-#include <io.h>
-#include <conio.h>
-#include <mapi.h>
-#include <shellapi.h>
 #include <shlobj.h>
 
-#ifndef __MRC__
-	#include <sys/types.h>
-	#include <sys/stat.h>
-#endif
-
-#ifdef USE_SDL
-	#include <SDL2/SDL_main.h>
-	#include "../sdl/DeviceManager_SDL.h"
-#else
-	#include "DeviceManager_Win32.h"
-#endif
-
 #include "../sys_local.h"
-#include "win_local.h"
-#include "win_hirez.h"
-#include "../../renderer/RenderCommon.h"
-
-idCVar Win32Vars_t::in_mouse( "in_mouse", "1", CVAR_SYSTEM | CVAR_BOOL, "enable mouse input" );
-idCVar Win32Vars_t::win_outputEditString( "win_outputEditString", "1", CVAR_SYSTEM | CVAR_BOOL, "" );
-idCVar Win32Vars_t::win_viewlog( "win_viewlog", "0", CVAR_SYSTEM | CVAR_INTEGER, "" );
-idCVar Win32Vars_t::win_timerUpdate( "win_timerUpdate", "0", CVAR_SYSTEM | CVAR_BOOL, "allows the game to be updated while dragging the window" );
-
-Win32Vars_t win32 = {};
 
 /*
-==================
-Sys_SetDPIAwareness #616
-
-Code that tells windows we're High DPI aware so it doesn't scale our windows.
-Taken from Yamagi Quake II
-==================
+==============
+WPath2A
+==============
 */
-typedef enum D3_PROCESS_DPI_AWARENESS
+static int WPath2A( char* dst, size_t size, const WCHAR* src )
 {
-	D3_PROCESS_DPI_UNAWARE = 0,
-	D3_PROCESS_SYSTEM_DPI_AWARE = 1,
-	D3_PROCESS_PER_MONITOR_DPI_AWARE = 2
-} YQ2_PROCESS_DPI_AWARENESS;
+	int len;
+	BOOL default_char = FALSE;
 
-void Sys_SetDPIAwareness()
-{
-	// For Vista, Win7 and Win8
-	BOOL( WINAPI * SetProcessDPIAware )( void ) = NULL;
+	// test if we can convert lossless
+	len = WideCharToMultiByte( CP_ACP, 0, src, -1, dst, size, NULL, &default_char );
 
-	/* Win8.1 and later */
-	HRESULT( WINAPI * SetProcessDpiAwareness )( D3_PROCESS_DPI_AWARENESS dpiAwareness ) = NULL;
-
-
-	HINSTANCE userDLL = LoadLibrary( "USER32.DLL" );
-	if( userDLL )
+	if( default_char )
 	{
-		SetProcessDPIAware = ( BOOL( WINAPI* )( void ) ) GetProcAddress( userDLL, "SetProcessDPIAware" );
-	}
+		// The following lines implement a horrible
+		// hack to connect the UTF-16 WinAPI to the
+		// ASCII doom3 strings. While this should work in
+		// most cases, it'll fail if the "Windows to
+		// DOS filename translation" is switched off.
+		// In that case the function will return NULL
+		// and no homedir is used.
+		WCHAR w[MAX_OSPATH];
+		len = GetShortPathNameW( src, w, sizeof( w ) );
 
-	HINSTANCE shcoreDLL = LoadLibrary( "SHCORE.DLL" );
-	if( shcoreDLL )
-	{
-		SetProcessDpiAwareness = ( HRESULT( WINAPI* )( YQ2_PROCESS_DPI_AWARENESS ) ) GetProcAddress( shcoreDLL, "SetProcessDpiAwareness" );
-	}
-
-	if( SetProcessDpiAwareness )
-	{
-		SetProcessDpiAwareness( D3_PROCESS_PER_MONITOR_DPI_AWARE );
-	}
-	else if( SetProcessDPIAware )
-	{
-		SetProcessDPIAware();
-	}
-}
-
-/*
-=============
-Sys_Error
-
-Show the early console as an error dialog
-=============
-*/
-void Sys_Error( const char* error, ... )
-{
-	va_list		argptr;
-	char		text[4096];
-	MSG        msg;
-
-	va_start( argptr, error );
-	vsprintf( text, error, argptr );
-	va_end( argptr );
-
-	Conbuf_AppendText( text );
-	Conbuf_AppendText( "\n" );
-
-	Win_SetErrorText( text );
-	Sys_ShowConsole( 1, true );
-
-	timerHiRes.Shutdown();
-
-	Sys_ShutdownInput();
-
-	if( idDeviceManager::GetInstance() )
-	{
-		idDeviceManager::GetInstance()->Shutdown();
-	}
-
-	extern idCVar com_productionMode;
-	if( com_productionMode.GetInteger() == 0 )
-	{
-		// wait for the user to quit
-		while( 1 )
+		if( len == 0 )
 		{
-			if( !GetMessage( &msg, NULL, 0, 0 ) )
-			{
-				common->Quit();
-			}
-			TranslateMessage( &msg );
-			DispatchMessage( &msg );
+			return 0;
+		}
+
+		/* Since the DOS path contains no UTF-16 characters, convert it to the system's default code page */
+		len = WideCharToMultiByte( CP_ACP, 0, w, len, dst, size - 1, NULL, NULL );
+	}
+
+	if( len == 0 )
+	{
+		return 0;
+	}
+
+	dst[len] = 0;
+
+	// Replace backslashes by slashes
+	for( int i = 0; i < len; ++i )
+	{
+		if( dst[i] == '\\' )
+		{
+			dst[i] = '/';
 		}
 	}
-	Sys_DestroyConsole();
 
-	exit( 1 );
-}
-
-/*
-==============
-Sys_Quit
-==============
-*/
-void Sys_Quit()
-{
-	timerHiRes.Shutdown();
-	Sys_ShutdownInput();
-	Sys_DestroyConsole();
-	ExitProcess( 0 );
-}
-
-
-/*
-==============
-Sys_Printf
-==============
-*/
-#define MAXPRINTMSG 4096
-void Sys_Printf( const char* fmt, ... )
-{
-	char		msg[MAXPRINTMSG];
-
-	va_list argptr;
-	va_start( argptr, fmt );
-	idStr::vsnPrintf( msg, MAXPRINTMSG - 1, fmt, argptr );
-	va_end( argptr );
-	msg[sizeof( msg ) - 1] = '\0';
-
-	OutputDebugString( msg );
-
-	if( win32.win_outputEditString.GetBool() && idLib::IsMainThread() )
+	// cut trailing slash
+	if( dst[len - 1] == '/' )
 	{
-		Conbuf_AppendText( msg );
+		dst[len - 1] = 0;
+		len--;
 	}
+
+	return len;
 }
 
 /*
 ==============
-Sys_DebugPrintf
+GetHomeDir
 ==============
 */
-#define MAXPRINTMSG 4096
-void Sys_DebugPrintf( const char* fmt, ... )
+static int GetHomeDir( char* dst, size_t size )
 {
-	char msg[MAXPRINTMSG];
+	int len;
+	WCHAR profile[MAX_OSPATH];
 
-	va_list argptr;
-	va_start( argptr, fmt );
-	idStr::vsnPrintf( msg, MAXPRINTMSG - 1, fmt, argptr );
-	msg[ sizeof( msg ) - 1 ] = '\0';
-	va_end( argptr );
+	// Get the path to "My Documents" directory
+	SHGetFolderPathW( NULL, CSIDL_PERSONAL, NULL, 0, profile );
 
-	OutputDebugString( msg );
-}
-
-/*
-==============
-Sys_DebugVPrintf
-==============
-*/
-void Sys_DebugVPrintf( const char* fmt, va_list arg )
-{
-	char msg[MAXPRINTMSG];
-
-	idStr::vsnPrintf( msg, MAXPRINTMSG - 1, fmt, arg );
-	msg[ sizeof( msg ) - 1 ] = '\0';
-
-	OutputDebugString( msg );
-}
-
-#ifndef USE_SDL
-/*
-==============
-Sys_Sleep
-==============
-*/
-void Sys_Sleep( int msec )
-{
-	Sleep( msec );
-}
-
-/*
-==============
-Sys_ShowWindow
-==============
-*/
-void Sys_ShowWindow( bool show )
-{
-	::ShowWindow( win32.hWnd, show ? SW_SHOW : SW_HIDE );
-}
-
-/*
-==============
-Sys_IsWindowVisible
-==============
-*/
-bool Sys_IsWindowVisible()
-{
-	return ( ::IsWindowVisible( win32.hWnd ) != 0 );
-}
-#endif
-
-/*
-==============
-Sys_Mkdir
-==============
-*/
-void Sys_Mkdir( const char* path )
-{
-	_mkdir( path );
-}
-
-/*
-=================
-Sys_FileTimeStamp
-=================
-*/
-ID_TIME_T Sys_FileTimeStamp( idFileHandle fp )
-{
-	FILETIME writeTime;
-	GetFileTime( fp, NULL, NULL, &writeTime );
-
-	/*
-		FILETIME = number of 100-nanosecond ticks since midnight
-		1 Jan 1601 UTC. time_t = number of 1-second ticks since
-		midnight 1 Jan 1970 UTC. To translate, we subtract a
-		FILETIME representation of midnight, 1 Jan 1970 from the
-		time in question and divide by the number of 100-ns ticks
-		in one second.
-	*/
-
-	SYSTEMTIME base_st =
+	len = WPath2A( dst, size, profile );
+	if( len == 0 )
 	{
-		1970,   // wYear
-		1,      // wMonth
-		0,      // wDayOfWeek
-		1,      // wDay
-		0,      // wHour
-		0,      // wMinute
-		0,      // wSecond
-		0       // wMilliseconds
-	};
+		return 0;
+	}
 
-	FILETIME base_ft;
-	SystemTimeToFileTime( &base_st, &base_ft );
+	idStr::Append( dst, size, SAVE_PATH );
 
-	LARGE_INTEGER itime;
-	itime.QuadPart = reinterpret_cast<LARGE_INTEGER&>( writeTime ).QuadPart;
-	itime.QuadPart -= reinterpret_cast<LARGE_INTEGER&>( base_ft ).QuadPart;
-	itime.QuadPart /= 10000000LL;
-	return itime.QuadPart;
+	return len;
 }
 
 /*
-========================
-Sys_Rmdir
-========================
+==============
+GetRegistryPath
+==============
 */
-bool Sys_Rmdir( const char* path )
+static int GetRegistryPath( char* dst, size_t size, const WCHAR* subkey, const WCHAR* name )
 {
-	return _rmdir( path ) == 0;
+	WCHAR w[MAX_OSPATH];
+	DWORD len = sizeof( w );
+	HKEY res;
+	DWORD sam = KEY_QUERY_VALUE
+#ifdef _WIN64
+				| KEY_WOW64_32KEY
+#endif
+				;
+	DWORD type;
+
+	if( RegOpenKeyExW( HKEY_LOCAL_MACHINE, subkey, 0, sam, &res ) != ERROR_SUCCESS )
+	{
+		return 0;
+	}
+
+	if( RegQueryValueExW( res, name, NULL, &type, ( LPBYTE )w, &len ) != ERROR_SUCCESS )
+	{
+		RegCloseKey( res );
+		return 0;
+	}
+
+	RegCloseKey( res );
+
+	if( type != REG_SZ )
+	{
+		return 0;
+	}
+
+	return WPath2A( dst, size, w );
 }
 
 /*
-========================
-Sys_IsFileWritable
-========================
+==============
+Sys_GetPath
+
+Returns "My Documents"/My Games/dhewm3 directory (or equivalent - "CSIDL_PERSONAL").
+To be used with Sys_GetPath(PATH_SAVE), so savegames, screenshots etc will be
+saved to the users files instead of systemwide.
+
+Based on (with kind permission) Yamagi Quake II's Sys_GetHomeDir()
+
+Returns the number of characters written to dst
+==============
 */
-bool Sys_IsFileWritable( const char* path )
+bool Sys_GetPath( sysPath_t type, idStr& path )
 {
+	char buf[MAX_OSPATH];
 	struct _stat st;
-	if( _stat( path, &st ) == -1 )
+	idStr s;
+
+	switch( type )
 	{
-		return true;
-	}
-	return ( st.st_mode & S_IWRITE ) != 0;
-}
-
-/*
-========================
-Sys_IsFolder
-========================
-*/
-sysFolder_t Sys_IsFolder( const char* path )
-{
-	struct _stat buffer;
-	if( _stat( path, &buffer ) < 0 )
-	{
-		return FOLDER_ERROR;
-	}
-	return ( buffer.st_mode & _S_IFDIR ) != 0 ? FOLDER_YES : FOLDER_NO;
-}
-
-/*
-==============
-Sys_Cwd
-==============
-*/
-const char* Sys_Cwd()
-{
-	static char cwd[MAX_OSPATH];
-
-	_getcwd( cwd, sizeof( cwd ) - 1 );
-	cwd[MAX_OSPATH - 1] = 0;
-
-	return cwd;
-}
-
-/*
-==============
-Sys_DefaultBasePath
-==============
-*/
-const char* Sys_DefaultBasePath()
-{
-	return Sys_Cwd();
-}
-
-// Vista shit
-typedef HRESULT( WINAPI* SHGetKnownFolderPath_t )( const GUID& rfid, DWORD dwFlags, HANDLE hToken, PWSTR* ppszPath );
-// NOTE: FOLIDERID_SavedGames is already exported from in shell32.dll in Windows 7.  We can only detect
-// the compiler version, but that doesn't doesn't tell us which version of the OS we're linking against.
-// This GUID value should never change, so we name it something other than FOLDERID_SavedGames to get
-// around this problem.
-const GUID FOLDERID_SavedGames_IdTech5 = { 0x4c5c32ff, 0xbb9d, 0x43b0, { 0xb5, 0xb4, 0x2d, 0x72, 0xe5, 0x4e, 0xaa, 0xa4 } };
-
-/*
-==============
-Sys_DefaultSavePath
-==============
-*/
-const char* Sys_DefaultSavePath()
-{
-	static char savePath[ MAX_PATH ];
-	memset( savePath, 0, MAX_PATH );
-
-	HMODULE hShell = LoadLibrary( "shell32.dll" );
-	if( hShell )
-	{
-		SHGetKnownFolderPath_t SHGetKnownFolderPath = ( SHGetKnownFolderPath_t )GetProcAddress( hShell, "SHGetKnownFolderPath" );
-		if( SHGetKnownFolderPath )
-		{
-			wchar_t* path;
-
-			// RB FIXME?
-#if defined(__MINGW32__)
-			if( SUCCEEDED( SHGetKnownFolderPath( FOLDERID_SavedGames_IdTech5, CSIDL_FLAG_CREATE, 0, &path ) ) )
-#else
-			if( SUCCEEDED( SHGetKnownFolderPath( FOLDERID_SavedGames_IdTech5, CSIDL_FLAG_CREATE | CSIDL_FLAG_PER_USER_INIT, 0, &path ) ) )
-#endif
-				// RB end
+		case PATH_BASE:
+			// try <path to exe>/base first
+			if( Sys_GetPath( PATH_EXE, path ) )
 			{
-				if( wcstombs( savePath, path, MAX_PATH ) > MAX_PATH )
+				path.StripFilename();
+
+				s = path;
+				s.AppendPath( BASE_GAMEDIR );
+				if( _stat( s.c_str(), &st ) != -1 && ( st.st_mode & _S_IFDIR ) )
 				{
-					savePath[0] = 0;
+					//idLib::Warning( "using path of executable: %s", path.c_str() );
+					return true;
 				}
-				CoTaskMemFree( path );
+
+				idLib::Warning( "base path '%s' does not exist", s.c_str() );
 			}
-		}
-		FreeLibrary( hShell );
-	}
 
-	if( savePath[0] == 0 )
-	{
-		// RB: looks like a bug in the shlobj.h
-#if defined(__MINGW32__)
-		SHGetFolderPath( NULL, CSIDL_PERSONAL | CSIDL_FLAG_CREATE, NULL, 1, savePath );
-#else
-		SHGetFolderPath( NULL, CSIDL_PERSONAL | CSIDL_FLAG_CREATE, NULL, SHGFP_TYPE_CURRENT, savePath );
-#endif
-		// RB end
-		strcat( savePath, "\\My Games" );
-	}
-
-	strcat( savePath, SAVE_PATH );
-
-	return savePath;
-}
-
-/*
-==============
-Sys_EXEPath
-==============
-*/
-const char* Sys_EXEPath()
-{
-	static char exe[ MAX_OSPATH ];
-	GetModuleFileName( NULL, exe, sizeof( exe ) - 1 );
-	return exe;
-}
-
-/*
-==============
-Sys_ListFiles
-==============
-*/
-int Sys_ListFiles( const char* directory, const char* extension, idStrList& list )
-{
-	idStr		search;
-	struct _finddata_t findinfo;
-	// RB: 64 bit fixes, changed int to intptr_t
-	intptr_t	findhandle;
-	// RB end
-	int			flag;
-
-	if( !extension )
-	{
-		extension = "";
-	}
-
-	// passing a slash as extension will find directories
-	if( extension[0] == '/' && extension[1] == 0 )
-	{
-		extension = "";
-		flag = 0;
-	}
-	else
-	{
-		flag = _A_SUBDIR;
-	}
-
-	sprintf( search, "%s\\*%s", directory, extension );
-
-	// search
-	list.Clear();
-
-	findhandle = _findfirst( search, &findinfo );
-	if( findhandle == -1 )
-	{
-		return -1;
-	}
-
-	do
-	{
-		if( flag ^ ( findinfo.attrib & _A_SUBDIR ) )
-		{
-			list.Append( findinfo.name );
-		}
-	}
-	while( _findnext( findhandle, &findinfo ) != -1 );
-
-	_findclose( findhandle );
-
-	return list.Num();
-}
-
-#ifndef USE_SDL
-/*
-================
-Sys_GetClipboardData
-================
-*/
-char* Sys_GetClipboardData()
-{
-	char* data = NULL;
-	char* cliptext;
-
-	if( OpenClipboard( NULL ) != 0 )
-	{
-		HANDLE hClipboardData;
-
-		if( ( hClipboardData = GetClipboardData( CF_TEXT ) ) != 0 )
-		{
-			if( ( cliptext = ( char* )GlobalLock( hClipboardData ) ) != 0 )
+			// fallback to steam doom3-bfg install
+			if( GetRegistryPath( buf, sizeof( buf ), L"SOFTWARE\\Valve\\Steam", L"InstallPath" ) > 0 )
 			{
-				data = ( char* )Mem_Alloc( GlobalSize( hClipboardData ) + 1, TAG_CRAP );
-				strcpy( data, cliptext );
-				GlobalUnlock( hClipboardData );
+				path = buf;
+				path.AppendPath( "steamapps\\common\\DOOM 3 BFG Edition" );
 
-				strtok( data, "\n\r\b" );
+				if( _stat( path.c_str(), &st ) != -1 && st.st_mode & _S_IFDIR )
+				{
+					return true;
+				}
 			}
-		}
-		CloseClipboard();
-	}
-	return data;
-}
 
-/*
-================
-Sys_SetClipboardData
-================
-*/
-void Sys_SetClipboardData( const char* string )
-{
-	HGLOBAL HMem;
-	char* PMem;
+			idLib::Warning( "vanilla doom3-bfg path not found either" );
 
-	// allocate memory block
-	HMem = ( char* )::GlobalAlloc( GMEM_MOVEABLE | GMEM_DDESHARE, strlen( string ) + 1 );
-	if( HMem == NULL )
-	{
-		return;
-	}
-	// lock allocated memory and obtain a pointer
-	PMem = ( char* )::GlobalLock( HMem );
-	if( PMem == NULL )
-	{
-		return;
-	}
-	// copy text into allocated memory block
-	lstrcpy( PMem, string );
-	// unlock allocated memory
-	::GlobalUnlock( HMem );
-	// open Clipboard
-	if( !OpenClipboard( 0 ) )
-	{
-		::GlobalFree( HMem );
-		return;
-	}
-	// remove current Clipboard contents
-	EmptyClipboard();
-	// supply the memory handle to the Clipboard
-	SetClipboardData( CF_TEXT, HMem );
-	HMem = 0;
-	// close Clipboard
-	CloseClipboard();
-}
+			return false;
 
-/*
-========================================================================
+		case PATH_SAVE:
+			if( GetHomeDir( buf, sizeof( buf ) ) < 1 )
+			{
+				idLib::Error( "Couldn't get dir to home path" );
+				return false;
+			}
 
-DLL Loading
+			path = buf;
+			return true;
 
-========================================================================
-*/
-
-/*
-=====================
-Sys_DLL_Load
-=====================
-*/
-uintptr_t Sys_DLL_Load( const char* dllName )
-{
-	HINSTANCE	libHandle;
-	libHandle = LoadLibrary( dllName );
-	if( libHandle )
-	{
-		// since we can't have LoadLibrary load only from the specified path, check it did the right thing
-		char loadedPath[ MAX_OSPATH ];
-		GetModuleFileName( libHandle, loadedPath, sizeof( loadedPath ) - 1 );
-		if( idStr::IcmpPath( dllName, loadedPath ) )
-		{
-			Sys_Printf( "ERROR: LoadLibrary '%s' wants to load '%s'\n", dllName, loadedPath );
-			Sys_DLL_Unload( ( uintptr_t )libHandle );
-			return 0;
-		}
-	}
-	else
-	{
-		DWORD e = GetLastError();
-
-		if( e ==  0x7E )
-		{
-			// 0x7E is "The specified module could not be found."
-			// don't print a warning for that error, it's expected
-			// when trying different possible paths for a DLL
-			return 0;
-		}
-
-		if( e == 0xC1 )
-		{
-			// "[193 (0xC1)] is not a valid Win32 application"
-			// probably going to be common. Lets try to be less cryptic.
-			common->Warning( "LoadLibrary( \"%s\" ) Failed ! [%i (0x%X)]\tprobably the DLL is of the wrong architecture, "
-							 "like x64 instead of x86 (expects %s)",
-							 dllName, e, e, CPUSTRING );
-			return 0;
-		}
-
-		// for all other errors, print whatever FormatMessage() gives us
-		LPVOID msgBuf = NULL;
-
-		FormatMessage(
-			FORMAT_MESSAGE_ALLOCATE_BUFFER |
-			FORMAT_MESSAGE_FROM_SYSTEM |
-			FORMAT_MESSAGE_IGNORE_INSERTS,
-			NULL,
-			e,
-			MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),
-			( LPTSTR )&msgBuf,
-			0, NULL );
-
-		common->Warning( "LoadLibrary( \"%s\" ) Failed ! [%i (0x%X)]\t%s", dllName, e, e, msgBuf );
-
-		::LocalFree( msgBuf );
-	}
-	return ( uintptr_t )libHandle;
-}
-
-/*
-=====================
-Sys_DLL_GetProcAddress
-=====================
-*/
-void* Sys_DLL_GetProcAddress( uintptr_t dllHandle, const char* procName )
-{
-	// RB: added missing cast
-	return ( void* ) GetProcAddress( ( HINSTANCE )dllHandle, procName );
-}
-
-/*
-=====================
-Sys_DLL_Unload
-=====================
-*/
-void Sys_DLL_Unload( uintptr_t dllHandle )
-{
-	if( !dllHandle )
-	{
-		return;
+		case PATH_EXE:
+			GetModuleFileName( NULL, buf, sizeof( buf ) - 1 );
+			path = buf;
+			path.BackSlashesToSlashes();
+			return true;
 	}
 
-	if( FreeLibrary( ( HINSTANCE )dllHandle ) == 0 )
-	{
-		int lastError = GetLastError();
-		LPVOID lpMsgBuf;
-		FormatMessage(
-			FORMAT_MESSAGE_ALLOCATE_BUFFER,
-			NULL,
-			lastError,
-			MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ), // Default language
-			( LPTSTR ) &lpMsgBuf,
-			0,
-			NULL
-		);
-
-		Sys_Error( "Sys_DLL_Unload: FreeLibrary failed - %s (%d)", lpMsgBuf, lastError );
-	}
-}
-// RB end
-
-/*
-========================================================================
-
-EVENT LOOP
-
-========================================================================
-*/
-
-#define	MAX_QUED_EVENTS		256
-#define	MASK_QUED_EVENTS	( MAX_QUED_EVENTS - 1 )
-
-sysEvent_t	eventQue[MAX_QUED_EVENTS];
-int			eventHead = 0;
-int			eventTail = 0;
-
-/*
-================
-Sys_QueEvent
-
-Ptr should either be null, or point to a block of data that can
-be freed by the game later.
-================
-*/
-void Sys_QueEvent( sysEventType_t type, int value, int value2, int ptrLength, void* ptr, int inputDeviceNum )
-{
-	sysEvent_t* ev = &eventQue[ eventHead & MASK_QUED_EVENTS ];
-
-	if( eventHead - eventTail >= MAX_QUED_EVENTS )
-	{
-		common->Printf( "Sys_QueEvent: overflow\n" );
-		// we are discarding an event, but don't leak memory
-		if( ev->evPtr )
-		{
-			Mem_Free( ev->evPtr );
-		}
-		eventTail++;
-	}
-
-	eventHead++;
-
-	ev->evType = type;
-	ev->evValue = value;
-	ev->evValue2 = value2;
-	ev->evPtrLength = ptrLength;
-	ev->evPtr = ptr;
-	ev->inputDevice = inputDeviceNum;
-}
-
-/*
-=============
-Sys_PumpEvents
-
-This allows windows to be moved during renderbump
-=============
-*/
-void Sys_PumpEvents()
-{
-	MSG msg;
-
-	// pump the message loop
-	while( PeekMessage( &msg, NULL, 0, 0, PM_NOREMOVE ) )
-	{
-		if( !GetMessage( &msg, NULL, 0, 0 ) )
-		{
-			common->Quit();
-		}
-
-		TranslateMessage( &msg );
-		DispatchMessage( &msg );
-	}
-}
-
-/*
-================
-Sys_GenerateEvents
-================
-*/
-void Sys_GenerateEvents()
-{
-	static int entered = false;
-	char* s;
-
-	if( entered )
-	{
-		return;
-	}
-	entered = true;
-
-	// pump the message loop
-	Sys_PumpEvents();
-
-	// grab or release the mouse cursor if necessary
-	IN_Frame();
-
-	// check for console commands
-	s = Sys_ConsoleInput();
-	if( s )
-	{
-		char*	b;
-		int		len;
-
-		len = strlen( s ) + 1;
-		b = ( char* )Mem_Alloc( len, TAG_EVENTS );
-		strcpy( b, s );
-		Sys_QueEvent( SE_CONSOLE, 0, 0, len, b, 0 );
-	}
-
-	entered = false;
-}
-
-/*
-================
-Sys_ClearEvents
-================
-*/
-void Sys_ClearEvents()
-{
-	eventHead = eventTail = 0;
-}
-
-/*
-================
-Sys_GetEvent
-================
-*/
-sysEvent_t Sys_GetEvent()
-{
-	sysEvent_t	ev;
-
-	// return if we have data
-	if( eventHead > eventTail )
-	{
-		eventTail++;
-		return eventQue[( eventTail - 1 ) & MASK_QUED_EVENTS ];
-	}
-
-	// return the empty event
-	memset( &ev, 0, sizeof( ev ) );
-
-	return ev;
-}
-
-//================================================================
-#endif
-
-/*
-=================
-Sys_In_Restart_f
-
-Restart the input subsystem
-=================
-*/
-void Sys_In_Restart_f( const idCmdArgs& args )
-{
-	Sys_ShutdownInput();
-	Sys_InitInput();
-}
-
-/*
-================
-Sys_Init
-
-The cvar system must already be setup
-================
-*/
-void Sys_Init()
-{
-	int cpuFlags = Sys_GetProcessorId();
-
-	CoInitialize( NULL );
-
-	cmdSystem->AddCommand( "in_restart", Sys_In_Restart_f, CMD_FL_SYSTEM, "restarts the input system" );
-
-	//
-	// Windows version
-	//
-	win32.osversion.dwOSVersionInfoSize = sizeof( win32.osversion );
-
-	if( !GetVersionEx( ( LPOSVERSIONINFO )&win32.osversion ) )
-	{
-		Sys_Error( "Couldn't get OS info" );
-	}
-
-	if( win32.osversion.dwMajorVersion < 7 )
-	{
-		Sys_Error( GAME_NAME " requires Windows 7 SP1 or greater" );
-	}
-
-	if( win32.osversion.dwMajorVersion >= 6 && win32.osversion.dwMinorVersion == 1 && ( win32.osversion.dwBuildNumber == 7600 || win32.osversion.dwBuildNumber == 7601 ) )
-	{
-		common->Printf( "Detected: Windows 7 %u.%u (Build: %u)\n", win32.osversion.dwMajorVersion, win32.osversion.dwMinorVersion, win32.osversion.dwBuildNumber );
-	}
-	else if( win32.osversion.dwMajorVersion >= 6 && win32.osversion.dwMinorVersion == 2 && ( win32.osversion.dwBuildNumber == 9200 ) )
-	{
-		common->Printf( "Detected: Windows 8 %u.%u (Build: %u)\n", win32.osversion.dwMajorVersion, win32.osversion.dwMinorVersion, win32.osversion.dwBuildNumber );
-	}
-	else if( win32.osversion.dwMajorVersion >= 6 && win32.osversion.dwMinorVersion == 3 && ( win32.osversion.dwBuildNumber == 9200 || win32.osversion.dwBuildNumber == 9600 ) )
-	{
-		common->Printf( "Detected: Windows 8.1 %u.%u (Build: %u)\n", win32.osversion.dwMajorVersion, win32.osversion.dwMinorVersion, win32.osversion.dwBuildNumber );
-	}
-	else if( win32.osversion.dwMajorVersion >= 10 && win32.osversion.dwBuildNumber < 21996 )
-	{
-		common->Printf( "Detected: Windows 10 %u.%u (Build: %u)\n", win32.osversion.dwMajorVersion, win32.osversion.dwMinorVersion, win32.osversion.dwBuildNumber );
-	}
-	else if( win32.osversion.dwMajorVersion >= 10 && win32.osversion.dwBuildNumber >= 21996 )
-	{
-		common->Printf( "Detected: Windows 11 %u.%u (Build: %u)\n", win32.osversion.dwMajorVersion, win32.osversion.dwMinorVersion, win32.osversion.dwBuildNumber );
-	}
-	else
-	{
-		common->Printf( "Detected: Windows (Proton/Wine) %u.%u (Build: %u)", win32.osversion.dwMajorVersion, win32.osversion.dwMinorVersion, win32.osversion.dwBuildNumber );
-	}
-
-	//
-	// CPU type
-	//
-	common->Printf( "CPU Name: %s\n", Sys_GetProcessorString() );
-	common->Printf( "%1.0f CPU MHz ", Sys_ClockTicksPerSecond() / 1000000.0f );
-
-	common->Printf( "%d MB System Memory\n", Sys_GetSystemRam() );
-	if( ( cpuFlags & CPUID_SSE ) == 0 )
-	{
-		common->Error( "SSE not supported!" );
-	}
-
-#ifndef USE_SDL
-	win32.g_Joystick.Init();
-#endif
-}
-
-/*
-================
-Sys_Shutdown
-================
-*/
-void Sys_Shutdown()
-{
-	CoUninitialize();
-}
-
-//=======================================================================
-
-//#define SET_THREAD_AFFINITY
-
-/*
-====================
-Win_Frame
-====================
-*/
-void Win_Frame()
-{
-	// if "viewlog" has been modified, show or hide the log console
-	if( win32.win_viewlog.IsModified() )
-	{
-		win32.win_viewlog.ClearModified();
-	}
-}
-
-/*
-==================
-WinMain
-==================
-*/
-#ifdef USE_SDL
-	int main( int argc, char* argv[] )
-#else
-	int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow )
-#endif
-{
-	::SetCursor( NULL );
-
-	Sys_SetPhysicalWorkMemory( 192 << 20, 1024 << 20 );
-
-	// DG: tell Windows 8+ we're high dpi aware, otherwise display scaling screws up the game
-	Sys_SetDPIAwareness();
-
-#ifdef USE_SDL
-	win32.hInstance = GetModuleHandle( NULL );
-
-	// combine the args into a windows-style command line
-	sys_cmdline[0] = 0;
-	for( int i = 1 ; i < argc ; i++ )
-	{
-		strcat( sys_cmdline, argv[i] );
-		if( i < argc - 1 )
-		{
-			strcat( sys_cmdline, " " );
-		}
-	}
-#else
-	win32.hInstance = hInstance;
-	idStr::Copynz( sys_cmdline, lpCmdLine, sizeof( sys_cmdline ) );
-#endif
-
-	// done before Com/Sys_Init since we need this for error output
-	Sys_CreateConsole();
-
-	// Register the unhandled exception
-	LONG WINAPI Sys_UnhandledExceptionFilter( EXCEPTION_POINTERS * exceptionInfo );
-	SetUnhandledExceptionFilter( Sys_UnhandledExceptionFilter );
-
-	// no abort/retry/fail errors
-	SetErrorMode( SEM_FAILCRITICALERRORS );
-
-	// make sure the timer is high precision, otherwise
-	// NT gets 18ms resolution
-	timerHiRes.Init();
-
-	// get the initial time base
-	Sys_Milliseconds();
-
-#ifdef DEBUG
-	// disable the painfully slow MS heap check every 1024 allocs
-	_CrtSetDbgFlag( 0 );
-#endif
-
-#ifdef USE_SDL
-	static idDeviceManagerSDL deviceMgr;
-#else
-	static idDeviceManagerWin32 deviceMgr;
-#endif
-	idDeviceManager::s_instance = &deviceMgr;
-
-	common->Init( 0, NULL, sys_cmdline );
-
-	// hide or show the early console as necessary
-	if( win32.win_viewlog.GetInteger() )
-	{
-		Sys_ShowConsole( 1, true );
-	}
-	else
-	{
-		Sys_ShowConsole( 0, false );
-	}
-
-#ifdef SET_THREAD_AFFINITY
-	// give the main thread an affinity for the first cpu
-	SetThreadAffinityMask( GetCurrentThread(), 1 );
-#endif
-
-#ifndef USE_SDL
-	::SetFocus( win32.hWnd );
-#endif
-
-	// main game loop
-	while( 1 )
-	{
-		Win_Frame();
-
-#ifdef DEBUG
-		Sys_MemFrame();
-#endif
-
-		// run the game
-		common->Frame();
-	}
-
-	// never gets here
-	return 0;
+	return false;
 }

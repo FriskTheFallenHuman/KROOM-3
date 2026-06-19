@@ -1367,7 +1367,17 @@ void idParallelJobManagerLocal::Init()
 	Sys_CPUCount( numLogicalCpuCores, numPhysicalCpuCores, numCpuPackages );
 	idLib::Printf( "CPU core count: %d physical, %d logical\n", numPhysicalCpuCores, numLogicalCpuCores );
 
-	isRunningOnHdd = Sys_IsFileOnHdd( Sys_EXEPath() );
+	idStr exePath;
+	if( Sys_GetPath( PATH_EXE, exePath ) )
+	{
+		isRunningOnHdd = Sys_IsFileOnHdd( exePath.c_str() );
+	}
+	else
+	{
+		isRunningOnHdd = false;
+		idLib::Warning( "Could not determine executable path, assuming not on HDD for job system." );
+	}
+
 	if( isRunningOnHdd )
 	{
 		idLib::Printf( "HDD detected: number of loading threads limited\n" );

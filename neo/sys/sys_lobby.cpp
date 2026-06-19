@@ -3498,7 +3498,7 @@ void idLobby::CheckHeartBeats()
 
 	int timeoutInMs = session->GetTitleStorageInt( "net_peerTimeoutInSeconds", net_peerTimeoutInSeconds.GetInteger() ) * 1000;
 
-	if( sessionCB->GetState() < idSession::LOADING && migrationInfo.state == MIGRATE_NONE )
+	if( sessionCB && sessionCB->GetState() < idSession::LOADING && migrationInfo.state == MIGRATE_NONE )
 	{
 		// Use shorter timeout in lobby (TCR)
 		timeoutInMs = session->GetTitleStorageInt( "net_peerTimeoutInSeconds_Lobby", net_peerTimeoutInSeconds_Lobby.GetInteger() ) * 1000;
