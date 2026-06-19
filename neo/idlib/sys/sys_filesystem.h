@@ -33,6 +33,13 @@ void			Sys_Mkdir( const char* path );
 bool			Sys_Rmdir( const char* path );
 bool			Sys_IsFileWritable( const char* path );
 
+enum sysPath_t
+{
+	PATH_BASE,
+	PATH_SAVE,
+	PATH_EXE
+};
+
 enum sysFolder_t
 {
 	FOLDER_ERROR	= -1,
@@ -51,7 +58,7 @@ bool			Sys_IsFileOnHdd( const char* path );
 // returns -1 if directory was not found (the list is cleared)
 int				Sys_ListFiles( const char* directory, const char* extension, idList<class idStr>& list );
 
-const char* 	Sys_EXEPath();
+bool			Sys_GetPath( sysPath_t type, idStr& path );
 const char* 	Sys_CWD();
 
 #endif /* !__SYS_FILESYSTEM_H__ */

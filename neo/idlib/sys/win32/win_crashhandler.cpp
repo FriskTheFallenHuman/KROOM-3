@@ -34,90 +34,8 @@ If you have questions concerning this license or the applicable additional terms
 #include "dbghelp.h"
 #pragma warning(pop)
 
-uint8 g_crashStackData[4096];
-int g_crashStackLen = 0;
-uint32 g_crashStackHash = 0;
 EXCEPTION_POINTERS* g_exceptionPointers = NULL;
 char g_crashLogPath[MAX_PATH] = {};
-
-/*
-====================
-Sys_CaptureStackTrace
-====================
-*/
-void Sys_CaptureStackTrace( int ignoreFrames, uint8* data, int& len )
-{
-	int cnt = CaptureStackBackTrace( ignoreFrames, len / sizeof( PVOID ), ( PVOID* )data, NULL );
-	len = cnt * sizeof( PVOID );
-}
-
-/*
-====================
-Sys_GetStackTraceFramesCount
-====================
-*/
-int Sys_GetStackTraceFramesCount( uint8* data, int len )
-{
-	return len / sizeof( PVOID );
-}
-
-/*
-====================
-Sys_GetStackTraceFramesCount
-====================
-*/
-static bool AreSymbolsInitialized = false;
-void Sys_DecodeStackTrace( uint8* data, int len, debugStackFrame_t* frames )
-{
-	//interpret input blob as array of addresses
-	PVOID* addresses = ( PVOID* )data;
-	int framesCount = Sys_GetStackTraceFramesCount( data, len );
-
-	//fill output with zeros
-	memset( frames, 0, framesCount * sizeof( frames[0] ) );
-
-	HANDLE hProcess = GetCurrentProcess();
-	if( !AreSymbolsInitialized )
-	{
-		AreSymbolsInitialized = true;
-		SymInitialize( hProcess, NULL, TRUE );
-	}
-
-	//allocate symbol structures
-	int buff[( sizeof( IMAGEHLP_SYMBOL64 ) + sizeof( frames[0].functionName ) ) / 4 + 1] = { 0 };
-	IMAGEHLP_SYMBOL64* symbol = ( IMAGEHLP_SYMBOL64* )buff;
-	symbol->SizeOfStruct = sizeof( IMAGEHLP_SYMBOL64 );
-	symbol->MaxNameLength = sizeof( frames[0].functionName ) - 1;
-	IMAGEHLP_LINE64 line = {0};
-	line.SizeOfStruct = sizeof( IMAGEHLP_LINE64 );
-
-	for( int i = 0; i < framesCount; i++ )
-	{
-		frames[i].pointer = addresses[i];
-		sprintf( frames[i].functionName, "[%p]", frames[i].pointer );	//in case PDB not found
-
-		if( !addresses[i] )
-		{
-			continue;	// null function?
-		}
-
-		if( !SymGetSymFromAddr64( hProcess, DWORD64( addresses[i] ), NULL, symbol ) )
-		{
-			continue;	// cannot get symbol
-		}
-
-		idStr::Copynz( frames[i].functionName, symbol->Name, sizeof( frames[0].functionName ) );
-
-		DWORD displacement = DWORD( -1 );
-		if( !SymGetLineFromAddr64( hProcess, DWORD64( addresses[i] ), &displacement, &line ) )
-		{
-			continue;	// no code line info
-		}
-
-		idStr::Copynz( frames[i].fileName, line.FileName, sizeof( frames[0].fileName ) );
-		frames[i].lineNumber = line.LineNumber;
-	}
-}
 
 /*
 ====================
@@ -220,71 +138,10 @@ void Sys_CaptureExceptionStack( EXCEPTION_POINTERS* exceptionInfo )
 {
 	g_exceptionPointers = exceptionInfo;
 
-	if( !exceptionInfo )
-	{
-		// Fallback: no context available, capture current stack as-is
-		g_crashStackLen  = sizeof( g_crashStackData );
-		g_crashStackHash = idDebugSystem::GetStack( g_crashStackData, g_crashStackLen );
-		return;
-	}
+	g_crashStackLen = sizeof( g_crashStackData );
+	Sys_CaptureStackTrace( 2, g_crashStackData, g_crashStackLen );
 
-	HANDLE hProcess = GetCurrentProcess();
-	HANDLE hThread  = GetCurrentThread();
-
-	// Make a writable copy — StackWalk64 modifies the CONTEXT in place
-	CONTEXT ctx = *exceptionInfo->ContextRecord;
-
-	STACKFRAME64 sf = {};
-#if defined( _WIN64 )
-	const DWORD machineType   = IMAGE_FILE_MACHINE_AMD64;
-	sf.AddrPC.Offset    = ctx.Rip;
-	sf.AddrPC.Mode      = AddrModeFlat;
-	sf.AddrFrame.Offset = ctx.Rbp;
-	sf.AddrFrame.Mode   = AddrModeFlat;
-	sf.AddrStack.Offset = ctx.Rsp;
-	sf.AddrStack.Mode   = AddrModeFlat;
-#else
-	const DWORD machineType   = IMAGE_FILE_MACHINE_I386;
-	sf.AddrPC.Offset    = ctx.Eip;
-	sf.AddrPC.Mode      = AddrModeFlat;
-	sf.AddrFrame.Offset = ctx.Ebp;
-	sf.AddrFrame.Mode   = AddrModeFlat;
-	sf.AddrStack.Offset = ctx.Esp;
-	sf.AddrStack.Mode   = AddrModeFlat;
-#endif
-
-	// Ensure symbols are loaded before walking
-	SymInitialize( hProcess, NULL, TRUE );
-
-	// Walk the stack and store each frame PC as a PVOID (same layout that
-	// Sys_DecodeStackTrace expects, since it also casts the buffer to PVOID[])
-	PVOID* addresses  = reinterpret_cast<PVOID*>( g_crashStackData );
-	int    maxFrames  = static_cast<int>( sizeof( g_crashStackData ) / sizeof( PVOID ) );
-	int    frameCount = 0;
-
-	while( frameCount < maxFrames )
-	{
-		if( !StackWalk64( machineType, hProcess, hThread,
-						  &sf, &ctx,
-						  NULL,                       // no custom memory reader
-						  SymFunctionTableAccess64,
-						  SymGetModuleBase64,
-						  NULL ) )
-		{
-			break;
-		}
-		if( sf.AddrPC.Offset == 0 )
-		{
-			break;
-		}
-		addresses[frameCount++] = reinterpret_cast<PVOID>( sf.AddrPC.Offset );
-	}
-
-	g_crashStackLen = frameCount * static_cast<int>( sizeof( PVOID ) );
-
-	// Compute a simple hash over the raw address data
-	g_crashStackHash = idStr::Hash(
-						   reinterpret_cast<const char*>( g_crashStackData ), g_crashStackLen );
+	g_crashStackHash = idStr::Hash( ( char* )g_crashStackData, g_crashStackLen );
 	if( g_crashStackHash == 0 )
 	{
 		g_crashStackHash = static_cast<uint32>( -1 );

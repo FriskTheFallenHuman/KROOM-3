@@ -3320,13 +3320,15 @@ void idFileSystemLocal::Init()
 	common->StartupVariable( "fs_game_base" );
 	common->StartupVariable( "fs_copyfiles" );
 
-	if( fs_basepath.GetString()[0] == '\0' )
+	idStr path;
+	if( fs_basepath.GetString()[0] == '\0' && Sys_GetPath( PATH_BASE, path ) )
 	{
-		fs_basepath.SetString( Sys_DefaultBasePath() );
+		fs_basepath.SetString( path );
 	}
-	if( fs_savepath.GetString()[0] == '\0' )
+
+	if( fs_savepath.GetString()[0] == '\0' && Sys_GetPath( PATH_SAVE, path ) )
 	{
-		fs_savepath.SetString( Sys_DefaultSavePath() );
+		fs_savepath.SetString( path );
 	}
 
 	// try to start up normally
@@ -4148,14 +4150,17 @@ idFileSystemLocal::FindDLL
 void idFileSystemLocal::FindDLL( const char* name, char _dllPath[ MAX_OSPATH ] )
 {
 	char dllName[MAX_OSPATH];
+	idStr dllPath;
 	sys->DLL_GetFileName( name, dllName, MAX_OSPATH );
 
 	// from executable directory first - this is handy for developement
-	idStr dllPath = Sys_EXEPath( );
-	dllPath.StripFilename( );
-	dllPath.AppendPath( dllName );
-	idFile* dllFile = OpenExplicitFileRead( dllPath );
+	if( Sys_GetPath( PATH_EXE, dllPath ) )
+	{
+		dllPath.StripFilename( );
+		dllPath.AppendPath( dllName );
+	}
 
+	idFile* dllFile = OpenExplicitFileRead( dllPath );
 	if( dllFile )
 	{
 		dllPath = dllFile->GetFullPath();

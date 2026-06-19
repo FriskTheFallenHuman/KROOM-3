@@ -27,15 +27,12 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
+
+#include "precompiled.h"
 #pragma hdrstop
-#include "../../precompiled.h"
 
 #ifndef _WIN32
 	#include <sched.h>
-#endif
-
-#ifdef __APPLE__
-	#include "../../../sys/posix/posix_public.h"
 #endif
 
 #ifdef __FreeBSD__

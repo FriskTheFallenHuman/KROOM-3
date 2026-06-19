@@ -29,11 +29,11 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
-#include "win_local.h"
-
 extern HWND FindParentWindow();
 extern HINSTANCE GetApplicationInstance();
 INT_PTR CALLBACK CrashHandlerDialogProc( HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam );
+
+void Sys_ShowCrashDialog( const char* summaryText ) {}
 
 /*
 ** Sys_UnhandledExceptionFilter

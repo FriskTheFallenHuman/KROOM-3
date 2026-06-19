@@ -29,7 +29,7 @@ file(GLOB src_external_mesa mesa/*.h)
 source_group("Mesa" FILES ${src_external_mesa})
 list(APPEND src_external ${src_external_mesa})
 
-file(GLOB src_external_imgui imgui/*.cpp imgui/misc/cpp/*.cpp imgui/misc/cpp/*.h imgui/*.h)
+file(GLOB src_external_imgui imgui/*.cpp imgui/backends/imgui_impl_sdl2.cpp imgui/backends/imgui_impl_sdlrenderer2.cpp imgui/misc/cpp/*.cpp imgui/backends/imgui_impl_sdl2.h imgui/backends/imgui_impl_sdlrenderer2.h imgui/misc/cpp/*.h imgui/*.h)
 source_group("ImGUI" FILES ${src_external_imgui})
 list(APPEND src_external ${src_external_imgui})
 

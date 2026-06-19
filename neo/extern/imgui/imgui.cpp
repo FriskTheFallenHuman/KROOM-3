@@ -1481,6 +1481,9 @@ static ImGuiMemAllocFunc    GImAllocatorAllocFunc = MallocWrapper;
 static ImGuiMemFreeFunc     GImAllocatorFreeFunc = FreeWrapper;
 static void*                GImAllocatorUserData = NULL;
 
+// Krispy: see header
+thread_local ImGuiContext* AtomicImGuiTLS = nullptr;
+
 //-----------------------------------------------------------------------------
 // [SECTION] USER FACING STRUCTURES (ImGuiStyle, ImGuiIO, ImGuiPlatformIO)
 //-----------------------------------------------------------------------------

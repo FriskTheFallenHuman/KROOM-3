@@ -154,6 +154,7 @@ If you have questions concerning this license or the applicable additional terms
 #include <climits>
 #include <cstdint>
 #include <inttypes.h>
+#include <filesystem>
 
 // STL
 #include <typeinfo>

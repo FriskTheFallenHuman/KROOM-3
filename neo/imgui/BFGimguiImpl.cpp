@@ -84,7 +84,7 @@ bool	g_MousePressed[5] = { false, false, false, false, false };
 float	g_MouseWheel = 0.0f;
 ImVec2	g_MousePos = ImVec2( -1.0f, -1.0f ); //{-1.0f, -1.0f};
 ImVec2	g_DisplaySize = ImVec2( 0.0f, 0.0f ); //{0.0f, 0.0f};
-
+ImGuiContext* g_EngineCtx = nullptr;
 
 
 bool g_haveNewFrame = false;
@@ -237,7 +237,8 @@ bool Init( int windowWidth, int windowHeight )
 
 	idLib::Printf( "Version: %s\n", ImGui::GetVersion() );
 
-	ImGui::CreateContext();
+	g_EngineCtx = ImGui::CreateContext();
+	ImGui::SetCurrentContext( g_EngineCtx );
 
 	ImGuiIO& io = ImGui::GetIO();
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -457,7 +458,8 @@ void Destroy()
 	{
 		idLib::Printf( "------------ ImGui Shutdown -----------\n" );
 
-		ImGui::DestroyContext();
+		ImGui::DestroyContext( g_EngineCtx );
+		g_EngineCtx = nullptr;
 		g_IsInit = false;
 		g_haveNewFrame = false;
 

@@ -4499,4 +4499,9 @@ typedef ImFontAtlasRect ImFontAtlasCustomRect;
 // RB: added idlib idStr integration for string inputs
 #include "misc/cpp/imgui_stdlib.h"
 
+// Krispy: See Dear ImGui's FAQ (GitHub issue #586)
+struct ImGuiContext;
+extern thread_local ImGuiContext* AtomicImGuiTLS;
+#define GImGui AtomicImGuiTLS
+
 #endif // #ifndef IMGUI_DISABLE

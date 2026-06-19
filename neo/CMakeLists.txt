@@ -15,7 +15,6 @@ option(FORCE_COLOR_OUTPUT "Always produce ANSI-colored output (GNU/Clang only)."
 option(COMPILE_COMMANDS "Generate compile_commands.json" OFF)
 option(TOOLS "Compile the built-in MFC based tools" OFF)
 option(USE_PRECOMPILED_HEADERS "Use precompiled headers during build" ON)
-option(SDL2 "Use SDL2 instead of platform specific implementations" OFF)
 option(OPENAL "Use OpenAL soft instead of XAudio2" OFF)
 option(FFMPEG "Use FMPEG to render other video formats" OFF)
 option(USE_VULKAN "Use Vulkan instead of OpenGL" OFF)
@@ -91,9 +90,9 @@ if(CMAKE_COMPILER_IS_GNUCC OR (CMAKE_C_COMPILER_ID MATCHES "Clang" AND NOT CMAKE
 	add_compile_options(-Wno-format-zero-length)
 	add_compile_options(-Wno-nonnull)
 
-	# Compiler check (needs -std=c++14 flag)
+	# Compiler check (needs -std=c++17 flag)
 	include(CheckCXXCompilerFlag)
-	CHECK_CXX_COMPILER_FLAG("-std=c++14" COMPILER_SUPPORTS_CXX14)
+	CHECK_CXX_COMPILER_FLAG("-std=c++17" COMPILER_SUPPORTS_CXX17)
 	if(COMPILER_SUPPORTS_CXX17)
 		set(CMAKE_CXX_STANDARD 17)
 		set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -256,10 +255,6 @@ elseif(MSVC)
 			else()
 				list(APPEND sys_libs dsound dxguid xaudio2)
 			endif()
-
-			if (NOT SDL2 )
-				list(APPEND sys_libs dinput8 Xinput)
-			endif()
 		else()
 			find_package(WindowsSDK REQUIRED)
 			get_windowssdk_library_dirs("${WINDOWSSDK_LATEST_DIR}" WINSDK_LIB_DIRS)
@@ -276,10 +271,6 @@ elseif(MSVC)
 				list(APPEND sys_libs "${WINSDK_LIB_DIR}/dxguid.lib")
 			else()
 				list(APPEND sys_libs "${WINSDK_LIB_DIR}/dsound.lib" "${WINSDK_LIB_DIR}/dxguid.lib" xaudio2)
-			endif()
-
-			if (NOT SDL2 )
-				list(APPEND sys_libs "${WINSDK_LIB_DIR}/dinput8" Xinput)
 			endif()
 		endif()
 	endif()
@@ -346,15 +337,6 @@ if(USE_VULKAN)
 		endif()
 		message(STATUS "Using Vulkan: " ${Vulkan_LIBRARY})
 	endif()
-
-	# Eric: For use with SDL2/Vulkan and/or for vulkan
-	if(UNIX OR SDL2)
-		# SRS - For UNIX-like target OSs use the generic SDL Vulkan platform
-		# Or for when we build SDL2
-		add_definitions(-DVULKAN_USE_PLATFORM_SDL)
-	elseif(WIN32)
-		add_definitions(-DVK_USE_PLATFORM_WIN32_KHR)
-	endif()
 else()
 	add_definitions(-DGLEW_STATIC)
 endif()
@@ -397,22 +379,20 @@ if(OPENAL)
 	list(APPEND sys_thirdparty ${OPENAL_LIBRARY})
 endif()
 
-if(SDL2)
-	if(UNIX)
-		pkg_check_modules(SDL2 REQUIRED sdl2)
-		include_directories(${SDL2_INCLUDE_DIRS})
-		link_directories(${SDL2_LIBRARY_DIRS})
-		set(SDLX_LIBRARY ${SDL2_LIBRARIES})
-	else()
-		add_subdirectory(extern/SDL2)
-		include_directories(${CMAKE_BINARY_DIR}/extern/SDL2/include)
-		include_directories(extern/SDL2/include)
-		set(SDLX_LIBRARY SDL2 SDL2main)
-		list(APPEND sys_thirdparty_dependencies SDL2 sdl_headers_copy)
-	endif()
-	add_definitions(-DUSE_SDL)
-	list(APPEND sys_thirdparty ${SDLX_LIBRARY})
+if(UNIX)
+	pkg_check_modules(SDL2 REQUIRED sdl2)
+	include_directories(${SDL2_INCLUDE_DIRS})
+	link_directories(${SDL2_LIBRARY_DIRS})
+	set(SDLX_LIBRARY ${SDL2_LIBRARIES})
+else()
+	add_subdirectory(extern/SDL2)
+	include_directories(${CMAKE_BINARY_DIR}/extern/SDL2/include)
+	include_directories(extern/SDL2/include)
+	set(SDLX_LIBRARY SDL2 SDL2main)
+	list(APPEND sys_thirdparty_dependencies SDL2 sdl_headers_copy)
 endif()
+add_definitions(-DUSE_SDL)
+list(APPEND sys_thirdparty ${SDLX_LIBRARY})
 
 if(NOT USE_VULKAN)
 	find_package(OpenGL REQUIRED)
@@ -433,6 +413,8 @@ endif()
 add_subdirectory(extern/reproc)
 list(APPEND sys_thirdparty_dependencies reproc++)
 list(APPEND sys_thirdparty reproc++)
+
+add_subdirectory(extern/cpptrace)
 
 # optimize this source file even in debug builds, to make speed (esp. loading times) more bearable
 # used for libs integrated here like stb_* and miniz(ip)
@@ -515,27 +497,8 @@ source_group("Sys" FILES ${src_sys})
 file(GLOB src_sys_common sys/common/*.cpp sys/common/*.h)
 source_group("Sys\\Common" FILES ${src_sys_common})
 
-if(SDL2)
-	file(GLOB src_sys_sdl sys/sdl/*.cpp sys/sdl/*.h)
-	source_group("Sys//SDL" FILES ${src_sys_sdl})
-
-	#if(WIN32)
-	#	get_filename_component(sdl_events_cpp_full_path ${CMAKE_CURRENT_SOURCE_DIR}/sys/sdl/sdl_events.cpp ABSOLUTE)
-	#	list(REMOVE_ITEM src_sys_sdl "${sdl_events_cpp_full_path}")
-
-	#	get_filename_component(sdl2_scancode_mappings_h_full_path ${CMAKE_CURRENT_SOURCE_DIR}/sys/sdl/sdl2_scancode_mappings.h ABSOLUTE)
-	#	list(REMOVE_ITEM src_sys_sdl "${sdl2_scancode_mappings_h_full_path}")
-	#endif()
-
-	# Eric: Utilize either the Vulkan or GL implementation of SDL
-	if(USE_VULKAN)
-		get_filename_component(sdl_glimp_cpp_full_path ${CMAKE_CURRENT_SOURCE_DIR}/sys/sdl/sdl_glimp.cpp ABSOLUTE)
-		list(REMOVE_ITEM src_sys_sdl "${sdl_glimp_cpp_full_path}")
-	else()
-		get_filename_component(sdl_vkimp_cpp_full_path ${CMAKE_CURRENT_SOURCE_DIR}/sys/sdl/sdl_vkimp.cpp ABSOLUTE)
-		list(REMOVE_ITEM src_sys_sdl "${sdl_vkimp_cpp_full_path}")
-	endif()
-endif()
+file(GLOB src_sys_sdl sys/sdl/*.cpp sys/sdl/*.h)
+source_group("Sys//SDL" FILES ${src_sys_sdl})
 
 file(GLOB src_ui ui/*.cpp ui/*.h)
 list(REMOVE_ITEM src_ui ${CMAKE_CURRENT_SOURCE_DIR}/ui/GameWindow.cpp)
@@ -703,7 +666,13 @@ set(src_tools
 	${src_scripteditor}
 	${src_soundeditor})
 
-include_directories(${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/idlib ${CMAKE_SOURCE_DIR}/extern ${CMAKE_SOURCE_DIR}/extern/imgui)
+include_directories(
+	${CMAKE_BINARY_DIR}
+	${CMAKE_SOURCE_DIR}
+	${CMAKE_SOURCE_DIR}/idlib
+	${CMAKE_SOURCE_DIR}/extern
+	${CMAKE_SOURCE_DIR}/extern/imgui
+	${CMAKE_SOURCE_DIR}/extern/cpptrace/include)
 
 add_subdirectory(idlib)
 add_subdirectory(extern)
@@ -742,33 +711,7 @@ if(MSVC)
 	endif()
 
 	file(GLOB src_sys_win32 sys/win32/*.cpp sys/win32/*.h)
-	list(REMOVE_ITEM src_sys_win32
-		${CMAKE_CURRENT_SOURCE_DIR}/sys/win32/win_gamma.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/sys/win32/win_snd.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/sys/win32/win_stats.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/sys/win32/win_stats.h)
 	source_group("Sys//Win32" FILES ${src_sys_win32})
-
-	if(SDL2)
-		get_filename_component(win_input_cpp_full_path ${CMAKE_CURRENT_SOURCE_DIR}/sys/win32/win_input.cpp ABSOLUTE)
-		list(REMOVE_ITEM src_sys_win32 "${win_input_cpp_full_path}")
-
-		get_filename_component(win_input_h_full_path ${CMAKE_CURRENT_SOURCE_DIR}/sys/win32/win_input.h ABSOLUTE)
-		list(REMOVE_ITEM src_sys_win32 "${win_input_h_full_path}")
-
-		get_filename_component(devicemanager_win32_cpp_full_path ${CMAKE_CURRENT_SOURCE_DIR}/sys/win32/DeviceManager_Win32.cpp ABSOLUTE)
-		list(REMOVE_ITEM src_sys_win32 "${devicemanager_win32_cpp_full_path}")
-
-		get_filename_component(devicemanager_win32_h_full_path ${CMAKE_CURRENT_SOURCE_DIR}/sys/win32/DeviceManager_Win32.h ABSOLUTE)
-		list(REMOVE_ITEM src_sys_win32 "${devicemanager_win32_h_full_path}")
-
-		get_filename_component(win_wndproc_cpp_full_path ${CMAKE_CURRENT_SOURCE_DIR}/sys/win32/win_wndproc.cpp ABSOLUTE)
-		list(REMOVE_ITEM src_sys_win32 "${win_wndproc_cpp_full_path}")
-	endif()
-
-	if(NOT MSVC)
-		list(REMOVE_ITEM src_sys_win32 ${CMAKE_SOURCE_DIR}/sys/win32/win_cpu.cpp)
-	endif()
 
 	file(GLOB_RECURSE src_sys_win32_rc sys/win32/rc/res/*.ico sys/win32/rc/*.manifest sys/win32/rc/*.rc sys/win32/rc/*.h)
 	source_group("Sys//Win32//RC" FILES ${src_sys_win32_rc})
@@ -872,14 +815,12 @@ if(MSVC)
 		install(TARGETS ${CMAKE_PROJECT_NAME} RUNTIME DESTINATION .)
 	endif()
 
-	if (SDL2)
-		add_custom_command(
-		  TARGET ${CMAKE_PROJECT_NAME} POST_BUILD COMMAND
-		  ${CMAKE_COMMAND} -E copy_if_different
-			$<TARGET_FILE:SDL2>
-			$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>
-		  VERBATIM )
-	endif()
+	add_custom_command(
+	  TARGET ${CMAKE_PROJECT_NAME} POST_BUILD COMMAND
+	  ${CMAKE_COMMAND} -E copy_if_different
+		$<TARGET_FILE:SDL2>
+		$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>
+	  VERBATIM )
 
 	if(OPENAL)
 		add_custom_command(

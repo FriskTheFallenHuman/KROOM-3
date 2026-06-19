@@ -40,6 +40,8 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
+class idStr;
+
 enum cpuid_t
 {
 	CPUID_NONE							= 0x00000,
@@ -426,20 +428,6 @@ struct sysEvent_t
 	}
 };
 
-struct sysMemoryStats_t
-{
-	int memoryLoad;
-	int totalPhysical;
-	int availPhysical;
-	int totalPageFile;
-	int availPageFile;
-	int totalVirtual;
-	int availVirtual;
-	int availExtendedVirtual;
-};
-
-// typedef unsigned long address_t; // DG: this isn't even used
-
 void			Sys_Init();
 void			Sys_Shutdown();
 void			Sys_Error( const char* error, ... );
@@ -453,6 +441,11 @@ void			Sys_SetClipboardData( const char* string );
 void			Sys_CreateConsole();
 void			Sys_DestroyConsole();
 char* 			Sys_ConsoleInput();
+bool			Sys_IsConsoleVisible();
+void			Sys_ShowConsole( int visLevel, bool quitOnClose );
+
+// For linux...
+void			Sys_ShowCrashDialog( const char* summaryText );
 
 // will go to the various text consoles
 // NOT thread safe - never use in the async paths
@@ -505,7 +498,6 @@ int64			Sys_GetDriveFreeSpaceInBytes( const char* path );
 void			Sys_SetPhysicalWorkMemory( int minBytes, int maxBytes );
 
 // DLL loading, the path should be a fully qualified OS path to the DLL file to be loaded
-
 uintptr_t		Sys_DLL_Load( const char* dllName );
 void* 			Sys_DLL_GetProcAddress( uintptr_t dllHandle, const char* procName );
 void			Sys_DLL_Unload( uintptr_t dllHandle );
@@ -549,7 +541,6 @@ void			Sys_GrabMouseCursor( bool grabIt );
 
 void			Sys_ShowWindow( bool show );
 bool			Sys_IsWindowVisible();
-void			Sys_ShowConsole( int visLevel, bool quitOnClose );
 
 // This really isn't the right place to have this, but since this is the 'top level' include
 // and has a function signature with 'FILE' in it, it kinda needs to be here =/
@@ -562,14 +553,11 @@ void			Sys_ShowConsole( int visLevel, bool quitOnClose );
 #endif
 // RB end
 
+ID_TIME_T		Sys_FileTimeStamp( const char* path );
 
-ID_TIME_T		Sys_FileTimeStamp( idFileHandle fp );
 // NOTE: do we need to guarantee the same output on all platforms?
 const char* 	Sys_TimeStampToStr( ID_TIME_T timeStamp );
 const char* 	Sys_SecToStr( int sec );
-
-const char* 	Sys_DefaultBasePath();
-const char* 	Sys_DefaultSavePath();
 
 // Execute the specified process and wait until it's done, calling workFn every waitMS milliseconds.
 // If showOutput == true, std IO from the executed process will be output to the console.
@@ -752,6 +740,8 @@ class idSys
 {
 public:
 	virtual const char* 	GetCmdLine() = 0;
+
+	virtual void			ShowCrashDialog( const char* summaryText ) = 0;
 
 	virtual void			DebugPrintf( VERIFY_FORMAT_STRING const char* fmt, ... ) = 0;
 	virtual void			DebugVPrintf( const char* fmt, va_list arg ) = 0;

@@ -1530,8 +1530,7 @@ idFile_Permanent::Timestamp
 */
 ID_TIME_T idFile_Permanent::Timestamp() const
 {
-	ID_TIME_T ts = Sys_FileTimeStamp( o );
-	return ts;
+	return Sys_FileTimeStamp( fullPath.c_str() );
 }
 
 /*
