@@ -314,7 +314,7 @@ void idLib::PrintCallStack()
 	char message[4096];
 	idDebugSystem::StringifyStack( hash, callstack.Ptr(), callstack.Num(), message, sizeof( message ) );
 
-	Printf( message );
+	Printf( "%s", message );
 }
 
 /*
