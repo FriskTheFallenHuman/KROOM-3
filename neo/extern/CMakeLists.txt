@@ -33,6 +33,7 @@ file(GLOB src_external_imgui imgui/*.cpp imgui/backends/imgui_impl_sdl2.cpp imgu
 source_group("ImGUI" FILES ${src_external_imgui})
 list(APPEND src_external ${src_external_imgui})
 
+if(WIN32)
 if(NOT USE_VULKAN)
 file(GLOB src_external_glew glew/src/*.c glew/include/GL/*.h)
 list(REMOVE_ITEM src_external_glew ${CMAKE_CURRENT_SOURCE_DIR}/glew/src/visualinfo.c)
@@ -44,6 +45,7 @@ endif()
 source_group("Glew" FILES ${src_external_glew})
 list(APPEND src_external ${src_external_glew})
 list(APPEND src_external_includes ${CMAKE_CURRENT_SOURCE_DIR}/glew/include)
+endif()
 endif()
 
 file(GLOB src_external_stb stb/*.h)
