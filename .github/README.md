@@ -35,6 +35,8 @@ Compiling its straight forward following these steps:
 	```
 	./cmake_linux.sh gcc debug
 	```
+- For macos
+    * `brew install cmake ninja sdl2 openal-soft glew pkgconfig`
 
 # ".plan" <a name="plan"></a>
 
