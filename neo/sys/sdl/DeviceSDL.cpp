@@ -704,7 +704,9 @@ int main( int argc, char* argv[] )
 	}
 
 	// done before Com/Sys_Init since we need this for error output
+#if !defined( __APPLE__ )
 	Sys_CreateConsole();
+#endif
 
 #ifdef _WIN32
 	// Register the unhandled exception
