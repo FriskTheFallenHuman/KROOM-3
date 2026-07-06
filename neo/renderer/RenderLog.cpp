@@ -626,7 +626,7 @@ void idRenderLog::OpenMainBlock( renderLogMainBlock_t block )
 #elif defined(__APPLE__)
 		// SRS - For OSX use elapsed time query for Apple OpenGL 4.1 using GL_TIME_ELAPSED vs GL_TIMESTAMP (which is not implemented on OSX)
 		// SRS - OSX AMD drivers have a rendering bug (flashing colours) with an elasped time query when Shadow Mapping is on - turn off query for that case unless r_skipAMDWorkarounds is set
-		if( !r_useShadowMapping.GetBool() || glConfig.vendor != VENDOR_AMD || r_skipAMDWorkarounds.GetBool() )
+		if( glConfig.vendor != VENDOR_AMD || r_skipAMDWorkarounds.GetBool() )
 		{
 			if( glcontext.renderLogMainBlockTimeQueryIds[ glcontext.frameParity ][ mainBlock * 2 + 1 ] == 0 )
 			{
@@ -674,7 +674,7 @@ void idRenderLog::CloseMainBlock()
 #elif defined(__APPLE__)
 		// SRS - For OSX use elapsed time query for Apple OpenGL 4.1 using GL_TIME_ELAPSED vs GL_TIMESTAMP (which is not implemented on OSX)
 		// SRS - OSX AMD drivers have a rendering bug (flashing colours) with an elasped time query when Shadow Mapping is on - turn off query for that case unless r_skipAMDWorkarounds is set
-		if( !r_useShadowMapping.GetBool() || glConfig.vendor != VENDOR_AMD || r_skipAMDWorkarounds.GetBool() )
+		if( glConfig.vendor != VENDOR_AMD || r_skipAMDWorkarounds.GetBool() )
 		{
 			glEndQuery( GL_TIME_ELAPSED_EXT );
 			glcontext.renderLogMainBlockTimeQueryIssued[ glcontext.frameParity ][ mainBlock * 2 + 1 ]++;
