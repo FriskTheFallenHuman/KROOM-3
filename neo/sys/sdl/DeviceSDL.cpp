@@ -634,10 +634,13 @@ void Sys_Init()
 	common->Printf( "%1.0f CPU MHz ", Sys_ClockTicksPerSecond() / 1000000.0f );
 
 	common->Printf( "%d MB System Memory\n", Sys_GetSystemRam() );
+
+#ifdef USE_INTRINSICS_SSE
 	if( ( cpuFlags & CPUID_SSE ) == 0 )
 	{
 		common->Error( "SSE not supported!" );
 	}
+#endif
 
 	sdl.g_Joystick.Init();
 }
