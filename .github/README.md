@@ -36,7 +36,21 @@ Compiling its straight forward following these steps:
 	./cmake_linux.sh gcc debug
 	```
 - For macos
-    * `brew install cmake ninja sdl2 openal-soft glew pkgconfig`
+	* Clone the repository
+	* Install the pre-requirements:
+	```sh
+    brew install cmake ninja sdl2 openal-soft glew pkgconfig
+	```
+	* Open a terminal in the root of the project and run:
+	```sh
+	chmod +x cmake_macos.sh
+	```
+	* In the same terminal run:
+	```
+	./cmake_macos.sh clang debug opengl
+	```
+
+:warning: the macOS is still in work in progress. 
 
 # ".plan" <a name="plan"></a>
 
