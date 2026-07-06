@@ -38,7 +38,7 @@ If you have questions concerning this license or the applicable additional terms
 #define GAME_NAME						"KROOM 3: BFG"		// appears on window titles and errors
 #define ENGINE_VERSION					"KROOM 3: BFG"	// printed in console, used for window title
 
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__)
 	#define SAVE_PATH						"kroom3bfg"
 #else
 	#define SAVE_PATH						"/My Games/KROOM 3 BFG"
