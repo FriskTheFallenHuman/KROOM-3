@@ -119,7 +119,7 @@ bool Sys_IsFileOnHdd( const char* filePath )
 	}
 
 	const char* bsdName = fs.f_mntfromname;
-	if( strncmp( bsdName, "/dev/", 5 ) == 0 )
+	if( idStr::Cmpn( bsdName, "/dev/", 5 ) == 0 )
 	{
 		bsdName += 5;
 	}
