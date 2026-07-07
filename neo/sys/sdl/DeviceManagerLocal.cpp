@@ -527,7 +527,11 @@ bool idDeviceManagerSDL::Init( vidParms_t parms )
 #endif
 
 		// RB begin
-		SDL_GetWindowSize( sdl.window, &glConfig.nativeScreenWidth, &glConfig.nativeScreenHeight );
+#if defined(USE_VULKAN)
+		SDL_Vulkan_GetDrawableSize( sdl.window, &glConfig.nativeScreenWidth, &glConfig.nativeScreenHeight );
+#else
+		SDL_GL_GetDrawableSize( sdl.window, &glConfig.nativeScreenWidth, &glConfig.nativeScreenHeight );
+#endif
 		// RB end
 
 		if( parms.fullScreen == -1 )
