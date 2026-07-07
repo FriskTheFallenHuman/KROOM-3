@@ -46,3 +46,5 @@ neo/neo.kdev4
 neo/.idea/
 neo/cmake-build-*/
 bin/*
+
+.DS_Store
