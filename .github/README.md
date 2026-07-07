@@ -46,8 +46,20 @@ Compiling its straight forward following these steps:
 	chmod +x cmake_macos.sh
 	```
 	* In the same terminal run:
+	```sh
+	./cmake_macos.sh clang release opengl
 	```
-	./cmake_macos.sh clang debug opengl
+	* Build the application:
+	```sh
+	cmake --build build/clang/release -j
+	```
+	* Launch the application, specifying OpenGL 4.1:
+	```sh
+	build/clang/release/Kroom3BFG.app/Contents/MacOS/Kroom3BFG \
+  		+set r_glProfile 2 \                # Core profile
+		+set r_glVersionMajor 4 \           # OpenGL major version 4
+		+set r_glVersionMinor 1 \           # OpenGL minor version 1
+		+set fs_basepath <PATH_TO_KROOM-3>  # Path to the root folder of KROOM-3
 	```
 
 :warning: the macOS is still in work in progress. 
