@@ -415,6 +415,12 @@ bool idDeviceManagerSDL::Init( vidParms_t parms )
 			glConfig.driverVersion = GL_OPENGL_46;
 		}
 
+#if defined( __APPLE__ )
+		// Apple OpenGL caps at 4.1 core; ignore r_glProfile/r_glVersion* defaults
+		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 4 );
+		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
+		SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
+#else
 		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, glMajorVersion );
 		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, glMinorVersion );
 
@@ -438,6 +444,7 @@ bool idDeviceManagerSDL::Init( vidParms_t parms )
 		}
 
 		SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, profileCore ); // ES support?
+#endif
 
 		if( r_debugContext.GetBool() )
 		{
