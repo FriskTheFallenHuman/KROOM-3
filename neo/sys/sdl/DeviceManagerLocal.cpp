@@ -373,54 +373,37 @@ bool idDeviceManagerSDL::Init( vidParms_t parms )
 		const int glMajorVersion = r_glVersionMajor.GetInteger();
 		const int glMinorVersion = r_glVersionMinor.GetInteger();
 
-		// Krispy: This is Mega stupid, im sorry
-		if( glMajorVersion >= 3 && glMajorVersion >= 1 )
-		{
-			glConfig.driverVersion = GL_OPENGL_31;
-		}
-		else if( glMajorVersion >= 3 && glMajorVersion >= 2 )
-		{
-			glConfig.driverVersion = GL_OPENGL_32;
-		}
-		else if( glMajorVersion >= 3 && glMajorVersion >= 3 )
-		{
-			glConfig.driverVersion = GL_OPENGL_33;
-		}
-		else if( glMajorVersion >= 4 && glMajorVersion >= 0 )
-		{
-			glConfig.driverVersion = GL_OPENGL_40;
-		}
-		else if( glMajorVersion >= 4 && glMajorVersion >= 1 )
-		{
-			glConfig.driverVersion = GL_OPENGL_41;
-		}
-		else if( glMajorVersion >= 4 && glMajorVersion >= 2 )
-		{
-			glConfig.driverVersion = GL_OPENGL_42;
-		}
-		else if( glMajorVersion >= 4 && glMajorVersion >= 3 )
-		{
-			glConfig.driverVersion = GL_OPENGL_43;
-		}
-		else if( glMajorVersion >= 4 && glMajorVersion >= 4 )
-		{
-			glConfig.driverVersion = GL_OPENGL_44;
-		}
-		else if( glMajorVersion >= 4 && glMajorVersion >= 5 )
-		{
-			glConfig.driverVersion = GL_OPENGL_45;
-		}
-		else if( glMajorVersion >= 4 && glMajorVersion >= 6 )
-		{
+		if ( glMajorVersion >= 4 && glMinorVersion >= 6) {
 			glConfig.driverVersion = GL_OPENGL_46;
 		}
+		else if ( glMajorVersion >= 4 && glMinorVersion == 5) {
+			glConfig.driverVersion = GL_OPENGL_45;
+		}
+		else if ( glMajorVersion >= 4 && glMinorVersion == 4) {
+			glConfig.driverVersion = GL_OPENGL_44;
+		}
+		else if ( glMajorVersion >= 4 && glMinorVersion == 3) {
+			glConfig.driverVersion = GL_OPENGL_43;
+		}
+		else if ( glMajorVersion >= 4 && glMinorVersion == 2) {
+			glConfig.driverVersion = GL_OPENGL_42;
+		}
+		else if ( glMajorVersion >= 4 && glMinorVersion == 1) {
+			glConfig.driverVersion = GL_OPENGL_41;
+		}
+		else if ( glMajorVersion >= 4 && glMinorVersion == 0) {
+			glConfig.driverVersion = GL_OPENGL_40;
+		}
+		if ( glMajorVersion >= 3 && glMinorVersion >= 3) {
+			glConfig.driverVersion = GL_OPENGL_33;
+		}
+		else if ( glMajorVersion >= 3 && glMinorVersion == 2) {
+			glConfig.driverVersion = GL_OPENGL_32;
+		}
+		else if ( glMajorVersion >= 3 && glMinorVersion == 1) {
+			glConfig.driverVersion = GL_OPENGL_31;
+		}
 
-#if defined( __APPLE__ )
-		// Apple OpenGL caps at 4.1 core; ignore r_glProfile/r_glVersion* defaults
-		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 4 );
-		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
-		SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
-#else
 		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, glMajorVersion );
 		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, glMinorVersion );
 
@@ -444,7 +427,6 @@ bool idDeviceManagerSDL::Init( vidParms_t parms )
 		}
 
 		SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, profileCore ); // ES support?
-#endif
 
 		if( r_debugContext.GetBool() )
 		{
