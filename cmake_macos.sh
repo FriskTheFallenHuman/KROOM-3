@@ -104,6 +104,15 @@ else
 	echo "==> ninja not found, falling back to Unix Makefiles ('brew install ninja' for faster builds)"
 fi
 
+# prefer Homebrew openal-soft over Apple's deprecated system OpenAL framework
+OPENAL_FLAGS=""
+if command -v brew >/dev/null 2>&1; then
+	OPENAL_PREFIX=$(brew --prefix openal-soft 2>/dev/null)
+	if [ -n "$OPENAL_PREFIX" ] && [ -f "$OPENAL_PREFIX/lib/libopenal.dylib" ]; then
+		OPENAL_FLAGS="-DOPENAL_INCLUDE_DIR=$OPENAL_PREFIX/include -DOPENAL_LIBRARY=$OPENAL_PREFIX/lib/libopenal.dylib"
+	fi
+fi
+
 BUILDDIR=build/$DIRECTORY/$BUILDTYPE
 
 mkdir -p "$BUILDDIR"
@@ -118,12 +127,14 @@ echo "==> Generator     : $CMAKE_GENERATOR"
 [ -n "$MACOSX_DEPLOYMENT_TARGET" ] && echo "==> Min macOS ver : $MACOSX_DEPLOYMENT_TARGET"
 [ -n "$MACOSX_SYSROOT" ]           && echo "==> SDK sysroot  : $MACOSX_SYSROOT"
 [ -n "$VULKAN_SDK" ]               && echo "==> VULKAN_SDK   : $VULKAN_SDK"
+if [ -n "$OPENAL_FLAGS" ]; then echo "==> OpenAL        : openal-soft (Homebrew)"; else echo "==> OpenAL        : system framework (brew install openal-soft recommended)"; fi
 echo ""
 
 cmake -G"$CMAKE_GENERATOR" \
 	-DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
 	-DFORCE_COLOR_OUTPUT=ON \
 	$RENDERER_FLAGS \
+	$OPENAL_FLAGS \
 	${CMAKE_OSX_ARCHITECTURES:+-DCMAKE_OSX_ARCHITECTURES=$CMAKE_OSX_ARCHITECTURES} \
 	${MACOSX_DEPLOYMENT_TARGET:+-DCMAKE_OSX_DEPLOYMENT_TARGET=$MACOSX_DEPLOYMENT_TARGET} \
 	${MACOSX_SYSROOT:+-DCMAKE_OSX_SYSROOT=$MACOSX_SYSROOT} \
