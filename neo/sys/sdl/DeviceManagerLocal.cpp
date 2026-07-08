@@ -477,8 +477,8 @@ bool idDeviceManagerSDL::Init( vidParms_t parms )
 			windowPosY = ( parms.y != -1 ) ? parms.y : SDL_WINDOWPOS_UNDEFINED;
 		}
 
-		// Show whether this is a 32-bit or 64-bit binary
-		idStr title = va( "%s - %s %s (x%u Build)", GAME_NAME, ID__DATE__, ID__TIME__, sizeof( void* ) * 8 );
+		// Show whether this is a 32-bit or 64-bit binary, and architecture via CPUSTRING
+		idStr title = va( "%s - %s %s (" CPUSTRING " %lu-bit Build)", GAME_NAME, ID__DATE__, ID__TIME__, sizeof( void* ) * 8 );
 
 		sdl.window = SDL_CreateWindow( title.c_str(),
 									   windowPosX, windowPosY,
