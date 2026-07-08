@@ -29,7 +29,10 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __SYS_INTRIINSICS_H__
 #define __SYS_INTRIINSICS_H__
 
-#if defined(USE_INTRINSICS_SSE)
+// Compiling Universal Binaries on an Apple Silicon machine does not
+// include USE_INTRINSICS_SSE.
+// However, __SSE2__ is included for Intel macs in any case.
+#if defined(USE_INTRINSICS_SSE) || defined(__SSE2__)
 	#include <emmintrin.h>
 #endif
 /*
