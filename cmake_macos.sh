@@ -8,21 +8,20 @@ CMAKE_OSX_ARCHITECTURES=""
 
 # default to MoltenVK when the Vulkan SDK is present, OpenGL otherwise
 if [ -n "$VULKAN_SDK" ]; then
-	RENDERER="moltenvk"
+	RENDERER="vulkan"
 else
 	RENDERER="opengl"
 fi
 
 usage()
 {
-	echo "Usage: cmake_macos.sh <clang|clang-universal> <debug|release|reldeb> [opengl|vulkan|moltenvk]"
+	echo "Usage: cmake_macos.sh <clang|clang-universal> <debug|release|reldeb> [opengl|vulkan]"
 	echo ""
 	echo "  clang             host architecture (arm64 on Apple Silicon, x86_64 on Intel)"
 	echo "  clang-universal   universal binary (arm64 + x86_64)"
 	echo "  debug|release|reldeb   CMake build type"
 	echo "  opengl            OpenGL 4.1 + GLEW backend (default when VULKAN_SDK is unset)"
-	echo "  vulkan            Vulkan loader backend (defaults VULKAN_SDK to /usr/local if unset)"
-	echo "  moltenvk          link directly to libMoltenVK.dylib (default when VULKAN_SDK is set)"
+	echo "  vulkan            link directly to libMoltenVK.dylib (default when VULKAN_SDK is set)"
 	echo ""
 	echo "Optional environment variables:"
 	echo "  MACOSX_DEPLOYMENT_TARGET  minimum macOS version (e.g. 11.0)"
@@ -80,12 +79,9 @@ case "$RENDERER" in
 		RENDERER_FLAGS="-DUSE_VULKAN=OFF"
 		;;
 	vulkan)
-		RENDERER_FLAGS="-DUSE_VULKAN=ON -DUSE_MoltenVK=OFF"
-		;;
-	moltenvk)
 		RENDERER_FLAGS="-DUSE_VULKAN=ON -DUSE_MoltenVK=ON"
 		if [ -z "$VULKAN_SDK" ]; then
-			echo "ERROR: 'moltenvk' requires VULKAN_SDK to point at the LunarG Vulkan SDK for macOS"
+			echo "ERROR: 'vulkan' requires VULKAN_SDK to point at the LunarG Vulkan SDK for macOS"
 			echo "       (it bundles MoltenVK under \$VULKAN_SDK/../MoltenVK/)."
 			echo "       Install it from https://vulkan.lunarg.com/ or use:"
 			echo "         ./cmake_macos.sh $1 $2 opengl"
