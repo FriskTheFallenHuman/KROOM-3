@@ -37,10 +37,11 @@ Compiling its straight forward following these steps:
 	```
 - For macos
 	* Clone the repository
-	* Install the pre-requirements:
+	* Install the pre-requirements for your mac:
 	```sh
     brew install cmake ninja sdl2 openal-soft glew pkgconfig
 	```
+	:warning: If you want to build a Universal Binaries you will need either the x86_64 and the arm64 versions of those libraries !
 	* Open a terminal in the root of the project and run:
 	```sh
 	chmod +x cmake_macos.sh

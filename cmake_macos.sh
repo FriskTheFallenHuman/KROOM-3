@@ -37,6 +37,8 @@ if [ "$#" -lt "2" ]; then
 	usage
 fi
 
+CMAKE_BUILD_ARGUMENTS=""
+
 # arg 1: compiler / architecture
 case "$1" in
 	clang)
@@ -49,6 +51,7 @@ case "$1" in
 		export CC="clang"
 		DIRECTORY="clang-universal"
 		CMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+		CMAKE_BUILD_ARGUMENTS="-DCMAKE_AR=/usr/bin/ar -DCMAKE_RANLIB=/usr/bin/ranlib"
 		;;
 	*)
 		echo "Unknown compiler/architecture: $1"
@@ -135,6 +138,7 @@ cmake -G"$CMAKE_GENERATOR" \
 	-DFORCE_COLOR_OUTPUT=ON \
 	$RENDERER_FLAGS \
 	$OPENAL_FLAGS \
+	$CMAKE_BUILD_ARGUMENTS \
 	${CMAKE_OSX_ARCHITECTURES:+-DCMAKE_OSX_ARCHITECTURES=$CMAKE_OSX_ARCHITECTURES} \
 	${MACOSX_DEPLOYMENT_TARGET:+-DCMAKE_OSX_DEPLOYMENT_TARGET=$MACOSX_DEPLOYMENT_TARGET} \
 	${MACOSX_SYSROOT:+-DCMAKE_OSX_SYSROOT=$MACOSX_SYSROOT} \
