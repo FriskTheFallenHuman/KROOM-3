@@ -441,8 +441,8 @@ void			Sys_SetClipboardData( const char* string );
 void			Sys_CreateConsole();
 void			Sys_DestroyConsole();
 char* 			Sys_ConsoleInput();
-bool			Sys_IsConsoleVisible();
 void			Sys_ShowConsole( int visLevel, bool quitOnClose );
+void			Conbuf_AppendText( const char* msg );
 
 // For linux...
 void			Sys_ShowCrashDialog( const char* summaryText );

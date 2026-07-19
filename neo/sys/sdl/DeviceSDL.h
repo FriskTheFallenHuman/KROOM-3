@@ -29,6 +29,16 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __SDL_LOCAL_H__
 #define __SDL_LOCAL_H__
 
+// DG: SDL.h somehow needs the following functions, so #undef those silly
+//     "don't use" #defines from Str.h
+#undef strncmp
+#undef strcasecmp
+#undef vsnprintf
+// DG end
+
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_timer.h>
+
 #include "DeviceInput.h"
 #include "DeviceHires.h"
 

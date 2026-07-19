@@ -44,7 +44,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "renderer/RenderCommon.h"
 #include "DeviceSDL.h"
 #include "DeviceManagerLocal.h"
-#include "DeviceConsole.h"
 
 // DG: those are needed for moving/resizing windows
 extern idCVar r_windowX;
@@ -357,18 +356,6 @@ sysEvent_t Sys_GetEvent()
 	// loop until there is an event we care about (will return then) or no more events
 	while( SDL_PollEvent( &ev ) )
 	{
-		// Anything that belongs to the console, belongs to the console,
-		// not the engine windows.
-		if( deviceConsole.g_active )
-		{
-			Uint32 conWinID = SDL_GetWindowID( deviceConsole.g_window );
-			if( deviceConsole.IsConsoleEvent( ev, conWinID ) )
-			{
-				SDL_PushEvent( &ev );
-				continue;
-			}
-		}
-
 		switch( ev.type )
 		{
 			case SDL_WINDOWEVENT:
@@ -759,6 +746,32 @@ void Sys_ClearEvents()
 	mouse_polls.SetNum( 0 );
 }
 
+#ifdef _WIN32
+/*
+=============
+Sys_PumpEvents
+
+This allows windows to be moved during renderbump
+=============
+*/
+static void Sys_PumpEvents()
+{
+	MSG msg;
+
+	// pump the message loop
+	while( PeekMessage( &msg, NULL, 0, 0, PM_NOREMOVE ) )
+	{
+		if( !GetMessage( &msg, NULL, 0, 0 ) )
+		{
+			common->Quit();
+		}
+
+		TranslateMessage( &msg );
+		DispatchMessage( &msg );
+	}
+}
+#endif
+
 /*
 ================
 Sys_GenerateEvents
@@ -766,6 +779,12 @@ Sys_GenerateEvents
 */
 void Sys_GenerateEvents()
 {
+#ifdef _WIN32
+	// pump the message loop
+	Sys_PumpEvents();
+#endif
+
+	// check for console commands
 	char* s = Sys_ConsoleInput();
 	if( s )
 	{
