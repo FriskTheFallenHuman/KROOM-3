@@ -53,7 +53,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "../sys_local.h"
 #include "DeviceSDL.h"
 #include "DeviceManagerLocal.h"
-#include "DeviceConsole.h"
 
 namespace fs = std::filesystem;
 
@@ -234,10 +233,21 @@ void Sys_Error( const char* error, ... )
 {
 	va_list		argptr;
 	char		text[4096];
+#ifdef _WIN32
+	MSG        msg;
+#endif
 
 	va_start( argptr, error );
 	vsprintf( text, error, argptr );
 	va_end( argptr );
+
+	Conbuf_AppendText( text );
+	Conbuf_AppendText( "\n" );
+
+#ifdef _WIN32
+	void Win_SetErrorText( const char* buf );
+	Win_SetErrorText( text );
+#endif
 
 	Sys_Printf( "%s\n", text );
 	Sys_ShowConsole( 1, true );
@@ -251,35 +261,22 @@ void Sys_Error( const char* error, ... )
 		idDeviceManager::GetInstance()->Shutdown();
 	}
 
+#ifdef _WIN32
 	extern idCVar com_productionMode;
 	if( com_productionMode.GetInteger() == 0 )
 	{
 		// wait for the user to quit
 		while( 1 )
 		{
-			SDL_Event ev;
-			while( SDL_PollEvent( &ev ) )
-			{
-				if( deviceConsole.g_active )
-				{
-					Uint32 conWinID = SDL_GetWindowID( deviceConsole.g_window );
-					if( deviceConsole.IsConsoleEvent( ev, conWinID ) )
-					{
-						SDL_PushEvent( &ev );
-					}
-				}
-			}
-
-			// HACK HACK
-			if( deviceConsole.IsQuitRequested() )
+			if( !GetMessage( &msg, NULL, 0, 0 ) )
 			{
 				common->Quit();
-				break;
 			}
-
-			Sys_Sleep( 10 );
+			TranslateMessage( &msg );
+			DispatchMessage( &msg );
 		}
 	}
+#endif
 
 	Sys_DestroyConsole();
 
@@ -313,7 +310,7 @@ void Sys_Printf( const char* fmt, ... )
 
 	if( sdl.sdl_outputEditString.GetBool() && idLib::IsMainThread() )
 	{
-		deviceConsole.Print( msg );
+		Conbuf_AppendText( msg );
 	}
 }
 
@@ -667,12 +664,6 @@ static void Sys_Frame()
 	if( sdl.sdl_viewlog.IsModified() )
 	{
 		sdl.sdl_viewlog.ClearModified();
-		Sys_ShowConsole( sdl.sdl_viewlog.GetInteger() ? 1 : 0, true );
-	}
-
-	if( deviceConsole.IsQuitRequested() )
-	{
-		common->Quit();
 	}
 }
 
