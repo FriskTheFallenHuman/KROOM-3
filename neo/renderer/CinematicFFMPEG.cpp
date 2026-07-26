@@ -33,12 +33,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "CinematicFFMPEG.h"
 
-#if defined(_MSC_VER) && !defined(USE_OPENAL)
-	#include <xaudio2.h>
-	#include "../sound/XAudio2/XA2_CinematicAudio.h"
-#else
-	#include "../sound/OpenAL/AL_CinematicAudio.h"
-#endif
+#include "../sound/OpenAL/AL_CinematicAudio.h"
 
 extern idCVar s_noSound;
 extern idCVar s_playCinematicAudio;
@@ -303,11 +298,7 @@ bool idCinematicFFMPEG::InitFromFFMPEGFile( const char* qpath, bool amilooping )
 #endif
 						 GetSampleFormat( dec_ctx2->sample_fmt ), hasplanar );
 
-#if defined(_MSC_VER) && !defined(USE_OPENAL)
-		cinematicAudio = new( TAG_AUDIO ) CinematicAudio_XAudio2( false );
-#else
 		cinematicAudio = new( TAG_AUDIO ) CinematicAudio_OpenAL( false );
-#endif
 		cinematicAudio->InitAudio( dec_ctx2 );
 	}
 

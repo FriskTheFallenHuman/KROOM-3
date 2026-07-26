@@ -388,35 +388,13 @@ void idSoundSystemLocal::StopAllSounds()
 
 /*
 ========================
-idSoundSystemLocal::GetIXAudio2
+idSoundSystemLocal::GetAudioDevice
 ========================
 */
-void* idSoundSystemLocal::GetIXAudio2() const
+void* idSoundSystemLocal::GetAudioDevice() const
 {
-	// RB begin
-#if defined(USE_OPENAL)
-	return NULL;
-#else
-	return ( void* )hardware.GetIXAudio2();
-#endif
-	// RB end
+	return ( void* )hardware.GetAudioDevice();
 }
-
-/*
-========================
-idSoundSystemLocal::GetOpenALDevice
-========================
-*/
-// RB begin
-void* idSoundSystemLocal::GetOpenALDevice() const
-{
-#if defined(USE_OPENAL)
-	return ( void* )hardware.GetOpenALDevice();
-#else
-	return ( void* )hardware.GetIXAudio2();
-#endif
-}
-// RB end
 
 /*
 ========================

@@ -35,12 +35,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "CinematicBink.h"
 
-#if defined(_MSC_VER) && !defined(USE_OPENAL)
-	#include <xaudio2.h>
-	#include "../sound/XAudio2/XA2_CinematicAudio.h"
-#else
-	#include "../sound/OpenAL/AL_CinematicAudio.h"
-#endif
+#include "../sound/OpenAL/AL_CinematicAudio.h"
 
 extern idCVar s_noSound;
 extern idCVar s_playCinematicAudio;
@@ -175,11 +170,7 @@ bool idCinematicBink::InitFromBinkDecFile( const char* qpath, bool amilooping )
 		trackIndex = 0;
 		binkInfo = Bink_GetAudioTrackDetails( binkHandle, trackIndex );
 		common->DPrintf( "Cinematic audio stream found: Sample Rate=%d Hz, Channels=%d, Format=16-bit\n", binkInfo.sampleRate, binkInfo.nChannels );
-#if defined(_MSC_VER) && !defined(USE_OPENAL)
-		cinematicAudio = new( TAG_AUDIO ) CinematicAudio_XAudio2( true );
-#else
 		cinematicAudio = new( TAG_AUDIO ) CinematicAudio_OpenAL( true );
-#endif
 		cinematicAudio->InitAudio( &binkInfo );
 	}
 

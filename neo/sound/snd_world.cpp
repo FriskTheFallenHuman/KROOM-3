@@ -385,10 +385,9 @@ void idSoundWorldLocal::Update()
 			const bool canMute = channel->CanMute();
 			if( canMute && channel->volumeDB <= DB_SILENCE )
 			{
-#if !defined(USE_OPENAL)
-				channel->Mute();
-				continue;
-#endif
+				//TODO: Channel mutting over OpenAL
+				//channel->Mute();
+				//continue;
 			}
 
 			// Calculate the sort key.
