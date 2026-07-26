@@ -55,7 +55,7 @@ public:
 	void			FreeVoice( idSoundVoice* voice );
 
 	// listDevices needs this
-	ALCdevice* 		GetOpenALDevice() const
+	ALCdevice* 		GetAudioDevice() const
 	{
 		return openalDevice;
 	};

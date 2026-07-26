@@ -158,7 +158,7 @@ void listDevices_f( const idCmdArgs& args )
 
 	idSoundHardware_OpenAL::PrintALCInfo( NULL );
 
-	idSoundHardware_OpenAL::PrintALCInfo( ( ALCdevice* )soundSystem->GetOpenALDevice() );
+	idSoundHardware_OpenAL::PrintALCInfo( ( ALCdevice* )soundSystem->GetAudioDevice() );
 }
 
 /*

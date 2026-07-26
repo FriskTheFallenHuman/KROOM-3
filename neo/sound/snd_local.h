@@ -95,8 +95,6 @@ typedef enum
 
 #include "SoundVoice.h"
 
-#if defined(USE_OPENAL)
-
 //#define AL_ALEXT_PROTOTYPES
 
 // SRS - Added check on OSX for OpenAL Soft headers vs macOS SDK headers
@@ -135,51 +133,9 @@ ID_INLINE_EXTERN ALCenum CheckALCErrors_( ALCdevice* device, const char* filenam
 }
 #define CheckALCErrors(x) CheckALCErrors_((x), __FILE__, __LINE__)
 
-#elif defined(_MSC_VER) // DG: stub out xaudio for MinGW etc
-
-#define OPERATION_SET 1
-
-// RB: not available on Windows 8 SDK
-#if defined(USE_WINRT) // (_WIN32_WINNT < 0x0602 /*_WIN32_WINNT_WIN8*/)
-#include <mmdeviceapi.h>
-#include <initguid.h> // For the pkey defines to be properly instantiated.
-#include <propkeydef.h>
-#include "functiondiscoverykeys_devpkey.h"
-#include <string>
-#include <vector>
-
-DEFINE_PROPERTYKEY( PKEY_AudioEndpoint_Path, 0x9c119480, 0xddc2, 0x4954, 0xa1, 0x50, 0x5b, 0xd2, 0x40, 0xd4, 0x54, 0xad, 1 );
-
-#pragma comment(lib,"xaudio2.lib")
-
-struct AudioDevice
-{
-	std::wstring name;
-	std::wstring id;
-};
-#else
-#include <dxsdkver.h>
-#endif
-// RB end
-
-#include <xaudio2.h>
-#include <xaudio2fx.h>
-#include <X3DAudio.h>
-
-// RB: not available on Windows 8 SDK
-#if !defined(USE_WINRT) // (_WIN32_WINNT < 0x0602 /*_WIN32_WINNT_WIN8*/)
-	#include <xma2defs.h>
-#endif
-// RB end
-
-#include "XAudio2/XA2_SoundSample.h"
-#include "XAudio2/XA2_SoundVoice.h"
-#include "XAudio2/XA2_SoundHardware.h"
-
-#else // not _MSC_VER => MinGW, GCC, ...
 // just a stub for now
-#include "stub/SoundStub.h"
-#endif // _MSC_VER ; DG end
+// TODO: Re-use this for headless builds.
+//#include "stub/SoundStub.h"
 
 //------------------------
 // Listener data
@@ -507,11 +463,7 @@ public:
 	virtual void			InitStreamBuffers();
 	virtual void			FreeStreamBuffers();
 
-	virtual void* 			GetIXAudio2() const; // FIXME: stupid name; get rid of this? not sure if it's really needed..
-
-	// RB begin
-	virtual void*			GetOpenALDevice() const;
-	// RB end
+	virtual void*			GetAudioDevice() const;
 
 	// for the sound level meter window
 	virtual cinData_t		ImageForTime( const int milliseconds, const bool waveform );
@@ -556,20 +508,12 @@ public:
 			bufferNumber( 0 )
 		{ }
 
-#if defined(USE_OPENAL)
 		idSoundVoice_OpenAL* 	voice;
 		idSoundSample_OpenAL*	sample;
-#elif defined(_MSC_VER) // XAudio backend
-		// DG: because the inheritance is kinda strange (idSoundVoice is derived
-		// from idSoundVoice_XAudio2), casting the latter to the former isn't possible
-		// so we need this ugly #ifdef ..
-		idSoundVoice_XAudio2* 	voice;
-		idSoundSample_XAudio2* sample;
-#else // not _MSC_VER
+
 		// from stub or something..
-		idSoundVoice* 	voice;
-		idSoundSample* sample;
-#endif // _MSC_VER ; DG end
+		//idSoundVoice* 	voice;
+		//idSoundSample* sample;
 
 		int bufferNumber;
 	};

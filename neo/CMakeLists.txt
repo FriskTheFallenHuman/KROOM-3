@@ -15,7 +15,6 @@ option(FORCE_COLOR_OUTPUT "Always produce ANSI-colored output (GNU/Clang only)."
 option(COMPILE_COMMANDS "Generate compile_commands.json" OFF)
 option(TOOLS "Compile the built-in MFC based tools" OFF)
 option(USE_PRECOMPILED_HEADERS "Use precompiled headers during build" ON)
-option(OPENAL "Use OpenAL soft instead of XAudio2" OFF)
 option(FFMPEG "Use FMPEG to render other video formats" OFF)
 option(USE_VULKAN "Use Vulkan instead of OpenGL" OFF)
 option(USE_MoltenVK	"Use MoltenVK library directly instead of Vulkan loader on macOS" OFF)
@@ -27,8 +26,6 @@ option(WINDOWS10 "Build for Windows 10" ON)
 include(CPUDefine)
 
 if(UNIX)
-	set(OPENAL ON)
-
 	# SRS - Disable precompiled headers when cross-compiling on OSX, e.g. when creating universal binaries
 	#     - Also disable precompiled headers when using the Ninja Multi-Config generator on linux or macOS
 	if((CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64" AND CMAKE_OSX_ARCHITECTURES MATCHES "arm64" ) OR
@@ -250,11 +247,7 @@ elseif(MSVC)
 
 	if(MSVC)
 		if(WINDOWS10)
-			if(OPENAL)
-				list(APPEND sys_libs dxguid)
-			else()
-				list(APPEND sys_libs dsound dxguid xaudio2)
-			endif()
+			list(APPEND sys_libs dxguid)
 		else()
 			find_package(WindowsSDK REQUIRED)
 			get_windowssdk_library_dirs("${WINDOWSSDK_LATEST_DIR}" WINSDK_LIB_DIRS)
@@ -267,11 +260,7 @@ elseif(MSVC)
 				endif()
 			endforeach()
 
-			if(OPENAL)
-				list(APPEND sys_libs "${WINSDK_LIB_DIR}/dxguid.lib")
-			else()
-				list(APPEND sys_libs "${WINSDK_LIB_DIR}/dsound.lib" "${WINSDK_LIB_DIR}/dxguid.lib" xaudio2)
-			endif()
+			list(APPEND sys_libs "${WINSDK_LIB_DIR}/dxguid.lib")
 		endif()
 	endif()
 
@@ -367,17 +356,14 @@ if(FFMPEG)
 	list(APPEND sys_thirdparty ${FFmpeg_LIBRARIES})
 endif()
 
-if(OPENAL)
-	add_definitions(-DUSE_OPENAL)
-	if(UNIX)
-		find_package(OpenAL REQUIRED)
-		include_directories(${OPENAL_INCLUDE_DIR})
-	else()
-		add_subdirectory(extern/OpenalSoft)
-		set(OPENAL_LIBRARY OpenAL::OpenAL)
-	endif()
-	list(APPEND sys_thirdparty ${OPENAL_LIBRARY})
+if(UNIX)
+	find_package(OpenAL REQUIRED)
+	include_directories(${OPENAL_INCLUDE_DIR})
+else()
+	add_subdirectory(extern/OpenalSoft)
+	set(OPENAL_LIBRARY OpenAL::OpenAL)
 endif()
+list(APPEND sys_thirdparty ${OPENAL_LIBRARY})
 
 if(UNIX)
 	pkg_check_modules(SDL2 REQUIRED sdl2)
@@ -697,17 +683,9 @@ if(MSVC)
 		list(APPEND src_core ${src_renderer_opengl})
 	endif()
 
-	if(OPENAL)
-		file(GLOB src_sound_openal sound/OpenAL/*.cpp sound/OpenAL/*.h)
-		source_group("Sound\\OpenAL" FILES ${src_sound_openal})
-
-		list(APPEND src_core ${src_sound_openal})
-	else()
-		file(GLOB src_sound_xaudio2 sound/XAudio2/*.cpp sound/XAudio2/*.h)
-		source_group("Sound\\XAudio2" FILES ${src_sound_xaudio2})
-
-		list(APPEND src_core ${src_sound_xaudio2})
-	endif()
+	file(GLOB src_sound_openal sound/OpenAL/*.cpp sound/OpenAL/*.h)
+	source_group("Sound\\OpenAL" FILES ${src_sound_openal})
+	list(APPEND src_core ${src_sound_openal})
 
 	if(TOOLS)
 		list(APPEND src_core ${src_tools})
@@ -740,23 +718,15 @@ else()
 	list(APPEND src_core ${src_sys_posix})
 
 	if(UNIX)
-		if(OPENAL)
-			# SRS - Added support for OpenAL Soft headers on OSX (vs default macOS SDK headers)
-			if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin" AND NOT OPENAL_INCLUDE_DIR MATCHES "SDKs/MacOSX.*\.sdk")
-				include_directories(${OPENAL_INCLUDE_DIR})
-				add_definitions(-DUSE_OPENAL_SOFT_INCLUDES)
-			endif()
-
-			file(GLOB src_sound_openal sound/OpenAL/*.cpp sound/OpenAL/*.h)
-			source_group("Sound\\OpenAL" FILES ${src_sound_openal})
-
-			list(APPEND src_core ${src_sound_openal})
-		else()
-			file(GLOB src_sound_stub sound/stub/*.cpp sound/stub/*.h)
-			source_group("Sound\\Stub" FILES ${src_sound_stub})
-
-			list(APPEND src_core ${src_sound_stub})
+		# SRS - Added support for OpenAL Soft headers on OSX (vs default macOS SDK headers)
+		if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin" AND NOT OPENAL_INCLUDE_DIR MATCHES "SDKs/MacOSX.*\.sdk")
+			include_directories(${OPENAL_INCLUDE_DIR})
+			add_definitions(-DUSE_OPENAL_SOFT_INCLUDES)
 		endif()
+
+		file(GLOB src_sound_openal sound/OpenAL/*.cpp sound/OpenAL/*.h)
+		source_group("Sound\\OpenAL" FILES ${src_sound_openal})
+		list(APPEND src_core ${src_sound_openal})
 
 		if(USE_VULKAN)
 			set(Vulkan_LIBRARIES ${Vulkan_LIBRARY} Vulkan::shaderc_combined GPUOpen::VulkanMemoryAllocator)
@@ -809,7 +779,7 @@ if(MSVC)
 	# set MSVC default debug directory on executable
 	set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${CMAKE_PROJECT_NAME}) # set MSVC startup project
 	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>")
-	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES VS_DEBUGGER_COMMAND_ARGUMENTS "+set r_fullscreen 0 +set win_viewlog 1 +set developter 1")
+	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES VS_DEBUGGER_COMMAND_ARGUMENTS "+set r_fullscreen 0 +set sdl_viewlog 1 +set developer 1")
 
 	#CMAKE_BINARY_DIR
 	if(CMAKE_CL_64)
@@ -825,12 +795,10 @@ if(MSVC)
 		$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>
 	  VERBATIM )
 
-	if(OPENAL)
-		add_custom_command(
-		  TARGET ${CMAKE_PROJECT_NAME} POST_BUILD COMMAND
-		  ${CMAKE_COMMAND} -E copy_if_different
-			$<TARGET_FILE:OpenAL>
-			$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>
-		  VERBATIM )
-	endif()
+	add_custom_command(
+	  TARGET ${CMAKE_PROJECT_NAME} POST_BUILD COMMAND
+	  ${CMAKE_COMMAND} -E copy_if_different
+		$<TARGET_FILE:OpenAL>
+		$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>
+	  VERBATIM )
 endif()

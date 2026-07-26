@@ -580,7 +580,7 @@ void idSoundSample_OpenAL::MakeDefault()
 	playLength = DEFAULT_NUM_SAMPLES;
 
 
-	if( soundSystem->GetOpenALDevice() != NULL && !s_noSound.GetBool() )
+	if( soundSystem->GetAudioDevice() != NULL && !s_noSound.GetBool() )
 	{
 		CheckALErrors();
 		alGenBuffers( 1, &openalBuffer );
