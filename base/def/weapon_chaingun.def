@@ -16,7 +16,9 @@ entityDef weapon_chaingun {
 	"model"						"models/weapons/chaingun/w_chaingun.lwo"
 	"model_view" 				"viewmodel_chaingun"
 	"model_world" 				"worldmodel_chaingun"
+	"model_world_npc"			"worldmodel_zombie_commando_cgun"
 	"joint_attach"				"CHAINGUN_ATTACHER"
+	"joint_attach_npc"			"Rhand"
 	"def_dropItem"				"moveable_item_chaingun"
 
 	"inv_name"					"#str_00100181"
@@ -35,6 +37,7 @@ entityDef weapon_chaingun {
 
 	"weapon_scriptobject"		"weapon_chaingun"
 	"def_projectile"			"projectile_chaingunbullet"
+	"def_projectile_npc"		"projectile_zombie_commando_cgun"
 	"ammoType"					"ammo_belt"
 	"ammoRequired"				"1"
 	"clipSize"					"60"
@@ -78,6 +81,7 @@ entityDef weapon_chaingun {
 	"ejectBrassDelay"			"10"
 
 	"spread"					"5"
+	"fire_hold_time_npc"		"1680"
 
 	"controllerShakeHighMag"	"1.0"
 	"controllerShakeHighTime"	"100"
@@ -100,6 +104,12 @@ model worldmodel_chaingun {
 	anim idle 					models/md5/weapons/chaingun_world/chaingun_idle.md5anim
 	anim fire					models/md5/weapons/chaingun_world/chaingun_fire.md5anim
 	anim chaingun_fire			models/md5/weapons/chaingun_world/chaingun_fire.md5anim
+}
+
+model worldmodel_zombie_commando_cgun {
+	"inherit"						"worldmodel_chaingun"
+	offset							( -5 1 2 )
+	rotation						( 90 0 -90 )
 }
 
 model viewmodel_chaingun {
@@ -228,4 +238,26 @@ entityDef	damage_bullet_chaingun {
 
 	//"dv_time"			"100"
 
+}
+
+entityDef projectile_zombie_commando_cgun {
+	"inherit"			"projectile_chaingunbullet"
+
+	"tracers"			"1"
+	"model_tracer"		"models/particles/tracer/tracer.lwo"
+
+	"mass"				"2"
+
+	"snd_impact"		"bullet_impact_metal"
+}
+
+entityDef damage_zombie_commando_cgun {
+	"inherit"			"damage_bullet_chaingun"
+
+	"damage"			"3"
+	
+	"kick_time"			"10"
+	"kick_amplitude"	"0"
+
+	"dv_time"			"100"
 }

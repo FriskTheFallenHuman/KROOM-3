@@ -155,6 +155,8 @@ typedef struct predictedPath_s
 //
 extern const idEventDef AI_BeginAttack;
 extern const idEventDef AI_EndAttack;
+extern const idEventDef AI_FireWeaponBegin;
+extern const idEventDef AI_FireWeaponEnd;
 extern const idEventDef AI_MuzzleFlash;
 extern const idEventDef AI_CreateMissile;
 extern const idEventDef AI_AttackMissile;
@@ -286,6 +288,8 @@ public:
 	talkState_t				GetTalkState() const;
 
 	bool					GetAimDir( const idVec3& firePos, idEntity* aimAtEnt, const idEntity* ignore, idVec3& aimDir ) const;
+
+	virtual void			GetViewPos( idVec3& origin, idMat3& axis ) const;
 
 	void					TouchedByFlashlight( idActor* flashlight_owner );
 
@@ -598,6 +602,8 @@ protected:
 	void					Event_RadiusDamageFromJoint( const char* jointname, const char* damageDefName );
 	void					Event_BeginAttack( const char* name );
 	void					Event_EndAttack();
+	void					Event_FireWeaponBegin();
+	void					Event_FireWeaponEnd();
 	void					Event_MeleeAttackToJoint( const char* jointname, const char* meleeDefName );
 	void					Event_RandomPath();
 	void					Event_CanBecomeSolid();

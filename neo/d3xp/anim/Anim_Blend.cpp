@@ -2702,6 +2702,7 @@ idDeclModelDef::idDeclModelDef()
 {
 	modelHandle	= NULL;
 	skin		= NULL;
+	rotation.Set( 0.0f, 0.0f, 0.0f, 1.0f );
 	offset.Zero();
 	for( int i = 0; i < ANIM_NumAnimChannels; i++ )
 	{
@@ -2740,6 +2741,7 @@ void idDeclModelDef::CopyDecl( const idDeclModelDef* decl )
 
 	FreeData();
 
+	rotation = decl->rotation;
 	offset = decl->offset;
 	modelHandle = decl->modelHandle;
 	skin = decl->skin;
@@ -2772,6 +2774,7 @@ void idDeclModelDef::FreeData()
 	jointParents.Clear();
 	modelHandle	= NULL;
 	skin = NULL;
+	rotation.Set( 0.0f, 0.0f, 0.0f, 1.0f );
 	offset.Zero();
 	for( int i = 0; i < ANIM_NumAnimChannels; i++ )
 	{
@@ -3006,6 +3009,10 @@ void idDeclModelDef::SetupJoints( int* numJoints, idJointMat** jointList, idBoun
 
 	// convert the joint quaternions to joint matrices
 	SIMDProcessor->ConvertJointQuatsToJointMats( list, pose, joints.Num() );
+
+	// apply rotation offset to the root joint for the default pose
+	idMat3 rotMat = rotation.ToMat3();
+	list[0].SetRotation( rotMat * list[0].ToMat3() );
 
 	// check if we offset the model by the origin joint
 	if( removeOriginOffset )
@@ -3445,6 +3452,19 @@ bool idDeclModelDef::Parse( const char* text, const int textLength, bool allowBi
 				return false;
 			}
 		}
+		else if( token == "rotation" )
+		{
+			idVec3 anglesVec;
+			if( !src.Parse1DMatrix( 3, anglesVec.ToFloatPtr() ) )
+			{
+				src.Warning( "Expected vector following 'rotation'" );
+				MakeDefault();
+				return false;
+			}
+
+			idAngles angles( anglesVec );
+			rotation = angles.ToQuat();
+		}
 		else if( token == "channel" )
 		{
 			if( !modelHandle )
@@ -3780,6 +3800,16 @@ idDeclModelDef::GetVisualOffset
 const idVec3& idDeclModelDef::GetVisualOffset() const
 {
 	return offset;
+}
+
+/*
+=====================
+idDeclModelDef::GetVisualRotation
+=====================
+*/
+const idQuat& idDeclModelDef::GetVisualRotation() const
+{
+	return rotation;
 }
 
 /***********************************************************************
@@ -5359,7 +5389,11 @@ bool idAnimator::CreateFrame( int currentTime, bool force )
 		j = 0;
 	}
 
-	// add in the model offset
+	// add in the model rotation offset
+	idMat3 rotMat = modelDef->GetVisualRotation().ToMat3();
+	joints[0].SetRotation( rotMat * joints[0].ToMat3() );
+
+	// add in the model translation offset
 	joints[0].SetTranslation( joints[0].ToVec3() + modelDef->GetVisualOffset() );
 
 	// pointer to joint info

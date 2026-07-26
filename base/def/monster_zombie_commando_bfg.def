@@ -1,0 +1,11 @@
+/***********************************************************************
+
+	monster_zombie_commando_bfg.def
+
+***********************************************************************/
+
+entityDef monster_zombie_commando_bfg {
+	"inherit"						"monster_zombie_commando_cgun"
+
+	"def_weapon"					"weapon_bfg"
+}

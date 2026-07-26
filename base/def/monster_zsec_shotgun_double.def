@@ -1,0 +1,11 @@
+/***********************************************************************
+
+monster_zsec_shotgun_double.def
+
+***********************************************************************/
+
+entityDef monster_zsec_shotgun_double {
+	"inherit"						"monster_zsec_shotgun"
+
+	"def_weapon"					"weapon_shotgun_double"
+}

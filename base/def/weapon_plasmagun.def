@@ -83,6 +83,7 @@ entityDef weapon_plasmagun {
 	"skin_invisible"			"skins/plasma_invis"
 
 	"spread"					"0"
+	"fire_hold_time_npc"		"500"
 
 	"controllerShakeHighMag"	"0.7"
 	"controllerShakeHighTime"	"25"

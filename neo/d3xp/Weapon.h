@@ -96,8 +96,9 @@ public:
 
 	// Init
 	void					Spawn();
-	void					SetOwner( idPlayer* owner );
-	idPlayer*				GetOwner();
+	void					SetOwner( idActor* owner );
+	idActor*				GetOwner();
+	idPlayer*				GetPlayerOwner() const;
 	virtual bool			ShouldConstructScriptObjectAtSpawn() const;
 
 	static void				CacheWeapon( const char* weaponName );
@@ -244,7 +245,7 @@ private:
 	// precreated projectile
 	idEntity*				projectileEnt;
 
-	idPlayer* 				owner;
+	idActor* 				owner;
 	idEntityPtr<idAnimatedEntity>	worldModel;
 
 	// hiding (for GUIs and NPCs)
@@ -274,15 +275,20 @@ private:
 
 	idVec3					pushVelocity;
 
+public:
 	// weapon definition
 	// we maintain local copies of the projectile and brass dictionaries so they
 	// do not have to be copied across the DLL boundary when entities are spawned
 	const idDeclEntityDef* 	weaponDef;
+	const idDeclEntityDef*	projectileDef;
 	const idDeclEntityDef* 	meleeDef;
+	const idDeclEntityDef*	brassDef;
 	idDict					projectileDict;
 	float					meleeDistance;
 	idStr					meleeDefName;
 	idDict					brassDict;
+
+private:
 	int						brassDelay;
 	idStr					icon;
 	idStr					pdaIcon;
@@ -476,7 +482,7 @@ ID_INLINE bool idWeapon::IsWorldModelReady()
 	return ( worldModel.GetEntity() != NULL );
 }
 
-ID_INLINE idPlayer* idWeapon::GetOwner()
+ID_INLINE idActor* idWeapon::GetOwner()
 {
 	return owner;
 }

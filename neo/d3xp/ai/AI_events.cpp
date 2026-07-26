@@ -58,6 +58,8 @@ const idEventDef AI_DirectDamage( "directDamage", "es" );
 const idEventDef AI_RadiusDamageFromJoint( "radiusDamageFromJoint", "ss" );
 const idEventDef AI_BeginAttack( "attackBegin", "s" );
 const idEventDef AI_EndAttack( "attackEnd" );
+const idEventDef AI_FireWeaponBegin( "fireWeaponBegin" );
+const idEventDef AI_FireWeaponEnd( "fireWeaponEnd" );
 const idEventDef AI_MeleeAttackToJoint( "meleeAttackToJoint", "ss", 'd' );
 const idEventDef AI_RandomPath( "randomPath", NULL, 'e' );
 const idEventDef AI_CanBecomeSolid( "canBecomeSolid", NULL, 'f' );
@@ -198,6 +200,8 @@ EVENT( AI_DirectDamage,						idAI::Event_DirectDamage )
 EVENT( AI_RadiusDamageFromJoint,			idAI::Event_RadiusDamageFromJoint )
 EVENT( AI_BeginAttack,						idAI::Event_BeginAttack )
 EVENT( AI_EndAttack,						idAI::Event_EndAttack )
+EVENT( AI_FireWeaponBegin,					idAI::Event_FireWeaponBegin )
+EVENT( AI_FireWeaponEnd,					idAI::Event_FireWeaponEnd )
 EVENT( AI_MeleeAttackToJoint,				idAI::Event_MeleeAttackToJoint )
 EVENT( AI_RandomPath,						idAI::Event_RandomPath )
 EVENT( AI_CanBecomeSolid,					idAI::Event_CanBecomeSolid )
@@ -603,6 +607,15 @@ void idAI::Event_MuzzleFlash( const char* jointname )
 	idVec3	muzzle;
 	idMat3	axis;
 
+	if( jointname && jointname[0] )
+	{
+		jointHandle_t joint = animator.GetJointHandle( jointname );
+		if( joint != INVALID_JOINT )
+		{
+			flashJointWorld = joint;
+		}
+	}
+
 	GetMuzzle( jointname, muzzle, axis );
 	TriggerWeaponEffects( muzzle );
 }
@@ -881,6 +894,43 @@ idAI::Event_EndAttack
 void idAI::Event_EndAttack()
 {
 	EndAttack();
+}
+
+/*
+=====================
+idAI::Event_FireWeaponBegin
+=====================
+*/
+void idAI::Event_FireWeaponBegin()
+{
+	if( heldWeapon.GetEntity() )
+	{
+		heldWeapon.GetEntity()->BeginAttack();
+
+		// Some weapons needs a different hold time depending of their type.
+		int holdTime = 150;
+		const idDeclEntityDef* weaponDeclDef = heldWeapon.GetEntity()->GetDeclEntityDef();
+		if( weaponDeclDef )
+		{
+			holdTime = weaponDeclDef->dict.GetInt( "fire_hold_time_npc", "150" );
+		}
+
+		heldWeaponFireEndTime = gameLocal.time + holdTime;
+	}
+}
+
+/*
+=====================
+idAI::Event_FireWeaponEnd
+=====================
+*/
+void idAI::Event_FireWeaponEnd()
+{
+	if( heldWeapon.GetEntity() )
+	{
+		heldWeapon.GetEntity()->EndAttack();
+		heldWeaponFireEndTime = 0;
+	}
 }
 
 /*

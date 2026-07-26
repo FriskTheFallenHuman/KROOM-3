@@ -16,7 +16,9 @@ entityDef weapon_bfg {
 	"model" 					"models/weapons/bfg/bfg_world.lwo"
 	"model_view"				"viewmodel_bfg"
 	"model_world" 				"worldmodel_bfg"
+	"model_world_npc"			"worldmodel_zombie_commando_bfg"
 	"joint_attach"				"BFG_ATTACHER"
+	"joint_attach_npc"			"Rhand"
 	"def_dropItem"				"moveable_item_bfg"
 
 	"inv_name"					"#str_00100197"
@@ -50,6 +52,7 @@ entityDef weapon_bfg {
 
 	"weapon_scriptobject"		"weapon_bfg"
 	"def_projectile"			"projectile_bfg"
+	"def_projectile_npc"		"projectile_zombie_commando_bfg"
 	"ammoType"					"ammo_bfg"
 	"ammoRequired"				"1"
 	"clipSize"					"4"
@@ -99,6 +102,12 @@ model worldmodel_bfg {
 	anim reload					models/md5/weapons/bfg_world/bfg_idle.md5anim
 	anim noammo					models/md5/weapons/bfg_world/bfg_idle.md5anim
 	anim putaway				models/md5/weapons/bfg_world/bfg_idle.md5anim
+}
+
+model worldmodel_zombie_commando_bfg {
+	"inherit"						"worldmodel_bfg"
+	offset							( -5 1 2 )
+	rotation						( -220 -90 -170 )
 }
 
 model viewmodel_bfg {
@@ -258,4 +267,28 @@ entityDef damage_bfg_overcharge {
 	"radius"					"256"
 	"push"						"10000"
 	"knockback"					"200"
+}
+
+entityDef damage_zombie_commando_bfg {
+	"inherit"					"damage_bfg"
+	"damage"					"80"
+}
+
+entityDef damage_zombie_commando_bfgFreq {
+	"inherit"					"damage_bfgFreq"
+	"damage"					"3"
+}
+
+entityDef damage_zombie_commando_bfgSplash {
+	"inherit"					"damage_bfgSplash"
+	"damage"					"30"
+	"radius"					"120"
+}
+
+entityDef projectile_zombie_commando_bfg {
+	"inherit"					"projectile_bfg"
+
+	"def_damage"				"damage_zombie_commando_bfg"
+	"def_damageFreq"			"damage_zombie_commando_bfgFreq"
+	"def_splash_damage"			"damage_zombie_commando_bfgSplash"
 }
