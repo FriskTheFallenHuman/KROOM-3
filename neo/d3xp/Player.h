@@ -335,7 +335,6 @@ public:
 	idTarget_SetPrimaryObjective* primaryObjective;
 
 	int						flashlightBattery;
-	idEntityPtr<idWeapon>	flashlight;
 
 	idEntityPtr<idWeapon>	weapon;
 	idMenuHandler_HUD* 		hudManager;

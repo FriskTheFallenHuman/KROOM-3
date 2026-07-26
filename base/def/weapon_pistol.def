@@ -14,6 +14,7 @@ entityDef weapon_pistol {
 	"model"						"models/weapons/pistol/w_pistol.lwo"
 	"model_view" 				"viewmodel_pistol"
 	"model_world" 				"worldmodel_pistol"
+	"model_world_npc" 			"worldmodel_zsec_pistol"
 	"joint_attach"				"PISTOL_ATTACHER"
 	"def_dropItem"				"moveable_item_pistol"
 
@@ -29,6 +30,7 @@ entityDef weapon_pistol {
 
 	"weapon_scriptobject"		"weapon_pistol"
 	"def_projectile"			"projectile_bullet_pistol"
+	"def_projectile_npc"		"projectile_bullet_zsec_pistol"
 	"ammoType"					"ammo_bullets"
 	"ammoRequired"				"1"
 	"clipSize"					"12"
@@ -97,6 +99,11 @@ model worldmodel_pistol {
 	anim raise					models/md5/weapons/pistol_world/pistol_idle.md5anim
 	anim reload					models/md5/weapons/pistol_world/pistol_idle.md5anim
 	anim noammo					models/md5/weapons/pistol_world/pistol_idle.md5anim
+}
+
+model worldmodel_zsec_pistol {
+	"inherit"						"worldmodel_pistol"
+	offset							( -5.7 2 0 )
 }
 
 model viewmodel_pistol {
@@ -219,4 +226,18 @@ entityDef projectile_bullet_pistol {
 	"explode_light_color"		"0 0 0"
 	"explode_light_radius"		"0"
 	"explode_light_fadetime"	"0"
+}
+
+entityDef	damage_bullet_zsec_pistol {
+	"inherit"						"damage_bullet_pistol"
+
+	"damage"						"4"
+}
+
+entityDef projectile_bullet_zsec_pistol {
+	"inherit"						"projectile_bullet_pistol"
+
+	"def_damage"					"damage_bullet_zsec_pistol"
+
+	"velocity"						"2000 0 0"	// slowed down for tracer effect
 }

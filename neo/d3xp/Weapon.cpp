@@ -176,7 +176,9 @@ idWeapon::idWeapon()
 
 	muzzleFlashEnd			= 0;
 	flashColor				= vec3_origin;
-	flashLightColor				= vec3_origin;
+	flashLightColor			= vec3_origin;
+
+	flashLightHandle		= -1;
 	muzzleFlashHandle		= -1;
 	worldMuzzleFlashHandle	= -1;
 	guiLightHandle			= -1;
@@ -223,7 +225,8 @@ void idWeapon::Spawn()
 		worldModel.GetEntity()->fl.networkSync = true;
 	}
 
-	if( 1 /*!common->IsMultiplayer()*/ )
+	idPlayer* playerOwner = GetPlayerOwner();
+	if( playerOwner )
 	{
 		grabber.Initialize();
 	}
@@ -240,16 +243,39 @@ idWeapon::SetOwner
 Only called at player spawn time, not each weapon switch
 ================
 */
-void idWeapon::SetOwner( idPlayer* _owner )
+void idWeapon::SetOwner( idActor* _owner )
 {
 	assert( !owner );
 	owner = _owner;
-	SetName( va( "%s_weapon", owner->name.c_str() ) );
 
-	if( worldModel.GetEntity() )
+	if( _owner->IsType( idPlayer::Type ) )
 	{
-		worldModel.GetEntity()->SetName( va( "%s_weapon_worldmodel", owner->name.c_str() ) );
+		SetName( va( "%s_weapon", owner->name.c_str() ) );
+
+		if( worldModel.GetEntity() )
+		{
+			worldModel.GetEntity()->SetName( va( "%s_weapon_worldmodel", owner->name.c_str() ) );
+		}
 	}
+	else
+	{
+		SetName( va( "%s_%d_weapon_npc", owner->name.c_str(), owner->entityNumber ) );
+
+		if( worldModel.GetEntity() )
+		{
+			worldModel.GetEntity()->SetName( va( "%s_%d_weapon_npc_worldmodel", owner->name.c_str(), owner->entityNumber ) );
+		}
+	}
+}
+
+/*
+================
+idWeapon::GetPlayerOwner
+================
+*/
+idPlayer* idWeapon::GetPlayerOwner() const
+{
+	return ( owner && owner->IsType( idPlayer::Type ) ) ? static_cast<idPlayer*>( owner ) : NULL;
 }
 
 /*
@@ -533,7 +559,7 @@ void idWeapon::Restore( idRestoreGame* savefile )
 	weaponDef = gameLocal.FindEntityDef( objectname );
 	meleeDef = gameLocal.FindEntityDef( weaponDef->dict.GetString( "def_melee" ), false );
 
-	const idDeclEntityDef* projectileDef = gameLocal.FindEntityDef( weaponDef->dict.GetString( "def_projectile" ), false );
+	projectileDef = gameLocal.FindEntityDef( weaponDef->dict.GetString( "def_projectile" ), false );
 	if( projectileDef )
 	{
 		projectileDict = projectileDef->dict;
@@ -543,7 +569,7 @@ void idWeapon::Restore( idRestoreGame* savefile )
 		projectileDict.Clear();
 	}
 
-	const idDeclEntityDef* brassDef = gameLocal.FindEntityDef( weaponDef->dict.GetString( "def_ejectBrass" ), false );
+	brassDef = gameLocal.FindEntityDef( weaponDef->dict.GetString( "def_ejectBrass" ), false );
 	if( brassDef )
 	{
 		brassDict = brassDef->dict;
@@ -873,7 +899,12 @@ void idWeapon::Clear()
 	silent_fire		= false;
 
 	grabberState	= -1;
-	grabber.Update( owner, true );
+
+	idPlayer* playerOwner = GetPlayerOwner();
+	if( playerOwner )
+	{
+		grabber.Update( playerOwner, true );
+	}
 
 	ammoType		= 0;
 	ammoRequired	= 0;
@@ -975,20 +1006,42 @@ void idWeapon::InitWorldModel( const idDeclEntityDef* def )
 	assert( def );
 
 	const char* model = def->dict.GetString( "model_world" );
+	const char* modelNPC = def->dict.GetString( "model_world_npc" );
 	const char* attach = def->dict.GetString( "joint_attach" );
+	const char* attachNPC = def->dict.GetString( "joint_attach_npc", "gun" );
 
 	ent->SetSkin( NULL );
 	if( model[0] && attach[0] )
 	{
+		idPlayer* playerOwner = GetPlayerOwner();
+
 		ent->Show();
-		ent->SetModel( model );
+
+		if( playerOwner )
+		{
+			ent->SetModel( model );
+		}
+		else
+		{
+			ent->SetModel( modelNPC );
+		}
+
 		if( ent->GetAnimator()->ModelDef() )
 		{
 			ent->SetSkin( ent->GetAnimator()->ModelDef()->GetDefaultSkin() );
 		}
 		ent->GetPhysics()->SetContents( 0 );
 		ent->GetPhysics()->SetClipModel( NULL, 1.0f );
-		ent->BindToJoint( owner, attach, true );
+
+		if( playerOwner )
+		{
+			ent->BindToJoint( owner, attach, true );
+		}
+		else
+		{
+			ent->BindToJoint( owner, attachNPC, true );
+		}
+
 		ent->GetPhysics()->SetOrigin( vec3_origin );
 		ent->GetPhysics()->SetAxis( mat3_identity );
 
@@ -1137,10 +1190,19 @@ void idWeapon::GetWeaponDef( const char* objectname, int ammoinclip )
 	// get the projectile
 	projectileDict.Clear();
 
-	projectileName = weaponDef->dict.GetString( "def_projectile" );
+	idPlayer* playerOwner = GetPlayerOwner();
+	if( playerOwner )
+	{
+		projectileName = weaponDef->dict.GetString( "def_projectile" );
+	}
+	else
+	{
+		projectileName = weaponDef->dict.GetString( "def_projectile_npc" );
+	}
+
 	if( projectileName[0] != '\0' )
 	{
-		const idDeclEntityDef* projectileDef = gameLocal.FindEntityDef( projectileName, false );
+		projectileDef = gameLocal.FindEntityDef( projectileName, false );
 		if( !projectileDef )
 		{
 			gameLocal.Warning( "Unknown projectile '%s' in weapon '%s'", projectileName, objectname );
@@ -1267,7 +1329,7 @@ void idWeapon::GetWeaponDef( const char* objectname, int ammoinclip )
 
 	if( brassDefName[0] )
 	{
-		const idDeclEntityDef* brassDef = gameLocal.FindEntityDef( brassDefName, false );
+		brassDef = gameLocal.FindEntityDef( brassDefName, false );
 		if( !brassDef )
 		{
 			gameLocal.Warning( "Unknown brass '%s'", brassDefName );
@@ -1288,13 +1350,20 @@ void idWeapon::GetWeaponDef( const char* objectname, int ammoinclip )
 	{
 		// first time using this weapon so have it fully loaded to start
 		ammoClip = clipSize;
-		ammoAvail = owner->inventory.HasAmmo( ammoType, ammoRequired );
-		if( ammoClip.Get() > ammoAvail )
+
+		idPlayer* playerOwner = GetPlayerOwner();
+		if( playerOwner )
 		{
-			ammoClip = ammoAvail;
+			ammoAvail = playerOwner->inventory.HasAmmo( ammoType, ammoRequired );
+			if( ammoClip.Get() > ammoAvail )
+			{
+				ammoClip = ammoAvail;
+			}
+			//In D3XP we use ammo as soon as it is moved into the clip. This allows for weapons that share ammo
+			playerOwner->inventory.UseAmmo( ammoType, ammoClip.Get() );
 		}
-		//In D3XP we use ammo as soon as it is moved into the clip. This allows for weapons that share ammo
-		owner->inventory.UseAmmo( ammoType, ammoClip.Get() );
+
+		// TODO - idInventory for AI
 	}
 
 	renderEntity.gui[ 0 ] = NULL;
@@ -1504,13 +1573,19 @@ void idWeapon::UpdateGUI()
 		return;
 	}
 
-	if( owner->weaponGone )
+	idPlayer* playerOwner = GetPlayerOwner();
+	if( !playerOwner )
+	{
+		return;
+	}
+
+	if( playerOwner->weaponGone )
 	{
 		// dropping weapons was implemented wierd, so we have to not update the gui when it happens or we'll get a negative ammo count
 		return;
 	}
 
-	if( !owner->IsLocallyControlled() )
+	if( !playerOwner->IsLocallyControlled() )
 	{
 		// if updating the hud for a followed client
 		if( gameLocal.GetLocalClientNum() >= 0 && gameLocal.entities[ gameLocal.GetLocalClientNum() ] && gameLocal.entities[ gameLocal.GetLocalClientNum() ]->IsType( idPlayer::Type ) )
@@ -2030,11 +2105,16 @@ void idWeapon::OwnerDied()
 		// Update the grabber effects
 		if( /*!common->IsMultiplayer() &&*/ grabberState != -1 )
 		{
-			grabber.Update( owner, hide );
+			idPlayer* playerOwner = GetPlayerOwner();
+			if( playerOwner )
+			{
+				grabber.Update( playerOwner, hide );
+			}
 		}
 	}
 
 	Hide();
+
 	if( worldModel.GetEntity() )
 	{
 		worldModel.GetEntity()->Hide();
@@ -2589,11 +2669,13 @@ idWeapon::PresentWeapon
 */
 void idWeapon::PresentWeapon( bool showViewModel )
 {
+	idPlayer* playerOwner = GetPlayerOwner();
+
 	// moved from ReadFromSnapshot (with changes)
 	if( common->IsClient() && IsLinked() && canSyncLight && snapshotLight > 0 )
 	{
 		bool playerLightOn = ( bool )( snapshotLight - 1 );
-		if( owner != NULL && !owner->IsLocallyControlled() && playerLightOn != lightOn )
+		if( playerOwner != NULL && !playerOwner->IsLocallyControlled() && playerLightOn != lightOn )
 		{
 			// flashlight
 			Reload();
@@ -2601,11 +2683,20 @@ void idWeapon::PresentWeapon( bool showViewModel )
 		snapshotLight = 0;
 	}
 
-	playerViewOrigin = owner->firstPersonViewOrigin;
-	playerViewAxis = owner->firstPersonViewAxis;
+	if( playerOwner )
+	{
+		playerViewOrigin = playerOwner->firstPersonViewOrigin;
+		playerViewAxis = playerOwner->firstPersonViewAxis;
 
-	// calculate weapon position based on player movement bobbing
-	owner->CalculateViewWeaponPos( viewWeaponOrigin, viewWeaponAxis );
+		// calculate weapon position based on player movement bobbing
+		playerOwner->CalculateViewWeaponPos( viewWeaponOrigin, viewWeaponAxis );
+	}
+	else
+	{
+		owner->GetViewPos( playerViewOrigin, playerViewAxis );
+		viewWeaponOrigin = playerViewOrigin;
+		viewWeaponAxis = playerViewAxis;
+	}
 
 	// hide offset is for dropping the gun when approaching a GUI or NPC
 	// This is simpler to manage than doing the weapon put-away animation
@@ -2858,9 +2949,12 @@ void idWeapon::PresentWeapon( bool showViewModel )
 	float lowMagnitude = weaponDef->dict.GetFloat( "controllerConstantShakeLowMag" );
 	int lowDuration = weaponDef->dict.GetInt( "controllerConstantShakeLowTime" );
 
-	if( owner->IsLocallyControlled() )
+	if( playerOwner )
 	{
-		owner->SetControllerShake( highMagnitude, highDuration, lowMagnitude, lowDuration );
+		if( playerOwner->IsLocallyControlled() )
+		{
+			playerOwner->SetControllerShake( highMagnitude, highDuration, lowMagnitude, lowDuration );
+		}
 	}
 }
 
@@ -2900,7 +2994,11 @@ void idWeapon::EnterCinematic()
 		WEAPON_RAISEWEAPON	= false;
 		WEAPON_LOWERWEAPON	= false;
 
-		grabber.Update( this->GetOwner(), true );
+		idPlayer* playerOwner = GetPlayerOwner();
+		if( playerOwner )
+		{
+			grabber.Update( playerOwner, true );
+		}
 	}
 
 	disabled = true;
@@ -2949,10 +3047,12 @@ idWeapon::GetZoomFov
 int	idWeapon::GetZoomFov()
 {
 	int fov;
-	if( owner )
+
+	idPlayer* playerOwner = GetPlayerOwner();
+	if( playerOwner )
 	{
 		float invAmpFactor = idMath::Tan( DEG2RAD( ( float )zoomFov * 0.5f ) ) / idMath::Tan( DEG2RAD( 90.0f * 0.5f ) );
-		float newFov = RAD2DEG( 2.0f * idMath::ATan( invAmpFactor * idMath::Tan( DEG2RAD( owner->DefaultFov() ) * 0.5f ) ) );
+		float newFov = RAD2DEG( 2.0f * idMath::ATan( invAmpFactor * idMath::Tan( DEG2RAD( playerOwner->DefaultFov() ) * 0.5f ) ) );
 		fov = idMath::ClampInt( 1, 179, ( int )newFov );
 	}
 	else
@@ -3108,9 +3208,14 @@ idWeapon::AmmoAvailable
 */
 int idWeapon::AmmoAvailable() const
 {
-	if( owner )
+	if( idPlayer* playerOwner = GetPlayerOwner() )
 	{
-		return owner->inventory.HasAmmo( ammoType, ammoRequired );
+		return playerOwner->inventory.HasAmmo( ammoType, ammoRequired );
+	}
+	else if( owner )
+	{
+		// TODO: idInventory for AI
+		return 1000;
 	}
 	else
 	{
@@ -3207,10 +3312,15 @@ Returns the total number of rounds regardless of the required ammo
 */
 int idWeapon::AmmoCount() const
 {
-
-	if( owner )
+	idPlayer* playerOwner = GetPlayerOwner();
+	if( playerOwner )
 	{
-		return owner->inventory.HasAmmo( ammoType, 1 );
+		return playerOwner->inventory.HasAmmo( ammoType, 1 );
+	}
+	else if( owner )
+	{
+		// TODO: idInventory for AI
+		return 1000;
 	}
 	else
 	{
@@ -3259,9 +3369,13 @@ void idWeapon::ReadFromSnapshot( const idBitMsg& msg )
 	}
 
 	// WEAPON_NETFIRING is only turned on for other clients we're predicting. not for local client
-	if( owner && !owner->IsLocallyControlled() && WEAPON_NETFIRING.IsLinked() )
+	idPlayer* playerOwner = GetPlayerOwner();
+	if( playerOwner )
 	{
-		WEAPON_NETFIRING = isFiring;
+		if( !playerOwner->IsLocallyControlled() && WEAPON_NETFIRING.IsLinked() )
+		{
+			WEAPON_NETFIRING = isFiring;
+		}
 	}
 }
 
@@ -3278,12 +3392,16 @@ bool idWeapon::ClientReceiveEvent( int event, int time, const idBitMsg& msg )
 		case EVENT_RELOAD:
 		{
 			// Local clients predict reloads, only process this event for remote clients.
-			if( owner != NULL && !owner->IsLocallyControlled() && ( gameLocal.time - time < 1000 ) )
+			idPlayer* playerOwner = GetPlayerOwner();
+			if( playerOwner )
 			{
-				if( WEAPON_NETRELOAD.IsLinked() )
+				if( !playerOwner->IsLocallyControlled() && ( gameLocal.time - time < 1000 ) )
 				{
-					WEAPON_NETRELOAD = true;
-					WEAPON_NETENDRELOAD = false;
+					if( WEAPON_NETRELOAD.IsLinked() )
+					{
+						WEAPON_NETRELOAD = true;
+						WEAPON_NETENDRELOAD = false;
+					}
 				}
 			}
 			return true;
@@ -3291,9 +3409,13 @@ bool idWeapon::ClientReceiveEvent( int event, int time, const idBitMsg& msg )
 		case EVENT_ENDRELOAD:
 		{
 			// Local clients predict reloads, only process this event for remote clients.
-			if( owner != NULL && !owner->IsLocallyControlled() && WEAPON_NETENDRELOAD.IsLinked() )
+			idPlayer* playerOwner = GetPlayerOwner();
+			if( playerOwner )
 			{
-				WEAPON_NETENDRELOAD = true;
+				if( !playerOwner->IsLocallyControlled() && WEAPON_NETENDRELOAD.IsLinked() )
+				{
+					WEAPON_NETENDRELOAD = true;
+				}
 			}
 			return true;
 		}
@@ -3437,7 +3559,12 @@ void idWeapon::Event_WeaponRising()
 	{
 		WEAPON_LOWERWEAPON = false;
 	}
-	owner->WeaponRisingCallback();
+
+	idPlayer* playerOwner = GetPlayerOwner();
+	if( playerOwner )
+	{
+		playerOwner->WeaponRisingCallback();
+	}
 }
 
 /*
@@ -3453,7 +3580,12 @@ void idWeapon::Event_WeaponLowering()
 	{
 		WEAPON_RAISEWEAPON = false;
 	}
-	owner->WeaponLoweringCallback();
+
+	idPlayer* playerOwner = GetPlayerOwner();
+	if( playerOwner )
+	{
+		playerOwner->WeaponLoweringCallback();
+	}
 }
 
 /*
@@ -3463,14 +3595,17 @@ idWeapon::Event_UseAmmo
 */
 void idWeapon::Event_UseAmmo( int amount )
 {
-	if( owner == NULL || ( common->IsClient() && !owner->IsLocallyControlled() ) )
+	idPlayer* playerOwner = GetPlayerOwner();
+
+	if( owner == NULL || ( playerOwner && common->IsClient() && !playerOwner->IsLocallyControlled() ) )
 	{
 		return;
 	}
 
-	if( clipSize == 0 )
+	if( clipSize == 0 && playerOwner )
 	{
-		owner->inventory.UseAmmo( ammoType, ( powerAmmo ) ? amount : ( amount * ammoRequired ) );
+		// TODO: idInventory for AIs
+		playerOwner->inventory.UseAmmo( ammoType, ( powerAmmo ) ? amount : ( amount * ammoRequired ) );
 	}
 
 	if( clipSize && ammoRequired )
@@ -3490,15 +3625,15 @@ idWeapon::Event_AddToClip
 */
 void idWeapon::Event_AddToClip( int amount )
 {
-	int ammoAvail;
+	idPlayer* playerOwner = GetPlayerOwner();
 
-	if( owner == NULL || ( common->IsClient() && !owner->IsLocallyControlled() ) )
+	if( owner == NULL || ( playerOwner && common->IsClient() && !playerOwner->IsLocallyControlled() ) )
 	{
 		return;
 	}
 
 	int oldAmmo = ammoClip.Get();
-	ammoAvail = owner->inventory.HasAmmo( ammoType, ammoRequired ) + AmmoInClip();
+	int ammoAvail = AmmoAvailable() + AmmoInClip();
 
 	ammoClip += amount;
 	if( ammoClip.Get() > clipSize )
@@ -3514,7 +3649,10 @@ void idWeapon::Event_AddToClip( int amount )
 
 	// for shared ammo we need to use the ammo when it is moved into the clip
 	int usedAmmo = ammoClip.Get() - oldAmmo;
-	owner->inventory.UseAmmo( ammoType, usedAmmo );
+	if( playerOwner )
+	{
+		playerOwner->inventory.UseAmmo( ammoType, usedAmmo );
+	}
 }
 
 /*
@@ -3535,7 +3673,7 @@ idWeapon::Event_AmmoAvailable
 */
 void idWeapon::Event_AmmoAvailable()
 {
-	int ammoAvail = owner->inventory.HasAmmo( ammoType, ammoRequired );
+	int ammoAvail = AmmoAvailable();
 	ammoAvail += AmmoInClip();
 
 	idThread::ReturnFloat( ammoAvail );
@@ -3548,7 +3686,7 @@ idWeapon::Event_TotalAmmoCount
 */
 void idWeapon::Event_TotalAmmoCount()
 {
-	int ammoAvail = owner->inventory.HasAmmo( ammoType, 1 );
+	int ammoAvail = AmmoCount();
 	idThread::ReturnFloat( ammoAvail );
 }
 
@@ -3571,14 +3709,22 @@ void idWeapon::Event_AutoReload()
 {
 	assert( owner );
 
-	if( common->IsClient() && owner != NULL && !owner->IsLocallyControlled() )
+	idPlayer* playerOwner = GetPlayerOwner();
+	if( !playerOwner )
+	{
+		// idAI always auto-reload
+		idThread::ReturnFloat( 1.0f );
+		return;
+	}
+
+	if( common->IsClient() && !playerOwner->IsLocallyControlled() )
 	{
 		idThread::ReturnFloat( 0.0f );
 		return;
 	}
 
 	idLobbyBase& lobby = session->GetActingGameStateLobbyBase();
-	lobbyUserID_t& lobbyUserID = gameLocal.lobbyUserIDs[owner->entityNumber];
+	lobbyUserID_t& lobbyUserID = gameLocal.lobbyUserIDs[playerOwner->entityNumber];
 	idThread::ReturnFloat( lobby.GetLobbyUserWeaponAutoReload( lobbyUserID ) );
 }
 
@@ -3628,7 +3774,8 @@ void idWeapon::Event_PlayAnim( int channel, const char* animname )
 	}
 	else
 	{
-		if( !( owner && owner->GetInfluenceLevel() ) )
+		idPlayer* playerOwner = GetPlayerOwner();
+		if( !( playerOwner && playerOwner->GetInfluenceLevel() ) )
 		{
 			Show();
 		}
@@ -3665,7 +3812,8 @@ void idWeapon::Event_PlayCycle( int channel, const char* animname )
 	}
 	else
 	{
-		if( !( owner && owner->GetInfluenceLevel() ) )
+		idPlayer* playerOwner = GetPlayerOwner();
+		if( !( playerOwner && playerOwner->GetInfluenceLevel() ) )
 		{
 			Show();
 		}
@@ -3726,7 +3874,11 @@ idWeapon::Event_Next
 void idWeapon::Event_Next()
 {
 	// change to another weapon if possible
-	owner->NextBestWeapon();
+	idPlayer* playerOwner = GetPlayerOwner();
+	if( playerOwner )
+	{
+		playerOwner->NextBestWeapon();
+	}
 }
 
 /*
@@ -3761,7 +3913,8 @@ void idWeapon::Event_SetSkin( const char* skinname )
 	}
 
 	// Hack, don't send message if flashlight, because clients process the flashlight instantly.
-	if( common->IsServer() && owner && owner->GetCurrentWeaponSlot() != owner->weapon_flashlight )
+	idPlayer* skinPlayerOwner = GetPlayerOwner();
+	if( common->IsServer() && owner && ( !skinPlayerOwner || skinPlayerOwner->GetCurrentWeaponSlot() != skinPlayerOwner->weapon_flashlight ) )
 	{
 		idBitMsg			msg;
 		byte				msgBuf[MAX_EVENT_PARAM_SIZE];
@@ -3934,22 +4087,31 @@ idWeapon::GetProjectileLaunchOriginAndAxis
 */
 void idWeapon::GetProjectileLaunchOriginAndAxis( idVec3& origin, idMat3& axis )
 {
-	assert( owner != NULL );
-
-	// calculate the muzzle position
-	if( barrelJointView != INVALID_JOINT && projectileDict.GetBool( "launchFromBarrel" ) )
+	idPlayer* playerOwner = GetPlayerOwner();
+	if( playerOwner )
 	{
-		// there is an explicit joint for the muzzle
-		GetGlobalJointTransform( true, barrelJointView, muzzleOrigin, muzzleAxis );
+		if( barrelJointView != INVALID_JOINT && projectileDict.GetBool( "launchFromBarrel" ) )
+		{
+			GetGlobalJointTransform( true, barrelJointView, origin, axis );
+		}
+		else
+		{
+			origin = playerViewOrigin;
+			axis = playerViewAxis;
+		}
 	}
 	else
 	{
-		// go straight out of the view
-		origin = playerViewOrigin;
-		axis = playerViewAxis;
-	}
+		owner->GetViewPos( origin, axis );
 
-	axis = playerViewAxis;	// Fix for plasma rifle not firing correctly on initial shot of a burst fire
+		if( barrelJointWorld != INVALID_JOINT )
+		{
+			idVec3 jointOrigin;
+			idMat3 jointAxis;
+			GetGlobalJointTransform( false, barrelJointWorld, jointOrigin, jointAxis );
+			origin = jointOrigin;
+		}
+	}
 }
 
 /*
@@ -3973,6 +4135,8 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 
 	assert( owner != NULL );
 
+	idPlayer* playerOwner = GetPlayerOwner();
+
 	if( IsHidden() )
 	{
 		return;
@@ -3986,7 +4150,7 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 	}
 
 	// Predict clip ammo on locally controlled MP clients.
-	if( common->IsServer() || owner->IsLocallyControlled() )
+	if( common->IsServer() || ( playerOwner && playerOwner->IsLocallyControlled() ) )
 	{
 		if( ( clipSize != 0 ) && ( ammoClip.Get() <= 0 ) )
 		{
@@ -4008,13 +4172,13 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 			}
 		}
 
-		if( clipSize == 0 )
+		if( clipSize == 0 && playerOwner )
 		{
 			//Weapons with a clip size of 0 launch straight from inventory without moving to a clip
 
 			//In D3XP we used the ammo when the ammo was moved into the clip so we don't want to
 			//use it now.
-			owner->inventory.UseAmmo( ammoType, ( powerAmmo ) ? dmgPower : ammoRequired );
+			playerOwner->inventory.UseAmmo( ammoType, ( powerAmmo ) ? dmgPower : ammoRequired );
 		}
 
 		if( clipSize && ammoRequired && !g_infiniteAmmo.GetBool() )
@@ -4057,7 +4221,7 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 	// "Predict" damage effects on clients by just spawning a local projectile that deals no damage. Used only
 	// for sound & visual effects. Damage will be handled through reliable messages to the host.
 	const bool isHitscan = projectileDict.GetBool( "net_instanthit" );
-	const bool attackerIsLocal = owner->IsLocallyControlled();
+	const bool attackerIsLocal = ( playerOwner == NULL ) || playerOwner->IsLocallyControlled();
 	const bool forceReplication = projectileDict.GetBool( "net_replicate" );
 	const bool actuallySpawnProjectile = common->IsServer() || ( attackerIsLocal && !forceReplication ) || isHitscan;
 
@@ -4066,7 +4230,10 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 
 		ownerBounds = owner->GetPhysics()->GetAbsBounds();
 
-		owner->AddProjectilesFired( num_projectiles );
+		if( playerOwner )
+		{
+			playerOwner->AddProjectilesFired( num_projectiles );
+		}
 
 		float spreadRad = DEG2RAD( spread );
 		for( i = 0; i < num_projectiles; i++ )
@@ -4112,14 +4279,14 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 				// don't synchronize this on top of the already predicted effect
 				ent->fl.networkSync = false;
 			}
-			else if( owner != NULL )
+			else if( playerOwner != NULL )
 			{
 				// Set the prediction key only for non-instanthit projectiles.
 				if( common->IsClient() )
 				{
-					owner->IncrementFireCount();
+					playerOwner->IncrementFireCount();
 				}
-				predictedKey = gameLocal.GeneratePredictionKey( this, owner, -1 );
+				predictedKey = gameLocal.GeneratePredictionKey( this, playerOwner, -1 );
 				ent->SetPredictedKey( predictedKey );
 			}
 
@@ -4147,9 +4314,9 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 			// If this is the server simulating a remote client, the client has spawned the projectile in the past.
 			// The server will catch-up the projectile so that its position will be as if the projectile had spawned
 			// when the client fired it.
-			if( common->IsServer() && owner != NULL && !owner->IsLocallyControlled() && !projectileDict.GetBool( "net_instanthit" ) )
+			if( common->IsServer() && playerOwner != NULL && !playerOwner->IsLocallyControlled() && !projectileDict.GetBool( "net_instanthit" ) )
 			{
-				int serverTimeOnClient = owner->usercmd.serverGameMilliseconds;
+				int serverTimeOnClient = playerOwner->usercmd.serverGameMilliseconds;
 
 				int delta = idMath::ClampInt( 0, cg_projectile_clientAuthoritative_maxCatchup.GetInteger(), gameLocal.GetServerGameTimeMs() - serverTimeOnClient );
 
@@ -4185,7 +4352,10 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 		MuzzleFlashLight();
 	}
 
-	owner->WeaponFireFeedback( &weaponDef->dict );
+	if( playerOwner )
+	{
+		playerOwner->WeaponFireFeedback( &weaponDef->dict );
+	}
 
 	// reset muzzle smoke
 	weaponSmokeStartTime = gameLocal.realClientTime;
@@ -4210,6 +4380,8 @@ void idWeapon::Event_LaunchProjectilesEllipse( int num_projectiles, float spread
 	idVec3			muzzle_pos;
 	idBounds		ownerBounds, projBounds;
 
+	idPlayer* playerOwner = GetPlayerOwner();
+
 	if( IsHidden() )
 	{
 		return;
@@ -4223,17 +4395,17 @@ void idWeapon::Event_LaunchProjectilesEllipse( int num_projectiles, float spread
 	}
 
 	// Predict clip ammo on locally controlled MP clients.
-	if( common->IsServer() || owner->IsLocallyControlled() )
+	if( common->IsServer() || ( playerOwner && playerOwner->IsLocallyControlled() ) )
 	{
 		if( ( clipSize != 0 ) && ( ammoClip.Get() <= 0 ) )
 		{
 			return;
 		}
 
-		if( clipSize == 0 )
+		if( clipSize == 0 && playerOwner )
 		{
 			//Weapons with a clip size of 0 launch strait from inventory without moving to a clip
-			owner->inventory.UseAmmo( ammoType, ammoRequired );
+			playerOwner->inventory.UseAmmo( ammoType, ammoRequired );
 		}
 
 		// see Event_LaunchProjectiles
@@ -4276,7 +4448,7 @@ void idWeapon::Event_LaunchProjectilesEllipse( int num_projectiles, float spread
 	// "Predict" damage effects on clients by just spawning a local projectile that deals no damage. Used only
 	// for sound & visual effects. Damage will be handled through reliable messages to the host.
 	const bool isHitscan = projectileDict.GetBool( "net_instanthit" );
-	const bool attackerIsLocal = owner->IsLocallyControlled();
+	const bool attackerIsLocal = ( playerOwner == NULL ) || playerOwner->IsLocallyControlled();
 	//const bool actuallySpawnProjectile = common->IsServer() || attackerIsLocal || isHitscan;
 	const bool forceReplication = projectileDict.GetBool( "net_replicate" );
 	const bool actuallySpawnProjectile = common->IsServer() || ( attackerIsLocal && !forceReplication ) || isHitscan;
@@ -4285,7 +4457,10 @@ void idWeapon::Event_LaunchProjectilesEllipse( int num_projectiles, float spread
 	{
 		ownerBounds = owner->GetPhysics()->GetAbsBounds();
 
-		owner->AddProjectilesFired( num_projectiles );
+		if( playerOwner )
+		{
+			playerOwner->AddProjectilesFired( num_projectiles );
+		}
 
 		float spreadRadA = DEG2RAD( spreada );
 		float spreadRadB = DEG2RAD( spreadb );
@@ -4325,14 +4500,14 @@ void idWeapon::Event_LaunchProjectilesEllipse( int num_projectiles, float spread
 				// don't synchronize this on top of the already predicted effect
 				ent->fl.networkSync = false;
 			}
-			else if( owner != NULL )
+			else if( playerOwner != NULL )
 			{
 				// Set the prediction key only for non-instanthit projectiles.
 				if( common->IsClient() )
 				{
-					owner->IncrementFireCount();
+					playerOwner->IncrementFireCount();
 				}
-				predictedKey = gameLocal.GeneratePredictionKey( this, owner, -1 );
+				predictedKey = gameLocal.GeneratePredictionKey( this, playerOwner, -1 );
 				ent->SetPredictedKey( predictedKey );
 			}
 
@@ -4360,9 +4535,9 @@ void idWeapon::Event_LaunchProjectilesEllipse( int num_projectiles, float spread
 			// If this is the server simulating a remote client, the client has spawned the projectile in the past.
 			// The server will catch-up the projectile so that its position will be as if the projectile had spawned
 			// when the client fired it.
-			if( common->IsServer() && owner != NULL && !owner->IsLocallyControlled() && !projectileDict.GetBool( "net_instanthit" ) )
+			if( common->IsServer() && playerOwner != NULL && !playerOwner->IsLocallyControlled() && !projectileDict.GetBool( "net_instanthit" ) )
 			{
-				int serverTimeOnClient = owner->usercmd.serverGameMilliseconds;
+				int serverTimeOnClient = playerOwner->usercmd.serverGameMilliseconds;
 
 				int delta = idMath::ClampInt( 0, cg_projectile_clientAuthoritative_maxCatchup.GetInteger(), gameLocal.GetServerGameTimeMs() - serverTimeOnClient );
 
@@ -4400,7 +4575,10 @@ void idWeapon::Event_LaunchProjectilesEllipse( int num_projectiles, float spread
 		MuzzleFlashLight();
 	}
 
-	owner->WeaponFireFeedback( &weaponDef->dict );
+	if( playerOwner )
+	{
+		playerOwner->WeaponFireFeedback( &weaponDef->dict );
+	}
 
 	weaponSmokeStartTime = gameLocal.realClientTime;
 }
@@ -4411,6 +4589,11 @@ void idWeapon::Event_LaunchProjectilesEllipse( int num_projectiles, float spread
 */
 void idWeapon::Event_LaunchPowerup( const char* powerup, float duration, int useAmmo )
 {
+	idPlayer* playerOwner = GetPlayerOwner();
+	if( !playerOwner )
+	{
+		return;
+	}
 
 	if( IsHidden() )
 	{
@@ -4420,12 +4603,12 @@ void idWeapon::Event_LaunchPowerup( const char* powerup, float duration, int use
 	// check if we're out of ammo
 	if( useAmmo )
 	{
-		int ammoAvail = owner->inventory.HasAmmo( ammoType, ammoRequired );
+		int ammoAvail = playerOwner->inventory.HasAmmo( ammoType, ammoRequired );
 		if( !ammoAvail )
 		{
 			return;
 		}
-		owner->inventory.UseAmmo( ammoType, ammoRequired );
+		playerOwner->inventory.UseAmmo( ammoType, ammoRequired );
 	}
 
 	// set the shader parm to the time of last projectile firing,
@@ -4445,7 +4628,7 @@ void idWeapon::Event_LaunchPowerup( const char* powerup, float duration, int use
 		MuzzleFlashLight();
 	}
 
-	owner->Give( powerup, va( "%f", duration ), ITEM_GIVE_FEEDBACK | ITEM_GIVE_UPDATE_STATE | ITEM_GIVE_FROM_WEAPON );
+	playerOwner->Give( powerup, va( "%f", duration ), ITEM_GIVE_FEEDBACK | ITEM_GIVE_UPDATE_STATE | ITEM_GIVE_FROM_WEAPON );
 
 
 }
@@ -4551,10 +4734,15 @@ void idWeapon::Event_Melee()
 		return;
 	}
 
+	idPlayer* playerOwner = GetPlayerOwner();
+
 	if( !common->IsClient() )
 	{
+		// No powerups are granted to idAIs
+		float meleeDistanceMod = playerOwner ? playerOwner->PowerUpModifier( MELEE_DISTANCE ) : 1.0f;
+
 		idVec3 start = playerViewOrigin;
-		idVec3 end = start + playerViewAxis[0] * ( meleeDistance * owner->PowerUpModifier( MELEE_DISTANCE ) );
+		idVec3 end = start + playerViewAxis[0] * ( meleeDistance * meleeDistanceMod );
 		gameLocal.clip.TracePoint( tr, start, end, MASK_SHOT_RENDERMODEL, owner );
 		if( tr.fraction < 1.0f )
 		{
@@ -4581,7 +4769,8 @@ void idWeapon::Event_Melee()
 		{
 
 			float push = meleeDef->dict.GetFloat( "push" );
-			idVec3 impulse = -push * owner->PowerUpModifier( SPEED ) * tr.c.normal;
+			float speedMod = playerOwner ? playerOwner->PowerUpModifier( SPEED ) : 1.0f;
+			idVec3 impulse = -push * speedMod * tr.c.normal;
 
 			if( gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) && ( ent->IsType( idActor::Type ) || ent->IsType( idAFAttachment::Type ) ) )
 			{
@@ -4595,14 +4784,15 @@ void idWeapon::Event_Melee()
 			if( common->IsMultiplayer()
 					&& weaponDef->dict.GetBool( "stealing" )
 					&& ent->IsType( idPlayer::Type )
-					&& !owner->PowerUpActive( BERSERK )
+					&& playerOwner
+					&& !playerOwner->PowerUpActive( BERSERK )
 					&& ( ( gameLocal.gameType != GAME_TDM ) || gameLocal.serverInfo.GetBool( "si_teamDamage" ) || ( owner->team != static_cast< idPlayer* >( ent )->team ) )
 			  )
 			{
 
 				if( !gameLocal.mpGame.IsGametypeFlagBased() )
 				{
-					owner->StealWeapon( static_cast< idPlayer* >( ent ) );
+					playerOwner->StealWeapon( static_cast< idPlayer* >( ent ) );
 				}
 			}
 
@@ -4612,7 +4802,7 @@ void idWeapon::Event_Melee()
 				meleeDef->dict.GetVector( "kickDir", "0 0 0", kickDir );
 				globalKickDir = muzzleAxis * kickDir;
 				//Adjust the melee powerup modifier for the invulnerability boss fight
-				float mod = owner->PowerUpModifier( MELEE_DAMAGE );
+				float mod = playerOwner ? playerOwner->PowerUpModifier( MELEE_DAMAGE ) : 1.0f;
 				if( !strcmp( ent->GetEntityDefName(), "monster_hunter_invul" ) )
 				{
 					//Only do a quater of the damage mod
@@ -4628,7 +4818,7 @@ void idWeapon::Event_Melee()
 				if( ent->spawnArgs.GetBool( "bleed" ) )
 				{
 
-					hitSound = meleeDef->dict.GetString( owner->PowerUpActive( BERSERK ) ? "snd_hit_berserk" : "snd_hit" );
+					hitSound = meleeDef->dict.GetString( ( playerOwner && playerOwner->PowerUpActive( BERSERK ) ) ? "snd_hit_berserk" : "snd_hit" );
 
 					ent->AddDamageEffect( tr, impulse, meleeDef->dict.GetString( "classname" ) );
 
@@ -4681,12 +4871,18 @@ void idWeapon::Event_Melee()
 		}
 
 		idThread::ReturnInt( hit );
-		owner->WeaponFireFeedback( &weaponDef->dict );
+		if( playerOwner )
+		{
+			playerOwner->WeaponFireFeedback( &weaponDef->dict );
+		}
 		return;
 	}
 
 	idThread::ReturnInt( 0 );
-	owner->WeaponFireFeedback( &weaponDef->dict );
+	if( playerOwner )
+	{
+		playerOwner->WeaponFireFeedback( &weaponDef->dict );
+	}
 }
 
 /*
@@ -4725,7 +4921,8 @@ Toss a shell model out from the breach if the bone is present
 */
 void idWeapon::Event_EjectBrass()
 {
-	if( !g_showBrass.GetBool() || !owner->CanShowWeaponViewmodel() )
+	idPlayer* playerOwner = GetPlayerOwner();
+	if( !g_showBrass.GetBool() || ( playerOwner && !playerOwner->CanShowWeaponViewmodel() ) )
 	{
 		return;
 	}
@@ -4777,7 +4974,8 @@ void idWeapon::Event_IsInvisible()
 		idThread::ReturnFloat( 0 );
 		return;
 	}
-	idThread::ReturnFloat( owner->PowerUpActive( INVISIBILITY ) ? 1 : 0 );
+	idPlayer* playerOwner = GetPlayerOwner();
+	idThread::ReturnFloat( ( playerOwner && playerOwner->PowerUpActive( INVISIBILITY ) ) ? 1 : 0 );
 }
 
 /*
@@ -4807,9 +5005,10 @@ void idWeapon::ForceAmmoInClip()
 void idWeapon::UpdateGrabber()
 {
 	// moved from PresentWeapon (with changes)
-	if( !common->IsMultiplayer() && grabberState != -1 )
+	idPlayer* playerOwner = GetPlayerOwner();
+	if( !common->IsMultiplayer() && grabberState != -1 && playerOwner )
 	{
-		grabberState = grabber.Update( owner, hide );
+		grabberState = grabber.Update( playerOwner, hide );
 	}
 }
 

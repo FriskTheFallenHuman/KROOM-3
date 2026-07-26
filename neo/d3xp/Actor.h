@@ -56,6 +56,9 @@ extern const idEventDef AI_GetBlendFrames;
 extern const idEventDef AI_SetState;
 
 class idDeclParticle;
+class idWeapon;
+
+extern const int WEAPON_DROP_TIME;
 
 class idAnimState
 {
@@ -196,6 +199,9 @@ public:
 
 	void					Attach( idEntity* ent );
 
+	void					SetupHeldWeapon( const char* weaponDefName );
+	void					UpdateHeldWeapon();
+
 	virtual void			Teleport( const idVec3& origin, const idAngles& angles, idEntity* destination );
 
 	virtual	renderView_t* 	GetRenderView();
@@ -235,6 +241,10 @@ protected:
 	bool						use_combat_bbox;	// whether to use the bounding box for combat collision
 	idEntityPtr<idAFAttachment>	head;
 	idList<copyJoints_t, TAG_ACTOR>		copyJoints;			// copied from the body animation to the head model
+
+	idEntityPtr<idWeapon>		heldWeapon;
+	int							heldWeaponAmmo;
+	int							heldWeaponFireEndTime;
 
 	// state variables
 	const function_t*		state;

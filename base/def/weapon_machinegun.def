@@ -16,6 +16,7 @@ entityDef weapon_machinegun {
 	"model"						"models/weapons/machinegun/w_machinegun.lwo"
 	"model_view" 				"viewmodel_machinegun"
 	"model_world" 				"worldmodel_machinegun"
+	"model_world_npc"			"worldmodel_zsec_machinegun"
 	"joint_attach"				"MGATTACHER"
 	"def_dropItem"				"moveable_item_machinegun"
 
@@ -35,6 +36,7 @@ entityDef weapon_machinegun {
 
 	"weapon_scriptobject"		"weapon_machinegun"
 	"def_projectile"			"projectile_bullet_machinegun"
+	"def_projectile_npc"		"projectile_bullet_zsec_machinegun"
 	"ammoType"					"ammo_clip"
 	"ammoRequired"				"1"
 	"clipSize"					"60"
@@ -83,6 +85,8 @@ entityDef weapon_machinegun {
 	"skin_invisible"			"skins/machinegun_invis"
 
 	"spread"					"1"
+	"attack_range_npc"			"260"
+	"fire_hold_time_npc"		"940"
 
 	"controllerShakeHighMag"	"0.5"
 	"controllerShakeHighTime"	"100"
@@ -109,6 +113,12 @@ model worldmodel_machinegun {
 	anim reload					models/md5/weapons/machinegun_world/machinegun_reload.md5anim
 	anim noammo					models/md5/weapons/machinegun_world/machinegun_idle.md5anim
 	anim putaway				models/md5/weapons/machinegun_world/machinegun_idle.md5anim
+}
+
+model worldmodel_zsec_machinegun {
+	"inherit"						"worldmodel_machinegun"
+	offset							( -3 3 -6 )
+	rotation						( -90 0 0 )
 }
 
 model viewmodel_machinegun {
@@ -227,4 +237,24 @@ entityDef projectile_bullet_machinegun {
 	"snd_liquid"				"bullet_impact_liquid"
 	"snd_plastic"				"small_plastic"
 	//"snd_impact"				"bullet_impact_metal"
+}
+
+entityDef damage_bullet_zsec_machinegun {
+	"inherit"					"damage_bullet_machinegun"
+	"damage"					"3"
+
+	"knockback"					"1"
+}
+
+entityDef projectile_bullet_zsec_machinegun {
+	"inherit"					"projectile_bullet_machinegun"
+
+	"tracers"					"1"
+	"model_tracer"				"models/particles/tracer/tracer.lwo"
+
+	"def_damage"				"damage_bullet_zsec_machinegun"
+
+	"launchFromBarrel"			"1"
+	"velocity"					"2000 0 0"	// slowed down for tracer effect
+	"mass"						"2"
 }

@@ -1050,6 +1050,11 @@ void idAI::Spawn()
 	// init the move variables
 	StopMove( MOVE_STATUS_DONE );
 
+	idStr weaponName;
+	if( spawnArgs.GetString( "def_weapon", "", weaponName ) && weaponName.Length() )
+	{
+		SetupHeldWeapon( weaponName );
+	}
 
 	spawnArgs.GetBool( "spawnClearMoveables", "0", spawnClearMoveables );
 }
@@ -1075,25 +1080,49 @@ void idAI::InitMuzzleFlash()
 	const char*			shader;
 	idVec3				flashColor;
 
-	spawnArgs.GetString( "mtr_flashShader", "muzzleflash", &shader );
-	spawnArgs.GetVector( "flashColor", "0 0 0", flashColor );
-	float flashRadius = spawnArgs.GetFloat( "flashRadius" );
-	flashTime = SEC2MS( spawnArgs.GetFloat( "flashTime", "0.25" ) );
+	spawnArgs.GetString( "mtr_flashShader", "lights/defaultPointLight", &shader );
+	spawnArgs.GetVector( "flashColor", "1 0.82 0.45", flashColor );
+	float flashRadius = spawnArgs.GetFloat( "flashRadius", "0" );
+	if( flashRadius <= 0.0f )
+	{
+		flashRadius = spawnArgs.GetFloat( "muzzleLightRadius", "150" );
+	}
+	if( flashRadius <= 0.0f )
+	{
+		flashRadius = 150.0f;
+	}
+
+	flashTime = SEC2MS( spawnArgs.GetFloat( "flashTime", "0.12" ) );
+	if( flashTime <= 0 )
+	{
+		flashTime = 120;
+	}
 
 	memset( &worldMuzzleFlash, 0, sizeof( worldMuzzleFlash ) );
 
 	worldMuzzleFlash.pointLight = true;
+	//worldMuzzleFlash.noShadows = true;
 	worldMuzzleFlash.shader = declManager->FindMaterial( shader, false );
+	if( worldMuzzleFlash.shader == NULL )
+	{
+		worldMuzzleFlash.shader = declManager->FindMaterial( "muzzleflash", false );
+	}
 	worldMuzzleFlash.shaderParms[ SHADERPARM_RED ] = flashColor[0];
 	worldMuzzleFlash.shaderParms[ SHADERPARM_GREEN ] = flashColor[1];
 	worldMuzzleFlash.shaderParms[ SHADERPARM_BLUE ] = flashColor[2];
 	worldMuzzleFlash.shaderParms[ SHADERPARM_ALPHA ] = 1.0f;
 	worldMuzzleFlash.shaderParms[ SHADERPARM_TIMESCALE ] = 1.0f;
+	worldMuzzleFlash.shaderParms[ SHADERPARM_TIMEOFFSET ] = 0.0f;
 	worldMuzzleFlash.lightRadius[0] = flashRadius;
 	worldMuzzleFlash.lightRadius[1]	= flashRadius;
 	worldMuzzleFlash.lightRadius[2]	= flashRadius;
 
+	if( worldMuzzleFlashHandle != -1 )
+	{
+		gameRenderWorld->FreeLightDef( worldMuzzleFlashHandle );
+	}
 	worldMuzzleFlashHandle = -1;
+	muzzleFlashEnd = 0;
 }
 
 /*
@@ -1225,6 +1254,8 @@ void idAI::Think()
 		deltaViewAngles.Zero();
 		viewAxis = idAngles( 0, current_yaw, 0 ).ToMat3();
 
+		UpdateHeldWeapon();
+
 		if( num_cinematics )
 		{
 			if( !IsHidden() && torsoAnim.AnimDone( 0 ) )
@@ -1309,11 +1340,18 @@ void idAI::Think()
 		// UpdateAnimation won't call frame commands when hidden, so call them here when we allow hidden movement
 		animator.ServiceAnims( gameLocal.previousTime, gameLocal.time );
 	}
-	/*	this still draws in retail builds.. not sure why.. don't care at this point.
-		if ( !aas && developer.GetBool() && !fl.hidden && !num_cinematics ) {
-			gameRenderWorld->DrawText( "No AAS", physicsObj.GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 1 );
+
+	if( health > 0 )
+	{
+		idStr tmp;
+		if( developer.GetBool() && spawnArgs.GetString( "use_aas", "", tmp ) )
+		{
+			if( !aas && !fl.hidden && !num_cinematics )
+			{
+				gameRenderWorld->DrawText( "No AAS", this->GetEyePosition() + idVec3( 0.0f, 0.0f, 12.0f ), 0.75f, colorYellow, gameLocal.GetLocalPlayer()->viewAngles.ToMat3() );
+			}
 		}
-	*/
+	}
 
 	UpdateMuzzleFlash();
 	UpdateAnimation();
@@ -3958,6 +3996,34 @@ void idAI::Killed( idEntity* inflictor, idEntity* attacker, int damage, const id
 		noGrab = true;
 	}
 
+	// Drop held weapon
+	if( heldWeapon.GetEntity() )
+	{
+		idWeapon* weap = heldWeapon.GetEntity();
+
+		// Tell the weapon its owner died.
+		weap->OwnerDied();
+
+		if( weap->CanDrop() )
+		{
+			// Forward and up vectors from the AI's view axis
+			idVec3 forward = viewAxis[0];
+			idVec3 up = viewAxis[2];
+
+			// Add some random spread to the drop velocity
+			idVec3 velocity = 150.0f * forward + 150.0f * up;
+			velocity.x += gameLocal.random.CRandomFloat() * 50.0f;
+			velocity.y += gameLocal.random.CRandomFloat() * 50.0f;
+			velocity.z += gameLocal.random.CRandomFloat() * 30.0f;
+
+			// Drop it.
+			weap->DropItem( velocity, 500, 20000, false );
+		}
+
+		weap->PostEventMS( &EV_Remove, 0 );
+		heldWeapon = NULL;
+	}
+
 	restartParticles = false;
 
 	state = GetScriptFunction( "state_Killed" );
@@ -4688,6 +4754,31 @@ void idAI::CreateProjectileClipModel() const
 
 /*
 =====================
+idAI::GetViewPos
+=====================
+*/
+void idAI::GetViewPos( idVec3& origin, idMat3& axis ) const
+{
+	origin = GetEyePosition();
+
+	idActor* enemyActor = enemy.GetEntity();
+	if( enemyActor )
+	{
+		idVec3 headPos, chestPos;
+		enemyActor->GetAIAimTargets( enemyActor->GetPhysics()->GetOrigin(), headPos, chestPos );
+
+		idVec3 dir = chestPos - origin;
+		dir.Normalize();
+		axis = dir.ToMat3();
+	}
+	else
+	{
+		axis = viewAxis;
+	}
+}
+
+/*
+=====================
 idAI::GetAimDir
 =====================
 */
@@ -4699,9 +4790,45 @@ bool idAI::GetAimDir( const idVec3& firePos, idEntity* aimAtEnt, const idEntity*
 	float	max_height;
 	bool	result;
 
-	// if no aimAtEnt or projectile set
-	if( !aimAtEnt || !projectileDef )
+	// if no aimAtEnt set
+	if( !aimAtEnt )
 	{
+		aimDir = viewAxis[ 0 ] * physicsObj.GetGravityAxis();
+		return false;
+	}
+
+	if( !projectileDef )
+	{
+		// We use heldWeapon to determine the AIM direction this NPC
+		// Can shot at
+		if( heldWeapon.GetEntity() )
+		{
+			if( aimAtEnt->IsType( idActor::Type ) )
+			{
+				static_cast<idActor*>( aimAtEnt )->GetAIAimTargets( aimAtEnt->GetPhysics()->GetOrigin(), targetPos1, targetPos2 );
+			}
+			else
+			{
+				targetPos1 = aimAtEnt->GetPhysics()->GetAbsBounds().GetCenter();
+				targetPos2 = targetPos1;
+			}
+
+			delta = targetPos1 - firePos;
+			aimDir = delta;
+			aimDir.Normalize();
+
+			const idDeclEntityDef* weaponDeclDef = heldWeapon.GetEntity()->GetDeclEntityDef();
+			float maxRange = weaponDeclDef ? weaponDeclDef->dict.GetFloat( "attack_range_npc", "0" ) : 0.0f;
+			if( maxRange > 0.0f && delta.LengthFast() > maxRange )
+			{
+				return false;
+			}
+
+			trace_t tr;
+			gameLocal.clip.TracePoint( tr, firePos, targetPos1, MASK_SHOT_RENDERMODEL, ignore );
+			return ( tr.fraction >= 1.0f || tr.c.entityNum == aimAtEnt->entityNumber );
+		}
+
 		aimDir = viewAxis[ 0 ] * physicsObj.GetGravityAxis();
 		return false;
 	}
@@ -5298,26 +5425,66 @@ void idAI::TriggerWeaponEffects( const idVec3& muzzle )
 	renderEntity.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.time );
 	renderEntity.shaderParms[ SHADERPARM_DIVERSITY ] = gameLocal.random.CRandomFloat();
 
+	idVec3 flashColor;
+	spawnArgs.GetVector( "flashColor", "1 0.82 0.45", flashColor );
+	if( flashColor.LengthSqr() <= 0.0001f )
+	{
+		flashColor.Set( 1.0f, 0.82f, 0.45f );
+	}
+
+	float flashRadius = spawnArgs.GetFloat( "flashRadius", "0" );
+	if( flashRadius <= 0.0f )
+	{
+		flashRadius = spawnArgs.GetFloat( "muzzleLightRadius", "150" );
+	}
+	if( flashRadius <= 0.0f )
+	{
+		flashRadius = 150.0f;
+	}
+
+	if( flashTime <= 0 )
+	{
+		flashTime = SEC2MS( spawnArgs.GetFloat( "flashTime", "0.12" ) );
+		if( flashTime <= 0 )
+		{
+			flashTime = 120;
+		}
+	}
+
 	if( flashJointWorld != INVALID_JOINT )
 	{
 		GetJointWorldTransform( flashJointWorld, gameLocal.time, org, axis );
-
-		if( worldMuzzleFlash.lightRadius.x > 0.0f )
-		{
-			worldMuzzleFlash.axis = axis;
-			worldMuzzleFlash.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.time );
-			if( worldMuzzleFlashHandle != - 1 )
-			{
-				gameRenderWorld->UpdateLightDef( worldMuzzleFlashHandle, &worldMuzzleFlash );
-			}
-			else
-			{
-				worldMuzzleFlashHandle = gameRenderWorld->AddLightDef( &worldMuzzleFlash );
-			}
-			muzzleFlashEnd = gameLocal.time + flashTime;
-			UpdateVisuals();
-		}
 	}
+	else
+	{
+		org = muzzle;
+		axis = viewAxis * physicsObj.GetGravityAxis();
+	}
+
+	worldMuzzleFlash.origin = org;
+	worldMuzzleFlash.axis = axis;
+	//worldMuzzleFlash.noShadows = true;
+	worldMuzzleFlash.pointLight = true;
+	worldMuzzleFlash.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.time );
+	worldMuzzleFlash.shaderParms[SHADERPARM_RED] = flashColor.x;
+	worldMuzzleFlash.shaderParms[SHADERPARM_GREEN] = flashColor.y;
+	worldMuzzleFlash.shaderParms[SHADERPARM_BLUE] = flashColor.z;
+	worldMuzzleFlash.shaderParms[SHADERPARM_ALPHA] = 1.0f;
+	worldMuzzleFlash.lightRadius[0] = flashRadius;
+	worldMuzzleFlash.lightRadius[1] = flashRadius;
+	worldMuzzleFlash.lightRadius[2] = flashRadius;
+
+	muzzleFlashEnd = gameLocal.time + flashTime;
+
+	if( worldMuzzleFlashHandle != - 1 )
+	{
+		gameRenderWorld->UpdateLightDef( worldMuzzleFlashHandle, &worldMuzzleFlash );
+	}
+	else
+	{
+		worldMuzzleFlashHandle = gameRenderWorld->AddLightDef( &worldMuzzleFlash );
+	}
+	UpdateVisuals();
 }
 
 /*
@@ -5327,23 +5494,58 @@ idAI::UpdateMuzzleFlash
 */
 void idAI::UpdateMuzzleFlash()
 {
-	if( worldMuzzleFlashHandle != -1 )
+	if( worldMuzzleFlashHandle == -1 )
 	{
-		if( gameLocal.time >= muzzleFlashEnd )
-		{
-			gameRenderWorld->FreeLightDef( worldMuzzleFlashHandle );
-			worldMuzzleFlashHandle = -1;
-		}
-		else
-		{
-			idVec3 muzzle;
-			animator.GetJointTransform( flashJointWorld, gameLocal.time, muzzle, worldMuzzleFlash.axis );
-			animator.GetJointTransform( flashJointWorld, gameLocal.time, muzzle, worldMuzzleFlash.axis );
-			muzzle = physicsObj.GetOrigin() + ( muzzle + modelOffset ) * viewAxis * physicsObj.GetGravityAxis();
-			worldMuzzleFlash.origin = muzzle;
-			gameRenderWorld->UpdateLightDef( worldMuzzleFlashHandle, &worldMuzzleFlash );
-		}
+		return;
 	}
+
+	if( IsHidden() || gameLocal.time >= muzzleFlashEnd )
+	{
+		gameRenderWorld->FreeLightDef( worldMuzzleFlashHandle );
+		worldMuzzleFlashHandle = -1;
+		muzzleFlashEnd = 0;
+		return;
+	}
+
+	// Follow the muzzle joint while the flash is alive.
+	if( flashJointWorld != INVALID_JOINT )
+	{
+		GetJointWorldTransform( flashJointWorld, gameLocal.time, worldMuzzleFlash.origin, worldMuzzleFlash.axis );
+	}
+
+	// Fade the actual light, not just the material time parm.  This gives the AI
+	// muzzle flash the same behavior as the idWeapon weapon-fire light: bright at
+	// the shot, then quickly decays while staying attached to the joint.
+	float fade = 1.0f;
+	if( flashTime > 0 )
+	{
+		fade = ( float )( muzzleFlashEnd - gameLocal.time ) / ( float )flashTime;
+	}
+	if( fade < 0.0f )
+	{
+		fade = 0.0f;
+	}
+	else if( fade > 1.0f )
+	{
+		fade = 1.0f;
+	}
+
+	// Smooth the fade so it starts hot and falls off faster near the end.
+	fade = fade * fade;
+
+	idVec3 flashColor;
+	spawnArgs.GetVector( "flashColor", "1 0.82 0.45", flashColor );
+	if( flashColor.LengthSqr() <= 0.0001f )
+	{
+		flashColor.Set( 1.0f, 0.82f, 0.45f );
+	}
+
+	worldMuzzleFlash.shaderParms[SHADERPARM_RED] = flashColor.x * fade;
+	worldMuzzleFlash.shaderParms[SHADERPARM_GREEN] = flashColor.y * fade;
+	worldMuzzleFlash.shaderParms[SHADERPARM_BLUE] = flashColor.z * fade;
+	worldMuzzleFlash.shaderParms[SHADERPARM_ALPHA] = fade;
+
+	gameRenderWorld->UpdateLightDef( worldMuzzleFlashHandle, &worldMuzzleFlash );
 }
 
 /*
@@ -5353,6 +5555,13 @@ idAI::Hide
 */
 void idAI::Hide()
 {
+	if( worldMuzzleFlashHandle != -1 )
+	{
+		gameRenderWorld->FreeLightDef( worldMuzzleFlashHandle );
+		worldMuzzleFlashHandle = -1;
+	}
+	muzzleFlashEnd = 0;
+
 	idActor::Hide();
 	fl.takedamage = false;
 	physicsObj.SetContents( 0 );

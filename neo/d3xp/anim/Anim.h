@@ -345,12 +345,14 @@ public:
 	const int* 					GetChannelJoints( int channel ) const;
 
 	const idVec3& 				GetVisualOffset() const;
+	const idQuat&				GetVisualRotation() const;
 
 private:
 	void						CopyDecl( const idDeclModelDef* decl );
 	bool						ParseAnim( idLexer& src, int numDefaultAnims );
 
 private:
+	idQuat						rotation;
 	idVec3						offset;
 	idList<jointInfo_t, TAG_ANIM>			joints;
 	idList<int, TAG_ANIM>					jointParents;

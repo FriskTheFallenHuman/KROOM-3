@@ -4,6 +4,8 @@ scriptEvent void setAux(float aux);
 scriptEvent void beginLightSync();
 scriptEvent void setNetfiring(float isNetfiring);
 scriptEvent void setWeaponGuiParm(string key, string value);
+scriptEvent	void fireWeaponBegin();
+scriptEvent	void fireWeaponEnd();
 
 // monsters
 scriptEvent void cclearGrabbed();

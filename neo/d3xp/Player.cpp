@@ -73,9 +73,6 @@ const int LADDER_RUNG_DISTANCE = 32;
 // amount of health per dose from the health station
 const int HEALTH_PER_DOSE = 10;
 
-// time before a weapon dropped to the floor disappears
-const int WEAPON_DROP_TIME = 20 * 1000;
-
 // time before a next or prev weapon switch happens
 const int WEAPON_SWITCH_DELAY = 150;
 

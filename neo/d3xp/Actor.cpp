@@ -31,6 +31,8 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "Game_local.h"
 
+// time before a weapon dropped to the floor disappears
+const int WEAPON_DROP_TIME = 20 * 1000;
 
 /***********************************************************************
 
@@ -499,6 +501,10 @@ idActor::idActor()
 	finalBoss			= false;
 	damageNotByFists	= false;		// for killed by fists achievement
 
+	heldWeapon				= NULL;
+	heldWeaponAmmo			= 0;
+	heldWeaponFireEndTime	= 0;
+
 	attachments.SetGranularity( 1 );
 
 	enemyNode.SetOwner( this );
@@ -527,6 +533,9 @@ idActor::~idActor()
 
 	delete combatModel;
 	combatModel = NULL;
+
+	delete heldWeapon.GetEntity();
+	heldWeapon = NULL;
 
 	if( head.GetEntity() )
 	{
@@ -990,6 +999,8 @@ void idActor::Save( idSaveGame* savefile ) const
 
 	savefile->WriteInt( damageCap );
 
+	heldWeapon.Save( savefile );
+
 }
 
 /*
@@ -1109,6 +1120,8 @@ void idActor::Restore( idRestoreGame* savefile )
 	}
 
 	savefile->ReadInt( damageCap );
+
+	heldWeapon.Restore( savefile );
 }
 
 /*
@@ -1989,6 +2002,55 @@ void idActor::Attach( idEntity* ent )
 	ent->SetAxis( newAxis );
 	ent->BindToJoint( this, joint, true );
 	ent->cinematic = cinematic;
+}
+
+/*
+================
+idActor::SetupHeldWeapon
+================
+*/
+void idActor::SetupHeldWeapon( const char* weaponDefName )
+{
+	if( heldWeapon.GetEntity() )
+	{
+		return;
+	}
+
+	if( !weaponDefName || !weaponDefName[0] )
+	{
+		return;
+	}
+
+	idEntity* ent = gameLocal.SpawnEntityType( idWeapon::Type, NULL );
+	idWeapon* newWeapon = static_cast<idWeapon*>( ent );
+
+	heldWeapon = newWeapon;
+	newWeapon->SetOwner( this );
+
+	idWeapon::CacheWeapon( weaponDefName );
+
+	newWeapon->GetWeaponDef( weaponDefName, 0 );
+	newWeapon->ForceAmmoInClip();
+	newWeapon->Raise();
+}
+
+/*
+================
+idActor::UpdateHeldWeapon
+================
+*/
+void idActor::UpdateHeldWeapon()
+{
+	if( heldWeapon.GetEntity() )
+	{
+		if( heldWeaponFireEndTime && gameLocal.time >= heldWeaponFireEndTime )
+		{
+			heldWeapon.GetEntity()->EndAttack();
+			heldWeaponFireEndTime = 0;
+		}
+
+		heldWeapon.GetEntity()->PresentWeapon( false );
+	}
 }
 
 /*
