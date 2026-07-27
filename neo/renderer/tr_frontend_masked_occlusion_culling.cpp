@@ -33,7 +33,7 @@ If you have questions concerning this license or the applicable additional terms
 	#if MOC_MULTITHREADED
 		#include "CullingThreadPool.h"
 	#else
-		#include "moc/MaskedOcclusionCulling.h"
+		#include <MaskedOcclusionCulling.h>
 	#endif
 #endif
 

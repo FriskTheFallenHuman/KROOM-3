@@ -33,7 +33,7 @@ extern "C"
 }
 #endif
 
-#include "libbinkdec/include/BinkDecoder.h"
+#include <BinkDecoder.h>
 
 extern idCVar s_volume_dB;
 

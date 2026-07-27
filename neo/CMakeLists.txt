@@ -22,6 +22,7 @@ option(ONATIVE "Optimize for the host CPU" OFF)
 option(REPRODUCIBLE_BUILD "Replace __DATE__ and __TIME__ by hardcoded values for reproducible builds." OFF)
 option(WINRT "Build for Windows RT" OFF)
 option(WINDOWS10 "Build for Windows 10" ON)
+option(USE_SYSTEM_LIBS "Prefer system-installed libraries over FetchContent" OFF)
 
 include(CPUDefine)
 
@@ -58,23 +59,34 @@ if (FORCE_COLOR_OUTPUT)
 	endif ()
 endif ()
 
+macro(SET_FORCED_OPTION option value)
+	set(${option} ${value} CACHE INTERNAL "" FORCE)
+endmacro()
+
+include(FetchContent)
+macro(find_or_fetch PACKAGE_NAME)
+	if(USE_SYSTEM_LIBS)
+		find_package(${PACKAGE_NAME} REQUIRED)
+		include_directories(${${PACKAGE_NAME}_INCLUDE_DIRS})
+	else()
+		find_package(${PACKAGE_NAME} QUIET)
+		if(NOT ${PACKAGE_NAME}_FOUND)
+			message(STATUS "Fetching ${PACKAGE_NAME}")
+			FetchContent_Declare(
+				${PACKAGE_NAME}
+				${ARGN}
+			)
+			FetchContent_MakeAvailable(${PACKAGE_NAME})
+			FetchContent_GetProperties(${PACKAGE_NAME})
+
+			include_directories(${${PACKAGE_NAME}_SOURCE_DIR} ${${PACKAGE_NAME}_SOURCE_DIR}/include ${${PACKAGE_NAME}_BINARY_DIR}/include)
+		endif()
+	endif()
+endmacro()
+
 configure_file("${CMAKE_SOURCE_DIR}/config.h.in" "${CMAKE_BINARY_DIR}/config.h")
 
-if(MSVC)
-	if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-		set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/../bin/x86_64)
-		set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/../bin/x86_64)
-	else()
-		set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/../bin/x86)
-		set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/../bin/x86)
-	endif()
-
-	message(STATUS "Root: ${CMAKE_ROOT}")
-	message(STATUS "Executable Path: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
-	message(STATUS "DLL Path: ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
-	message(STATUS "Project Binary Path: ${PROJECT_BINARY_DIR}")
-	message(STATUS "Binary Path: ${CMAKE_BINARY_DIR}")
-else()
+if(NOT MSVC)
 	message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
 endif()
 
@@ -304,8 +316,11 @@ if(USE_VULKAN)
 		add_definitions(-DUSE_VULKAN)
 		include_directories($ENV{VULKAN_SDK}/include)
 
-		add_subdirectory(extern/VulkanMemoryAllocator)
-		include_directories(extern/VulkanMemoryAllocator/include)
+		find_or_fetch(VulkanMemoryAllocator
+			GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+			GIT_TAG v3.4.0)
+
+		set(VMA_LIBRARY VulkanMemoryAllocator::Headers GPUOpen::VulkanMemoryAllocator)
 
 		# SRS - Add case for UNIX/OSX
 		if(CMAKE_CL_64 OR UNIX)
@@ -360,7 +375,22 @@ if(UNIX)
 	find_package(OpenAL REQUIRED)
 	include_directories(${OPENAL_INCLUDE_DIR})
 else()
-	add_subdirectory(extern/OpenalSoft)
+	SET_FORCED_OPTION(ALSOFT_NO_CONFIG_UTIL OFF)
+	SET_FORCED_OPTION(ALSOFT_UTILS OFF)
+	SET_FORCED_OPTION(ALSOFT_EXAMPLES OFF)
+	SET_FORCED_OPTION(ALSOFT_TESTS OFF)
+	SET_FORCED_OPTION(ALSOFT_INSTALL_UTILS OFF)
+	SET_FORCED_OPTION(ALSOFT_INSTALL_EXAMPLES OFF)
+	SET_FORCED_OPTION(ALSOFT_INSTALL_AMBDEC_PRESETS OFF)
+	SET_FORCED_OPTION(ALSOFT_INSTALL_HRTF_DATA OFF)
+	SET_FORCED_OPTION(ALSOFT_INSTALL_CONFIG OFF)
+	SET_FORCED_OPTION(ALSOFT_INSTALL OFF)
+
+	# OpenAL
+	find_or_fetch(OpenAL
+		GIT_REPOSITORY https://github.com/kcat/openal-soft.git
+		GIT_TAG 1.25.2)
+
 	set(OPENAL_LIBRARY OpenAL::OpenAL)
 endif()
 list(APPEND sys_thirdparty ${OPENAL_LIBRARY})
@@ -371,39 +401,76 @@ if(UNIX)
 	link_directories(${SDL2_LIBRARY_DIRS})
 	set(SDLX_LIBRARY ${SDL2_LIBRARIES})
 else()
-	add_subdirectory(extern/SDL2)
-	include_directories(${CMAKE_BINARY_DIR}/extern/SDL2/include)
-	include_directories(extern/SDL2/include)
-	set(SDLX_LIBRARY SDL2 SDL2main)
-	list(APPEND sys_thirdparty_dependencies SDL2 sdl_headers_copy)
+	SET_FORCED_OPTION(SDL_STATIC OFF)
+	SET_FORCED_OPTION(SDL_TEST OFF)
+	if(MSVC)
+		SET_FORCED_OPTION(SDL_JOYSTICK_XINPUT ON)
+	endif()
+
+	# SDL2
+	find_or_fetch(SDL2
+		GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+		GIT_TAG release-2.30.10)
+
+	set(SDLX_LIBRARY SDL2::SDL2 SDL2::SDL2main)
 endif()
-add_definitions(-DUSE_SDL)
 list(APPEND sys_thirdparty ${SDLX_LIBRARY})
 
 if(NOT USE_VULKAN)
   find_package(OpenGL REQUIRED)
   include_directories(${OPENGL_INCLUDE_DIRS})
   if(UNIX)
-    find_package(GLEW REQUIRED)
-    include_directories(${GLEW_INCLUDE_DIRS})
+	find_package(GLEW REQUIRED)
+	include_directories(${GLEW_INCLUDE_DIRS})
 
-    list(APPEND sys_thirdparty GLEW::GLEW OpenGL::GL)
+	list(APPEND sys_thirdparty GLEW::GLEW OpenGL::GL)
   else()
-    list(APPEND sys_thirdparty OpenGL::GL OpenGL::GLU)
+	list(APPEND sys_thirdparty OpenGL::GL OpenGL::GLU)
   endif()
 endif()
 
 if(USE_INTRINSICS_SSE)
-	add_subdirectory(extern/moc)
+	# MaskedOcclusionCulling
+	find_or_fetch(MaskedOcclusionCulling
+		GIT_REPOSITORY https://github.com/FriskTheFallenHuman/MaskedOcclusionCulling.git
+		GIT_TAG v1.0.0)
 	list(APPEND sys_thirdparty_dependencies MaskedOcclusionCulling)
 	list(APPEND sys_thirdparty MaskedOcclusionCulling)
 endif()
 
-add_subdirectory(extern/reproc)
+# Reproc
+SET_FORCED_OPTION(REPROC_DEVELOP ON)
+SET_FORCED_OPTION(REPROC_TEST OFF)
+SET_FORCED_OPTION(REPROC_EXAMPLES OFF)
+SET_FORCED_OPTION(REPROC_TIDY OFF)
+
+find_or_fetch(reproc
+	GIT_REPOSITORY https://github.com/daandemeyer/reproc.git
+	GIT_TAG v14.2.7)
+
+include_directories(${reproc_SOURCE_DIR}/reproc++/include)
+
 list(APPEND sys_thirdparty_dependencies reproc++)
 list(APPEND sys_thirdparty reproc++)
 
-add_subdirectory(extern/cpptrace)
+# CppTrace
+SET_FORCED_OPTION(CPPTRACE_BUILD_TESTING OFF)
+SET_FORCED_OPTION(CPPTRACE_BUILD_BENCHMARKING OFF)
+SET_FORCED_OPTION(CPPTRACE_BUILD_TOOLS OFF)
+
+find_or_fetch(cpptrace
+	GIT_REPOSITORY https://github.com/jeremy-rifkin/cpptrace.git
+	GIT_TAG v1.0.4)
+
+# libBinkDec
+SET_FORCED_OPTION(CREATE_INSTALL OFF)
+SET_FORCED_OPTION(BUILD_STATIC OFF)
+
+find_or_fetch(libbinkdec
+	GIT_REPOSITORY https://github.com/FriskTheFallenHuman/libbinkdec.git
+	GIT_TAG v1.0.0-hotfix)
+list(APPEND sys_thirdparty_dependencies BINKDEC::BINKDEC)
+list(APPEND sys_thirdparty BINKDEC::BINKDEC)
 
 # optimize this source file even in debug builds, to make speed (esp. loading times) more bearable
 # used for libs integrated here like stb_* and miniz(ip)
@@ -670,7 +737,7 @@ add_definitions(-D__DOOM__)
 
 if(MSVC)
 	if(USE_VULKAN)
-		list(APPEND sys_thirdparty ${Vulkan_LIBRARY} Vulkan::shaderc_combined GPUOpen::VulkanMemoryAllocator)
+		list(APPEND sys_thirdparty ${Vulkan_LIBRARY} Vulkan::shaderc_combined ${VMA_LIBRARY})
 
 		file(GLOB src_renderer_vulkan renderer/Vulkan/*.cpp renderer/Vulkan/*.h)
 		source_group("Renderer\\Vulkan" FILES ${src_renderer_vulkan})
@@ -770,11 +837,21 @@ target_link_libraries(${CMAKE_PROJECT_NAME} idLib external ${sys_libs} ${sys_thi
 if(USE_PRECOMPILED_HEADERS)
 	target_precompile_headers(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/idlib/precompiled.h)
 endif()
-set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY $<1:>${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+
+if (CMAKE_SIZEOF_VOID_P EQUAL 8)
+	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY $<1:>${CMAKE_SOURCE_DIR}/../bin/x86_64)
+else()
+	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY $<1:>${CMAKE_SOURCE_DIR}/../bin/x86)
+endif()
+
 set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES FOLDER "exes")
 
 if(MSVC)
-	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES LINK_FLAGS "/MAP:\"${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_PROJECT_NAME}.map\"")
+	if (CMAKE_SIZEOF_VOID_P EQUAL 8)
+		set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES LINK_FLAGS "/MAP:\"${CMAKE_SOURCE_DIR}/../bin/x86_64/${CMAKE_PROJECT_NAME}.map\"")
+	else()
+		set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES LINK_FLAGS "/MAP:\"${CMAKE_SOURCE_DIR}/../bin/x86/${CMAKE_PROJECT_NAME}.map\"")
+	endif()
 
 	# set MSVC default debug directory on executable
 	set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${CMAKE_PROJECT_NAME}) # set MSVC startup project
@@ -791,7 +868,7 @@ if(MSVC)
 	add_custom_command(
 	  TARGET ${CMAKE_PROJECT_NAME} POST_BUILD COMMAND
 	  ${CMAKE_COMMAND} -E copy_if_different
-		$<TARGET_FILE:SDL2>
+		$<TARGET_FILE:SDL2::SDL2>
 		$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>
 	  VERBATIM )
 
@@ -799,6 +876,13 @@ if(MSVC)
 	  TARGET ${CMAKE_PROJECT_NAME} POST_BUILD COMMAND
 	  ${CMAKE_COMMAND} -E copy_if_different
 		$<TARGET_FILE:OpenAL>
+		$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>
+	  VERBATIM )
+
+	add_custom_command(
+	  TARGET ${CMAKE_PROJECT_NAME} POST_BUILD COMMAND
+	  ${CMAKE_COMMAND} -E copy_if_different
+		$<TARGET_FILE:BINKDEC::BINKDEC>
 		$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>
 	  VERBATIM )
 endif()

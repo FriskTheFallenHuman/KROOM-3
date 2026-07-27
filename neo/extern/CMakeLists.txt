@@ -16,11 +16,6 @@ list(APPEND src_external_includes ${CMAKE_CURRENT_SOURCE_DIR}/minizip)
 #always_optimize_sourcefile(minizip/ioapi.c)
 #always_optimize_sourcefile(minizip/unzip.cpp)
 
-file(GLOB src_external_binkdec libbinkdec/src/*.cpp libbinkdec/src/*.c libbinkdec/include/*.h)
-source_group("BinkDec" FILES ${src_external_binkdec})
-list(APPEND src_external ${src_external_binkdec})
-list(APPEND src_external_includes ${CMAKE_CURRENT_SOURCE_DIR}/libbinkdec/include)
-
 file(GLOB src_external_mikktspace mikktspace/*.hh)
 source_group("MikktSpace" FILES ${src_external_mikktspace})
 list(APPEND src_external ${src_external_mikktspace})
