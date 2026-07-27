@@ -1744,6 +1744,8 @@ void idGameLocal::MapShutdown()
 	clip.Shutdown();
 	idClipModel::ClearTraceModelCache();
 
+	idTonemapController::ClearTonemapState();
+
 	common->UpdateLevelLoadPacifier();
 
 	collisionModelManager->FreeMap();		// Fixes an issue where when maps were reloaded the materials wouldn't get their surfaceFlags re-set.  Now we free the map collision model forcing materials to be reparsed.

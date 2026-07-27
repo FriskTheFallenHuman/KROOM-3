@@ -51,8 +51,9 @@ END_CLASS
 
 tonemapState_t idTonemapController::tonemapCurrent;
 tonemapState_t idTonemapController::tonemapTarget;
-float    idTonemapController::tonemapBlendAlpha = 1.0f;
-float    idTonemapController::tonemapBlendSpeed = 1.0f;
+float	idTonemapController::tonemapBlendAlpha = 1.0f;
+float	idTonemapController::tonemapBlendSpeed = 1.0f;
+bool	idTonemapController::tonemapEngaged = false;
 
 /*
 ================
@@ -136,6 +137,22 @@ void idTonemapController::Restore( idRestoreGame* savefile )
 	savefile->ReadFloat( prevContrast );
 	savefile->ReadFloat( prevKey );
 	savefile->ReadBool( active );
+
+	if( active )
+	{
+		tonemapTarget.preset = preset;
+		tonemapTarget.exposure = exposure;
+		tonemapTarget.saturation = saturation;
+		tonemapTarget.contrast = contrast;
+		tonemapTarget.hdrKey = hdrKey;
+
+		tonemapCurrent  = tonemapTarget;
+		tonemapBlendAlpha = 1.0f;
+		tonemapBlendSpeed = ( blendTime > 0.0f ) ? ( 1.0f / blendTime ) : 100.0f;
+		tonemapEngaged  = true;
+
+		BecomeActive( TH_THINK );
+	}
 }
 
 /*
@@ -145,7 +162,7 @@ idTonemapController::Think
 */
 void idTonemapController::Think()
 {
-	float dt = MS2SEC( gameLocal.time );
+	float dt = MS2SEC( gameLocal.time - gameLocal.previousTime );
 
 	// Proximity-based auto activation (when not triggered manually)
 	if( spawnArgs.GetBool( "auto_activate", "0" ) )
@@ -192,7 +209,11 @@ void idTonemapController::Think()
 
 		if( !active )
 		{
-			BecomeInactive( TH_THINK );    // dormant until triggered again
+			tonemapEngaged = false;
+			if( !spawnArgs.GetBool( "auto_activate", "0" ) )
+			{
+				BecomeInactive( TH_THINK );    // dormant until triggered again
+			}
 		}
 	}
 }
@@ -210,6 +231,7 @@ void idTonemapController::Event_Enable()
 	}
 
 	active = true;
+	tonemapEngaged = true;
 
 	// Snapshot what the current target is so we can restore it on disable
 	prevPreset = tonemapTarget.preset;
@@ -263,28 +285,19 @@ void idTonemapController::Event_Disable()
 
 /*
 ================
-idGameLocal::GetActiveTonemapState
+idTonemapController::ClearTonemapState
 
-Called from renderer backend before tonemap pass
-
-Returns true if a tonemap controller is currently blending in or active.
+Resets static tonemap state between map loads so settings from a
+previous map don't bleed into the next one.
 ================
 */
-bool idGameLocal::GetActiveTonemapState( int& preset, float& exposure, float& saturation, float& contrast, float& hdrKey )
+void idTonemapController::ClearTonemapState()
 {
-	// Only return true if a controller is currently active or in the middle of blending
-	if( !idTonemapController::IsControllerActive() )
-	{
-		return false;
-	}
-
-	preset = idTonemapController::tonemapCurrent.preset;
-	exposure = idTonemapController::tonemapCurrent.exposure;
-	saturation = idTonemapController::tonemapCurrent.saturation;
-	contrast = idTonemapController::tonemapCurrent.contrast;
-	hdrKey = idTonemapController::tonemapCurrent.hdrKey;
-
-	return true;
+	tonemapCurrent = tonemapState_t();
+	tonemapTarget = tonemapState_t();
+	tonemapBlendAlpha = 1.0f;
+	tonemapBlendSpeed = 1.0f;
+	tonemapEngaged = false;
 }
 
 /*
@@ -359,4 +372,31 @@ bool idTonemapController::ClientReceiveEvent( int event, int time, const idBitMs
 {
 	// Events are handled through snapshot data, so delegate to base class
 	return idEntity::ClientReceiveEvent( event, time, msg );
+}
+
+
+/*
+================
+idGameLocal::GetActiveTonemapState
+
+Called from renderer backend before tonemap pass
+
+Returns true if a tonemap controller is currently blending in or active.
+================
+*/
+bool idGameLocal::GetActiveTonemapState( int& preset, float& exposure, float& saturation, float& contrast, float& hdrKey )
+{
+	// Only return true if a controller is currently active or in the middle of blending
+	if( !idTonemapController::IsControllerActive() )
+	{
+		return false;
+	}
+
+	preset = idTonemapController::tonemapCurrent.preset;
+	exposure = idTonemapController::tonemapCurrent.exposure;
+	saturation = idTonemapController::tonemapCurrent.saturation;
+	contrast = idTonemapController::tonemapCurrent.contrast;
+	hdrKey = idTonemapController::tonemapCurrent.hdrKey;
+
+	return true;
 }

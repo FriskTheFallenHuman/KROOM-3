@@ -77,14 +77,17 @@ public:
 
 	static bool		IsControllerActive()
 	{
-		return ( tonemapBlendAlpha < 1.0f );
+		return tonemapEngaged;
 	}
+
+	static void		ClearTonemapState();
 
 private:
 	static tonemapState_t	tonemapCurrent;	// the current tonemap settings for the player's view, used for syncing with the backend
 	static tonemapState_t	tonemapTarget;	// the target tonemap settings that the current settings will blend towards
 	static float	tonemapBlendAlpha;
 	static float	tonemapBlendSpeed;
+	static bool		tonemapEngaged;
 
 	float       activateRadius;
 	float       blendTime;
