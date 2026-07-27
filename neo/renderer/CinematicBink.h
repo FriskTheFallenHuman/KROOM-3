@@ -31,7 +31,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #undef nullptr
 
-#include "libbinkdec/include/BinkDecoder.h"
+#include <BinkDecoder.h>
 #include "../sound/CinematicAudio.h"
 
 /*
