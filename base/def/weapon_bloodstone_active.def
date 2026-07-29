@@ -57,8 +57,8 @@ entityDef weapon_bloodstone_active1 {
 	"inv_name"					"#str_00100201"
 	"inv_weapon"				"weapon_bloodstone_active1"
 	"inv_item"					"5"
-	"icon"						"guis/assets/hud/wpn_11"
 
+	"icon"						"guis/assets/hud/wpn_11"
 	"hudIcon"					"guis/assets/hud/icons/bloodorb2w.tga"
 
 	"weapon_scriptobject"		"weapon_bloodstone_active1"

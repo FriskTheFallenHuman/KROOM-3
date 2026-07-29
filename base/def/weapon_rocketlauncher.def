@@ -23,7 +23,8 @@ entityDef weapon_rocketlauncher {
 	"inv_weapon"				"weapon_rocketlauncher"
 	"inv_ammo_rockets"			"5"
 	"inv_item"					"5"
-	"inv_desc"					"#str_02539"
+
+	"display_desc"				"#str_02539"
 	"display_name"				"#str_02480"
 
 	"icon"						"guis/assets/hud/wpn_6"

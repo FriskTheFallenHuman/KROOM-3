@@ -21,7 +21,7 @@ entityDef weapon_flashlight {
 	"inv_item"					"5"
 	"icon"						"guis/assets/hud/wpn_10"
 
-	"inv_desc"					"#str_weapon_flashlight_desc"
+	"display_desc"				"#str_weapon_flashlight_desc"
 	"display_name"				"#str_02482"
 	"pdaIcon"					"guis/assets/hud/icons/flashlight_new.tga"
 	"hudIcon"					"guis/assets/hud/icons/flashlightw.tga"

@@ -22,9 +22,9 @@ entityDef weapon_chainsaw {
 	"inv_name"					"#str_00100205"
 	"inv_weapon"				"weapon_chainsaw"
 	"inv_item"					"5"
-
 	"inv_icon"					"guis/assets/hud/wpn_9"
-	"inv_desc"					"#str_02541"
+
+	"display_desc"				"#str_02541"
 	"display_name"				"#str_02481"
 	"pdaIcon"					"guis/assets/hud/icons/chainsaw_new.tga"
 	"hudIcon"					"guis/assets/hud/icons/chainsaww.tga"

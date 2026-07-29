@@ -245,7 +245,7 @@ void idMenuScreen_PDA_Inventory::Update()
 		if( validIndex == itemList.GetMoveToIndex() )
 		{
 			idStr itemName = weaponDef->dict.GetString( "display_name" );
-			idStr itemDesc = weaponDef->dict.GetString( "inv_desc" );
+			idStr itemDesc = weaponDef->dict.GetString( "display_desc" );
 			infoBox.SetHeading( idLocalization::GetString( itemName.c_str() ) );
 			infoBox.SetBody( idLocalization::GetString( itemDesc.c_str() ) );
 			break;

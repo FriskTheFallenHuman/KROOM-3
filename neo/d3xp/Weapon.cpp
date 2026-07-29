@@ -1105,7 +1105,7 @@ void idWeapon::GetWeaponDef( const char* objectname, int ammoinclip )
 	icon				= weaponDef->dict.GetString( "icon" );
 	pdaIcon				= weaponDef->dict.GetString( "pdaIcon" );
 	displayName			= weaponDef->dict.GetString( "display_name" );
-	itemDesc			= weaponDef->dict.GetString( "inv_desc" );
+	itemDesc			= weaponDef->dict.GetString( "display_desc" );
 
 	silent_fire			= weaponDef->dict.GetBool( "silent_fire" );
 	powerAmmo			= weaponDef->dict.GetBool( "powerAmmo" );
