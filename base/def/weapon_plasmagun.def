@@ -23,7 +23,8 @@ entityDef weapon_plasmagun {
 	"inv_weapon"				"weapon_plasmagun"
 	"inv_ammo_cells"			"50"
 	"inv_item"					"5"
-	"inv_desc"					"#str_02538"
+
+	"display_desc"				"#str_02538"
 	"display_name"				"#str_02479"
 
 	"icon"						"guis/assets/hud/wpn_5"

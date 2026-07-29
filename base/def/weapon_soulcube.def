@@ -25,7 +25,7 @@ entityDef weapon_soulcube {
 	"pdaIcon"					"guis/assets/hud/icons/soul_cube.tga"
 	"hudIcon"					"guis/assets/hud/icons/scubew.tga"
 	"display_name"				"#str_02525"
-	"inv_desc"					"#str_02542"
+	"display_desc"				"#str_02542"
 
 	"mtr_guiLightShader"		"lights/viewWeaponGuiLight"
 	"weapon_scriptobject"		"weapon_soulcube"

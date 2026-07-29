@@ -46,18 +46,6 @@ model viewmodel_pda {
 	anim fire2 					models/md5/items/pda_view/idle3.md5anim
 }
 
-// world model pda
-
-export fred {
-
-	options -prefix PLAYER_PDA_ -keep ATTACHER -rename ATTACHER origin -clearorigin
-	addoptions -keepmesh PLAYER_polySurface1
-	addoptions -keepmesh PLAYER_polySurface2
-
-	mesh	models/characters/male_npc/cycles/tweakedplayermoves/pda_idle.mb -dest models/md5/items/pda_world/worldpda
-	anim	models/characters/male_npc/cycles/tweakedplayermoves/pda_idle.mb -dest models/md5/items/pda_world/pda_idle
-}
-
 model worldmodel_pda {
 	mesh						models/md5/items/pda_world/worldpda.md5mesh
 	anim idle 					models/md5/items/pda_world/pda_idle.md5anim

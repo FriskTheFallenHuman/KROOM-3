@@ -66,7 +66,7 @@ entityDef weapon_bloodstone_passive {
 	"inv_item"					"5"
 	"icon"						"guis/assets/hud/wpn_11"
 
-	"inv_desc"					"#str_00100213"
+	"display_desc"				"#str_00100213"
 	"display_name"				"#str_00100209"
 	"pdaIcon"					"guis/assets/hud/icons/shotgun_new.tga"
 	"hudIcon"					"guis/assets/hud/icons/bloodorbw.tga"

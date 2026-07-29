@@ -23,7 +23,7 @@ entityDef weapon_shotgun {
 	"inv_ammo_shells"			"4"
 	"inv_item"					"5"
 
-	"inv_desc"					"#str_02534"
+	"display_desc"				"#str_02534"
 	"display_name"				"#str_01820"
 	"icon"						"guis/assets/hud/wpn_2"
 	"pdaIcon"					"guis/assets/hud/icons/shotgun_new.tga"
