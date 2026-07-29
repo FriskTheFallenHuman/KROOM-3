@@ -3763,11 +3763,11 @@ int idAI::ReactionTo( const idEntity* ent )
 	// monsters will fight when attacked by lower ranked monsters.  rank 0 never fights back.
 	if( rank && ( actor->rank < rank ) )
 	{
-		return ATTACK_ON_DAMAGE;
+		return ATTACK_IGNORE;
 	}
 
-	// don't fight back
-	return ATTACK_IGNORE;
+	// fight back
+	return ATTACK_ON_DAMAGE;
 }
 
 
