@@ -161,7 +161,7 @@ entityDef projectile_rocket {
 	"def_debris"				"debris_largeshrapnel"
 	"def_shrapnel"				"debris_shrapnel"
 
-	"mtr_light_shader"			""
+	"mtr_light_shader"			"lights/spot01"
 	"light_color"				"1 0.8 0.4"
 	"light_radius"				"160"
 	"light_offset"				"0 0 0"
