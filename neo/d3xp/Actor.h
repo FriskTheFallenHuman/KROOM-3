@@ -162,6 +162,7 @@ public:
 	idVec3					EyeOffset() const;
 	idVec3					GetEyePosition() const;
 	virtual void			GetViewPos( idVec3& origin, idMat3& axis ) const;
+	virtual void			GetAimAxisFromOrigin( const idVec3& firePos, idMat3& axis ) const;
 	void					SetFOV( float fov );
 	bool					CheckFOV( const idVec3& pos ) const;
 	bool					CanSee( idEntity* ent, bool useFOV ) const;

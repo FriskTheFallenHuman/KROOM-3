@@ -4090,27 +4090,35 @@ void idWeapon::GetProjectileLaunchOriginAndAxis( idVec3& origin, idMat3& axis )
 	idPlayer* playerOwner = GetPlayerOwner();
 	if( playerOwner )
 	{
+		// calculate the muzzle position
 		if( barrelJointView != INVALID_JOINT && projectileDict.GetBool( "launchFromBarrel" ) )
 		{
+			// there is an explicit joint for the muzzle
 			GetGlobalJointTransform( true, barrelJointView, origin, axis );
 		}
 		else
 		{
+			// go straight out of the view
 			origin = playerViewOrigin;
 			axis = playerViewAxis;
 		}
+
+		axis = playerViewAxis;	// Fix for plasma rifle not firing correctly on initial shot of a burst fire
 	}
 	else
 	{
-		owner->GetViewPos( origin, axis );
-
+		// calculate the muzzle position
 		if( barrelJointWorld != INVALID_JOINT )
 		{
-			idVec3 jointOrigin;
 			idMat3 jointAxis;
-			GetGlobalJointTransform( false, barrelJointWorld, jointOrigin, jointAxis );
-			origin = jointOrigin;
+			GetGlobalJointTransform( false, barrelJointWorld, origin, jointAxis );
 		}
+		else
+		{
+			owner->GetViewPos( origin, axis );
+		}
+
+		owner->GetAimAxisFromOrigin( origin, axis );
 	}
 }
 

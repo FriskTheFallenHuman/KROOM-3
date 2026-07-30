@@ -1645,6 +1645,16 @@ void idActor::GetViewPos( idVec3& origin, idMat3& axis ) const
 
 /*
 =====================
+idActor::GetAimAxisFromOrigin
+=====================
+*/
+void idActor::GetAimAxisFromOrigin( const idVec3& firePos, idMat3& axis ) const
+{
+	axis = viewAxis;
+}
+
+/*
+=====================
 idActor::CheckFOV
 =====================
 */
