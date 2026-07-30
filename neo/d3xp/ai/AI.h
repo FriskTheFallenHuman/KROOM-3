@@ -290,6 +290,7 @@ public:
 	bool					GetAimDir( const idVec3& firePos, idEntity* aimAtEnt, const idEntity* ignore, idVec3& aimDir ) const;
 
 	virtual void			GetViewPos( idVec3& origin, idMat3& axis ) const;
+	virtual void			GetAimAxisFromOrigin( const idVec3& firePos, idMat3& axis ) const;
 
 	void					TouchedByFlashlight( idActor* flashlight_owner );
 

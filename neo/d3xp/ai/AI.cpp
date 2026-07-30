@@ -4779,6 +4779,33 @@ void idAI::GetViewPos( idVec3& origin, idMat3& axis ) const
 
 /*
 =====================
+idAI::GetAimAxisFromOrigin
+
+Same as GetViewPos but aims from firePos instead of the eye.
+=====================
+*/
+void idAI::GetAimAxisFromOrigin( const idVec3& firePos, idMat3& axis ) const
+{
+	idActor* enemyActor = enemy.GetEntity();
+	if( enemyActor )
+	{
+		idVec3 headPos, chestPos;
+		enemyActor->GetAIAimTargets( enemyActor->GetPhysics()->GetOrigin(), headPos, chestPos );
+
+		idVec3 dir = chestPos - firePos;
+		dir.Normalize();
+
+		idAngles ang = dir.ToAngles();
+		axis = ang.ToMat3();
+	}
+	else
+	{
+		axis = viewAxis;
+	}
+}
+
+/*
+=====================
 idAI::GetAimDir
 =====================
 */
