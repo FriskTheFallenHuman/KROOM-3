@@ -195,15 +195,15 @@ entityDef projectile_plasmablast {
 
 	"model_detonate"			"plasmaimpact.prt"
 
-//	"mtr_light_shader"			""
-//	"light_color"				"0 0 0.8"
-//	"light_radius"				"160"
-//	"light_offset"				"-8 0 0"
+	"mtr_light_shader"			"lights/baronflash"
+	"light_color"				"0 0 0.8"
+	"light_radius"				"120"
+	"light_offset"				"-8 0 0"
 
-//	"mtr_explode_light_shader"	"muzzleflash"
-//	"explode_light_color"		"0 0 1"
-//	"explode_light_radius"		"160"
-//	"explode_light_fadetime"	"0.25"
+	"mtr_explode_light_shader"	"muzzleflash"
+	"explode_light_color"		"0 0 1"
+	"explode_light_radius"		"120"
+	"explode_light_fadetime"	"0.25"
 
 	"snd_fly"					"plasma_flight"					// sound effect while in the air
 	"snd_explode"				"plasma_impact"

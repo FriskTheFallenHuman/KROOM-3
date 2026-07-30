@@ -146,6 +146,7 @@ entityDef projectile_chaingunbullet {
 	"cone"						"3"
 	"scale"						"0.1"
 	"noshadows"					"1"
+
 	"tracers"					"1"
 	"model_tracer"				"models/particles/tracer/tracer.lwo"
 
@@ -242,9 +243,6 @@ entityDef	damage_bullet_chaingun {
 
 entityDef projectile_zombie_commando_cgun {
 	"inherit"			"projectile_chaingunbullet"
-
-	"tracers"			"1"
-	"model_tracer"		"models/particles/tracer/tracer.lwo"
 
 	"mass"				"2"
 

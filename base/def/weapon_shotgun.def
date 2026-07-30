@@ -214,7 +214,6 @@ entityDef projectile_bullet_shotgun {
 	"mins"						"-1 -1 -1"
 	"maxs"						"1 1 1"
 	"cone"						"3"
-	//"model" 					"models/items/projectiles/rocket.ase"
 	"scale"						"0.1"
 	"noshadows"					"1"
 
@@ -232,7 +231,10 @@ entityDef projectile_bullet_shotgun {
 
 	"def_damage"				"damage_shotgun"
 
-	"launchFromBarrel"			"0"
+	"tracers"					"1"
+	"model_tracer"				"models/particles/tracer/tracer.lwo"
+
+	"launchFromBarrel"			"1"
 	"health"					"0"
 	"velocity"					"7200 0 0"	// .38 Special 600 fps.  Source: Petzal, David E. "How fast is a speeding bullet." Field and Stream. 97 (1992): 23
 	"angular_velocity"			"0 0 0"
