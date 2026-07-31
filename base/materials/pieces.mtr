@@ -1,0 +1,978 @@
+
+//-----------------------------------------------------------------------
+
+textures/particles/pieces/waveline1
+{
+	qer_editorimage textures/particles/pieces/waveline1.tga
+	translucent
+	twoSided
+	noShadows
+	{
+		blend add
+		map textures/particles/pieces/waveline1.tga
+		vertexColor
+		scroll time * 2, 0 
+	}
+}
+
+textures/particles/pieces/waveline1b
+{
+	qer_editorimage textures/particles/pieces/waveline1.tga
+	translucent
+	twoSided
+	noShadows
+	{
+		blend add
+		map textures/particles/pieces/waveline1.tga
+		vertexColor
+		scroll time * 1.23, 0 
+	}
+}
+
+textures/particles/pieces/debris_cloud
+{
+	qer_editorimage textures/particles/pieces/debris_cloud.tga
+
+	noshadows
+	{
+		blend blend
+		map	textures/particles/pieces/debris_cloud
+		vertexColor
+	}
+}
+
+textures/particles/pieces/warm_blend2
+{
+	qer_editorimage textures/particles/pieces/warm_blend2.tga
+	translucent
+	twoSided
+	noShadows
+	{
+		blend add
+		map textures/particles/pieces/warm_blend2.tga
+		vertexColor
+		rgb		guitable_random1 [time * 1.1]
+	}
+}
+
+textures/particles/pieces/ripple
+{
+	qer_editorimage textures/particles/pieces/ripple.tga
+	translucent
+	twoSided
+	noShadows
+	{
+		blend add
+		map textures/particles/pieces/ripple.tga
+		vertexColor
+	}
+}
+
+textures/particles/pieces/hex_add
+{
+	qer_editorimage textures/particles/pieces/hex.tga
+	translucent
+	twoSided
+	noShadows
+	{
+		blend add
+		map textures/particles/pieces/hex.tga
+		vertexColor
+	}
+}
+
+textures/particles/pieces/hex_alpha
+{
+	{
+		blend blend
+		map makeAlpha(textures/particles/pieces/hex.tga)
+		vertexColor
+		colored
+	}
+}
+
+textures/particles/pieces/blob
+{
+	{
+		blend blend
+		map makeAlpha(textures/particles/pieces/blob.tga)
+		vertexColor
+		colored
+	}
+}
+
+textures/particles/pieces/add_sphere
+{
+	translucent
+	noShadows
+	twoSided
+	{
+		blend	add
+		clamp
+		map		textures/particles/pieces/add_sphere.tga
+		vertexColor
+	}	
+}
+
+textures/particles/pieces/add_sphere2
+{
+	translucent
+	noShadows
+	twoSided
+	{
+		blend	add
+		clamp
+		map		textures/particles/pieces/add_sphere2.tga
+		vertexColor
+	}	
+}
+
+textures/particles/pieces/blend_sphere2.tga
+{
+	{
+		blend blend
+		map makeAlpha(textures/particles/pieces/add_sphere2.tga)
+		vertexColor
+		colored
+	}
+}
+
+textures/particles/pieces/add_line
+{
+	translucent
+	noShadows
+	twoSided
+	{
+		blend	add
+		clamp
+		map		textures/particles/pieces/add_line.tga
+		vertexColor
+	}	
+}
+
+
+textures/particles/pieces/add_line_last
+{
+	translucent
+	noShadows
+	twoSided
+	sort far
+	{
+		blend	add
+		clamp
+		map		textures/particles/pieces/add_line.tga
+		vertexColor
+		
+	}	
+}
+
+textures/particles/pieces/motionblur
+{
+	translucent
+	noShadows
+	twoSided
+	{
+		blend	add
+		clamp
+		map		textures/particles/pieces/motionblur.tga
+		vertexColor
+	}	
+}
+
+textures/particles/pieces/motionblur_nail
+{
+	translucent
+	noShadows
+	twoSided
+	{
+		blend	add
+		clamp
+		map		textures/particles/pieces/motionblur_nail.tga
+		vertexColor
+	}	
+}
+textures/particles/pieces/motionblur2
+{
+	translucent
+	noShadows
+	twoSided
+	{
+		blend	blend
+		clamp
+		map		textures/particles/pieces/motionblur2
+		vertexColor
+	}	
+}
+
+textures/particles/pieces/lightbeam
+{
+	qer_editorimage	textures/particles/pieces/lightbeam.tga
+	noShadows
+	nonSolid
+	translucent
+	twoSided
+	{
+		blend blend
+		map textures/particles/pieces/lightbeam.tga
+	//	red 		Parm0
+	//	green 		Parm1
+	//	blue 		Parm2
+	//	alpha 		sound * Parm3
+		vertexColor
+	}	
+}
+
+//------------------------------------shapes ----------------------------------
+
+textures/particles/pieces/blank
+{
+	qer_editorimage textures/particles/pieces/blank.tga
+	noshadows
+	twosided
+        {
+		blend	add
+		map textures/particles/pieces/blank.tga
+		clamp
+		vertexColor   
+        }
+}
+
+textures/particles/pieces/chunk_black
+{
+	noshadows
+	translucent
+	{
+		blend  blend
+		map    textures/particles/pieces/chunk.tga
+		vertexColor
+	}
+}
+
+textures/particles/pieces/chunk_grey
+{
+	noshadows
+	translucent
+	{
+		blend  blend
+		map    textures/particles/pieces/chunk_grey.tga
+		vertexColor
+	}
+}
+
+textures/particles/pieces/glass_chunks
+{
+	noshadows
+	translucent
+	{
+		blend  blend
+		map    textures/particles/pieces/glass_chunks.tga
+		vertexColor
+	}
+}
+
+gfx/effects/particels_shapes/glass_chunks2
+{
+	
+	noSelfShadow
+	noshadows
+	twosided
+	translucent
+//	materialType glass
+	forceoverlays
+//	sort decal
+	
+/*	{
+		blend  blend
+		map    textures/particles/pieces/glass_chunks.tga
+		vertexColor
+	}
+*/
+	{	
+		maskcolor				
+	    map	makealpha(textures/particles/pieces/glass_chunks2.tga)
+	}
+
+	{
+	    blend GL_DST_ALPHA, gl_one
+	    maskalpha
+//      cubeMap		gfx/env/gen2
+		cubeMap		gfx/env/medic
+        texgen		reflect
+		red   Parm0
+		green Parm1
+		blue  Parm2
+	}
+}
+
+
+
+
+
+textures/particles/pieces/concrete_chunks
+{
+	noshadows
+	translucent
+	{
+		blend  blend
+		map    textures/particles/pieces/concrete_chunks.tga
+		vertexColor
+	}
+}
+
+textures/particles/pieces/duststreak_alpha
+{
+	noshadows
+	translucent
+	{
+		blend  blend
+		map    textures/particles/pieces/duststreak_alpha.tga
+		vertexColor
+	}
+}
+
+textures/particles/pieces/warm_blend
+{
+	qer_editorimage textures/particles/pieces/warm_blend.tga
+	translucent
+	twoSided
+	noShadows
+	{
+		blend add
+		map textures/particles/pieces/warm_blend.tga
+		vertexColor
+	}
+}
+
+textures/particles/pieces/warm_blend_last
+{
+	qer_editorimage textures/particles/pieces/warm_blend.tga
+	translucent
+	twoSided
+	noShadows
+	sort far
+	{
+		blend add
+		map textures/particles/pieces/warm_blend.tga
+		vertexColor
+
+	}
+}
+
+textures/particles/pieces/hot_blend
+{
+	qer_editorimage textures/particles/pieces/hot_blend.tga
+	translucent
+	twoSided
+	noShadows
+	{
+		blend add
+		map textures/particles/pieces/hot_blend.tga
+		vertexColor
+	}
+}
+
+textures/particles/pieces/generic_pill
+{
+	qer_editorimage gfx/effects/pill.tga
+	translucent
+	twoSided
+	noShadows
+	{
+		blend add
+		map textures/particles/pieces/pill.tga
+		vertexColor
+	}
+}
+
+textures/particles/pieces/blue_pill
+{
+	qer_editorimage textures/particles/pieces/blue_pill.tga
+	translucent
+	twoSided
+	noShadows
+	{
+		blend add
+		map textures/particles/pieces/blue_pill.tga
+		vertexColor
+	}
+}
+
+textures/particles/pieces/pill_hot
+{
+	qer_editorimage textures/particles/pieces/pill_hot.tga
+	translucent
+	twoSided
+	noShadows
+	{
+		blend add
+		map textures/particles/pieces/pill_hot.tga
+		vertexColor
+	}
+}
+
+textures/particles/pieces/generic_pill2
+{
+	qer_editorimage textures/particles/pieces/pill2.tga
+	translucent
+	twoSided
+	noShadows
+	{
+		blend add
+		map textures/particles/pieces/pill2.tga
+		vertexColor
+	}
+}
+
+textures/particles/pieces/spike
+{
+	qer_editorimage textures/particles/pieces/spike.tga
+	translucent
+	twoSided
+	noShadows
+	{
+		blend add
+		map textures/particles/pieces/spike.tga
+		clamp
+		vertexColor
+	}
+}
+
+textures/particles/pieces/specs
+{
+	qer_editorimage textures/particles/pieces/specs.tga
+	translucent
+	twoSided
+	noShadows
+	{
+		blend add
+		map textures/particles/pieces/specs.tga
+		vertexColor
+	}
+}
+
+
+
+textures/particles/pieces/generic_splat
+{
+	{
+		blend blend
+		map makeAlpha(textures/particles/pieces/splat.tga)
+		vertexColor
+		colored
+	}
+}
+
+textures/particles/pieces/specs_alpha
+{
+	noshadows
+	translucent
+	{
+		blend  blend
+		map    textures/particles/pieces/specs_alpha.tga
+		vertexColor
+	}
+
+}
+
+textures/particles/pieces/dirt2
+{
+	noshadows
+	translucent
+	{
+		blend  blend
+		map    textures/particles/pieces/dirt2.tga
+		vertexColor
+	}
+
+}
+
+
+textures/particles/pieces/dirt3
+{
+	noshadows
+	translucent
+	{
+		blend  blend
+		map    textures/particles/pieces/dirt3.tga
+		vertexColor
+	}
+
+}
+
+textures/particles/pieces/dirt
+{
+	noshadows
+	translucent
+	{
+		blend  blend
+		map    textures/particles/pieces/dirt.tga
+		vertexColor
+	}
+
+}
+
+textures/particles/pieces/sand
+{
+	noshadows
+	translucent
+	{
+		blend  blend
+		map    textures/particles/pieces/sand.tga
+		vertexColor
+	}
+
+}
+
+textures/particles/pieces/chunk_glass
+{
+	noshadows
+	translucent
+	{
+		blend  blend
+		map    textures/particles/pieces/chunk_glass.tga
+		vertexColor
+	}
+
+}
+
+textures/particles/pieces/chunk_single
+{
+	noshadows
+	translucent
+	{
+		blend  blend
+		map    textures/particles/pieces/chunk.tga
+		vertexColor
+	}
+
+}
+
+
+textures/particles/pieces/debri_1
+{
+	noshadows
+	twoSided
+	translucent
+	{
+		blend  blend
+		map    textures/particles/pieces/debri_1.tga
+		vertexColor
+	}
+
+}
+
+textures/particles/pieces/debri_2
+{
+	noshadows
+	twoSided
+	translucent
+	{
+		blend  blend
+		map    textures/particles/pieces/debri_2.tga
+		vertexColor
+	}
+
+}
+
+
+
+
+textures/particles/pieces/shockwave
+{
+	qer_editorimage textures/particles/pieces/shockwave.tga
+	noshadows
+	twosided
+        {
+                
+		blend	add
+                map textures/particles/pieces/shockwave.tga
+		clamp
+		vertexColor
+             
+        }
+}
+
+textures/particles/pieces/soundwave
+{
+	qer_editorimage textures/particles/pieces/soundwave.tga
+	noshadows
+	twosided
+
+	{                
+		blend	add
+		map		textures/particles/pieces/soundwave.tga
+		clamp
+		vertexColor             
+	}
+}
+
+textures/particles/pieces/Flying_dirt
+{
+	noshadows
+	translucent
+	{
+		blend  blend
+		map    textures/particles/pieces/dirt.tga
+		vertexColor
+	}
+
+}
+
+textures/particles/pieces/shockwave_alpha
+{
+	qer_editorimage textures/particles/pieces/shockwave_alpha.tga
+	translucent
+	twoSided
+	noShadows
+	{
+		blend	blend
+		map textures/particles/pieces/shockwave_alpha.tga
+		vertexColor
+	}
+}
+
+gfx/effects/rock_alpha
+{
+	qer_editorimage textures/particles/pieces/rock_alpha.tga
+
+	noshadows
+	{
+		blend blend
+		map	textures/particles/pieces/rock_alpha
+		vertexColor
+	}
+}
+
+textures/particles/pieces/dust
+{
+	translucent
+	noShadows
+	twoSided
+	{
+		blend	blend
+		clamp
+		map makeAlpha(textures/particles/pieces/dust.tga)
+		vertexColor
+	}	
+}
+
+textures/particles/pieces/dustadd
+{
+	translucent
+	noShadows
+	twoSided
+	{
+		blend	add
+		clamp
+		map textures/particles/pieces/dust.tga
+		vertexColor
+	}	
+}
+
+textures/particles/pieces/add_sphere_alpha
+{
+	{
+		blend blend
+		map makeAlpha(textures/particles/pieces/add_sphere)
+		vertexColor
+		colored
+	}
+}
+
+//------------------------------------specific images ----------------------------------
+
+textures/particles/pieces/flies
+{
+	qer_editorimage textures/particles/pieces/flies.tga
+
+	noshadows
+	{
+		blend blend
+		map	textures/particles/pieces/flies
+		vertexColor
+	}
+}
+
+textures/particles/pieces/repairbot_sm
+{
+	qer_editorimage textures/particles/pieces/repairbot_sm.tga
+
+	noshadows
+	{
+		blend blend
+		map	textures/particles/pieces/repairbot_sm
+		vertexColor
+	}
+}
+
+textures/particles/pieces/repairbot_med
+{
+	qer_editorimage textures/particles/pieces/repairbot_med.tga
+
+	noshadows
+	{
+		blend blend
+		map	textures/particles/pieces/repairbot_med
+		vertexColor
+	}
+	{
+		blend add
+		map	textures/particles/pieces/repairbot_med_add
+		vertexColor
+	}	
+}
+
+textures/particles/pieces/repairbot_sm_flipped
+{
+	qer_editorimage textures/particles/pieces/repairbot_sm.tga
+
+	noshadows
+	{
+		blend blend
+		map	textures/particles/pieces/repairbot_sm
+		vertexColor
+		scale -1,1
+	}
+}
+
+textures/particles/pieces/repairbot_med_flipped
+{
+	qer_editorimage textures/particles/pieces/repairbot_med.tga
+
+	noshadows
+	{
+		blend blend
+		map	textures/particles/pieces/repairbot_med
+		vertexColor
+		scale -1,1
+	}
+	{
+		blend add
+		map	textures/particles/pieces/repairbot_med_add
+		vertexColor
+		scale -1,1
+	}	
+}
+
+
+textures/particles/pieces/p_warm_blend2
+{
+	qer_editorimage textures/particles/pieces/p_warm_blend2.tga
+	translucent
+	twoSided
+	noShadows
+	{
+		blend add
+		map textures/particles/pieces/p_warm_blend2.tga
+		vertexColor
+		rgb		guitable_random1 [time * 1.1]
+	}
+}
+
+
+textures/particles/pieces/debris1
+{
+	qer_editorimage textures/particles/pieces/debris1.tga
+	translucent
+	twoSided
+	noShadows
+	{
+		blend blend
+		map textures/particles/pieces/debris1.tga
+		vertexColor
+//		alphaTest .5
+	}
+}
+
+
+textures/particles/pieces/debris2
+{
+	qer_editorimage textures/particles/pieces/debris2.tga
+	translucent
+	twoSided
+	noShadows
+	{
+		blend blend
+		map textures/particles/pieces/debris2.tga
+		vertexColor
+//		alphaTest .5
+	}
+}
+
+
+textures/particles/pieces/debris3
+{
+	qer_editorimage textures/particles/pieces/debris3.tga
+	translucent
+	twoSided
+	noShadows
+	{
+		blend blend
+		map textures/particles/pieces/debris3.tga
+		vertexColor
+//		alphaTest .5
+	}
+}
+
+
+textures/particles/pieces/debris4
+{
+	qer_editorimage textures/particles/pieces/debris4.tga
+	translucent
+	twoSided
+	noShadows
+	{
+		blend blend
+		map textures/particles/pieces/debris4.tga
+		vertexColor
+//		alphaTest .5
+	}
+}
+
+
+textures/particles/pieces/debris5
+{
+	qer_editorimage textures/particles/pieces/debris5.tga
+	translucent
+	twoSided
+	noShadows
+	{
+		blend blend
+		map textures/particles/pieces/debris5.tga
+		vertexColor
+//		alphaTest .5
+	}
+}
+
+
+textures/particles/pieces/debris6
+{
+	qer_editorimage textures/particles/pieces/debris6.tga
+	translucent
+	twoSided
+	noShadows
+	{
+		blend blend
+		map textures/particles/pieces/debris6.tga
+		vertexColor
+//		alphaTest .5
+	}
+}
+
+
+textures/particles/pieces/debris7
+{
+	qer_editorimage textures/particles/pieces/debris7.tga
+	translucent
+	twoSided
+	noShadows
+	{
+		blend blend
+		map textures/particles/pieces/debris7.tga
+		vertexColor
+//		alphaTest .5
+	}
+}
+
+//------------------------------------------------------------------
+//	New Pieces pack
+//------------------------------------------------------------------
+textures/particles/pieces/fleck_cement1
+{
+	noshadows
+	translucent
+	{
+		blend  blend
+		map    textures/particles/pieces/new/fleck_cement1.tga
+		vertexColor
+	}
+}
+
+textures/particles/pieces/fleck_cement2
+{
+	noshadows
+	translucent
+	{
+		blend  blend
+		map    textures/particles/pieces/new/fleck_cement2.tga
+		vertexColor
+	}
+}
+
+textures/particles/pieces/fleck_glass1
+{
+	translucent
+	noShadows
+	twoSided
+	{
+		blend	blend
+		clamp
+		map makeAlpha(textures/particles/pieces/new/fleck_glass1.tga)
+		vertexColor
+	}	
+}
+
+
+textures/particles/pieces/fleck_glass2
+{
+	translucent
+	noShadows
+	twoSided
+	{
+		blend	blend
+		clamp
+		map makeAlpha(textures/particles/pieces/new/fleck_glass2.tga)
+		vertexColor
+	}	
+}
+textures/particles/pieces/fleck_tile1
+{
+	translucent
+	noShadows
+	twoSided
+	{
+		blend	blend
+		clamp
+		map makeAlpha(textures/particles/pieces/new/fleck_tile1.tga)
+		vertexColor
+	}	
+}
+textures/particles/pieces/fleck_tile2
+{
+	translucent
+	noShadows
+	twoSided
+	{
+		blend	blend
+		clamp
+		map makeAlpha(textures/particles/pieces/new/fleck_tile2.tga)
+		vertexColor
+	}	
+}
+
+textures/particles/pieces/fleck_wood1
+{
+	qer_editorimage textures/particles/pieces/fleck_wood1.tga
+	translucent
+	twoSided
+	noShadows
+	{
+		blend blend
+		map textures/particles/pieces/new/fleck_wood1.tga
+		vertexColor
+//		alphaTest .5
+	}
+}
+textures/particles/pieces/fleck_wood2
+{
+	qer_editorimage textures/particles/pieces/fleck_wood2.tga
+	translucent
+	twoSided
+	noShadows
+	{
+		blend blend
+		map textures/particles/pieces/new/fleck_wood2.tga
+		vertexColor
+//		alphaTest .5
+	}
+}

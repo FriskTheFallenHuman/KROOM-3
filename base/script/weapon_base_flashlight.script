@@ -49,6 +49,7 @@ void weapon_base_flashlight::updateLightIntensity() {
 		intensity = global_flashlight_intensity;
 		setLightParm( 3, intensity );
 		setShaderParm( 3, intensity );
+		UpdateSkin();
 	}
 }
 
@@ -79,6 +80,7 @@ weapon_base_flashlight::TurnOff
 =====================
 */
 void weapon_base_flashlight::TurnOn() {
+	startSoundShader( "player_flashlight_on", SND_CHANNEL_ITEM );
 	SetLight( true );
 }
 
@@ -88,6 +90,7 @@ weapon_base_flashlight::TurnOff
 =====================
 */
 void weapon_base_flashlight::TurnOff() {
+	startSoundShader( "player_flashlight_off", SND_CHANNEL_ITEM );
 	SetLight( false );
 }
 

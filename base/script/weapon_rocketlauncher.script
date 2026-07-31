@@ -63,6 +63,13 @@ void weapon_rocketlauncher::UpdateSkin() {
 
 void weapon_rocketlauncher::Raise() {
 	UpdateSkin();
+
+	startWeaponLight( "laser" );
+	startWeaponLight( "laserGlow" );
+	startWeaponLight( "laserGlowWorld" );
+	startWeaponParticle( "laser" );
+	startWeaponParticle( "laserWorld" );
+		
 	weaponRising();
 	playAnim( ANIMCHANNEL_ALL, "raise" );
 	waitUntil( animDone( ANIMCHANNEL_ALL, ROCKETLAUNCHER_RAISE_TO_IDLE ) );
@@ -70,7 +77,14 @@ void weapon_rocketlauncher::Raise() {
 }
 
 void weapon_rocketlauncher::Lower() {
+	stopWeaponLight( "laser" );
+	stopWeaponLight( "laserGlow" );
+	stopWeaponParticle( "laser" );
+	stopWeaponParticle( "laserWorld" );
+	stopWeaponLight( "laserGlowWorld" );
+
 	weaponLowering();
+
 	playAnim( ANIMCHANNEL_ALL, "putaway" );
 	waitUntil( animDone( ANIMCHANNEL_ALL, 0 ) );
 	weaponHolstered();

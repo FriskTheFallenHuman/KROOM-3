@@ -120,22 +120,23 @@ model viewmodel_grenade {
 }
 
 entityDef damage_grenadeDirect {
-	"damage"					"150"
-	"push"						"1000"
-	"mtr_wound_flesh"			"textures/decals/hurt02"
-	"mtr_splat_flesh"			""
+	"mtr_wound"					"textures/decals/new/rocketburn"
+	"size_wound"				"270"
+	
+	"mtr_wound_flesh"			"textures/decals/plasmahurt01"
+	"size_wound_flesh"			"21"
 	"gib"						"1"
-	"smoke_wound_flesh"			"bloodwound.prt"
+	"smoke_wound_flesh"			"burstysquirt.prt" //"bloodwound.prt"
 }
 
 entityDef damage_grenadeSplash {
-	"damage"					"150"
+	"damage"					"150" //130
 	"radius"					"175"
-	"knockback"					"80"
-	"push"						"10000"
+	"knockback"					"180" // Works for player only
+	"push"						"55000" // 10000
 	"attackerDamageScale"		"0.2"
-	"attackerPushScale"			"0.2"
-	"gib"						"1"
+	"attackerPushScale"			"0.4"
+	"gib"						"1" 
 }
 
 entityDef damage_grenadeSplash_inhand {
@@ -153,28 +154,29 @@ entityDef projectile_grenade {
 
 	"def_damage"				"damage_grenadeDirect"
 	"def_splash_damage"			"damage_grenadeSplash"
-
+	"ignore_splash_damage"		"0"					// set it to 0, to let splash damage have effect on the entity hit.
+								
 	"launchFromBarrel"			"1"
-	"health"					"0"					// amount of damage projectile can take if damaged (0 means it can't be destroyed)
-	"velocity"					"300 0 40"			// how fast the projectile leaves the gun (or distance if fuse is 0)
+	"health"					"0"	//0				// amount of damage projectile can take if damaged (0 means it can't be destroyed)
+	"velocity"					"340 0 100"//300 0 40			// how fast the projectile leaves the gun (or distance if fuse is 0)
 	"angular_velocity"			"10 -10 10"			// how the projectile is rotating when it leaves the gun
-	"thrust"					"0"					// the rate of acceleration (always in the direction of the projectiles model)
+	"thrust"					"1500"				// the rate of acceleration (always in the direction of the projectiles model)
 	"thrust_start"				"0"					// when to start accelerating
 	"thrust_end"				"0"					// when to stop accelerating
 	"linear_friction"			"0.6"				// "air" friction
-	"angular_friction"			"0.4"
-	"contact_friction"			"0.1"
-	"bounce"					"0.9"				// how much speed a projectile retains when it bounces off of objects (coefficient of restitution).  0 means no bounce.
-	"mass"						"10"
+	"angular_friction"			"0.4"  //.4
+	"contact_friction"			"0.3" // .3, .1
+	"bounce"					"0.5"//.9			// how much speed a projectile retains when it bounces off of objects (coefficient of restitution).  0 means no bounce.
+	"mass"						"57"
 	"gravity"					"1066"				// how much gravity affects the trajectory.  gravity direction is same as the entity that fired it.
 	"fuse"						"3"					// how long before the projectile is removed or self-detonates.  Use 0 for beam weapons (velocity == distance).
-
+						
 	"detonate_on_fuse"			"1"					// whether projectile should detonate when it's fuse runs out
 	"detonate_on_death"			"0"					// whether projectile should detonate when it's "killed" (health runs out)
 	"detonate_on_world"			"0"					// whether projectile should detonate when it hits an obstacle
 	"detonate_on_actor"			"1"					// whether projectile should detonate when it hits a character in the game
 	"detonate_on_trigger"		"1"					// whether projectile should detonate when triggered by a character in the game
-
+								
 	"impact_damage_effect"		"1"					// whether projectile causes blood splats from characters that bleed
 	"impact_gib"				"1"					// whether projectile can gib a character or not (for example: bullets don't gib, but rockets do)
 
@@ -183,26 +185,26 @@ entityDef projectile_grenade {
 
 	"model_detonate"			"grenadeExplosion.prt"			// parametric particles -- temp
 
-	"smoke_fly"					"grenadetrail.prt"			// particle effect while in the air
+	"smoke_fly"					"grenadetrail.prt"				// particle effect while in the air
 	"smoke_detonate"			""								// particle effect when detonates
 	"smoke_residue"				""								// particle effect while in the air
 	"smoke_fuse"				""
 	"smoke_bounce"				"bulletricochet.prt"
 
-	"debris_count"				"6"
+	//"debris_count"			"6"
 	"def_debris"				"debris_largeshrapnel"
 	"def_shrapnel"				"debris_shrapnel"
 
-	"mtr_light_shader"			""
-	"light_color"				""
-	"light_radius"				""
-	"light_offset"				""
+	"mtr_light_shader"			"lights/rocketflash"
+	"light_color"				"0.74 0.27 0.27"
+	"light_radius"				"30"
+	"light_offset"				"0 0 0"
 
-	"mtr_explode_light_shader"	"muzzleflash"
-	"explode_light_color"		"1 0.8 0.4"
-	"explode_light_radius"		"200"
-	"explode_light_fadetime"	"0.25"
-
+	"mtr_explode_light_shader"	"lights/muzzleflash"
+	"explode_light_color"		"4 3.2 1.6"	//"2 1.6 0.8"
+	"explode_light_radius"		"300"
+	"explode_light_fadetime"	"0.45"
+	
 	"detonation_axis"			"0 0 1"
 
 	"snd_impact"				"player_handgrenade_bounce"

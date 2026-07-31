@@ -123,7 +123,7 @@ public:
 	virtual void			AddForce( idEntity* ent, int id, const idVec3& point, const idVec3& force );
 
 	virtual	void			Damage( idEntity* inflictor, idEntity* attacker, const idVec3& dir, const char* damageDefName, const float damageScale, const int location );
-	virtual void			AddDamageEffect( const trace_t& collision, const idVec3& velocity, const char* damageDefName );
+	virtual void			AddDamageEffect( const trace_t& collision, const idVec3& velocity, const char* damageDefName, idEntity* soundEnt );
 
 	void					SetCombatModel();
 	idClipModel* 			GetCombatModel() const;
@@ -160,7 +160,7 @@ public:
 	void					Restore( idRestoreGame* savefile );
 
 	virtual void			Think();
-	virtual void			AddDamageEffect( const trace_t& collision, const idVec3& velocity, const char* damageDefName );
+	virtual void			AddDamageEffect( const trace_t& collision, const idVec3& velocity, const char* damageDefName, idEntity* soundEnt = NULL );;
 	virtual void			GetImpactInfo( idEntity* ent, int id, const idVec3& point, impactInfo_t* info );
 	virtual void			ApplyImpulse( idEntity* ent, int id, const idVec3& point, const idVec3& impulse );
 	virtual void			AddForce( idEntity* ent, int id, const idVec3& point, const idVec3& force );

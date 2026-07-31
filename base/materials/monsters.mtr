@@ -1916,8 +1916,8 @@ models/monsters/zsecurity/zsheild_glass
 	//nonsolid
 	//noimpact
 	noshadows
-	ricochet
-
+//	ricochet
+	glass
 		{
        
     		  		 blend	filter

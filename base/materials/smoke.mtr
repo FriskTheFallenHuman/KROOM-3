@@ -1,0 +1,326 @@
+//-----------------------------------------------------------
+
+textures/particles/smoke/cloud_add_snd
+{
+	qer_editorimage	textures/particles/smoke/cloud_add.tga
+	noShadows
+	nonSolid
+	translucent
+	twoSided
+	{
+		blend add
+		map textures/particles/smoke/cloud_add.tga
+		red 		sound * Parm0
+ 		green 		sound * Parm1
+		blue 		sound * Parm2
+	}	
+}
+
+textures/particles/smoke/cloud_add
+{
+	qer_editorimage	textures/particles/smoke/cloud_add.tga
+	noShadows
+	nonSolid
+	translucent
+	twoSided
+	{
+		blend add
+		map textures/particles/smoke/cloud_add.tga
+		vertexColor
+	}	
+}
+
+textures/particles/smoke/cloud_alpha3
+{
+	noshadows
+	translucent
+	{
+		blend  blend
+		map    textures/particles/smoke/cloud_alpha3.tga
+		vertexColor
+	}
+}
+
+textures/particles/smoke/cloud_alpha4
+{
+	noSelfShadow
+	noshadows
+	translucent
+	discrete
+	twosided
+	nonsolid
+	noimpact
+	{
+		blend  diffusemap
+		map    textures/particles/smoke/cloud_alpha3.tga
+		vertexColor
+	}
+}
+
+//--------------------------------------
+//		new material for concrete smoke
+//--------------------------------------
+
+textures/particles/smoke/dirt_cloud
+{
+	noshadows
+	translucent
+	{
+		blend  blend
+		map    textures/particles/smoke/cloud_alpha3.tga
+		vertexColor
+	}
+	{
+		blend  blend
+		map    textures/particles/pieces/dirt2.tga
+		vertexColor
+	}
+}
+
+textures/particles/smoke/soft_alpha_trail
+{
+	noshadows
+	translucent
+	{
+		blend  blend
+		map    textures/particles/smoke/soft_alpha_trail.tga
+		vertexColor
+	}
+}
+
+textures/particles/smoke/cloud_alpha2
+{
+	noshadows
+	translucent
+	{
+		blend  blend
+		map    textures/particles/smoke/cloud_alpha2.tga
+		vertexColor
+	}
+}
+
+textures/particles/smoke/cloud
+{
+	qer_editorimage	textures/particles/smoke/cloud.tga
+	noShadows
+	nonSolid
+	translucent
+	twoSided
+	{
+		blend filter
+		map textures/particles/smoke/cloud.tga
+		vertexColor
+	}	
+}
+
+textures/particles/smoke/steam_alpha
+{
+	qer_editorimage	textures/particles/smoke/steam_alpha.tga
+	noShadows
+	nonSolid
+	translucent
+	twoSided
+	{
+		blend blend
+		map textures/particles/smoke/steam_alpha.tga
+		vertexColor
+	}	
+}
+
+textures/particles/smoke/underlit_alpha
+{
+	qer_editorimage	textures/particles/smoke/underlit_alpha.tga
+	noShadows
+	nonSolid
+	translucent
+	twoSided
+	{
+		blend blend
+		map textures/particles/smoke/underlit_alpha.tga
+		vertexColor
+	}	
+}
+
+textures/particles/smoke/underlit_alpha2
+{
+	qer_editorimage	textures/particles/smoke/underlit_alpha2.tga
+	noShadows
+	nonSolid
+	translucent
+	twoSided
+	{
+		blend blend
+		map textures/particles/smoke/underlit_alpha2.tga
+		vertexColor
+	}	
+}
+
+textures/particles/smoke/cloud_alpha
+{
+	noshadows
+	translucent
+	{
+		blend  blend
+		map    textures/particles/smoke/cloud_alpha.tga
+		vertexColor
+	}
+}
+
+textures/particles/smoke/impact_smoke
+{
+	noshadows
+	translucent
+	{
+		blend  blend
+		map    textures/particles/smoke/impact_smoke.tga
+		vertexColor
+	}
+}
+
+textures/particles/smoke/impact_smoke2
+{
+	noshadows
+	translucent
+	{
+		blend  diffusemap
+		map    textures/particles/smoke/impact_smoke.tga
+		alphaTest 0.05 
+		clamp
+		vertexColor
+	}
+}
+
+textures/particles/smoke/impact_smoke3
+{
+	noshadows
+	translucent
+	{
+		blend  blend
+		map    textures/particles/smoke/impact_smoke3.tga
+		vertexColor
+	}
+}
+
+
+textures/particles/smoke/white_alpha
+{
+	noshadows
+	translucent
+	{
+		blend  blend
+		map    textures/particles/smoke/white_alpha.tga
+		clamp
+		vertexColor
+	}
+
+}
+
+textures/particles/smoke/steam_source
+{
+	noshadows
+	translucent
+	{
+		blend  blend
+		map    textures/particles/smoke/steam_source.tga
+		clamp
+		vertexColor
+	}
+
+}
+
+textures/particles/smoke/steam_green
+{
+	noshadows
+	translucent
+	{
+		blend  blend
+		map    textures/particles/smoke/steam_green.tga
+		clamp
+		vertexColor
+	}
+
+}
+
+textures/particles/smoke/blacksmokepuff
+{
+	qer_editorimage textures/particles/smoke/blacksmokepuff.tga
+	noShadows
+	{
+		blend		gl_zero, gl_one_minus_src_color
+		map textures/particles/smoke/blacksmokepuff.tga
+		vertexColor
+	}
+}
+
+
+textures/particles/smoke/smoke
+{
+	qer_editorimage textures/particles/smoke/basic.tga
+	translucent
+	twoSided
+	noShadows
+	{
+		blend add
+		map textures/particles/smoke/basic.tga
+		vertexColor
+	}
+}
+
+textures/particles/smoke/smoke_underlit
+{
+	qer_editorimage textures/particles/smoke/underlit.tga
+	translucent
+	twoSided
+	noShadows
+	{
+		blend add
+		map textures/particles/smoke/underlit.tga
+		vertexColor
+	}
+}
+
+textures/particles/smoke/smoke_alpha
+{
+	noshadows
+	translucent
+	{
+		blend  blend
+		map    textures/particles/smoke/alpha.tga
+		vertexColor
+	}
+
+}
+
+
+//------------------------------------------------------------------------------
+
+
+textures/particles/smoke/smoke_dark
+{
+	noshadows
+	translucent
+	{
+		blend  blend
+		map    textures/particles/smoke/smoke_dark.tga
+		vertexColor
+	}
+}
+
+textures/particles/smoke/smoke_dark2
+{
+	noshadows
+	translucent
+	
+	{
+		maskcolor				
+	    map	makealpha(textures/particles/smoke/smoke_dark_mask.tga)
+	    vertexColor
+	}
+	{
+	    blend GL_DST_ALPHA, gl_one
+		maskAlpha
+		map    textures/particles/smoke/smoke_dark.tga
+		vertexColor
+	}
+	
+}

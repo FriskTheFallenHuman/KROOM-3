@@ -136,27 +136,30 @@ model viewmodel_bfg {
 }
 
 entityDef damage_bfg {
-	"damage"					"200"
-	"push"						"1000"
+	"damage"					"100" // this will be applied in addition to splashDamage
+	//"push"					"90000" //1000
 	"gib"						"1"
 	"smoke_wound_flesh"			"bloodwound.prt"
+	"mtr_wound"					"textures/decals/bfg_wallmark"
+	"size_wound"				"172" //72
 }
 
 entityDef damage_bfgFreq {
 	"damage"					"5"
-	"push"						"0"
+	"push"						"-200"//0
 	"gib"						"1"
 	"snd_flesh"					"bullet_impact_flesh"
 }
 
 entityDef damage_bfgSplash {
-	"damage"					"100"
-	"radius"					"150"
-	"knockback"					"80"
-	"push"						"7000"
-	"attackerDamageScale"		"0.2"
-	"attackerPushScale"			"0.2"
+	"damage"					"240" //100, 110  
+	"radius"					"220" //250, 150
+	"knockback"					"150"  //80
+	"push"						"100000" //7000
+	"attackerDamageScale"		"0.01"// You'll have shoot at your feet to hurt yourself
+	"attackerPushScale"			"0.4"//.2
 	"gib"						"1"
+	"smoke_wound_flesh"			"bloodwound.prt" //new
 }
 
 entityDef projectile_bfg {
@@ -172,7 +175,8 @@ entityDef projectile_bfg {
 	"def_damage"				"damage_bfg"
 	"def_damageFreq"			"damage_bfgFreq"
 	"def_splash_damage"			"damage_bfgSplash"
-
+	"ignore_splash_damage"		"0"
+	
 	"beam_WidthFly"				"24"
 	"beam_WidthExplode"			"128"
 	"skin_beam"					"skins/duffybolt"
@@ -205,30 +209,30 @@ entityDef projectile_bfg {
 
 	"impact_damage_effect"		"1"					// whether projectile causes blood splats from characters that bleed
 	"impact_gib"				"1"					// whether projectile can gib a character or not (for example: bullets don't gib, but rockets do)
+								
+	//"mtr_detonate"			"textures/decals/bfg_wallmark"		//doesnt work with the new dll, damage def handles these things now
+	//"decal_size"				"72" 
 
-	"mtr_detonate"				"textures/decals/bfg_wallmark"
-	"decal_size"				"72"
-
-	"smoke_fly"					""					// particle effect while in the air
+	"smoke_fly"					"bfgtrail.prt"		// particle effect while in the air
 	"smoke_detonate"			""					// particle effect when detonates
 	"smoke_residue"				""					// particle effect while in the air
 	"smoke_bounce"				""					// particle effect when bounces
 	"smoke_fuse"				""					// particle effect when removed from fuse expiring
 
 	"model_detonate"			"bfgExplosion.prt"
-	"debris_count"				"6"
-	"def_debris"				"debris_largeshrapnel"
-	"def_shrapnel"				"debris_shrapnel"
+	//"debris_count"			"6"
+	//"def_debris"				"debris_largeshrapnel" // fixed the dll, now this line works if uncommented
+	//"def_shrapnel"			"debris_shrapnel"
 
-	"mtr_light_shader"			"lights/baronflash"
+	"mtr_light_shader"			"lights/newbaronflash"
 	"light_color"				"1 1 1"
-	"light_radius"				"160"
+	"light_radius"				"240"//160
 	"light_offset"				"0 0 -16"
-
-	"mtr_explode_light_shader"	"muzzleflash"
-	"explode_light_color"		"0 1 0"
-	"explode_light_radius"		"300"
-	"explode_light_fadetime"	"0.25"
+	
+	"mtr_explode_light_shader"	"lights/newbaronflash"
+	"explode_light_color"		"1 1.75 1"// 2 3.5 2, 4 7 4
+	"explode_light_radius"		"360"//300
+	"explode_light_fadetime"	".85"//.25
 
 								// sound effect while in the air
 	"snd_explode"				"player_bfg_explode"

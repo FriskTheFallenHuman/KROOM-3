@@ -1,0 +1,27 @@
+textures/particles/sparks/spark_line3_vert  
+{
+	qer_editorimage textures/particles/sparks/spark_line3_vert.tga
+	noShadows
+	{
+		blend add
+		map textures/particles/sparks/spark_line3_vert.tga
+		vertexColor
+	}
+}
+
+textures/particles/sparks/spark3
+{
+	qer_editorimage textures/particles/sparks/spark3.tga
+	noshadows
+	twosided
+        {
+		blend	add
+		map textures/particles/sparks/spark3.tga
+		clamp
+		vertexColor 
+		red parm0
+		green parm1
+		blue parm2  
+        }
+}
+

@@ -1,0 +1,264 @@
+/***********************************************************************
+
+	monster_demon_maggot.def
+
+***********************************************************************/
+
+model monster_demon_maggot {
+	mesh							models/md5/monsters/maggot3/maggot3.md5mesh
+	channel torso					( *origin -*Hips -origin -Torso )
+	channel legs					( *Hips origin Torso )
+	anim af_pose					models/md5/monsters/maggot3/af_pose.md5anim
+	anim idle						models/md5/monsters/maggot3/idle.md5anim
+	anim stand						models/md5/monsters/maggot3/idle.md5anim
+	anim teleport					models/md5/monsters/maggot3/teleportin.md5anim
+	anim sight						models/md5/monsters/maggot3/sight.md5anim {
+		frame 14						sound_voice snd_sight
+		frame 19						sound_body snd_sight
+	}
+	//anim sight2					models/md5/monsters/maggot3/getup.md5anim
+	anim walk1						models/md5/monsters/maggot3/walk.md5anim {
+		frame 9							sound_body snd_footstep
+		frame 12						sound_body snd_footstep
+		frame 18						sound_body snd_footstep
+		frame 15						sound_body snd_footstep
+		frame 27						sound_body snd_footstep
+	}
+	anim walk2						models/md5/monsters/maggot3/walk2.md5anim {
+		frame 11						sound_body snd_footstep	
+		frame 13						sound_body snd_footstep
+		frame 15						sound_body snd_footstep
+		frame 19						sound_body snd_footstep
+		frame 20						sound_body snd_footstep
+	}
+	anim run						models/md5/monsters/maggot3/run3.md5anim {
+		frame 9							sound_body snd_footstep
+		frame 12						sound_body snd_footstep
+		frame 18						sound_body snd_footstep
+		frame 15						sound_body snd_footstep
+		frame 27						sound_body snd_footstep
+	}
+	anim melee_attack1				models/md5/monsters/maggot3/leftclawattack.md5anim {
+		//frame	1						sound_weapon snd_attack_1
+		frame 12						sound_weapon snd_attack_1
+		//frame 12						sound_weapon snd_attackmelee_2
+		//frame 12						sound_voice snd_melee
+		//frame 12						sound_voice snd_melee2
+		frame 19						sound_body snd_footstep	
+		frame 20						melee melee_magLeftClaw
+		frame 29						sound_body snd_footstep
+	}
+	/*
+	FIXME: missing anim
+	anim melee_attack2				models/md5/monsters/maggot3/backslash.md5anim {
+		//frame 12						sound_weapon snd_attackmelee_2
+		frame 26						melee melee_magRightClaw
+		frame 31						sound_voice snd_melee
+		frame 31						sound_voice snd_melee2
+		frame 32						melee melee_magLeftClaw
+	}
+	*/
+	anim melee_attack3				models/md5/monsters/maggot3/righthandsattack.md5anim {
+		//frame	1						sound_weapon snd_attack_3
+		frame	12						sound_weapon snd_attack_3
+		//frame 12						sound_weapon snd_attackmelee_2
+		frame 17						melee melee_magRightClaw
+		frame 18						melee melee_magRightClaw
+		//frame 19						sound_voice snd_melee
+		//frame 19						sound_voice snd_melee2
+	}
+	anim melee_attack4				models/md5/monsters/maggot3/tongueattack.md5anim {
+		//frame 1						sound_weapon snd_attackmelee_2
+		frame	14						sound_weapon snd_attack_4
+		frame 21						attack_begin melee_magRightClaw
+		frame 31						attack_end
+	}
+	anim evade_left					models/md5/monsters/maggot3/evade_left.md5anim {
+		frame 1							call overrideTorso
+		frame 1							sound_voice snd_evade_left
+	}
+	anim evade_right				models/md5/monsters/maggot3/evade_right.md5anim {
+		frame 1							call overrideTorso
+		frame 1							sound_voice snd_evade_right
+	}
+	//anim range_attack				models/md5/monsters/maggot3/range_attack1.md5anim
+
+	anim jump_start					models/md5/monsters/maggot3/jump_start.md5anim {
+		frame 1							sound_voice snd_attack_4
+	
+	}
+	anim jump_loop					models/md5/monsters/maggot3/jump_loop.md5anim
+	anim jump_end					models/md5/monsters/maggot3/jump_end.md5anim
+
+	anim pain						models/md5/monsters/maggot3/pain_chest2.md5anim {
+		frame 1							call overrideLegs
+		frame 1							sound_voice snd_pain
+	}
+	anim pain_head					models/md5/monsters/maggot3/pain_chest2.md5anim {
+		frame 1							call overrideLegs
+		frame 1							sound_voice snd_pain
+	}
+	anim pain_chest					models/md5/monsters/maggot3/pain_chest2.md5anim {
+		frame 1							call overrideLegs
+		frame 1							sound_voice snd_pain
+	}
+	anim pain_right_arm				models/md5/monsters/maggot3/pain_rightarm2.md5anim {
+		frame 1							call overrideLegs
+		frame 1							sound_voice snd_pain
+	}
+	anim pain_left_arm				models/md5/monsters/maggot3/pain_leftarm2.md5anim {
+		frame 1							call overrideLegs
+		frame 1							sound_voice snd_pain
+	}
+	anim pain_legs					models/md5/monsters/maggot3/pain_chest2.md5anim {
+		frame 1							call overrideLegs
+		frame 1							sound_voice snd_pain
+	}
+	anim outofhole1					models/md5/monsters/maggot3/outofhole.md5anim  {
+		ai_no_turn
+		frame 1							sound_voice snd_chatter
+		frame 35						sound_voice2 snd_sight
+	}
+	anim outofhole2					models/md5/monsters/maggot3/outofhole2.md5anim {
+		ai_no_turn
+		frame 1							sound_voice snd_chatter
+	}
+	anim outofhole3					models/md5/monsters/maggot3/outofhole3.md5anim {
+		ai_no_turn
+		frame 1							sound_voice snd_chatter
+	}
+	anim downwall					models/md5/monsters/maggot3/maggotdownwall.md5anim {
+		ai_no_turn
+		frame 1							disableGravity
+		frame 1							disableWalkIK
+		frame 82						enableGravity
+		frame 82						enableWalkIK
+	}
+	anim ceiling192					models/md5/monsters/maggot3/oneninetytwoceiling.md5anim {
+		frame 1						disableGravity
+		frame 1						disableWalkIK
+		frame 14 					enableGravity
+		frame 14					enableWalkIK
+	}
+
+
+
+}
+
+entityDef monster_demon_maggot {
+	"inherit"						"monster_default_new"
+	"scriptobject"					"monster_demon_maggot"
+	"size"							"48 48 68"
+	"use_aas"						"aas48"
+	"team"							"1"
+	"rank"							"1"
+	"health"						"80"
+	"melee_range"					"48"
+	"turn_rate"						"360"
+	"mass"							"200"
+		
+	"burnaway"						"0.50"
+	"smoke_burnParticleSystem"			"burn_imp.prt-chest"
+
+	"ragdoll"						"monster_demon_maggot"
+	"model"							"monster_demon_maggot"
+	"anim"							"idle"
+	"skin_dropDeath"				"skins/models/monsters/magnospikes.skin"	
+
+	"bone_focus"					"Shoulders"
+
+	"damage_zone head"				"*Shoulders"
+	"damage_zone chest"				"*Waist -*Rshldr -*Lshldr -*Shoulders"
+	"damage_zone left_arm"			"*Lshldr"
+	"damage_zone right_arm"			"*Rshldr"
+	"damage_zone legs"				"*Hips"
+
+	"damage_scale head"				"3"
+
+	"snd_attack_1"					"monster_demon_maggot_attack1"
+	"snd_attack_3"					"monster_demon_maggot_attack3"
+	"snd_attack_4"					"monster_demon_maggot_attack4"
+	"snd_evade_right"				"monster_demon_maggot_evade_right"
+	"snd_evade_left"				"monster_demon_maggot_evade_left"
+	//"snd_idle"						"monster_demon_maggot_idle"
+	"snd_chatter"					"monster_demon_maggot_idle"
+	"snd_chatter_combat"			"monster_demon_maggot_idle"
+
+	"snd_sight"						"monster_demon_maggot_sight"
+	"snd_sight2"					"monster_demon_maggot_sight"
+	"snd_footstep"					"monster_demon_maggot_footstep"
+	"snd_melee"						"monster_demon_maggot_melee"
+	"snd_melee2"					"monster_demon_maggot_melee2"
+	//"snd_chatter"					"monster_demon_maggot_chatter"
+	//"snd_chatter_combat"			"monster_demon_maggot_chatter"
+
+	"snd_pain"						"monster_demon_maggot_pain"
+	"snd_death"						"monster_demon_maggot_die"
+	"snd_burn"						"monster_demon_tick_burn"
+}
+
+entityDef melee_magLeftClaw {
+	// melee specific parameters
+	"snd_hit"						"monster_demon_imp_melee_hit"
+	"snd_miss"						"monster_demon_imp_melee_miss"
+	"kickDir"						"0 -1 0"
+
+
+	// damage parameters
+	"damage"						"6"
+
+	"mtr_blob"						"leftSlash"
+	"blob_time"						"300"
+	"blob_x"						"140"
+	"blob_y"						"-100"
+	"blob_width"					"600"
+	"blob_height"					"600"
+
+	"knockback"						"40"
+
+	"kick_time"						"400"
+	"kick_amplitude"				"2"
+
+	"dv_time"						"100"
+}
+
+entityDef melee_magRightClaw {
+	"snd_hit"						"monster_demon_imp_melee_hit"
+	"snd_miss"						"monster_demon_imp_melee_miss"
+	"kickDir"						"0 1 0"
+
+	"damage"						"6"
+
+	"mtr_blob"						"rightSlash"
+	"blob_time"						"300"
+	"blob_x"						"-100"
+	"blob_y"						"-100"
+	"blob_width"					"600"
+	"blob_height"					"600"
+
+	"knockback"						"30"
+
+	"kick_time"						"400"
+	"kick_amplitude"				"2"
+
+	"dv_time"						"100"
+}
+
+entityDef melee_maggotLeapAttack {
+	// melee specific parameters
+	"snd_hit"						"monster_demon_maggot_melee_hit"
+	"kickDir"						"1 0 0"
+
+	// damage parameters			
+	"damage"						"16"
+	"mtr_blob"						"leftSmack"
+	"blob_time"						"300"
+	"blob_x"						"50"
+	"blob_y"						"-100"
+	"blob_width"					"600"
+	"blob_height"					"600"
+	"knockback"						"100"
+	"kick_time"						"800"
+	"kick_amplitude"				"2"
+	"dv_time"						"400"
+}

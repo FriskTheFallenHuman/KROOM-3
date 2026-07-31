@@ -335,8 +335,6 @@ entityDef monster_zsec_pistol {
 	"damage_zone left_arm"			"*Lshldr"
 	"damage_zone right_arm"			"*Rshldr"
 	"damage_zone legs"				"*Hips"
-
-	"damage_scale head"				"1.25"
 		
 
 	"def_head"						"head_zombie6"

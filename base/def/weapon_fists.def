@@ -69,12 +69,13 @@ entityDef damage_fists {
 	"blob_size"			"400"
 	"blob_offset_x"		"400"
 
-	"knockback"			"20"
+	"knockback"			"1020" //20
 	"push"				"20000"
 
 	"gib"				"1"
 	"smoke_wound_flesh"	"burstysquirt.prt"
 	"mtr_wound_flesh"	"textures/decals/hurt02"
+	"size_wound_flesh"	"9"
 
 	"kick_time"			"400"
 	"kick_amplitude"	"1"
@@ -90,8 +91,8 @@ entityDef damage_fists {
 	"snd_glass"			"fist_impact"
 	"snd_liquid"		"fist_impact"
 	"snd_plastic"		"fist_impact"
-	"snd_shatter"		"melee_impact_glass"
-
+	"snd_shatter"		"fist_impact"		//"melee_impact_glass"	
+	
 	"snd_hit"			"fist_impact"
 	"snd_miss"			"fist_whoosh"
 	"snd_hit_berserk"	"fist_gorepunch"

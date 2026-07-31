@@ -44,8 +44,8 @@ entityDef weapon_machinegun {
 	"lowAmmo"					"10"
 
 	"mtr_flashShader"			"muzzleflash"
-	"flashColor"				"1 0.8 0.4"
-	"flashRadius"				"120"
+	"flashColor"				"1.75 1.4 0.7" //"1 0.8 0.4"
+	"flashRadius"				"150" //180, 120
 
 	"mtr_flashLightShader"		"lights/flashlight5"
 	"flashLightColor"			"1 1 1"
@@ -73,7 +73,8 @@ entityDef weapon_machinegun {
 	"hide_time"					"0.3"								// time to hide weapon when talking to npcs or looking at guis
 	"hide_distance"				"-15"								// distance to offset weapon when talking to npcs or looking at guis
 
-	"smoke_muzzle"				"mgmuzzlesmoke.prt"
+	"smoke_muzzle"				"mgmuzzlesmoke.prt" 
+	//"fixed_brass_dir"			"1"			// This causes the brass to be spawned from fixed direction.
 	"def_ejectBrass"			"debris_brass"
 	"ejectBrassDelay"			"10"
 
@@ -85,7 +86,36 @@ entityDef weapon_machinegun {
 	// MP
 	"skin_invisible"			"skins/machinegun_invis"
 
-	"spread"					"1"
+	"weapon_particle"					"flashfx_left"						// This the effect name and must be used as prefix for keys below
+	"flashfx_left_joint"				"barrel"
+	"flashfx_left_weaponDepthHack"		"1"
+	"flashfx_left_continuous"			"0"
+	"flashfx_left_offset"				"0 .5 -.9"
+	"flashfx_left_particle"				"machinegun_flash_half.prt"
+
+	"weapon_particle2"					"flashfx_right"
+	"flashfx_right_joint"				"barrel"
+	"flashfx_right_weaponDepthHack"		"1"
+	"flashfx_right_continuous"			"0"
+	"flashfx_right_offset"				"0 0.5 .9"
+	"flashfx_right_particle"			"machinegun_flash_half.prt"
+
+	"weapon_particle3"					"flashfx_left_world"
+	"flashfx_left_world_joint"			"barrel"
+	"flashfx_left_world_onWorldModel"	"1"
+	"flashfx_left_world_offset"			"0 0 -1.1"
+	"flashfx_left_world_particle"		"machinegun_flash_half_world.prt"
+
+	"weapon_particle4"					"flashfx_right_world"
+	"flashfx_right_world_joint"			"barrel"
+	"flashfx_right_world_onWorldModel"	"1"
+	"flashfx_right_world_offset"		"0 0 .7"
+	"flashfx_right_world_particle"		"machinegun_flash_half_world.prt"
+
+	"spread"					".5" // 1
+	"spread_max"				"7"		
+	"spread_increment_factor"	"0.3" // float, range be should 0-1 however you can try values greater than 1.
+
 	"attack_range_npc"			"260"
 	"fire_hold_time_npc"		"940"
 
@@ -101,7 +131,7 @@ entityDef moveable_item_machinegun {
 	"density"					"0.05"
 	"friction"					"0.2"
 	"bouncyness"				"0"
-	"snd_bounce"				"smallbox"
+	"snd_bounce"				"metal_bounce"
 }
 
 model worldmodel_machinegun {
@@ -130,7 +160,6 @@ model viewmodel_machinegun {
 	anim idle 				models/md5/weapons/machinegun_view/idle.md5anim
 	anim fire1				models/md5/weapons/machinegun_view/fire4.md5anim {
 		frame 1				sound_voice player_machinegun_fire
-		frame 1				sound_voice2  player_machinegun_mech
 	}
 	anim reload				models/md5/weapons/machinegun_view/reload.md5anim {
 		frame 1				sound_item player_machinegun_reload
@@ -150,24 +179,76 @@ entityDef damage_bullet_machinegun {
 	"blob_size"			"400"
 	"blob_offset_x"		"400"
 
-	"knockback"			"2"
+	"knockback"			"4"   // 1, 6
 
-	"mtr_wound_flesh"	"textures/decals/hurt02"
-	"mtr_wound_metal"	"textures/decals/hurtmetal"
-	"mtr_wound_ricochet"	"textures/decals/hurtmetal"
-	"mtr_splat_flesh"	"textures/decals/dsplat2"
-	"mtr_splat_flesh2"	"textures/decals/dsplat5"
-	"mtr_splat_flesh3"	"textures/decals/dsplat7"
-	"mtr_splat_flesh4"	"textures/decals/dsplat11"
-
-	"kick_time"			"400"
+	"kick_time"			"100" //400
 	"kick_amplitude"	"1"
 
 	"dv_time"			"100"
 
 	"gib"				"1"
-	"smoke_wound_flesh"	"burstysquirt.prt"
+	
+	"smoke_wound_cardboard"		"smokecardboard.prt"
+	"smoke_wound_flesh"			"burstysquirt.prt"
+	"smoke_wound_ricochet"		"smokemetal.prt"
+	//"smoke_wound_metal"		"burstysquirt.prt"	//For Testing
+	//"smoke_wound_metal"		"smokewood.prt"	//For Testing
+	//"smoke_wound_metal"		"smokesparks.prt"	//Default Smoke
+	"smoke_wound_metal"			"smokemetal.prt"	//Default Smoke
+	"smoke_wound_wood"			"smokewood.prt"	
+	"smoke_wound_plastic"		"smokeplastic.prt"	
+	"smoke_wound_stone"			"smokestone.prt" 
+	"smoke_wound_glass"			"smokeglass.prt" 
+	"smoke_wound_surftype10"	"smokeconcrete.prt" 
+	"smoke_wound_surftype11"	"smokesand.prt" 
 
+	"mtr_wound"					"textures/decals/hurtmetal"
+	"mtr_wound_stone"			"textures/decals/new/concrete"
+	"mtr_wound_wood"			"textures/new/decals/wood/shot3"
+	"mtr_wound_flesh"			"textures/decals/hurt02"
+	"mtr_wound_glass"			"textures/decals/new/bulletglass"
+	"mtr_wound_cardboard"		"textures/decals/new/concrete" 
+	"mtr_wound_plastic"			"textures/decals/new/concrete" 
+	"mtr_wound_surftype10"		"textures/new/decals/concrete/shot1"
+	"mtr_wound_surftype11"		"textures/decals/new/concrete" 
+	//"mtr_wound_ricochet"		"textures/decals/hurtmetal"
+
+	"size_wound"				"4"		// default size
+	"size_wound_stone"			"6"		// stone decal size
+	"size_wound_cardboard"		"10"	// cardboard and paper decal size
+	"size_wound_plastic"		"7"		// plastic decal size
+	"size_wound_surftype10"		"4"		// concrete
+	"size_wound_surftype11"		"12" 	// concrete
+	//"size_wound_flesh"		"6"
+	
+	"snd_tracer"				"bullet_flight"
+	"snd_ricochet"				"bullet_ricochet"
+	"snd_flesh"					"bullet_impact_flesh"
+	"snd_metal"					"bullet_impact_metal" 		// default sound
+	"snd_surftype10"			"bullet_impact_concrete"
+	"snd_surftype11"			"bullet_impact_sand"
+	"snd_stone"					"bullet_impact_stone"
+	"snd_wood"					"bullet_impact_wood"
+	"snd_cardboard"				"bullet_impact_cardboard"
+	"snd_glass"					"bullet_impact_glass"
+	"snd_liquid"				"bullet_impact_liquid"
+	"snd_plastic"				"bullet_impact_plastic"
+
+	"mtr_splat_flesh"			"textures/decals/dsplat2"
+	"mtr_splat_flesh2"			"textures/decals/dsplat5"
+	"mtr_splat_flesh3"			"textures/decals/dsplat7"
+	"mtr_splat_flesh4"			"textures/decals/dsplat11"
+
+	"mtr_bloodPool_flesh"		"textures/decals/splat6"
+	"mtr_bloodPool_flesh2"		"textures/decals/splat7"
+	"mtr_bloodPool_flesh3"		"textures/decals/dsplat7"
+
+	"mtr_splatSelf_flesh"		"textures/decals/test1"
+	"mtr_splatSelf_flesh2"		"textures/decals/test2"
+	"mtr_splatSelf_flesh3"		"textures/decals/test3"
+	"mtr_splatSelf_flesh4"		"textures/decals/test4"
+
+	"size_splatSelf_flesh"		"7"
 }
 
 entityDef projectile_bullet_machinegun {
@@ -175,16 +256,19 @@ entityDef projectile_bullet_machinegun {
 	"mins"						"-1 -1 -1"
 	"maxs"						"1 1 1"
 	"cone"						"3"
-//	"model" 					"models/items/projectiles/rocket.ase"
 	"scale"						"0.1"
 	"noshadows"					"1"
 
-	"tracers"					"1"
-	"model_tracer"				"models/particles/tracer/tracer.lwo"
-
+	"tracers"					"1" // the new tracer logic is enabled
+	"tracer_speed"				"5900"
+	//"tracer_probability"		".6"	//probability that the tracer will be drawn everytime porjectile is thrown
+	
+	"beam_skin"					"textures/particles/tracer1_nodeform" 
+	"beam_length"				"170" //170
+		
 	"def_damage"				"damage_bullet_machinegun"
 
-	"launchFromBarrel"			"1"
+	"launchFromBarrel"			"0"
 	"health"					"0"
 	"velocity"					"7200 0 0"	// .38 Special 600 fps.  Source: Petzal, David E. "How fast is a speeding bullet." Field and Stream. 97 (1992): 23
 	"angular_velocity"			"0 0 0"
@@ -195,9 +279,9 @@ entityDef projectile_bullet_machinegun {
 	"angular_friction"			"0"
 	"contact_friction"			"0"
 	"bounce"					"0.6"
-	"mass"						"1"
+	"mass"						"1.7"    //3, 1
 	"gravity"					"0"
-	"fuse"						"4"
+	"fuse"						"4"//4
 
 	"detonate_on_fuse"			"0"
 	"detonate_on_death"			"0"
@@ -206,39 +290,33 @@ entityDef projectile_bullet_machinegun {
 
 	"impact_damage_effect"		"1"
 	"impact_gib"				"1"
+	
+	//"debris_count"			"2"
+	//"def_debris"				"debris_sparks"		// 
 
-	"mtr_detonate"				"textures/decals/bulleth02"
+	"mtr_detonate"				"textures/decals/new/concrete"	 //"textures/decals/bulleth02"
 	"mtr_detonate_glass"		"textures/decals/testbulletglass1"
-	"decal_size"				"10"
-	"model_smokespark"			"bulletsmokeandspark.prt"
-	"model_ricochet"			"bulletricochet.prt"
+	"decal_size"				"8"	//"10"
+	//"model_smokespark"		"smokeglass.prt"	//"burstysquirt.prt"		
+	//"model_ricochet"			"bulletsparks.prt"
 
-	"smoke_fly"					""
+	"smoke_fly"					""//"tracer"
 	"smoke_detonate"			"smokeandspark.smoke"
 	"smoke_bounce"				""	//particles/bullet_sparks.particle"
 	"smoke_fuse"				""
-
+								
 	"mtr_light_shader"			""
 	"light_color"				"0 0 0"
 	"light_radius"				"0"
 	"light_offset"				"0 0 0"
+	
+	//"snd_tracer"				"bullet_flight" // Only this sound info lies here, Everything else lies in damage def
 
-	"mtr_explode_light_shader"	""
-	"explode_light_color"		"0 0 0"
-	"explode_light_radius"		"0"
-	"explode_light_fadetime"	"0"
-
-	"snd_tracer"				"bullet_flight"
-	"snd_ricochet"				"bullet_ricochet"
-	"snd_flesh"					"bullet_impact_flesh"
-	"snd_metal"					"bullet_impact_metal"
-	"snd_stone"					"bullet_impact_stone"
-	"snd_wood"					"bullet_impact_wood"
-	"snd_cardboard"				"bullet_impact_cardboard"
-	"snd_glass"					"bullet_impact_glass"
-	"snd_liquid"				"bullet_impact_liquid"
-	"snd_plastic"				"small_plastic"
-	//"snd_impact"				"bullet_impact_metal"
+	"mtr_explode_light_shader"	""	//"lights/rocketflash"
+	"explode_light_color"		""	//"1 0.8 0.4"
+	"explode_light_radius"		""	//"15"
+	"explode_light_fadetime"	""	//"0.09"
+	
 }
 
 entityDef damage_bullet_zsec_machinegun {

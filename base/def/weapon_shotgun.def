@@ -38,8 +38,8 @@ entityDef weapon_shotgun {
 	"lowAmmo"					"2"
 
 	"mtr_flashShader"			"muzzleflash"
-	"flashColor"				"1 0.8 0.4"
-	"flashRadius"				"120"
+	"flashColor"				"2 1.6 .8"	//"1.75 1.4 0.7" //"1 0.8 0.4"
+	"flashRadius"				"190"//170, 220, 120
 
 	"mtr_flashLightShader"		"lights/flashlight5"
 	"flashLightColor"			"1 1 1"
@@ -72,8 +72,71 @@ entityDef weapon_shotgun {
 	// MP
 	"skin_invisible"			"skins/shotgun_invis"
 
-	"spread"					"22"
+	"spread"					"14" //  "22"
 	"attack_range_npc"			"460"
+
+	"weapon_light"				"flashlight"
+	"flashlight_joint"			"barrel"
+	"flashlight_shader"			"lights/flashlight5"
+	"flashlight_color"			"1 1 1"
+	"flashlight_radius"			"640"
+	"flashlight_alwaysOn"		"1"
+	"flashlight_target"    		"960 0 0"
+	"flashlight_up"       		"0 480 0"//"0 420 0"   
+	"flashlight_right"    		"0 0 480"//"0 0 420" 
+	"flashlight_pointLight"		"0" 
+	"flashlight_noShadows"		"0"//"1"
+
+	"weapon_light2"						"flashlightworld"
+	"flashlightworld_joint"				"barrel"
+	"flashlightworld_shader"			"lights/flashlight5"
+	"flashlightworld_color"				"1 1 1"
+	"flashlightworld_radius"			"640"
+	"flashlightworld_alwaysOn"			"1"
+	"flashlightworld_onWorldModel"		"1"
+	"flashlightworld_target"			"960 0 0"
+	"flashlightworld_up"				"0 420 0"   
+	"flashlightworld_right"				"0 0 420"  
+	"flashlightworld_pointLight"		"0" 
+	"flashlightworld_noShadows"			"1"
+
+	"weapon_light3"				"emitterGlow"		// Prefix
+	"emitterGlow_joint"			"barrel"
+	"emitterGlow_shader"		"lights/rocketflash"
+	"emitterGlow_color"			"1 1 1"
+	"emitterGlow_radius"		"12"
+	"emitterGlow_offset"		"1.7 -2.2 0.4"	
+	 "emitterGlow_alwaysOn"		"1"
+	"emitterGlow_pointLight"	"1" 
+	"emitterGlow_noShadows"		"1"
+
+	"weapon_particle"					"flashlightworld"
+	//"flashlightworld_joint"			"barrel" 			// defined already
+	//"flashlightworld_onWorldModel"	"1"					// defined already
+	"flashlightworld_offset"			"4.5 -1.7 0.5"		//"4.5 -1.8 0.5"	
+	"flashlightworld_dir"				"1 -0.02 .10"	
+	"flashlightworld_particle"			"flashmodworld.prt"
+
+	"weapon_particle2"					"flashlight"
+	//"flashlight_joint"					"barrel"
+	"flashlight_weaponDepthHack"		"1"
+	"flashlight_offset"					"1.7 -2.2 0.4"	
+	"flashlight_dir"					"1 0 0.11"//"1 -0.02 .11"	//"1 -0.03 .11"		
+	"flashlight_particle"				"flashmod.prt"
+
+	"weapon_particle3"					"shotgun_flash"
+	"shotgun_flash_joint"				"barrel"
+	"shotgun_flash_weaponDepthHack"		"1"
+	"shotgun_flash_continuous"			"0"
+	"shotgun_flash_dir"					"1 0 .11"//"1 0 .25" 
+	//"shotgun_flash_offset"				"0 0.7 0"// 0 0.7 0
+	"shotgun_flash_particle"			"shotgun_flash.prt"
+
+	"weapon_particle4"					"shotgun_flash_world"
+	"shotgun_flash_world_joint"			"barrel"
+	"shotgun_flash_world_onWorldModel"	"1"
+	"shotgun_flash_world_offset"		"2 1 0"
+	"shotgun_flash_world_particle"		"shotgun_flash_world.prt"
 
 	"controllerShakeHighMag"	"1.0"
 	"controllerShakeHighTime"	"120"
@@ -88,7 +151,7 @@ entityDef moveable_item_shotgun {
 	"density"					"0.05"
 	"friction"					"0.2"
 	"bouncyness"				"0"
-	"snd_bounce"				"smallbox"
+	"snd_bounce"				"metal_bounce"
 }
 
 model worldmodel_shotgun {
@@ -162,23 +225,70 @@ entityDef	damage_shotgun {
 	"blob_size"			"400"
 	"blob_offset_x"		"400"
 
-	"knockback"			"10"
-
+	"knockback"			"30"  // 15 34
+	
 	"gib"				"1"
-	"smoke_wound_flesh"	"burstysquirt.prt"
-
-	"mtr_wound_flesh"	"textures/decals/hurt02"
-	"mtr_wound_metal"	"textures/decals/hurtmetal"
-	"mtr_splat_flesh"	"textures/decals/dsplat2"
-	"mtr_splat_flesh2"	"textures/decals/dsplat5"
-	"mtr_splat_flesh3"	"textures/decals/dsplat7"
-	"mtr_splat_flesh4"	"textures/decals/dsplat11"
-	"snd_flesh"			"shotgun_impact_flesh"
-
 	"kick_time"			"400"
 	"kick_amplitude"	"1"
 
 	"dv_time"			"100"
+	
+	"smoke_wound"				"smokesparks.prt"	// Default Smoke 
+	"smoke_wound_flesh"			"burstysquirt.prt"
+	"smoke_wound_cardboard"		"smokecardboard.prt"
+	"smoke_wound_wood"			"smokewood.prt"	
+	"smoke_wound_stone"			"smokestone.prt" 
+	"smoke_wound_glass"			"smokeglass.prt"
+	"smoke_wound_plastic"		"smokeplastic.prt"
+	"smoke_wound_surftype11"	"smokesand.prt"		// surftype11 is sand 
+	"smoke_wound_surftype10"	"smokeconcrete.prt"	// smoke for Concrete 
+	//"smoke_wound_ricochet"	"smokesparks.prt"
+
+	"mtr_wound"					"textures/decals/ballburn01"// Default material
+	"mtr_wound_flesh"			"textures/decals/hurt02"
+	"mtr_wound_glass"			"textures/decals/new/bulletglass"
+	"mtr_wound_wood"			"textures/new/decals/wood/shot3"
+	"mtr_wound_cardboard"		"textures/decals/new/concrete" 
+	"mtr_wound_plastic"			"textures/decals/new/concrete" 
+	//"mtr_wound_surftype10"	"textures/decals/new/concrete"
+	"mtr_wound_surftype10"		"textures/new/decals/concrete/shot1"	//surftype10 is concrete
+	"mtr_wound_surftype11"		"textures/decals/new/concrete"			//surftype11 is sand
+
+	"size_wound"				"5"		
+	"size_wound_flesh"			"8"		
+	"size_wound_wood"			"7"		
+	"size_wound_cardboard"		"10"		// cardboard and paper decal size
+	"size_wound_plastic"		"7"			// plastic decal size
+	"size_wound_surftype10"		"4"//"10"	// concrete
+	"size_wound_surftype11"		"12"		// sand
+
+	"mtr_splat_flesh"			"textures/decals/dsplat2"
+	"mtr_splat_flesh3"			"textures/decals/dsplat7"
+	"mtr_splat_flesh4"			"textures/decals/dsplat11"
+
+	"mtr_bloodPool_flesh"		"textures/decals/new_splat"
+
+	"size_bloodPool_flesh"		"72"
+	"bloodpool_below_origin"	"1"				// When this flag is set, bloodPool is created below origin of 
+												// colliding entity, as opposed to bloodPool below colling point.
+
+	"mtr_splatSelf_flesh"		"textures/decals/test2"
+	"mtr_splatSelf_flesh2"		"textures/decals/test3"
+	"mtr_splatSelf_flesh3"		"textures/decals/test4"
+
+	"size_splatSelf_flesh"		"30"
+
+	"snd_flesh"					"shotgun_impact_flesh"
+	"snd_metal"					"shotgun_impact_metal"		//default sound
+	"snd_stone"					"bullet_impact_stone"
+	"snd_wood"					"bullet_impact_wood"
+	"snd_cardboard"				"bullet_impact_cardboard"
+	"snd_glass"					"bullet_impact_glass"
+	"snd_liquid"				"bullet_impact_liquid"
+	"snd_ricochet"				"bullet_ricochet"
+	"snd_plastic"				"bullet_impact_plastic"
+	"snd_surftype10"			"shotgun_impact_concrete"
+	"snd_surftype11"			"bullet_impact_sand"
 }
 
 entityDef debris_shotgunbrass {
@@ -189,7 +299,7 @@ entityDef debris_shotgunbrass {
 	"model" 					"models/weapons/shell1/sshell_bigger.lwo"
 
 	"health"					"0"					// amount of damage projectile can take if damaged (0 means it can't be destroyed)
-	"velocity"					"60 30 10"			// how fast the projectile leaves the gun (or distance if fuse is 0)
+	"velocity"					"0 40 70" //60 30 10			// how fast the projectile leaves the gun (or distance if fuse is 0)
 	"angular_velocity"			"0 0 0"				// how the projectile is rotating when it leaves the gun
 	"thrust"					"0"					// the rate of acceleration (always in the direction of the projectiles model)
 	"thrust_start"				"0"					// when to start accelerating
@@ -197,8 +307,8 @@ entityDef debris_shotgunbrass {
 	"linear_friction"			"0.6"				// "air" friction
 	"angular_friction"			"0.4"
 	"contact_friction"			"0.1"
-	"bounce"					"0.5"				// how much speed a projectile retains when it bounces off of objects (coefficient of restitution).  0 means no bounce.
-	"mass"						"1"
+	"bounce"					"0.3"//.5				// how much speed a projectile retains when it bounces off of objects (coefficient of restitution).  0 means no bounce.
+	"mass"						"10" 
 	"gravity"					"666"				// how much gravity affects the trajectory.  gravity direction is same as the entity that fired it.
 	"fuse"						"3"					// how long before the projectile is removed or self-detonates.  Use 0 for beam weapons (velocity == distance).
 
@@ -207,34 +317,28 @@ entityDef debris_shotgunbrass {
 	"detonate_on_world"			"0"					// whether projectile should detonate when it hits an obstacle
 	"detonate_on_actor"			"0"					// whether projectile should detonate when it hits a character in the game
 	"snd_bounce"				"casings_shotgun"
+	//"snd_rest"					"casings_shotgun_rest"
 }
 
 entityDef projectile_bullet_shotgun {
 	"spawnclass"				"idProjectile"
 	"mins"						"-1 -1 -1"
 	"maxs"						"1 1 1"
-	"cone"						"3"
-	"scale"						"0.1"
+	"cone"						"3" 
+	"scale"						"0.1" 
 	"noshadows"					"1"
+	
+	//"tracers"					"1"
+	
+	"beam_skin"					"textures/particles/tracer2_nodeform"
+	"beam_width"				".9"//.7, .9
+	"beam_length"				"130"
 
-	"snd_flesh"					"bullet_impact_flesh"
-	"snd_metal"					"bullet_impact_metal"
-	"snd_stone"					"bullet_impact_stone"
-	"snd_wood"					"bullet_impact_wood"
-	"snd_cardboard"				"bullet_impact_cardboard"
-	"snd_glass"					"bullet_impact_glass"
-	"snd_liquid"				"bullet_impact_liquid"
-	"snd_ricochet"				"bullet_ricochet"
-	"snd_plastic"				"small_plastic"
-
-	"snd_impact"				"shotgun_impact_metal"
-
+			
 	"def_damage"				"damage_shotgun"
 
-	"tracers"					"1"
-	"model_tracer"				"models/particles/tracer/tracer.lwo"
 
-	"launchFromBarrel"			"1"
+	"launchFromBarrel"			"0"//"1"
 	"health"					"0"
 	"velocity"					"7200 0 0"	// .38 Special 600 fps.  Source: Petzal, David E. "How fast is a speeding bullet." Field and Stream. 97 (1992): 23
 	"angular_velocity"			"0 0 0"
@@ -245,7 +349,7 @@ entityDef projectile_bullet_shotgun {
 	"angular_friction"			"0"
 	"contact_friction"			"0"
 	"bounce"					"0.6"
-	"mass"						"1.0"
+	"mass"						"2.8"// 3.5, 1, 5
 	"gravity"					"0"
 	"fuse"						"4"
 
@@ -256,15 +360,9 @@ entityDef projectile_bullet_shotgun {
 
 	"impact_damage_effect"		"1"
 	"impact_gib"				"1"
-
-	"mtr_detonate"				"textures/decals/bulleth02"
-	"mtr_detonate_glass"		"textures/decals/testbulletglass1"
-	"decal_size"				"10"
-	"model_smokespark"			"sgsmokeandspark.prt"
-	"model_ricochet"			"bulletricochet.prt"
-
-
-	"smoke_fly"					""
+								
+	
+	"smoke_fly"					""//"tracerold"
 	"smoke_detonate"			"smokeandspark.smoke"
 	"smoke_bounce"				"sparkdebris.smoke"
 	"smoke_fuse"				""

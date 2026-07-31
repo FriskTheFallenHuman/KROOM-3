@@ -29,12 +29,12 @@ weapon_shotgun_double.script
 #define SHOTGUN_BIG_PROJECTILES			12
 //#define SHOTGUN_BIG_PROJECTILES 13
 
-#define SHOTGUN_CENTER_WIDTH			5
-#define SHOTGUN_CENTER_HEIGHT			10
+#define SHOTGUN_CENTER_WIDTH			12		// 5
+#define SHOTGUN_CENTER_HEIGHT			8		// 10
 //#define SHOTGUN_CENTER_HEIGHT 12
-#define SHOTGUN_BIG_WIDTH				22
+#define SHOTGUN_BIG_WIDTH				16		//22
 //#define SHOTGUN_BIG_WIDTH 25
-#define SHOTGUN_BIG_HEIGHT				15
+#define SHOTGUN_BIG_HEIGHT				12		//15
 
 
 object weapon_shotgun_double : weapon_base {
@@ -162,11 +162,19 @@ void weapon_shotgun_double::Fire() {
 
 	next_attack = sys.getTime() + SHOTGUN_DOUBLE_FIRERATE;
 
+	startWeaponParticle( "shotgun_flash" );
+	startWeaponParticle( "shotgun_flash_world" );
+
+	startWeaponParticle( "shotgun_muzzleSmoke" ); // We dont need to stop this effect explicitly, since it's not a continuous smoke effect.
+
 	launchProjectilesEllipse( SHOTGUN_CENTER_PROJECTILES, SHOTGUN_CENTER_WIDTH, SHOTGUN_CENTER_HEIGHT, 0, 1.0 );
 	launchProjectilesEllipse( SHOTGUN_BIG_PROJECTILES, SHOTGUN_BIG_WIDTH, SHOTGUN_BIG_HEIGHT, 0, 1.0 );
 
 	playAnim( ANIMCHANNEL_ALL, "fire" );
 	waitUntil( animDone( ANIMCHANNEL_ALL, SHOTGUN_DOUBLE_FIRE_TO_IDLE ) );
+	stopWeaponParticle("shotgun_flash");
+	stopWeaponParticle("shotgun_flash_world");
+
 
 	if ( autoReload() && ammoAvailable() >= SHOTGUN_DOUBLE_REQUIRED ) {
 		WEAPON_RELOAD = true;

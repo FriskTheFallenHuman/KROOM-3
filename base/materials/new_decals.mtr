@@ -1,0 +1,50 @@
+
+
+textures/new/decals/concrete/shot1
+{
+	qer_editorimage textures/new/decals/concrete/SHOT1.tga
+//	noshadows
+//	translucent
+
+	DECAL_MACRO
+
+	{       
+		if ( parm7 == 0 )
+		blend gl_dst_color,gl_zero
+		map			textures/new/decals/concrete/SHOT1.tga
+	//	alphaTest 0.05 
+		clamp		// we don't want it to tile if the projection extends past the bounds
+//		vertexColor
+	}
+
+}
+
+textures/new/decals/wood/shot3
+{
+	qer_editorimage textures/new/decals/wood/shot3.tga
+
+	DECAL_MACRO
+	{       
+		if ( parm7 == 0 )
+		blend gl_dst_color,gl_zero
+		map			textures/new/decals/wood/shot3.tga
+	//	alphaTest 0.05 
+		clamp		// we don't want it to tile if the projection extends past the bounds
+	}
+
+}
+
+textures/new/decals/wood/shot4
+{
+	qer_editorimage textures/new/decals/wood/shot4.tga
+
+	DECAL_MACRO
+	{       
+		if ( parm7 == 0 )
+		blend gl_dst_color,gl_zero
+		map			textures/new/decals/wood/shot4.tga
+		//alphaTest 0.05 
+		clamp		// we don't want it to tile if the projection extends past the bounds
+	}
+
+}

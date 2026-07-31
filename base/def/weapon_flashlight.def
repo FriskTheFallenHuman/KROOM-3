@@ -41,9 +41,9 @@ entityDef weapon_flashlight {
 	"mtr_flashLightShader"		"lights/flashlight5"
 	"flashLightColor"			"1 1 1"
 	"flashLightRadius"			"400"
-	"flashLightTarget"			"0 0 1280"
-	"flashLightUp"				"0 640 0"
-	"flashLightRight"			"-640 0 0"
+	"flashLightTarget"			"0 0 960"	//"0 0 1280"
+	"flashLightUp"				"0 640 0"	//"0 640 0"
+	"flashLightRight"			"-640 0 0"	//"-640 0 0"
 	"flashLightPointLight"		"0"
 
 	"silent_fire"				"1"
@@ -124,8 +124,8 @@ entityDef	damage_flashlight {
 	"snd_glass"					"monster_zombie_fat_wrench"
 //	"snd_liquid"				"bullet_impact_liquid"
 	"snd_plastic"				"flashlight_impact"
-	"snd_shatter"				"melee_impact_glass"
-
+	"snd_shatter"				"flashlight_impact"		//"melee_impact_glass"	
+	
 	"snd_hit"			"flashlight_impact"		// TEMP
 	"snd_miss"			"fist_whoosh"			// TEMP
 	"snd_hit_berserk"	"fist_gorepunch"
@@ -203,6 +203,8 @@ material models/items/flashlight/flare2 {
 material models/items/flashlight/beam2 {
 	translucent
 	deform tube
+	noSelfShadow
+	noShadows
 	{
 		maskcolor
 		map makealpha(models/items/flashlight/beam1.tga)

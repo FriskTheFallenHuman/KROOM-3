@@ -1,0 +1,340 @@
+
+//---------------------------------------------------------------
+// MAterial for Laser
+//---------------------------------------------------------------
+
+textures/sfx/beam_colored
+ {
+	translucent
+	deform tube
+	noSelfShadow
+	noshadows
+
+	qer_editorimage textures/sfx/beam_colored.tga
+
+	{
+		blend add
+		map	textures/sfx/beam_colored.tga
+		forcehighquality
+	}
+}
+
+
+//---------------------------------------------------------------
+// MAterial for Laser
+//---------------------------------------------------------------
+
+textures/sfx/beam_red2 
+ {
+	translucent
+	deform tube
+	noSelfShadow
+	noshadows
+//	twosided
+//	nonsolid
+//	noimpact
+
+	qer_editorimage textures/sfx/beam_red2.tga
+
+	{
+		blend add
+		map	textures/sfx/beam_red2.tga
+	//	scroll	time * 0.2 , time * 0	
+		//scale	 2 , 1
+		forcehighquality
+	}
+	/*{
+		blend gl_dst_alpha, gl_one
+	        maskalpha
+		map models/items/flashlight/dust
+	//	scale	 4 , 4
+		rotate time * -.02
+		scroll	time * .001 , time * .001
+	}*/
+}
+
+//---------------------------------------------------------------
+// MAterials for flashlight.
+//---------------------------------------------------------------
+
+textures/particles/beam1 {
+	translucent
+	deform tube
+	noSelfShadow
+	noShadows
+	//sort nearest   // Test
+	{
+		maskcolor
+		map makealpha(textures/particles/beam1.tga)
+		//	scroll	time * 3 , time * 0	
+		forcehighquality
+	
+	
+	}
+	{
+		blend gl_dst_alpha, gl_one
+	        maskalpha
+		map models/items/flashlight/dust
+		scale	 4 , 4
+		rotate time * -.02
+		scroll	time * .001 , time * .001
+	}
+}
+
+//---------------------------------------------------------------
+// MAterials for muzzleflashes
+//---------------------------------------------------------------
+
+textures/particles/boomboom_mflash
+
+{
+    noselfShadow
+    noshadows	
+	translucent
+	discrete
+	nonsolid
+	noimpact
+	
+	sort nearest // for muzzleflashes 
+	{ 
+      
+      	blend add
+	    map	textures/particles/boomboom
+		vertexcolor
+
+
+						
+	}
+
+}
+
+
+textures/particles/boomboom2_mflash
+{
+    noselfShadow
+    noshadows	
+	translucent
+	discrete
+	nonsolid
+	noimpact
+
+	sort nearest // for muzzleflashes 
+	{ 
+      
+      	blend add
+	    map	textures/particles/boomboom2
+		vertexcolor
+					
+	}
+
+}
+
+//---------------------------------------------------------------
+// MAterials for flashlight 2.
+//---------------------------------------------------------------
+
+textures/particles/sparks/focus_beam {
+	translucent
+	deform tube
+	noSelfShadow
+	noShadows
+	//sort nearest   // Test
+	{
+		maskcolor
+		map makealpha(textures/particles/sparks/focus_beam.tga)
+		//	scroll	time * 3 , time * 0	
+		forcehighquality
+	
+	
+	}
+	/*{
+		blend gl_dst_alpha, gl_one
+	        maskalpha
+		map models/items/flashlight/dust
+		scale	 4 , 4
+		rotate time * -.02
+		scroll	time * .001 , time * .001
+	}*/
+}
+
+material models/items/flashlight/sgbulb {
+	twosided
+	translucent
+	{
+		blend			add
+		map				models/items/flashlight/bulb.tga		
+	}
+}
+
+//---------------------------------------------------------------
+// light for lasersight glow.
+//---------------------------------------------------------------
+
+
+lights/laserglow
+{	
+	noShadows
+	{
+		forceHighQuality
+		map	lights/falloff_exp1.tga
+		red		0.6 * guiLightTable[ time ]
+		green	0.1 * guiLightTable[ time ]
+		blue	0.1 * guiLightTable[ time ]
+		zeroClamp
+	}
+}
+
+//---------------------------------------------------------------
+// MAterial for red flare used for lasersight glow
+//---------------------------------------------------------------
+
+material textures/particles/flare2_red {
+	translucent
+	//deform sprite
+	{
+		blend			add
+		map				textures/particles/flare_red.tga
+		vertexcolor
+	}
+}
+
+//-------------------------------------------------
+// Blood Pool Overlays
+//-------------------------------------------------
+
+textures/decals/test1
+{
+
+	qer_editorimage textures/decals/test1.tga
+	DECAL_MACRO
+
+	{
+		if ( parm7 == 0 )
+		blend gl_dst_color,gl_zero
+		map	textures/decals/test1.tga
+		clamp
+	}
+ }
+
+
+textures/decals/test2
+{
+
+	qer_editorimage textures/decals/test2.tga
+	DECAL_MACRO
+
+	{
+		if ( parm7 == 0 )
+		blend gl_dst_color,gl_zero
+		map	textures/decals/test2.tga
+		clamp
+	}
+ }
+
+textures/decals/test3
+{
+
+	qer_editorimage textures/decals/test3.tga
+	DECAL_MACRO
+
+	{
+		if ( parm7 == 0 )
+		blend gl_dst_color,gl_zero
+		map	textures/decals/test3.tga
+		clamp
+	}
+ }
+
+
+textures/decals/test4
+{
+
+	qer_editorimage textures/decals/test4.tga
+	DECAL_MACRO
+
+	{
+		if ( parm7 == 0 )
+		blend gl_dst_color,gl_zero
+		map	textures/decals/test4.tga
+		clamp
+	}
+ }
+
+
+//-------------------------------------------------
+// Chainsaw Hurt Decal
+//-------------------------------------------------
+
+
+material textures/decals/cshurt {
+
+	qer_editorimage textures/decals/cshurt.tga
+	DECAL_MACRO
+
+	{
+		if ( parm7 == 0 )
+		blend gl_dst_color,gl_zero
+		map	textures/decals/cshurt.tga
+		clamp
+	}
+ }
+
+//-------------------------------------------------
+// Plasmahurt decal from Mycelo
+//-------------------------------------------------
+
+textures/decals/plasmahurt01.tga
+{
+
+	qer_editorimage textures/decals/plasmahurt01.tga
+	DECAL_MACRO
+
+	{
+		if ( parm7 == 0 )
+		blend gl_dst_color,gl_zero
+		map	textures/decals/plasmahurt01.tga
+		clamp
+	}
+
+ }
+
+//-------------------------------------------------
+// New Material based decals
+//-------------------------------------------------
+
+// Concrete Wound
+
+textures/decals/new/concrete
+{
+
+	qer_editorimage textures/decals/new/concrete.tga
+	DECAL_MACRO
+
+	{
+		if ( parm7 == 0 )
+		blend gl_dst_color,gl_zero
+		map	textures/decals/new/concrete.tga
+		clamp
+	}
+
+ }
+
+// Metal Wound
+
+textures/decals/new/metal
+{
+
+	qer_editorimage textures/decals/new/metal.tga
+	DECAL_MACRO
+
+	decalInfo 10 1 ( 1 1 1 1 ) ( 0 0 0 0 )
+	{       
+      	blend	gl_zero, gl_one_minus_src_color
+		map		textures/decals/new/metal.tga
+
+		clamp			// we don't want it to tile if the projection extends past the bounds
+		vertexColor		// oblique projections will be slightly faded down
+	}
+
+ }
+

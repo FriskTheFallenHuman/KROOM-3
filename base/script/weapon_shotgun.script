@@ -4,9 +4,9 @@ weapon_shotgun.script
 
 ***********************************************************************/
 
-#define SHOTGUN_FIRERATE		1.333
+#define SHOTGUN_FIRERATE		1.2//1.333
 #define SHOTGUN_LOWAMMO			2
-#define SHOTGUN_RELOADRATE		2
+#define SHOTGUN_RELOADRATE		1 // 8, 1, 2
 #define	SHOTGUN_NUMPROJECTILES	13
 
 // blend times
@@ -162,6 +162,9 @@ void weapon_shotgun::Fire() {
 		startSound( "snd_lowammo", SND_CHANNEL_ITEM, true );
 	}
 
+	startWeaponParticle( "shotgun_flash" );
+	startWeaponParticle( "shotgun_flash_world" );
+
 	launchProjectiles( SHOTGUN_NUMPROJECTILES, spread, 0, 1.0, 1.0 );
 	playAnim( ANIMCHANNEL_ALL, "fire" );
 	waitTime = sys.getTime() + 0.1;
@@ -173,6 +176,9 @@ void weapon_shotgun::Fire() {
 		updateLightIntensity();
 		waitFrame();
 	}
+
+	stopWeaponParticle( "shotgun_flash" );
+	stopWeaponParticle( "shotgun_flash_world" );
 
 	setNetfiring(false);
 

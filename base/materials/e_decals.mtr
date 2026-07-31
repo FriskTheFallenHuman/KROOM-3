@@ -1,0 +1,354 @@
+
+textures/decals/new/bullethole_new
+{
+	qer_EditorImage	textures/decals/new/bullethole.tga
+	translucent
+	twoSided
+	noShadows
+	{
+		blend blend
+		map textures/decals/new/bullethole.tga
+		vertexColor
+	}
+}
+
+textures/decals/new/bullethole
+{
+	DECAL_MACRO
+	noSelfShadow
+	noShadows
+	noImpact
+	nonSolid
+	qer_EditorImage	textures/decals/new/bullethole_multiply.tga
+	
+	{  
+      		blend			gl_zero, gl_one_minus_src_color
+		map			textures/decals/new/bullethole_multiply.tga
+		clamp			// we don't want it to tile if the projection extends past the bounds
+		vertexColor		// oblique projections will be slightly faded down
+	}
+}
+
+textures/decals/new/rocketburn
+{
+	qer_editorimage textures/decals/new/rocketburn.tga
+
+	DECAL_MACRO
+//	decalInfo 0.5 10 ( 1 1 1 10 ) ( -5 -5 -5 0 )		// fade rgb down fast (clamps to 0), but leave alpha clamped at 1 for the first nine seconds
+
+	decalInfo 0.5 10 ( 1 1 1 10 ) ( -5 -5 -5 0 )		// fade rgb down fast (clamps to 0), but leave alpha clamped at 1 for the first nine seconds
+	{       
+      	blend		gl_zero, gl_one_minus_src_alpha
+		map			makealpha(textures/decals/new/concrete_neg.tga)
+		clamp		// we don't want it to tile if the projection extends past the bounds
+		vertexColor
+	}
+	{
+      	blend	add  
+		map		textures/decals/ballburn01_fx.tga
+		blue	fireballtable[ time * .2 ]//.2		// all marks will be flickering the same, unfortunately
+		green	fireballtable[ time * .2 ]//.2
+		red		fireballtable[ time * .1 ]//.1
+		vertexColor
+	}
+
+
+}
+
+textures/decals/new/bullethole_multiply
+{
+	DECAL_MACRO
+	{       
+      		blend		gl_zero, gl_one_minus_src_color
+		map			textures/decals/new/bullethole_multiply.tga
+		clamp			// we don't want it to tile if the projection extends past the bounds
+		rgba		decalFade[ DecalLife ]
+		vertexColor		// oblique projections will be slightly faded down
+	}
+}
+
+textures/decals/new/bulleth02
+{
+	DECAL_MACRO
+	{       
+      	blend		gl_zero, gl_one_minus_src_color
+		map			textures/decals/new/bulleth02.tga
+		clamp			// we don't want it to tile if the projection extends past the bounds
+		rgba		decalFade[ DecalLife ]
+		vertexColor		// oblique projections will be slightly faded down
+	}
+}
+
+textures/decals/new/bulleth02a
+{
+	DECAL_MACRO
+	{       
+      	blend		gl_zero, gl_one_minus_src_color
+		map			textures/decals/new/bulleth02a.tga
+		clamp			// we don't want it to tile if the projection extends past the bounds
+		rgba		decalFade[ DecalLife ]
+		vertexColor		// oblique projections will be slightly faded down
+	}
+}
+textures/decals/new/nailgun_mark
+{
+	DECAL_MACRO
+	{       
+      	blend		gl_zero, gl_one_minus_src_color
+		map			textures/decals/new/nailgun_mark.tga
+		clamp			// we don't want it to tile if the projection extends past the bounds
+		rgba		decalFade[ DecalLife ]
+		vertexColor		// oblique projections will be slightly faded down
+	}
+}
+
+textures/decals/new/fabric
+{
+	DECAL_MACRO
+	{       
+      	blend		gl_zero, gl_one_minus_src_color
+		map			textures/decals/new/fabric.tga
+		clamp			// we don't want it to tile if the projection extends past the bounds
+		rgba		decalFade[ DecalLife ]
+		vertexColor		// oblique projections will be slightly faded down
+	}
+}
+
+textures/decals/new/bulletglass
+{
+	DECAL_MACRO
+	translucent
+	nonSolid
+	noimpact
+	twoSided
+	noShadows
+	polygonOffset
+	
+	qer_EditorImage	textures/decals/new/bulletglass.tga
+	
+	{
+	 	blend	add
+		map	 textures/decals/bulletglass1.tga
+		vertexColor
+	}
+}
+
+textures/decals/new/bpglass
+{
+	DECAL_MACRO
+	translucent
+	nonsolid
+	noimpact
+	twosided
+	noshadows
+	polygonOffset
+	qer_editorimage	textures/decals/bpglass.tga
+	
+	{
+	 	blend	add 
+		map	 textures/decals/bpglass.tga
+		vertexColor
+		rgba .4 * decalFade[ DecalLife ]
+	}
+}
+
+
+textures/decals/new/nailgun_burn
+{
+	qer_editorimage textures/decals/new/nailgun_burn1.tga
+
+	DECAL_MACRO
+	{       
+	   	blend		gl_zero, gl_one_minus_src_color
+		map			textures/decals/new/explosion_impact2.tga
+		clamp		// we don't want it to tile if the projection extends past the bounds
+		rgba		decalFade[ DecalLife ]
+		vertexColor	// oblique projections will be slightly faded down
+	}
+
+	{
+	   	blend	add  
+		map		textures/decals/new/nailgun_burn2.tga
+		rgba	nailgunburn[ DecalLife ]
+
+		vertexColor	// oblique projections will be slightly faded down
+	} 
+}
+
+textures/decals/new/explosion_impact
+{
+	qer_editorimage textures/decals/new/explosion_impact.tga
+
+	DECAL_MACRO
+	{       
+	   	blend		gl_zero, gl_one_minus_src_color
+		map			textures/decals/new/explosion_impact.tga
+		clamp		// we don't want it to tile if the projection extends past the bounds
+		rgba		decalFade[ DecalLife ]
+		vertexColor	// oblique projections will be slightly faded down
+	}
+
+	{
+	   	blend	add  
+		map		textures/decals/new/explosion_impact_glow.tga
+		rgba	nailgunburn[ DecalLife ]
+
+		vertexColor	// oblique projections will be slightly faded down
+	} 
+}
+
+textures/decals/new/explosion_impact2
+{
+	qer_editorimage textures/decals/new/explosion_impact2.tga
+
+	DECAL_MACRO
+	{       
+	   	blend		gl_zero, gl_one_minus_src_color
+		map			textures/decals/new/explosion_impact2.tga
+		clamp
+		rgba		decalFade[ DecalLife ]
+		vertexColor	
+	}
+}
+
+textures/decals/new/lightning_impact
+{
+	qer_editorimage textures/decals/new/lightning_impact.tga
+
+	DECAL_MACRO
+	{       
+	   	blend		gl_zero, gl_one_minus_src_color
+		map			textures/decals/new/lightning_impact.tga
+		clamp
+		rgba		decalFade[ DecalLife ]
+		vertexColor	
+	}
+}
+
+
+textures/decals/new/bullet_glowcenter
+{
+	DECAL_MACRO
+	{       
+      	blend		gl_zero, gl_one_minus_src_color
+		map			textures/decals/new/bulleth02.tga
+		clamp			// we don't want it to tile if the projection extends past the bounds
+		rgba		decalFade[ DecalLife ]
+		vertexColor		// oblique projections will be slightly faded down
+	}
+	
+	{
+      	blend	add  
+		map		gfx/effects/weapons/flash.tga
+		clamp
+		rgba	nailgunburn[ DecalLife ]
+
+		vertexColor	// oblique projections will be slightly faded down
+	}
+}
+
+textures/decals/new/scorch
+{
+	DECAL_MACRO
+	{       
+      	blend		gl_zero, gl_one_minus_src_color
+		map			textures/decals/new/scorch.tga
+		clamp			// we don't want it to tile if the projection extends past the bounds
+		rgba		decalFade[ DecalLife ]
+		vertexColor		// oblique projections will be slightly faded down
+	}
+}
+
+textures/decals/new/railgun_decal
+{
+	DECAL_MACRO
+	{       
+      	blend		gl_zero, gl_one_minus_src_color
+		map			textures/decals/new/railgun_bullethole.tga
+		clamp			// we don't want it to tile if the projection extends past the bounds
+		rgba		decalFade[ DecalLife ]
+		vertexColor		// oblique projections will be slightly faded down
+	}
+	
+	{
+      	blend	add  
+		map		textures/decals/new/blue_glow.tga
+		rgba	nailgunburn[ DecalLife ]
+
+		vertexColor	// oblique projections will be slightly faded down
+	}
+}
+
+textures/decals/new/railgun_impact1
+{
+	DECAL_MACRO
+	{ 
+      	blend		gl_zero, gl_one_minus_src_color
+		map			textures/decals/new/railgun_impact2.tga
+		clamp			// we don't want it to tile if the projection extends past the bounds
+		rgba		decalFade[ DecalLife ]
+		vertexColor		// oblique projections will be slightly faded down
+	}
+	
+		
+	{
+      	blend	add  
+		map		textures/decals/new/railgun_impact1.tga
+		rgba	nailgunburn[ DecalLife ]
+
+		vertexColor	// oblique projections will be slightly faded down
+	}
+}
+
+textures/decals/new/railgun_impact_mp
+{
+	DECAL_MACRO
+	{ 
+      	blend		gl_zero, gl_one_minus_src_color
+		map			textures/decals/new/railgun_impact2.tga
+		clamp			// we don't want it to tile if the projection extends past the bounds
+		rgba		decalFade[ DecalLife ]
+		vertexColor		// oblique projections will be slightly faded down
+	}
+	
+		
+	{
+      	blend	add  
+		map		textures/decals/new/railgun_impact_mp.tga
+		red	.25 * nailgunburn[ DecalLife ]
+		green	.25 * nailgunburn[ DecalLife ]
+		blue	.25 * nailgunburn[ DecalLife ]
+
+		vertexColor	// oblique projections will be slightly faded down
+	}
+}
+
+textures/decals/new/shockwave_decal
+{
+	DECAL_MACRO
+	{
+      	blend	add  
+		map	 gfx/effects/particles_shapes/shockwave.tga
+		rgba	shockwave_8_0 [ DecalLife ]
+		//centerScale shockwave_60_10 [ DecalLife ] , shockwave_60_10 [ DecalLife ]
+		centerScale shockwave_60_10 [ time ] , shockwave_60_10 [ time ]
+		clamp
+		vertexColor	// oblique projections will be slightly faded down
+	}
+}
+
+
+gfx/decals/spark2_red
+{
+	DECAL_MACRO
+	qer_EditorImage gfx/effects/energy_sparks/spark2_red.tga
+	noshadows
+	twosided
+        {
+		blend	add
+		map gfx/effects/energy_sparks/spark2_red.tga
+		clamp
+		rgba		decalFade[ DecalLife ]
+		vertexColor		// oblique projections will be slightly faded down
+        }
+}

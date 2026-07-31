@@ -203,7 +203,6 @@ entityDef monster_zsec_shield {
 	"damage_zone legs"				"*Hips"
 	"damage_zone shield"			"*shield"
 	"damage_scale shield"			"0"
-	"damage_scale head"				"1.25"
 	
 	"ragdoll"						"monster_zombie_security_pistol"
 	"def_head"						"head_security_dhelmet"

@@ -1,0 +1,32 @@
+MD5Version 10
+commandline "anim models/characters/player_character/cycles/grabber_w_idle.mb -dest models/md5/weapons/shotgun_double_world/dbshotgun_idle.md5anim -game d3xp -prefix PLAYER_DBSHOTGUN_ -keep ATTACHER barrel flash eject -parent flash body -parent eject body -rename ATTACHER origin -clearorigin -range 0 0"
+
+numFrames 1
+numJoints 6
+frameRate 24
+numAnimatedComponents 0
+
+hierarchy {
+	"origin"	-1 0 0	//
+	"body"	0 0 0	// origin
+	"body2"	1 0 0	// body
+	"barrel"	2 0 0	// body2
+	"eject"	1 0 0	// body
+	"flash"	1 0 0	// body
+}
+
+bounds {
+	( -12.3085794449 -7.868124485 -49.5718269348 ) ( 7.0232691765 14.677022934 12.2541637421 )
+}
+
+baseframe {
+	( 0 0 0 ) ( 0 0 0 )
+	( -1.8487945795 0.6810306311 -3.7686536312 ) ( -0.0427421518 0.6970642805 0.0246232171 )
+	( -7.1773438454 -0.2117787898 -0.2253626585 ) ( 0 0 0 )
+	( 10.4631786346 6.6416735649 0.0000005802 ) ( 0 0 0 )
+	( 3.8539586067 6.6416735649 -0.0000007048 ) ( 0 0 0 )
+	( 3.2858345509 6.4298949242 -0.2253620923 ) ( 0 0 0 )
+}
+
+frame 0 {
+}

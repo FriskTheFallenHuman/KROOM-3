@@ -100,6 +100,11 @@ public :
 	virtual void			SimulateProjectileFrame( int msec, int endTime );
 	virtual void			PostSimulate( int endTime );
 
+	void					setTracerEffect( dnTracerEffect* effect )
+	{
+		tracerEffect = effect;
+	}
+
 	struct simulatedProjectile_t
 	{
 		simulatedProjectile_t(): projectile( NULL ), startTime( 0 ) {}
@@ -120,8 +125,8 @@ protected:
 		bool				detonate_on_world			: 1;
 		bool				detonate_on_actor			: 1;
 		bool				randomShaderSpin			: 1;
-		bool				isTracer					: 1;
 		bool				noSplashDamage				: 1;
+		bool				impact_fx_played			: 1; // keeps track of fx played on collided body.
 	} projectileFlags;
 
 	bool					launchedFromGrabber;
@@ -159,10 +164,13 @@ protected:
 
 	projectileState_t		state;
 
+	dnTracerEffect* tracerEffect;
+
 private:
 
 	idVec3					launchOrigin;
 	idMat3					launchAxis;
+	const idDeclEntityDef*	damageDef; // stores Damage Def
 
 	void					AddDefaultDamageEffect( const trace_t& collision, const idVec3& velocity );
 	void					AddParticlesAndLight();
@@ -367,7 +375,11 @@ private:
 	idPhysics_RigidBody		physicsObj;
 	const idDeclParticle* 	smokeFly;
 	int						smokeFlyTime;
+	int						nextSoundTime;
+	int						soundTimeDifference;
+	bool					continuousSmoke;
 	const idSoundShader* 	sndBounce;
+	const idSoundShader*	sndRest;
 
 
 	void					Event_Explode();
