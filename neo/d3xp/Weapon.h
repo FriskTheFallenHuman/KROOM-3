@@ -66,23 +66,55 @@ class idMoveableItem;
 
 typedef struct
 {
-	char			name[64];
-	char			particlename[128];
-	bool			active;
-	int				startTime;
-	jointHandle_t	joint;			//The joint on which to attach the particle
-	bool			smoke;			//Is this a smoke particle
-	const idDeclParticle* particle;		//Used for smoke particles
-	idFuncEmitter*  emitter;		//Used for non-smoke particles
-} WeaponParticle_t;
+	bool		isActive			: 1;		// Is the particle active
+	bool		isSmoke				: 1;		// Is this a smoke particle
+	bool		isContinuous		: 1;		// Is the effect continuous
+	bool		isOffset			: 1;		// Is new Offset needed
+	bool		isDir				: 1;		// Is new Direction needed
+	bool		isOnWorldModel		: 1;		// Is this effect intended for world model only
+	bool		isUpdateJoint		: 1;
+} particleFlags_t;
 
 typedef struct
 {
 	char			name[64];
-	bool			active;
+	char			particlename[128];
+	//bool			active;
 	int				startTime;
-	jointHandle_t	joint;
+	idVec3			offset;			//Sometimes you cant find proper joint, then use offset along with muzzle bone
+	idVec3			dir;
+	jointHandle_t	joint;			//The joint on which to attach the particle
+	//bool			smoke;			//Is this a smoke particle
+	particleFlags_t particleFlags;	// flags
+	const idDeclParticle* particle;		//Used for smoke particles
+	renderEntity_t renderEntity;
+	qhandle_t modelDefHandle;
+	//idFuncEmitter*  emitter;		//Used for non-smoke particles
+} WeaponParticle_t;
+
+
+typedef struct
+{
+	bool		isActive		: 1;		// Is the particle active
+	bool		isAlwaysOn		: 1;		// Is this light always on
+	bool		isOffset		: 1;		// Is new Offset needed
+	bool		isDir			: 1;		// Is new Direction needed
+	bool		isOnWorldModel	: 1;		// Is this light intended for world model only
+} lightFlags_t;
+
+typedef struct
+{
+	char			name[64];
+	//bool			active;
+	int				startTime;
+	int				endTime;
 	int				lightHandle;
+	idVec3			offset;			//If weapons does not have bones in proper places for some effect use this
+	idVec3			dir;			//If the desired bone is not pointing in proper direction use this to fix it.
+	// Note that the dir should be vector representing X-axis of the bone.
+	lightFlags_t	lightFlags;
+	jointHandle_t	joint;
+	//int				lightHandle;
 	renderLight_t	light;
 } WeaponLight_t;
 
@@ -400,6 +432,9 @@ private:
 	void					InitWorldModel( const idDeclEntityDef* def );
 	void					MuzzleRise( idVec3& origin, idMat3& axis );
 	void					UpdateNozzleFx();
+	void					InitWeaponFx();
+	void					StopWeaponFx();
+	void					UpdateWeaponFx();
 	void					UpdateMuzzleFlashPosition();
 	void					UpdateFlashlightPosition();
 

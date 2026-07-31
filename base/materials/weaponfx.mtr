@@ -1,0 +1,132 @@
+//-----------------------------------------------------------------------
+textures/particles/weapons/rail_trail_mp
+{
+	qer_editorimage textures/particles/weapons/rail_trail_mp.tga
+	translucent
+	twoSided
+	noShadows
+	{
+		blend add
+		map textures/particles/weapons/rail_trail_mp.tga
+		vertexColor
+		red parm0
+		green parm1
+		blue parm2
+	}
+}
+
+textures/particles/weapons/rail_spiral
+{
+	qer_editorimage textures/particles/weapons/rail_spiral.tga
+	translucent
+	twoSided
+	noShadows
+	{
+		blend add
+		map textures/particles/weapons/rail_spiral.tga
+		vertexColor
+	}
+}
+
+textures/particles/weapons/railgun_ring
+{
+	qer_editorimage textures/particles/weapons/railgun_ring.tga
+	noshadows
+	twosided
+        {
+                
+		blend	add
+                map textures/particles/weapons/railgun_ring.tga
+		clamp
+		vertexColor
+             
+        }
+}
+
+textures/particles/weapons/railgun_ring_end
+{
+	qer_editorimage textures/particles/weapons/railgun_ring_end.tga
+	noshadows
+	twosided
+        {
+                
+		blend	add
+                map textures/particles/weapons/railgun_ring_end.tga
+		clamp
+		vertexColor
+             
+        }
+}
+
+//----------------------------------------------------
+//		Shotgun muzzleflash materials
+//----------------------------------------------------
+textures/particles/weapons/shotgun_mflash
+{
+	qer_editorimage textures/particles/weapons/shotgun_mflash.tga
+	sort nearest
+	deform sprite
+	{
+		forceHighQuality
+		if ( time + parm4 ) * 6.4 < 1.0
+		blend add
+		map textures/particles/shotgun_mflash_strip.tga
+		scale 1 / 32 , 1 					
+		scroll table32[ (time + parm4) * 6.4] , 0 
+		rotate	rotate90[ parm5 ]
+		clamp
+	}
+}
+
+textures/particles/weapons/shotgun_mflash2
+{
+	qer_editorimage textures/particles/weapons/shotgun_mflash2.tga
+   sort nearest
+	deform tube
+	{
+		forceHighQuality
+		if ( time + parm4 ) * 5 < 1.0
+		blend add
+		map textures/particles/shotgun_mflash2_strip.tga
+		scale  1 / 8 , 1			//1 / 8 , 1
+		scroll table8[ (time + parm4) * 5] , 0
+		clamp
+	}
+}
+
+//----------------------------------------------------
+//		pistol and machinegun muzzleflash material
+//----------------------------------------------------
+
+
+
+textures/particles/weapons/pistol_mflash
+{
+	deform sprite
+	sort nearest
+	{
+		forceHighQuality
+		if ( time + parm4 ) * 8 < 1.0
+		blend add
+		map textures/particles/pistol_mflash_strip.tga
+		scale 1 / 12 , 1
+		scroll table12[ (time + parm4) * 8 ] , 0
+		rotate	rotate90[ parm5 ]
+	}
+}
+
+textures/particles/weapons/pistol_mflash2
+{
+	deform tube
+	sort nearest
+	{
+		forceHighQuality
+		if ( time + parm4 ) * 7 < 1.0
+		blend add
+		map textures/particles/pistol_mflash2_strip.tga
+		scale 1 / 4 , 1
+		scroll table4[ (time + parm4) * 7] , 0
+	}
+}
+
+//----------------------------------------------------

@@ -71,10 +71,9 @@ public:
 	virtual void				Think();
 	virtual void				ApplyImpulse( idEntity* ent, int id, const idVec3& point, const idVec3& impulse );
 	virtual void				AddForce( idEntity* ent, int id, const idVec3& point, const idVec3& force );
-	virtual void				AddDamageEffect( const trace_t& collision, const idVec3& velocity, const char* damageDefName );
+	virtual void				AddDamageEffect( const trace_t& collision, const idVec3& velocity, const char* damageDefName, idEntity* soundEnt = NULL );
+	void						ProjectDecal( const idVec3& point, const idVec3& dir, const int time, const char* damageDefName, idEntity* soundEnt = NULL );
 	virtual void				Killed( idEntity* inflictor, idEntity* attacker, int damage, const idVec3& dir, int location );
-
-	void						ProjectDecal( const idVec3& point, const idVec3& dir, const int time, const char* damageDefName );
 	bool						IsBroken() const;
 
 	enum

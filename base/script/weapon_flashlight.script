@@ -12,11 +12,9 @@ weapon_flashlight.script
 #define FLASHLIGHT_FIRE_TO_IDLE		4
 #define FLASHLIGHT_RELOAD_TO_IDLE	4
 
-object weapon_flashlight : weapon_base {
+object weapon_flashlight : weapon_base_flashlight {
 	float		netFired;
-	boolean		on;
-	boolean		onBeforeCinematic;
-	float		intensity;
+
 	string		skin_on;
 	string		skin_on_invis;
 	string		skin_off;
@@ -28,15 +26,10 @@ object weapon_flashlight : weapon_base {
 	void		Raise();
 	void		Idle();
 	void		Fire();
-	void		SetLight( boolean lightOn );
 	void		ToggleOnOff();
-	void		TurnOn();
-	void		TurnOff();
 	void		EnterCinematic();
 	void		ExitCinematic();
 	void		NetCatchup();
-
-	void		updateLightIntensity();
 
 				// called by the game
 	void		UpdateSkin();
@@ -50,21 +43,7 @@ void weapon_flashlight::init() {
 	skin_off		= getKey( "skin_off" );
 	skin_off_invis	= getKey( "skin_off_invis" );
 
-	global_flashlight_intensity = 1.0;
-	intensity = 1.0;
-	setLightParm( 3, 1.0 );
-	setShaderParm( 3, 1.0 );
-
 	weaponState( "Raise", 0 );
-}
-
-void weapon_flashlight::updateLightIntensity() {
-	if ( global_flashlight_intensity != intensity ) {
-		intensity = global_flashlight_intensity;
-		setLightParm( 3, intensity );
-		setShaderParm( 3, intensity );
-		UpdateSkin();
-	}
 }
 
 void weapon_flashlight::Raise() {
@@ -167,12 +146,6 @@ void weapon_flashlight::Fire() {
 	weaponState( "Idle", FLASHLIGHT_FIRE_TO_IDLE );
 }
 
-void weapon_flashlight::SetLight( boolean lightOn ) {
-	on = lightOn;
-	UpdateSkin();
-	flashlight( on );
-}
-
 void weapon_flashlight::ToggleOnOff() {
 	float waitTime;
 
@@ -192,14 +165,6 @@ void weapon_flashlight::ToggleOnOff() {
 	}
 
 	weaponState( "Idle", FLASHLIGHT_RELOAD_TO_IDLE );
-}
-
-void weapon_flashlight::TurnOn() {
-	SetLight( true );
-}
-
-void weapon_flashlight::TurnOff() {
-	SetLight( false );
 }
 
 void weapon_flashlight::EnterCinematic() {

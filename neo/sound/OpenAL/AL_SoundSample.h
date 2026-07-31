@@ -57,7 +57,7 @@ public:
 	}
 
 	// turns it into a beep
-	void			MakeDefault();
+	void			MakeDefault( bool noDefault = false );
 
 	// frees all data
 	void			FreeData();
@@ -90,6 +90,17 @@ public:
 
 	bool			IsDefault() const
 	{
+		// HACK
+		if( idStr::Icmpn( GetName(), "_default", 8 ) == 0 )
+		{
+			return false;
+		}
+
+		if( idStr::Icmpn( GetName(), "_emptyname", 10 ) == 0 )
+		{
+			return false;
+		}
+
 		return timestamp == FILE_NOT_FOUND_TIMESTAMP;
 	}
 	bool			IsLoaded() const

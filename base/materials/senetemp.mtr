@@ -342,6 +342,8 @@ textures/caves/s_stairs
 		map				addnormals (textures/caves/s_stairs_local, heightmap (textures/caves/sbricks1_bmp, 4) ) 
 	}
 		diffusemap		textures/caves/s_stairs
+
+	stone
 }
 
 textures/caves/sbricks1a
@@ -2196,6 +2198,7 @@ textures/hell/scowall
 
 textures/hell/avawall3
 {
+	flesh
 	qer_editorimage		textures/hell/avawall3
 	{
 		blend			bumpmap
@@ -2215,6 +2218,7 @@ textures/hell/avawall3
 
 textures/hell/avawall2
 {
+	flesh
 	qer_editorimage		textures/hell/avawall2
 	{
 		blend			bumpmap
@@ -2234,6 +2238,8 @@ textures/hell/avawall2
 
 textures/hell/avawall
 {
+	flesh
+
 	qer_editorimage		textures/hell/avawall
 	{
 		blend			bumpmap
@@ -3784,6 +3790,7 @@ textures/mcity/mcityc11
 
 textures/mcity/mcityc10
 {
+		metal // glass
 		qer_editorimage	textures/mcity/mcityc10
 		bumpmap			textures/mcity/mcityc10_local
 		diffusemap		textures/mcity/mcityc10
@@ -6100,7 +6107,8 @@ textures/rock/skyrock1
 textures/rock/skysandnew
 {
 	qer_editorimage	textures/rock/skysandnew.tga
-	stone
+//	stone
+	surftype11 //sand
 	bumpmap			addnormals (textures/rock/skysand1_local.tga, heightmap (textures/rock/skysand2_bmp.tga, 4))
 	diffusemap		textures/rock/skysand2.tga
 }
@@ -6108,16 +6116,19 @@ textures/rock/skysandnew
 textures/rock/skysand1
 {
 	qer_editorimage	textures/rock/skysand1.tga
-	stone
+	//stone
 	bumpmap			addnormals (textures/rock/skysand1_local.tga, heightmap (textures/rock/skysand1_bmp.tga, 4))
 	diffusemap		textures/rock/skysand1_d.tga
+	
+	surftype11 //sand
 }
 
 textures/rock/skysand1ns
 {
 	noshadows
 	qer_editorimage	textures/rock/skysand1.tga
-	stone
+//	stone
+	surftype11 //sand
 	bumpmap			heightmap (textures/rock/skysand1_bmp.tga, 4)
 	diffusemap		textures/rock/skysand1_d.tga
 	specularmap		textures/rock/skysand1_s.tga
@@ -6457,6 +6468,7 @@ textures/decals/splat16
 {
 	DECAL_MACRO
 	nonsolid
+	blood
 
 	qer_editorimage	textures/decals/splat16.tga
 	{
@@ -6470,6 +6482,7 @@ textures/decals/splat15
 {
 	DECAL_MACRO
 	nonsolid
+	blood
 
 	qer_editorimage	textures/decals/splat15.tga
 	{
@@ -6483,6 +6496,7 @@ textures/decals/splat14
 {
 	DECAL_MACRO
 	nonsolid
+	blood
 
 	qer_editorimage	textures/decals/splat14.tga
 	{
@@ -6496,6 +6510,7 @@ textures/decals/splat13
 {
 	DECAL_MACRO
 	nonsolid
+	blood
 
 	qer_editorimage	textures/decals/splat13.tga
 	{
@@ -6509,6 +6524,7 @@ textures/decals/splat12
 {
 	DECAL_MACRO
 	nonsolid
+	blood
 
 	qer_editorimage	textures/decals/splat12.tga
 	{
@@ -6522,6 +6538,7 @@ textures/decals/splat11
 {
 	DECAL_MACRO
 	nonsolid
+	blood
 
 	qer_editorimage	textures/decals/splat11.tga
 	{
@@ -6535,6 +6552,7 @@ textures/decals/splat10
 {
 	DECAL_MACRO
 	nonsolid
+	blood
 
 	qer_editorimage	textures/decals/splat10.tga
 	{
@@ -6548,6 +6566,7 @@ textures/decals/splat9
 {
 	DECAL_MACRO
 	nonsolid
+	blood
 
 	qer_editorimage	textures/decals/splat9.tga
 	{
@@ -6561,6 +6580,7 @@ textures/decals/splat8
 {
 	DECAL_MACRO
 	nonsolid
+	blood
 
 	qer_editorimage	textures/decals/splat8.tga
 	{
@@ -6575,6 +6595,7 @@ textures/decals/splat7
 {
 	DECAL_MACRO
 	nonsolid
+	blood
 
 	qer_editorimage	textures/decals/splat7.tga
 	{
@@ -6588,6 +6609,7 @@ textures/decals/splat6
 {
 	DECAL_MACRO
 	nonsolid
+	blood
 
 	qer_editorimage	textures/decals/splat6.tga
 	{
@@ -6601,6 +6623,7 @@ textures/decals/splat5
 {
 	DECAL_MACRO
 	nonsolid
+	blood
 
 	qer_editorimage	textures/decals/splat5.tga
 	{
@@ -6614,6 +6637,7 @@ textures/decals/splat4
 {
 	DECAL_MACRO
 	nonsolid
+	blood
 	
 	qer_editorimage	textures/decals/splat4.tga
 	{
@@ -6627,6 +6651,7 @@ textures/decals/splat3
 {
 	DECAL_MACRO
 	nonsolid
+	blood
 	
 	qer_editorimage	textures/decals/splat3.tga
 	{
@@ -6640,6 +6665,7 @@ textures/decals/splat2
 {
 	DECAL_MACRO
 	nonsolid
+	blood
 	
 	qer_editorimage	textures/decals/splat2.tga
 	{
@@ -6653,6 +6679,7 @@ textures/decals/splat1
 {
 	DECAL_MACRO
 	nonsolid
+	blood
 	
 	qer_editorimage	textures/decals/splat1.tga
 	{
@@ -9970,6 +9997,8 @@ textures/base_wall/skpanelT
 	bumpmap			textures/base_wall/skpanelT_local.tga
 	diffusemap		textures/base_wall/skpanelT_d.tga
 	specularmap		textures/base_wall/skpanelT_s.tga
+	
+	surftype10 // concrete
 }
 
 textures/base_wall/skpanel26
@@ -11364,6 +11393,7 @@ textures/object/sopbox2a
 		green		Parm1
 		blue		Parm2
 	}
+	cardboard
 	specularmap		textures/object/sopbox2_s.tga
 }
 
@@ -11371,6 +11401,7 @@ textures/object/sopbox2
 {
 	qer_editorimage		textures/object/sopbox2.tga
 	bumpmap	addnormals 	(textures/object/sopbox2_local.tga, heightmap (textures/object/sopbox2_bmp.tga, 4 ) ) 
+	cardboard 
 	{
 		blend		diffusemap
 		map		textures/object/sopbox2.tga
@@ -11587,6 +11618,7 @@ textures/object/magback6
 	bumpmap		textures/object/mag_local.tga
 	diffusemap		textures/object/magback6.tga
 	specularmap		textures/object/mag_s.tga
+	cardboard
 }
 
 textures/object/magback5
@@ -11595,6 +11627,7 @@ textures/object/magback5
 	bumpmap		textures/object/mag_local.tga
 	diffusemap		textures/object/magback5.tga
 	specularmap		textures/object/mag_s.tga
+	cardboard
 }
 
 textures/object/magback4
@@ -11603,6 +11636,8 @@ textures/object/magback4
 	bumpmap		textures/object/mag_local.tga
 	diffusemap		textures/object/magback4.tga
 	specularmap		textures/object/mag_s.tga
+	
+	cardboard
 }
 
 textures/object/magback3
@@ -11611,6 +11646,8 @@ textures/object/magback3
 	bumpmap		textures/object/mag_local.tga
 	diffusemap		textures/object/magback3.tga
 	specularmap		textures/object/mag_s.tga
+	
+	cardboard
 }
 
 textures/object/magback2
@@ -11619,6 +11656,8 @@ textures/object/magback2
 	bumpmap		textures/object/mag_local.tga
 	diffusemap		textures/object/magback2.tga
 	specularmap		textures/object/mag_s.tga
+	
+	cardboard
 }
 
 textures/object/magback1
@@ -11627,6 +11666,8 @@ textures/object/magback1
 	bumpmap		textures/object/mag_local.tga
 	diffusemap		textures/object/magback1.tga
 	specularmap		textures/object/mag_s.tga
+	
+	cardboard
 }
 
 textures/object/mag6
@@ -11635,6 +11676,8 @@ textures/object/mag6
 	bumpmap		textures/object/mag_local.tga
 	diffusemap		textures/object/mag6.tga
 	specularmap		textures/object/mag_s.tga
+	
+	cardboard
 }
 
 textures/object/mag5
@@ -11643,6 +11686,8 @@ textures/object/mag5
 	bumpmap		textures/object/mag_local.tga
 	diffusemap		textures/object/mag5.tga
 	specularmap		textures/object/mag_s.tga
+
+	cardboard
 }
 
 textures/object/mag4
@@ -11651,6 +11696,8 @@ textures/object/mag4
 	bumpmap		textures/object/mag_local.tga
 	diffusemap		textures/object/mag4.tga
 	specularmap		textures/object/mag_s.tga
+	
+		cardboard
 }
 
 textures/object/mag3
@@ -11659,6 +11706,8 @@ textures/object/mag3
 	bumpmap		textures/object/mag_local.tga
 	diffusemap		textures/object/mag3.tga
 	specularmap		textures/object/mag_s.tga
+	
+		cardboard
 }
 
 textures/object/mag2
@@ -11667,6 +11716,8 @@ textures/object/mag2
 	bumpmap		textures/object/mag_local.tga
 	diffusemap		textures/object/mag2.tga
 	specularmap		textures/object/mag_s.tga
+	
+	cardboard
 }
 
 textures/object/mag1
@@ -11675,6 +11726,8 @@ textures/object/mag1
 	bumpmap		textures/object/mag_local.tga
 	diffusemap		textures/object/mag1.tga
 	specularmap		textures/object/mag_s.tga
+	
+	cardboard
 }
 
 textures/object/magrack4
@@ -12248,6 +12301,7 @@ models/mapobjects/delta3/ceilingtanks/ceilingtanks
 
 models/mapobjects/healthgui/healthgui
 {
+	//glass
    	renderbump  	-size 256 256 colorMap -aa 2 models/mapobjects/healthgui/healthgui_local.tga	models/mapobjects/healthgui/work/healthgui_hp.lwo
 	{
 		blend			bumpmap			
@@ -13178,6 +13232,7 @@ models/mapobjects/fuel_barrel/exp_barrel2_white
 
 models/mapobjects/fuel_barrel/exp_barrel_white
 {
+	noSelfShadow
 	{
 		blend		bumpmap			
 		map			addnormals (models/mapobjects/fuel_barrel/exp_barrel_local, heightmap (models/mapobjects/fuel_barrel/exp_barrel_bmp, 2) ) 
@@ -13220,6 +13275,7 @@ models/mapobjects/fuel_barrel/exp_barrel2_blue
 
 models/mapobjects/fuel_barrel/exp_barrel_blue
 {
+	noSelfShadow
 	{
 		blend		bumpmap			
 		map			addnormals (models/mapobjects/fuel_barrel/exp_barrel_local, heightmap (models/mapobjects/fuel_barrel/exp_barrel_bmp, 2) ) 
@@ -13838,6 +13894,7 @@ models/mapobjects/washroom/airtank
 
 models/mapobjects/washroom/mopbucket
 {
+	plastic
 	renderbump  	-size 256 256 -aa 2 -trace .2 models/mapobjects/washroom/mopbucket_local.tga models/mapobjects/washroom/work/mopbucket_hp.lwo		
 	bumpmap			models/mapobjects/washroom/mopbucket_local
 	diffusemap		models/mapobjects/washroom/mopbucket
@@ -13854,6 +13911,8 @@ models/mapobjects/washroom/mop2
 
 models/mapobjects/washroom/mop1
 {
+	plastic
+
 	renderbump  	-size 64 64 -aa 2 models/mapobjects/washroom/mop1_local.tga models/mapobjects/washroom/work/mop_hp.lwo		
 	bumpmap			models/mapobjects/washroom/mop1_local
 	diffusemap		models/mapobjects/washroom/mop1

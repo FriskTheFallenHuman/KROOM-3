@@ -348,7 +348,7 @@ model monster_zombie_commando_cgun {
 }
 
 entityDef monster_zombie_commando_cgun {
-	"inherit"						"monster_default"
+	"inherit"						"monster_default_new"			// zombie_default
 	"scriptobject"					"monster_zombie_commando_cgun"
 	"ragdoll"						"monster_zombie_commando_cgun"
 	"size"							"48 48 68"
@@ -379,7 +379,6 @@ entityDef monster_zombie_commando_cgun {
 	"damage_zone left_arm"			"*Lshldr"
 	"damage_zone right_arm"			"*Rshldr"
 	"damage_zone legs"				"origin lolegs"
-	"damage_scale head"				"2"
 
 	"mass"   						"450"
 
@@ -397,9 +396,6 @@ entityDef monster_zombie_commando_cgun {
 	"ik_foot1"						"Lball"
 	"ik_foot2"						"Rball"
 
-	"snd_fire"						"monster_zombie_commando_cgun_fire"
-	"snd_winddown"					"monster_zombie_commando_winddown"
-	"snd_windup"					"monster_zombie_commando_windup"
 	"snd_sight1"					"monster_zombie_commando_sight1"
 	"snd_sight2"					"monster_zombie_commando_sight2"
 	"snd_chatter"					"monster_zombie_commando_chatter"

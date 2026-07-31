@@ -4666,6 +4666,10 @@ void idGameLocal::RadiusPush( const idVec3& origin, const float radius, const fl
 		{
 			scale = inflictorScale;
 		}
+		else if( ent->IsType( idAFEntity_Base::Type ) && static_cast<idAFEntity_Base*>( ent )->IsActiveAF() )
+		{
+			scale = ent->spawnArgs.GetFloat( "ragdoll_push_scale", "1.0" );	// Scales down ragdoll push based on def's value
+		}
 		else
 		{
 			scale = 1.0f;

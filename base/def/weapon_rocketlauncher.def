@@ -41,7 +41,7 @@ entityDef weapon_rocketlauncher {
 	"clipSize"					"5"
 	"lowAmmo"					"1"
 	"mtr_flashShader"			"muzzleflash"
-	"flashColor"				"1 0.8 0.4"
+	"flashColor"				"1 1 0.5" //"1 0.8 0.4"
 	"flashRadius"				"120"
 	"silent_fire"				"0"
 	"recoilTime"				"325"
@@ -69,6 +69,65 @@ entityDef weapon_rocketlauncher {
 
 	"spread"					"1"
 
+	"weapon_light"				"laser"
+	"laser_joint"				"barrel"
+	"laser_shader"				"lights/biground1"
+	"laser_color"				"1 0 0"
+	"laser_radius"				"640"
+	"laser_alwaysOn"    		"1"
+	"laser_target"         		"1280 0 0"
+	"laser_up"             		"0 16 0"   
+	"laser_right"          		"0 0 -16"  
+	"laser_pointLight"     		"0" 
+	"laser_noShadows"			"0"	// light wont pass thro objects.
+
+	"weapon_light2"				"laserGlow"
+	"laserGlow_joint"			"barrel"
+	"laserGlow_shader"			"lights/biground1"
+	"laserGlow_color"			"1 0 0"
+	"laserGlow_radius"			"3"//5
+	"laserGlow_offset"			"1.19 3.5 -6.5"	
+	"laserGlow_alwaysOn"      	"1"
+	"laserGlow_pointLight"    	"1" 
+	"laserGlow_noShadows"		"1"
+
+	"weapon_particle"			"laser"
+	//"laser_joint"				"barrel" 		// Key already defined
+	"laser_offset"				"1.19 3.5 -7"		
+	"laser_dir"					"0 0 1"		
+	"laser_weaponDepthHack"		"1"
+	"laser_particle"			"lasermod.prt"
+
+	"weapon_light3"				"laserWorld"
+	"laserWorld_joint"			"barrel"
+	"laserWorld_shader"			"lights/biground1"
+	"laserWorld_color"			"1 0 0"
+	"laserWorld_radius"			"640"
+	"laserWorld_alwaysOn"    	"1"
+	"laserWorld_target"         "1280 0 0"
+	"laserWorld_up"             "0 16 0"   
+	"laserWorld_right"          "0 0 -16"  
+	"laserWorld_pointLight"     "0" 
+	"laserWorld_onWorldModel"   "1" 
+	"laserWorld_noShadows"		"1"
+
+	"weapon_particle2"			"laserWorld"
+	//"laserWorld_joint"		"barrel" 		// Key already defined
+	"laserWorld_offset"			"-.7 3.6 -5.3"		
+	"laserWorld_dir"			"0 0 1"		
+	"laserWorld_particle"		"lasermod.prt"
+
+	"weapon_light4"					"laserGlowWorld"
+	"laserGlowWorld_joint"			"barrel"
+	"laserGlowWorld_shader"			"lights/biground1"
+	"laserGlowWorld_color"			"1 0 0"
+	"laserGlowWorld_radius"			"3"//5
+	"laserGlowWorld_offset"			"-.7 3.6 -5.3"	
+	"laserGlowWorld_onWorldModel"	"1"
+	"laserGlowWorld_alwaysOn"      	"1"
+	"laserGlowWorld_pointLight"    	"1" 
+	"laserGlowWorld_noShadows"		"1"
+
 	"controllerShakeHighMag"	"1.0"
 	"controllerShakeHighTime"	"500"
 	"controllerShakeLowMag"		"0.9"
@@ -81,7 +140,7 @@ entityDef moveable_item_rocketlauncher {
 	"density"					"0.05"
 	"friction"					"0.2"
 	"bouncyness"				"0"
-	"snd_bounce"				"smallbox"
+	"snd_bounce"				"metal_bounce"
 }
 
 model worldmodel_rocketlauncher {
@@ -122,10 +181,11 @@ entityDef projectile_rocket {
 
 	"def_damage"				"damage_rocketDirect"
 	"def_splash_damage"			"damage_rocketSplash"
+	"ignore_splash_damage"		"0"
 
 	"launchFromBarrel"			"1"					// launch from barrel
 	"health"					"5"					// amount of damage projectile can take if damaged (0 means it can't be destroyed)
-	"velocity"					"900 0 0"			// how fast the projectile leaves the gun (or distance if fuse is 0)
+	"velocity"					"600 0 0"//600 900	// how fast the projectile leaves the gun (or distance if fuse is 0)
 	"angular_velocity"			"0 0 0"				// how the projectile is rotating when it leaves the gun
 	"thrust"					"0"					// the rate of acceleration (always in the direction of the projectiles model)
 	"thrust_start"				"0"					// when to start accelerating
@@ -149,7 +209,7 @@ entityDef projectile_rocket {
 	"mtr_detonate"				"textures/decals/ballburn01"
 	"decal_size"				"300"
 
-	"smoke_fly"					"rockettrail.prt"		// particle effect while in the air
+	"smoke_fly"					"rockettrail.prt" //rockettrail.prt		// particle effect while in the air
 	// parametric particles -- temp
 	"model_detonate"			"rocketExplosion.prt"
 	"smoke_detonate"			""						// particle effect when detonates
@@ -157,39 +217,50 @@ entityDef projectile_rocket {
 	"smoke_bounce"				""
 	"smoke_fuse"				""
 
-	"debris_count"				"6"
+	//"debris_count"				"6"
 	"def_debris"				"debris_largeshrapnel"
 	"def_shrapnel"				"debris_shrapnel"
+	
+	"mtr_light_shader"			"lights/rocketflash"
+	"light_color"				"2 1.6 0.8"
+	"light_radius"				"160"  // 140
+	"light_offset"				"0 0 0"//"0 0 0"
 
-	"mtr_light_shader"			"lights/spot01"
-	"light_color"				"1 0.8 0.4"
-	"light_radius"				"160"
-	"light_offset"				"0 0 0"
+	"mtr_explode_light_shader"	"lights/muzzleflash"		//"muzzleflash"
+	"explode_light_color"		"4 3.2 1.6"	//"2 1.6 0.8"
 
-	"mtr_explode_light_shader"	"muzzleflash"
-	"explode_light_color"		"2 1.6 0.8"
-	"explode_light_radius"		"320"
-	"explode_light_fadetime"	"0.5"
+	"explode_light_radius"		"320" //420, 320
+	"explode_light_fadetime"	"0.45"	//.5 2.5
 
 	"snd_fly"					"rocket_flight"					// sound effect while in the air
 	"snd_explode"				"rocket_impact"
 }
 
 entityDef damage_rocketDirect {
-	"damage"					"170"
-	"push"						"1000"
-	"mtr_wound_flesh"			"textures/decals/hurt02"
-	"mtr_splat_flesh"			""
+	//"damage"					"150"				//Do not include damage, push etc here
+	//"push"					"8000"	//"1000"    // since def_splash_damage is going to handle it.
+	"damage"					"20"
+
+	"mtr_wound"					"textures/decals/new/rocketburn"
+ 
+	"mtr_wound_flesh"			"textures/decals/plasmahurt01"
+	"size_wound_flesh"			"15"
+	"size_wound"				"300"
+	//"mtr_splat_flesh"			""
 	"gib"						"1"
-	"smoke_wound_flesh"			"bloodwound.prt"
+	"smoke_wound_flesh"			"burstysquirt.prt" //"bloodwound.prt"
+	
+	"mtr_splatSelf_flesh"	"textures/decals/test1"
+	//"mtr_splatSelf_flesh"	"textures/decals/test3"
+	"size_splatSelf_flesh"	"25"
 }
 
 entityDef damage_rocketSplash {
-	"damage"					"150"
+	"damage"					"150"//150
 	"radius"					"175" //changed by Tim 6-22-04 from 132
-	"knockback"					"80"
-	"push"						"10000"
+	"knockback"					"180" // 80
+	"push"						"60000" // 10000
 	"attackerDamageScale"		"0.2"
-	"attackerPushScale"			"0.2"
+	"attackerPushScale"			"0.4"
 	"gib"						"1"
 }

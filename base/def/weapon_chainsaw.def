@@ -91,6 +91,7 @@ entityDef moveable_item_chainsaw {
 	"density"					"0.05"
 	"friction"					"0.2"
 	"bouncyness"				"0"
+	"snd_bounce"				"metal_bounce"
 }
 
 model worldmodel_chainsaw {
@@ -141,11 +142,12 @@ entityDef damage_chainsaw {
 
 	"gib"				"1"
 	"smoke_wound_flesh"	"chainsawwound.prt"
-	"mtr_wound_flesh"	"textures/decals/hurt02"
+	"mtr_wound_flesh"	"textures/decals/cshurt"  //"textures/decals/hurt02"
 	"mtr_splat_flesh"	"textures/decals/dsplat2"
 	"mtr_splat_flesh2"	"textures/decals/dsplat5"
 	"mtr_wound_metal"	"textures/decals/chainsawh02"
 	"mtr_wound_glass"	"textures/decals/chainsawh02"
+	"size_wound_flesh"  "15" 
 
 	"kick_time"			"400"
 	"kick_amplitude"	"1"

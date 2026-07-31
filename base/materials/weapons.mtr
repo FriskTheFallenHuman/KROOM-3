@@ -1371,6 +1371,24 @@ All flashes should be "sort nearest" so they draw over muzzle smokes and other t
 // would usually pull in parts of the adjacent frames unless the image fit inside an inscribed
 // circle.  The 90 degree rotations are always safe, so only pick from those for randomized orientations.
 table rotate90 { snap { 0, 0.25, 0.5, 0.75 } }
+table rotate90_reverse { snap { 0.25, 0.20, 0.15, 0.10, 0.5, 0.0, 0.75, 0.7, 0.65, 0.6, 0.55, 0.5, 0.45, 0.4, 0.35, 0.30 } }
+
+/*
+models/weapons/pistol/pistol_mflash
+{
+	deform sprite
+	sort nearest
+	{
+		forceHighQuality
+		if ( time + parm4 ) * 8 < 1.0
+		blend add
+		map textures/particles/pistol_mflash_strip.tga
+		scale 1 / 12 , 1
+		scroll table12[ (time + parm4) * 8 ] , 0
+		rotate	rotate90[ parm5 ]
+	}
+}
+*/
 
 models/weapons/pistol/pistol_mflash
 {
@@ -1385,6 +1403,17 @@ models/weapons/pistol/pistol_mflash
 		scroll table12[ (time + parm4) * 8 ] , 0
 		rotate	rotate90[ parm5 ]
 	}
+/*	sort nearest
+	{
+		forceHighQuality
+		if ( time + parm4 ) * 8 < 1.0
+		blend add
+		map textures/particles/pistol_mflash_strip.tga
+		scale 1 / 12 , 1
+		scroll table12[ (time + parm4) * 8 ] , 0
+		rotate	rotate90_reverse[ parm5 ]
+	}*/
+
 }
 
 models/weapons/pistol/pistol_mflash2
@@ -3282,6 +3311,7 @@ models/weapons/mflash/f_pistol1
 {	
        	noShadows
 	twosided
+	deform tube
    	{
     	  Blend add
 	  Map   models/weapons/mflash/f_pistol1.tga
@@ -3671,11 +3701,69 @@ models/weapons/mflash/f_machinegun
 		zeroclamp
 		rotate	time * -2.1
 		//centerscale   mgscaleTable[time* 9], mgscaleTable[time* 9] 
-		rgb		mgtable[ time * 5 ]
+		rgb		mgtable[ time * 5 ] 
+	}
+}
+
+models/weapons/mflash/cgun_mflash
+{	
+    noShadows
+	noselfShadow
+	translucent
+	twosided	
+	sort nearest
+
+   	{
+    		 Blend add
+		Map   models/weapons/mflash/f_machinegun.tga
+		zeroclamp
+		rotate	time * 3.7
 		
+	}
+   	{
+    		 Blend add
+		Map   models/weapons/mflash/f_machinegun.tga
+		zeroclamp
+		rotate	time * -2.1
 
 	}
 }
+
+models/weapons/mflash/cgun_mflash_bluish
+{	
+    noShadows
+	noselfShadow
+	translucent
+	twosided
+	sort nearest
+
+   	{
+    		 Blend add
+		Map   models/weapons/mflash/f_machinegun.tga
+		zeroclamp
+		rotate	time * 2//3.7
+	}
+   	{
+    		 Blend add
+		Map   models/weapons/mflash/f_machinegun2.tga
+		zeroclamp
+		rotate	time * -2.1
+	}
+}
+
+/*models/weapons/mflash/mflash_beam
+{	
+    noShadows
+	noselfShadow
+	translucent
+	twosided
+	deform tube
+   	{
+    	Blend add
+		Map   models/weapons/mflash/mflash_beam.tga
+	}
+}*/
+//---------------------------------------------------------------
 
 models/weapons/machinegun/m_strap
 {
@@ -3966,7 +4054,21 @@ muzzleflash
 		map lights/round
 		zeroClamp
 		colored 
-	
+
+		red 	muzzleflashrandom[ time * 3.33 ] * muzzleflashtable[ (time + parm4) * 4 * Parm3 ] * Parm0
+		green 	muzzleflashrandom[ time * 3.33 ] * muzzleflashtable[ (time + parm4) * 4 * Parm3 ] * Parm1
+		blue 	muzzleflashrandom[ time * 3.33 ] * muzzleflashtable[ (time + parm4) * 4 * Parm3 ] * Parm2
+	}
+}
+
+muzzleflash_fast
+{
+	noshadows
+	{
+		//map	_spotlight
+		map lights/round
+		zeroClamp
+		colored 
 
 		red 	muzzleflashrandom[ time * 3.33 ] * muzzleflashtable[ (time + parm4) * 4 * Parm3 ] * Parm0
 		green 	muzzleflashrandom[ time * 3.33 ] * muzzleflashtable[ (time + parm4) * 4 * Parm3 ] * Parm1

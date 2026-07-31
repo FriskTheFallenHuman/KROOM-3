@@ -1,0 +1,9 @@
+name				In use
+=======================================
+tracer2				Yes
+tracer1				Yes
+embers_multi			No
+beam1				yes
+laserGLow			Yes
+
+

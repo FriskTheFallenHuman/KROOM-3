@@ -205,7 +205,8 @@ entityDef projectile_bullet_pistol_mp {
 	"net_instanthit"	"1"				// predict decals on walls in MP
 	"velocity"			"20000 0 0"		// fast projectiles in MP
 	"mass"				"1"				// lower mass because of the high velocity
-	"tracers"			"0"				// no tracers in MP
+//	"tracers"			"0"				// no tracers in MP
+	"tracer_speed"		"7200"				// new tracers for mp
 	"push"				"0"				// no additional push in MP
 }
 
@@ -224,7 +225,9 @@ entityDef projectile_bullet_shotgun_mp {
 	"net_instanthit"	"1"				// don't predict decals on walls because the predicted spread is way of
 	"velocity"			"20000 0 0"		// fast projectiles in MP
 	"mass"				"0.5"			// lower mass because of the high velocity
-	"tracers"			"0"				// no tracers in MP
+//	"tracers"			"0"				// no tracers in MP
+	"tracer_speed"		"7200"				// new tracers for mp
+
 	"push"				"0"				// no additional push in MP
 }
 
@@ -243,7 +246,8 @@ entityDef projectile_bullet_machinegun_mp {
 	"net_instanthit"	"1"				// predict decals on walls in MP
 	"velocity"			"20000 0 0"		// fast projectiles in MP
 	"mass"				"0.5"				// lower mass because of the high velocity
-	"tracers"			"0"				// no tracers in MP
+	"tracer_speed"		"7200"				// new tracers for mp
+//	"tracers"			"0"				// no tracers in MP
 	"push"				"0"				// no additional push in MP
 }
 
@@ -262,7 +266,8 @@ entityDef projectile_chaingunbullet_mp {
 	"net_instanthit"	"1"				// predict decals on walls in MP
 	"velocity"			"20000 0 0"		// fast projectiles in MP
 	"mass"				"1"				// lower mass because of the high velocity
-	"tracers"			"0"				// no tracers in MP
+//	"tracers"			"0"				// no tracers in MP
+	"tracer_speed"		"7200"				// new tracers for mp
 	"push"				"0"				// no additional push in MP
 }
 
@@ -277,6 +282,7 @@ entityDef weapon_handgrenade_mp {
 entityDef projectile_grenade_mp {
 	"inherit"			"projectile_grenade"
 	"push"				"0"				// no additional push in MP
+	"net_fullphysics"	"1"				// predict bouncing, don't simplify the snapshots for this
 }
 
 entityDef moveable_item_grenades_mp {

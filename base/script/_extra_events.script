@@ -11,6 +11,7 @@ scriptEvent	void fireWeaponEnd();
 scriptEvent void cclearGrabbed();
 scriptEvent entity findHittableEnemy(float useFov);
 scriptEvent entity findHittableEnemyAI(float useFov);
+scriptEvent	void gib( string damage_def ); 
 
 // players
 scriptEvent void Damage(string damageDef);

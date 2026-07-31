@@ -4,7 +4,8 @@ weapon_pistol.script
 
 ***********************************************************************/
 
-#define PISTOL_FIRERATE			0.4
+#define PISTOL_FIRERATE			0.07 //0.4	// Maximum rate of fire, 
+#define PISTOL_BASE_FIRERATE	0.5 // At this fire rate pistol fires with base spread.
 #define PISTOL_LOWAMMO			4
 #define PISTOL_NUMPROJECTILES	1
 
@@ -20,7 +21,7 @@ object weapon_pistol : weapon_base_flashlight {
 	float		hasReloaded;
 	float		next_attack;
 	float		spread;
-
+	float		spreadMax;
 	void		init();
 
 	void		Lower();
@@ -37,6 +38,7 @@ void weapon_pistol::init() {
 	hasReloaded = false;
 	next_attack = 0;
 	spread		= getFloatKey( "spread" );
+	spreadMax	= getFloatKey( "spread_max" );
 	weaponState( "Raise", 0 );
 }
 
@@ -128,7 +130,16 @@ void weapon_pistol::Idle() {
 
 void weapon_pistol::Fire() {
 	float waitTime;
-	float ammoClip;
+	float ammoClip, attackDiff, currentSpread, maxAttackDiff;
+
+	maxAttackDiff = PISTOL_BASE_FIRERATE - PISTOL_FIRERATE;
+	attackDiff = sys.getTime() - next_attack;
+
+	if( attackDiff >= maxAttackDiff ) {
+		currentSpread = spread;
+	} else {
+		currentSpread = (spreadMax - spread) * (1 -  (attackDiff / maxAttackDiff)); 
+	}
 
 	next_attack = sys.getTime() + PISTOL_FIRERATE;
 
@@ -137,7 +148,11 @@ void weapon_pistol::Fire() {
 		startSound( "snd_lowammo", SND_CHANNEL_ITEM, true );
 	}
 
-	launchProjectiles( PISTOL_NUMPROJECTILES, spread, 0, 1.0, 1.0 );
+	startWeaponParticle( "mflash" );
+	startWeaponParticle( "mflash_world" );
+
+	launchProjectiles( PISTOL_NUMPROJECTILES, currentSpread, 0, 1.0, 1.0 );
+
 	playAnim( ANIMCHANNEL_ALL, "fire" );
 
 	waitTime = sys.getTime() + 0.1;
@@ -150,6 +165,9 @@ void weapon_pistol::Fire() {
 		updateLightIntensity();
 		waitFrame();
 	}
+	
+	stopWeaponParticle( "mflash" );
+	stopWeaponParticle( "mflash_world" );
 
 	setNetfiring(false);
 
@@ -159,7 +177,7 @@ void weapon_pistol::Fire() {
 void weapon_pistol::Reload() {
 	weaponReloading();
 	playAnim( ANIMCHANNEL_ALL, "reload" );
-	while( !animDone( ANIMCHANNEL_ALL, PISTOL_FIRE_TO_IDLE ) ) {
+	while( !animDone( ANIMCHANNEL_ALL, PISTOL_RELOAD_TO_IDLE ) ) {
 		updateLightIntensity();
 		waitFrame();
 	}

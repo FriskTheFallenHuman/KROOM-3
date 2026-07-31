@@ -2595,7 +2595,10 @@ void idActor::Damage( idEntity* inflictor, idEntity* attacker, const idVec3& dir
 	}
 
 	int	damage = damageDef->GetInt( "damage" ) * damageScale;
-	damage = GetDamageForLocation( damage, location );
+	if( health > 0 )
+	{
+		damage = GetDamageForLocation( damage, location );
+	}
 
 	// inform the attacker that they hit someone
 	if( attacker )
@@ -2724,7 +2727,17 @@ void idActor::Damage( idEntity* inflictor, idEntity* attacker, const idVec3& dir
 			}
 
 			Killed( inflictor, attacker, damage, dir, location );
-			if( ( health < -20 ) && spawnArgs.GetBool( "gib" ) && damageDef->GetBool( "gib" ) )
+
+			// GibHealth is suppossed to be declared in entityDef
+			int healthToGib = spawnArgs.GetInt( "gibHealth" );
+
+			// If its not there, set it to default value
+			if( healthToGib == 0 )
+			{
+				healthToGib = -20 ;
+			}
+
+			if( ( health < healthToGib ) && spawnArgs.GetBool( "gib" ) && damageDef->GetBool( "gib" ) )
 			{
 				Gib( dir, damageDefName );
 			}

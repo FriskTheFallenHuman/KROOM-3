@@ -678,7 +678,7 @@ monster_base::state_Dead
 */
 void monster_base::state_Dead() {
 
-	float burnDelay = getFloatKey( "burnaway" );
+	float burnDelay = getFloatKey( "global_burnaway" );
 	if ( burnDelay != 0 ) {
 		preBurn();
 		sys.wait( burnDelay );

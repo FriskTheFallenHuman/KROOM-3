@@ -198,7 +198,13 @@ void idSoundSample_OpenAL::LoadResource()
 
 	if( idStr::Icmpn( GetName(), "_default", 8 ) == 0 )
 	{
-		MakeDefault();
+		MakeDefault(true);
+		return;
+	}
+
+	if( idStr::Icmpn( GetName(), "_emptyname", 10 ) == 0 )
+	{
+		MakeDefault(true);
 		return;
 	}
 
@@ -537,8 +543,12 @@ bool idSoundSample_OpenAL::LoadWav( const idStr& filename )
 idSoundSample_OpenAL::MakeDefault
 ========================
 */
-void idSoundSample_OpenAL::MakeDefault()
+void idSoundSample_OpenAL::MakeDefault( bool noDefault )
 {
+	// Built-in default sounds shouldn't make a beep noise
+	if( noDefault )
+		return;
+
 	FreeData();
 
 	static const int DEFAULT_NUM_SAMPLES = 4096;
