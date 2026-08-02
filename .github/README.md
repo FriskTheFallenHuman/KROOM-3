@@ -35,6 +35,35 @@ Compiling its straight forward following these steps:
 	```
 	./cmake_linux.sh gcc debug
 	```
+- For macos
+	* Clone the repository
+	* Install the pre-requirements for your mac:
+	```sh
+    brew install cmake ninja sdl2 openal-soft glew pkgconfig
+	```
+	:warning: If you want to build a Universal Binaries you will need either the x86_64 and the arm64 versions of those libraries !
+	* Open a terminal in the root of the project and run:
+	```sh
+	chmod +x cmake_macos.sh
+	```
+	* In the same terminal run:
+	```sh
+	./cmake_macos.sh clang release opengl
+	```
+	* Build the application:
+	```sh
+	cmake --build build/clang/release -j
+	```
+	* Launch the application, specifying OpenGL 4.1:
+	```sh
+	build/clang/release/Kroom3BFG.app/Contents/MacOS/Kroom3BFG \
+  		+set r_glProfile 2 \                # Core profile
+		+set r_glVersionMajor 4 \           # OpenGL major version 4
+		+set r_glVersionMinor 1 \           # OpenGL minor version 1
+		+set fs_basepath <PATH_TO_KROOM-3>  # Path to the root folder of KROOM-3
+	```
+
+:warning: the macOS is still in work in progress. 
 
 # ".plan" <a name="plan"></a>
 

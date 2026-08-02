@@ -373,46 +373,35 @@ bool idDeviceManagerSDL::Init( vidParms_t parms )
 		const int glMajorVersion = r_glVersionMajor.GetInteger();
 		const int glMinorVersion = r_glVersionMinor.GetInteger();
 
-		// Krispy: This is Mega stupid, im sorry
-		if( glMajorVersion >= 3 && glMajorVersion >= 1 )
-		{
-			glConfig.driverVersion = GL_OPENGL_31;
+		if ( glMajorVersion >= 4 && glMinorVersion >= 6) {
+			glConfig.driverVersion = GL_OPENGL_46;
 		}
-		else if( glMajorVersion >= 3 && glMajorVersion >= 2 )
-		{
-			glConfig.driverVersion = GL_OPENGL_32;
-		}
-		else if( glMajorVersion >= 3 && glMajorVersion >= 3 )
-		{
-			glConfig.driverVersion = GL_OPENGL_33;
-		}
-		else if( glMajorVersion >= 4 && glMajorVersion >= 0 )
-		{
-			glConfig.driverVersion = GL_OPENGL_40;
-		}
-		else if( glMajorVersion >= 4 && glMajorVersion >= 1 )
-		{
-			glConfig.driverVersion = GL_OPENGL_41;
-		}
-		else if( glMajorVersion >= 4 && glMajorVersion >= 2 )
-		{
-			glConfig.driverVersion = GL_OPENGL_42;
-		}
-		else if( glMajorVersion >= 4 && glMajorVersion >= 3 )
-		{
-			glConfig.driverVersion = GL_OPENGL_43;
-		}
-		else if( glMajorVersion >= 4 && glMajorVersion >= 4 )
-		{
-			glConfig.driverVersion = GL_OPENGL_44;
-		}
-		else if( glMajorVersion >= 4 && glMajorVersion >= 5 )
-		{
+		else if ( glMajorVersion >= 4 && glMinorVersion == 5) {
 			glConfig.driverVersion = GL_OPENGL_45;
 		}
-		else if( glMajorVersion >= 4 && glMajorVersion >= 6 )
-		{
-			glConfig.driverVersion = GL_OPENGL_46;
+		else if ( glMajorVersion >= 4 && glMinorVersion == 4) {
+			glConfig.driverVersion = GL_OPENGL_44;
+		}
+		else if ( glMajorVersion >= 4 && glMinorVersion == 3) {
+			glConfig.driverVersion = GL_OPENGL_43;
+		}
+		else if ( glMajorVersion >= 4 && glMinorVersion == 2) {
+			glConfig.driverVersion = GL_OPENGL_42;
+		}
+		else if ( glMajorVersion >= 4 && glMinorVersion == 1) {
+			glConfig.driverVersion = GL_OPENGL_41;
+		}
+		else if ( glMajorVersion >= 4 && glMinorVersion == 0) {
+			glConfig.driverVersion = GL_OPENGL_40;
+		}
+		if ( glMajorVersion >= 3 && glMinorVersion >= 3) {
+			glConfig.driverVersion = GL_OPENGL_33;
+		}
+		else if ( glMajorVersion >= 3 && glMinorVersion == 2) {
+			glConfig.driverVersion = GL_OPENGL_32;
+		}
+		else if ( glMajorVersion >= 3 && glMinorVersion == 1) {
+			glConfig.driverVersion = GL_OPENGL_31;
 		}
 
 		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, glMajorVersion );
@@ -488,8 +477,8 @@ bool idDeviceManagerSDL::Init( vidParms_t parms )
 			windowPosY = ( parms.y != -1 ) ? parms.y : SDL_WINDOWPOS_UNDEFINED;
 		}
 
-		// Show whether this is a 32-bit or 64-bit binary
-		idStr title = va( "%s - %s %s (x%u Build)", GAME_NAME, ID__DATE__, ID__TIME__, sizeof( void* ) * 8 );
+		// Show whether this is a 32-bit or 64-bit binary, and architecture via CPUSTRING
+		idStr title = va( "%s - %s %s (" CPUSTRING " %lu-bit Build)", GAME_NAME, ID__DATE__, ID__TIME__, sizeof( void* ) * 8 );
 
 		sdl.window = SDL_CreateWindow( title.c_str(),
 									   windowPosX, windowPosY,
@@ -520,7 +509,11 @@ bool idDeviceManagerSDL::Init( vidParms_t parms )
 #endif
 
 		// RB begin
-		SDL_GetWindowSize( sdl.window, &glConfig.nativeScreenWidth, &glConfig.nativeScreenHeight );
+#if defined(USE_VULKAN)
+		SDL_Vulkan_GetDrawableSize( sdl.window, &glConfig.nativeScreenWidth, &glConfig.nativeScreenHeight );
+#else
+		SDL_GL_GetDrawableSize( sdl.window, &glConfig.nativeScreenWidth, &glConfig.nativeScreenHeight );
+#endif
 		// RB end
 
 		if( parms.fullScreen == -1 )

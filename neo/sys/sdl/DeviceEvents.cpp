@@ -402,8 +402,12 @@ sysEvent_t Sys_GetEvent()
 						r_windowWidth.SetInteger( w );
 						r_windowHeight.SetInteger( h );
 
+#if defined(USE_VULKAN)
 						glConfig.nativeScreenWidth = w;
 						glConfig.nativeScreenHeight = h;
+#else
+						SDL_GL_GetDrawableSize( sdl.window, &glConfig.nativeScreenWidth, &glConfig.nativeScreenHeight );
+#endif
 						break;
 					}
 
@@ -515,9 +519,19 @@ sysEvent_t Sys_GetEvent()
 				// to fix cursor problems in windowed mode
 				if( mainMenu && ( mainMenu->IsActive() || ImGuiTools::ReleaseMouseForTools() ) )
 				{
+					int winW = 0, winH = 0;
+					SDL_GetWindowSize( sdl.window, &winW, &winH );
 					res.evType = SE_MOUSE_ABSOLUTE;
-					res.evValue = ev.motion.x;
-					res.evValue2 = ev.motion.y;
+					if( winW > 0 && winH > 0 )
+					{
+						res.evValue = ev.motion.x * glConfig.nativeScreenWidth / winW;
+						res.evValue2 = ev.motion.y * glConfig.nativeScreenHeight / winH;
+					}
+					else
+					{
+						res.evValue = ev.motion.x;
+						res.evValue2 = ev.motion.y;
+					}
 				}
 				else     // this is the old, default behavior
 				{

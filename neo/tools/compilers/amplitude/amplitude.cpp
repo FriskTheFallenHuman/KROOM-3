@@ -29,6 +29,41 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
+// __min and __max are only for MSVC
+#if !defined(_MSC_VER)
+#define __min(a,b) (((a) < (b)) ? (a) : (b))
+#define __max(a,b) (((a) < (b)) ? (b) : (a))
+#endif
+
+#if defined(__APPLE__)
+#include <string.h>
+// Map strcpy_s arguments to strlcpy
+// for Apple platforms only
+static inline int strcpy_s(char *dest, size_t dest_size, const char *src) {
+    if (dest == NULL || src == NULL || dest_size == 0)
+	{
+        return -1;
+    }
+
+    size_t required_size = strlcpy(dest, src, dest_size);
+
+    if (required_size >= dest_size)
+	{
+        return -1;
+    }
+
+    return 0;
+}
+
+#ifdef __cplusplus
+template <size_t N>
+// Force the deduced size 'N', matches the MSVC strcpy_s function
+inline int strcpy_s(char (&dest)[N], const char *src) {
+    return strcpy_s(dest, N, src);
+}
+#endif
+#endif
+
 static const int SAMPLE_RATE = 60;
 
 struct chunk_t
@@ -353,8 +388,8 @@ void Amplitude_f( const idCmdArgs& args )
 
 	idLib::Printf( "Processing %s: \n", inputFileName );
 
-	FILE* in = NULL;
-	if( fopen_s( &in, inputFileName, "rb" ) != 0 )
+	FILE* in = fopen( inputFileName, "rb" );
+	if ( NULL != in )
 	{
 		idLib::Error( "Could not open input file\n" );
 		return;
@@ -376,8 +411,8 @@ void Amplitude_f( const idCmdArgs& args )
 		return;
 	}
 
-	FILE* out = NULL;
-	if( fopen_s( &out, outputFileName, "wb" ) != 0 )
+	FILE* out = fopen(inputFileName, "rb");
+	if ( NULL == out )
 	{
 		idLib::Error( "Could not open output file %s\n", outputFileName );
 		return;

@@ -56,7 +56,7 @@ PFN_vkCmdInsertDebugUtilsLabelEXT	qvkCmdInsertDebugUtilsLabelEXT = VK_NULL_HANDL
 #include "../RenderBackend.h"
 #include "Staging_VK.h"
 //#include "../../framework/Common_local.h"
-#include "../../sys/sdl/DeviceManager_SDL.h"
+#include "../../sys/sdl/DeviceManagerLocal.h"
 
 idCVar r_drawFlickerBox( "r_drawFlickerBox", "0", CVAR_RENDERER | CVAR_BOOL, "visual test for dropping frames" );
 

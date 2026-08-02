@@ -631,10 +631,13 @@ void Sys_Init()
 	common->Printf( "%1.0f CPU MHz ", Sys_ClockTicksPerSecond() / 1000000.0f );
 
 	common->Printf( "%d MB System Memory\n", Sys_GetSystemRam() );
+
+#ifdef USE_INTRINSICS_SSE
 	if( ( cpuFlags & CPUID_SSE ) == 0 )
 	{
 		common->Error( "SSE not supported!" );
 	}
+#endif
 
 	sdl.g_Joystick.Init();
 }
@@ -692,7 +695,9 @@ int main( int argc, char* argv[] )
 	}
 
 	// done before Com/Sys_Init since we need this for error output
+#if !defined( __APPLE__ )
 	Sys_CreateConsole();
+#endif
 
 #ifdef _WIN32
 	// Register the unhandled exception

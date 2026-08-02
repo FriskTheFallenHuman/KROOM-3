@@ -119,18 +119,18 @@ bool Sys_IsFileOnHdd( const char* filePath )
 	}
 
 	const char* bsdName = fs.f_mntfromname;
-	if( strncmp( bsdName, "/dev/", 5 ) == 0 )
+	if( idStr::Cmpn( bsdName, "/dev/", 5 ) == 0 )
 	{
 		bsdName += 5;
 	}
 
-	CFMutableDictionaryRef matching = IOBSDNameMatching( kIOMasterPortDefault, 0, bsdName );
+	CFMutableDictionaryRef matching = IOBSDNameMatching( kIOMainPortDefault, 0, bsdName );
 	if( !matching )
 	{
 		return true;
 	}
 
-	io_service_t service = IOServiceGetMatchingService( kIOMasterPortDefault, matching );
+	io_service_t service = IOServiceGetMatchingService( kIOMainPortDefault, matching );
 	if( !service )
 	{
 		return true;

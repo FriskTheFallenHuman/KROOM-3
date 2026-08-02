@@ -175,6 +175,10 @@ if(CMAKE_COMPILER_IS_GNUCC OR (CMAKE_C_COMPILER_ID MATCHES "Clang" AND NOT CMAKE
 
 		if(NOT "${CMAKE_SYSTEM}" MATCHES "Darwin")
 			list(APPEND sys_libs rt)
+		else()
+			find_library(COREFOUNDATION_LIBRARY CoreFoundation)
+			find_library(IOKIT_LIBRARY IOKit)
+			list(APPEND sys_libs ${COREFOUNDATION_LIBRARY} ${IOKIT_LIBRARY})
 		endif()
 	endif()
 

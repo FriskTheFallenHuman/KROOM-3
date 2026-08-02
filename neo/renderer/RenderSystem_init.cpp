@@ -304,7 +304,7 @@ idCVar r_tonemapContrast( "r_tonemapContrast", "1.0", CVAR_RENDERER | CVAR_ARCHI
 
 #if !defined( USE_VULKAN )
 	idCVar r_glVersionMajor( "r_glVersionMajor", "4", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "OpenGL major version (>= 3.2 is the minimun supported level!)", 3, 4 );
-	idCVar r_glVersionMinor( "r_glVersionMinor", "5", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "OpenGL minor version (>= 3.2 is the minimun supported level!)", 2, 5 );
+	idCVar r_glVersionMinor( "r_glVersionMinor", "5", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "OpenGL minor version (>= 3.2 is the minimun supported level!)", 1, 5 );
 	idCVar r_glProfile( "r_glProfile", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "0 = no profile, 1 = prefer compatibility, 2 = prefer core", 0, 2 );
 #endif
 
