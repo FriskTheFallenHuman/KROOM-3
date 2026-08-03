@@ -624,23 +624,11 @@ void spawn_canister2()
 	}
 }
 
-//#modified-fva; BEGIN
-void cst_spawn_weapons() {
-	if ($player1.cstGetAwChainsawLM() > 0) {
-		sys.spawn("cst_le_enpro1_chainsaw_1");
-	}
-}
-//#modified-fva; END
-
 void main() {
 	
 	world_init();
 	//spawn_canister();
 	hall_light_sway1();
-
-	//#modified-fva; BEGIN
-	cst_spawn_weapons();
-	//#modified-fva; END
 }
 
 

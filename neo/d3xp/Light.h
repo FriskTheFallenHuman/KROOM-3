@@ -41,6 +41,89 @@ extern const idEventDef EV_Light_GetLightParm;
 extern const idEventDef EV_Light_SetLightParm;
 extern const idEventDef EV_Light_SetLightParms;
 
+/*
+===============================================================================
+
+  Predefined light styles
+
+===============================================================================
+*/
+
+static char* predef_lightstyles[] =
+{
+	"m",
+	"mmnmmommommnonmmonqnmmo",
+	"abcdefghijklmnopqrstuvwxyzyxwvutsrqponmlkjihgfedcba",
+	"mmmmmaaaaammmmmaaaaaabcdefgabcdefg",
+	"mamamamamama",
+	"jklmnopqrstuvwxyzyxwvutsrqponmlkj",
+	"nmonqnmomnmomomno",
+	"mmmaaaabcdefgmmmmaaaammmaamm",
+	"mmmaaammmaaammmabcdefaaaammmmabcdefmmmaaaa",
+	"aaaaaaaazzzzzzzz",
+	"mmamammmmammamamaaamammma",
+	"abcdefghijklmnopqrrqponmlkjihgfedcba"
+};
+
+static char* predef_lightstylesinfo[] =
+{
+	"Normal",
+	"Flicker A",
+	"Slow Strong Pulse",
+	"Candle A",
+	"Fast Strobe",
+	"Gentle Pulse",
+	"Flicker B",
+	"Candle B",
+	"Candle C",
+	"Slow Strobe",
+	"Fluorescent Flicker",
+	"Slow Pulse (no black)"
+};
+
+/*
+===============================================================================
+
+  idLightStyleState_t
+
+===============================================================================
+*/
+
+struct idLightStyleState_t
+{
+	idLightStyleState_t();
+
+	int	frame;
+	float	framef;
+	int	oldframe;
+	int	time;
+	float	backlerp;
+
+	void	Reset();
+};
+
+ID_INLINE idLightStyleState_t::idLightStyleState_t()
+{
+	Reset();
+}
+
+ID_INLINE void idLightStyleState_t::Reset()
+{
+	frame = 0;
+	framef = 0;
+	oldframe = 0;
+	time = 0;
+	backlerp = 0;
+}
+
+/*
+===============================================================================
+
+  idLight
+
+===============================================================================
+*/
+
 class idLight : public idEntity
 {
 public:
@@ -59,6 +142,7 @@ public:
 	virtual void	ClientThink( const int curTime, const float fraction, const bool predict );
 	virtual void	FreeLightDef();
 	virtual bool	GetPhysicsToSoundTransform( idVec3& origin, idMat3& axis );
+	virtual void	SharedThink();
 	void			Present();
 
 	void			SaveState( idDict* args );
@@ -122,6 +206,9 @@ private:
 
 	bool			breakOnTrigger;
 	int				count;
+	int				style;
+	int				styleFrameTime;
+	idVec3			styleBase;
 	int				triggercount;
 	idEntity* 		lightParent;
 	idVec4			fadeFrom;
@@ -129,6 +216,9 @@ private:
 	int				fadeStart;
 	int				fadeEnd;
 	bool			soundWasPlaying;
+
+	idList<idStr>	styles;
+	idLightStyleState_t styleState;
 
 private:
 	void			PresentLightDefChange();

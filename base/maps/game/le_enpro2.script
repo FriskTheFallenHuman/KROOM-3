@@ -221,21 +221,6 @@ void shaker1_move()	{
 	}
 }
 
-
-
-//#modified-fva; BEGIN
-void cst_setup_lift_lamp() {
-	if (sys.getcvar("cst_mapLeEnpro2_noLiftLamp") == "1") {
-		// remove the original lift lamp
-		$light_4731.remove();
-		$func_mover_5.remove();
-	} else {
-		// remove the new model-less lift light
-		$light_cst_4731.remove();
-	}
-}
-//#modified-fva; END
-
 void main ()
 {
 	//fan_init();
@@ -247,10 +232,6 @@ void main ()
 	thread spindle_thingy();
 	thread shaker1_move();
 	//sys.trigger( $speaker_spindle_loop );
-	
-	//#modified-fva; BEGIN
-	cst_setup_lift_lamp();
-	//#modified-fva; END
 }
 
 

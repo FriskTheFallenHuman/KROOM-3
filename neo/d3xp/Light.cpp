@@ -74,6 +74,9 @@ idLight::UpdateChangeableSpawnArgs
 */
 void idLight::UpdateChangeableSpawnArgs( const idDict* source )
 {
+	styleFrameTime = spawnArgs.GetInt( "style_frametime", "100" );
+	style = spawnArgs.GetInt( "style", -1 );
+	styleState.Reset();
 
 	idEntity::UpdateChangeableSpawnArgs( source );
 
@@ -220,6 +223,9 @@ void idLight::Spawn()
 	// do the parsing the same way dmap and the editor do
 	gameEditLocal.ParseSpawnArgsToRenderLight( &spawnArgs, &renderLight );
 
+	// Store the original light radius for the light style.
+	styleBase = renderLight.lightRadius;
+
 	// we need the origin and axis relative to the physics origin/axis
 	localLightOrigin = ( renderLight.origin - GetPhysics()->GetOrigin() ) * GetPhysics()->GetAxis().Transpose();
 	localLightAxis = renderLight.axis * GetPhysics()->GetAxis().Transpose();
@@ -268,6 +274,28 @@ void idLight::Spawn()
 	spawnArgs.GetString( "broken", "", brokenModel );
 	spawnArgs.GetBool( "break", "0", breakOnTrigger );
 	spawnArgs.GetInt( "count", "1", count );
+
+	styleFrameTime = spawnArgs.GetInt( "style_frametime", "100" );
+	style = spawnArgs.GetInt( "style", -1 );
+
+	int numStyles = spawnArgs.GetInt( "num_styles", "0" );
+	if( numStyles > 0 )
+	{
+		for( int i = 0; i < numStyles; i++ )
+		{
+			idStr style = spawnArgs.GetString( va( "light_style%d", i ) );
+			styles.Append( style );
+		}
+	}
+	else
+	{
+		// it's not defined in entityDef light so use predefined table
+		for( int i = 0; i < 12; i++ )
+		{
+			idStr style = spawnArgs.GetString( va( "light_style%d", i ), predef_lightstyles[ i ] );
+			styles.Append( style );
+		}
+	}
 
 	triggercount = 0;
 
@@ -756,6 +784,99 @@ void idLight::Think()
 
 	RunPhysics();
 	Present();
+}
+
+/*
+================
+idLight::SharedThink
+================
+*/
+void idLight::SharedThink()
+{
+	float lightval;
+	int stringlength;
+	float offset;
+	int offsetwhole;
+	int otime;
+	int lastch, nextch;
+
+	if( style == -1 )
+	{
+		return;
+	}
+
+	if( style > styles.Num() )
+	{
+		gameLocal.Warning( "Light style out of range\n" );
+		return;
+	}
+
+	idStr stylestring = styles[style];
+
+	otime = gameLocal.time - styleState.time;
+	stringlength = stylestring.Length();
+
+	// it's been a long time since you were updated, lets assume a reset
+	if( otime > 2 * styleFrameTime )
+	{
+		otime = 0;
+		styleState.frame = styleState.oldframe = 0;
+		styleState.backlerp = 0;
+	}
+
+	styleState.time = gameLocal.time;
+
+	offset = ( ( float )otime ) / styleFrameTime;
+	offsetwhole = ( int )offset;
+
+	styleState.backlerp += offset;
+
+
+	if( styleState.backlerp > 1 )	// we're moving on to the next frame
+	{
+		styleState.oldframe = styleState.oldframe + ( int )styleState.backlerp;
+		styleState.frame = styleState.oldframe + 1;
+		if( styleState.oldframe >= stringlength )
+		{
+			styleState.oldframe = ( styleState.oldframe ) % stringlength;
+		}
+
+		if( styleState.frame >= stringlength )
+		{
+			styleState.frame = ( styleState.frame ) % stringlength;
+		}
+
+		styleState.backlerp = styleState.backlerp - ( int )styleState.backlerp;
+	}
+
+
+	lastch = stylestring[styleState.oldframe] - 'a';
+	nextch = stylestring[styleState.frame] - 'a';
+
+	lightval = ( lastch * ( 1.0 - styleState.backlerp ) ) + ( nextch * styleState.backlerp );
+
+	// ydnar: dlight values go from 0-1.5ish
+#if 0
+	lightval = ( lightval * ( 1000.0f / 24.0f ) ) - 200.0f; // they want 'm' as the "middle" value as 300
+	lightval = max( 0.0f, lightval );
+	lightval = min( 1000.0f, lightval );
+#else
+	lightval *= 0.071429f;
+	lightval = Max( 0.0f, lightval );
+	lightval = Min( 20.0f, lightval );
+#endif
+
+	renderLight.lightRadius.x = lightval * styleBase.x;
+	renderLight.lightRadius.y = lightval * styleBase.y;
+	renderLight.lightRadius.z = lightval * styleBase.z;
+
+
+	if( !common->IsClient() )
+	{
+		BecomeActive( TH_THINK );
+	}
+
+	PresentLightDefChange();
 }
 
 /*
