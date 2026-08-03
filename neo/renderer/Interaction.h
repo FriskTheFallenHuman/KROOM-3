@@ -34,7 +34,7 @@ If you have questions concerning this license or the applicable additional terms
 
 	Interaction between static entityDef surfaces and a static lightDef.
 
-	Interactions with no lightTris and no shadowTris are still
+	Interactions with no lightTris are still
 	valid, because they show that a given entityDef / lightDef
 	do not interact, even though they share one or more areas.
 

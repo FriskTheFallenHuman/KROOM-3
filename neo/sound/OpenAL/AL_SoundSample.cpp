@@ -198,13 +198,13 @@ void idSoundSample_OpenAL::LoadResource()
 
 	if( idStr::Icmpn( GetName(), "_default", 8 ) == 0 )
 	{
-		MakeDefault(true);
+		MakeDefault( true );
 		return;
 	}
 
 	if( idStr::Icmpn( GetName(), "_emptyname", 10 ) == 0 )
 	{
-		MakeDefault(true);
+		MakeDefault( true );
 		return;
 	}
 
@@ -547,7 +547,9 @@ void idSoundSample_OpenAL::MakeDefault( bool noDefault )
 {
 	// Built-in default sounds shouldn't make a beep noise
 	if( noDefault )
+	{
 		return;
+	}
 
 	FreeData();
 

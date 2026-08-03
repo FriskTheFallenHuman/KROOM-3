@@ -705,8 +705,6 @@ void R_ShowInteractionMemory_f( const idCmdArgs& args )
 	int emptyInteractions = 0;
 	int lightTris = 0;
 	int lightTriIndexes = 0;
-	int shadowTris = 0;
-	int shadowTriIndexes = 0;
 	int maxInteractionsForEntity = 0;
 	int maxInteractionsForLight = 0;
 
@@ -785,7 +783,6 @@ void R_ShowInteractionMemory_f( const idCmdArgs& args )
 	common->Printf( "%i entities with %i total interactions\n", entities, interactions );
 	common->Printf( "%i deferred interactions, %i empty interactions\n", deferredInteractions, emptyInteractions );
 	common->Printf( "%5i indexes in %5i light tris\n", lightTriIndexes, lightTris );
-	common->Printf( "%5i indexes in %5i shadow tris\n", shadowTriIndexes, shadowTris );
 	common->Printf( "%i maxInteractionsForEntity\n", maxInteractionsForEntity );
 	common->Printf( "%i maxInteractionsForLight\n", maxInteractionsForLight );
 }

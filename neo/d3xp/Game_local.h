@@ -415,6 +415,7 @@ public:
 	void					RunAllUserCmdsForPlayer( idUserCmdMgr& cmdMgr, const int playerNumber );
 	void					RunSingleUserCmd( usercmd_t& cmd, idPlayer& player );
 	void					RunEntityThink( idEntity& ent, idUserCmdMgr& userCmdMgr );
+	void					RunSharedThink();
 	virtual bool			Draw( int clientNum );
 	virtual bool			HandlePlayerGuiEvent( const sysEvent_t* ev );
 	virtual void			ServerWriteSnapshot( idSnapShot& ss );

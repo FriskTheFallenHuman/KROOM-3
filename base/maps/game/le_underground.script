@@ -11,12 +11,7 @@
 
 	float ambushLiftPos = 0;	//position of ambush lift up = 0, down = 1
 	float ambushLiftDoors = 0;	//position of cage doors closed = 0
-	//#modified-fva; BEGIN
-	float cst_ambush_lift_called = false;
-	//#modified-fva; END
-	
-	
-
+	float ambushLiftCalled = false; //ambush lift called
 
 	void cacheSounds()
 	{
@@ -48,36 +43,29 @@
 		sys.trigger($ambush_move_stop);
 	}
 		
-	
-	//#modified-fva; BEGIN
 	void ambush_lift_move();
-	//#modified-fva; END
 
 	void ambush_lift_start()
 	{
-		//#modified-fva; BEGIN
 		if (ambushLiftPos == 1) {
 			ambush_lift_move();
 			return;
 		}
-		if (cst_ambush_lift_called) {
+	
+		if (ambushLiftCalled) {
 			return;
 		}
-		cst_ambush_lift_called = true;
+	
+		ambushLiftCalled = true;
 
 		$func_door_62.lock(1);
-		//#modified-fva; END
 
 		$da_func_static_2456.setGuiParm( "noninteractive", "1" );
-		//#modified-fva; BEGIN
-		//sys.trigger($ambushDoorSafety);
-		//#modified-fva; END
 		
 		$ambush_mover.time(3);
 		$ambush_mover.accelTime(.5);
-		//#modified-fva; BEGIN
 		$ambush_mover.decelTime(.5);
-		//#modified-fva; END
+
 		$ambush_mover.moveTo( $ambushLift_mid );
 		thread ambush_lift_startSound();
 		sys.waitFor($ambush_mover);
@@ -85,15 +73,8 @@
 		$da_func_static_2456.setGuiParm( "gui_parm5", "2" );
 		$da_func_static_2456.setGuiParm( "gui_parm7", "0" );
 		
-		//#modified-fva; BEGIN
-		//$ambushDoorSafety.remove();
-		//#modified-fva; END
-		
 		thread ambush_lift_stopSound();
-		
-		//#modified-fva; BEGIN
-		//$func_door_62.lock(1);
-		//#modified-fva; END
+
 		sys.trigger($func_static_53106);
 		
 		$da_func_static_2456.setShaderParm( 7, 0 );
@@ -174,20 +155,17 @@
 		ambushLiftPos = 1;
 		
 		$da_func_static_2456.setGuiParm( "gui_parm6", "ambush_lift_move" );
-		
-		//#modified-fva; BEGIN
-		cst_ambush_lift_called = false;
-		//#modified-fva; END
+
+		ambushLiftCalled = false;
 	}
 
 
 	void ambush_lift_move()
 	{
-		//#modified-fva; BEGIN
-		if (cst_ambush_lift_called) {
+		if (ambushLiftCalled) {
 			return;
 		}
-		cst_ambush_lift_called = true;
+		ambushLiftCalled = true;
 
 		$triteAmbushLift_doorLeft.time(1.5);
 		$triteAmbushLift_doorLeft.accelTime(.5);
@@ -196,21 +174,14 @@
 		$triteAmbushLift_doorRight.time(1.5);
 		$triteAmbushLift_doorRight.accelTime(.5);
 		$triteAmbushLift_doorRight.decelTime(.5);
-		//#modified-fva; END
 
 		$ambush_mover.time(5);
 		$ambush_mover.accelTime(.5);
 		$ambush_mover.decelTime(1);
 
 		$func_static_53110.setGuiParm( "noninteractive", "1" );
-		//#modified-fva; BEGIN
-		/*
-		$da_func_static_2455.setGuiParm( "noninteractive", "1" );
-		$da_func_static_2455.setGuiParm( "gui_parm7", "0" );
-		*/
 		$func_static_55759.setGuiParm( "noninteractive", "1" );
 		$func_static_55759.setGuiParm( "gui_parm7", "0" );
-		//#modified-fva; END
 		$da_func_static_2456.setGuiParm( "noninteractive", "1" );
 		$da_func_static_2456.setGuiParm( "gui_parm7", "0" );
 
@@ -257,20 +228,12 @@
 		sys.wait( 1 );
 		
 		$func_static_53110.setGuiParm( "noninteractive", "0" );
-		//#modified-fva; BEGIN
-		/*
-		$da_func_static_2455.setGuiParm( "noninteractive", "0" );
-		$da_func_static_2455.setGuiParm( "gui_parm7", "1" );
-		*/
 		$func_static_55759.setGuiParm( "noninteractive", "0" );
 		$func_static_55759.setGuiParm( "gui_parm7", "1" );
-		//#modified-fva; END
 		$da_func_static_2456.setGuiParm( "noninteractive", "0" );
 		$da_func_static_2456.setGuiParm( "gui_parm7", "1" );
 
-		//#modified-fva; BEGIN
-		cst_ambush_lift_called = false;
-		//#modified-fva; END
+		ambushLiftCalled = false;
 	}
 
 
@@ -334,25 +297,9 @@
 		
 	}
 
-
-		
-	//#modified-fva; BEGIN
-	void cst_setup_hiss_pipe() {
-		if (sys.getcvar("cst_mapLeUnderground_noHissPipe") == "1") {
-			$speaker_71.Off();
-			$speaker_72.Off();
-			$speaker_73.Off();
-			$speaker_74.Off();
-		}
-	}
-	//#modified-fva; END
-
 	void main()
 	{
 		setup_world();
-		//#modified-fva; BEGIN
-		cst_setup_hiss_pipe();
-		//#modified-fva; END
 		
 		sys.wait( 5 );
 		

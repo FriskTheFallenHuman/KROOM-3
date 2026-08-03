@@ -588,8 +588,6 @@ static void CreateMapLight( const idMapEntity* mapEnt )
 	}
 
 	light = new mapLight_t;
-	light->name[0] = '\0';
-	light->shadowTris = NULL;
 
 	// parse parms exactly as the game do
 	// use the game's epair parsing code so
@@ -608,17 +606,6 @@ static void CreateMapLight( const idMapEntity* mapEnt )
 	}
 	// RB end
 
-	// get the name for naming the shadow surfaces
-	const char*	name;
-
-	mapEnt->epairs.GetString( "name", "", &name );
-
-	idStr::Copynz( light->name, name, sizeof( light->name ) );
-	if( !light->name[0] )
-	{
-		idLib::Error( "Light at (%f,%f,%f) didn't have a name",
-					  light->def.parms.origin[0], light->def.parms.origin[1], light->def.parms.origin[2] );
-	}
 #if 0
 	// use the renderer code to get the bounding planes for the light
 	// based on all the parameters
