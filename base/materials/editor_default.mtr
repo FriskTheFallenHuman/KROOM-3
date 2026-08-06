@@ -1,0 +1,17 @@
+_emptyName
+{
+	description	"Empty-name editor texture"
+	qer_editorimage	textures/_emptyname.tga
+	diffusemap	textures/_emptyname.tga
+	bumpmap	textures/_emptyname_local.tga
+	specularmap	textures/_emptyname_s.tga
+}
+
+textures/default
+{
+	description	"Default editor texture"
+	qer_editorimage	textures/_emptyname.tga
+	diffusemap	textures/_emptyname.tga
+	bumpmap	textures/_emptyname_local.tga
+	specularmap	textures/_emptyname_s.tga
+}
