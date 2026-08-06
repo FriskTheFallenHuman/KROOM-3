@@ -414,6 +414,8 @@ void idCollisionModelManagerLocal::FreeModel( cm_model_t* model )
 	cm_brushRefBlock_t* brushRefBlock, *nextBrushRefBlock;
 	cm_nodeBlock_t* nodeBlock, *nextNodeBlock;
 
+	// runtime acceleration structures reference geometry owned by the tree
+	FreeModelBVHs( model );
 	// free the tree structure
 	if( model->node )
 	{
@@ -621,6 +623,8 @@ cm_model_t* idCollisionModelManagerLocal::AllocModel()
 	model->numEdges = 0;
 	model->edges = NULL;
 	model->node = NULL;
+	memset( &model->polygonBvh, 0, sizeof( model->polygonBvh ) );
+	memset( &model->brushBvh, 0, sizeof( model->brushBvh ) );
 	model->nodeBlocks = NULL;
 	model->polygonRefBlocks = NULL;
 	model->brushRefBlocks = NULL;
@@ -3470,6 +3474,8 @@ void idCollisionModelManagerLocal::FinishModel( cm_model_t* model )
 	CM_GetNodeBounds( &model->bounds, model->node );
 	// get model contents
 	model->contents = CM_GetNodeContents( model->node );
+	// build immutable runtime acceleration structures after geometry is final
+	BuildModelBVHs( model );
 	// total memory used by this model
 	model->usedMemory = model->numVertices * sizeof( cm_vertex_t ) +
 						model->numEdges * sizeof( cm_edge_t ) +
@@ -3477,7 +3483,11 @@ void idCollisionModelManagerLocal::FinishModel( cm_model_t* model )
 						model->brushMemory +
 						model->numNodes * sizeof( cm_node_t ) +
 						model->numPolygonRefs * sizeof( cm_polygonRef_t ) +
-						model->numBrushRefs * sizeof( cm_brushRef_t );
+						model->numBrushRefs * sizeof( cm_brushRef_t ) +
+						model->polygonBvh.numNodes * sizeof( cm_bvhNode_t ) +
+						model->polygonBvh.numPolygons * sizeof( cm_polygon_t* ) +
+						model->brushBvh.numNodes * sizeof( cm_bvhNode_t ) +
+						model->brushBvh.numBrushes * sizeof( cm_brush_t* );
 }
 
 static const byte BCM_VERSION = 100;
@@ -4161,6 +4171,10 @@ void idCollisionModelManagerLocal::PrintModelInfo( const cm_model_t* model )
 	common->Printf( "%6i nodes (%i KB)\n", model->numNodes, ( model->numNodes * sizeof( cm_node_t ) ) >> 10 );
 	common->Printf( "%6i polygon refs (%i KB)\n", model->numPolygonRefs, ( model->numPolygonRefs * sizeof( cm_polygonRef_t ) ) >> 10 );
 	common->Printf( "%6i brush refs (%i KB)\n", model->numBrushRefs, ( model->numBrushRefs * sizeof( cm_brushRef_t ) ) >> 10 );
+	common->Printf( "%6i polygon BVH nodes (%i KB)\n", model->polygonBvh.numNodes,
+					( ( model->polygonBvh.numNodes * sizeof( cm_bvhNode_t ) ) + ( model->polygonBvh.numPolygons * sizeof( cm_polygon_t* ) ) ) >> 10 );
+	common->Printf( "%6i brush BVH nodes (%i KB)\n", model->brushBvh.numNodes,
+					( ( model->brushBvh.numNodes * sizeof( cm_bvhNode_t ) ) + ( model->brushBvh.numBrushes * sizeof( cm_brush_t* ) ) ) >> 10 );
 	common->Printf( "%6i internal edges\n", model->numInternalEdges );
 	common->Printf( "%6i sharp edges\n", model->numSharpEdges );
 	common->Printf( "%6i contained polygons removed\n", model->numRemovedPolys );
@@ -4190,6 +4204,10 @@ void idCollisionModelManagerLocal::AccumulateModelInfo( cm_model_t* model )
 		model->numNodes += models[i]->numNodes;
 		model->numBrushRefs += models[i]->numBrushRefs;
 		model->numPolygonRefs += models[i]->numPolygonRefs;
+		model->polygonBvh.numNodes += models[i]->polygonBvh.numNodes;
+		model->polygonBvh.numPolygons += models[i]->polygonBvh.numPolygons;
+		model->brushBvh.numNodes += models[i]->brushBvh.numNodes;
+		model->brushBvh.numBrushes += models[i]->brushBvh.numBrushes;
 		model->numInternalEdges += models[i]->numInternalEdges;
 		model->numSharpEdges += models[i]->numSharpEdges;
 		model->numRemovedPolys += models[i]->numRemovedPolys;

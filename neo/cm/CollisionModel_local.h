@@ -185,6 +185,31 @@ typedef struct cm_nodeBlock_s
 	struct cm_nodeBlock_s* next;				// next block with nodes
 } cm_nodeBlock_t;
 
+typedef struct cm_bvhNode_s
+{
+	idBounds				bounds;
+	int					children[2];		// -1 for a leaf
+	int					firstPrimitive;
+	int					numPrimitives;
+	int					contents;
+} cm_bvhNode_t;
+
+typedef struct cm_polygonBvh_s
+{
+	cm_bvhNode_t* 			nodes;
+	cm_polygon_t** 		polygons;
+	int					numNodes;
+	int					numPolygons;
+} cm_polygonBvh_t;
+
+typedef struct cm_brushBvh_s
+{
+	cm_bvhNode_t* 			nodes;
+	cm_brush_t** 			brushes;
+	int					numNodes;
+	int					numBrushes;
+} cm_brushBvh_t;
+
 typedef struct cm_model_s
 {
 	idStr					name;				// model name
@@ -199,6 +224,8 @@ typedef struct cm_model_s
 	int						numEdges;			// number of edges
 	cm_edge_t* 				edges;				// array with all edges used by the model
 	cm_node_t* 				node;				// first node of spatial subdivision
+	cm_polygonBvh_t			polygonBvh;			// runtime polygon acceleration structure
+	cm_brushBvh_t			brushBvh;			// runtime brush acceleration structure
 	// blocks with allocated memory
 	cm_nodeBlock_t* 		nodeBlocks;			// list with blocks of nodes
 	cm_polygonRefBlock_t* 	polygonRefBlocks;	// list with blocks of polygon references
@@ -420,17 +447,17 @@ private:			// CollisionMap_rotate.cpp
 private:			// CollisionMap_contents.cpp
 	bool			TestTrmVertsInBrush( cm_traceWork_t* tw, cm_brush_t* b );
 	bool			TestTrmInPolygon( cm_traceWork_t* tw, cm_polygon_t* p );
-	cm_node_t* 		PointNode( const idVec3& p, cm_model_t* model );
 	int				PointContents( const idVec3 p, cmHandle_t model );
 	int				TransformedPointContents( const idVec3& p, cmHandle_t model, const idVec3& origin, const idMat3& modelAxis );
 	int				ContentsTrm( trace_t* results, const idVec3& start,
 								 const idTraceModel* trm, const idMat3& trmAxis, int contentMask,
 								 cmHandle_t model, const idVec3& modelOrigin, const idMat3& modelAxis );
 
-private:			// CollisionMap_trace.cpp
-	void			TraceTrmThroughNode( cm_traceWork_t* tw, cm_node_t* node );
-	void			TraceThroughAxialBSPTree_r( cm_traceWork_t* tw, cm_node_t* node, float p1f, float p2f, idVec3& p1, idVec3& p2 );
+private:			// CollisionModel_bvh.cpp
 	void			TraceThroughModel( cm_traceWork_t* tw );
+	int				PointContentsThroughModel( const idVec3& p, cm_model_t* model );
+	void			BuildModelBVHs( cm_model_t* model );
+	void			FreeModelBVHs( cm_model_t* model );
 	void			RecurseProcBSP_r( trace_t* results, int parentNodeNum, int nodeNum, float p1f, float p2f, const idVec3& p1, const idVec3& p2 );
 
 private:			// CollisionMap_load.cpp

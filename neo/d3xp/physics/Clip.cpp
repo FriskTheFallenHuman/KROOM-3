@@ -32,25 +32,45 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "../Game_local.h"
 
-#define	MAX_SECTOR_DEPTH				12
-#define MAX_SECTORS						((1<<(MAX_SECTOR_DEPTH+1))-1)
+#define CLIP_BROADPHASE_MARGIN		8.0f
+#define CLIP_BROADPHASE_PREDICTION	2.0f
 
-typedef struct clipSector_s
+typedef struct clipBroadPhaseNode_s
 {
-	int						axis;		// -1 = leaf node
-	float					dist;
-	struct clipSector_s* 	children[2];
-	struct clipLink_s* 		clipLinks;
-} clipSector_t;
-
-typedef struct clipLink_s
-{
+	idBounds				bounds;
 	idClipModel* 			clipModel;
-	struct clipSector_s* 	sector;
-	struct clipLink_s* 		prevInSector;
-	struct clipLink_s* 		nextInSector;
-	struct clipLink_s* 		nextLink;
-} clipLink_t;
+	int						parent;
+	int						children[2];
+	int						height;
+	int						next;
+} clipBroadPhaseNode_t;
+
+class idClipBroadPhase
+{
+public:
+	idClipBroadPhase();
+
+	int						CreateProxy( const idBounds& bounds, idClipModel* clipModel );
+	void					DestroyProxy( int proxy );
+	void					MoveProxy( int proxy, const idBounds& bounds, const idVec3& displacement );
+	int						Query( const idBounds& bounds, int contentMask, idClipModel** list, int maxCount ) const;
+
+private:
+	idList<clipBroadPhaseNode_t> nodes;
+	int						root;
+	int						freeList;
+
+	int						AllocNode();
+	void					FreeNode( int node );
+	void					InsertLeaf( int leaf );
+	void					RemoveLeaf( int leaf );
+	int						Balance( int node );
+
+	static bool				IsLeaf( const clipBroadPhaseNode_t& node );
+	static bool				ContainsBounds( const idBounds& outer, const idBounds& inner );
+	static idBounds			UnionBounds( const idBounds& a, const idBounds& b );
+	static float			SurfaceArea( const idBounds& bounds );
+};
 
 typedef struct trmCache_s
 {
@@ -63,7 +83,435 @@ typedef struct trmCache_s
 
 idVec3 vec3_boxEpsilon( CM_BOX_EPSILON, CM_BOX_EPSILON, CM_BOX_EPSILON );
 
-idBlockAlloc<clipLink_t, 1024>	clipLinkAllocator;
+/*
+===============
+idClipBroadPhase::idClipBroadPhase
+===============
+*/
+idClipBroadPhase::idClipBroadPhase()
+{
+	nodes.SetGranularity( 256 );
+	root = -1;
+	freeList = -1;
+}
+
+/*
+===============
+idClipBroadPhase::IsLeaf
+===============
+*/
+bool idClipBroadPhase::IsLeaf( const clipBroadPhaseNode_t& node )
+{
+	return node.children[0] == -1;
+}
+
+/*
+===============
+idClipBroadPhase::ContainsBounds
+===============
+*/
+bool idClipBroadPhase::ContainsBounds( const idBounds& outer, const idBounds& inner )
+{
+	return outer[0][0] <= inner[0][0] && outer[0][1] <= inner[0][1] && outer[0][2] <= inner[0][2] &&
+		   outer[1][0] >= inner[1][0] && outer[1][1] >= inner[1][1] && outer[1][2] >= inner[1][2];
+}
+
+/*
+===============
+idClipBroadPhase::UnionBounds
+===============
+*/
+idBounds idClipBroadPhase::UnionBounds( const idBounds& a, const idBounds& b )
+{
+	idBounds bounds = a;
+	bounds.AddBounds( b );
+	return bounds;
+}
+
+/*
+===============
+idClipBroadPhase::SurfaceArea
+===============
+*/
+float idClipBroadPhase::SurfaceArea( const idBounds& bounds )
+{
+	const idVec3 size = bounds[1] - bounds[0];
+	return 2.0f * ( size[0] * size[1] + size[1] * size[2] + size[2] * size[0] );
+}
+
+/*
+===============
+idClipBroadPhase::AllocNode
+===============
+*/
+int idClipBroadPhase::AllocNode( void )
+{
+	int nodeNum;
+	if( freeList != -1 )
+	{
+		nodeNum = freeList;
+		freeList = nodes[nodeNum].next;
+	}
+	else
+	{
+		clipBroadPhaseNode_t node;
+		memset( &node, 0, sizeof( node ) );
+		nodeNum = nodes.Append( node );
+	}
+
+	clipBroadPhaseNode_t& node = nodes[nodeNum];
+	node.clipModel = NULL;
+	node.parent = -1;
+	node.children[0] = node.children[1] = -1;
+	node.height = 0;
+	node.next = -1;
+	return nodeNum;
+}
+
+/*
+===============
+idClipBroadPhase::FreeNode
+===============
+*/
+void idClipBroadPhase::FreeNode( int nodeNum )
+{
+	clipBroadPhaseNode_t& node = nodes[nodeNum];
+	node.clipModel = NULL;
+	node.parent = -1;
+	node.children[0] = node.children[1] = -1;
+	node.height = -1;
+	node.next = freeList;
+	freeList = nodeNum;
+}
+
+/*
+===============
+idClipBroadPhase::Balance
+===============
+*/
+int idClipBroadPhase::Balance( int nodeNum )
+{
+	clipBroadPhaseNode_t& a = nodes[nodeNum];
+	if( IsLeaf( a ) || a.height < 2 )
+	{
+		return nodeNum;
+	}
+
+	const int bNum = a.children[0];
+	const int cNum = a.children[1];
+	clipBroadPhaseNode_t& b = nodes[bNum];
+	clipBroadPhaseNode_t& c = nodes[cNum];
+	const int balance = c.height - b.height;
+
+	if( balance > 1 )
+	{
+		const int fNum = c.children[0];
+		const int gNum = c.children[1];
+		clipBroadPhaseNode_t& f = nodes[fNum];
+		clipBroadPhaseNode_t& g = nodes[gNum];
+
+		c.children[0] = nodeNum;
+		c.parent = a.parent;
+		a.parent = cNum;
+		if( c.parent != -1 )
+		{
+			clipBroadPhaseNode_t& parent = nodes[c.parent];
+			parent.children[parent.children[1] == nodeNum] = cNum;
+		}
+		else
+		{
+			root = cNum;
+		}
+
+		if( f.height > g.height )
+		{
+			c.children[1] = fNum;
+			a.children[1] = gNum;
+			g.parent = nodeNum;
+			a.bounds = UnionBounds( b.bounds, g.bounds );
+			c.bounds = UnionBounds( a.bounds, f.bounds );
+			a.height = 1 + Max( b.height, g.height );
+			c.height = 1 + Max( a.height, f.height );
+		}
+		else
+		{
+			c.children[1] = gNum;
+			a.children[1] = fNum;
+			f.parent = nodeNum;
+			a.bounds = UnionBounds( b.bounds, f.bounds );
+			c.bounds = UnionBounds( a.bounds, g.bounds );
+			a.height = 1 + Max( b.height, f.height );
+			c.height = 1 + Max( a.height, g.height );
+		}
+		return cNum;
+	}
+
+	if( balance < -1 )
+	{
+		const int dNum = b.children[0];
+		const int eNum = b.children[1];
+		clipBroadPhaseNode_t& d = nodes[dNum];
+		clipBroadPhaseNode_t& e = nodes[eNum];
+
+		b.children[0] = nodeNum;
+		b.parent = a.parent;
+		a.parent = bNum;
+		if( b.parent != -1 )
+		{
+			clipBroadPhaseNode_t& parent = nodes[b.parent];
+			parent.children[parent.children[1] == nodeNum] = bNum;
+		}
+		else
+		{
+			root = bNum;
+		}
+
+		if( d.height > e.height )
+		{
+			b.children[1] = dNum;
+			a.children[0] = eNum;
+			e.parent = nodeNum;
+			a.bounds = UnionBounds( c.bounds, e.bounds );
+			b.bounds = UnionBounds( a.bounds, d.bounds );
+			a.height = 1 + Max( c.height, e.height );
+			b.height = 1 + Max( a.height, d.height );
+		}
+		else
+		{
+			b.children[1] = eNum;
+			a.children[0] = dNum;
+			d.parent = nodeNum;
+			a.bounds = UnionBounds( c.bounds, d.bounds );
+			b.bounds = UnionBounds( a.bounds, e.bounds );
+			a.height = 1 + Max( c.height, d.height );
+			b.height = 1 + Max( a.height, e.height );
+		}
+		return bNum;
+	}
+
+	return nodeNum;
+}
+
+/*
+===============
+idClipBroadPhase::InsertLeaf
+===============
+*/
+void idClipBroadPhase::InsertLeaf( int leaf )
+{
+	if( root == -1 )
+	{
+		root = leaf;
+		nodes[root].parent = -1;
+		return;
+	}
+
+	const idBounds leafBounds = nodes[leaf].bounds;
+	int sibling = root;
+	while( !IsLeaf( nodes[sibling] ) )
+	{
+		const int child0 = nodes[sibling].children[0];
+		const int child1 = nodes[sibling].children[1];
+		const float area = SurfaceArea( nodes[sibling].bounds );
+		const idBounds combined = UnionBounds( nodes[sibling].bounds, leafBounds );
+		const float combinedArea = SurfaceArea( combined );
+		const float parentCost = 2.0f * combinedArea;
+		const float inheritanceCost = 2.0f * ( combinedArea - area );
+
+		const idBounds combined0 = UnionBounds( leafBounds, nodes[child0].bounds );
+		const float cost0 = ( IsLeaf( nodes[child0] ) ? SurfaceArea( combined0 ) : SurfaceArea( combined0 ) - SurfaceArea( nodes[child0].bounds ) ) + inheritanceCost;
+		const idBounds combined1 = UnionBounds( leafBounds, nodes[child1].bounds );
+		const float cost1 = ( IsLeaf( nodes[child1] ) ? SurfaceArea( combined1 ) : SurfaceArea( combined1 ) - SurfaceArea( nodes[child1].bounds ) ) + inheritanceCost;
+
+		if( parentCost < cost0 && parentCost < cost1 )
+		{
+			break;
+		}
+		sibling = cost0 < cost1 ? child0 : child1;
+	}
+
+	const int oldParent = nodes[sibling].parent;
+	const int newParent = AllocNode();
+	nodes[newParent].parent = oldParent;
+	nodes[newParent].bounds = UnionBounds( leafBounds, nodes[sibling].bounds );
+	nodes[newParent].height = nodes[sibling].height + 1;
+	nodes[newParent].children[0] = sibling;
+	nodes[newParent].children[1] = leaf;
+	nodes[sibling].parent = newParent;
+	nodes[leaf].parent = newParent;
+
+	if( oldParent != -1 )
+	{
+		clipBroadPhaseNode_t& parent = nodes[oldParent];
+		parent.children[parent.children[1] == sibling] = newParent;
+	}
+	else
+	{
+		root = newParent;
+	}
+
+	int index = nodes[leaf].parent;
+	while( index != -1 )
+	{
+		index = Balance( index );
+		clipBroadPhaseNode_t& node = nodes[index];
+		const clipBroadPhaseNode_t& child0 = nodes[node.children[0]];
+		const clipBroadPhaseNode_t& child1 = nodes[node.children[1]];
+		node.height = 1 + Max( child0.height, child1.height );
+		node.bounds = UnionBounds( child0.bounds, child1.bounds );
+		index = node.parent;
+	}
+}
+
+/*
+===============
+idClipBroadPhase::RemoveLeaf
+===============
+*/
+void idClipBroadPhase::RemoveLeaf( int leaf )
+{
+	if( leaf == root )
+	{
+		root = -1;
+		return;
+	}
+
+	const int parent = nodes[leaf].parent;
+	const int grandParent = nodes[parent].parent;
+	const int sibling = nodes[parent].children[nodes[parent].children[0] == leaf];
+	if( grandParent != -1 )
+	{
+		clipBroadPhaseNode_t& grand = nodes[grandParent];
+		grand.children[grand.children[1] == parent] = sibling;
+		nodes[sibling].parent = grandParent;
+		FreeNode( parent );
+
+		int index = grandParent;
+		while( index != -1 )
+		{
+			index = Balance( index );
+			clipBroadPhaseNode_t& node = nodes[index];
+			const clipBroadPhaseNode_t& child0 = nodes[node.children[0]];
+			const clipBroadPhaseNode_t& child1 = nodes[node.children[1]];
+			node.bounds = UnionBounds( child0.bounds, child1.bounds );
+			node.height = 1 + Max( child0.height, child1.height );
+			index = node.parent;
+		}
+	}
+	else
+	{
+		root = sibling;
+		nodes[sibling].parent = -1;
+		FreeNode( parent );
+	}
+	nodes[leaf].parent = -1;
+}
+
+/*
+===============
+idClipBroadPhase::CreateProxy
+===============
+*/
+int idClipBroadPhase::CreateProxy( const idBounds& bounds, idClipModel* clipModel )
+{
+	const int proxy = AllocNode();
+	nodes[proxy].bounds = bounds.Expand( CLIP_BROADPHASE_MARGIN );
+	nodes[proxy].clipModel = clipModel;
+	nodes[proxy].height = 0;
+	InsertLeaf( proxy );
+	return proxy;
+}
+
+/*
+===============
+idClipBroadPhase::DestroyProxy
+===============
+*/
+void idClipBroadPhase::DestroyProxy( int proxy )
+{
+	assert( proxy >= 0 && proxy < nodes.Num() && IsLeaf( nodes[proxy] ) );
+	RemoveLeaf( proxy );
+	FreeNode( proxy );
+}
+
+/*
+===============
+idClipBroadPhase::MoveProxy
+===============
+*/
+void idClipBroadPhase::MoveProxy( int proxy, const idBounds& bounds, const idVec3& displacement )
+{
+	assert( proxy >= 0 && proxy < nodes.Num() && IsLeaf( nodes[proxy] ) );
+	if( ContainsBounds( nodes[proxy].bounds, bounds ) )
+	{
+		return;
+	}
+
+	RemoveLeaf( proxy );
+	idBounds fatBounds = bounds.Expand( CLIP_BROADPHASE_MARGIN );
+	for( int i = 0; i < 3; i++ )
+	{
+		const float prediction = displacement[i] * CLIP_BROADPHASE_PREDICTION;
+		if( prediction < 0.0f )
+		{
+			fatBounds[0][i] += prediction;
+		}
+		else
+		{
+			fatBounds[1][i] += prediction;
+		}
+	}
+	nodes[proxy].bounds = fatBounds;
+	InsertLeaf( proxy );
+}
+
+/*
+===============
+idClipBroadPhase::Query
+===============
+*/
+int idClipBroadPhase::Query( const idBounds& bounds, int contentMask, idClipModel** list, int maxCount ) const
+{
+	if( root == -1 )
+	{
+		return 0;
+	}
+
+	int count = 0;
+	int stack[256];
+	int stackCount = 0;
+	stack[stackCount++] = root;
+	while( stackCount > 0 )
+	{
+		const int nodeNum = stack[--stackCount];
+		const clipBroadPhaseNode_t& node = nodes[nodeNum];
+		if( !node.bounds.IntersectsBounds( bounds ) )
+		{
+			continue;
+		}
+		if( IsLeaf( node ) )
+		{
+			idClipModel* clipModel = node.clipModel;
+			if( !clipModel->IsEnabled() || !( clipModel->GetContents() & contentMask ) || !clipModel->GetAbsBounds().IntersectsBounds( bounds ) )
+			{
+				continue;
+			}
+			if( count >= maxCount )
+			{
+				gameLocal.Warning( "idClipBroadPhase::Query: max count" );
+				return count;
+			}
+			list[count++] = clipModel;
+		}
+		else
+		{
+			assert( stackCount + 2 <= ( int )( sizeof( stack ) / sizeof( stack[0] ) ) );
+			stack[stackCount++] = node.children[0];
+			stack[stackCount++] = node.children[1];
+		}
+	}
+	return count;
+}
 
 
 /*
@@ -409,8 +857,8 @@ void idClipModel::Init()
 	collisionModelHandle = 0;
 	renderModelHandle = -1;
 	traceModelIndex = -1;
-	clipLinks = NULL;
-	touchCount = -1;
+	linkedClip = NULL;
+	broadPhaseHandle = -1;
 }
 
 /*
@@ -492,8 +940,8 @@ idClipModel::idClipModel( const idClipModel* model )
 		LoadModel( *GetCachedTraceModel( model->traceModelIndex ) );
 	}
 	renderModelHandle = model->renderModelHandle;
-	clipLinks = NULL;
-	touchCount = -1;
+	linkedClip = NULL;
+	broadPhaseHandle = -1;
 }
 
 /*
@@ -538,8 +986,7 @@ void idClipModel::Save( idSaveGame* savefile ) const
 	}
 	savefile->WriteInt( traceModelIndex );
 	savefile->WriteInt( renderModelHandle );
-	savefile->WriteBool( clipLinks != NULL );
-	savefile->WriteInt( touchCount );
+	savefile->WriteBool( IsLinked() );
 }
 
 /*
@@ -579,12 +1026,11 @@ void idClipModel::Restore( idRestoreGame* savefile )
 	}
 	savefile->ReadInt( renderModelHandle );
 	savefile->ReadBool( linked );
-	savefile->ReadInt( touchCount );
 
 	// the render model will be set when the clip model is linked
 	renderModelHandle = -1;
-	clipLinks = NULL;
-	touchCount = -1;
+	linkedClip = NULL;
+	broadPhaseHandle = -1;
 
 	if( linked )
 	{
@@ -599,7 +1045,7 @@ idClipModel::SetPosition
 */
 void idClipModel::SetPosition( const idVec3& newOrigin, const idMat3& newAxis )
 {
-	if( clipLinks )
+	if( IsLinked() )
 	{
 		Unlink();	// unlink from old position
 	}
@@ -656,65 +1102,13 @@ idClipModel::Unlink
 */
 void idClipModel::Unlink()
 {
-	clipLink_t* link;
-
-	for( link = clipLinks; link; link = clipLinks )
+	if( broadPhaseHandle != -1 )
 	{
-		clipLinks = link->nextLink;
-		if( link->prevInSector )
-		{
-			link->prevInSector->nextInSector = link->nextInSector;
-		}
-		else
-		{
-			link->sector->clipLinks = link->nextInSector;
-		}
-		if( link->nextInSector )
-		{
-			link->nextInSector->prevInSector = link->prevInSector;
-		}
-		clipLinkAllocator.Free( link );
+		assert( linkedClip != NULL && linkedClip->broadPhase != NULL );
+		linkedClip->broadPhase->DestroyProxy( broadPhaseHandle );
+		broadPhaseHandle = -1;
+		linkedClip = NULL;
 	}
-}
-
-/*
-===============
-idClipModel::Link_r
-===============
-*/
-void idClipModel::Link_r( struct clipSector_s* node )
-{
-	clipLink_t* link;
-
-	while( node->axis != -1 )
-	{
-		if( absBounds[0][node->axis] > node->dist )
-		{
-			node = node->children[0];
-		}
-		else if( absBounds[1][node->axis] < node->dist )
-		{
-			node = node->children[1];
-		}
-		else
-		{
-			Link_r( node->children[0] );
-			node = node->children[1];
-		}
-	}
-
-	link = clipLinkAllocator.Alloc();
-	link->clipModel = this;
-	link->sector = node;
-	link->nextInSector = node->clipLinks;
-	link->prevInSector = NULL;
-	if( node->clipLinks )
-	{
-		node->clipLinks->prevInSector = link;
-	}
-	node->clipLinks = link;
-	link->nextLink = clipLinks;
-	clipLinks = link;
 }
 
 /*
@@ -724,6 +1118,8 @@ idClipModel::Link
 */
 void idClipModel::Link( idClip& clp )
 {
+	idBounds oldAbsBounds = absBounds;
+	const bool updateProxy = ( linkedClip == &clp && broadPhaseHandle != -1 );
 
 	assert( idClipModel::entity );
 	if( !idClipModel::entity )
@@ -731,13 +1127,17 @@ void idClipModel::Link( idClip& clp )
 		return;
 	}
 
-	if( clipLinks )
+	if( broadPhaseHandle != -1 && !updateProxy )
 	{
-		Unlink();	// unlink from old position
+		Unlink();
 	}
 
 	if( bounds.IsCleared() )
 	{
+		if( updateProxy )
+		{
+			Unlink();
+		}
 		return;
 	}
 
@@ -759,7 +1159,15 @@ void idClipModel::Link( idClip& clp )
 	absBounds[0] -= vec3_boxEpsilon;
 	absBounds[1] += vec3_boxEpsilon;
 
-	Link_r( clp.clipSectors );
+	if( updateProxy )
+	{
+		clp.broadPhase->MoveProxy( broadPhaseHandle, absBounds, absBounds.GetCenter() - oldAbsBounds.GetCenter() );
+	}
+	else
+	{
+		linkedClip = &clp;
+		broadPhaseHandle = clp.broadPhase->CreateProxy( absBounds, this );
+	}
 }
 
 /*
@@ -812,69 +1220,9 @@ idClip::idClip
 */
 idClip::idClip()
 {
-	numClipSectors = 0;
-	clipSectors = NULL;
+	broadPhase = NULL;
 	worldBounds.Zero();
 	numRotations = numTranslations = numMotions = numRenderModelTraces = numContents = numContacts = 0;
-}
-
-/*
-===============
-idClip::CreateClipSectors_r
-
-Builds a uniformly subdivided tree for the given world size
-===============
-*/
-clipSector_t* idClip::CreateClipSectors_r( const int depth, const idBounds& bounds, idVec3& maxSector )
-{
-	int				i;
-	clipSector_t*	anode;
-	idVec3			size;
-	idBounds		front, back;
-
-	anode = &clipSectors[idClip::numClipSectors];
-	idClip::numClipSectors++;
-
-	if( depth == MAX_SECTOR_DEPTH )
-	{
-		anode->axis = -1;
-		anode->children[0] = anode->children[1] = NULL;
-
-		for( i = 0; i < 3; i++ )
-		{
-			if( bounds[1][i] - bounds[0][i] > maxSector[i] )
-			{
-				maxSector[i] = bounds[1][i] - bounds[0][i];
-			}
-		}
-		return anode;
-	}
-
-	size = bounds[1] - bounds[0];
-	if( size[0] >= size[1] && size[0] >= size[2] )
-	{
-		anode->axis = 0;
-	}
-	else if( size[1] >= size[0] && size[1] >= size[2] )
-	{
-		anode->axis = 1;
-	}
-	else
-	{
-		anode->axis = 2;
-	}
-
-	anode->dist = 0.5f * ( bounds[1][anode->axis] + bounds[0][anode->axis] );
-
-	front = bounds;
-	back = bounds;
-
-	front[0][anode->axis] = back[1][anode->axis] = anode->dist;
-
-	anode->children[0] = CreateClipSectors_r( depth + 1, front, maxSector );
-	anode->children[1] = CreateClipSectors_r( depth + 1, back, maxSector );
-
-	return anode;
 }
 
 /*
@@ -885,24 +1233,18 @@ idClip::Init
 void idClip::Init()
 {
 	cmHandle_t h;
-	idVec3 size, maxSector = vec3_origin;
+	idVec3 size;
 
-	// clear clip sectors
-	clipSectors = new( TAG_PHYSICS_CLIP ) clipSector_t[MAX_SECTORS];
-	memset( clipSectors, 0, MAX_SECTORS * sizeof( clipSector_t ) );
-	numClipSectors = 0;
-	touchCount = -1;
+	delete broadPhase;
+	broadPhase = new idClipBroadPhase;
 
 	// get world map bounds
 	h = collisionModelManager->LoadModel( "worldMap", false );
 	collisionModelManager->GetModelBounds( h, worldBounds );
 
-	// create world sectors
-	CreateClipSectors_r( 0, worldBounds, maxSector );
-
 	size = worldBounds[1] - worldBounds[0];
 	gameLocal.Printf( "map bounds are (%1.1f, %1.1f, %1.1f)\n", size[0], size[1], size[2] );
-	gameLocal.Printf( "max clip sector is (%1.1f, %1.1f, %1.1f)\n", maxSector[0], maxSector[1], maxSector[2] );
+	gameLocal.Printf( "dynamic AABB tree broad phase initialized\n" );
 
 	// initialize a default clip model
 	defaultClipModel.LoadModel( defaultTraceModel );
@@ -918,8 +1260,8 @@ idClip::Shutdown
 */
 void idClip::Shutdown()
 {
-	delete[] clipSectors;
-	clipSectors = NULL;
+	delete broadPhase;
+	broadPhase = NULL;
 
 	// free the trace model used for the temporaryClipModel
 	if( temporaryClipModel.traceModelIndex != -1 )
@@ -934,87 +1276,6 @@ void idClip::Shutdown()
 		idClipModel::FreeTraceModel( defaultClipModel.traceModelIndex );
 		defaultClipModel.traceModelIndex = -1;
 	}
-
-	clipLinkAllocator.Shutdown();
-}
-
-/*
-====================
-idClip::ClipModelsTouchingBounds_r
-====================
-*/
-typedef struct listParms_s
-{
-	idBounds		bounds;
-	int				contentMask;
-	idClipModel**		list;
-	int				count;
-	int				maxCount;
-} listParms_t;
-
-void idClip::ClipModelsTouchingBounds_r( const struct clipSector_s* node, listParms_t& parms ) const
-{
-
-	while( node->axis != -1 )
-	{
-		if( parms.bounds[0][node->axis] > node->dist )
-		{
-			node = node->children[0];
-		}
-		else if( parms.bounds[1][node->axis] < node->dist )
-		{
-			node = node->children[1];
-		}
-		else
-		{
-			ClipModelsTouchingBounds_r( node->children[0], parms );
-			node = node->children[1];
-		}
-	}
-
-	for( clipLink_t* link = node->clipLinks; link; link = link->nextInSector )
-	{
-		idClipModel*	check = link->clipModel;
-
-		// if the clip model is enabled
-		if( !check->enabled )
-		{
-			continue;
-		}
-
-		// avoid duplicates in the list
-		if( check->touchCount == touchCount )
-		{
-			continue;
-		}
-
-		// if the clip model does not have any contents we are looking for
-		if( !( check->contents & parms.contentMask ) )
-		{
-			continue;
-		}
-
-		// if the bounds really do overlap
-		if(	check->absBounds[0][0] > parms.bounds[1][0] ||
-				check->absBounds[1][0] < parms.bounds[0][0] ||
-				check->absBounds[0][1] > parms.bounds[1][1] ||
-				check->absBounds[1][1] < parms.bounds[0][1] ||
-				check->absBounds[0][2] > parms.bounds[1][2] ||
-				check->absBounds[1][2] < parms.bounds[0][2] )
-		{
-			continue;
-		}
-
-		if( parms.count >= parms.maxCount )
-		{
-			gameLocal.Warning( "idClip::ClipModelsTouchingBounds_r: max count" );
-			return;
-		}
-
-		check->touchCount = touchCount;
-		parms.list[parms.count] = check;
-		parms.count++;
-	}
 }
 
 /*
@@ -1024,8 +1285,6 @@ idClip::ClipModelsTouchingBounds
 */
 int idClip::ClipModelsTouchingBounds( const idBounds& bounds, int contentMask, idClipModel** clipModelList, int maxCount ) const
 {
-	listParms_t parms;
-
 	if(	bounds[0][0] > bounds[1][0] ||
 			bounds[0][1] > bounds[1][1] ||
 			bounds[0][2] > bounds[1][2] )
@@ -1035,17 +1294,8 @@ int idClip::ClipModelsTouchingBounds( const idBounds& bounds, int contentMask, i
 		return 0;
 	}
 
-	parms.bounds[0] = bounds[0] - vec3_boxEpsilon;
-	parms.bounds[1] = bounds[1] + vec3_boxEpsilon;
-	parms.contentMask = contentMask;
-	parms.list = clipModelList;
-	parms.count = 0;
-	parms.maxCount = maxCount;
-
-	touchCount++;
-	ClipModelsTouchingBounds_r( clipSectors, parms );
-
-	return parms.count;
+	idBounds queryBounds( bounds[0] - vec3_boxEpsilon, bounds[1] + vec3_boxEpsilon );
+	return broadPhase ? broadPhase->Query( queryBounds, contentMask, clipModelList, maxCount ) : 0;
 }
 
 /*
