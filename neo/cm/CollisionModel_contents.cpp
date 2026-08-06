@@ -438,12 +438,80 @@ bool idCollisionModelManagerLocal::TestTrmInPolygon( cm_traceWork_t* tw, cm_poly
 
 /*
 ================
+idCollisionModelManagerLocal::PointNode
+================
+*/
+cm_node_t* idCollisionModelManagerLocal::PointNode( const idVec3& p, cm_model_t* model )
+{
+	cm_node_t* node;
+
+	node = model->node;
+	while( node->planeType != -1 )
+	{
+		if( p[node->planeType] > node->planeDist )
+		{
+			node = node->children[0];
+		}
+		else
+		{
+			node = node->children[1];
+		}
+
+		assert( node != NULL );
+	}
+	return node;
+}
+
+/*
+================
 idCollisionModelManagerLocal::PointContents
 ================
 */
 int idCollisionModelManagerLocal::PointContents( const idVec3 p, cmHandle_t model )
 {
-	return PointContentsThroughModel( p, idCollisionModelManagerLocal::models[model] );
+	int i;
+	float d;
+	cm_node_t* node;
+	cm_brushRef_t* bref;
+	cm_brush_t* b;
+	idPlane* plane;
+
+	node = idCollisionModelManagerLocal::PointNode( p, idCollisionModelManagerLocal::models[model] );
+	for( bref = node->brushes; bref; bref = bref->next )
+	{
+		b = bref->b;
+		// test if the point is within the brush bounds
+		for( i = 0; i < 3; i++ )
+		{
+			if( p[i] < b->bounds[0][i] )
+			{
+				break;
+			}
+			if( p[i] > b->bounds[1][i] )
+			{
+				break;
+			}
+		}
+		if( i < 3 )
+		{
+			continue;
+		}
+		// test if the point is inside the brush
+		plane = b->planes;
+		for( i = 0; i < b->numPlanes; i++, plane++ )
+		{
+			d = plane->Distance( p );
+			if( d >= 0.0f )
+			{
+				break;
+			}
+		}
+		if( i >= b->numPlanes )
+		{
+			return b->contents;
+		}
+	}
+	return 0;
 }
 
 /*
