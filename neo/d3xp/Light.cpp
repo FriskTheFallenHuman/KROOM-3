@@ -121,6 +121,9 @@ idLight::idLight():
 	fadeStart			= 0;
 	fadeEnd				= 0;
 	soundWasPlaying		= false;
+	style				= -1;
+	styleFrameTime		= 100;
+	styleBase			= vec3_zero;
 }
 
 /*
@@ -168,6 +171,20 @@ void idLight::Save( idSaveGame* savefile ) const
 	savefile->WriteInt( fadeStart );
 	savefile->WriteInt( fadeEnd );
 	savefile->WriteBool( soundWasPlaying );
+
+	savefile->WriteInt( style );
+	savefile->WriteInt( styleFrameTime );
+	savefile->WriteVec3( styleBase );
+	savefile->WriteInt( styles.Num() );
+	for( int i = 0; i < styles.Num(); i++ )
+	{
+		savefile->WriteString( styles[ i ] );
+	}
+	savefile->WriteInt( styleState.frame );
+	savefile->WriteFloat( styleState.framef );
+	savefile->WriteInt( styleState.oldframe );
+	savefile->WriteInt( styleState.time );
+	savefile->WriteFloat( styleState.backlerp );
 }
 
 /*
@@ -203,6 +220,36 @@ void idLight::Restore( idRestoreGame* savefile )
 	savefile->ReadInt( fadeStart );
 	savefile->ReadInt( fadeEnd );
 	savefile->ReadBool( soundWasPlaying );
+
+	savefile->ReadInt( style );
+	savefile->ReadInt( styleFrameTime );
+	savefile->ReadVec3( styleBase );
+	if( styleFrameTime <= 0 )
+	{
+		styleFrameTime = 100;
+	}
+
+	styles.Clear();
+	int styleCount;
+	savefile->ReadInt( styleCount );
+	for( int i = 0; i < styleCount; i++ )
+	{
+		idStr styleName;
+		savefile->ReadString( styleName );
+		styles.Append( styleName );
+	}
+
+	savefile->ReadInt( styleState.frame );
+	savefile->ReadFloat( styleState.framef );
+	savefile->ReadInt( styleState.oldframe );
+	savefile->ReadInt( styleState.time );
+	savefile->ReadFloat( styleState.backlerp );
+
+	if( style < 0 || style >= styles.Num() )
+	{
+		style = -1;
+		styleState.Reset();
+	}
 
 	lightDefHandle = -1;
 
@@ -805,7 +852,7 @@ void idLight::SharedThink()
 		return;
 	}
 
-	if( style > styles.Num() )
+	if( style < 0 || style >= styles.Num() )
 	{
 		gameLocal.Warning( "Light style out of range\n" );
 		return;
