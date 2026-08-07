@@ -420,8 +420,11 @@ public:
 	void					Close();
 	void					Open();
 	void					SetCompanion( idDoor* door );
+	bool					IsOpening();
 
 private:
+	friend class idPlayer;
+
 	float					triggersize;
 	bool					crusher;
 	bool					noTouch;
