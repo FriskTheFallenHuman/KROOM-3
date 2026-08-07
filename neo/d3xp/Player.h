@@ -1004,7 +1004,7 @@ private:
 
 	bool					WeaponAvailable( const char* name );
 
-	void					UseVehicle();
+	void					Use();
 
 	void					Event_GetButtons();
 	void					Event_GetMove();

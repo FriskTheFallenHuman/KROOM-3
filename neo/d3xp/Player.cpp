@@ -5725,14 +5725,6 @@ void idPlayer::Weapon_NPC()
 	}
 	StopFiring();
 	weapon.GetEntity()->LowerWeapon();
-
-	bool wasDown = ( oldButtons & ( BUTTON_ATTACK | BUTTON_USE ) ) != 0;
-	bool isDown = ( usercmd.buttons & ( BUTTON_ATTACK | BUTTON_USE ) ) != 0;
-	if( isDown && !wasDown )
-	{
-		buttonMask |= BUTTON_ATTACK;
-		focusCharacter->TalkTo( this );
-	}
 }
 
 /*
@@ -7514,33 +7506,98 @@ void idPlayer::SetClipModel()
 
 /*
 ==============
-idPlayer::UseVehicle
+idPlayer::Use
 ==============
 */
-void idPlayer::UseVehicle()
+void idPlayer::Use()
 {
 	trace_t	trace;
 	idVec3 start, end;
 	idEntity* ent;
 
+	// Prevent use during cinematics, when dead, or when spectating
+	if( gameLocal.inCinematic || health <= 0 || spectating )
+	{
+		return;
+	}
+
+	// If a GUI is focused, send a mouse click to it
+	if( focusUI && focusGUIent )
+	{
+		bool updateVisuals = false;
+		sysEvent_t ev = sys->GenerateMouseButtonEvent( 1, true );
+		const char* command = focusUI->HandleEvent( &ev, gameLocal.fast.time, &updateVisuals );
+		if( updateVisuals && focusGUIent && focusUI == focusUI )
+		{
+			focusGUIent->UpdateVisuals();
+		}
+		if( common->IsClient() )
+		{
+			// Clients predict GUI cursor but don't execute commands
+			return;
+		}
+		HandleGuiCommands( focusGUIent, command );
+		return;
+	}
+
+	// Talk to nearby NPC
+	if( focusCharacter )
+	{
+		buttonMask |= BUTTON_USE;
+		focusCharacter->TalkTo( this );
+		return;
+	}
+
+	// If we're bound to a vehicle, use it
 	if( GetBindMaster() && GetBindMaster()->IsType( idAFEntity_Vehicle::Type ) )
 	{
 		Show();
 		static_cast<idAFEntity_Vehicle*>( GetBindMaster() )->Use( this );
+		return;
 	}
-	else
+
+	// Default interaction trace: enter/use vehicle or activate entity
+	start = GetEyePosition();
+	end = start + viewAngles.ToForward() * 80.0f;
+	gameLocal.clip.TracePoint( trace, start, end, MASK_SHOT_RENDERMODEL, this );
+	if( trace.fraction < 1.0f )
 	{
-		start = GetEyePosition();
-		end = start + viewAngles.ToForward() * 80.0f;
-		gameLocal.clip.TracePoint( trace, start, end, MASK_SHOT_RENDERMODEL, this );
-		if( trace.fraction < 1.0f )
+		ent = gameLocal.entities[ trace.c.entityNum ];
+		if( ent )
 		{
-			ent = gameLocal.entities[ trace.c.entityNum ];
-			if( ent && ent->IsType( idAFEntity_Vehicle::Type ) )
+			// If it's a vehicle, enter it
+			if( ent->IsType( idAFEntity_Vehicle::Type ) )
 			{
 				Hide();
 				static_cast<idAFEntity_Vehicle*>( ent )->Use( this );
+				return;
 			}
+
+			// If it's a door, open it, if is not locked
+			if( ent->IsType( idDoor::Type ) )
+			{
+				if( !static_cast<idDoor*>( ent )->IsLocked() )
+				{
+					static_cast<idDoor*>( ent )->Use( this, this );
+					return;
+				}
+				else
+				{
+					if( gameLocal.slow.time > !static_cast<idDoor*>( ent )->nextSndTriggerTime )
+					{
+						const char* sound = static_cast<idDoor*>( ent )->spawnArgs.GetString( "snd_locked" );
+						if( sound && *sound )
+						{
+							static_cast<idDoor*>( ent )->StartSoundShader( declManager->FindSound( sound ), SND_CHANNEL_ANY, 0, false, NULL );
+						}
+
+						static_cast<idDoor*>( ent )->nextSndTriggerTime = gameLocal.slow.time + 10000;
+					}
+					return;
+				}
+			}
+			// Otherwise, activate the entity
+			//ent->ProcessEvent( &EV_Activate, this );
 		}
 	}
 }
@@ -8896,6 +8953,14 @@ void idPlayer::Think()
 
 		// update GUIs, Items, and character interactions
 		UpdateFocus();
+
+		// is BUTTON_USE being press?
+		bool wasUseDown = ( oldButtons & BUTTON_USE ) != 0;
+		bool isUseDown = ( usercmd.buttons & BUTTON_USE ) != 0;
+		if( isUseDown && !wasUseDown )
+		{
+			Use();
+		}
 
 		UpdateLocation();
 
