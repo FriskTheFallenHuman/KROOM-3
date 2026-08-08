@@ -116,6 +116,10 @@ const idEventDef EV_MotionBlurOn( "motionBlurOn" );
 const idEventDef EV_MotionBlurOff( "motionBlurOff" );
 const idEventDef EV_GuiNamedEvent( "guiNamedEvent", "ds" );
 
+const idEventDef EV_FireProjectile( "fireProjectile", "svv", 'e' );
+const idEventDef EV_GetDriver( "getDriver", NULL, 'e' );
+const idEventDef EV_GetAimAngles( "getAimAngles", "v", 'v' );
+
 ABSTRACT_DECLARATION( idClass, idEntity )
 EVENT( EV_GetName,				idEntity::Event_GetName )
 EVENT( EV_SetName,				idEntity::Event_SetName )
@@ -185,6 +189,7 @@ EVENT( EV_PrecacheGui,			idEntity::Event_PrecacheGui )
 EVENT( EV_GetGuiParm,			idEntity::Event_GetGuiParm )
 EVENT( EV_GetGuiParmFloat,		idEntity::Event_GetGuiParmFloat )
 EVENT( EV_GuiNamedEvent,		idEntity::Event_GuiNamedEvent )
+EVENT( EV_FireProjectile,		idEntity::Event_FireProjectile )
 END_CLASS
 
 /*
@@ -5581,9 +5586,10 @@ void idEntity::Event_SetNeverDormant( int enable )
 /*
 ================
 idEntity::Event_SetGui
+
+BSM Nerve: Allows guis to be changed at runtime. Guis that are
+loaded after the level loads should be precahced using PrecacheGui.
 ================
-* BSM Nerve: Allows guis to be changed at runtime. Guis that are
-* loaded after the level loads should be precahced using PrecacheGui.
 */
 void idEntity::Event_SetGui( int guiNum, const char* guiName )
 {
@@ -5612,15 +5618,21 @@ void idEntity::Event_SetGui( int guiNum, const char* guiName )
 /*
 ================
 idEntity::Event_PrecacheGui
+
+BSM Nerve: Forces the engine to initialize a gui even if it is not specified as used in a level.
+This is useful for preventing load hitches when switching guis during the game using "setGui"
 ================
-* BSM Nerve: Forces the engine to initialize a gui even if it is not specified as used in a level.
-* This is useful for preventing load hitches when switching guis during the game using "setGui"
 */
 void idEntity::Event_PrecacheGui( const char* guiName )
 {
 	uiManager->FindGui( guiName, true, true );
 }
 
+/*
+================
+idEntity::Event_GetGuiParm
+================
+*/
 void idEntity::Event_GetGuiParm( int guiNum, const char* key )
 {
 	if( renderEntity.gui[guiNum - 1] )
@@ -5631,6 +5643,11 @@ void idEntity::Event_GetGuiParm( int guiNum, const char* key )
 	idThread::ReturnString( "" );
 }
 
+/*
+================
+idEntity::Event_GetGuiParmFloat
+================
+*/
 void idEntity::Event_GetGuiParmFloat( int guiNum, const char* key )
 {
 	if( renderEntity.gui[guiNum - 1] )
@@ -5641,12 +5658,102 @@ void idEntity::Event_GetGuiParmFloat( int guiNum, const char* key )
 	idThread::ReturnFloat( 0.0f );
 }
 
+/*
+================
+idEntity::Event_GuiNamedEvent
+================
+*/
 void idEntity::Event_GuiNamedEvent( int guiNum, const char* event )
 {
 	if( renderEntity.gui[guiNum - 1] )
 	{
 		renderEntity.gui[guiNum - 1]->HandleNamedEvent( event );
 	}
+}
+
+/*
+================
+idEntity::SysFireProjectile
+================
+*/
+idProjectile* idEntity::SysFireProjectile( const char* projDefName, idVec3& firePos, idVec3& dir, const float launchPower )
+{
+	idProjectile*	proj;
+	idEntity*		ent;
+	idDict			projectileDict;
+	float			damageScale;
+	idEntity*		owner;
+
+	if( common->IsClient() )
+	{
+		return NULL;
+	}
+
+	const idDeclEntityDef* projectileDef = gameLocal.FindEntityDef( projDefName, false );
+	if( !projectileDef )
+	{
+		gameLocal.Warning( "No def '%s' found", projDefName );
+		return NULL;
+	}
+
+	projectileDict = projectileDef->dict;
+	if( !projectileDict.GetNumKeyVals() )
+	{
+		gameLocal.Warning( "No projectile defined '%s'", projDefName );
+		return NULL;
+	}
+
+	if( IsType( idProjectile::Type ) )
+	{
+		owner = static_cast<idProjectile*>( this )->GetOwner() ? static_cast<idProjectile*>( this )->GetOwner() : this;
+	}
+	else
+	{
+		owner = this;
+	}
+
+	if( owner->IsType( idPlayer::Type ) )
+	{
+		gameLocal.AlertAI( owner, firePos );
+		damageScale = 1.0f; //TODO: get current mult?
+	}
+	else
+	{
+		damageScale = 1.0f;
+	}
+
+	gameLocal.SpawnEntityDef( projectileDict, &ent, false );
+
+	if( !ent || !ent->IsType( idProjectile::Type ) )
+	{
+		gameLocal.Error( "'%s' is not an idProjectile", projDefName );
+	}
+
+	if( projectileDict.GetBool( "net_instanthit" ) )
+	{
+		ent->fl.networkSync = false;
+	}
+
+	proj = static_cast<idProjectile*>( ent );
+	proj->Create( owner, firePos, dir );
+	proj->Launch( firePos, dir, vec3_origin, 0.0f, launchPower, damageScale );
+	return proj;
+}
+
+/*
+================
+idEntity::Event_FireProjectile
+================
+*/
+void idEntity::Event_FireProjectile( const char* projDefName, idVec3& firePos, idAngles& fireAng )
+{
+	idProjectile*	proj;
+	idVec3			dir;
+
+	dir = fireAng.ToForward();
+	proj = SysFireProjectile( projDefName , firePos, dir );
+
+	idThread::ReturnEntity( proj );
 }
 
 /***********************************************************************
@@ -6558,9 +6665,7 @@ void idAnimatedEntity::AddLocalDamageEffect( jointHandle_t jointNum, const idVec
 	// can't see wounds on the player model in single player mode
 	if( !( IsType( idPlayer::Type ) && !common->IsMultiplayer() ) )
 	{
-
-
-		// blood splats can be thrown on the body itself two - By Clone JC Denton
+		// blood splats can be thrown on the body itself two
 		key = va( "mtr_splatSelf_%s", materialType );
 		splat = spawnArgs.RandomPrefix( key, gameLocal.random );
 		if( *splat == '\0' )

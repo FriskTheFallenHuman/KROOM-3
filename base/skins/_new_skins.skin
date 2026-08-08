@@ -1,3 +1,16 @@
+//
+// NPCs
+//
 skin skins/characters/male_npc/e6_bottech_gib {
-	models/characters/male_npc/soldier/soldier models/characters/male_npc/bot_tech/cst_bot_tech_gib
+	models/characters/male_npc/soldier/soldier models/characters/male_npc/bot_tech/bot_tech_gib
+}
+
+//
+// Vehicles
+//
+skin skins/buggy_red {
+	//models/md5/vehicles/buggy/wheel	models/md5/vehicles/buggy/wheel
+	models/md5/vehicles/buggy/buggy	models/md5/vehicles/buggy/buggy_red
+	models/md5/vehicles/buggy/turret   textures/common/nodraw //models/md5/vehicles/buggy/turret //_pw
+	models/md5/vehicles/buggy/gun	textures/common/nodraw //models/md5/vehicles/buggy/gun_pw
 }

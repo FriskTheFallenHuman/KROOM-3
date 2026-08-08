@@ -4391,6 +4391,7 @@ idAFConstraint_Suspension::idAFConstraint_Suspension()
 	wheelModel = NULL;
 	memset( &trace, 0, sizeof( trace ) );
 	epsilon = LCP_EPSILON;
+	lastContactPosition = vec3_origin;
 }
 
 /*
@@ -4398,14 +4399,23 @@ idAFConstraint_Suspension::idAFConstraint_Suspension()
 idAFConstraint_Suspension::Setup
 ================
 */
-void idAFConstraint_Suspension::Setup( const char* name, idAFBody* body, const idVec3& origin, const idMat3& axis, idClipModel* clipModel )
+void idAFConstraint_Suspension::Setup( const char* name, idAFBody* body, idClipModel* clipModel )
 {
 	this->name = name;
 	body1 = body;
 	body2 = NULL;
-	localOrigin = ( origin - body->GetWorldOrigin() ) * body->GetWorldAxis().Transpose();
-	localAxis = axis * body->GetWorldAxis().Transpose();
 	wheelModel = clipModel;
+}
+
+/*
+================
+idAFConstraint_Suspension::SetPosition
+================
+*/
+void idAFConstraint_Suspension::SetPosition( const idVec3& origin, const idMat3& axis )
+{
+	localOrigin = ( origin - body1->GetWorldOrigin() ) * body1->GetWorldAxis().Transpose();
+	localAxis = axis * body1->GetWorldAxis().Transpose();
 }
 
 /*
@@ -4430,6 +4440,70 @@ idAFConstraint_Suspension::GetWheelOrigin
 const idVec3 idAFConstraint_Suspension::GetWheelOrigin() const
 {
 	return body1->GetWorldOrigin() + wheelOffset * body1->GetWorldAxis();
+}
+
+/*
+================
+idAFConstraint_Suspension::GetLastContactPosition
+================
+*/
+const idVec3 idAFConstraint_Suspension::GetLastContactPosition() const
+{
+	return lastContactPosition;
+}
+
+/*
+================
+idAFConstraint_Suspension::Save
+================
+*/
+void idAFConstraint_Suspension::Save( idSaveGame* savefile ) const
+{
+	idAFConstraint::Save( savefile );
+
+	savefile->WriteVec3( localOrigin );
+	savefile->WriteMat3( localAxis );
+	savefile->WriteFloat( suspensionUp );
+	savefile->WriteFloat( suspensionDown );
+	savefile->WriteFloat( suspensionKCompress );
+	savefile->WriteFloat( suspensionDamping );
+	savefile->WriteFloat( steerAngle );
+	savefile->WriteFloat( friction );
+	savefile->WriteBool( motorEnabled );
+	savefile->WriteFloat( motorForce );
+	savefile->WriteFloat( motorVelocity );
+	//savefile->WriteClipModel( wheelModel );
+	savefile->WriteVec3( wheelOffset );
+	savefile->WriteTrace( trace );
+	savefile->WriteFloat( epsilon );
+	savefile->WriteVec3( lastContactPosition );
+}
+
+/*
+================
+idAFConstraint_Suspension::Restore
+================
+*/
+void idAFConstraint_Suspension::Restore( idRestoreGame* savefile )
+{
+	idAFConstraint::Restore( savefile );
+
+	savefile->ReadVec3( localOrigin );
+	savefile->ReadMat3( localAxis );
+	savefile->ReadFloat( suspensionUp );
+	savefile->ReadFloat( suspensionDown );
+	savefile->ReadFloat( suspensionKCompress );
+	savefile->ReadFloat( suspensionDamping );
+	savefile->ReadFloat( steerAngle );
+	savefile->ReadFloat( friction );
+	savefile->ReadBool( motorEnabled );
+	savefile->ReadFloat( motorForce );
+	savefile->ReadFloat( motorVelocity );
+	//savefile->ReadClipModel( wheelModel );
+	savefile->ReadVec3( wheelOffset );
+	savefile->ReadTrace( trace );
+	savefile->ReadFloat( epsilon );
+	savefile->ReadVec3( lastContactPosition );
 }
 
 /*
@@ -4465,8 +4539,11 @@ void idAFConstraint_Suspension::Evaluate( float invTimeStep )
 		{
 			J2.SetSize( 0, 6 );
 		}
+		lastContactPosition = vec3_origin;
 		return;
 	}
+
+	lastContactPosition = trace.c.point;
 
 	// calculate and add spring force
 	vel1 = body1->GetPointVelocity( start );
@@ -7703,9 +7780,17 @@ void idPhysics_AF::Restore( idRestoreGame* saveFile )
 	}
 
 	saveFile->ReadInt( num );
+
+	// call back the parent entity to add dynamically-added constraints to the list
+	if( self && self->IsType( idAFEntity_Base::Type ) )	//should always be true, but better be sure ;)
+	{
+		static_cast< idAFEntity_Base* >( self )->RecreateDynamicConstraints( &constraints );
+	}
+
 	assert( num == constraints.Num() );
 	for( i = 0; i < constraints.Num(); i++ )
 	{
+		constraints[i]->physics = this;
 		constraints[i]->Restore( saveFile );
 	}
 

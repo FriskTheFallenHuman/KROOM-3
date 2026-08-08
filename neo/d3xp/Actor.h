@@ -223,6 +223,8 @@ public:
 		return head.GetEntity();
 	};
 
+	idAFEntity_Vehicle*		GetCurrentVehicle() const;
+
 protected:
 	friend class			idAnimState;
 
@@ -284,6 +286,8 @@ protected:
 	idList<idAttachInfo, TAG_ACTOR>	attachments;
 
 	int						damageCap;
+
+	idAFEntity_Vehicle*		currentVehicle;
 
 	virtual void			Gib( const idVec3& dir, const char* damageDefName );
 
@@ -347,5 +351,10 @@ private:
 	void					Event_GetWaitState();
 
 };
+
+ID_INLINE idAFEntity_Vehicle* idActor::GetCurrentVehicle() const
+{
+	return currentVehicle;
+}
 
 #endif /* !__GAME_ACTOR_H__ */

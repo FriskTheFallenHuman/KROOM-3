@@ -811,6 +811,10 @@ public:
 		return newPDAUp;
 	}
 
+	bool					UseThirdPersonCamera( void );
+	void					EnterVehicle( idAFEntity_Vehicle* vehicle );
+	void					ExitVehicle();
+
 private:
 	// Stats & achievements
 	idAchievementManager	achievementManager;
@@ -848,6 +852,7 @@ private:
 	int						previousWeapon;
 	int						weaponSwitchTime;
 	bool					weaponEnabled;
+	bool					weaponEnabledOnRideExit;
 
 	int						skinIndex;
 	const idDeclSkin* 		skin;
@@ -892,6 +897,8 @@ private:
 	int						focusTime;
 	idAFEntity_Vehicle* 	focusVehicle;
 	idUserInterface* 		cursor;
+
+	int						nextVehicleTime;
 
 	// full screen guis track mouse movements directly
 	int						oldMouseX;
@@ -975,7 +982,11 @@ private:
 	idAngles				GunTurningOffset();
 	idVec3					GunAcceleratingOffset();
 
-	void					UseObjects();
+	void					CommonRidingSetup( idEntity* riddenEnt );
+	void					CommonRidingCleanUp( bool killed );
+	bool					IsRiding();
+
+	void					Use();
 	void					CrashLand( const idVec3& oldOrigin, const idVec3& oldVelocity );
 	void					BobCycle( const idVec3& pushVelocity );
 	void					UpdateViewAngles();
@@ -1003,8 +1014,6 @@ private:
 	void					Respawn_Shared();
 
 	bool					WeaponAvailable( const char* name );
-
-	void					Use();
 
 	void					Event_GetButtons();
 	void					Event_GetMove();
@@ -1037,6 +1046,8 @@ private:
 	void					Event_SetBloomParms( float speed, float intensity );
 	void					Event_Damage( const char* damageDef );
 
+	void					Event_IsOnVehicle();
+
 	class idCrouchRate
 	{
 	public:
@@ -1050,6 +1061,11 @@ private:
 	};
 	idCrouchRate			crouchRate;
 };
+
+ID_INLINE bool idPlayer::IsRiding()
+{
+	return currentVehicle;
+}
 
 ID_INLINE bool idPlayer::IsRespawning()
 {

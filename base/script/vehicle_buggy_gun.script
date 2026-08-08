@@ -1,0 +1,155 @@
+/***********************************************************************
+
+vehicle_buggy_gun.script
+
+author: Ivan_the_B
+
+***********************************************************************/
+
+#define BUGGY_CHAINGUN_SPREAD			2
+#define BUGGY_ZOOM_SPREAD_MULTIPLIER	0.33
+
+object vehicle_buggy_gun : vehicle_base {
+	void		init();
+	void		fire();
+	void		startDrive();
+	void		updateDrive();
+
+	//model-specific data
+	float		turret_turn_joint;
+	float		turret_aim_joint;
+	float		barrel_joint;
+	entity		muzzleEntity;
+
+	//fire
+	float		fire_rate;
+	string		muzzleFx;
+	string		projName;
+	float		nextFireTime;
+	float		nextSpinTime;
+	boolean		fireSndIncreasing;
+
+	//aim
+	vector		turretTurnAngles;
+	vector		turretAimAngles;
+	vector		barrelAngles;
+	float		barrelRotationAdder;
+};
+
+void vehicle_buggy_gun::init() {
+
+	//joints
+	turret_turn_joint = getJointHandle( "turret_turn" );
+	turret_aim_joint = getJointHandle( "turret_aim" );
+	barrel_joint = getJointHandle( "gun_rotate" );
+
+	//spawn an hidden object at fire position
+	//NOTE1: we do this for simplicity because there's no joint there
+	//NOTE2: also use this entity to play sounds to avoid interference with other channels' volume (fadesound event seemes buggy...)
+	vector v = getJointPos( getJointHandle("turret_aim") );
+	vector origin = v + (sys.angToForward( getAngles() ))*40;
+	sys.setSpawnArg( "snd_spingun", getKey("snd_spingun") );
+	sys.setSpawnArg( "snd_fire", getKey("snd_fire") );
+	sys.setSpawnArg( "snd_noammo", getKey("snd_noammo") );
+	sys.setSpawnArg( "origin", origin );
+	muzzleEntity = sys.spawn( "target_null" );
+	muzzleEntity.bindToJoint( self, "turret_aim", true );
+	
+	//fire
+	fire_rate = getFloatKey("fire_rate");
+	muzzleFx = getKey("fx_fire");
+	projName = getKey("def_projectile");
+	nextFireTime = 0;
+	nextSpinTime = 0;
+	fireSndIncreasing = false;
+	
+	//aim
+	turretTurnAngles = '0 0 0';
+	turretAimAngles = '0 0 0';
+	barrelAngles = '0 0 0';
+	barrelRotationAdder = 0;
+}
+
+void vehicle_buggy_gun::fire(){
+	vector firePos = muzzleEntity.getWorldOrigin();
+	vector angles = getAimAngles( firePos );
+	float spread = BUGGY_CHAINGUN_SPREAD;
+
+	entity driver = getDriver();
+	float buttons = driver.getButtons();
+	if( buttons & BUTTON_ZOOM ){
+		spread = spread * BUGGY_ZOOM_SPREAD_MULTIPLIER;
+	}
+
+	fireProjectile( projName, firePos, angles + spreadAngles(spread) );
+	useVehicleAmmo(1);
+	muzzleEntity.startSound("snd_fire", SND_CHANNEL_WEAPON, 0);
+	muzzleEntity.startFx( muzzleFx );
+}
+
+void vehicle_buggy_gun::startDrive(){
+	fireSndIncreasing = false;
+}
+
+void vehicle_buggy_gun::updateDrive(){
+	vector player_angles;
+	vector temp_angles;
+	vector pforward;
+	entity driver = getDriver();
+	float currentTime = sys.getTime();
+	
+	//barrel
+	if( barrelRotationAdder > 0 ){
+		barrelAngles_z = barrelAngles_z + barrelRotationAdder;
+		 //to do:limite barrelAngles_z 360 da settare a 0
+		setJointAngle( barrel_joint, JOINTMOD_LOCAL, barrelAngles );
+	}
+
+	//base
+	player_angles = driver.getViewAngles();
+	pforward = sys.angToForward( player_angles );
+	pforward_x = pforward_x * 10;
+	pforward_y = pforward_y * 10;
+
+	temp_angles = getAngles();
+	temp_angles_z = 0; //don't care
+	turretTurnAngles = sys.VecToAngles( pforward ) -  temp_angles;
+	turretTurnAngles_x = 0;  //only rotate
+	setJointAngle( turret_turn_joint, JOINTMOD_WORLD, turretTurnAngles );
+
+	//aim
+	turretAimAngles_z = player_angles_x;
+	if( turretAimAngles_z > 45 ){ //fix error when looking too down
+		turretAimAngles_z = 45;
+	}
+	setJointAngle( turret_aim_joint, JOINTMOD_LOCAL, turretAimAngles );
+
+	// fire
+	if( VEHICLE_FIRING && nextSpinTime < currentTime ){
+		if( barrelRotationAdder < 15 ){
+			barrelRotationAdder = barrelRotationAdder + 0.2;
+		}
+		if( barrelRotationAdder > 10 ){
+			if( nextFireTime < currentTime ){
+				if( vehicleAmmoAvailable() > 0 ){
+					fire();
+					nextFireTime = currentTime + fire_rate;
+				} else {
+					muzzleEntity.startSound("snd_noammo", SND_CHANNEL_WEAPON, 0);
+					nextSpinTime = currentTime + 2;
+				}
+				fireSndIncreasing = false;
+			}
+		}else if( !fireSndIncreasing ){
+			fireSndIncreasing = true;
+			muzzleEntity.startSound("snd_spingun", SND_CHANNEL_WEAPON, 0);
+		}
+	} else {
+		if( barrelRotationAdder > 0 ){
+			barrelRotationAdder = barrelRotationAdder - 0.1;
+		} else if( fireSndIncreasing ){
+			fireSndIncreasing = false;
+			muzzleEntity.stopSound( SND_CHANNEL_WEAPON, 0 );
+		}
+	}
+}

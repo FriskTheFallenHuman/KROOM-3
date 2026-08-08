@@ -42,4 +42,9 @@ Currently there's not a .plan set in stone there's a lot of things that i want t
 
 - Re-introduced MFC tools
 - Refactor the render apis to be like v1.5.0 RBDOOM3-BFG
-- Re-introduce .bmtrs has it was present on the original TEKUUM
+
+# Credits
+
+- JC Clone Denton's DentonMod has most of its features are use here.
+- fva's CstDoom3-BFG has we use it has a base for fixes for the base game + expansions.
+- Ivan's Fragging Free has we use their Improve Vehicle Code.

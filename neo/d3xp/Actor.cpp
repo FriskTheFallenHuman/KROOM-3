@@ -514,6 +514,8 @@ idActor::idActor()
 	aimAssistNode.AddToEnd( gameLocal.aimAssistEntities );
 
 	damageCap = -1;
+
+	currentVehicle		= NULL;
 }
 
 /*
@@ -999,6 +1001,8 @@ void idActor::Save( idSaveGame* savefile ) const
 
 	savefile->WriteInt( damageCap );
 
+	savefile->WriteObject( currentVehicle );
+
 	heldWeapon.Save( savefile );
 
 }
@@ -1120,6 +1124,8 @@ void idActor::Restore( idRestoreGame* savefile )
 	}
 
 	savefile->ReadInt( damageCap );
+
+	savefile->ReadObject( reinterpret_cast<idClass*&>( currentVehicle ) );
 
 	heldWeapon.Restore( savefile );
 }
@@ -1693,18 +1699,40 @@ bool idActor::CanSee( idEntity* ent, bool useFov ) const
 	idVec3		eye;
 	idVec3		toPos;
 
-	if( ent->IsHidden() )
-	{
-		return false;
-	}
-
 	if( ent->IsType( idActor::Type ) )
 	{
-		toPos = ( ( idActor* )ent )->GetEyePosition();
+		idActor* actor = static_cast<idActor*>( ent );
+		if( actor->GetCurrentVehicle() )
+		{
+			if( actor->GetCurrentVehicle()->IsHidden() )
+			{
+				return false;
+			}
+			toPos = actor->GetCurrentVehicle()->GetEyePosition();
+		}
+		else
+		{
+			if( actor->IsHidden() )
+			{
+				return false;
+			}
+			toPos = actor->GetEyePosition();
+		}
 	}
 	else
 	{
-		toPos = ent->GetPhysics()->GetOrigin();
+		if( ent->IsHidden() )
+		{
+			return false;
+		}
+		if( ent->IsType( idAFEntity_Vehicle::Type ) )
+		{
+			toPos = static_cast<idAFEntity_Vehicle*>( ent )->GetEyePosition();
+		}
+		else
+		{
+			toPos = ent->GetPhysics()->GetOrigin();
+		}
 	}
 
 	if( useFov && !CheckFOV( toPos ) )

@@ -1,0 +1,193 @@
+
+models/mapobjects/buggy/buggy
+{
+	collision
+	playerclip
+	solid
+	renderbump -size 512 512 -aa 2 models/md5/vehicles/buggy/buggy_local.tga models/md5/vehicles/buggy/buggy_hi.lwo
+	diffusemap	models/mapobjects/base/chairs/chair1_bmp.tga
+	specularmap	models/mapobjects/base/chairs/chair1_bmp.tga
+	bumpmap		models/md5/vehicles/buggy/buggy_local.tga
+}
+
+models/mapobjects/capri/capri_wheel
+{
+	collision
+	playerclip
+	solid
+	// renderbump -size 256 128 -aa 2 models/mapobjects/capri/capri_wheel_local.tga models/mapobjects/capri/wheel_hi.lwo
+	diffusemap	models/md5/vehicles/capri/capri_wheel_d.tga
+	specularmap	models/md5/vehicles/capri/capri_wheel_s.tga
+	bumpmap		models/md5/vehicles/capri/capri_wheel_local.tga
+}
+
+models/md5/vehicles/buggy/buggy
+{
+	collision
+	playerclip
+	solid
+	// renderbump -size 512 512 -aa 2 models/mapobjects/buggy/buggy_local.tga models/mapobjects/buggy/buggy_hi.lwo
+	{
+		blend	bumpmap          
+		map		models/md5/vehicles/buggy/buggy_local.tga
+		
+	}
+	diffusemap         	models/md5/vehicles/buggy/buggy_d.tga
+	specularmap      	models/md5/vehicles/buggy/buggy_turret_d.tga
+}
+
+models/md5/vehicles/buggy/gun
+{
+	collision
+	playerclip
+	solid
+	//aassolid
+	unsmoothedTangents
+	//	renderbump  -size 1024 1024 -colorMap -aa 2  models/weapons/chaingun/barrel_local.tga models/md5/weapons/chaingun/barrel_hi.lwo
+
+	diffusemap	models/weapons/chaingun/barrel.tga
+	{
+		blend bumpmap
+		map  addnormals(models/weapons/chaingun/barrel_local.tga, heightmap(models/weapons/chaingun/barrel_h.tga, 14 ) )
+		//
+	}
+	specularmap	 models/weapons/chaingun/barrel_s.tga
+}
+
+models/md5/vehicles/buggy/turret
+{
+	collision
+	playerclip
+	solid
+	// renderbump -size 512 256 -aa 2 models/md5/vehicles/buggy/buggy_turret_local.tga models/md5/vehicles/buggy/turret_hi.lwo
+	{
+		blend	bumpmap
+		map		models/md5/vehicles/buggy/buggy_turret_local.tga
+		
+	}
+
+	//bumpmap	models/md5/vehicles/buggy/buggy_turret_local.tga
+	diffusemap	models/md5/vehicles/buggy/buggy_turret_d.tga
+	specularmap	models/md5/vehicles/buggy/buggy_turret_d.tga
+}
+
+models/md5/vehicles/buggy/wheel
+{
+	collision
+	playerclip
+	solid
+	// renderbump -size 256 128 -aa 2 models/md5/vehicles/buggy/wheel_local.tga models/md5/vehicles/buggy/wheel_hi.lwo
+
+	diffusemap	models/md5/vehicles/buggy/wheel_d.tga
+	specularmap	models/md5/vehicles/buggy/wheel_s.tga
+	bumpmap		models/md5/vehicles/buggy/wheel_local.tga
+}
+
+models/md5/vehicles/buggy/buggy_red
+{
+	collision
+	playerclip
+	solid
+	// renderbump -size 512 512 -aa 2 models/mapobjects/buggy/buggy_local.tga models/mapobjects/buggy/buggy_hi.lwo
+	{
+		blend	bumpmap          
+		map		models/md5/vehicles/buggy/buggy_local.tga
+		
+	}
+	diffusemap         	models/md5/vehicles/buggy/buggy_red_d.tga
+	specularmap      	models/md5/vehicles/buggy/buggy_turret_d.tga
+}
+
+models/md5/vehicles/buggy/turret_pw
+{
+	collision
+	playerclip
+	solid
+	translucent
+	// renderbump -size 512 256 -aa 2 models/md5/vehicles/buggy/buggy_turret_local.tga models/md5/vehicles/buggy/turret_hi.lwo
+	{
+		blend	bumpmap
+		map		models/md5/vehicles/buggy/buggy_turret_local.tga
+		
+	}
+
+	{   //il primo nn si vede bene..
+		blend specularmap
+		map textures/hell/lavascroll.tga //models/invis_s.tga
+		translate	time * 0 , time * 2 //was 0.6
+	}
+
+	{ //così c'è tex trasparente rosso  sempre visibile
+		blend			add
+		map			models/weapons/chaingun/buggy_turret_d.tga  //	models/items/lantern/lanternglow.tga
+		red			2
+		green		0
+		blue		0
+         }
+         {//+rosso che scorre!
+		blend			add
+		map                   textures/hell/lavascroll.tga //textures/particles/fbeam.tga
+		translate	time * 0 , time * 2
+
+		red			2
+		green		0
+		blue		0
+         }
+         {//+rosso che scorre!
+		blend			add
+		map                   textures/hell/lavascroll.tga //textures/particles/fbeam.tga
+		translate	time * 0 , time * 0.5
+
+		red			2
+		green		0
+		blue		0
+         }
+}
+
+models/md5/vehicles/buggy/gun_pw
+{
+	collision
+	playerclip
+	solid
+	translucent
+	//aassolid
+	unsmoothedTangents
+	//	renderbump  -size 1024 1024 -colorMap -aa 2  models/weapons/chaingun/barrel_local.tga models/md5/weapons/chaingun/barrel_hi.lwo
+
+        {
+ 		  blend bumpmap
+                  map  addnormals(models/weapons/chaingun/barrel_local.tga, heightmap(models/weapons/chaingun/barrel_h.tga, 14 ) )
+     	}
+
+	{   //il primo nn si vede bene..
+		blend specularmap
+		map textures/hell/lavascroll.tga //models/invis_s.tga
+		translate	time * 0 , time * 2 //was 0.6
+	}
+
+	{ //così c'è tex trasparente rosso  sempre visibile
+		blend			add
+		map			models/weapons/chaingun/barrel.tga  //	models/items/lantern/lanternglow.tga
+		red			0
+		green		0.4
+		blue		1
+         }
+         {//+rosso che scorre!
+		blend			add
+		map                  textures/hell/lavascroll.tga
+		translate	time * 0 , time * 2
+
+		red			0
+		green		0.4
+		blue		1
+         }
+         {//+rosso che scorre!
+		blend			add
+		map                   textures/hell/lavascroll.tga //textures/particles/fbeam.tga
+		translate	time * 2 , time * 0.5
+
+		red			0
+		green		0.4
+		blue		1
+         }
+}

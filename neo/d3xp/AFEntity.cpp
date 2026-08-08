@@ -643,6 +643,16 @@ void idAFEntity_Base::Restore( idRestoreGame* savefile )
 
 /*
 ================
+idAFEntity_Base::RecreateDynamicConstraints
+================
+*/
+void idAFEntity_Base::RecreateDynamicConstraints( idList<idAFConstraint*, TAG_IDLIB_LIST_PHYSICS>* constraints )
+{
+	//meant to be overridden
+}
+
+/*
+================
 idAFEntity_Base::Spawn
 ================
 */
@@ -1910,7 +1920,14 @@ void idAFEntity_WithAttachedHead::Event_Activate( idEntity* activator )
 ===============================================================================
 */
 
+const idEventDef EV_Vehicle_AmmoAvailable( "vehicleAmmoAvailable", NULL, 'f' );
+const idEventDef EV_Vehicle_UseAmmo( "useVehicleAmmo", "d" );
+
 CLASS_DECLARATION( idAFEntity_Base, idAFEntity_Vehicle )
+EVENT( EV_GetDriver,				idAFEntity_Vehicle::Event_GetDriver )
+EVENT( EV_GetAimAngles,				idAFEntity_Vehicle::Event_GetAimAngles )
+EVENT( EV_Vehicle_AmmoAvailable,	idAFEntity_Vehicle::Event_AmmoAvailable )
+EVENT( EV_Vehicle_UseAmmo,			idAFEntity_Vehicle::Event_UseAmmo )
 END_CLASS
 
 /*
@@ -1920,14 +1937,33 @@ idAFEntity_Vehicle::idAFEntity_Vehicle
 */
 idAFEntity_Vehicle::idAFEntity_Vehicle()
 {
-	player				= NULL;
+	driver				= NULL;
 	eyesJoint			= INVALID_JOINT;
 	steeringWheelJoint	= INVALID_JOINT;
 	wheelRadius			= 0.0f;
 	steerAngle			= 0.0f;
 	steerSpeed			= 0.0f;
 	dustSmoke			= NULL;
+	ammo				= 0;
+	vehicleVelocity		= 0.0f;
+	vehicleForce		= 0.0f;
+
+	thirdPersonRange	= 0.0f;
+	thirdPersonHeight	= 0.0f;
+
+	scriptThread		= NULL;		// initialized by ConstructScriptObject, which is called by idEntity::Spawn
 }
+
+/*
+=====================
+idAFEntity_Vehicle::~idAFEntity_Vehicle
+=====================
+*/
+idAFEntity_Vehicle::~idAFEntity_Vehicle()
+{
+	ShutdownThreads();
+}
+
 
 /*
 ================
@@ -1936,8 +1972,7 @@ idAFEntity_Vehicle::Spawn
 */
 void idAFEntity_Vehicle::Spawn()
 {
-	const char* eyesJointName = spawnArgs.GetString( "eyesJoint", "eyes" );
-	const char* steeringWheelJointName = spawnArgs.GetString( "steeringWheelJoint", "steeringWheel" );
+
 
 	LoadAF();
 
@@ -1947,11 +1982,14 @@ void idAFEntity_Vehicle::Spawn()
 
 	fl.takedamage = true;
 
+	const char* eyesJointName = spawnArgs.GetString( "eyesJoint", "eyes" );
 	if( !eyesJointName[0] )
 	{
 		gameLocal.Error( "idAFEntity_Vehicle '%s' no eyes joint specified", name.c_str() );
 	}
 	eyesJoint = animator.GetJointHandle( eyesJointName );
+
+	const char* steeringWheelJointName = spawnArgs.GetString( "steeringWheelJoint", "steeringWheel" );
 	if( !steeringWheelJointName[0] )
 	{
 		gameLocal.Error( "idAFEntity_Vehicle '%s' no steering wheel joint specified", name.c_str() );
@@ -1961,7 +1999,7 @@ void idAFEntity_Vehicle::Spawn()
 	spawnArgs.GetFloat( "wheelRadius", "20", wheelRadius );
 	spawnArgs.GetFloat( "steerSpeed", "5", steerSpeed );
 
-	player = NULL;
+	driver = NULL;
 	steerAngle = 0.0f;
 
 	const char* smokeName = spawnArgs.GetString( "smoke_vehicle_dust", "muzzlesmoke" );
@@ -1969,39 +2007,171 @@ void idAFEntity_Vehicle::Spawn()
 	{
 		dustSmoke = static_cast<const idDeclParticle*>( declManager->FindType( DECL_PARTICLE, smokeName ) );
 	}
+
+	spawnArgs.GetInt( "ammo", "100", ammo );
+
+	// third-person camera joint
+	const char* cameraJointName = spawnArgs.GetString( "cameraJoint", "origin" );
+	if( !cameraJointName[0] )
+	{
+		gameLocal.Error( "idAFEntity_Vehicle '%s' no third-person camera joint specified", name.c_str() );
+	}
+	cameraJoint = animator.GetJointHandle( cameraJointName );
+
+	// vehicle settings - set same default values as old CVars
+	spawnArgs.GetFloat( "vehicleVelocity", "1000", vehicleVelocity );
+	spawnArgs.GetFloat( "vehicleForce", "50000", vehicleForce );
+
+	// camera settings
+	spawnArgs.GetFloat( "thirdPersonRange", "200", thirdPersonRange );
+	spawnArgs.GetFloat( "thirdPersonHeight", "106", thirdPersonHeight );
+
+	// initialize the script variables
+	LinkScriptVariables();
 }
+
+#if 0
+/*
+===============
+idAFEntity_Vehicle::InitHudStats
+===============
+*/
+void idAFEntity_Vehicle::InitHudStats( idUserInterface* hud, idUserInterface* cursor )
+{
+	if( hud )
+	{
+		hud->HandleNamedEvent( spawnArgs.GetString( "hudHealthEvent", "health_mode_buggy_green" ) );
+		hud->HandleNamedEvent( spawnArgs.GetString( "hudWeaponEvent", "setup_melee_only" ) );
+		hud->HandleNamedEvent( "start_riding" );
+		hud->HandleNamedEvent( "select_a0" );
+	}
+
+	if( cursor )
+	{
+		cursor->HandleNamedEvent( spawnArgs.GetString( "cursorEvent", "enableSentryCursor" ) ); //hideCursor
+	}
+}
+
+/*
+===============
+idAFEntity_Vehicle::UpdateHudStats
+===============
+*/
+void idAFEntity_Vehicle::UpdateHudStats( idUserInterface* hud )
+{
+	if( hud )
+	{
+		hud->SetStateInt( "sentry_health", health );
+		hud->SetStateFloat( "sentry_health_pct", health / spawnArgs.GetFloat( "health" ) );
+		hud->SetStateInt( "sentry_ammo", ammo );
+	}
+}
+#endif
 
 /*
 ================
 idAFEntity_Vehicle::Use
 ================
 */
-void idAFEntity_Vehicle::Use( idPlayer* other )
+bool idAFEntity_Vehicle::StartDriving( idPlayer* player )
 {
 	idVec3 origin;
 	idMat3 axis;
+	idAngles angles;
 
-	if( player )
+	if( driver || !player || VEHICLE_DEAD )
 	{
-		if( player == other )
-		{
-			other->Unbind();
-			player = NULL;
+		return false;
+	}
 
-			af.GetPhysics()->SetComeToRest( true );
+	driver = player;
+	animator.GetJointTransform( eyesJoint, gameLocal.time, origin, axis );
+	origin = renderEntity.origin + origin * renderEntity.axis;
+	driver->GetPhysics()->SetOrigin( origin );
+	driver->BindToBody( this, 0, false ); // was true, but 'false' fixes wrong view angles after teleport
+
+	angles = renderEntity.axis.ToAngles();
+	angles.roll = 0.0f;
+	driver->SetViewAngles( angles );
+
+	af.GetPhysics()->SetComeToRest( false );
+	af.GetPhysics()->Activate();
+
+	SetState( "state_Drive" );
+	return true;
+}
+
+
+/*
+================
+idAFEntity_Vehicle::Use
+================
+*/
+void idAFEntity_Vehicle::StopDriving()
+{
+	if( driver )
+	{
+		driver->Unbind();
+		driver = NULL;
+
+		af.GetPhysics()->SetComeToRest( true );
+
+		VEHICLE_FIRING = false;
+		VEHICLE_FORWARD = false;
+
+		if( !VEHICLE_DEAD )
+		{
+			SetState( "state_Idle" );
 		}
 	}
-	else
-	{
-		player = other;
-		animator.GetJointTransform( eyesJoint, gameLocal.time, origin, axis );
-		origin = renderEntity.origin + origin * renderEntity.axis;
-		player->GetPhysics()->SetOrigin( origin );
-		player->BindToBody( this, 0, true );
+}
 
-		af.GetPhysics()->SetComeToRest( false );
-		af.GetPhysics()->Activate();
-	}
+/*
+===============
+idAFEntity_Vehicle::GetCameraPos
+===============
+*/
+void idAFEntity_Vehicle::GetCameraPos( idVec3& origin, idMat3& axis )
+{
+	//we only need the world position of origin. axis is not important atm.
+	//so we can simply use the code below intead of
+	//GetJointWorldTransform( cameraJoint, gameLocal.time, origin, axis );
+	//...which would be slower
+	animator.GetJointTransform( cameraJoint, gameLocal.time, origin, axis );
+	origin = renderEntity.origin + origin * renderEntity.axis;
+}
+
+/*
+=====================
+idActor::EyeOffset
+=====================
+*/
+idVec3 idAFEntity_Vehicle::EyeOffset() const
+{
+	return GetPhysics()->GetGravityNormal() * -10;
+}
+
+/*
+=====================
+idActor::GetEyePosition
+=====================
+*/
+idVec3 idAFEntity_Vehicle::GetEyePosition() const
+{
+	return GetPhysics()->GetOrigin() + ( GetPhysics()->GetGravityNormal() * -10 );
+}
+
+/*
+=====================
+idActor::GetAIAimTargets
+
+Returns positions for the AI to aim at.
+=====================
+*/
+void idAFEntity_Vehicle::GetAIAimTargets( const idVec3& lastSightPos, idVec3& headPos, idVec3& chestPos )
+{
+	headPos = lastSightPos + EyeOffset();
+	chestPos = headPos;
 }
 
 /*
@@ -2013,7 +2183,7 @@ float idAFEntity_Vehicle::GetSteerAngle()
 {
 	float idealSteerAngle, angleDelta;
 
-	idealSteerAngle = player->usercmd.rightmove * ( 30.0f / 128.0f );
+	idealSteerAngle = driver->usercmd.rightmove * ( 30.0f / 128.0f );
 	angleDelta = idealSteerAngle - steerAngle;
 
 	if( angleDelta > steerSpeed )
@@ -2032,6 +2202,387 @@ float idAFEntity_Vehicle::GetSteerAngle()
 	return steerAngle;
 }
 
+/*
+================
+idAFEntity_Vehicle::Damage
+================
+*/
+void idAFEntity_Vehicle::Damage( idEntity* inflictor, idEntity* attacker, const idVec3& dir, const char* damageDefName, const float damageScale, const int location )
+{
+
+	if( !fl.takedamage || gameLocal.inCinematic || ( driver && driver->godmode ) )
+	{
+		return;
+	}
+
+	const idDict* damageDef = gameLocal.FindEntityDefDict( damageDefName );
+	if( !damageDef )
+	{
+		gameLocal.Error( "Unknown damageDef '%s'\n", damageDefName );
+	}
+
+	bool ignoreVehicle;
+	if( damageDef->GetBool( "ignore_vehicle", "1", ignoreVehicle ) )
+	{
+		if( ignoreVehicle )
+		{
+			return;
+		}
+	}
+	else if( attacker && attacker->IsType( idActor::Type ) )
+	{
+		// disable friendly fire unless ignore_vehicle is explicitly disabled (fix for double shotgun sec fire)
+		if( static_cast<idActor*>( attacker )->team == 0 )
+		{
+			return;
+		}
+	}
+
+	float skillScale = 1.0f;
+	if( !common->IsMultiplayer() && inflictor != gameLocal.world )
+	{
+		switch( g_skill.GetInteger() )
+		{
+			case 0:
+				skillScale = 0.9f;
+				break;
+			case 2:
+				skillScale = 1.1f;
+				break;
+			case 3:
+				skillScale = 1.2f;
+				break;
+			default:
+				break;
+		}
+	}
+
+	idAFEntity_Base::Damage( inflictor, attacker, dir, damageDefName, skillScale * damageScale * damageDef->GetFloat( "vehicleDamageScale", "1" ), location );
+}
+
+/*
+============
+idAFEntity_Vehicle::Killed
+============
+*/
+void idAFEntity_Vehicle::Killed( idEntity* inflictor, idEntity* attacker, int damage, const idVec3& dir, int location )
+{
+	if( !VEHICLE_DEAD )
+	{
+		VEHICLE_DEAD = true;
+		SetState( "state_Killed" );
+
+		if( driver )
+		{
+			driver->ExitVehicle();
+		}
+	}
+}
+
+/*
+================
+idAFEntity_Vehicle::Teleport
+================
+*/
+void idAFEntity_Vehicle::Teleport( const idVec3& origin, const idAngles& angles, idEntity* destination )
+{
+	if( driver )
+	{
+		idAngles viewAngles = renderEntity.axis.ToAngles();
+		viewAngles.roll = 0.0f;
+		driver->SetViewAngles( viewAngles );
+	}
+
+	idAFEntity_Base::Teleport( origin, angles, destination );
+	GetPhysics()->SetLinearVelocity( vec3_origin );
+	GetPhysics()->SetAngularVelocity( vec3_origin );
+}
+
+/*
+==============
+idAFEntity_Vehicle::LinkScriptVariables
+==============
+*/
+void idAFEntity_Vehicle::LinkScriptVariables()
+{
+	VEHICLE_FIRING.LinkTo(	scriptObject, "VEHICLE_FIRING" );
+	VEHICLE_FORWARD.LinkTo(	scriptObject, "VEHICLE_FORWARD" );
+	VEHICLE_DEAD.LinkTo(	scriptObject, "VEHICLE_DEAD" );
+}
+
+/*
+==================
+idAFEntity_Vehicle::Event_GetDriver
+==================
+*/
+void idAFEntity_Vehicle::Event_GetDriver()
+{
+	idThread::ReturnEntity( driver );
+}
+
+/*
+==================
+idAFEntity_Vehicle::Event_GetAimAngles
+==================
+*/
+void idAFEntity_Vehicle::Event_GetAimAngles( const idVec3& firePos )
+{
+	idAngles angles;
+	if( !gameLocal.inCinematic && driver && driver->renderView )
+	{
+		renderView_t* view = driver->renderView;
+		idVec3 end = view->vieworg + view->viewaxis[ 0 ] * 3000.0f;
+		trace_t trace;
+		gameLocal.clip.TracePoint( trace, view->vieworg, end, MASK_SOLID | CONTENTS_RENDERMODEL, this );
+		if( trace.fraction < 1.0f )
+		{
+			angles = ( trace.endpos - firePos ).ToAngles();
+		}
+		else
+		{
+			angles = ( end - firePos ).ToAngles();
+		}
+	}
+	else
+	{
+		angles = GetPhysics()->GetAxis().ToAngles();
+	}
+	idThread::ReturnVector( idVec3( angles[0], angles[1], angles[2] ) );
+}
+
+/*
+==================
+idAFEntity_Vehicle::Save
+==================
+*/
+void idAFEntity_Vehicle::Save( idSaveGame* savefile ) const
+{
+	savefile->WriteObject( driver );
+	savefile->WriteJoint( eyesJoint );
+	savefile->WriteJoint( cameraJoint );
+	savefile->WriteJoint( steeringWheelJoint );
+	savefile->WriteFloat( wheelRadius );
+	savefile->WriteFloat( steerAngle );
+	savefile->WriteFloat( steerSpeed );
+	savefile->WriteParticle( dustSmoke );
+	savefile->WriteInt( ammo );
+
+	savefile->WriteFloat( vehicleVelocity );
+	savefile->WriteFloat( vehicleForce );
+
+	savefile->WriteFloat( thirdPersonRange );
+	savefile->WriteFloat( thirdPersonHeight );
+
+	// script variables
+	savefile->WriteObject( scriptThread );
+}
+
+/*
+==================
+idAFEntity_Vehicle::Restore
+==================
+*/
+void idAFEntity_Vehicle::Restore( idRestoreGame* savefile )
+{
+	//gameLocal.Printf("idAFEntity_Vehicle::Restore\n");
+	savefile->ReadObject( reinterpret_cast<idClass*&>( driver ) );
+	savefile->ReadJoint( eyesJoint );
+	savefile->ReadJoint( cameraJoint );
+	savefile->ReadJoint( steeringWheelJoint );
+	savefile->ReadFloat( wheelRadius );
+	savefile->ReadFloat( steerAngle );
+	savefile->ReadFloat( steerSpeed );
+	savefile->ReadParticle( dustSmoke );
+	savefile->ReadInt( ammo );
+
+	savefile->ReadFloat( vehicleVelocity );
+	savefile->ReadFloat( vehicleForce );
+
+	savefile->ReadFloat( thirdPersonRange );
+	savefile->ReadFloat( thirdPersonHeight );
+
+	// script variables
+	savefile->ReadObject( reinterpret_cast<idClass*&>( scriptThread ) );
+
+	// Re-link idBoolFields to the scriptObject, values will be restored in scriptObject's restore
+	LinkScriptVariables();
+
+	SetCombatModel();
+	LinkCombat();
+
+	// activate Physics for a frame just to avoid GetJointTransform errors in Use function after reload
+	af.GetPhysics()->Activate();
+}
+
+
+/***********************************************************************
+
+	script state management
+
+***********************************************************************/
+
+/*
+================
+idAFEntity_Vehicle::ShutdownThreads
+================
+*/
+void idAFEntity_Vehicle::ShutdownThreads()
+{
+	if( scriptThread )
+	{
+		scriptThread->EndThread();
+		scriptThread->PostEventMS( &EV_Remove, 0 );
+		delete scriptThread;
+		scriptThread = NULL;
+	}
+}
+
+/*
+================
+idAFEntity_Vehicle::ConstructScriptObject
+
+Called during idEntity::Spawn.  Calls the constructor on the script object.
+Can be overridden by subclasses when a thread doesn't need to be allocated.
+================
+*/
+idThread* idAFEntity_Vehicle::ConstructScriptObject()
+{
+	const function_t* constructor;
+
+	// make sure we have a scriptObject
+	if( !scriptObject.HasObject() )
+	{
+		gameLocal.Error( "No scriptobject set on '%s'.  Check the '%s' entityDef.", name.c_str(), GetEntityDefName() );
+	}
+
+	if( !scriptThread )
+	{
+		// create script thread
+		scriptThread = new idThread();
+		scriptThread->ManualDelete();
+		scriptThread->ManualControl();
+		scriptThread->SetThreadName( name.c_str() );
+	}
+	else
+	{
+		scriptThread->EndThread();
+	}
+
+	// call script object's constructor
+	constructor = scriptObject.GetConstructor();
+	if( !constructor )
+	{
+		gameLocal.Error( "Missing constructor on '%s' for entity '%s'", scriptObject.GetTypeName(), name.c_str() );
+	}
+
+	// init the script object's data
+	scriptObject.ClearObject();
+
+	// just set the current function on the script.  we'll execute later.
+	scriptThread->CallFunction( this, constructor, true );
+
+	return scriptThread;
+}
+
+/*
+=====================
+idAFEntity_Vehicle::GetScriptFunction
+=====================
+*/
+const function_t* idAFEntity_Vehicle::GetScriptFunction( const char* funcname )
+{
+	const function_t* func;
+
+	func = scriptObject.GetFunction( funcname );
+	if( !func )
+	{
+		scriptThread->Error( "Unknown function '%s' in '%s'", funcname, scriptObject.GetTypeName() );
+	}
+
+	return func;
+}
+
+/*
+=====================
+idAFEntity_Vehicle::SetState
+=====================
+*/
+void idAFEntity_Vehicle::SetState( const function_t* newState )
+{
+	if( !newState )
+	{
+		gameLocal.Error( "idAFEntity_Vehicle::SetState: Null state" );
+	}
+
+	if( ai_debugScript.GetInteger() == entityNumber )
+	{
+		gameLocal.Printf( "%d: %s: State: %s\n", gameLocal.time, name.c_str(), newState->Name() );
+	}
+
+	//state = newState;
+	//idealState = state;
+	scriptThread->CallFunction( this, newState, true );
+}
+
+/*
+=====================
+idAFEntity_Vehicle::SetState
+=====================
+*/
+void idAFEntity_Vehicle::SetState( const char* statename )
+{
+	const function_t* newState;
+
+	newState = GetScriptFunction( statename );
+	SetState( newState );
+}
+
+/*
+=====================
+idAFEntity_Vehicle::UpdateScript
+=====================
+*/
+void idAFEntity_Vehicle::UpdateScript()
+{
+	if( ai_debugScript.GetInteger() == entityNumber )
+	{
+		scriptThread->EnableDebugInfo();
+	}
+	else
+	{
+		scriptThread->DisableDebugInfo();
+	}
+
+	// don't call script until it's done waiting
+	if( !scriptThread->IsWaiting() )
+	{
+		scriptThread->Execute();
+	}
+}
+
+/*
+===============
+idAFEntity_Vehicle::Event_UseAmmo
+===============
+*/
+void idAFEntity_Vehicle::Event_UseAmmo( int amount )
+{
+	ammo -= amount;
+	if( ammo < 0 )
+	{
+		ammo = 0;
+	}
+}
+
+/*
+===============
+idAFEntity_Vehicle::Event_AmmoAvailable
+===============
+*/
+void idAFEntity_Vehicle::Event_AmmoAvailable()
+{
+	idThread::ReturnFloat( ammo );
+}
 
 /*
 ===============================================================================
@@ -2041,8 +2592,20 @@ float idAFEntity_Vehicle::GetSteerAngle()
 ===============================================================================
 */
 
+const idEventDef EV_Vehicle_SetTireFriction( "setTireFriction", "f" );
+
 CLASS_DECLARATION( idAFEntity_Vehicle, idAFEntity_VehicleSimple )
+EVENT( EV_Vehicle_SetTireFriction,	idAFEntity_VehicleSimple::Event_SetTireFriction )
 END_CLASS
+
+static const float VEHICLE_SELF_IMPULSE_MULT_STD			= 0.1f;
+static const float VEHICLE_SELF_IMPULSE_MULT_ACTOR_KILL		= 0.1f;
+static const float VEHICLE_PUSH_MULT_STD					= 36.0f;
+static const float VEHICLE_PUSH_MULT_ACTOR_KILL				= 366.0f;
+static const float VEHICLE_MIN_PREDICTION_VELOCITY			= 10.0f;
+static const float VEHICLE_MIN_DAMAGE_VELOCITY				= 100.0f;
+static const float VEHICLE_MIN_SMOKE_VELOCITY				= 5.0f;
+static const float VEHICLE_MAX_PREDICTION_WIDTH				= 64.0f; //100% at speed = 1000
 
 /*
 ================
@@ -2056,6 +2619,14 @@ idAFEntity_VehicleSimple::idAFEntity_VehicleSimple()
 	{
 		suspension[i] = NULL;
 	}
+
+	vehicleSuspensionUp			= 0.0f;
+	vehicleSuspensionDown		= 0.0f;
+	vehicleSuspensionKCompress	= 0.0f;
+	vehicleSuspensionDamping	= 0.0f;
+	vehicleTireFriction			= 0.0f;
+
+	nextCollideFxTime	= 0;
 }
 
 /*
@@ -2067,6 +2638,8 @@ idAFEntity_VehicleSimple::~idAFEntity_VehicleSimple()
 {
 	delete wheelModel;
 	wheelModel = NULL;
+
+	//all idAFConstraint_Suspension will be deleted in idPhysics_AF::~idPhysics_AF
 }
 
 /*
@@ -2085,6 +2658,13 @@ void idAFEntity_VehicleSimple::Spawn()
 	};
 	static idVec3 wheelPoly[4] = { idVec3( 2, 2, 0 ), idVec3( 2, -2, 0 ), idVec3( -2, -2, 0 ), idVec3( -2, 2, 0 ) };
 
+	// vehicle settings - set same default values as old CVars
+	spawnArgs.GetFloat( "vehicleSuspensionUp", "32", vehicleSuspensionUp );
+	spawnArgs.GetFloat( "vehicleSuspensionDown", "20", vehicleSuspensionDown );
+	spawnArgs.GetFloat( "vehicleSuspensionKCompress", "200", vehicleSuspensionKCompress );
+	spawnArgs.GetFloat( "vehicleSuspensionDamping", "400", vehicleSuspensionDamping );
+	spawnArgs.GetFloat( "vehicleTireFriction", "0.8", vehicleTireFriction );
+
 	int i;
 	idVec3 origin;
 	idMat3 axis;
@@ -2092,7 +2672,7 @@ void idAFEntity_VehicleSimple::Spawn()
 
 	trm.SetupPolygon( wheelPoly, 4 );
 	trm.Translate( idVec3( 0, 0, -wheelRadius ) );
-	wheelModel = new( TAG_PHYSICS_CLIP_AF ) idClipModel( trm );
+	wheelModel = new( TAG_PHYSICS_CLIP_AF )  idClipModel( trm );
 
 	for( i = 0; i < 4; i++ )
 	{
@@ -2110,16 +2690,21 @@ void idAFEntity_VehicleSimple::Spawn()
 		GetAnimator()->GetJointTransform( wheelJoints[i], 0, origin, axis );
 		origin = renderEntity.origin + origin * renderEntity.axis;
 
-		suspension[i] = new( TAG_PHYSICS_AF ) idAFConstraint_Suspension();
-		suspension[i]->Setup( va( "suspension%d", i ), af.GetPhysics()->GetBody( 0 ), origin, af.GetPhysics()->GetAxis( 0 ), wheelModel );
-		suspension[i]->SetSuspension(	g_vehicleSuspensionUp.GetFloat(),
-										g_vehicleSuspensionDown.GetFloat(),
-										g_vehicleSuspensionKCompress.GetFloat(),
-										g_vehicleSuspensionDamping.GetFloat(),
-										g_vehicleTireFriction.GetFloat() );
-
+		suspension[i] = new( TAG_PHYSICS_AF )  idAFConstraint_Suspension();
+		suspension[i]->Setup( va( "suspension%d", i ), af.GetPhysics()->GetBody( 0 ), wheelModel );
+		suspension[i]->SetPosition( origin, af.GetPhysics()->GetAxis( 0 ) );
+		suspension[i]->SetSuspension(	vehicleSuspensionUp,
+										vehicleSuspensionDown,
+										vehicleSuspensionKCompress,
+										vehicleSuspensionDamping,
+										vehicleTireFriction );
 		af.GetPhysics()->AddConstraint( suspension[i] );
 	}
+
+	fxCollide = spawnArgs.GetString( "fx_collide" );
+	nextCollideFxTime = 0;
+
+	damage = spawnArgs.GetString( "def_damage", "" );
 
 	memset( wheelAngles, 0, sizeof( wheelAngles ) );
 	BecomeActive( TH_THINK );
@@ -2141,16 +2726,21 @@ void idAFEntity_VehicleSimple::Think()
 	if( thinkFlags & TH_THINK )
 	{
 
-		if( player )
+		if( driver )
 		{
-			// capture the input from a player
-			velocity = g_vehicleVelocity.GetFloat();
-			if( player->usercmd.forwardmove < 0 )
+			// capture the input from the player
+			velocity = vehicleVelocity;
+			if( driver->usercmd.forwardmove < 0 )
 			{
 				velocity = -velocity;
 			}
-			force = idMath::Fabs( player->usercmd.forwardmove * g_vehicleForce.GetFloat() ) * ( 1.0f / 128.0f );
+			force = idMath::Fabs( driver->usercmd.forwardmove * vehicleForce ) * ( 1.0f / 128.0f );
 			steerAngle = GetSteerAngle();
+
+			VEHICLE_FIRING	= ( !driver->objectiveSystemOpen && driver->usercmd.buttons & BUTTON_ATTACK );
+			VEHICLE_FORWARD = ( driver->usercmd.forwardmove > 0 );
+
+			TouchTriggers();
 		}
 
 		// update the wheel motor force and steering
@@ -2183,24 +2773,24 @@ void idAFEntity_VehicleSimple::Think()
 			suspension[1]->SetMotorVelocity( velocity * 0.5f );
 		}
 
-		// update suspension with latest cvar settings
-		for( i = 0; i < 4; i++ )
-		{
-			suspension[i]->SetSuspension(	g_vehicleSuspensionUp.GetFloat(),
-											g_vehicleSuspensionDown.GetFloat(),
-											g_vehicleSuspensionKCompress.GetFloat(),
-											g_vehicleSuspensionDamping.GetFloat(),
-											g_vehicleTireFriction.GetFloat() );
-		}
+		UpdateScript();
 
 		// run the physics
 		RunPhysics();
 
+		// Kick Obstacles
+		if( thinkFlags & TH_PHYSICS )
+		{
+			PredictCollisions();
+		}
+
+		int spawnSmoke = !( gameLocal.framenum & 7 );
+
 		// move and rotate the wheels visually
 		for( i = 0; i < 4; i++ )
 		{
-			idAFBody* body = af.GetPhysics()->GetBody( 0 );
 
+			idAFBody* body = af.GetPhysics()->GetBody( 0 );
 			origin = suspension[i]->GetWheelOrigin();
 			velocity = body->GetPointVelocity( origin ) * body->GetWorldAxis()[0];
 			wheelAngles[i] += velocity * MS2SEC( gameLocal.time - gameLocal.previousTime ) / wheelRadius;
@@ -2214,6 +2804,7 @@ void idAFEntity_VehicleSimple::Think()
 				// rotate the wheel for steering
 				steerRotation.SetAngle( steerAngle );
 				steerRotation.SetVec( 0, 0, 1 );
+
 				// set wheel rotation
 				animator.SetJointAxis( wheelJoints[i], JOINTMOD_WORLD, wheelRotation.ToMat3() * steerRotation.ToMat3() );
 			}
@@ -2226,20 +2817,13 @@ void idAFEntity_VehicleSimple::Think()
 			// set wheel position for suspension
 			origin = ( origin - renderEntity.origin ) * renderEntity.axis.Transpose();
 			GetAnimator()->SetJointPos( wheelJoints[i], JOINTMOD_WORLD_OVERRIDE, origin );
+
+			// spawn dust particle effects
+			if( spawnSmoke && abs( velocity ) > VEHICLE_MIN_SMOKE_VELOCITY && suspension[i]->GetLastContactPosition() != vec3_origin )
+			{
+				gameLocal.smokeParticles->EmitSmoke( dustSmoke, gameLocal.time, gameLocal.random.RandomFloat(), suspension[i]->GetLastContactPosition(), body->GetWorldAxis(), timeGroup /* D3XP */ );
+			}
 		}
-		/*
-				// spawn dust particle effects
-				if ( force != 0.0f && !( gameLocal.framenum & 7 ) ) {
-					int numContacts;
-					idAFConstraint_Contact *contacts[2];
-					for ( i = 0; i < 4; i++ ) {
-						numContacts = af.GetPhysics()->GetBodyContactConstraints( wheels[i]->GetClipModel()->GetId(), contacts, 2 );
-						for ( int j = 0; j < numContacts; j++ ) {
-							gameLocal.smokeParticles->EmitSmoke( dustSmoke, gameLocal.time, gameLocal.random.RandomFloat(), contacts[j]->GetContact().point, contacts[j]->GetContact().normal.ToMat3() );
-						}
-					}
-				}
-		*/
 	}
 
 	UpdateAnimation();
@@ -2250,6 +2834,256 @@ void idAFEntity_VehicleSimple::Think()
 	}
 }
 
+/*
+================
+idAFEntity_VehicleSimple::ApplyCollisionFeedback
+================
+*/
+void idAFEntity_VehicleSimple::ApplyCollisionFeedback( const trace_t& collision, const idVec3& velocity, bool predicted )
+{
+	float multiplier, speed;
+	idVec3 dir;
+	idVec3 forceVec;
+	idVec3 delta;
+	idVec2 perpendicular;
+	idEntity* ent;
+
+	ent = gameLocal.entities[ collision.c.entityNum ];
+
+	// ignore prediction if too distant, unless it's an actor
+	if( predicted && ent && collision.fraction > 0.5f && !ent->IsType( idActor::Type ) )
+	{
+		//gameLocal.Printf("ignore predicted collision with: %s\n", ent->GetName());
+		return;
+	}
+
+	// get collision data
+	dir = velocity;
+	speed = dir.NormalizeFast();
+
+	//  play sound
+	if( speed > BOUNCE_SOUND_MIN_VELOCITY &&  gameLocal.time > nextSoundTime )
+	{
+		if( StartSound( "snd_bounce", SND_CHANNEL_ANY, 0, false, NULL ) )
+		{
+			// don't set the volume unless there is a bounce sound as it overrides the entire channel
+			// which causes footsteps on ai's to not honor their shader parms
+			multiplier = speed > BOUNCE_SOUND_MAX_VELOCITY ? 1.0f : idMath::Sqrt( speed - BOUNCE_SOUND_MIN_VELOCITY ) * ( 1.0f / idMath::Sqrt( BOUNCE_SOUND_MAX_VELOCITY - BOUNCE_SOUND_MIN_VELOCITY ) );
+			SetSoundVolume( multiplier ); //0...1
+		}
+		nextSoundTime = gameLocal.time + 500;
+	}
+
+	//play fx
+	if( fxCollide.Length() && gameLocal.time > nextCollideFxTime )
+	{
+		idEntityFx::StartFx( fxCollide, &collision.c.point, NULL, this, false );
+		nextCollideFxTime = gameLocal.time + 3500;
+	}
+
+	// don't damage or push players and vehicles
+	if( !ent || ent->IsType( idPlayer::Type ) || ent->IsType( idAFEntity_Vehicle::Type ) )
+	{
+		return;
+	}
+
+	// damage AIs/Players and damagables
+	if( ent->IsType( idActor::Type ) || ent->IsType( idDamagable::Type ) )
+	{
+		if( damage.Length() && speed > VEHICLE_MIN_DAMAGE_VELOCITY && gameLocal.time > ent->spawnArgs.GetInt( "nextVehicleDamage" ) )
+		{
+			delta = ent->GetPhysics()->GetOrigin() - af.GetPhysics()->GetOrigin();
+			delta.NormalizeFast();
+			multiplier = ( delta * dir ) * idMath::Sqrt( speed );
+
+			if( g_vehicleDebug.GetBool() )
+			{
+				gameLocal.Printf( "speed: %f, projection: %f, multiplier: %f\n", speed, ( delta * dir ), multiplier );
+			}
+
+			if( multiplier > 10.0f )
+			{
+				int oldhealth = ent->health;
+				ent->Damage( this, driver ? driver : ( idEntity* ) this, dir, damage, multiplier, INVALID_JOINT );
+				ent->spawnArgs.SetInt( "nextVehicleDamage", gameLocal.time + 1000 );
+
+				// push killed AI
+				if( ent->IsType( idActor::Type ) && oldhealth > 0 && ent->health <= 0 )
+				{
+					delta = ent->GetPhysics()->GetOrigin() - collision.endpos;
+					delta.NormalizeFast();
+					forceVec = delta * multiplier * VEHICLE_PUSH_MULT_ACTOR_KILL; //TODO: use ent->GetPhysics()->GetMass(); ??? should be virtual...
+					ent->GetPhysics()->SetLinearVelocity( forceVec );
+					if( predicted )
+					{
+						ApplyImpulse( ent, 0, collision.endpos, -forceVec * VEHICLE_SELF_IMPULSE_MULT_ACTOR_KILL ); //TODO: balance
+					}
+				}
+			}
+		}
+	}
+
+	// push moveables and AFs
+	else if( ( ent->IsType( idMoveable::Type ) || ( ent->IsType( idAFEntity_Base::Type ) ) ) && ent->GetPhysics()->IsPushable() )
+	{
+		delta = ent->GetPhysics()->GetOrigin() - af.GetPhysics()->GetOrigin();
+		delta.NormalizeFast();
+		perpendicular.x = -delta.y;
+		perpendicular.y = delta.x;
+		delta.z += 0.5f;
+		delta.ToVec2() += perpendicular * gameLocal.random.CRandomFloat() * 0.5f;
+		forceVec = delta * sqrt( speed ) * VEHICLE_PUSH_MULT_STD * ent->GetPhysics()->GetMass();
+		ent->ApplyImpulse( this, 0, ent->GetPhysics()->GetOrigin(), forceVec );
+
+		if( g_vehicleDebug.GetBool() )
+		{
+			gameLocal.Printf( "push speed: %f mass: %f\n", speed, ent->GetPhysics()->GetMass() );
+		}
+
+		if( predicted )
+		{
+			ApplyImpulse( ent, 0, collision.endpos, -forceVec * VEHICLE_SELF_IMPULSE_MULT_STD );
+		}
+	}
+
+}
+
+/*
+=================
+idAFEntity_VehicleSimple::Collide
+=================
+*/
+bool idAFEntity_VehicleSimple::Collide( const trace_t& collision, const idVec3& velocity )
+{
+	ApplyCollisionFeedback( collision, velocity, false );
+	return false;
+}
+
+/*
+============
+idAFEntity_VehicleSimple::PredictCollisions
+============
+*/
+void idAFEntity_VehicleSimple::PredictCollisions()
+{
+	idAFBody* body;
+	idVec3 org, dest;
+	trace_t	trace;
+
+	const idVec3& linearVel = af.GetPhysics()->GetLinearVelocity();
+
+	if( linearVel.LengthFast() < VEHICLE_MIN_PREDICTION_VELOCITY )
+	{
+		return;
+	}
+
+	body = af.GetPhysics()->GetBody( 0 );
+	org = af.GetPhysics()->GetOrigin();
+	dest = org + linearVel * 0.001f * VEHICLE_MAX_PREDICTION_WIDTH;
+
+	if( g_vehicleDebug.GetBool() )
+	{
+		gameRenderWorld->DebugArrow( colorMagenta, org, dest, 4 ); //test only
+	}
+
+	gameLocal.clip.Translation( trace, org, dest, body->GetClipModel(), body->GetClipModel()->GetAxis(), /*af.GetPhysics()->GetClipMask()*/ MASK_SOLID | CONTENTS_RENDERMODEL, this );
+	if( trace.fraction != 1.0f )
+	{
+		ApplyCollisionFeedback( trace, linearVel, true );
+	}
+}
+
+/*
+============
+idAFEntity_VehicleSimple::Save
+============
+*/
+void idAFEntity_VehicleSimple::Save( idSaveGame* savefile ) const
+{
+	savefile->WriteFloat( vehicleSuspensionUp );
+	savefile->WriteFloat( vehicleSuspensionDown );
+	savefile->WriteFloat( vehicleSuspensionKCompress );
+	savefile->WriteFloat( vehicleSuspensionDamping );
+	savefile->WriteFloat( vehicleTireFriction );
+
+	savefile->WriteClipModel( wheelModel );
+	int wheel;
+	for( wheel = 0; wheel < 4; wheel++ )
+	{
+		savefile->WriteJoint( wheelJoints[wheel] );
+		savefile->WriteFloat( wheelAngles[wheel] );
+	}
+
+	savefile->WriteString( damage );
+	savefile->WriteString( fxCollide );
+	savefile->WriteInt( nextCollideFxTime );
+}
+
+/*
+============
+idAFEntity_VehicleSimple::Restore
+============
+*/
+void idAFEntity_VehicleSimple::Restore( idRestoreGame* savefile )
+{
+	idVec3 origin;
+	idMat3 axis;
+	int wheel;
+
+	savefile->ReadFloat( vehicleSuspensionUp );
+	savefile->ReadFloat( vehicleSuspensionDown );
+	savefile->ReadFloat( vehicleSuspensionKCompress );
+	savefile->ReadFloat( vehicleSuspensionDamping );
+	savefile->ReadFloat( vehicleTireFriction );
+
+	savefile->ReadClipModel( wheelModel );
+	for( wheel = 0; wheel < 4; wheel++ )
+	{
+		savefile->ReadJoint( wheelJoints[wheel] );
+		savefile->ReadFloat( wheelAngles[wheel] );
+
+		suspension[wheel] = static_cast<idAFConstraint_Suspension*>( af.GetPhysics()->GetConstraint( wheel ) );
+		suspension[wheel]->Setup( va( "suspension%d", wheel ), af.GetPhysics()->GetBody( 0 ), wheelModel );
+	}
+
+	savefile->ReadString( damage );
+	savefile->ReadString( fxCollide );
+	savefile->ReadInt( nextCollideFxTime );
+}
+
+/*
+==================
+idAFEntity_VehicleSimple::RecreateDynamicConstraints
+==================
+*/
+void idAFEntity_VehicleSimple::RecreateDynamicConstraints( idList<idAFConstraint*, TAG_IDLIB_LIST_PHYSICS>* constraints )
+{
+	int i;
+	for( i = 0; i < 4; i++ )
+	{
+		idAFConstraint_Suspension* constraint = new idAFConstraint_Suspension();
+		constraints->Append( constraint );
+	}
+}
+
+/*
+==================
+idAFEntity_VehicleSimple::Event_SetTireFriction
+==================
+*/
+void idAFEntity_VehicleSimple::Event_SetTireFriction( float tireFriction )
+{
+	vehicleTireFriction = tireFriction;
+
+	for( int i = 0; i < 4; i++ )
+	{
+		suspension[i]->SetSuspension(	vehicleSuspensionUp,
+										vehicleSuspensionDown,
+										vehicleSuspensionKCompress,
+										vehicleSuspensionDamping,
+										vehicleTireFriction );
+	}
+}
 
 /*
 ===============================================================================
@@ -2370,15 +3204,15 @@ void idAFEntity_VehicleFourWheels::Think()
 	if( thinkFlags & TH_THINK )
 	{
 
-		if( player )
+		if( driver )
 		{
 			// capture the input from a player
-			velocity = g_vehicleVelocity.GetFloat();
-			if( player->usercmd.forwardmove < 0 )
+			velocity = vehicleVelocity;
+			if( driver->usercmd.forwardmove < 0 )
 			{
 				velocity = -velocity;
 			}
-			force = idMath::Fabs( player->usercmd.forwardmove * g_vehicleForce.GetFloat() ) * ( 1.0f / 128.0f );
+			force = idMath::Fabs( driver->usercmd.forwardmove * vehicleForce ) * ( 1.0f / 128.0f );
 			steerAngle = GetSteerAngle();
 		}
 
@@ -2581,15 +3415,15 @@ void idAFEntity_VehicleSixWheels::Think()
 	if( thinkFlags & TH_THINK )
 	{
 
-		if( player )
+		if( driver )
 		{
 			// capture the input from a player
-			velocity = g_vehicleVelocity.GetFloat();
-			if( player->usercmd.forwardmove < 0 )
+			velocity = vehicleVelocity;
+			if( driver->usercmd.forwardmove < 0 )
 			{
 				velocity = -velocity;
 			}
-			force = idMath::Fabs( player->usercmd.forwardmove * g_vehicleForce.GetFloat() ) * ( 1.0f / 128.0f );
+			force = idMath::Fabs( driver->usercmd.forwardmove * vehicleForce ) * ( 1.0f / 128.0f );
 			steerAngle = GetSteerAngle();
 		}
 

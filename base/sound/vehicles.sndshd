@@ -1,0 +1,91 @@
+buggy_gun {
+	minDistance	5
+	maxDistance	100
+	volume 9
+	sound/buggy/buggy_gun.wav
+}
+
+buggy_noammo {
+	minDistance	5
+	maxDistance	100
+	volume 9
+	sound/weapons/cgun/wind_down.wav
+}
+
+buggy_idle {
+	minDistance	5
+	maxDistance	100
+	volume -2
+	looping
+	sound/machinery/machines/loop_airpump_02.wab
+	//sound/ff/hotidle.wav
+}
+
+buggy_slow {
+	minDistance	5
+	maxDistance	100
+	volume 10 //was 13
+	looping
+	sound/buggy/buggy_engine.wav
+}
+
+buggy_fast{ //not used?
+	minDistance	5
+	maxDistance	100
+	volume 15
+	looping
+	sound/machinery/machines/loop_machinery_05.wav
+}
+
+buggy_in {
+	minDistance	5
+	maxDistance	100
+	volume 15
+	sound/machinery/generators/generator_start_01.wav
+}
+
+buggy_out {
+	minDistance	15
+	maxDistance	100
+	volume 15
+	sound/machinery/machines/loops_1s/loop_machinery_1s_15.wav
+}
+
+buggy_bonk {
+	minDistance	30
+	maxDistance	100
+	volume	8 //3
+	no_dups
+
+	sound/movers/alphalabs4/pounder_1second_02.wav
+	sound/movers/alphalabs4/pounder_1second_04.wav
+}
+
+buggy_rundown {
+	minDistance	30
+	maxDistance	100
+	volume	18 //3
+	no_dups
+
+	sound/impact/solid/impact_01.wav
+	sound/impact/solid/impact_02.wav
+	sound/impact/solid/impact_03.wav
+}
+
+buggy_spinner {
+	minDistance	40
+	maxDistance	100
+	volume		10 //-2
+	//no_dups
+
+	sound/movers/alphalabs4/spinner_2s_03.wav
+}
+
+buggy_turbo
+{
+	minDistance	50
+	maxDistance	200
+	volume	10
+
+	sound/items/helltime_orb/enter_helltime.wav
+}

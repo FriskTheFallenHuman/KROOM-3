@@ -106,13 +106,6 @@ extern idCVar	g_dragDamping;
 extern idCVar	g_dragShowSelection;
 extern idCVar	g_dropItemRotation;
 
-extern idCVar	g_vehicleVelocity;
-extern idCVar	g_vehicleForce;
-extern idCVar	g_vehicleSuspensionUp;
-extern idCVar	g_vehicleSuspensionDown;
-extern idCVar	g_vehicleSuspensionKCompress;
-extern idCVar	g_vehicleSuspensionDamping;
-extern idCVar	g_vehicleTireFriction;
 extern idCVar	g_vehicleDebug;
 extern idCVar	g_debugShockwave;
 extern idCVar	g_enablePortalSky;

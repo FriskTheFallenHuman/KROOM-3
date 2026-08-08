@@ -45,8 +45,12 @@ public:
 
 	idForce_Spring();
 	virtual				~idForce_Spring();
+
+	void				Save( idSaveGame* savefile ) const;
+	void				Restore( idRestoreGame* savefile );
+
 	// initialize the spring
-	void				InitSpring( float Kstretch, float Kcompress, float damping, float restLength );
+	void				InitSpring( float Kstretch, float Kcompress, float damping, float restLength, float maxLength, bool pullEntity1 );
 	// set the entities and positions on these entities the spring is attached to
 	void				SetPosition(	idPhysics* physics1, int id1, const idVec3& p1,
 										idPhysics* physics2, int id2, const idVec3& p2 );
@@ -62,6 +66,8 @@ private:
 	float				Kcompress;
 	float				damping;
 	float				restLength;
+	float				maxLength;
+	bool				pullEntity1;
 
 	// positioning
 	idPhysics* 			physics1;	// first physics object

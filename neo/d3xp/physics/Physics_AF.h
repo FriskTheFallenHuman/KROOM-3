@@ -680,7 +680,9 @@ class idAFConstraint_Suspension : public idAFConstraint
 public:
 	idAFConstraint_Suspension();
 
-	void					Setup( const char* name, idAFBody* body, const idVec3& origin, const idMat3& axis, idClipModel* clipModel );
+	void					Setup( const char* name, idAFBody* body, idClipModel* clipModel );
+	void					SetPosition( const idVec3& origin, const idMat3& axis );
+
 	void					SetSuspension( const float up, const float down, const float k, const float d, const float f );
 
 	void					SetSteerAngle( const float degrees )
@@ -709,6 +711,10 @@ public:
 	virtual void			Translate( const idVec3& translation );
 	virtual void			Rotate( const idRotation& rotation );
 
+	const idVec3			GetLastContactPosition() const;
+	virtual void			Save( idSaveGame* savefile ) const;
+	virtual void			Restore( idRestoreGame* savefile );
+
 protected:
 	idVec3					localOrigin;				// position of suspension relative to body1
 	idMat3					localAxis;					// orientation of suspension relative to body1
@@ -725,6 +731,7 @@ protected:
 	idVec3					wheelOffset;				// wheel position relative to body1
 	trace_t					trace;						// contact point with the ground
 	float					epsilon;					// lcp epsilon
+	idVec3					lastContactPosition;
 
 protected:
 	virtual void			Evaluate( float invTimeStep );

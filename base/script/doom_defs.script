@@ -77,7 +77,9 @@ This defines some variables needed by the game script.
 //
 #define BUTTON_ATTACK		1			// attack button pressed
 #define BUTTON_TALK			2			// when the player is talking or in the menus
+#define BUTTON_ZOOM			4			// player is zooming
 #define BUTTON_WALKING		16			// player is walking
+#define BUTTON_SECATTACK	32			// sec attack button pressed
 #define BUTTON_ANY			128			// any key whatsoever
 
 //

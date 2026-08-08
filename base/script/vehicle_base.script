@@ -1,0 +1,241 @@
+/***********************************************************************
+
+vehicle_base.script
+
+base class for all vehicles.  implements common behavior.
+
+author: Ivan_the_B
+
+***********************************************************************/
+
+#define VEHICLE_ENGINE_UPD_TIME  0.1
+
+/***********************************************************************
+
+vehicle_base
+
+***********************************************************************/
+
+vector spreadAngles(float spread){
+	vector angles = '0 0 0';
+	if( sys.random(2) < 1 ){ 
+		angles_x = sys.random(spread); 
+	} else { 
+		angles_x = -sys.random(spread); 
+	}
+	if( sys.random(2) < 1 ){ 
+		angles_y = sys.random(spread); 
+	} else { 
+		angles_y = -sys.random(spread); 
+	}
+	return angles;
+}
+
+object vehicle_base {
+	//flags - required by the game
+	boolean		VEHICLE_FIRING;
+	boolean		VEHICLE_FORWARD;
+	boolean		VEHICLE_DEAD;
+
+	//engine sounds
+	float		fadelevel1_old;
+	float		fadelevel2_old;
+	float		nextSndUpdate;
+
+	//position validation
+	float		max_timeZ;
+	float		max_timeX;
+	boolean		is_okZ;
+	boolean		is_okX;
+	//boolean		showJumpTip;
+
+	//base functions
+	void		setupVehicle();
+	void		updateSounds();
+	void		startDrive();
+	void		updateDrive();
+	void		validatePosition();
+	void		smoke();
+	void		explode();
+
+	//called by the game code
+	void		init();
+	void		state_Idle();
+	void		state_Drive();
+	void		state_Killed();
+};
+
+/***********************************************************************
+
+	States
+
+***********************************************************************/
+
+void vehicle_base::init() {
+	//init vars
+	//sys.println("vehicle_base::init");
+	fadelevel1_old = 0;
+	fadelevel2_old = 0;
+	nextSndUpdate = 0;
+	max_timeZ = 0;
+	max_timeX = 0;
+	is_okZ = false;
+	is_okX = false;
+	//showJumpTip = true;
+
+	//waitFrame(); //wait a while before setup
+	setupVehicle();
+}
+
+void vehicle_base::state_Idle() {
+	//sys.println("vehicle_base::state_Idle");
+	//fireHudEvent("stop_jumpicon");
+	startSound("snd_out", SND_CHANNEL_BODY, 0);
+	stopSound( SND_CHANNEL_BODY2,0 );
+}
+
+void vehicle_base::state_Drive() {
+	//sys.println("vehicle_base::state_Drive");
+	startSound("snd_in", SND_CHANNEL_VOICE2 , 0); //SND_CHANNEL_ITEM
+	startSound("snd_idle", SND_CHANNEL_BODY, 0);
+	startSound("snd_go_slow", SND_CHANNEL_BODY2, 0);
+	//startSound("snd_go_fast", SND_CHANNEL_BODY3, 0);
+	fadeSound(SND_CHANNEL_BODY2, -60 , 0 );
+	//fadeSound(SND_CHANNEL_BODY3, -60 , 0 );
+
+	//force quick position crtl
+	is_okZ = false;
+	is_okX = false;
+	//if( showJumpTip ){
+	//	fireHudEvent("start_jumpicon_vehicle");
+	//	showJumpTip = false;
+	//}
+	startDrive();
+
+	while(1){
+		//upd sound
+		if( nextSndUpdate < sys.getTime() ){
+			updateSounds();
+			nextSndUpdate = sys.getTime() + VEHICLE_ENGINE_UPD_TIME;
+		}
+
+		updateDrive();
+		validatePosition();
+
+		waitFrame();
+		//sys.println("executing..." );
+	}
+}
+
+void vehicle_base::state_Killed() {
+	//sys.println("vehicle_base::state_Killed");
+	//fireHudEvent("stop_jumpicon");
+	stopSound( SND_CHANNEL_ANY, 0 );
+	smoke();
+	explode();
+}
+
+/***********************************************************************
+
+	Common utils
+
+***********************************************************************/
+
+void vehicle_base::smoke(){
+	// smoke
+	sys.setSpawnArg( "hide", "0" );
+	sys.setSpawnArg( "start_off", "0" );
+	sys.setSpawnArg( "bind", getName() );
+	vector s = sys.angToForward(getAngles()); //getVectorKey("adder_smoke");
+	vector v = getWorldOrigin();
+	sys.setSpawnArg( "origin", v+'0 0 8'+ s*(60) );
+	sys.setSpawnArg( "model", "gflamerhand.prt" );
+	sys.spawn( "func_emitter" );
+}
+
+void vehicle_base::explode() {
+	sys.setSpawnArg( "hide", "0" );
+	sys.setSpawnArg( "origin", getWorldOrigin() );
+	sys.setSpawnArg( "def_damage", "damage_sabaoth_explosion" );
+	sys.setSpawnArg( "model", "hugeexplosion.prt" );
+	sys.trigger(sys.spawn( "func_explosion" ));
+}
+
+void vehicle_base::validatePosition() {
+	vector angles = getAngles();
+
+	// Z
+	if((angles_z > 60) || (angles_z < -60)){
+		if(is_okZ){
+			is_okZ = false;
+			max_timeZ = sys.getTime() + 3;
+		}
+	}else{
+		if(!is_okZ){
+			max_timeZ = 0;
+			is_okZ = true;
+		}
+	}
+
+	//X
+	if((angles_x > 60) || (angles_x < -60)){
+		if(is_okX){
+			is_okX = false;
+			max_timeX = sys.getTime() + 3;
+		}
+	}else{
+		if(!is_okX){
+			max_timeX = 0;
+			is_okX = true;
+		}
+	}
+
+	//recover if needed
+	if( (!is_okZ && (max_timeZ < sys.getTime()) ) || (!is_okX && (max_timeX < sys.getTime()) ) ){
+		setWorldOrigin( getWorldOrigin() + '0 0 100');
+		if(!is_okX ){ //impennato
+			angles_x = 0;
+		}
+		angles_z = 0;
+		setAngles(angles);
+		is_okZ = true;
+		is_okX = true;
+	}
+}
+
+//TODO move engine snd to C++ ?
+void vehicle_base::updateSounds(){
+	float velocity = sys.vecLength( getLinearVelocity() );
+	float fadelevel1_new;
+	float fadelevel2_new;
+
+	if( VEHICLE_FORWARD ){
+		fadelevel1_new = -60;
+		fadelevel2_new = velocity/100;
+	}else{
+		fadelevel1_new = velocity/100;
+		fadelevel2_new = -60;
+	}
+	if((fadelevel1_new > (fadelevel1_old + 1)) || (fadelevel1_new < (fadelevel1_old - 1))){
+		fadeSound(SND_CHANNEL_BODY, fadelevel1_new , 0.1 );
+		fadelevel1_old = fadelevel1_new;
+	}
+	if((fadelevel2_new > (fadelevel2_old + 1)) || (fadelevel2_new < (fadelevel2_old - 1))){
+		fadeSound(SND_CHANNEL_BODY2, fadelevel2_new, 0.1 );
+		fadelevel2_old = fadelevel2_new;
+	}
+	
+	//sys.println("l1_new " + fadelevel1_new + "  - l2_new " + fadelevel2_new);
+}
+
+void vehicle_base::setupVehicle() {
+	//TEMPLATE METHOD
+}
+
+void vehicle_base::startDrive() {
+	//TEMPLATE METHOD
+}
+
+void vehicle_base::updateDrive() {
+	//TEMPLATE METHOD
+}

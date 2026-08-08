@@ -965,7 +965,7 @@ entityDef debris_barrelpiece {
 	"health"					"0"					// amount of damage projectile can take if damaged (0 means it can't be destroyed)
 	"velocity"					"1 450 150"//1 350 250			// how fast the projectile leaves the gun (or distance if fuse is 0)
 	"random_velocity"			"1"	
-	"linear_velocity_rand"		".5"				// new key added by Clone JC Denton, for more info, look in debris_brass def		
+	"linear_velocity_rand"		".5"	
 	"angular_velocity"			"1 -1 1"			// how the projectile is rotating when it leaves the gun
 	"thrust"					"0"					// the rate of acceleration (always in the direction of the projectiles model)
 	"thrust_start"				"0"					// when to start accelerating
@@ -1004,7 +1004,7 @@ entityDef debris_barreltop {
 	"health"					"0"					// amount of damage projectile can take if damaged (0 means it can't be destroyed)
 	"velocity"					"1 100 650"			// how fast the projectile leaves the gun (or distance if fuse is 0)
 	"random_velocity"			"1"
-	"linear_velocity_rand"		".5"				// new key added by Clone JC Denton, for more info, look in debris_brass def						
+	"linear_velocity_rand"		".5"
 	"angular_velocity"			"105 215 10"	    // how the projectile is rotating when it leaves the gun
 	"thrust"					"0"					// the rate of acceleration (always in the direction of the projectiles model)
 	"thrust_start"				"0"					// when to start accelerating
@@ -1023,7 +1023,7 @@ entityDef debris_barrelpiece2 {
 	"health"					"0"					// amount of damage projectile can take if damaged (0 means it can't be destroyed)
 	"velocity"					"1 250 550"	//"1 350 450"		// how fast the projectile leaves the gun (or distance if fuse is 0)
 	"random_velocity"			"1"						
-	"linear_velocity_rand"		".5"				// new key added by Clone JC Denton, for more info, look in debris_brass def
+	"linear_velocity_rand"		".5"
 	"angular_velocity"			"1 -1 1"			// how the projectile is rotating when it leaves the gun
 	"thrust"					"0"					// the rate of acceleration (always in the direction of the projectiles model)
 	"thrust_start"				"0"					// when to start accelerating
@@ -1042,11 +1042,58 @@ entityDef debris_barreltop2 {
 	"health"					"0"					// amount of damage projectile can take if damaged (0 means it can't be destroyed)
 	"velocity"					"1 200 650"			// how fast the projectile leaves the gun (or distance if fuse is 0)
 	"random_velocity"			"1"			
-	"linear_velocity_rand"		".5"				// new key added by Clone JC Denton, for more info, look in debris_brass def			
+	"linear_velocity_rand"		".5"
 	"angular_velocity"			"105 215 10"	    // how the projectile is rotating when it leaves the gun
 	"thrust"					"0"					// the rate of acceleration (always in the direction of the projectiles model)
 	"thrust_start"				"0"					// when to start accelerating
 	"thrust_end"				"0"					// when to stop accelerating
+}
+
+entityDef moveable_explodingbarrel {
+	"editor_color"				"0 .5 .8"
+	"editor_mins"				"-16 -16 0"
+	"editor_maxs"				"16 16 48"
+	"editor_rotatable"			"1"
+
+
+	"editor_usage"					"Moveable barrel. Works just like a func_moveable. However the barrel"
+	"editor_usage1"					"has special handling to make it appear more round. This version also explodes when damaged enough."
+	"editor_usage2"					"Only add model, model_detonate or model_burn or health to override defaults"
+	"editor_var burn"				"number of seconds to burn before exploding."
+	"editor_model model_damage"		"model to leave as damaged base"
+	"editor_model model_detonate"	"ips model to switch to for explosion."
+	"editor_model model_burn"		"ips model to show when on fire."
+	"editor_var def_debris"			"add as many as you like, debris1, debris2, etc.. "
+	"editor_var health"				"how much health the barrel has, default is 5. If burn is set to 1, the health is effectively doubled so you have to kill it twice to get the explosion"
+	"editor_var respawn"			"if non zero the number of seconds to respawn after killed"
+	"editor_var respawn_range"		"no player in distance range to actually respawn - default 256"
+	"editor_var respawn_again"		"try again in seconds if player in range - default 10"
+	"editor_var triggerTargets"		"if set to 1 will trigger targets after being killed"
+	"editor_mat mtr_lightExplode"	"light shader to use for explosion"
+	"editor_mat mtr_lightBurn"		"light shader to use for burning"
+	"editor_mat mtr_burnmark"		"shader to use for burn decal"
+	"editor_var triggerOnRespawn"	"if set to no zero will trigger targets this many seconds after being killed"
+
+	"spawnclass"				"idExplodingBarrel"
+
+	"density"					"0.02"
+	"friction"					"0.2"
+	"bouncyness"				"0.4"
+	"def_splash_damage"			"damage_explodingbarrel"
+	"model"						"models/mapobjects/fuel_barrel/exp_barrel.lwo"
+	"def_debris"				"debris_barreltop2"
+	"def_debris1"				"debris_barrelpiece2"
+	"def_debris2"				"debris_barrelpiece2"
+	"def_debris3"				"debris_barrelpiece2"
+	"model_detonate"			"barrelexplosion.prt"
+	"skin"						"skins/exp_barrel_red"
+	"mtr_lightexplode"			"lights/impflash"
+	"mtr_burnmark"				"textures/decals/ballburn01"
+	"light_radius"				"300"
+	"health"					"25"
+	"snd_explode"				"barrel_explosions"
+	"snd_bounce"				"metal_barrel_impact"
+
 }
 
 entityDef moveable_burningbarrel {

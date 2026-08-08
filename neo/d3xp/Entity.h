@@ -58,6 +58,8 @@ extern const idEventDef EV_SetSkin;
 extern const idEventDef EV_StartSoundShader;
 extern const idEventDef EV_StopSound;
 extern const idEventDef EV_CacheSoundShader;
+extern const idEventDef EV_GetDriver;
+extern const idEventDef EV_GetAimAngles;
 
 // Think flags
 enum
@@ -107,6 +109,8 @@ class signalList_t
 public:
 	idList<signal_t, TAG_ENTITY> signal[ NUM_SIGNALS ];
 };
+
+class idProjectile;
 
 /*
 ================================================
@@ -591,6 +595,8 @@ private:
 
 	void					UpdatePVSAreas();
 
+	idProjectile*			SysFireProjectile( const char* projDefName, idVec3& firePos, idVec3& dir, const float launchPower = 1.0f );
+
 public:
 	idVec3					GetOrigin();
 	float					DistanceTo( idEntity* ent );
@@ -668,6 +674,7 @@ private:
 	void					Event_GetGuiParm( int guiNum, const char* key );
 	void					Event_GetGuiParmFloat( int guiNum, const char* key );
 	void					Event_GuiNamedEvent( int guiNum, const char* event );
+	void					Event_FireProjectile( const char* projDefName , idVec3& firePos, idAngles& fireAng );
 };
 
 ID_INLINE float idEntity::DistanceTo( idEntity* ent )
