@@ -240,6 +240,7 @@ void idGameLocal::Clear()
 	aasNames.Clear();
 	lastAIAlertEntity = NULL;
 	lastAIAlertTime = 0;
+	lastAIAlertPos.Zero();
 	spawnArgs.Clear();
 	gravity.Set( 0, 0, -1 );
 	playerPVS.h = ( unsigned int ) - 1;
@@ -652,6 +653,7 @@ void idGameLocal::SaveGame( idFile* f, idFile* strings )
 
 	lastAIAlertEntity.Save( &savegame );
 	savegame.WriteInt( lastAIAlertTime );
+	savegame.WriteVec3( lastAIAlertPos );
 
 	savegame.WriteDict( &spawnArgs );
 
@@ -1023,6 +1025,7 @@ void idGameLocal::LoadMap( const char* mapName, int randseed )
 
 	lastAIAlertEntity = NULL;
 	lastAIAlertTime = 0;
+	lastAIAlertPos.Zero();
 
 	previousTime	= 0;
 	time			= 0;
@@ -1611,6 +1614,7 @@ bool idGameLocal::InitFromSaveGame( const char* mapName, idRenderWorld* renderWo
 
 	lastAIAlertEntity.Restore( &savegame );
 	savegame.ReadInt( lastAIAlertTime );
+	savegame.ReadVec3( lastAIAlertPos );
 
 	savegame.ReadDict( &spawnArgs );
 
@@ -4419,13 +4423,24 @@ bool idGameLocal::RequirementMet( idEntity* activator, const idStr& requires, in
 idGameLocal::AlertAI
 ============
 */
-void idGameLocal::AlertAI( idEntity* ent )
+void idGameLocal::AlertAI( idEntity* ent, const idVec3& pos )
 {
-	if( ent && ent->IsType( idActor::Type ) )
+	if( ent )
 	{
-		// alert them for the next frame
-		lastAIAlertTime = framenum + 1;
-		lastAIAlertEntity = static_cast<idActor*>( ent );
+		if( ent->IsType( idActor::Type ) )
+		{
+			// alert them for the next frame
+			lastAIAlertTime = framenum + 1;
+			lastAIAlertEntity = static_cast<idActor*>( ent );
+			lastAIAlertPos = pos;
+		}
+		else if( ent->IsType( idAFEntity_Vehicle::Type ) )
+		{
+			// alert them for the next frame
+			lastAIAlertTime = framenum + 1;
+			lastAIAlertEntity = static_cast<idAFEntity_Vehicle*>( ent )->GetDriver();
+			lastAIAlertPos = pos;
+		}
 	}
 }
 
@@ -4442,6 +4457,16 @@ idActor* idGameLocal::GetAlertEntity()
 	}
 
 	return NULL;
+}
+
+/*
+============
+idGameLocal::GetAlertPos
+============
+*/
+const idVec3& idGameLocal::GetAlertPos() const
+{
+	return lastAIAlertPos;
 }
 
 /*

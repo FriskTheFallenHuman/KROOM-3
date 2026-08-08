@@ -4442,7 +4442,7 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 	if( !silent_fire )
 	{
 		// wake up nearby monsters
-		gameLocal.AlertAI( owner );
+		gameLocal.AlertAI( owner, playerViewOrigin );
 	}
 
 	// set the shader parm to the time of last projectile firing,
@@ -4784,7 +4784,7 @@ void idWeapon::Event_LaunchProjectilesEllipse( int num_projectiles, float spread
 	if( !silent_fire )
 	{
 		// wake up nearby monsters
-		gameLocal.AlertAI( owner );
+		gameLocal.AlertAI( owner, playerViewOrigin );
 	}
 
 	// set the shader parm to the time of last projectile firing,

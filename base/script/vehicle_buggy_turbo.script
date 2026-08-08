@@ -1,0 +1,62 @@
+/***********************************************************************
+
+vehicle_buggy.script
+
+author: Ivan_the_B
+
+***********************************************************************/
+
+object vehicle_buggy_turbo : vehicle_base {
+	float		fire_rate;
+	float		turbo_time;
+	float		turbo_power;
+	float		nextFireTime;
+
+	void		init();
+	void		startDrive();
+	void		updateDrive();
+	//void		updHudTurbo();
+	void		turbo();
+};
+
+void vehicle_buggy_turbo::init() {
+	fire_rate = getFloatKey("fire_rate");
+	turbo_time = getFloatKey("turbo_time");
+	turbo_power = getFloatKey("turbo_power");
+	nextFireTime = 0;
+}
+
+void vehicle_buggy_turbo::startDrive(){
+	//fireHudEvent( "set_weapon_bar_icon0");
+	//setHudGuiParm( "weapon_bar_value", HUD_WBAR_MAX_VALUE );
+}
+
+void vehicle_buggy_turbo::turbo(){
+	float endtime = sys.getTime() + turbo_time;
+	vector vec_velox;
+	vector dir;
+	while( (endtime > sys.getTime()) /*&& PLAYER_ONBOARD*/ ){
+		dir = sys.angToForward(getAngles());
+		vec_velox = getLinearVelocity();
+		setLinearVelocity(vec_velox + dir * turbo_power);
+		//wait
+		sys.waitFrame();
+	}
+}
+
+void vehicle_buggy_turbo::updateDrive(){
+	// fire
+	if( VEHICLE_FIRING ){
+		if( nextFireTime < sys.getTime() ){
+			thread turbo();
+			//thread reloadHudWeaponBar(fire_rate);
+
+			//workaround: somehow the engine script is also changing this volume 
+			//startSound("snd_fire", SND_CHANNEL_WEAPON, 0);
+			entity driver = getDriver();
+			driver.startSoundShader("ff_buggy_turbo", SND_CHANNEL_ANY);
+			
+			nextFireTime = sys.getTime() + fire_rate; // 0.1;
+		}
+	}
+}

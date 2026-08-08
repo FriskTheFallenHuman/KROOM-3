@@ -528,8 +528,9 @@ public:
 
 	bool					RequirementMet( idEntity* activator, const idStr& requires, int removeItem );
 
-	void					AlertAI( idEntity* ent );
+	void					AlertAI( idEntity* ent, const idVec3& pos );
 	idActor* 				GetAlertEntity();
+	const idVec3& 			GetAlertPos() const;
 
 	bool					InPlayerPVS( idEntity* ent ) const;
 	bool					InPlayerConnectedArea( idEntity* ent ) const;
@@ -674,6 +675,7 @@ private:
 
 	idEntityPtr<idActor>	lastAIAlertEntity;
 	int						lastAIAlertTime;
+	idVec3					lastAIAlertPos;
 
 	idDict					spawnArgs;				// spawn args used during entity spawning  FIXME: shouldn't be necessary anymore
 

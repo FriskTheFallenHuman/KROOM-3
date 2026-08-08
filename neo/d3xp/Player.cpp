@@ -87,6 +87,9 @@ const float MIN_BOB_SPEED = 5.0f;
 // Special team used for spectators that we ONLY store on lobby.  The local team property on player remains as 0 or 1.
 const float LOBBY_SPECTATE_TEAM_FOR_VOICE_CHAT = 2;
 
+// vehicle
+const int VEHICLE_ENTER_DELAY = 1700; //ms
+
 const idEventDef EV_Player_GetButtons( "getButtons", NULL, 'd' );
 const idEventDef EV_Player_GetMove( "getMove", NULL, 'v' );
 const idEventDef EV_Player_GetViewAngles( "getViewAngles", NULL, 'v' );
@@ -117,6 +120,7 @@ const idEventDef EV_Player_StopHelltime( "stopHelltime", "d" );
 const idEventDef EV_Player_ToggleBloom( "toggleBloom", "d" );
 const idEventDef EV_Player_SetBloomParms( "setBloomParms", "ff" );
 const idEventDef EV_Player_Damage( "Damage", "s" );
+const idEventDef EV_Player_IsOnVehicle( "isOnVehicle", NULL, 'd' );
 
 CLASS_DECLARATION( idActor, idPlayer )
 EVENT( EV_Player_GetButtons,			idPlayer::Event_GetButtons )
@@ -147,6 +151,7 @@ EVENT( EV_Player_StopHelltime,			idPlayer::Event_StopHelltime )
 EVENT( EV_Player_ToggleBloom,			idPlayer::Event_ToggleBloom )
 EVENT( EV_Player_SetBloomParms,			idPlayer::Event_SetBloomParms )
 EVENT( EV_Player_Damage,				idPlayer::Event_Damage )
+EVENT( EV_Player_IsOnVehicle,			idPlayer::Event_IsOnVehicle )
 END_CLASS
 
 const int MAX_RESPAWN_TIME = 10000;
@@ -1553,6 +1558,7 @@ idPlayer::idPlayer():
 	previousWeapon			= -1;
 	weaponSwitchTime		=  0;
 	weaponEnabled			= true;
+	weaponEnabledOnRideExit	= true;
 	weapon_soulcube			= -1;
 	weapon_pda				= -1;
 	weapon_fists			= -1;
@@ -1613,6 +1619,9 @@ idPlayer::idPlayer():
 	talkCursor				= 0;
 	focusVehicle			= NULL;
 	cursor					= NULL;
+
+	currentVehicle			= NULL;
+	nextVehicleTime			= 0;
 
 	oldMouseX				= 0;
 	oldMouseY				= 0;
@@ -1765,6 +1774,7 @@ void idPlayer::Init()
 	previousWeapon			= -1;
 	weaponSwitchTime		= 0;
 	weaponEnabled			= true;
+	weaponEnabledOnRideExit	= true;
 
 	weapon_soulcube			= SlotForWeapon( "weapon_soulcube" );
 	weapon_pda				= SlotForWeapon( "weapon_pda" );
@@ -1829,6 +1839,9 @@ void idPlayer::Init()
 	focusCharacter			= NULL;
 	talkCursor				= 0;
 	focusVehicle			= NULL;
+
+	currentVehicle			= NULL;
+	nextVehicleTime			= 0;
 
 	// remove any damage effects
 	playerView.ClearEffects();
@@ -2465,6 +2478,7 @@ void idPlayer::Save( idSaveGame* savefile ) const
 	savefile->WriteInt( previousWeapon );
 	savefile->WriteInt( weaponSwitchTime );
 	savefile->WriteBool( weaponEnabled );
+	savefile->WriteBool( weaponEnabledOnRideExit );
 
 	savefile->WriteInt( skinIndex );
 	savefile->WriteSkin( skin );
@@ -2520,6 +2534,8 @@ void idPlayer::Save( idSaveGame* savefile ) const
 	savefile->WriteInt( focusTime );
 	savefile->WriteObject( focusVehicle );
 	savefile->WriteUserInterface( cursor, false );
+
+	savefile->WriteInt( nextVehicleTime );
 
 	savefile->WriteInt( oldMouseX );
 	savefile->WriteInt( oldMouseY );
@@ -2785,6 +2801,7 @@ void idPlayer::Restore( idRestoreGame* savefile )
 	savefile->ReadInt( previousWeapon );
 	savefile->ReadInt( weaponSwitchTime );
 	savefile->ReadBool( weaponEnabled );
+	savefile->ReadBool( weaponEnabledOnRideExit );
 
 	savefile->ReadInt( skinIndex );
 	savefile->ReadSkin( skin );
@@ -2849,6 +2866,8 @@ void idPlayer::Restore( idRestoreGame* savefile )
 	savefile->ReadInt( focusTime );
 	savefile->ReadObject( reinterpret_cast<idClass*&>( focusVehicle ) );
 	savefile->ReadUserInterface( cursor );
+
+	savefile->ReadInt( nextVehicleTime );
 
 	savefile->ReadInt( oldMouseX );
 	savefile->ReadInt( oldMouseY );
@@ -3696,7 +3715,15 @@ void idPlayer::EnterCinematic()
 		StopHelltime();
 	}
 
-	Hide();
+	if( currentVehicle )
+	{
+		currentVehicle->PostEventMS( &EV_Hide, 0 );
+	}
+	else
+	{
+		Hide();
+	}
+
 	StopSound( SND_CHANNEL_PDA_AUDIO, false );
 	StopSound( SND_CHANNEL_PDA_VIDEO, false );
 
@@ -3743,7 +3770,14 @@ idPlayer::ExitCinematic
 */
 void idPlayer::ExitCinematic()
 {
-	Show();
+	if( currentVehicle )
+	{
+		currentVehicle->PostEventMS( &EV_Show, 0 );
+	}
+	else
+	{
+		Show();
+	}
 
 	if( weaponEnabled && weapon.GetEntity() )
 	{
@@ -4290,6 +4324,18 @@ bool idPlayer::GivePowerUp( int powerup, int time, unsigned int giveFlags )
 
 		if( giveFlags & ITEM_GIVE_UPDATE_STATE )
 		{
+			switch( powerup )
+			{
+				case HELLTIME:
+				{
+					if( IsRiding() )
+					{
+						return false; //not allowed
+					}
+					break;
+				}
+			}
+
 			if( common->IsServer() )
 			{
 				idBitMsg	msg;
@@ -5581,6 +5627,11 @@ idUserInterface* idPlayer::ActiveGui()
 		return NULL;
 	}
 
+	if( IsRiding() )
+	{
+		return NULL;
+	}
+
 	return focusUI;
 }
 
@@ -6394,218 +6445,228 @@ void idPlayer::UpdateFocus()
 	oldTalkCursor	= talkCursor;
 	oldVehicle		= focusVehicle;
 
-	if( focusTime <= gameLocal.time )
+	if( privateCameraView || IsRiding() )
 	{
-		ClearFocus();
+		ClearFocus(); //clear current focus entity
 	}
-
-	// don't let spectators interact with GUIs
-	if( spectating )
+	else
 	{
-		return;
-	}
-
-	start = GetEyePosition();
-	end = start + firstPersonViewAxis[0] * 80.0f;
-
-	// player identification -> names to the hud
-	if( common->IsMultiplayer() && IsLocallyControlled() )
-	{
-		idVec3 end = start + viewAngles.ToForward() * 768.0f;
-		gameLocal.clip.TracePoint( trace, start, end, MASK_SHOT_BOUNDINGBOX, this );
-		int iclient = -1;
-		if( ( trace.fraction < 1.0f ) && ( trace.c.entityNum < MAX_CLIENTS ) )
+		if( focusTime <= gameLocal.time )
 		{
-			iclient = trace.c.entityNum;
-		}
-		if( MPAim != iclient )
-		{
-			lastMPAim = MPAim;
-			MPAim = iclient;
-			lastMPAimTime = gameLocal.realClientTime;
-		}
-	}
-
-	idBounds bounds( start );
-	bounds.AddPoint( end );
-
-	listedClipModels = gameLocal.clip.ClipModelsTouchingBounds( bounds, -1, clipModelList, MAX_GENTITIES );
-
-	// no pretense at sorting here, just assume that there will only be one active
-	// gui within range along the trace
-	for( i = 0; i < listedClipModels; i++ )
-	{
-		clip = clipModelList[ i ];
-		ent = clip->GetEntity();
-
-		if( ent->IsHidden() )
-		{
-			continue;
-		}
-
-		if( allowFocus )
-		{
-			if( ent->IsType( idAFAttachment::Type ) )
-			{
-				idEntity* body = static_cast<idAFAttachment*>( ent )->GetBody();
-				if( body != NULL && body->IsType( idAI::Type ) && ( static_cast<idAI*>( body )->GetTalkState() >= TALK_OK ) )
-				{
-					gameLocal.clip.TracePoint( trace, start, end, MASK_SHOT_RENDERMODEL, this );
-					if( ( trace.fraction < 1.0f ) && ( trace.c.entityNum == ent->entityNumber ) )
-					{
-						ClearFocus();
-						focusCharacter = static_cast<idAI*>( body );
-						talkCursor = 1;
-						focusTime = gameLocal.time + FOCUS_TIME;
-						break;
-					}
-				}
-				continue;
-			}
-
-			if( ent->IsType( idAI::Type ) )
-			{
-				if( static_cast<idAI*>( ent )->GetTalkState() >= TALK_OK )
-				{
-					gameLocal.clip.TracePoint( trace, start, end, MASK_SHOT_RENDERMODEL, this );
-					if( ( trace.fraction < 1.0f ) && ( trace.c.entityNum == ent->entityNumber ) )
-					{
-						ClearFocus();
-						focusCharacter = static_cast<idAI*>( ent );
-						talkCursor = 1;
-						focusTime = gameLocal.time + FOCUS_TIME;
-						break;
-					}
-				}
-				continue;
-			}
-
-			if( ent->IsType( idAFEntity_Vehicle::Type ) )
-			{
-				gameLocal.clip.TracePoint( trace, start, end, MASK_SHOT_RENDERMODEL, this );
-				if( ( trace.fraction < 1.0f ) && ( trace.c.entityNum == ent->entityNumber ) )
-				{
-					ClearFocus();
-					focusVehicle = static_cast<idAFEntity_Vehicle*>( ent );
-					focusTime = gameLocal.time + FOCUS_TIME;
-					break;
-				}
-				continue;
-			}
-		}
-
-		if( !ent->GetRenderEntity() || !ent->GetRenderEntity()->gui[ 0 ] || !ent->GetRenderEntity()->gui[ 0 ]->IsInteractive() )
-		{
-			continue;
-		}
-
-		if( ent->spawnArgs.GetBool( "inv_item" ) )
-		{
-			// don't allow guis on pickup items focus
-			continue;
-		}
-
-		pt = gameRenderWorld->GuiTrace( ent->GetModelDefHandle(), start, end );
-		if( pt.x != -1 )
-		{
-			// we have a hit
-			renderEntity_t* focusGUIrenderEntity = ent->GetRenderEntity();
-			if( !focusGUIrenderEntity )
-			{
-				continue;
-			}
-
-			if( pt.guiId == 1 )
-			{
-				ui = focusGUIrenderEntity->gui[ 0 ];
-			}
-			else if( pt.guiId == 2 )
-			{
-				ui = focusGUIrenderEntity->gui[ 1 ];
-			}
-			else
-			{
-				ui = focusGUIrenderEntity->gui[ 2 ];
-			}
-
-			if( ui == NULL )
-			{
-				continue;
-			}
-
 			ClearFocus();
-			focusGUIent = ent;
-			focusUI = ui;
+		}
 
-			if( oldFocus != ent )
+		// don't let spectators interact with GUIs
+		if( spectating )
+		{
+			return;
+		}
+
+		start = GetEyePosition();
+		end = start + firstPersonViewAxis[0] * 80.0f;
+
+		// player identification -> names to the hud
+		if( common->IsMultiplayer() && IsLocallyControlled() )
+		{
+			idVec3 end = start + viewAngles.ToForward() * 768.0f;
+			gameLocal.clip.TracePoint( trace, start, end, MASK_SHOT_BOUNDINGBOX, this );
+			int iclient = -1;
+			if( ( trace.fraction < 1.0f ) && ( trace.c.entityNum < MAX_CLIENTS ) )
 			{
-				// new activation
-				// going to see if we have anything in inventory a gui might be interested in
-				// need to enumerate inventory items
-				focusUI->SetStateInt( "inv_count", inventory.items.Num() );
-				for( j = 0; j < inventory.items.Num(); j++ )
-				{
-					idDict* item = inventory.items[ j ];
-					const char* iname = item->GetString( "inv_name" );
-					const char* iicon = item->GetString( "inv_icon" );
-					const char* itext = item->GetString( "inv_text" );
+				iclient = trace.c.entityNum;
+			}
+			if( MPAim != iclient )
+			{
+				lastMPAim = MPAim;
+				MPAim = iclient;
+				lastMPAimTime = gameLocal.realClientTime;
+			}
+		}
 
-					focusUI->SetStateString( va( "inv_name_%i", j ), iname );
-					focusUI->SetStateString( va( "inv_icon_%i", j ), iicon );
-					focusUI->SetStateString( va( "inv_text_%i", j ), itext );
-					kv = item->MatchPrefix( "inv_id", NULL );
-					if( kv )
+		idBounds bounds( start );
+		bounds.AddPoint( end );
+
+		listedClipModels = gameLocal.clip.ClipModelsTouchingBounds( bounds, -1, clipModelList, MAX_GENTITIES );
+
+		// no pretense at sorting here, just assume that there will only be one active
+		// gui within range along the trace
+		for( i = 0; i < listedClipModels; i++ )
+		{
+			clip = clipModelList[ i ];
+			ent = clip->GetEntity();
+
+			if( ent->IsHidden() )
+			{
+				continue;
+			}
+
+			if( allowFocus )
+			{
+				if( ent->IsType( idAFAttachment::Type ) )
+				{
+					idEntity* body = static_cast<idAFAttachment*>( ent )->GetBody();
+					if( body != NULL && body->IsType( idAI::Type ) && ( static_cast<idAI*>( body )->GetTalkState() >= TALK_OK ) )
 					{
-						focusUI->SetStateString( va( "inv_id_%i", j ), kv->GetValue() );
+						gameLocal.clip.TracePoint( trace, start, end, MASK_SHOT_RENDERMODEL, this );
+						if( ( trace.fraction < 1.0f ) && ( trace.c.entityNum == ent->entityNumber ) )
+						{
+							ClearFocus();
+							focusCharacter = static_cast<idAI*>( body );
+							talkCursor = 1;
+							focusTime = gameLocal.time + FOCUS_TIME;
+							break;
+						}
 					}
-					focusUI->SetStateInt( iname, 1 );
+					continue;
 				}
 
-
-				for( j = 0; j < inventory.pdaSecurity.Num(); j++ )
+				if( ent->IsType( idAI::Type ) )
 				{
-					const char* p = inventory.pdaSecurity[ j ];
-					if( p && *p )
+					if( static_cast<idAI*>( ent )->GetTalkState() >= TALK_OK )
 					{
-						focusUI->SetStateInt( p, 1 );
+						gameLocal.clip.TracePoint( trace, start, end, MASK_SHOT_RENDERMODEL, this );
+						if( ( trace.fraction < 1.0f ) && ( trace.c.entityNum == ent->entityNumber ) )
+						{
+							ClearFocus();
+							focusCharacter = static_cast<idAI*>( ent );
+							talkCursor = 1;
+							focusTime = gameLocal.time + FOCUS_TIME;
+							break;
+						}
 					}
+					continue;
 				}
 
-				int powerCellCount = 0;
-				for( j = 0; j < inventory.items.Num(); j++ )
+				if( ent->IsType( idAFEntity_Vehicle::Type ) )
 				{
-					idDict* item = inventory.items[ j ];
-					if( item->GetInt( "inv_powercell" ) )
+					idBounds bounds;
+					bounds.Zero();
+					bounds.ExpandSelf( 20.0f );
+					gameLocal.clip.TraceBounds( trace, start, end, bounds, MASK_SHOT_RENDERMODEL, this );
+					if( ( trace.fraction < 1.0f ) && ( trace.c.entityNum == ent->entityNumber ) )
 					{
-						powerCellCount++;
+						ClearFocus();
+						focusVehicle = static_cast<idAFEntity_Vehicle*>( ent );
+						focusTime = gameLocal.time + FOCUS_TIME;
+						break;
 					}
-				}
-				focusUI->SetStateInt( "powercell_count", powerCellCount );
-
-				int staminapercentage = ( int )( 100.0f * stamina / pm_stamina.GetFloat() );
-				focusUI->SetStateString( "player_health", va( "%i", health ) );
-				focusUI->SetStateString( "player_stamina", va( "%i%%", staminapercentage ) );
-				focusUI->SetStateString( "player_armor", va( "%i%%", inventory.armor ) );
-
-				kv = focusGUIent->spawnArgs.MatchPrefix( "gui_parm", NULL );
-				while( kv )
-				{
-					focusUI->SetStateString( kv->GetKey(), kv->GetValue() );
-					kv = focusGUIent->spawnArgs.MatchPrefix( "gui_parm", kv );
+					continue;
 				}
 			}
 
-			// clamp the mouse to the corner
-			ev = sys->GenerateMouseMoveEvent( -2000, -2000 );
-			command = focusUI->HandleEvent( &ev, gameLocal.fast.time );
-			HandleGuiCommands( focusGUIent, command );
+			if( !ent->GetRenderEntity() || !ent->GetRenderEntity()->gui[ 0 ] || !ent->GetRenderEntity()->gui[ 0 ]->IsInteractive() )
+			{
+				continue;
+			}
 
-			// move to an absolute position
-			ev = sys->GenerateMouseMoveEvent( pt.x * SCREEN_WIDTH, pt.y * SCREEN_HEIGHT );
-			command = focusUI->HandleEvent( &ev, gameLocal.fast.time );
-			HandleGuiCommands( focusGUIent, command );
-			focusTime = gameLocal.time + FOCUS_GUI_TIME;
-			break;
+			if( ent->spawnArgs.GetBool( "inv_item" ) )
+			{
+				// don't allow guis on pickup items focus
+				continue;
+			}
+
+			pt = gameRenderWorld->GuiTrace( ent->GetModelDefHandle(), start, end );
+			if( pt.x != -1 )
+			{
+				// we have a hit
+				renderEntity_t* focusGUIrenderEntity = ent->GetRenderEntity();
+				if( !focusGUIrenderEntity )
+				{
+					continue;
+				}
+
+				if( pt.guiId == 1 )
+				{
+					ui = focusGUIrenderEntity->gui[ 0 ];
+				}
+				else if( pt.guiId == 2 )
+				{
+					ui = focusGUIrenderEntity->gui[ 1 ];
+				}
+				else
+				{
+					ui = focusGUIrenderEntity->gui[ 2 ];
+				}
+
+				if( ui == NULL )
+				{
+					continue;
+				}
+
+				ClearFocus();
+				focusGUIent = ent;
+				focusUI = ui;
+
+				if( oldFocus != ent )
+				{
+					// new activation
+					// going to see if we have anything in inventory a gui might be interested in
+					// need to enumerate inventory items
+					focusUI->SetStateInt( "inv_count", inventory.items.Num() );
+					for( j = 0; j < inventory.items.Num(); j++ )
+					{
+						idDict* item = inventory.items[ j ];
+						const char* iname = item->GetString( "inv_name" );
+						const char* iicon = item->GetString( "inv_icon" );
+						const char* itext = item->GetString( "inv_text" );
+
+						focusUI->SetStateString( va( "inv_name_%i", j ), iname );
+						focusUI->SetStateString( va( "inv_icon_%i", j ), iicon );
+						focusUI->SetStateString( va( "inv_text_%i", j ), itext );
+						kv = item->MatchPrefix( "inv_id", NULL );
+						if( kv )
+						{
+							focusUI->SetStateString( va( "inv_id_%i", j ), kv->GetValue() );
+						}
+						focusUI->SetStateInt( iname, 1 );
+					}
+
+
+					for( j = 0; j < inventory.pdaSecurity.Num(); j++ )
+					{
+						const char* p = inventory.pdaSecurity[ j ];
+						if( p && *p )
+						{
+							focusUI->SetStateInt( p, 1 );
+						}
+					}
+
+					int powerCellCount = 0;
+					for( j = 0; j < inventory.items.Num(); j++ )
+					{
+						idDict* item = inventory.items[ j ];
+						if( item->GetInt( "inv_powercell" ) )
+						{
+							powerCellCount++;
+						}
+					}
+					focusUI->SetStateInt( "powercell_count", powerCellCount );
+
+					int staminapercentage = ( int )( 100.0f * stamina / pm_stamina.GetFloat() );
+					focusUI->SetStateString( "player_health", va( "%i", health ) );
+					focusUI->SetStateString( "player_stamina", va( "%i%%", staminapercentage ) );
+					focusUI->SetStateString( "player_armor", va( "%i%%", inventory.armor ) );
+
+					kv = focusGUIent->spawnArgs.MatchPrefix( "gui_parm", NULL );
+					while( kv )
+					{
+						focusUI->SetStateString( kv->GetKey(), kv->GetValue() );
+						kv = focusGUIent->spawnArgs.MatchPrefix( "gui_parm", kv );
+					}
+				}
+
+				// clamp the mouse to the corner
+				ev = sys->GenerateMouseMoveEvent( -2000, -2000 );
+				command = focusUI->HandleEvent( &ev, gameLocal.fast.time );
+				HandleGuiCommands( focusGUIent, command );
+
+				// move to an absolute position
+				ev = sys->GenerateMouseMoveEvent( pt.x * SCREEN_WIDTH, pt.y * SCREEN_HEIGHT );
+				command = focusUI->HandleEvent( &ev, gameLocal.fast.time );
+				HandleGuiCommands( focusGUIent, command );
+				focusTime = gameLocal.time + FOCUS_GUI_TIME;
+				break;
+			}
 		}
 	}
 
@@ -7506,6 +7567,111 @@ void idPlayer::SetClipModel()
 
 /*
 ==============
+idPlayer::UseUseThirdPersonCamera
+==============
+*/
+bool idPlayer::UseThirdPersonCamera( void )
+{
+	return pm_thirdPerson.GetBool() || IsRiding();
+}
+
+/*
+==============
+idPlayer::SetupForRiding
+==============
+*/
+void idPlayer::CommonRidingSetup( idEntity* riddenEnt )
+{
+	physicsObj.DisableClip();
+
+	weaponEnabledOnRideExit = weaponEnabled;
+	weaponEnabled = false;
+
+	if( !gameLocal.inCinematic )
+	{
+		Hide();
+		if( weapon.GetEntity() )
+		{
+			weapon.GetEntity()->EnterCinematic();
+		}
+	}
+
+	if( PowerUpActive( HELLTIME ) )
+	{
+		ClearPowerup( HELLTIME );
+	}
+}
+
+/*
+==============
+idPlayer::SetupForRiding
+==============
+*/
+void idPlayer::CommonRidingCleanUp( bool killed )
+{
+	currentVehicle = NULL;
+
+	if( !gameLocal.inCinematic )
+	{
+		Show();
+	}
+
+	physicsObj.EnableClip();
+
+	if( !killed )
+	{
+		weaponEnabled = weaponEnabledOnRideExit;
+		if( weaponEnabled && weapon.GetEntity() && !gameLocal.inCinematic )
+		{
+			weapon.GetEntity()->ExitCinematic();
+		}
+
+		//restore player hud
+		//if( hud )
+		//{
+		//	UpdateEveryAmmoOnHud(); //make sure ammo are up to date, especially possession pw
+		//	hud->HandleNamedEvent( "stop_riding" );
+		//}
+		//if( cursor )
+		//{
+		//	cursor->HandleNamedEvent( "enableDefaultCursor" );
+		//}
+	}
+}
+
+/*
+==============
+idPlayer::EnterVehicle
+==============
+*/
+void idPlayer::EnterVehicle( idAFEntity_Vehicle* vehicle )
+{
+	if( !IsRiding() && vehicle && vehicle->StartDriving( this ) )
+	{
+		currentVehicle = vehicle;
+		CommonRidingSetup( vehicle );
+		//vehicle->InitHudStats( hud, cursor );
+		//vehicle->UpdateHudStats( hud );
+	}
+}
+
+/*
+==============
+idPlayer::ExitVehicle
+==============
+*/
+void idPlayer::ExitVehicle( void )
+{
+	if( currentVehicle )
+	{
+		currentVehicle->StopDriving();
+		CommonRidingCleanUp( false );
+		nextVehicleTime = gameLocal.time + VEHICLE_ENTER_DELAY;
+	}
+}
+
+/*
+==============
 idPlayer::Use
 ==============
 */
@@ -7548,12 +7714,14 @@ void idPlayer::Use()
 		return;
 	}
 
-	// If we're bound to a vehicle, use it
-	if( GetBindMaster() && GetBindMaster()->IsType( idAFEntity_Vehicle::Type ) )
+	// If we're inside a vehicle, exit
+	if( currentVehicle )
 	{
-		Show();
-		static_cast<idAFEntity_Vehicle*>( GetBindMaster() )->Use( this );
-		return;
+		if( usercmd.buttons & BUTTON_USE || noclip )
+		{
+			ExitVehicle();
+			return;
+		}
 	}
 
 	// Default interaction trace: enter/use vehicle or activate entity
@@ -7565,11 +7733,10 @@ void idPlayer::Use()
 		ent = gameLocal.entities[ trace.c.entityNum ];
 		if( ent )
 		{
-			// If it's a vehicle, enter it
-			if( ent->IsType( idAFEntity_Vehicle::Type ) )
+			// If we're outside a vehicle, enter
+			if( focusVehicle && !noclip && nextVehicleTime < gameLocal.time )
 			{
-				Hide();
-				static_cast<idAFEntity_Vehicle*>( ent )->Use( this );
+				EnterVehicle( focusVehicle );
 				return;
 			}
 
@@ -7810,6 +7977,11 @@ void idPlayer::AdjustSpeed()
 	float speed;
 	float rate;
 
+	if( IsRiding() )
+	{
+		speed = 0.0f;
+		bobFrac = 0.0f;
+	}
 	if( spectating )
 	{
 		speed = pm_spectatespeed.GetFloat();
@@ -8117,7 +8289,7 @@ void idPlayer::Move_Interpolated( float fraction )
 	physicsObj.SetMaxStepHeight( pm_stepsize.GetFloat() );
 	physicsObj.SetMaxJumpHeight( pm_jumpheight.GetFloat() );
 
-	if( noclip )
+	if( noclip || IsRiding() )
 	{
 		physicsObj.SetContents( 0 );
 		physicsObj.SetMovementType( PM_NOCLIP );
@@ -8358,7 +8530,7 @@ void idPlayer::Move()
 		}
 	}
 
-	if( noclip || gameLocal.inCinematic || ( influenceActive == INFLUENCE_LEVEL2 ) )
+	if( noclip || gameLocal.inCinematic || ( influenceActive == INFLUENCE_LEVEL2 ) || IsRiding() )
 	{
 		AI_CROUCH	= false;
 		AI_ONGROUND	= ( influenceActive == INFLUENCE_LEVEL2 );
@@ -9389,6 +9561,11 @@ void idPlayer::Kill( bool delayRespawn, bool nodamage )
 		}
 		else
 		{
+			if( currentVehicle )
+			{
+				ExitVehicle();
+			}
+
 			Damage( this, this, vec3_origin, "damage_suicide", 1.0f, INVALID_JOINT );
 			if( delayRespawn )
 			{
@@ -9893,7 +10070,7 @@ void idPlayer::Damage( idEntity* inflictor, idEntity* attacker, const idVec3& di
 
 	SetTimeState ts( timeGroup );
 
-	if( !fl.takedamage || noclip || spectating || gameLocal.inCinematic || godmode )
+	if( !fl.takedamage || noclip || spectating || gameLocal.inCinematic || godmode || IsRiding() )
 	{
 		return;
 	}
@@ -10075,6 +10252,14 @@ void idPlayer::Teleport( const idVec3& origin, const idAngles& angles, idEntity*
 {
 	idVec3 org;
 
+	teleportEntity = destination;
+
+	if( currentVehicle )
+	{
+		currentVehicle->Teleport( origin, angles, destination );
+		return;
+	}
+
 	if( weapon.GetEntity() )
 	{
 		weapon.GetEntity()->LowerWeapon();
@@ -10103,8 +10288,6 @@ void idPlayer::Teleport( const idVec3& origin, const idAngles& angles, idEntity*
 	}
 
 	UpdateVisuals();
-
-	teleportEntity = destination;
 
 	if( !common->IsClient() && !noclip )
 	{
@@ -10136,14 +10319,28 @@ void idPlayer::SetPrivateCameraView( idCamera* camView )
 	privateCameraView = camView;
 	if( camView )
 	{
-		StopFiring();
-		Hide();
+		if( currentVehicle )
+		{
+			currentVehicle->PostEventMS( &EV_Hide, 0 );
+		}
+		else
+		{
+			StopFiring();
+			Hide();
+		}
 	}
 	else
 	{
 		if( !spectating )
 		{
-			Show();
+			if( currentVehicle )
+			{
+				currentVehicle->PostEventMS( &EV_Show, 0 );
+			}
+			else
+			{
+				Show();
+			}
 		}
 	}
 }
@@ -10417,9 +10614,20 @@ void idPlayer::OffsetThirdPersonView( float angle, float range, float height, bo
 	idAngles		angles;
 	idMat3			axis;
 	idBounds		bounds;
+	idEntity* 		passEntity;
 
 	angles = viewAngles;
-	GetViewPos( origin, axis );
+
+	if( currentVehicle )
+	{
+		currentVehicle->GetCameraPos( origin, axis );
+		passEntity = currentVehicle;
+	}
+	else
+	{
+		GetViewPos( origin, axis );
+		passEntity = this;
+	}
 
 	if( angle )
 	{
@@ -10625,16 +10833,23 @@ void idPlayer::CalculateRenderView()
 			renderView->vieworg = firstPersonViewOrigin;
 			renderView->viewaxis = firstPersonViewAxis;
 
-			if( !pm_thirdPerson.GetBool() )
+			if( !UseThirdPersonCamera() )
 			{
 				// set the viewID to the clientNum + 1, so we can suppress the right player bodies and
 				// allow the right player view weapons
 				renderView->viewID = entityNumber + 1;
 			}
 		}
-		else if( pm_thirdPerson.GetBool() )
+		else if( UseThirdPersonCamera() )
 		{
-			OffsetThirdPersonView( pm_thirdPersonAngle.GetFloat(), pm_thirdPersonRange.GetFloat(), pm_thirdPersonHeight.GetFloat(), pm_thirdPersonClip.GetBool() );
+			if( currentVehicle )
+			{
+				OffsetThirdPersonView( pm_thirdPersonAngle.GetFloat(), currentVehicle->GetThirdPersonRange(), currentVehicle->GetThirdPersonHeight(), pm_thirdPersonClip.GetBool() );
+			}
+			else
+			{
+				OffsetThirdPersonView( pm_thirdPersonAngle.GetFloat(), pm_thirdPersonRange.GetFloat(), pm_thirdPersonHeight.GetFloat(), pm_thirdPersonClip.GetBool() );
+			}
 		}
 		else if( pm_thirdPersonDeath.GetBool() )
 		{
@@ -10949,10 +11164,17 @@ idPlayer::Event_EnableWeapon
 void idPlayer::Event_EnableWeapon()
 {
 	hiddenWeapon = gameLocal.world->spawnArgs.GetBool( "no_Weapons" );
-	weaponEnabled = true;
-	if( weapon.GetEntity() )
+	if( IsRiding() )
 	{
-		weapon.GetEntity()->ExitCinematic();
+		weaponEnabledOnRideExit = true;
+	}
+	else
+	{
+		weaponEnabled = true;
+		if( weapon.GetEntity() )
+		{
+			weapon.GetEntity()->ExitCinematic();
+		}
 	}
 }
 
@@ -10964,10 +11186,17 @@ idPlayer::Event_DisableWeapon
 void idPlayer::Event_DisableWeapon()
 {
 	hiddenWeapon = gameLocal.world->spawnArgs.GetBool( "no_Weapons" );
-	weaponEnabled = false;
-	if( weapon.GetEntity() )
+	if( IsRiding() )
 	{
-		weapon.GetEntity()->EnterCinematic();
+		weaponEnabledOnRideExit = false;
+	}
+	else
+	{
+		weaponEnabled = false;
+		if( weapon.GetEntity() )
+		{
+			weapon.GetEntity()->EnterCinematic();
+		}
 	}
 }
 
@@ -11228,7 +11457,7 @@ void idPlayer::TeleportDeath( int killer )
 
 /*
 ==================
-idPlayer::Event_ExitTeleporter
+idPlayer::Event_ForceOrigin
 ==================
 */
 void idPlayer::Event_ForceOrigin( idVec3& origin, idAngles& angles )
@@ -11265,32 +11494,45 @@ void idPlayer::Event_ExitTeleporter()
 	}
 
 	SetPrivateCameraView( NULL );
-	// setup origin and push according to the exit target
-	SetOrigin( exitEnt->GetPhysics()->GetOrigin() + idVec3( 0, 0, CM_CLIP_EPSILON ) );
-	SetViewAngles( exitEnt->GetPhysics()->GetAxis().ToAngles() );
-	physicsObj.SetLinearVelocity( exitEnt->GetPhysics()->GetAxis()[ 0 ] * pushVel );
-	physicsObj.ClearPushedVelocity();
-	// teleport fx
-	playerView.Flash( colorWhite, 120 );
 
-	// clear the ik heights so model doesn't appear in the wrong place
-	walkIK.EnableAll();
+	const idVec3& teleportPos = exitEnt->GetPhysics()->GetOrigin();
+	const idAngles& teleportAngles = exitEnt->GetPhysics()->GetAxis().ToAngles();
 
-	UpdateVisuals();
-
-	StartSound( "snd_teleport_exit", SND_CHANNEL_ANY, 0, false, NULL );
-
-	if( teleportKiller != -1 )
+	if( currentVehicle )
 	{
-		// we got killed while being teleported
-		Damage( gameLocal.entities[ teleportKiller ], gameLocal.entities[ teleportKiller ], vec3_origin, "damage_telefrag", 1.0f, INVALID_JOINT );
-		teleportKiller = -1;
+		currentVehicle->Teleport( teleportPos, teleportAngles, exitEnt );
 	}
 	else
 	{
-		// kill anything that would have waited at teleport exit
-		gameLocal.KillBox( this );
+		// setup origin and push according to the exit target
+		SetOrigin( teleportPos + idVec3( 0, 0, CM_CLIP_EPSILON ) );
+		SetViewAngles( teleportAngles );
+		physicsObj.SetLinearVelocity( exitEnt->GetPhysics()->GetAxis()[ 0 ] * pushVel );
+		physicsObj.ClearPushedVelocity();
+
+		// clear the ik heights so model doesn't appear in the wrong place
+		walkIK.EnableAll();
+
+		UpdateVisuals();
+
+		if( teleportKiller != -1 )
+		{
+			// we got killed while being teleported
+			Damage( gameLocal.entities[ teleportKiller ], gameLocal.entities[ teleportKiller ], vec3_origin, "damage_telefrag", 1.0f, INVALID_JOINT );
+			teleportKiller = -1;
+		}
+		else
+		{
+			// kill anything that would have waited at teleport exit
+			gameLocal.KillBox( this );
+		}
 	}
+
+	// teleport fx
+	playerView.Flash( colorWhite, 120 );
+
+	StartSound( "snd_teleport_exit", SND_CHANNEL_ANY, 0, false, NULL );
+
 	teleportEntity = NULL;
 }
 
@@ -12343,6 +12585,16 @@ idPlayer::Event_Gibbed
 void idPlayer::Event_Gibbed()
 {
 	// do nothing
+}
+
+/*
+================
+idPlayer::Event_IsOnVehicle
+================
+*/
+void idPlayer::Event_IsOnVehicle( void )
+{
+	idThread::ReturnInt( ( currentVehicle ? 1 : 0 ) );
 }
 
 extern idCVar net_clientMaxPrediction;

@@ -7,6 +7,9 @@ scriptEvent void setWeaponGuiParm(string key, string value);
 scriptEvent	void fireWeaponBegin();
 scriptEvent	void fireWeaponEnd();
 
+// entities
+scriptEvent	entity	fireProjectile( string projDefName, vector firePos, vector fireAng );
+
 // monsters
 scriptEvent void cclearGrabbed();
 scriptEvent entity findHittableEnemy(float useFov);
@@ -15,3 +18,10 @@ scriptEvent	void gib( string damage_def );
 
 // players
 scriptEvent void Damage(string damageDef);
+
+// vehicles
+scriptEvent	void setTireFriction( float friction );
+scriptEvent	void useVehicleAmmo( float amount );
+scriptEvent	float vehicleAmmoAvailable();
+scriptEvent	entity getDriver();
+scriptEvent	vector getAimAngles( vector firePos );

@@ -1336,7 +1336,7 @@ void idProjectile::Explode( const trace_t& collision, idEntity* ignore )
 	}
 
 	// alert the ai
-	gameLocal.AlertAI( owner.GetEntity() );
+	gameLocal.AlertAI( owner.GetEntity(), physicsObj.GetOrigin() );
 
 	// bind the projectile to the impact entity if necesary
 	if( gameLocal.entities[collision.c.entityNum] && spawnArgs.GetBool( "bindOnImpact" ) )

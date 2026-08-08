@@ -159,6 +159,9 @@ public:
 	void					Save( idSaveGame* savefile ) const;
 	void					Restore( idRestoreGame* savefile );
 
+	// recreate dynamically-added constraints to 'constraints' while physics obejct is being restored
+	virtual void		RecreateDynamicConstraints( idList<idAFConstraint*, TAG_IDLIB_LIST_PHYSICS>* constraints );
+
 	virtual void			Think();
 	virtual void			AddDamageEffect( const trace_t& collision, const idVec3& velocity, const char* damageDefName, idEntity* soundEnt = NULL );;
 	virtual void			GetImpactInfo( idEntity* ent, int id, const idVec3& point, impactInfo_t* info );
@@ -350,12 +353,40 @@ public:
 	CLASS_PROTOTYPE( idAFEntity_Vehicle );
 
 	idAFEntity_Vehicle();
+	~idAFEntity_Vehicle();
 
 	void					Spawn();
-	void					Use( idPlayer* player );
+	bool					StartDriving( idPlayer* player );
+	void					StopDriving();
+
+	//void					InitHudStats( idUserInterface* hud, idUserInterface* cursor );
+	//void					UpdateHudStats( idUserInterface* hud );
+
+	void					Save( idSaveGame* savefile ) const;
+	void					Restore( idRestoreGame* savefile );
+
+	virtual	void			Damage( idEntity* inflictor, idEntity* attacker, const idVec3& dir, const char* damageDefName, const float damageScale, const int location ); //ff
+	virtual void			Killed( idEntity* inflictor, idEntity* attacker, int damage, const idVec3& dir, int location );
+	virtual void			Teleport( const idVec3& origin, const idAngles& angles, idEntity* destination );
+
+	void					GetCameraPos( idVec3& origin, idMat3& axis );
+	float					GetThirdPersonRange() const;
+	float					GetThirdPersonHeight() const;
+	idVec3					EyeOffset() const;
+	idVec3					GetEyePosition() const;
+	idPlayer* 				GetDriver() const;
+	void					GetAIAimTargets( const idVec3& lastSightPos, idVec3& headPos, idVec3& chestPos );
+
+	// script state management
+	void					ShutdownThreads();
+	virtual idThread* 		ConstructScriptObject();
+	void					UpdateScript();
+	const function_t*		GetScriptFunction( const char* funcname );
+	void					SetState( const function_t* newState );
+	void					SetState( const char* statename );
 
 protected:
-	idPlayer* 				player;
+	idPlayer* 				driver;
 	jointHandle_t			eyesJoint;
 	jointHandle_t			steeringWheelJoint;
 	float					wheelRadius;
@@ -363,9 +394,51 @@ protected:
 	float					steerSpeed;
 	const idDeclParticle* 	dustSmoke;
 
+	int						ammo;
+
+	// third-person camera
+	jointHandle_t			cameraJoint;
+	float					thirdPersonRange;
+	float					thirdPersonHeight;
+
+	// settings (were CVars)
+	float					vehicleVelocity;
+	float					vehicleForce;
+
+	// script variables
+	idScriptBool			VEHICLE_FIRING;
+	idScriptBool			VEHICLE_FORWARD;
+	idScriptBool			VEHICLE_DEAD;
+
+	// script variables
+	idThread* 				scriptThread;
+
 	float					GetSteerAngle();
+
+private:
+	void					Event_GetDriver();
+	void					Event_GetAimAngles( const idVec3& firePos );
+	void					LinkScriptVariables();
+
+
+	void					Event_AmmoAvailable();
+	void					Event_UseAmmo( int amount );
 };
 
+ID_INLINE idPlayer* idAFEntity_Vehicle::GetDriver() const
+{
+	return driver;
+}
+
+ID_INLINE float idAFEntity_Vehicle::GetThirdPersonRange() const
+{
+	return thirdPersonRange;
+}
+
+ID_INLINE float idAFEntity_Vehicle::GetThirdPersonHeight() const
+{
+	return thirdPersonHeight;
+}
 
 /*
 ===============================================================================
@@ -386,11 +459,34 @@ public:
 	void					Spawn();
 	virtual void			Think();
 
+	virtual bool			Collide( const trace_t& collision, const idVec3& velocity );
+
+	void					Save( idSaveGame* savefile ) const;
+	void					Restore( idRestoreGame* savefile );
+	virtual void		RecreateDynamicConstraints( idList<idAFConstraint*, TAG_IDLIB_LIST_PHYSICS>* constraints );
+
 protected:
 	idClipModel* 			wheelModel;
 	idAFConstraint_Suspension* 	suspension[4];
 	jointHandle_t			wheelJoints[4];
 	float					wheelAngles[4];
+
+	// settings
+	float					vehicleSuspensionUp;
+	float					vehicleSuspensionDown;
+	float					vehicleSuspensionKCompress;
+	float					vehicleSuspensionDamping;
+	float					vehicleTireFriction;
+
+	idStr					damage;					// if > 0 apply damage to hit entities
+	idStr					fxCollide;				// fx system to start when collides with something
+	int						nextCollideFxTime;		// next time it is ok to spawn collision fx
+
+	void					PredictCollisions();
+	void					ApplyCollisionFeedback( const trace_t& collision, const idVec3& velocity, bool predicted );
+
+private:
+	void					Event_SetTireFriction( float tireFriction );
 };
 
 

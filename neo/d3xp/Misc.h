@@ -213,22 +213,26 @@ class idSpring : public idEntity
 public:
 	CLASS_PROTOTYPE( idSpring );
 
-	void				Spawn();
-	void				Save( idSaveGame* savefile ) const;
-	void				Restore( idRestoreGame* savefile );
+	idSpring();
+	void					Spawn();
 
-	virtual void		Think();
+	void					Save( idSaveGame* savefile ) const;
+	void					Restore( idRestoreGame* savefile );
+
+	virtual void			Think();
 
 private:
-	idEntity* 			ent1;
-	idEntity* 			ent2;
-	int					id1;
-	int					id2;
-	idVec3				p1;
-	idVec3				p2;
-	idForce_Spring		spring;
+	idEntityPtr<idEntity>	ent1;
+	idEntityPtr<idEntity>	ent2;
+	int						id1;
+	int						id2;
+	idVec3					p1;
+	idVec3					p2;
+	idForce_Spring			spring;
+	bool					enabled;
 
-	void				Event_LinkSpring();
+	void					Event_LinkSpring();
+	void					Event_Activate( idEntity* activator );
 };
 
 
