@@ -1,0 +1,12 @@
+
+
+void main() {
+	sys.setSpawnArg( "origin", "0 0 40" );
+	sys.spawn( "env_buggy" );
+
+	sys.setSpawnArg( "origin", "0 -180 40" );
+	sys.spawn( "env_buggy_red" );
+	
+	sys.setSpawnArg( "origin", "0 -340 40" );
+	sys.spawn( "env_locust" );
+}

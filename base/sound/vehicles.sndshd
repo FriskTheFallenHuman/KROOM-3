@@ -17,7 +17,7 @@ buggy_idle {
 	maxDistance	100
 	volume -2
 	looping
-	sound/machinery/machines/loop_airpump_02.wab
+	sound/machinery/machines/loop_airpump_02.wav
 	//sound/ff/hotidle.wav
 }
 

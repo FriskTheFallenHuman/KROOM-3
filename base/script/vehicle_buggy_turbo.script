@@ -1,6 +1,6 @@
 /***********************************************************************
 
-vehicle_buggy.script
+vehicle_buggy_turbo.script
 
 author: Ivan_the_B
 
@@ -54,7 +54,7 @@ void vehicle_buggy_turbo::updateDrive(){
 			//workaround: somehow the engine script is also changing this volume 
 			//startSound("snd_fire", SND_CHANNEL_WEAPON, 0);
 			entity driver = getDriver();
-			driver.startSoundShader("ff_buggy_turbo", SND_CHANNEL_ANY);
+			driver.startSoundShader("buggy_turbo", SND_CHANNEL_ANY);
 			
 			nextFireTime = sys.getTime() + fire_rate; // 0.1;
 		}
