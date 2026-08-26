@@ -226,6 +226,8 @@ const int RDF_NOAMBIENT		= BIT( 1 ); // don't render indirect lighting
 const int RDF_IRRADIANCE	= BIT( 2 ); // render into 256^2 HDR render target for irradiance/radiance GGX calculation
 const int RDF_UNDERWATER	= BIT( 3 ); // TODO enable automatic underwater caustics and fog
 
+#include "ScreenRect.h"
+
 typedef struct renderView_s
 {
 	// player views will set this to a non-zero integer for model suppress / allow
@@ -246,6 +248,9 @@ typedef struct renderView_s
 	const idMaterial*		globalMaterial;							// used to override everything draw
 
 	int						rdflags;			// RB: RDF_NOSHADOWS, etc
+
+	bool                    useViewport;
+	idScreenRect            viewport;
 } renderView_t;
 
 

@@ -427,10 +427,10 @@ sysEvent_t Sys_GetEvent()
 					if( ! renderSystem->IsFullScreen() )
 					{
 						// this will be handled as "fullscreen on current window"
-						// r_fullscreen 1 means "fullscreen on first window" in d3 bfg
+						// r_vidFullscreen 1 means "fullscreen on first window" in d3 bfg
 						fullscreen = -2;
 					}
-					cvarSystem->SetCVarInteger( "r_fullscreen", fullscreen );
+					cvarSystem->SetCVarInteger( "r_vidFullscreen", fullscreen );
 					// DG end
 					cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "vid_restart\n" );
 					continue; // handle next event

@@ -473,7 +473,7 @@ void idListWindow::PostParse()
 		r.x = tabStops[i];
 		r.w = ( i < c - 1 ) ? tabStops[i + 1] - r.x - tabBorder : -1;
 		r.align = ( doAligns ) ? tabAligns[i] : 0;
-		if( tabVAligns.Num() > 0 )
+		if( tabVAligns.Num() > 0 && i < tabVAligns.Num() )
 		{
 			r.valign = tabVAligns[i];
 		}
@@ -481,7 +481,7 @@ void idListWindow::PostParse()
 		{
 			r.valign = 0;
 		}
-		if( tabTypes.Num() > 0 )
+		if( tabTypes.Num() > 0 && i < tabTypes.Num() )
 		{
 			r.type = tabTypes[i];
 		}
@@ -489,7 +489,7 @@ void idListWindow::PostParse()
 		{
 			r.type = TAB_TYPE_TEXT;
 		}
-		if( tabSizes.Num() > 0 )
+		if( tabSizes.Num() > 0 && i < tabSizes.Num() )
 		{
 			r.iconSize = tabSizes[i];
 		}
@@ -497,7 +497,7 @@ void idListWindow::PostParse()
 		{
 			r.iconSize.Zero();
 		}
-		if( tabIconVOffsets.Num() > 0 )
+		if( tabIconVOffsets.Num() > 0 && i < tabIconVOffsets.Num() )
 		{
 			r.iconVOffset = tabIconVOffsets[i];
 		}
@@ -747,28 +747,40 @@ void idListWindow::UpdateList()
 	}
 	float vert = GetMaxCharHeight();
 	int fit = textRect.h / vert;
+	int selection = gui->State().GetInt( va( "%s_sel_0", listName.c_str() ) );
 	if( listItems.Num() < fit )
 	{
 		scroller->SetRange( 0.0f, 0.0f, 1.0f );
+		top = 0;
+		scroller->SetValue( 0.0f );
 	}
 	else
 	{
 		scroller->SetRange( 0.0f, ( listItems.Num() - fit ) + 1.0f, 1.0f );
+
+		// DG: scroll to selected item
+		float value = scroller->GetValue();
+		if( value < 0.0f )
+		{
+			value = 0.0f;
+			top = 0;
+		}
+		else if( value > listItems.Num() - 1 )
+		{
+			value = listItems.Num() - 1;
+		}
+		float maxVisibleVal = Min( value + fit, scroller->GetHigh() );
+		if( selection >= 0 && ( selection < value || selection > maxVisibleVal ) )
+		{
+			// if selected entry is not currently visible, center it (if possible)
+			value = Max( 0.0f, selection - 0.5f * fit );
+		}
+
+		scroller->SetValue( value );
+		top = value;
 	}
 
-	SetCurrentSel( gui->State().GetInt( va( "%s_sel_0", listName.c_str() ) ) );
-
-	float value = scroller->GetValue();
-	if( value > listItems.Num() - 1 )
-	{
-		value = listItems.Num() - 1;
-	}
-	if( value < 0.0f )
-	{
-		value = 0.0f;
-	}
-	scroller->SetValue( value );
-	top = value;
+	SetCurrentSel( selection );
 
 	typedTime = 0;
 	clickTime = 0;

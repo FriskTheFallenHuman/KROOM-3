@@ -1087,7 +1087,15 @@ void idRenderWorldLocal::RenderScene( const renderView_t* renderView )
 		windowHeight = ( windowHeight * r_screenFraction.GetInteger() ) / 100;
 	}
 	tr.CropRenderSize( windowWidth, windowHeight );
-	tr.GetCroppedViewport( &parms->viewport );
+
+	if( renderView->useViewport )
+	{
+		parms->viewport = renderView->viewport;
+	}
+	else
+	{
+		tr.GetCroppedViewport( &parms->viewport );
+	}
 
 	// the scissor bounds may be shrunk in subviews even if
 	// the viewport stays the same

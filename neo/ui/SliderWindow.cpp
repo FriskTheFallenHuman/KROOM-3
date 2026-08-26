@@ -150,12 +150,12 @@ const char* idSliderWindow::HandleEvent( const sysEvent_t* event, bool* updateVi
 		return "";
 	}
 
-	if( key == K_RIGHTARROW || key == K_KP_6 || ( key == K_MOUSE2 && gui->CursorY() > thumbRect.y ) )
+	if( key == K_RIGHTARROW || key == K_KP_6 || key == K_JOY_DPAD_RIGHT || ( key == K_MOUSE2 && gui->CursorY() > thumbRect.y ) )
 	{
 		value = value + stepSize;
 	}
 
-	if( key == K_LEFTARROW || key == K_KP_4 || ( key == K_MOUSE2 && gui->CursorY() < thumbRect.y ) )
+	if( key == K_LEFTARROW || key == K_KP_4 || key == K_JOY_DPAD_LEFT || ( key == K_MOUSE2 && gui->CursorY() < thumbRect.y ) )
 	{
 		value = value - stepSize;
 	}

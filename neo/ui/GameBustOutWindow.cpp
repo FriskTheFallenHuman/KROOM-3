@@ -871,17 +871,6 @@ void idGameBustOutWindow::Draw( int time, float x, float y )
 
 /*
 =============================
-idGameBustOutWindow::Activate
-=============================
-*/
-const char* idGameBustOutWindow::Activate( bool activate )
-{
-	return "";
-}
-
-
-/*
-=============================
 idGameBustOutWindow::UpdateScore
 =============================
 */

@@ -1,0 +1,1135 @@
+windowDef Desktop {
+	rect	0,0,640,480
+	nocursor 0
+	//nosave	1
+
+	float	"credits"			0
+
+	onEvent {
+		if("desktop::credits" == 0) {
+			set "CreditText::text" "#str_00100097";
+		}
+		if("desktop::credits" == 1) {
+			set "CreditText::text" "#str_00100098";
+		}
+		if("desktop::credits" == 2) {
+			set "CreditText::text" "#str_00100099";
+		}
+		if("desktop::credits" == 3) {
+			set "CreditText::text" "#str_00100100";
+		}
+		if("desktop::credits" == 4) {
+			set "CreditText::text" "#str_00100101";
+		}
+
+	}
+
+	onNamedEvent playerDamage {
+		resetTime "fnShackScreen" "0" ;
+
+	}
+
+	onNamedEvent levelComplete {
+		resetTime "fnLevelComplete" "0" ;
+	}
+
+	onNamedEvent gameComplete {
+		resetTime "fnGameComplete" "0" ;
+	}
+
+	onNamedEvent gameOver {
+		resetTime "fnGameOver" "0" ;
+	}
+
+	onNamedEvent startSuperBlaster {
+		set			"SuperBlaster::visible"	"1";
+	}
+
+	onNamedEvent stopSuperBlaster {
+		set			"SuperBlaster::visible"	"0";
+	}
+
+	windowDef mainbackground {
+		rect	0,0,640,480
+		visible	1
+
+		backcolor   0, 0, 0, 1
+		matcolor	1,1,1,.8
+
+		onAction {
+		}
+	}
+
+	windowDef gameback {
+		rect 0 ,0,640,480
+
+		windowDef back1 {
+			rect 0 ,0,640,480
+			background "guis/assets/arcade/stars.tga"
+			matscalex 2
+			matscaley 2
+			matcolor .5,.5,.5,.5
+		}
+		windowDef back1_1 {
+			rect 100,100,440,280
+			background "guis/assets/arcade/stars.tga"
+			//backcolor 1,0,0,1
+
+			matcolor .8,.8,.8,.2
+
+			onTime 0 {
+				transition "matcolor" ".8 .8 .8 .2" ".8 .8 .8 .5" "1000";
+			}
+			onTime 1000 {
+				transition "matcolor" ".8 .8 .8 .5" ".8 .8 .8 .2" "1000";
+			}
+			onTime 2000 {
+				resetTime "0";
+			}
+		}
+		windowDef back2 {
+			rect 320 ,0,640,480
+			background "guis/assets/arcade/stars.tga"
+			matscalex 2
+			matscaley 2
+			matcolor .5,.5,.5,.5
+		}
+		windowDef back1 {
+			rect 0 ,240,640,480
+			background "guis/assets/arcade/stars.tga"
+			matscalex 2
+			matscaley 2
+			matcolor .5,.5,.5,.5
+		}
+		windowDef back2 {
+			rect 320 ,240,640,480
+			background "guis/assets/arcade/stars.tga"
+			matscalex 2
+			matscaley 2
+			matcolor .5,.5,.5,.5
+		}
+	}
+
+	//Function Windows
+
+	/*
+	* Fades the menu screen and begins the game
+	*/
+	windowDef fnStartGame {
+
+		notime 1
+
+		onTime 0 {
+			set			"game::resetGame"	"1";
+			set			"game::refreshGuiData" "1";
+			transition	"IntroScreen::rect" "0 0 640 480" "0 -480 640 480" "1000";
+			transition	"LevelIntroScreen::rect" "0 -480 640 480" "0 0 640 480" "1000";
+			resetTime "LevelIntroScreen" "0";
+		}
+
+	}
+
+	windowDef fnNextLevel {
+		noTime 1
+
+		onTime 0 {
+			transition	"LevelCompleteScreen::rect" "0 0 640 480" "0 -480 640 480" "1000";
+			transition	"LevelIntroScreen::rect" "0 -480 640 480" "0 0 640 480" "1000";
+			resetTime	"LevelIntroScreen" "0";
+		}
+	}
+
+	windowDef fnBeginLevel {
+		noTime 1
+
+		onTime 0 {
+			"transition" "LevelIntroScreen::rect" "0 0 640 480" "0 -480 640 480" "1000";
+			resetTime	"fnShowGame" "0";
+		}
+		onTime 1000 {
+			set			"game::beginLevel"	"1";
+		}
+	}
+
+	windowDef fnGameOver {
+
+		notime 1
+
+		onTime 0 {
+			set				"GameOverScreen::visible" "1";
+			resetTime		"fnHideGame" "0";
+
+
+			transition		"GameOverScreen::rect" "0 -480 640 480" "0 0 640 480" "500";
+			resetTime		"GameOverScreen" "0";
+		}
+	}
+
+	windowDef fnIntroScreen {
+		noTime 1
+
+		onTime 0 {
+			set "InsertCredit::visible" "1";
+			set "StartButton::visible" "0";
+
+			set			"desktop::credits" "0";
+
+			resetTime	"fnHideGame" "0";
+
+			set			"IntroScreen::visible"	"1";
+			transition	"IntroScreen::rect" "0 -480 640 480" "0 0 640 480" "1000";
+		}
+	}
+
+	windowDef fnShowGame {
+		noTime 1
+		onTime 0 {
+			transition "game_main::matcolor" "1,1,1,0" "1,1,1,1" "1000";
+			transition "game::matcolor" "1,1,1,0" "1,1,1,1" "1000";
+
+
+		}
+	}
+	windowDef fnHideGame {
+		noTime 1
+		onTime 0 {
+			transition "game_main::matcolor" "1,1,1,1" "1,1,1,0" "1000";
+			transition "game::matcolor" "1,1,1,1" "1,1,1,0" "1000";
+		}
+	}
+
+	windowDef fnContinueGame {
+		noTime 1
+
+		onTime 0 {
+			set				"game::continueGame"	"1";
+
+
+			resetTime		"fnShowGame"			"0";
+
+
+			set				"GameOverScreen::noTime"	"1";
+			//resetTime		"GameOverScreen"	"20000"; //Make sure we don't return to the main menu
+
+			transition		"GameOverScreen::rect" "0 0 640 480" "0 -480 640 480" "100";
+		}
+	}
+
+	windowDef fnLevelComplete {
+		noTime 1
+
+		onTime 0 {
+			resetTime		"fnHideGame" "0";
+
+			transition		"LevelCompleteScreen::rect" "0 -480 640 480" "0 0 640 480" "500";
+			resetTime		"LevelCompleteScreen" "0";
+		}
+	}
+
+	windowDef fnGameComplete {
+		noTime 1
+
+		onTime 0 {
+			resetTime		"fnHideGame" "0";
+
+			transition		"GameCompleteScreen::rect" "0 -480 640 480" "0 0 640 480" "500";
+			resetTime		"GameCompleteScreen" "0";
+		}
+	}
+
+
+	windowDef fnShackScreen {
+
+		notime 1
+
+		onTime 0 {
+			transition "desktop::rect" "0 0 640 480" "-10 -5 640 480" "50";
+		}
+		onTime 50 {
+			transition "desktop::rect" "-10 -5 640 480" "0 0 640 480" "50";
+		}
+		onTime 100 {
+			transition "desktop::rect" "0 0 640 480" "10 10 640 480" "50";
+		}
+		onTime 150 {
+			transition "desktop::rect" "10 10 640 480" "0 0 640 480" "50";
+		}
+	}
+
+	windowDef fnShowGame {
+		noTime 1
+		onTime 0 {
+			set "gameHUD::visible"		"1";
+			set "scoreGroup::visible"	"1";
+			set "HealthGroup::visible"	"1";
+			set "LevelCompleteGroup::visible"	"1";
+			set "TargetGroup::visible"	"1";
+			set	"SuperBlaster::visible"	"0";
+			set	"desktop::hideCursor" "1";
+		}
+	}
+	windowDef fnHideGame {
+		noTime 1
+		onTime 0 {
+			set "gameHUD::visible"		"0";
+			set "scoreGroup::visible"	"0";
+			set "HealthGroup::visible"	"0";
+			set "LevelCompleteGroup::visible"	"0";
+			set "TargetGroup::visible"	"0";
+			set	"SuperBlaster::visible"	"0";
+			set	"desktop::hideCursor" "0";
+		}
+	}
+
+	windowDef game_main {
+		rect 0 ,0,640,480
+		visible 1
+		matcolor 1,1,1,0
+
+
+		gameSSDDef game {
+			rect 0 ,0,640,480
+			visible 1
+
+			//levelcount		20
+			levelcount		5
+
+			//Level Data
+			//	Asteroid Spawn Buffer (Size of the buffer to use when generating the asteroid start position)
+			//	Needed To Win (Number of astonauts that need to be saved to win the level)
+			leveldata01		"100 5"
+			leveldata02		"100 10"
+			leveldata03		"100 15"
+			leveldata04		"100 20"
+			leveldata05		"100 25"
+			//leveldata06		"100 30"
+			//leveldata07		"100 35"
+			//leveldata08		"100 40"
+			//leveldata09		"100 45"
+			//leveldata10		"100 50"
+			//leveldata11		"100 55"
+			//leveldata12		"100 60"
+			//leveldata13		"100 65"
+			//leveldata14		"100 70"
+			//leveldata15		"100 75"
+			//leveldata16		"100 80"
+			//leveldata17		"100 85"
+			//leveldata18		"100 90"
+			//leveldata19		"100 95"
+			//leveldata20		"100 100"
+
+
+			//Asteroid Data
+			//	Speed Minimum
+			//	Speed Maximum
+			//	Size Minimum
+			//	Size Maximum
+			//	Rotation Minimun
+			//	Rotation Maximum
+			//	Spawn Time Minimum
+			//	Spawn Time Maximum
+			//	Health of Asteroid
+			//	Asteroid Damage (Damage inflicted on player when hit by asteroid)
+			//	Asteroid Points (Points awarded for asteroid destruction)
+			asteroiddata01	"300 500 128 256 -1 1 1000 2000 400 10 200"
+			asteroiddata02	"300 500 128 256 -1 1 900 1900 400 10 200"
+			asteroiddata03	"300 500 128 256 -1 1 800 1800 400 10 200"
+			asteroiddata04	"300 500 128 256 -1 1 700 1700 400 10 200"
+			asteroiddata05	"300 500 128 256 -1 1 600 1600 400 10 200"
+			//asteroiddata06	"300 500 128 256 -1 1 500 1500 400 10 200"
+			//asteroiddata07	"300 500 128 256 -1 1 400 1400 400 10 200"
+			//asteroiddata08	"300 500 128 256 -1 1 300 1300 400 10 200"
+			//asteroiddata09	"300 500 128 256 -1 1 200 1200 400 10 200"
+			//asteroiddata10	"300 500 128 256 -1 1 100 1100 400 10 200"
+			//asteroiddata11	"300 500 128 256 -1 1 0	  1000 400 10 200"
+			//asteroiddata12	"300 500 128 256 -1 1 0   900 400 10 200"
+			//asteroiddata13	"300 500 128 256 -1 1 0   800 400 10 200"
+			//asteroiddata14	"300 500 128 256 -1 1 0   700 400 10 200"
+			//asteroiddata15	"300 500 128 256 -1 1 0   600 400 10 200"
+			//asteroiddata16	"300 500 128 256 -1 1 0   500 400 10 200"
+			//asteroiddata17	"300 500 128 256 -1 1 0   400 400 10 200"
+			//asteroiddata18	"300 500 128 256 -1 1 0   300 400 10 200"
+			//asteroiddata19	"300 500 128 256 -1 1 0   200 400 10 200"
+			//asteroiddata20	"300 500 128 256 -1 1 0   100 400 10 200"
+
+			//Astronaut Data
+			//	Speed Minimum
+			//	Speed Maximum
+			//	Rotation Minimun
+			//	Rotation Maximum
+			//	Spawn Time Minimum
+			//	Spawn Time Maximum
+			//	Health
+			//	Points (Awarded for saving the astronaut)
+			//	Penalty (Points taken when an astronaut bites it)
+			astronautdata01	"300 500 -1 1 5000 7000 100 200 -100"
+			astronautdata02	"300 500 -1 1 5000 7000 100 200 -100"
+			astronautdata03	"300 500 -1 1 5000 7000 100 200 -100"
+			astronautdata04	"300 500 -1 1 5000 7000 100 200 -100"
+			astronautdata05	"300 500 -1 1 5000 7000 100 200 -100"
+			//astronautdata06	"300 500 -1 1 5000 7000 100 200 -100"
+			//astronautdata07	"300 500 -1 1 5000 7000 100 200 -100"
+			//astronautdata08	"300 500 -1 1 5000 7000 100 200 -100"
+			//astronautdata09	"300 500 -1 1 5000 7000 100 200 -100"
+			//astronautdata10	"300 500 -1 1 5000 7000 100 200 -100"
+			//astronautdata11	"300 500 -1 1 5000 7000 100 200 -100"
+			//astronautdata12	"300 500 -1 1 5000 7000 100 200 -100"
+			//astronautdata13	"300 500 -1 1 5000 7000 100 200 -100"
+			//astronautdata14	"300 500 -1 1 5000 7000 100 200 -100"
+			//astronautdata15	"300 500 -1 1 5000 7000 100 200 -100"
+			//astronautdata16	"300 500 -1 1 5000 7000 100 200 -100"
+			//astronautdata17	"300 500 -1 1 5000 7000 100 200 -100"
+			//astronautdata18	"300 500 -1 1 5000 7000 100 200 -100"
+			//astronautdata19	"300 500 -1 1 5000 7000 100 200 -100"
+			//astronautdata20	"300 500 -1 1 5000 7000 100 200 -100"
+
+
+			//Powerup Data
+			//	Speed Minimum
+			//	Speed Maximum
+			//	Rotation Minimun
+			//	Rotation Maximum
+			//	Spawn Time Minimum
+			//	Spawn Time Maximum
+			powerupdata01 "300 500 -1 1 5000 7000"
+			powerupdata02 "300 500 -1 1 5000 7000"
+			powerupdata03 "300 500 -1 1 4500 6500"
+			powerupdata04 "300 500 -1 1 4500 6500"
+			powerupdata05 "300 500 -1 1 4000 6000"
+			//powerupdata06 "300 500 -1 1 4000 6000"
+			//powerupdata07 "300 500 -1 1 4000 6000"
+			//powerupdata08 "300 500 -1 1 4000 6000"
+			//powerupdata09 "300 500 -1 1 4000 6000"
+			//powerupdata10 "300 500 -1 1 4000 6000"
+			//powerupdata11 "300 500 -1 1 4000 6000"
+			//powerupdata12 "300 500 -1 1 4000 6000"
+			//powerupdata13 "300 500 -1 1 4000 6000"
+			//powerupdata14 "300 500 -1 1 4000 6000"
+			//powerupdata15 "300 500 -1 1 4000 6000"
+			//powerupdata16 "300 500 -1 1 4000 6000"
+			//powerupdata17 "300 500 -1 1 4000 6000"
+			//powerupdata18 "300 500 -1 1 4000 6000"
+			//powerupdata19 "300 500 -1 1 4000 6000"
+			//powerupdata20 "300 500 -1 1 4000 6000"
+
+
+			weaponcount		2
+
+			//Weapon Data
+			//	Projectile Speed
+			//	Projectile Damage
+			//	Projectile Size
+			weapondata01	"20000 200 64"
+			weapondata02	"20000 400 128"
+
+
+			windowDef gameHUD {
+				rect 0,0,640,480
+				background "guis/assets/arcade/martian_buddy_HUD.tga"
+				visible 0
+			}
+
+			windowDef scoreGroup {
+				rect 340, 0, 500, 30
+				visible 0
+
+				windowDef ScoreTitle {
+					rect 30,0, 100, 30
+					text "#str_00100121"
+					textscale .4
+				}
+				windowDef Score {
+					rect 100,0, 200, 30
+					//backcolor 1,0,0,.2
+					text "gui::player_score"
+					textscale .4
+					textalignx 10
+				}
+			}
+
+			windowDef HealthGroup {
+				rect 0,450,640,480
+				visible 0
+
+				windowDef HealthTitle {
+					rect 0, 0 , 640, 30
+					//backcolor	0, .6, 0, .2
+					text "#str_00100122"
+					textscale .4
+					textalignx 10
+				}
+
+				windowDef HeathBarParent {
+					rect 240, 0 , ("gui::player_health" * 4), 30
+
+					windowDef HealthBar {
+					rect 0, 0 , 400, 40
+
+
+						background "guis/assets/arcade/health_gradient.tga"
+						matcolor 1,1,1,.5
+					}
+				}
+
+				windowDef Health {
+					rect 235, 0 , 640, 30
+					text "gui::player_health"
+					textscale .4
+					textalignx 10
+				}
+
+			}
+
+			windowDef LevelCompleteGroup {
+				rect 10, 0, 500, 30
+				visible 0
+
+				windowDef LevelCompleteGroups {
+					rect 0,0, 240, 30
+					text "#str_00100564"
+					textscale .4
+				}
+				windowDef LevelComplete {
+					rect 110,0, 100, 30
+					//backcolor 1,0,0,.2
+					text "gui::level_complete"
+					textscale .4
+					textalignx -10
+					textalign 2
+				}
+
+			}
+
+			windowDef TargetGroup {
+
+				rect 340, 35, 500, 30
+				visible 0
+
+				windowDef TargetGroupTitle {
+					rect 20,0, 80, 30
+					text "#str_00100124"
+					textscale .4
+					textalign 2
+				}
+				windowDef Target {
+					rect 100,0, 200, 30
+					//backcolor 1,0,0,.2
+					text "gui::target_info"
+					textscale .4
+					textalignx 10
+				}
+
+			}
+
+			windowDef SuperBlaster {
+				rect 5,55,400,35
+				visible 0
+				
+				windowDef SuperBlasterLabel {
+					rect 0,0,300,30
+					textscale .4
+					forecolor 1,1,1,1
+					
+					text "#str_00100125"
+				}
+				windowDef SuperBlasterTime {
+					rect 160,0,300,30
+					textscale .4
+					text "gui::super_blaster_time"
+				}
+			}
+
+			/*windowDef WeaponGroup {
+				rect 590, 100, 50, 300
+				visible 1
+				backcolor 1,0,1,1
+
+				windowDef WeaponIconBlaster {
+					rect 0,0,100,30
+					text "Blaster"
+
+					onAction {
+						resetTime "fnShackScreen" "0";
+					}
+
+				}
+
+			}*/
+		}
+	}
+
+	windowDef IntroScreen {
+		rect 0,0,640,480
+		visible 1
+
+		windowDef InsertText
+		{
+			rect	0,351,640,29
+			text	"#str_00100108"
+			font	"fonts/micro"
+			textscale	0.4
+			forecolor	1,1,1,0.749
+			visible	1
+			textalign	1
+		}
+		windowDef CreditText {
+			rect	0,371,640,29
+			text	"#str_00100097"
+			font	"fonts/micro"
+			textscale	0.4
+			forecolor	1,1,1,0.349
+			visible	1
+			textalign	1
+		}
+		windowDef GameTitle {
+			rect	58,46,532,202
+
+			//text	"Space Station Defender"
+			//textscale 1.5
+			//textalign 1
+			background "guis/assets/arcade/martianbuddy_logo.tga"
+
+			onTime 0 {
+				transition "forecolor" "1 1 1 .9" "1 1 1 .4" "800" ;
+			}
+
+			onTime 800 {
+				transition "forecolor" "1 1 1 .4" "1 1 1 .9" "200" ;
+			}
+			onTime 1000 {
+				resetTime "0" ;
+			}
+		}
+
+
+		windowDef StartButton
+		{
+			rect	65,249,505,96
+			visible	0
+			//background	"guis/assets/teleporter/button1"
+			background "guis/assets/arcade/arcade_coincontinue_button.tga"
+			matcolor	0.6,0,0,0.4
+
+			onTime 0 {
+				transition "matcolor" "0 0.6 0 1" "0 0.6 0 0.4" "800" ;
+			}
+
+			onTime 800 {
+				transition "matcolor" "0 0.6 0 0.4" "0 0.6 0 1" "200" ;
+			}
+
+			onTime 1000 {
+				resetTime "0" ;
+			}
+
+			onAction {
+				set	"cmd"	"play arcade_startbeep" ;
+				resetTime "fnStartGame"	"0";
+			}
+
+			windowDef TextButton
+			{
+				rect	0,10,505,96
+				text	"#str_00100110"
+				font	"fonts/bank"
+				textscale	1
+				forecolor	1,1,1,0.8
+				visible	1
+				textalign	1
+			}
+		}
+
+		windowDef InsertCredit {
+
+			rect	65,249,505,96
+			visible	1
+			//background	"guis/assets/teleporter/button1"
+			background "guis/assets/arcade/arcade_coincontinue_button.tga"
+			matcolor	0.6,0,0,1
+
+
+			onAction {
+				if("desktop::credits" == 3) {
+					set	"cmd"	"play arcade_startgame" ;
+					set	"desktop::credits"	4;
+					set "InsertCredit::visible" "0";
+					set "StartButton::visible" "1";
+				}
+				if("desktop::credits" == 2) {
+					set	"cmd"	"play arcade_insertcoin" ;
+					set	"desktop::credits"	3;
+				}
+				if("desktop::credits" == 1) {
+					set	"cmd"	"play arcade_insertcoin" ;
+					set	"desktop::credits"	2;
+				}
+				if("desktop::credits" == 0) {
+					set	"cmd"	"play arcade_insertcoin" ;
+					set	"desktop::credits"	1;
+				}
+			}
+
+			windowDef TextButton
+			{
+				rect	0,10,505,96
+
+				text	"#str_00100111"
+				font	"fonts/bank"
+				textscale	1
+				forecolor	1,1,1,0.8
+				visible	1
+				textalign	1
+			}
+		}
+	}
+
+	windowDef LevelIntroScreen {
+
+		noTime 1
+
+		rect 0,-480,640,480
+		visible 1
+
+		windowDef LevelText {
+			rect		0,30, 640, 200
+			text		"#str_00100127"
+			textscale	3
+			textalign	1
+		}
+		windowDef LevelNumber {
+			rect		0,150, 640, 200
+			text		"gui::nextLevel"
+			textscale	3
+			textalign	1
+		}
+		windowDef TMinus {
+			rect		0, 300, 640, 200
+			text		"#str_00100128"
+			textscale	1
+			textalign	1
+		}
+		windowDef TMinusCount {
+			rect		0, 350, 640, 200
+			text		"5"
+			forecolor	.6, 0, 0, 1
+			textscale	1
+			textalign	1
+		}
+
+		onTime 0 {
+			set		"TMinusCount::text"	"5";
+		}
+		onTime 1000 {
+			set		"TMinusCount::text"	"4";
+		}
+		onTime 2000 {
+			set		"TMinusCount::text"	"3";
+		}
+		onTime 3000 {
+			set		"TMinusCount::text"	"2";
+		}
+		onTime 4000 {
+			set		"TMinusCount::text"	"1";
+		}
+		onTime 5000 {
+			set		"TMinusCount::text"	"0";
+			resetTime "fnBeginLevel" "0";
+		}
+	}
+
+	windowDef LevelCompleteScreen {
+		rect		0, -480,640,480
+		//rect		0, 0,640,480
+		visible		1
+
+		noTime		1
+
+		windowDef winimage {
+			rect		120,-20,400,400
+			background  "guis/assets/arcade/martianbuddy_thanksbuddy.tga"
+			matcolor	1,1,1,.8
+
+		}
+
+		windowDef win1 {
+			rect		0,20,640,100
+			text		"#str_00100129"
+			textscale	1
+			textalign	1
+		}
+
+		windowDef level {
+			rect		0,80,640,100
+			text		"gui::currentLevel"
+			textscale	1
+			textalign	1
+		}
+
+		windowDef ScoreLabel {
+			rect		100,150,440,40
+			text		"#str_00100114"
+			textscale	.5
+			textalign	0
+		}
+
+		windowDef Score {
+			rect		100,150,440,40
+			text		"gui::player_prebonusscore"
+			textscale	.5
+			textalign	2
+		}
+
+		windowDef BonusLabel {
+			rect		100,180,440,40
+			text		"#str_00100130"
+			textscale	.5
+			textalign	0
+		}
+
+		windowDef AccuracyLabel {
+			rect		120,210,440,40
+			text		"#str_00100131"
+			textscale	.5
+			textalign	0
+		}
+
+		windowDef Accuracy {
+			rect		260,210,440,40
+			text		"gui::player_accuracy"
+			textscale	.5
+			textalign	0
+		}
+
+		windowDef AccuracyScore {
+			rect		100,210,440,40
+			text		"gui::player_accuracy_score"
+			textscale	.5
+			textalign	2
+		}
+
+		windowDef SaveAccuracyLabel {
+			rect		120,240,440,40
+			text		"#str_00100132"
+			textscale	.5
+			textalign	0
+		}
+
+		windowDef SaveAccuracy {
+			rect		360,240,440,40
+			text		"gui::save_accuracy"
+			textscale	.5
+			textalign	0
+		}
+
+		windowDef SaveAccuracyScore {
+			rect		100,240,440,40
+			text		"gui::save_accuracy_score"
+			textscale	.5
+			textalign	2
+		}
+
+
+		windowDef TotalScoreLabel {
+			rect		100,320,440,40
+			text		"#str_00100133"
+			textscale	.7
+			textalign	0
+		}
+
+		windowDef TotalScore {
+			rect		100,320,440,40
+			text		"gui::player_score"
+			textscale	.7
+			textalign	2
+			forecolor	0, .6, 0, 1
+		}
+
+		windowDef NextLevelButtonImage {
+			rect	120,360,400,75
+			visible	1
+			background "guis/assets/arcade/arcade_coincontinue_button.tga"
+			matcolor	0.6,0,0,1
+		}
+
+		windowDef NextLevelButton {
+			rect		120,370,400,55
+			text		"#str_00100120"
+			textscale	.7
+			textalign	1
+			//backcolor	.6, 0, 0, .5
+
+			onAction {
+				set	"cmd"	"play arcade_levelcomplete2" ;
+				resetTime "fnNextLevel" "0";
+			}
+		}
+
+
+	}
+
+
+	windowDef GameCompleteScreen {
+		rect		0, -480,640,480
+		//rect		0, 0,640,480
+		visible		1
+
+		noTime		1
+
+		onTime 0 {
+			set "cmd" "martianbuddycomplete" ;
+		}
+
+		windowDef winimage {
+			rect		120,-20,400,400
+			background  "guis/assets/arcade/martianbuddy_thanksbuddy.tga"
+			matcolor	1,1,1,.8
+
+		}
+
+		windowDef win1 {
+			rect		0,20,640,100
+			text		"#str_00100565"
+			textscale	1
+			textalign	1
+		}
+
+		windowDef level {
+			rect		0,80,640,100
+			text		"gui::currentLevel"
+			textscale	1
+			textalign	1
+		}
+
+		windowDef ScoreLabel {
+			rect		100,150,440,40
+			text		"#str_00100114"
+			textscale	.5
+			textalign	0
+		}
+
+		windowDef Score {
+			rect		100,150,440,40
+			text		"gui::player_prebonusscore"
+			textscale	.5
+			textalign	2
+		}
+
+		windowDef BonusLabel {
+			rect		100,180,440,40
+			text		"#str_00100130"
+			textscale	.5
+			textalign	0
+		}
+
+		windowDef AccuracyLabel {
+			rect		120,210,440,40
+			text		"#str_00100131"
+			textscale	.5
+			textalign	0
+		}
+
+		windowDef Accuracy {
+			rect		260,210,440,40
+			text		"gui::player_accuracy"
+			textscale	.5
+			textalign	0
+		}
+
+		windowDef AccuracyScore {
+			rect		100,210,440,40
+			text		"gui::player_accuracy_score"
+			textscale	.5
+			textalign	2
+		}
+
+		windowDef SaveAccuracyLabel {
+			rect		120,240,440,40
+			text		"#str_00100132"
+			textscale	.5
+			textalign	0
+		}
+
+		windowDef SaveAccuracy {
+			rect		360,240,440,40
+			text		"gui::save_accuracy"
+			textscale	.5
+			textalign	0
+		}
+
+		windowDef SaveAccuracyScore {
+			rect		100,240,440,40
+			text		"gui::save_accuracy_score"
+			textscale	.5
+			textalign	2
+		}
+
+
+		windowDef TotalScoreLabel {
+			rect		100,320,440,40
+			text		"#str_00100133"
+			textscale	.7
+			textalign	0
+		}
+
+		windowDef TotalScore {
+			rect		100,320,440,40
+			text		"gui::player_score"
+			textscale	.7
+			textalign	2
+			forecolor	0, .6, 0, 1
+		}
+
+		windowDef MainMenuButtonImage {
+			rect	120,360,400,75
+			visible	1
+			background "guis/assets/arcade/arcade_coincontinue_button.tga"
+			matcolor	0.6,0,0,1
+		}
+
+		windowDef MainMenuButton {
+			rect		120,370,400,55
+			text		"#str_00100566"
+			textscale	.7
+			textalign	1
+			//backcolor	.6, 0, 0, .5
+
+			onAction {
+				transition		"GameCompleteScreen::rect" "0 0 640 480" "0 -480 640 480" "500";
+				resetTime		"fnIntroScreen" "0";
+			}
+		}
+
+	}
+
+	windowDef GameOverScreen {
+		rect		0, -480,640,480
+		//rect		0, 0,640,480
+		visible		0
+
+		noTime		1
+
+		/*windowDef GameOverWin1 {
+
+			rect	65,75,505,96
+			visible	1
+			background	"guis/assets/teleporter/button1"
+			matcolor	0.6,0,0,1
+
+
+			windowDef GameOverText
+			{
+				rect	0,10,505,96
+				text	"Game Over"
+				font	"fonts/bank"
+				textscale	1
+				forecolor	1,1,1,0.8
+				visible	1
+				textalign	1
+			}
+		}*/
+
+		windowDef GameOverImage {
+			rect 170,10,300,300
+			background "game/SSD/gameover"
+		}
+
+		windowDef ContinueText {
+			rect 0, 270, 640, 480
+			text "1"
+			textscale 2
+			forecolor 1,1,1,1
+			textalign	1
+		}
+
+		windowDef ContinueButtonImage {
+			rect	170,380,300,80
+			visible	1
+			background "guis/assets/arcade/arcade_coincontinue_button.tga"
+			matcolor	0.0,0.6,0,.6
+		}
+
+		windowDef ContinueButton {
+			rect	170,400,300,60
+			visible	1
+			//background	"guis/assets/teleporter/button1"
+			//matcolor	0.0,0.6,0,.6
+
+			text		"#str_00100113"
+			textalign	1
+			textscale	.6
+			forecolor   1,1,1,1
+
+			onAction {
+				set	"cmd"	"play arcade_startbeep" ;
+				resetTime "fnContinueGame"	"0";
+			}
+		}
+
+		onTime 0 {
+			set "ContinueText::text" "10";
+		}
+		onTime 1000 {
+			set "ContinueText::text" "9";
+		}
+		onTime 2000 {
+			set "ContinueText::text" "8";
+		}
+		onTime 3000 {
+			set "ContinueText::text" "7";
+		}
+		onTime 4000 {
+			set "ContinueText::text" "6";
+		}
+		onTime 5000 {
+			set "ContinueText::text" "5";
+		}
+		onTime 6000 {
+			set "ContinueText::text" "4";
+		}
+		onTime 7000 {
+			set "ContinueText::text" "3";
+		}
+		onTime 8000 {
+			set "ContinueText::text" "2";
+		}
+		onTime 9000 {
+			set "ContinueText::text" "1";
+		}
+		onTime 10000 {
+			transition		"GameOverScreen::rect" "0 0 640 480" "0 -480 640 480" "500";
+			set				"ContinueText::text" "0";
+			resetTime		"fnIntroScreen" "0";
+		}
+	}
+
+
+	//Some other full screen effects
+	windowDef Reflect
+	{
+		rect	-2,-13,648,489
+		matcolor	1 ,0.8 ,0.7 ,0.15
+		visible	1
+		background	"gui/reflect2"
+	}
+	windowDef Bglow
+	{
+		rect	0, 0, 640, 480
+		background	"guis/assets/cpuserver/bglow.tga"
+		visible	1
+		matcolor	1, 0.8, 0.4, 0.1
+	}
+	windowDef Addhighlight
+	{
+		rect	7,11,-625,461
+		background	"gui/addhighlight"
+		matcolor	0.4 ,0.4 ,0.2,1
+		visible	1
+	}
+	windowDef Static1
+	{
+		rect	0,0,-640,480
+		visible	1
+		background	"gui/static"
+		matcolor	1, 1, 1, pdhalffade[ time * 0.001 ] / 8
+	}
+}

@@ -167,6 +167,7 @@ protected:
 
 	~idSoundSample_OpenAL();
 
+	bool			LoadOgg( const idStr& name );
 	bool			LoadWav( const idStr& name );
 	bool			LoadAmplitude( const idStr& name );
 	void			WriteAllSamples( const idStr& sampleName );

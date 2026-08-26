@@ -36,11 +36,31 @@ If you have questions concerning this license or the applicable additional terms
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include <fstream>
+#include <string>
 
 // RB begin
 #include <stdio.h> // needed for sysconf()
 #include <cstring>
 // RB end
+
+/*
+================
+Sys_GetVideoRam
+returns in megabytes
+================
+*/
+int Sys_GetVideoRam()
+{
+	std::ifstream file( "/sys/class/drm/card0/device/mem_info_vram_total" );
+	if( file.is_open() )
+	{
+		uint64_t vramBytes = 0;
+		file >> vramBytes;
+		return vramBytes;
+	}
+	return 0;
+}
 
 /*
 ==============

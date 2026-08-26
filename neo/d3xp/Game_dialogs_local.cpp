@@ -42,7 +42,7 @@ idGameDialogsLocal::InitImp
 void idGameDialogsLocal::InitImp()
 {
 	dialog = NULL;
-	saveIndicator = NULL;
+	suppressMouseRelease = false;
 }
 
 /*
@@ -56,27 +56,17 @@ void idGameDialogsLocal::Init()
 
 	Shutdown();
 
-	dialog = new( TAG_SWF ) idSWF( "dialog" );
-	saveIndicator = new( TAG_SWF ) idSWF( "save_indicator" );
+	dialog = uiManager->FindGui( "guis/msg.gui", true, false, true );
+	if( !dialog )
+	{
+		idLib::Warning( "Failed to load dialog GUI 'guis/msg.gui'" );
+		return;
+	}
 
-	// Bind all dialogType_t enum values as globals so the SWF
-	// ActionScript can reference them by name
-#define BIND_DIALOG_CONSTANT( x ) dialog->SetGlobal( #x, x )
-	BIND_DIALOG_CONSTANT( DIALOG_ACCEPT );
-	BIND_DIALOG_CONSTANT( DIALOG_CONTINUE );
-	BIND_DIALOG_CONSTANT( DIALOG_ACCEPT_CANCEL );
-	BIND_DIALOG_CONSTANT( DIALOG_YES_NO );
-	BIND_DIALOG_CONSTANT( DIALOG_CANCEL );
-	BIND_DIALOG_CONSTANT( DIALOG_WAIT );
-	BIND_DIALOG_CONSTANT( DIALOG_WAIT_BLACKOUT );
-	BIND_DIALOG_CONSTANT( DIALOG_WAIT_CANCEL );
-	BIND_DIALOG_CONSTANT( DIALOG_DYNAMIC );
-	BIND_DIALOG_CONSTANT( DIALOG_QUICK_SAVE );
-	BIND_DIALOG_CONSTANT( DIALOG_TIMER_ACCEPT_REVERT );
-	BIND_DIALOG_CONSTANT( DIALOG_CRAWL_SAVE );
-	BIND_DIALOG_CONSTANT( DIALOG_CONTINUE_LARGE );
-	BIND_DIALOG_CONSTANT( DIALOG_BENCHMARK );
-#undef BIND_DIALOG_CONSTANT
+	dialog->Activate( false, 0 );
+	dialog->SetStateString( "visible_msgbox", "0" );
+	dialog->SetStateString( "visible_waitbox", "0" );
+	dialog->SetStateString( "visible_hasxp", /*fileSystem->HasD3XP() ? "1" :*/ "0" );
 }
 
 /*
@@ -88,13 +78,15 @@ void idGameDialogsLocal::Shutdown()
 {
 	idLib::PrintfIf( popupDialog_debug.GetBool(), "[%s]\n", __FUNCTION__ );
 
-	ClearDialogs();
+	if( dialog != NULL )
+	{
+		ActivateRenderer( false );
+	}
 
-	delete dialog;
+	ClearDialogs( true );
 	dialog = NULL;
 
-	delete saveIndicator;
-	saveIndicator = NULL;
+	suppressMouseRelease = false;
 }
 
 /*
@@ -124,9 +116,18 @@ idGameDialogsLocal::ActivateRenderer
 */
 void idGameDialogsLocal::ActivateRenderer( bool active )
 {
-	if( dialog != NULL )
+	if( dialog == NULL )
 	{
-		dialog->Activate( active );
+		return;
+	}
+
+	if( active )
+	{
+		dialog->Activate( true, Sys_Milliseconds() );
+	}
+	else
+	{
+		dialog->Activate( false, Sys_Milliseconds() );
 	}
 }
 
@@ -137,7 +138,7 @@ idGameDialogsLocal::IsSaveIndicatorActive
 */
 bool idGameDialogsLocal::IsSaveIndicatorActive() const
 {
-	return ( saveIndicator != NULL && saveIndicator->IsActive() );
+	return false;
 }
 
 /*
@@ -147,9 +148,9 @@ idGameDialogsLocal::RenderDialog
 */
 void idGameDialogsLocal::RenderDialog( int timeMicroseconds )
 {
-	if( dialog != NULL )
+	if( dialog != NULL && dialog->IsActive() )
 	{
-		dialog->Render( renderSystem, timeMicroseconds );
+		dialog->Redraw( Sys_Milliseconds(), false );
 	}
 }
 
@@ -160,10 +161,6 @@ idGameDialogsLocal::RenderSaveIndicator
 */
 void idGameDialogsLocal::RenderSaveIndicator( int timeMicroseconds )
 {
-	if( saveIndicator != NULL )
-	{
-		saveIndicator->Render( renderSystem, timeMicroseconds );
-	}
 }
 
 /*
@@ -175,7 +172,7 @@ void idGameDialogsLocal::SetRendererGlobalInt( const char* name, int val )
 {
 	if( dialog != NULL )
 	{
-		dialog->SetGlobal( name, val );
+		dialog->SetStateInt( name, val );
 	}
 }
 
@@ -188,53 +185,79 @@ void idGameDialogsLocal::SetRendererGlobalString( const char* name, const char* 
 {
 	if( dialog != NULL )
 	{
-		dialog->SetGlobal( name, val );
+		dialog->SetStateString( name, val );
 	}
 }
 
 /*
 ========================
-idGameDialogsLocal::AddRefCallback
+idGameDialogsLocal::HandleDialogCommand
 ========================
 */
-void idGameDialogsLocal::AddRefCallback( void* cb )
+void idGameDialogsLocal::HandleDialogCommand( const char* cmd )
 {
-	if( cb != NULL )
+	idLib::PrintfIf( popupDialog_debug.GetBool(), "[%s] cmd: %s\n", __FUNCTION__, cmd ? cmd : "NULL" );
+
+	if( messageList.Num() == 0 )
 	{
-		AsSWF( cb )->AddRef();
+		return;
+	}
+
+	idDialogInfo& info = messageList[0];
+	if( info.clear )
+	{
+		return;
+	}
+
+	bool shouldClear = false;
+
+	if( !idStr::Icmp( cmd, "mid" ) )
+	{
+		if( info.acceptCB )
+		{
+			InvokeCallback( info.acceptCB );
+		}
+		shouldClear = true;
+	}
+	else if( !idStr::Icmp( cmd, "left" ) )
+	{
+		if( info.cancelCB )
+		{
+			InvokeCallback( info.cancelCB );
+		}
+		else if( info.altCBOne )
+		{
+			InvokeCallback( info.altCBOne );
+		}
+		shouldClear = true;
+	}
+	else if( !idStr::Icmp( cmd, "right" ) )
+	{
+		if( info.altCBOne )
+		{
+			InvokeCallback( info.altCBOne );
+		}
+		else if( info.cancelCB )
+		{
+			InvokeCallback( info.cancelCB );
+		}
+		shouldClear = true;
+	}
+	else if( !idStr::Icmp( cmd, "stop" ) )
+	{
+		shouldClear = true;
+	}
+
+	if( shouldClear )
+	{
+		info.clear = true;
+		ActivateRenderer( false );
 	}
 }
 
 /*
 ========================
-idGameDialogsLocal::ReleaseCallback
-========================
-*/
-void idGameDialogsLocal::ReleaseCallback( void* cb )
-{
-	if( cb != NULL )
-	{
-		AsSWF( cb )->Release();
-	}
-}
-
-/*
-========================
-idGameDialogsLocal::InvokeCallback
-========================
-*/
-void idGameDialogsLocal::InvokeCallback( void* cb )
-{
-	if( cb != NULL )
-	{
-		idSWFParmList parms;
-		AsSWF( cb )->Call( NULL, parms );
-	}
-}
-
-/*
-========================
-idGameDialogsLocal::InvokeCallback
+idGameDialogsLocal::BindDialogToRenderer
 ========================
 */
 void idGameDialogsLocal::BindDialogToRenderer( const idDialogInfo& info )
@@ -244,92 +267,116 @@ void idGameDialogsLocal::BindDialogToRenderer( const idDialogInfo& info )
 		return;
 	}
 
-	class idSWFScriptFunction_CallbackAdapter : public idSWFScriptFunction_RefCounted
-	{
-	public:
-		explicit idSWFScriptFunction_CallbackAdapter( idDialogCallback* cb )
-			: callback( cb )
-		{
-			if( callback )
-			{
-				callback->AddRef();
-			}
-		}
-		~idSWFScriptFunction_CallbackAdapter()
-		{
-			if( callback )
-			{
-				callback->Release();
-			}
-		}
-		idSWFScriptVar Call( idSWFScriptObject*, const idSWFParmList& ) override
-		{
-			if( callback )
-			{
-				callback->Call();
-			}
-			return idSWFScriptVar();
-		}
-	private:
-		idDialogCallback* callback;
-	};
-
-	auto Wrap = []( idDialogCallback * cb ) -> idSWFScriptFunction *
-	{
-		if( cb == NULL )
-		{
-			return NULL;
-		}
-		return new( TAG_SWF ) idSWFScriptFunction_CallbackAdapter( cb );
-	};
-
 	idStr message, title;
 	GetDialogMsg( info.msg, message, title );
 
-	dialog->SetGlobal( "titleVal", title );
+	dialog->SetStateString( "title", idLocalization::GetString( title ) );
 	if( info.overrideMsg.IsEmpty() )
 	{
-		dialog->SetGlobal( "messageInfo", message );
+		dialog->SetStateString( "message", idLocalization::GetString( message ) );
 	}
 	else
 	{
-		dialog->SetGlobal( "messageInfo", info.overrideMsg );
+		dialog->SetStateString( "message", info.overrideMsg );
 	}
-	dialog->SetGlobal( "Infotype", info.type );
 
-	if( info.acceptCB == NULL &&
-			info.type != DIALOG_WAIT &&
-			info.type != DIALOG_WAIT_BLACKOUT )
+	bool visibleMsgBox = true;
+	bool visibleWaitBox = false;
+	bool visibleMid = false;
+	bool visibleLeft = false;
+	bool visibleRight = false;
+
+	idStr midText, leftText, rightText;
+
+	switch( info.type )
 	{
+		case DIALOG_ACCEPT:
+		case DIALOG_CONTINUE:
+		case DIALOG_CANCEL:
+			visibleMid = true;
+			midText = ( info.type == DIALOG_CONTINUE ) ? "#str_swf_continue" :
+					  ( info.type == DIALOG_CANCEL ) ? "#str_swf_cancel" :
+					  "#str_swf_accept";
+			break;
 
-		// Default accept: just clears this dialog
-		class idSWFScriptFunction_DefaultAccept : public idSWFScriptFunction_RefCounted
-		{
-		public:
-			explicit idSWFScriptFunction_DefaultAccept( gameDialogMessages_t m ) : msg( m ) {}
-			idSWFScriptVar Call( idSWFScriptObject*, const idSWFParmList& ) override
+		case DIALOG_ACCEPT_CANCEL:
+			visibleLeft = true;
+			visibleRight = true;
+			leftText = "#str_swf_accept";
+			rightText = "#str_swf_cancel";
+			break;
+
+		case DIALOG_YES_NO:
+			visibleLeft = true;
+			visibleRight = true;
+			leftText = "#str_swf_yes";
+			rightText = "#str_swf_no";
+			break;
+
+		case DIALOG_WAIT:
+		case DIALOG_WAIT_BLACKOUT:
+		case DIALOG_WAIT_CANCEL:
+			visibleMsgBox = false;
+			visibleWaitBox = true;
+			break;
+
+		case DIALOG_DYNAMIC:
+			// Up to 3 options (accept, cancel, alt)
+			if( !info.txt1.IsEmpty() )
 			{
-				dialogs->ClearDialog( msg );
-				return idSWFScriptVar();
+				visibleMid = true;
+				midText = info.txt1.GetLocalizedString();
 			}
-		private:
-			gameDialogMessages_t msg;
-		};
-		dialog->SetGlobal( "acceptCallBack", new( TAG_SWF ) idSWFScriptFunction_DefaultAccept( info.msg ) );
+			if( !info.txt2.IsEmpty() )
+			{
+				visibleLeft = true;
+				leftText = info.txt2.GetLocalizedString();
+			}
+			if( !info.txt3.IsEmpty() )
+			{
+				visibleRight = true;
+				rightText = info.txt3.GetLocalizedString();
+			}
+			// Note: we ignore txt4 (would need a fourth button)
+			break;
+
+		case DIALOG_QUICK_SAVE:
+		case DIALOG_CRAWL_SAVE:
+		case DIALOG_TIMER_ACCEPT_REVERT:
+		case DIALOG_BENCHMARK:
+			// For these, we can treat as wait or accept, but we'll keep them as generic
+			visibleMid = true;
+			midText = "#str_swf_accept";
+			break;
+
+		default:
+			visibleMid = true;
+			midText = "#str_swf_accept";
+			break;
 	}
-	else
+
+	// Set visibility flags
+	dialog->SetStateBool( "visible_msgbox", visibleMsgBox );
+	dialog->SetStateBool( "visible_waitbox", visibleWaitBox );
+	dialog->SetStateBool( "visible_mid", visibleMid );
+	dialog->SetStateBool( "visible_left", visibleLeft );
+	dialog->SetStateBool( "visible_right", visibleRight );
+
+	// Set button labels
+	dialog->SetStateString( "mid", idLocalization::GetString( midText ) );
+	dialog->SetStateString( "left", idLocalization::GetString( leftText ) );
+	dialog->SetStateString( "right", idLocalization::GetString( rightText ) );
+
+	// The GUI does not need explicit callbacks; commands are handled by HandleDialogCommand.
+	// However, we store the callbacks in the dialog info for later invocation.
+
+	// For timer-based dialogs (DIALOG_TIMER_ACCEPT_REVERT), we can handle the countdown
+	// in the Render loop by checking the remaining time.
+	if( info.type == DIALOG_TIMER_ACCEPT_REVERT )
 	{
-		dialog->SetGlobal( "acceptCallBack", Wrap( info.acceptCB ) );
+		// We'll use the GUI variable "countdownInfo" to display time remaining
+		// This will be updated in Render().
 	}
-
-	dialog->SetGlobal( "cancelCallBack", Wrap( info.cancelCB ) );
-	dialog->SetGlobal( "altCBOne",	Wrap( info.altCBOne ) );
-	dialog->SetGlobal( "altCBTwo",	Wrap( info.altCBTwo ) );
-
-	dialog->SetGlobal( "opt1Txt", info.txt1.GetLocalizedString() );
-	dialog->SetGlobal( "opt2Txt", info.txt2.GetLocalizedString() );
-	dialog->SetGlobal( "opt3Txt", info.txt3.GetLocalizedString() );
-	dialog->SetGlobal( "opt4Txt", info.txt4.GetLocalizedString() );
 }
 
 /*
@@ -339,12 +386,7 @@ idGameDialogsLocal::IsDialogActive
 */
 bool idGameDialogsLocal::IsDialogActive() const
 {
-	if( dialog != NULL )
-	{
-		return dialog->IsActive();
-	}
-
-	return false;
+	return ( dialog && dialog->IsActive() );
 }
 
 /*
@@ -354,21 +396,33 @@ idGameDialogsLocal::HandleDialogEvent
 */
 bool idGameDialogsLocal::HandleDialogEvent( const sysEvent_t* sev )
 {
-	if( dialog != NULL && dialog->IsLoaded() && dialog->IsActive() )
+	if( dialog != NULL && dialog->IsActive() )
 	{
-		if( IsSaveIndicatorActive() )
+		if( sev->evType == SE_KEY && sev->evValue == K_MOUSE1 && !sev->evValue2 && suppressMouseRelease )
 		{
-			return false;
+			suppressMouseRelease = false;
+			return true;
 		}
-		else
+
+		if( sev->evType == SE_MOUSE_ABSOLUTE )
 		{
-			if( dialog->HandleEvent( sev ) )
+			const float width = renderSystem->GetWidth();
+			const float height = renderSystem->GetHeight();
+			if( width > 0.0f && height > 0.0f )
 			{
-				idKeyInput::ClearStates();
-				Sys_ClearEvents();
+				dialog->SetCursor( ( float )sev->evValue * SCREEN_WIDTH / width,
+								   ( float )sev->evValue2 * SCREEN_HEIGHT / height );
 			}
 		}
 
+		// Let the GUI process the event; it will return a command string if any.
+		const char* cmd = dialog->HandleEvent( sev, Sys_Milliseconds() );
+		if( cmd && cmd[0] )
+		{
+			HandleDialogCommand( cmd );
+			idKeyInput::ClearStates();
+			Sys_ClearEvents();
+		}
 		return true;
 	}
 
@@ -382,12 +436,10 @@ idGameDialogsLocal::ShowSaveIndicator
 */
 void idGameDialogsLocal::ShowSaveIndicator( bool show )
 {
-	idLib::PrintfIf( popupDialog_debug.GetBool(), "[%s]\n", __FUNCTION__ );
+	idLib::PrintfIf( popupDialog_debug.GetBool(), "[%s] show=%d\n", __FUNCTION__, show );
 
 	if( show )
 	{
-		idStr msg = idStrId( "#str_dlg_pc_saving" ).GetLocalizedString();
-
 		AddDialog( GDM_SAVING, DIALOG_WAIT, NULL, NULL, true, "", 0, false, true, true );
 	}
 	else

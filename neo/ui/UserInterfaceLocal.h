@@ -107,7 +107,7 @@ public:
 	{
 		bindHandler = win;
 	}
-	bool						Active() const
+	virtual bool				IsActive() const
 	{
 		return active;
 	}

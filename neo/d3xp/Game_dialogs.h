@@ -31,6 +31,8 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __GAME_DIALOGS_H__
 #define	__GAME_DIALOGS_H__
 
+class idUserInterface;
+
 /*
 ===============================================================================
 
@@ -121,7 +123,7 @@ public:
 
 	static bool DialogMsgShouldWait( gameDialogMessages_t msg );
 
-// SWF DIALOG START HERE
+// GUI DIALOG START HERE
 public:
 	virtual void    Init();
 	virtual void    Shutdown();
@@ -143,28 +145,24 @@ protected:
 	virtual void    SetRendererGlobalInt( const char* name, int val );
 	virtual void    SetRendererGlobalString( const char* name, const char* val );
 
-	virtual void    AddRefCallback( void* cb );
-	virtual void    ReleaseCallback( void* cb );
-	virtual void    InvokeCallback( void* cb ) ;
-
 	virtual void    BindDialogToRenderer( const idDialogInfo& info );
+
+	void            HandleDialogCommand( const char* cmd );
 
 private:
 	void			InitImp();
 
-	static idSWFScriptFunction* AsSWF( void* cb )
-	{
-		return static_cast< idSWFScriptFunction* >( cb );
-	}
+	static bool     DialogCommandHandler( const char* cmd );
 
-	idSWF* dialog;
-	idSWF* saveIndicator;
-// SWF DIALOG ENDS HERE
+	idUserInterface* dialog;
+// GUI DIALOG ENDS HERE
 
 protected:
 	bool    dialogPause;
 	bool    dialogInUse;
 	bool    dialogShowingSaveIndicatorRequested;
+
+	bool    suppressMouseRelease;
 
 	int     startSaveTime;
 	int     stopSaveTime;

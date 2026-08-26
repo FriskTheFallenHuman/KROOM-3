@@ -93,3 +93,5 @@ If you have questions concerning this license or the applicable additional terms
 //#else
 //	#define DEFAULT_BASEPATH			"/usr/share/games/kroom3bfg"
 //#endif
+
+#define CONFIG_SPEC						"config.spec"

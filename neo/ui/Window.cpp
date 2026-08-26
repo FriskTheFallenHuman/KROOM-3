@@ -254,6 +254,11 @@ void idWindow::CleanUp()
 	// Cleanup the named events
 	namedEvents.DeleteContents( true );
 
+	// Cleanup the operations and update vars
+	// (if it is not fixed, orphane register references are possible)
+	ops.Clear();
+	updateVars.Clear();
+
 	drawWindows.Clear();
 	children.DeleteContents( true );
 	definedVars.DeleteContents( true );
@@ -585,6 +590,18 @@ void idWindow::StateChanged( bool redraw )
 		else
 		{
 			drawWindows[i].simp->StateChanged( redraw );
+		}
+	}
+
+	if( redraw )
+	{
+		if( flags & WIN_DESKTOP )
+		{
+			Redraw( 0.0f, 0.0f, false );
+		}
+		if( background && background->CinematicLength() )
+		{
+			background->UpdateCinematic( gui->GetTime() );
 		}
 	}
 }
@@ -1264,13 +1281,15 @@ void idWindow::Time()
 		}
 	}
 
-	if( gui->Active() )
+	if( gui->IsActive() && cmd.Length() > 0 )
 	{
-		if( gui->GetPendingCmd().Length() > 0 )
+		// DG: can't just append the command, must separate commands with " ; "
+		idStr& pend = gui->GetPendingCmd();
+		if( pend.Length() > 0 )
 		{
-			gui->GetPendingCmd() += ";";
+			pend += " ; ";
 		}
-		gui->GetPendingCmd() += cmd;
+		pend += cmd;
 	}
 }
 
@@ -1323,8 +1342,10 @@ void idWindow::DrawBackground( const idRectangle& drawRect )
 		float scalex, scaley;
 		if( flags & WIN_NATURALMAT )
 		{
-			scalex = drawRect.w / background->GetImageWidth();
-			scaley = drawRect.h / background->GetImageHeight();
+			// DG: now also multiplied with matScalex/y, don't see a reason not to support that
+			//     (it allows scaling a tiled background image)
+			scalex = ( drawRect.w / background->GetImageWidth() ) * matScalex;
+			scaley = ( drawRect.h / background->GetImageHeight() ) * matScaley;
 		}
 		else
 		{
@@ -1521,7 +1542,7 @@ void idWindow::Redraw( float x, float y, bool hud )
 		dc->PopClipRect();
 	}
 
-	if( gui_edit.GetBool()  || ( flags & WIN_DESKTOP && !( flags & WIN_NOCURSOR )  && !hideCursor && ( gui->Active() || ( flags & WIN_MENUGUI ) ) ) )
+	if( gui_edit.GetBool()  || ( flags & WIN_DESKTOP && !( flags & WIN_NOCURSOR )  && !hideCursor && ( gui->IsActive() || ( flags & WIN_MENUGUI ) ) ) )
 	{
 		dc->SetTransformInfo( vec3_origin, mat3_identity );
 		gui->DrawCursor();
@@ -2028,59 +2049,47 @@ idWindow::GetWinVarOffset
 */
 intptr_t idWindow::GetWinVarOffset( idWinVar* wv, drawWin_t* owner )
 {
-	// RB: 64 bit fixes, changed oldschool offsets using ptrdiff_t
-	// DG: => also return intptr_t..
 	intptr_t ret = -1;
 
 	if( wv == &rect )
 	{
-		//ret = (intptr_t)&( ( idWindow * ) 0 )->rect;
-		//ret = offsetof( idWindow, rect );
-		ret = ( ptrdiff_t )&rect - ( ptrdiff_t )this;
+		ret = ( ptrdiff_t )&this->rect - ( ptrdiff_t )this;
 	}
 
 	if( wv == &backColor )
 	{
-		//ret = (int)&( ( idWindow * ) 0 )->backColor;
-		ret = ( ptrdiff_t )&backColor - ( ptrdiff_t )this;
+		ret = ( ptrdiff_t )&this->backColor - ( ptrdiff_t )this;
 	}
 
 	if( wv == &matColor )
 	{
-		//ret = (int)&( ( idWindow * ) 0 )->matColor;
-		ret = ( ptrdiff_t )&matColor - ( ptrdiff_t )this;
+		ret = ( ptrdiff_t )&this->matColor - ( ptrdiff_t )this;
 	}
 
 	if( wv == &foreColor )
 	{
-		//ret = (int)&( ( idWindow * ) 0 )->foreColor;
-		ret = ( ptrdiff_t )&foreColor - ( ptrdiff_t )this;
+		ret = ( ptrdiff_t )&this->foreColor - ( ptrdiff_t )this;
 	}
 
 	if( wv == &hoverColor )
 	{
-		//ret = (int)&( ( idWindow * ) 0 )->hoverColor;
-		ret = ( ptrdiff_t )&hoverColor - ( ptrdiff_t )this;
+		ret = ( ptrdiff_t )&this->hoverColor - ( ptrdiff_t )this;
 	}
 
 	if( wv == &borderColor )
 	{
-		//ret = (int)&( ( idWindow * ) 0 )->borderColor;
-		ret = ( ptrdiff_t )&borderColor - ( ptrdiff_t )this;
+		ret = ( ptrdiff_t )&this->borderColor - ( ptrdiff_t )this;
 	}
 
 	if( wv == &textScale )
 	{
-		//ret = (int)&( ( idWindow * ) 0 )->textScale;
-		ret = ( ptrdiff_t )&textScale - ( ptrdiff_t )this;
+		ret = ( ptrdiff_t )&this->textScale - ( ptrdiff_t )this;
 	}
 
 	if( wv == &rotate )
 	{
-		//ret = (int)&( ( idWindow * ) 0 )->rotate;
-		ret = ( ptrdiff_t )&rotate - ( ptrdiff_t )this;
+		ret = ( ptrdiff_t )&this->rotate - ( ptrdiff_t )this;
 	}
-	// RB end
 
 	if( ret != -1 )
 	{
@@ -2464,9 +2473,7 @@ bool idWindow::ParseRegEntry( const char* name, idTokenParser* src )
 	work = name;
 	work.ToLower();
 
-	// DG: second argument is a bool, so use false, not NULL
 	idWinVar* var = GetWinVarByName( work, false );
-	// DG end
 	if( var )
 	{
 		for( int i = 0; i < NumRegisterVars; i++ )
@@ -2698,9 +2705,6 @@ bool idWindow::Parse( idTokenParser* src, bool rebuild )
 		}
 		else if( token == "renderDef" )
 		{
-			// D3 could render a 3D model in a subrect of a full screen
-			// GUI for the main menus, but we have cut that ability so
-			// we don't need to deal with offset viewports on all platforms.
 			idRenderWindow* win = new( TAG_OLD_UI ) idRenderWindow( gui );
 			SaveExpressionParseState();
 			win->Parse( src, rebuild );
@@ -3127,10 +3131,9 @@ wexpOp_t* idWindow::ExpressionOp()
 idWindow::EmitOp
 ================
 */
-// DG: a, b and the return value are really pointers, so use intptr_t
+
 intptr_t idWindow::EmitOp( intptr_t a, intptr_t b, wexpOpType_t opType, wexpOp_t** opp )
 {
-	// DG end
 	wexpOp_t* op;
 	/*
 		// optimize away identity operations
@@ -3182,11 +3185,9 @@ intptr_t idWindow::EmitOp( intptr_t a, intptr_t b, wexpOpType_t opType, wexpOp_t
 idWindow::ParseEmitOp
 ================
 */
-// DG: a, b and the return value are really pointers, so use intptr_t
 intptr_t idWindow::ParseEmitOp( idTokenParser* src, intptr_t a, wexpOpType_t opType, int priority, wexpOp_t** opp )
 {
 	intptr_t b = ParseExpressionPriority( src, priority );
-// DG end
 	return EmitOp( a, b, opType, opp );
 }
 
@@ -3198,14 +3199,10 @@ idWindow::ParseTerm
 Returns a register index
 =================
 */
-// DG: component and the return value are really pointers, so use intptr_t
 intptr_t idWindow::ParseTerm( idTokenParser* src,	idWinVar* var, intptr_t component )
 {
-	// DG end
 	idToken token;
-	// RB: 64 bit fixes, changed int to intptr_t
-	intptr_t		a, b;
-	// RB end
+	intptr_t a, b;
 
 	src->ReadToken( &token );
 
@@ -3256,10 +3253,7 @@ intptr_t idWindow::ParseTerm( idTokenParser* src,	idWinVar* var, intptr_t compon
 	}
 	if( var )
 	{
-		// RB: 64 bit fixes, changed int to intptr_t
 		a = ( intptr_t )var;
-		// RB end
-
 		//assert(dynamic_cast<idWinVec4*>(var));
 		var->Init( token, this );
 		b = component;
@@ -3306,9 +3300,7 @@ intptr_t idWindow::ParseTerm( idTokenParser* src,	idWinVar* var, intptr_t compon
 		// ugly but used for post parsing to fixup named vars
 		char* p = new( TAG_OLD_UI ) char[token.Length() + 1];
 		strcpy( p, token );
-		// RB: 64 bit fixes, changed int to intptr_t
 		a = ( intptr_t )p;
-		// RB: 64 bit fixes, changed int to intptr_t
 		b = -2;
 		return EmitOp( a, b, WOP_TYPE_VAR );
 	}
@@ -3323,7 +3315,6 @@ Returns a register index
 =================
 */
 #define	TOP_PRIORITY 4
-// DG: a, component and the return value are really pointers, so use intptr_t
 intptr_t idWindow::ParseExpressionPriority( idTokenParser* src, int priority, idWinVar* var, intptr_t component )
 {
 	idToken token;
@@ -3399,7 +3390,6 @@ intptr_t idWindow::ParseExpressionPriority( idTokenParser* src, int priority, id
 	{
 		wexpOp_t* oop = NULL;
 		intptr_t o = ParseEmitOp( src, a, WOP_TYPE_COND, priority, &oop );
-		// DG end
 		if( !src->ReadToken( &token ) )
 		{
 			return o;
@@ -3427,10 +3417,8 @@ idWindow::ParseExpression
 Returns a register index
 ================
 */
-// DG: component and the return value are really pointers, so use intptr_t
 intptr_t idWindow::ParseExpression( idTokenParser* src, idWinVar* var, intptr_t component )
 {
-	// DG end
 	return ParseExpressionPriority( src, TOP_PRIORITY, var );
 }
 
@@ -4336,70 +4324,68 @@ void idWindow::FixupTransitions()
 		transitions[i].data = NULL;
 		if( dw != NULL && ( dw->win != NULL || dw->simp != NULL ) )
 		{
-			// RB: 64 bit fixes, changed oldschool offsets using ptrdiff_t
 			if( dw->win != NULL )
 			{
-				if( transitions[i].offset == ( ptrdiff_t )&rect - ( ptrdiff_t )this )
+				if( transitions[i].offset == ( ptrdiff_t )&this->rect - ( ptrdiff_t )this )
 				{
 					transitions[i].data = &dw->win->rect;
 				}
-				else if( transitions[i].offset == ( ptrdiff_t )&backColor - ( ptrdiff_t )this )
+				else if( transitions[i].offset == ( ptrdiff_t )&this->backColor - ( ptrdiff_t )this )
 				{
 					transitions[i].data = &dw->win->backColor;
 				}
-				else if( transitions[i].offset == ( ptrdiff_t )&matColor - ( ptrdiff_t )this )
+				else if( transitions[i].offset == ( ptrdiff_t )&this->matColor - ( ptrdiff_t )this )
 				{
 					transitions[i].data = &dw->win->matColor;
 				}
-				else if( transitions[i].offset == ( ptrdiff_t )&foreColor - ( ptrdiff_t )this )
+				else if( transitions[i].offset == ( ptrdiff_t )&this->foreColor - ( ptrdiff_t )this )
 				{
 					transitions[i].data = &dw->win->foreColor;
 				}
-				else if( transitions[i].offset == ( ptrdiff_t )&borderColor - ( ptrdiff_t )this )
+				else if( transitions[i].offset == ( ptrdiff_t )&this->borderColor - ( ptrdiff_t )this )
 				{
 					transitions[i].data = &dw->win->borderColor;
 				}
-				else if( transitions[i].offset == ( ptrdiff_t )&textScale - ( ptrdiff_t )this )
+				else if( transitions[i].offset == ( ptrdiff_t )&this->textScale - ( ptrdiff_t )this )
 				{
 					transitions[i].data = &dw->win->textScale;
 				}
-				else if( transitions[i].offset == ( ptrdiff_t )&rotate - ( ptrdiff_t )this )
+				else if( transitions[i].offset == ( ptrdiff_t )&this->rotate - ( ptrdiff_t )this )
 				{
 					transitions[i].data = &dw->win->rotate;
 				}
 			}
 			else
 			{
-				if( transitions[i].offset == ( ptrdiff_t )&rect - ( ptrdiff_t )this )
+				if( transitions[i].offset == ( ptrdiff_t )&this->rect - ( ptrdiff_t )this )
 				{
 					transitions[i].data = &dw->simp->rect;
 				}
-				else if( transitions[i].offset == ( ptrdiff_t )&backColor - ( ptrdiff_t )this )
+				else if( transitions[i].offset == ( ptrdiff_t )&this->backColor - ( ptrdiff_t )this )
 				{
 					transitions[i].data = &dw->simp->backColor;
 				}
-				else if( transitions[i].offset == ( ptrdiff_t )&matColor - ( ptrdiff_t )this )
+				else if( transitions[i].offset == ( ptrdiff_t )&this->matColor - ( ptrdiff_t )this )
 				{
 					transitions[i].data = &dw->simp->matColor;
 				}
-				else if( transitions[i].offset == ( ptrdiff_t )&foreColor - ( ptrdiff_t )this )
+				else if( transitions[i].offset == ( ptrdiff_t )&this->foreColor - ( ptrdiff_t )this )
 				{
 					transitions[i].data = &dw->simp->foreColor;
 				}
-				else if( transitions[i].offset == ( ptrdiff_t )&borderColor - ( ptrdiff_t )this )
+				else if( transitions[i].offset == ( ptrdiff_t )&this->borderColor - ( ptrdiff_t )this )
 				{
 					transitions[i].data = &dw->simp->borderColor;
 				}
-				else if( transitions[i].offset == ( ptrdiff_t )&textScale - ( ptrdiff_t )this )
+				else if( transitions[i].offset == ( ptrdiff_t )&this->textScale - ( ptrdiff_t )this )
 				{
 					transitions[i].data = &dw->simp->textScale;
 				}
-				else if( transitions[i].offset == ( ptrdiff_t )&rotate - ( ptrdiff_t )this )
+				else if( transitions[i].offset == ( ptrdiff_t )&this->rotate - ( ptrdiff_t )this )
 				{
 					transitions[i].data = &dw->simp->rotate;
 				}
 			}
-			// RB end
 		}
 		if( transitions[i].data == NULL )
 		{
@@ -4467,9 +4453,7 @@ void idWindow::FixupParms()
 			const char* p = ( const char* )( ops[i].a );
 			idWinVar* var = GetWinVarByName( p, true );
 			delete []p;
-			// RB: 64 bit fix, changed int to intptr_t
 			ops[i].a = ( intptr_t )var;
-			// RB end
 			ops[i].b = -1;
 		}
 	}

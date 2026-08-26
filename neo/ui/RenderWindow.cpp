@@ -34,12 +34,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "UserInterfaceLocal.h"
 #include "RenderWindow.h"
 
-// NO LONGER SUPPORTED!
-//
-// D3 could render a 3D model in a subrect of a full screen
-// GUI for the main menus, but we have cut that ability so
-// we don't need to deal with offset viewports on all platforms.
-
 idRenderWindow::idRenderWindow( idUserInterfaceLocal* g ) : idWindow( g )
 {
 	gui = g;
@@ -122,12 +116,16 @@ void idRenderWindow::PreRender()
 			worldEntity.shaderParms[3] = 1;
 			modelDef = world->AddEntityDef( &worldEntity );
 		}
+		world->GenerateAllInteractions();
 		needsRender = false;
 	}
 }
 
 void idRenderWindow::Render( int time )
 {
+	UpdateWinVars();
+	EvalRegs( -1, true );
+
 	rLight.origin = lightOrigin.ToVec3();
 	rLight.shaderParms[SHADERPARM_RED] = lightColor.x();
 	rLight.shaderParms[SHADERPARM_GREEN] = lightColor.y();
@@ -162,6 +160,15 @@ void idRenderWindow::Draw( int time, float x, float y )
 
 	memset( &refdef, 0, sizeof( refdef ) );
 	refdef.vieworg = viewOffset.ToVec3();;
+
+	if( drawRect.w > 0.0f && drawRect.h > 0.0f )
+	{
+		const float centerX = drawRect.x + drawRect.w * 0.5f;
+		const float centerY = drawRect.y + drawRect.h * 0.5f;
+		refdef.vieworg.y += ( centerX - VIRTUAL_WIDTH * 0.5f ) * 0.15f;
+		refdef.vieworg.z += ( centerY - 235.0f ) * 0.15f;
+	}
+
 	//refdef.vieworg.Set(-128, 0, 0);
 
 	refdef.viewaxis.Identity();
@@ -172,6 +179,22 @@ void idRenderWindow::Draw( int time, float x, float y )
 
 	refdef.fov_x = 90;
 	refdef.fov_y = 2 * atan( ( float )drawRect.h / drawRect.w ) * idMath::M_RAD2DEG;
+
+	// HACK: in BFG edition all RenderWindows are rendered to the full screen
+	// this mimics the old behavior of the original Doom 3 engine where RenderWindows were rendered to a sub-rectangle of the screen
+	refdef.useViewport = true;
+	const int screenWidth = renderSystem->GetWidth();
+	const int screenHeight = renderSystem->GetHeight();
+	const float xScale = screenWidth / ( float )VIRTUAL_WIDTH;
+	const float yScale = screenHeight / ( float )VIRTUAL_HEIGHT;
+	const int left = idMath::ClampInt( 0, screenWidth - 1, idMath::Ftoi( drawRect.x * xScale ) );
+	const int right = idMath::ClampInt( 0, screenWidth - 1, idMath::Ftoi( ( drawRect.x + drawRect.w ) * xScale ) - 1 );
+	const int top = idMath::ClampInt( 0, screenHeight - 1, idMath::Ftoi( drawRect.y * yScale ) );
+	const int bottom = idMath::ClampInt( 0, screenHeight - 1, idMath::Ftoi( ( drawRect.y + drawRect.h ) * yScale ) - 1 );
+	refdef.viewport.x1 = left;
+	refdef.viewport.x2 = Max( left, right );
+	refdef.viewport.y1 = screenHeight - 1 - Max( top, bottom );
+	refdef.viewport.y2 = screenHeight - 1 - top;
 
 	refdef.time[0] = time;
 	refdef.time[1] = time;

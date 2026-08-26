@@ -1,0 +1,611 @@
+windowDef Desktop {
+	rect	0,0,640,480
+
+	float	"credits"			0
+
+	onEvent {
+		if("desktop::credits" == 0) {
+			set "CreditText::text" "#str_00100097";
+		}
+		if("desktop::credits" == 1) {
+			set "CreditText::text" "#str_00100098";
+		}
+		if("desktop::credits" == 2) {
+			set "CreditText::text" "#str_00100099";
+		}
+		if("desktop::credits" == 3) {
+			set "CreditText::text" "#str_00100100";
+		}
+		if("desktop::credits" == 4) {
+			set "CreditText::text" "#str_00100101";
+		}
+
+	}
+
+	onNamedEvent GameOver {
+		resetTime "fnGameOver" "0"
+	}
+
+	onNamedEvent EnableFireButton {
+		resetTime "fnEnableFireButton" "0"
+	}
+	onNamedEvent DisableFireButton {
+		resetTime "fnDisableFireButton" "0"
+	}
+
+	windowDef mainbackground {
+		rect	0,0,640,480
+		visible	1
+
+		backcolor   0, 0, 0, 1
+		matcolor	1,1,1,.8
+
+		onAction {
+		}
+	}
+
+	//Function Windows
+	/*
+	* Fades the menu screen and begins the game
+	*/
+	windowDef fnStartGame {
+		notime 1
+
+		onTime 0 {
+			set			"game::visible" "1";
+			set			"gui::player_score" "0";
+			set			"gui::current_level" "1";
+			set			"gui::turret_force" "200";
+
+			"transition" "game::matcolor" "0 0 0 0" "1 1 1 1" "1000";
+			"transition" "IntroScreen::rect" "0 0 640 480" "0 -480 640 480" "1000";
+		}
+		onTime 950 {
+			set			"gameWin::onNewGame"	"1";
+		}
+		onTime 1000 {
+			set			"IntroScreen::visible" "0";
+			set			"gameWin::visible"		"1";
+			set			"gameWin::gamerunning"	"1";
+			resetTime	"fnEnableFireButton"	"0";
+		}
+	}
+
+	/*
+	* Game Over
+	*/
+	windowDef fnGameOver {
+		notime 1
+
+		onTime 0 {
+			set			"ContinueScreen::visible"	"1";
+			set			"ContinueButton::noEvents"	"1";
+			set			"Countdown::text"	"10";
+			set			"gameWin::visible"		"0";
+			set			"gameWin::gamerunning"	"0";
+
+			"transition" "game::matcolor" "1 1 1 1" "0 0 0 0" "1000";
+			"transition" "ContinueScreen::rect" "0 -480 640 480" "0 0 640 480" "1000";
+		}
+		onTime 1000 {
+			set			"game::visible" "0";
+			resetTime	"ContinueScreen"		"0";
+			set			"ContinueButton::noEvents"	"0";
+		}
+	}
+
+	/*
+	* Continue Game
+	*/
+	windowDef fnContinueGame {
+		notime 1
+
+		onTime 0 {
+			set			"game::visible"			"1";
+			set			"ContinueButton::noEvents"	"1";
+
+			"transition" "game::matcolor" "0 0 0 0" "1 1 1 1" "1000";
+			"transition" "ContinueScreen::rect" "0 0 640 480" "0 -480 640 480" "1000";
+		}
+		onTime 950 {
+			set			"gameWin::onContinue"		"1";
+		}
+		onTime 1000 {
+			set			"ContinueScreen::visible"	"0";
+			set			"gameWin::visible"			"1";
+			set			"gameWin::gamerunning"		"1";
+		}
+	}
+
+	/*
+	* Enable and Disable the fire button
+	*/
+	windowDef fnEnableFireButton {
+		notime 1
+
+		onTime 0 {
+			set			"FireButton::matcolor" "0.6 0 0 0.4";
+			set			"FireButton::noEvents" "0";
+		}
+	}
+
+	windowDef fnDisableFireButton {
+		notime 1
+
+		onTime 0 {
+			set			"FireButton::matcolor" "0.2 0 0 0.1";
+			set			"FireButton::noEvents" "1";
+		}
+	}
+
+
+	/* ===================================
+	*  The Game Window
+	*  ===================================
+	*/
+	windowDef game {
+		rect 0,0,640,480
+		matcolor 0,0,0,0
+		background "guis/assets/bearshoot/background"
+		visible 0
+
+		gameBearShootDef gameWin {
+			rect 0,0,640,480
+			visible 0
+			gamerunning 0
+
+			windowDef TimerGroup {
+				rect 300, 0, 180, 30
+
+				windowDef TimerTitle {
+					rect 28, 0, 100, 30
+					text "#str_00100102"
+					textscale .4
+				}
+				windowDef Timer {
+					rect 100, 0, 90, 30
+					backcolor 0,0,0,.15
+					text "gui::time_remaining"
+					textscale .4
+				}
+			}
+
+			windowDef LevelGroup {
+				rect 480, 0, 150, 30
+
+				windowDef LevelTitle {
+					rect 28, 0, 100, 30
+					text "#str_00100103"
+					textscale .4
+				}
+				windowDef Level {
+					rect 100,0, 64, 30
+					backcolor 0,0,0,.15
+					text "gui::current_level"
+					textscale .4
+					textalignx 10
+				}
+			}
+
+			windowDef ScoreGroup {
+				rect 0,0,280,40
+
+				windowDef ScoreTitle {
+					rect 0, 0, 260, 30
+					text "#str_00100104"
+					textscale .4
+				}
+				windowDef Score {
+					rect 184, 0, 64, 30
+					backcolor 0,0,0,.15
+					text "gui::player_score"
+					textscale .4
+					textalignx 6
+				}
+			}
+
+			windowDef WindTitle {
+				rect 400, 408, 200, 70
+				text "#str_00100105"
+				textscale .4
+				textalignx 40
+
+				windowDef windbox {
+					rect 0, 27, 100, 30
+					backcolor 0,0,0,0
+					bordersize 2
+					bordercolor 0,0,0,1
+				}
+				windowDef windbox {
+					rect 100, 27, 100, 30
+					backcolor 0,0,0,0
+					bordersize 2
+					bordercolor 0,0,0,1
+				}
+
+				windowDef windbox {
+					rect 0, 27, 20, 30
+					backcolor 1,0,0,.4
+				}
+				windowDef windbox {
+					rect 20, 27, 30, 30
+					backcolor 1,1,0,.3
+				}
+				windowDef windbox {
+					rect 50, 27, 50, 30
+					backcolor 0,1,0,.2
+				}
+				windowDef windbox {
+					rect 100, 27, 50, 30
+					backcolor 0,1,0,.2
+				}
+				windowDef windbox {
+					rect 150, 27, 30, 30
+					backcolor 1,1,0,.3
+				}
+				windowDef windbox {
+					rect 180, 27, 20, 30
+					backcolor 1,0,0,.4
+				}
+			}
+
+			windowDef ButtonGroup {
+				rect 0,0,640,480
+				matcolor 0,0,0,0
+
+				windowDef FireButton
+				{
+					rect	180,410,120,35
+					visible	1
+					background	"guis/assets/teleporter/button1"
+					matcolor	0.6,0,0,0.4
+					text		"#str_00100106"
+					textscale	.5
+					textalign	1
+
+					onAction {
+						set "gameWin::onFire" 1;
+					}
+
+					onMouseEnter {
+						set		"matcolor" "0.8 0 0 0.8";
+					}
+					onMouseExit {
+						set		"matcolor" "0.6 0 0 0.4";
+					}
+				}
+
+				sliderDef TurretAngleSlider
+				{
+					rect	4, 325, 28, 128
+					forecolor	1, 1, 1, 1
+					matcolor	1, 1, 1, 1
+					vertical	1
+					verticalFlip 1
+					background	"game/bearshoot/sliderback_vert"
+					low			0
+					high		90
+					step		2
+					thumbShader	"game/bearshoot/sliderthumb_vert"
+					cvar		"bearTurretAngle"
+
+					windowDef text
+					"{"
+						rect 2, 30, 20, 20
+						forecolor	1, 1, 1, 0.75
+						backcolor	0,0,0,0
+						text		"A"
+						textscale	0.45
+					}
+					windowDef text
+					"{"
+						rect 8, 46, 20, 20
+						forecolor	1, 1, 1, 0.75
+						backcolor	0,0,0,0
+						text		"i"
+						textscale	0.45
+					}
+					windowDef text
+					"{"
+						rect 2, 64, 20, 20
+						forecolor	1, 1, 1, 0.75
+						backcolor	0,0,0,0
+						text		"m"
+						textscale	0.35
+					}
+				}
+
+				sliderDef TurretForceSlider
+				{
+					rect	28, 446, 132, 28
+					forecolor	1, 1, 1, 1
+					matcolor	1, 1, 1, 1
+					background	"game/bearshoot/sliderback_horiz"
+					low			100
+					high		500
+					step		10
+					thumbShader	"game/bearshoot/sliderthumb_horiz"
+					cvar		"bearTurretForce"
+
+					windowDef text
+					"{"
+						rect 32, 0, 100, 20
+						forecolor	1, 1, 1, 0.75
+						backcolor	0,0,0,0
+						text		"#str_00100107"
+						textscale	0.45
+					}
+				}
+			}
+		}
+	}
+
+	windowDef IntroScreen {
+		rect 0,0,640,480
+		visible 1
+
+		windowDef InsertText
+		{
+			rect	0,351,640,29
+			text	"#str_00100108"
+			font	"fonts/micro"
+			textscale	0.4
+			forecolor	1,1,1,0.749
+			visible	1
+			textalign	1
+		}
+		windowDef CreditText {
+			rect	0,371,640,29
+			text	"#str_00100097"
+			font	"fonts/micro"
+			textscale	0.4
+			forecolor	1,1,1,0.349
+			visible	1
+			textalign	1
+		}
+		windowDef GameTitle {
+			rect	58,46,532,202
+
+			//text	"SARGE'S"
+			//textscale 1.8
+			//textalign 1
+			background "guis/assets/arcade/biggamehunt_logo.tga"
+
+			onTime 0 {
+				transition "forecolor" "1 1 1 .9" "1 1 1 .4" "800" ;
+			}
+
+			onTime 800 {
+				transition "forecolor" "1 1 1 .4" "1 1 1 .9" "200" ;
+			}
+			onTime 1000 {
+				resetTime "0" ;
+			}
+		}
+
+		windowDef StartButton
+		{
+			rect	65,249,505,96
+			visible	0
+			background "guis/assets/arcade/arcade_coincontinue_button.tga"
+			matcolor	0.6,0,0,0.4
+
+			onTime 0 {
+				transition "matcolor" "0 0.6 0 1" "0 0.6 0 0.4" "800" ;
+			}
+
+			onTime 800 {
+				transition "matcolor" "0 0.6 0 0.4" "0 0.6 0 1" "200" ;
+			}
+
+			onTime 1000 {
+				resetTime "0" ;
+			}
+
+			onAction {
+				set	"cmd"	"play arcade_startbeep" ;
+				resetTime "fnStartGame"	"0";
+			}
+
+			windowDef TextButton
+			{
+				rect	0,10,505,96
+				text	"#str_00100110"
+				font	"fonts/bank"
+				textscale	1
+				forecolor	1,1,1,0.8
+				visible	1
+				textalign	1
+			}
+		}
+
+		windowDef InsertCredit {
+
+			rect	65,249,505,96
+			visible	1
+			background "guis/assets/arcade/arcade_coincontinue_button.tga"
+			matcolor	0.6,0,0,1
+
+
+			onAction {
+				if("desktop::credits" == 3) {
+					set	"cmd"	"play arcade_startgame" ;
+					set	"desktop::credits"	4;
+					set "InsertCredit::visible" "0";
+					set "StartButton::visible" "1";
+				}
+				if("desktop::credits" == 2) {
+					set	"cmd"	"play arcade_insertcoin" ;
+					set	"desktop::credits"	3;
+				}
+				if("desktop::credits" == 1) {
+					set	"cmd"	"play arcade_insertcoin" ;
+					set	"desktop::credits"	2;
+				}
+				if("desktop::credits" == 0) {
+					set	"cmd"	"play arcade_insertcoin" ;
+					set	"desktop::credits"	1;
+				}
+			}
+
+			windowDef TextButton
+			{
+				rect	0,10,505,96
+				text	"#str_00100111"
+				font	"fonts/bank"
+				textscale	1
+				forecolor	1,1,1,0.8
+				visible	1
+				textalign	1
+			}
+		}
+	}
+
+	windowDef ContinueScreen {
+		rect 0,-480,640,480
+		visible 0
+		notime 1
+
+		windowDef GameOver {
+
+			rect	65,50,505,96
+			visible	1
+			background	"guis/assets/teleporter/button1"
+			matcolor	0.5,0,0,1
+
+			windowDef TextButton
+			{
+				rect	0,-4,505,96
+				text	"#str_00100112"
+				font	"fonts/bank"
+				textscale	1.4
+				forecolor	1,1,1,0.8
+				visible	1
+				textalign	1
+			}
+		}
+
+		windowDef Countdown
+		{
+			backcolor 0,0,0,0
+			forecolor 1,1,1,1
+			rect	65, 150, 505, 200
+			text	"10"
+			textscale	2.5
+			textalign	1
+		}
+
+		onTime 0 {
+			set	"cmd"	"play arcade_countdown" ;
+			set		"Countdown::text"	"10";
+		}
+		onTime 1000 {
+			set	"cmd"	"play arcade_countdown" ;
+			set		"Countdown::text"	"9";
+		}
+		onTime 2000 {
+			set	"cmd"	"play arcade_countdown" ;
+			set		"Countdown::text"	"8";
+		}
+		onTime 3000 {
+			set	"cmd"	"play arcade_countdown" ;
+			set		"Countdown::text"	"7";
+		}
+		onTime 4000 {
+			set	"cmd"	"play arcade_countdown" ;
+			set		"Countdown::text"	"6";
+		}
+		onTime 5000 {
+			set	"cmd"	"play arcade_countdown" ;
+			set		"Countdown::text"	"5";
+		}
+		onTime 6000 {
+			set	"cmd"	"play arcade_countdown" ;
+			set		"Countdown::text"	"4";
+		}
+		onTime 7000 {
+			set	"cmd"	"play arcade_countdown" ;
+			set		"Countdown::text"	"3";
+		}
+		onTime 8000 {
+			set	"cmd"	"play arcade_countdown" ;
+			set		"Countdown::text"	"2";
+		}
+		onTime 9000 {
+			set	"cmd"	"play arcade_countdown" ;
+			set		"Countdown::text"	"1";
+		}
+		onTime 10000 {
+			set	"cmd"	"play arcade_countdown" ;
+			set		"Countdown::text"	"0";
+		}
+		onTime 11000 {
+			set		"desktop::credits"			0;
+			set		"ContinueScreen::notime"	"1";
+			set		"IntroScreen::visible"		"1";
+			set		"InsertCredit::visible"		"1";
+			set		"StartButton::visible"		"0";
+
+			"transition" "IntroScreen::rect" "0 -480 640 480" "0 0 640 480" "1000";
+			"transition" "ContinueScreen::rect" "0 0 640 480" "0 -480 640 480" "1000";
+		}
+		onTime 12000 {
+			set		"ContinueScreen::visible"	"0";
+		}
+
+		windowDef ContinueButtonImage {
+			rect	120,300,400,80
+			visible	1
+			background "guis/assets/arcade/arcade_coincontinue_button.tga"
+			matcolor	0.0,0.6,0,.6
+		}
+
+		windowDef ContinueButton {
+
+			rect	120,320,400,60
+			visible	1
+
+			text	"#str_00100113"
+			textscale	.6
+			forecolor	1,1,1,1
+			textalign	1
+
+			onAction {
+				set	"cmd"	"play arcade_startbeep" ;
+				set		"ContinueScreen::notime"	"1";
+				resetTime	"fnContinueGame"	"0";
+			}
+		}
+	}
+
+
+	//Some other full screen effects
+	windowDef Reflect
+	{
+		rect	-2,-13,648,489
+		matcolor	1 ,0.8 ,0.7 ,0.15
+		visible	1
+		background	"gui/reflect2"
+	}
+	windowDef Bglow
+	{
+		rect	0, 0, 640, 480
+		background	"guis/assets/cpuserver/bglow.tga"
+		visible	1
+		matcolor	1, 0.8, 0.4, 0.1
+	}
+	windowDef Addhighlight
+	{
+		rect	7,11,-625,461
+		background	"gui/addhighlight"
+		matcolor	0.4 ,0.4 ,0.2,1
+		visible	1
+	}
+	windowDef Static1
+	{
+		rect	0,0,-640,480
+		visible	1
+		background	"gui/static"
+		matcolor	1, 1, 1, pdhalffade[ time * 0.001 ] / 8
+	}
+}

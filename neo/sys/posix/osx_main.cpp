@@ -42,6 +42,19 @@ If you have questions concerning this license or the applicable additional terms
 #include <mach/mach.h>
 #include <mach-o/dyld.h>
 
+#include <IOKit/IOKitLib.h>
+
+/*
+================
+Sys_GetVideoRam
+returns in megabytes
+================
+*/
+int Sys_GetVideoRam()
+{
+	return 0;
+}
+
 /*
 ==============
 Sys_GetPath

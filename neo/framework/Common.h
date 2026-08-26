@@ -39,6 +39,7 @@ If you have questions concerning this license or the applicable additional terms
 ==============================================================
 */
 
+extern idCVar com_machineSpec;
 extern idCVar com_engineHz;
 extern idCVar com_hiResClock;
 extern float com_engineHz_latched;
@@ -75,6 +76,7 @@ class idDemoFile;
 class idUserInterface;
 class idSaveLoadParms;
 class idMatchParameters;
+class idUserCmdMgr;
 
 struct lobbyConnectInfo_t;
 
@@ -371,16 +373,18 @@ public:
 	// for images in particular we can measure more accurately this way (to deal with mipmaps)
 	virtual void				LoadPacifierBinarizeProgressTotal( int total ) = 0;
 	virtual void				LoadPacifierBinarizeProgressIncrement( int step ) = 0;
+
+	virtual idUserCmdMgr&		GetUCmdMgr() = 0;
 };
 
 extern idCommon* 		common;
 
 #define ADD_DIALOG( ... ) if( dialogs ) { \
-    dialogs->AddDialog( __VA_ARGS__ ); \
+	dialogs->AddDialog( __VA_ARGS__ ); \
 }
 
 #define ADD_DYNAMIC_DIALOG( ... ) if( dialogs ) { \
-    dialogs->AddDynamicDialog( __VA_ARGS__ ); \
+	dialogs->AddDynamicDialog( __VA_ARGS__ ); \
 }
 
 #endif /* !__COMMON_H__ */

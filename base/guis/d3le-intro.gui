@@ -1,0 +1,143 @@
+windowDef Desktop
+{
+	rect	0,0,640,480
+	backcolor	0,0,0,1
+	menugui	1
+
+	onESC {
+		set	"cmd"	"startgame" ;
+	}
+
+	onActivate {
+		resetTime "BG" "0" ;
+		showcursor "0" ;
+	}
+
+	windowDef text1
+	{
+		rect	84,319,472,32
+		forecolor	0.25098041,0.50196081,0.50196081,1
+		text	"#str_00200071"
+		font	"fonts/bank"
+		textscale	0.3
+		visible	1
+	}
+	windowDef text2
+	{
+		rect	84,335,472,32
+		forecolor	0.25098041,0.50196081,0.50196081,1
+		text	"#str_00200072"
+		font	"fonts/bank"
+		textscale	0.3
+		visible	1
+	}
+	windowDef text3
+	{
+		rect	84,351,472,64
+		forecolor	0.25098041,0.50196081,0.50196081,1
+		text	"#str_00200073"
+		font	"fonts/bank"
+		textscale	0.3
+		visible	1
+	}
+	windowDef block1
+	{
+		rect	84,326,472,17
+		visible	1
+		backcolor	0,0,0,1
+	}
+	windowDef block2
+	{
+		rect	84,342,472,17
+		visible	1
+		backcolor	0,0,0,1
+	}
+	windowDef block3
+	{
+		rect	84,358,472,21
+		visible	1
+		backcolor	0,0,0,1
+	}
+	windowDef block4
+	{
+		rect	84,378,472,21
+		visible	1
+		backcolor	0,0,0,1
+	}
+	windowDef blockall
+	{
+		rect	0,0,640,480
+		visible	1
+		backcolor	0,0,0,0
+	}
+	windowDef scripts
+	{
+		rect	0,0,100,100
+		visible	0
+
+		onTime 200 {
+			transition "block1::rect" "84,326,472,17" "555,325,0,17" "3500";
+			set	"cmd"	"play guisounds_line2a"
+		}
+
+		onTime 700 {
+			set	"cmd"	"play guisounds_line2a"
+		}
+
+		onTime 1500 {
+			transition "block2::rect" "84,342,472,17" "555,342,0,17" "3250";
+			set	"cmd"	"play guisounds_line2a"
+		}
+
+		onTime 2000 {
+			set	"cmd"	"play guisounds_line2a"
+		}
+
+		onTime 2500 {
+			set	"cmd"	"play guisounds_line2a"
+		}
+
+		onTime 3500 {
+			transition "block3::rect" "84,358,472,21" "555,358,0,21" "2750";
+			set	"cmd"	"play guisounds_line2a"
+		}
+
+		onTime 4000 {
+			set	"cmd"	"play guisounds_line2a"
+		}
+
+		onTime 4500 {
+			set	"cmd"	"play guisounds_line2a"
+		}
+
+		onTime 5000 {
+			set	"cmd"	"play guisounds_line2a"
+		}
+
+		onTime 5500 {
+			set	"cmd"	"play guisounds_line2a"
+		}
+
+		onTime 6500 {
+			transition "block4::rect" "84,378,472,21" "555,378,0,21" "3000";
+			set	"cmd"	"play guisounds_line2a"
+		}
+
+		onTime 7000 {
+			set	"cmd"	"play guisounds_line2a"
+		}
+
+		onTime 7500 {
+			set	"cmd"	"play guisounds_line2a"
+		}
+
+		onTime 8500 {
+			transition "blockall::backcolor" "0,0,0,0" "0,0,0,1" "2500";
+			
+		}
+
+		onTime 12000 {
+			set "cmd" "startgame";
+		}
+	}
+}

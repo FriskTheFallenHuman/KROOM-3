@@ -237,12 +237,25 @@ void idSoundSample_OpenAL::LoadResource()
 			}
 			generatedName.Append( ".idwav" );
 		}
-		loaded = LoadGeneratedSample( generatedName ) || LoadWav( sampleName );
+
+		// try .wav and .ogg first
+		loaded = LoadWav( sampleName );
 
 		if( !loaded && s_useCompression.GetBool() )
 		{
 			sampleName.SetFileExtension( "wav" );
 			loaded = LoadWav( sampleName );
+		}
+
+		if( !loaded && s_useCompression.GetBool() )
+		{
+			sampleName.SetFileExtension( "ogg" );
+			loaded = LoadOgg( sampleName );
+		}
+
+		if( !loaded )
+		{
+			loaded = LoadGeneratedSample( generatedName );
 		}
 
 		if( loaded )
@@ -364,6 +377,39 @@ void idSoundSample_OpenAL::CreateOpenALBuffer()
 			common->Error( "idSoundSample_OpenAL::CreateOpenALBuffer: error loading data into OpenAL hardware buffer" );
 		}
 	}
+}
+
+/*
+========================
+idSoundSample_OpenAL::LoadOgg
+========================
+*/
+bool idSoundSample_OpenAL::LoadOgg( const idStr& filename )
+{
+	idOggFile decoder;
+
+	if( !decoder.Open( filename ) )
+	{
+		return false;
+	}
+
+	timestamp = 1;
+
+	int64_t totalBufferSize = decoder.Size();
+
+	decoder.GetFormat( format );
+
+	playBegin = 0;
+	playLength = decoder.CompressedSize(); // format.basic.blockSize;
+
+	buffers.SetNum( 1 );
+	buffers[0].bufferSize = totalBufferSize;
+	buffers[0].numSamples = playLength;
+	buffers[0].buffer = AllocBuffer( totalBufferSize, GetName() );
+
+	int val = decoder.Read( buffers[0].buffer, buffers[0].bufferSize );
+
+	return ( val != -1 );
 }
 
 /*

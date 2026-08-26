@@ -158,7 +158,7 @@ void idCommonLocal::CheckToolMode()
 				|| !idStr::Icmp( com_consoleLines[ i ].Argv( 0 ), "materialEditor" )
 		  )
 		{
-			cvarSystem->SetCVarBool( "r_fullscreen", false );
+			cvarSystem->SetCVarBool( "r_vidFullscreen", false );
 			return;
 		}
 	}

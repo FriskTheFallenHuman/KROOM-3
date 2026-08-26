@@ -29,9 +29,41 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
+#include <windows.h>
+#include <dxgi.h>
+#pragma comment(lib, "dxgi.lib")
+
 #undef StrCmpN
 #undef StrCmpNI
 #undef StrCmpI
+
+/*
+================
+Sys_GetVideoRam
+returns in megabytes
+================
+*/
+int Sys_GetVideoRam()
+{
+	IDXGIFactory* factory = nullptr;
+	IDXGIAdapter* adapter = nullptr;
+	uint64_t vram = 0;
+
+	if( CreateDXGIFactory( __uuidof( IDXGIFactory ), ( void** )&factory ) == S_OK )
+	{
+		if( factory->EnumAdapters( 0, &adapter ) == S_OK )
+		{
+			DXGI_ADAPTER_DESC desc;
+			if( adapter->GetDesc( &desc ) == S_OK )
+			{
+				vram = desc.DedicatedVideoMemory; // Bytes
+			}
+			adapter->Release();
+		}
+		factory->Release();
+	}
+	return vram;
+}
 
 /*
 ================

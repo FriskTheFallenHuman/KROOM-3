@@ -31,8 +31,17 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __GAME_MAINMENU_H__
 #define	__GAME_MAINMENU_H__
 
-const int LOAD_TIP_CHANGE_INTERVAL = 12000;
-const int LOAD_TIP_COUNT		= 26;
+typedef enum
+{
+	MENU_SCREEN_NONE,
+	MENU_SCREEN_MAIN,
+	MENU_SCREEN_PAUSE,
+	MENU_SCREEN_INTRO,
+	MENU_SCREEN_LOADING,
+	MENU_SCREEN_RESTART,
+	MENU_SCREEN_ONLINE_STATUS
+} gameUIScreenStates_t;
+
 
 /*
 ===============================================================================
@@ -75,18 +84,50 @@ public:
 	virtual bool				IsGameComplete();
 
 	// ---------------------- Public idGameMainMenuLocal Interface -------------------
-
-	void						ClearRepeater();
+	void						ClearRepeater() {}
 
 private:
 
-	idMenuHandler_Shell* 	shellHandler;
+	void						SetGUI( idUserInterface* gui );
+	void						ExitMenu();
+	void						DispatchCommand( idUserInterface* gui, const char* menuCommand );
 
-	idSWF*					loadGUI;
-	int						nextLoadTip;
-	bool					isHellMap;
-	bool					defaultLoadscreen;
-	idStaticList<int, LOAD_TIP_COUNT>	loadTipList;
+	bool						HandleSaveGameMenuCommand( idCmdArgs& args, int& icmd );
+	void						HandleMainMenuCommands( const char* menuCommand );
+	void						HandleInGameCommands( const char* menuCommand );
+	void						HandleRestartMenuCommands( const char* menuCommand );
+	void						HandleIntroMenuCommands( const char* menuCommand );
+
+	void						SetVideoGuiVars();
+	void						SetSaveGameGuiVars();
+	void						SetMainMenuGuiVars();
+	void						GetSaveGameList();
+
+	idUserInterface*			guiActive;
+	idUserInterface*			guiMainMenu;
+	idUserInterface*			guiRestartMenu;
+	idUserInterface*			guiIntro;
+	idUserInterface* 			guiIntroD3;
+	idUserInterface* 			guiIntroD3XP;
+	idUserInterface* 			guiIntroD3LE;
+	//idUserInterface*			guiOnlineStatus;
+	idUserInterface*			guiLoading;
+
+	saveGameDetailsList_t		sortedSaves;
+
+	idListGUI*					saveGameListGUI;
+
+	idSoundWorld*				sw;
+	idSoundWorld*				menuSW;
+
+	gameUIScreenStates_t			currentScreen;
+	bool						inGame;
+	bool						canContinue;
+	bool						gameComplete;
+	bool						showingIntro;
+	idStr						introMapName;
+	int							loadStartTime;
+	int							expansionType;	// 0 = D3, 1 = D3XP, 2 = D3LE
 };
 
 #endif /* !__GAME_MAINMENU_H__ */

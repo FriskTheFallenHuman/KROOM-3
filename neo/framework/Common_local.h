@@ -268,6 +268,43 @@ public:
 		showShellRequested = true;
 	}
 
+	// RB begin
+	virtual void				LoadPacifierInfo( VERIFY_FORMAT_STRING const char* fmt, ... );
+	virtual void				LoadPacifierProgressTotal( int total );
+	virtual void				LoadPacifierProgressIncrement( int step );
+	virtual bool				LoadPacifierRunning();
+	// RB end
+
+	// foresthale 2014-05-30: a special binarize pacifier has to be shown in
+	// some cases, which includes filename and ETA information, note that
+	// the progress function takes 0-1 float, not 0-100, and can be called
+	// very quickly (it will check that enough time has passed when updating)
+	virtual void				LoadPacifierBinarizeFilename( const char* filename, const char* reason );
+	virtual void				LoadPacifierBinarizeInfo( const char* info );
+	virtual void				LoadPacifierBinarizeMiplevel( int level, int maxLevel );
+	virtual void				LoadPacifierBinarizeProgress( float progress );
+	virtual void				LoadPacifierBinarizeEnd();
+	// for images in particular we can measure more accurately this way (to deal with mipmaps)
+	virtual void				LoadPacifierBinarizeProgressTotal( int total );
+	virtual void				LoadPacifierBinarizeProgressIncrement( int step );
+
+	virtual bool				GetServerDedicated()
+	{
+		return serverDedicated;
+	}
+	virtual void				SetServerDedicated( bool dedicated )
+	{
+		serverDedicated = dedicated;
+	}
+	virtual void				SetQuitRequested( bool quitRequested )
+	{
+		isQuitRequested = quitRequested;
+	}
+
+	virtual idUserCmdMgr&		GetUCmdMgr()
+	{
+		return userCmdMgr;
+	}
 public:
 	void	Draw();			// called by gameThread
 
@@ -361,39 +398,6 @@ public:
 	}
 	// SRS end
 
-	// RB begin
-	virtual void				LoadPacifierInfo( VERIFY_FORMAT_STRING const char* fmt, ... );
-	virtual void				LoadPacifierProgressTotal( int total );
-	virtual void				LoadPacifierProgressIncrement( int step );
-	virtual bool				LoadPacifierRunning();
-	// RB end
-
-	// foresthale 2014-05-30: a special binarize pacifier has to be shown in
-	// some cases, which includes filename and ETA information, note that
-	// the progress function takes 0-1 float, not 0-100, and can be called
-	// very quickly (it will check that enough time has passed when updating)
-	virtual void				LoadPacifierBinarizeFilename( const char* filename, const char* reason );
-	virtual void				LoadPacifierBinarizeInfo( const char* info );
-	virtual void				LoadPacifierBinarizeMiplevel( int level, int maxLevel );
-	virtual void				LoadPacifierBinarizeProgress( float progress );
-	virtual void				LoadPacifierBinarizeEnd();
-	// for images in particular we can measure more accurately this way (to deal with mipmaps)
-	virtual void				LoadPacifierBinarizeProgressTotal( int total );
-	virtual void				LoadPacifierBinarizeProgressIncrement( int step );
-
-	virtual bool				GetServerDedicated()
-	{
-		return serverDedicated;
-	}
-	virtual void				SetServerDedicated( bool dedicated )
-	{
-		serverDedicated = dedicated;
-	}
-	virtual void				SetQuitRequested( bool quitRequested )
-	{
-		isQuitRequested = quitRequested;
-	}
-
 	frameTiming_t		frameTiming;
 	frameTiming_t		mainFrameTiming;
 
@@ -424,10 +428,7 @@ public:	// These are public because they are called directly by static functions
 	void	LocalizeMapData( const char* fileName, idLangDict& langDict );
 	void	LocalizeSpecificMapData( const char* fileName, idLangDict& langDict, const idLangDict& replaceArgs );
 
-	idUserCmdMgr& GetUCmdMgr()
-	{
-		return userCmdMgr;
-	}
+	void	SetMachineSpec( bool onlyReport = false );
 
 private:
 	bool						com_fullyInitialized;

@@ -856,7 +856,7 @@ if(MSVC)
 	# set MSVC default debug directory on executable
 	set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${CMAKE_PROJECT_NAME}) # set MSVC startup project
 	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>")
-	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES VS_DEBUGGER_COMMAND_ARGUMENTS "+set r_fullscreen 0 +set sdl_viewlog 1 +set developer 1")
+	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES VS_DEBUGGER_COMMAND_ARGUMENTS "+set r_vidFullscreen 0 +set sdl_viewlog 1 +set developer 1")
 
 	#CMAKE_BINARY_DIR
 	if(CMAKE_CL_64)

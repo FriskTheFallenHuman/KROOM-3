@@ -68,6 +68,20 @@ void Script_Set( idWindow* window, idList<idGSWinVar, TAG_OLD_UI>* src )
 			}
 			return;
 		}
+
+		// DG: allow debugprinting to the console with `set "print" "this windowDefs rect:" "$rect"`
+		if( idStr::Icmp( *dest, "print" ) == 0 )
+		{
+			idStr msg;
+			int parmCount = src->Num();
+			for( int i = 1; i < parmCount; ++i )
+			{
+				msg += ( *src )[i].var->c_str();
+				msg += " ";
+			}
+			common->Printf( "GUI debug: %s\n", msg.c_str() );
+			return;
+		}
 	}
 	( *src )[0].var->Set( ( *src )[1].var->c_str() );
 	( *src )[0].var->SetEval( false );
@@ -426,7 +440,7 @@ bool idGuiScript::Parse( idTokenParser* src )
 
 	if( handler == NULL )
 	{
-		src->Error( "Uknown script call %s", token.c_str() );
+		src->Error( "Unknown script call %s", token.c_str() );
 	}
 	// now read parms til ;
 	// all parms are read as idWinStr's but will be fixed up later

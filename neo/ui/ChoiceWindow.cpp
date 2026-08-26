@@ -140,7 +140,7 @@ const char* idChoiceWindow::HandleEvent( const sysEvent_t* event, bool* updateVi
 	{
 		key = event->evValue;
 
-		if( key == K_RIGHTARROW || key == K_KP_6 || key == K_MOUSE1 )
+		if( key == K_RIGHTARROW || key == K_KP_6 || key == K_MOUSE1 || key == K_JOY_DPAD_RIGHT )
 		{
 			// never affects the state, but we want to execute script handlers anyway
 			if( !event->evValue2 )
@@ -156,7 +156,7 @@ const char* idChoiceWindow::HandleEvent( const sysEvent_t* event, bool* updateVi
 			runAction = true;
 		}
 
-		if( key == K_LEFTARROW || key == K_KP_4 || key == K_MOUSE2 )
+		if( key == K_LEFTARROW || key == K_KP_4 || key == K_MOUSE2 || key == K_JOY_DPAD_LEFT )
 		{
 			// never affects the state, but we want to execute script handlers anyway
 			if( !event->evValue2 )
@@ -338,7 +338,7 @@ idWinVar* idChoiceWindow::GetWinVarByName( const char* _name, bool fixup, drawWi
 	}
 
 	return idWindow::GetWinVarByName( _name, fixup, owner );
-}
+}	
 
 // update the lists whenever the WinVar have changed
 void idChoiceWindow::UpdateChoicesAndVals()
@@ -475,7 +475,10 @@ void idChoiceWindow::Draw( int time, float x, float y )
 		color = hoverColor;
 	}
 
-	dc->DrawText( choices[currentChoice], textScale, textAlign, color, textRect, false, -1 );
+	if( choices.Num() > 0 )
+	{
+		dc->DrawText( choices[currentChoice], textScale, textAlign, color, textRect, false, -1 );
+	}
 }
 
 void idChoiceWindow::Activate( bool activate, idStr& act )

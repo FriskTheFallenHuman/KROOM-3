@@ -37,7 +37,7 @@ If you have questions concerning this license or the applicable additional terms
 idImageManager	imageManager;
 idImageManager* globalImages = &imageManager;
 
-idCVar preLoad_Images( "preLoad_Images", "1", CVAR_SYSTEM | CVAR_BOOL, "preload images during beginlevelload" );
+idCVar preLoad_Images( "preLoad_Images", "1", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "preload images during beginlevelload" );
 
 /*
 ===============
@@ -986,7 +986,6 @@ void idImageManager::PrintMemInfo( MemInfo_t* mi )
 
 #include "CmdlineProgressbar.h"
 
-#if !defined( DMAP )
 void idImageManager::CacheGlobalIlluminationData_f( const idCmdArgs& args )
 {
 	common->Printf( "Caching images to bimage files...\n" );
@@ -1031,4 +1030,3 @@ void idImageManager::CacheGlobalIlluminationData_f( const idCmdArgs& args )
 	globalImages->preloadingMapImages = false;
 	globalImages->cacheImages = false;
 }
-#endif

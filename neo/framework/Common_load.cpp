@@ -220,6 +220,11 @@ void idCommonLocal::UnloadMap()
 {
 	StopPlayingRenderDemo();
 
+	if( dialogs != NULL )
+	{
+		dialogs->Shutdown();
+	}
+
 	// end the current map in the game
 	if( game )
 	{
@@ -334,6 +339,13 @@ void idCommonLocal::ExecuteMapChange()
 	soundSystem->BeginLevelLoad();
 	declManager->BeginLevelLoad();
 	uiManager->BeginLevelLoad();
+
+	// Re-initialize the dialog system, uiManager was free during BeginLevelLoad()
+	if( dialogs != NULL )
+	{
+		dialogs->Init();
+	}
+
 	ms = Sys_Milliseconds() - sm;
 	common->Printf( "%6d msec to free assets\n", ms );
 
@@ -1277,10 +1289,7 @@ Common_RestartMap_f
 */
 CONSOLE_COMMAND_SHIP( restartMap, "restarts the current map", NULL )
 {
-	if( g_demoMode.GetBool() )
-	{
-		cmdSystem->AppendCommandText( va( "devmap %s %d\n", commonLocal.GetCurrentMapName(), 0 ) );
-	}
+	cmdSystem->AppendCommandText( va( "map %s %d\n", commonLocal.GetCurrentMapName(), 0 ) );
 }
 
 /*

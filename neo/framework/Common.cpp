@@ -58,7 +58,7 @@ struct version_s
 
 idCVar com_version( "si_version", version.string, CVAR_SYSTEM | CVAR_ROM | CVAR_SERVERINFO, "engine version" );
 idCVar com_forceGenericSIMD( "com_forceGenericSIMD", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "force generic platform independent SIMD" );
-
+idCVar com_machineSpec( "com_machineSpec", "-1", CVAR_INTEGER | CVAR_ARCHIVE | CVAR_SYSTEM, "hardware classification, -1 = not detected, 0 = low quality, 1 = medium quality, 2 = high quality, 3 = ultra quality" );
 idCVar com_allowConsole( "com_allowConsole", "1", CVAR_BOOL | CVAR_SYSTEM | CVAR_ARCHIVE, "allow toggling the console with the tilde key" );
 idCVar com_developer( "developer", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "developer mode" );
 idCVar com_speeds( "com_speeds", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "show engine timings" );
@@ -70,7 +70,7 @@ idCVar com_updateLoadSize( "com_updateLoadSize", "0", CVAR_BOOL | CVAR_SYSTEM | 
 
 idCVar com_productionMode( "com_productionMode", "0", CVAR_SYSTEM | CVAR_BOOL, "0 - no special behavior, 1 - building a production build, 2 - running a production build" );
 
-idCVar preload_CommonAssets( "preload_CommonAssets", "1", CVAR_SYSTEM | CVAR_BOOL, "preload common assets" );
+idCVar preload_CommonAssets( "preload_CommonAssets", "1", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "preload common assets" );
 
 idCVar net_inviteOnly( "net_inviteOnly", "1", CVAR_BOOL | CVAR_ARCHIVE, "whether or not the private server you create allows friends to join or invite only" );
 
@@ -623,6 +623,46 @@ CONSOLE_COMMAND( writeConfig, "writes a config file", NULL )
 }
 
 /*
+=================
+Com_SetMachineSpecs_f
+=================
+*/
+CONSOLE_COMMAND( setMachineSpec, "detects system capabilities and sets com_machineSpec to appropriate value", NULL )
+{
+	commonLocal.SetMachineSpec();
+}
+
+/*
+=================
+Com_ExecMachineSpecs_f
+=================
+*/
+CONSOLE_COMMAND( execMachineSpec, "execs the appropriate config files and sets cvars based on com_machineSpec", NULL )
+{
+	if( com_machineSpec.GetInteger() == 3 )
+	{
+		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec preset_ultra.cfg\n" );
+	}
+	else if( com_machineSpec.GetInteger() == 2 )
+	{
+		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec preset_high.cfg\n" );
+	}
+	else if( com_machineSpec.GetInteger() == 1 )
+	{
+		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec preset_medium.cfg\n" );
+	}
+	else
+	{
+		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec preset_low.cfg\n" );
+	}
+
+	if( Sys_GetVideoRam() < 512 || Sys_GetSystemRam() < 2024 )
+	{
+		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec low_ram.cfg\n" );
+	}
+}
+
+/*
 ========================
 idCommonLocal::CheckStartupStorageRequirements
 ========================
@@ -1107,6 +1147,51 @@ bool idCommonLocal::IsInitialized() const
 	return com_fullyInitialized;
 }
 
+/*
+=================
+idCommonLocal::SetMachineSpec
+=================
+*/
+void idCommonLocal::SetMachineSpec( bool onlyReport )
+{
+	int sysRam = Sys_GetSystemRam();
+	int gpuRam = Sys_GetVideoRam();
+
+	Printf( "Detected\n\t%i MB of System memory\n\t%i MB of Video memory\n\n", sysRam, gpuRam );
+
+	if( sysRam >= 2024 && gpuRam >= 1024 )
+	{
+		Printf( "This system qualifies for Ultra quality!\n" );
+		if( !onlyReport )
+		{
+			com_machineSpec.SetInteger( 3 );
+		}
+	}
+	else if( sysRam >= 1024 && gpuRam >= 512 )
+	{
+		Printf( "This system qualifies for High quality!\n" );
+		if( !onlyReport )
+		{
+			com_machineSpec.SetInteger( 2 );
+		}
+	}
+	else if( sysRam >= 512 && gpuRam >= 256 )
+	{
+		Printf( "This system qualifies for Medium quality.\n" );
+		if( !onlyReport )
+		{
+			com_machineSpec.SetInteger( 1 );
+		}
+	}
+	else
+	{
+		Printf( "This system qualifies for Low quality.\n" );
+		if( !onlyReport )
+		{
+			com_machineSpec.SetInteger( 0 );
+		}
+	}
+}
 
 //======================================================================================
 
@@ -1200,8 +1285,20 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 		// initialize the declaration manager
 		declManager->Init();
 
-		// force r_fullscreen 0 if running a tool
+		// force r_vidFullscreen 0 if running a tool
 		CheckToolMode();
+
+		idFile* file = fileSystem->OpenExplicitFileRead( fileSystem->RelativePathToOSPath( CONFIG_SPEC, "fs_savepath" ) );
+		bool sysDetect = ( file == NULL );
+		if( file )
+		{
+			fileSystem->CloseFile( file );
+		}
+		else
+		{
+			file = fileSystem->OpenFileWrite( CONFIG_SPEC, "fs_savepath" );
+			fileSystem->CloseFile( file );
+		}
 
 		// init journalling, etc
 		eventLoop->Init();
@@ -1241,6 +1338,13 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 
 		// start the sound system, but don't do any hardware operations yet
 		soundSystem->Init();
+
+		//idCmdArgs args;
+		if( sysDetect )
+		{
+			SetMachineSpec( true );
+			//Com_ExecMachineSpec_f( args );
+		}
 
 		// initialize the renderSystem data structures
 		renderSystem->Init();
@@ -1312,6 +1416,16 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 
 		// load the game dll
 		LoadGameDLL();
+
+		// have to do this twice..
+		if( sysDetect )
+		{
+			SetMachineSpec( true );
+			//Com_ExecMachineSpec_f( args );
+			//cvarSystem->SetCVarInteger( "s_numberOfSpeakers", 6 );
+			//cmdSystem->BufferCommandText( CMD_EXEC_NOW, "s_restart\n" );
+			//cmdSystem->ExecuteCommandBuffer();
+		}
 
 		// On the PC touch them all so they get included in the resource build
 		if( !fileSystem->UsingResourceFiles() )
@@ -1532,6 +1646,12 @@ void idCommonLocal::Shutdown()
 		leaderBoards->Shutdown();
 	}
 
+	printf( "dialogs->Shutdown();\n" );
+	if( dialogs != NULL )
+	{
+		dialogs->Shutdown();
+	}
+
 	// shut down the user interfaces
 	printf( "uiManager->Shutdown();\n" );
 	uiManager->Shutdown();
@@ -1559,12 +1679,6 @@ void idCommonLocal::Shutdown()
 	// Important for XAudio2 where the mastering voice cannot be destroyed if any other voices exist
 	printf( "soundSystem->Shutdown();\n" );
 	soundSystem->Shutdown();
-
-	printf( "dialogs->Shutdown();\n" );
-	if( dialogs != NULL )
-	{
-		dialogs->Shutdown();
-	}
 
 	// unload the game dll
 	printf( "UnloadGameDLL();\n" );

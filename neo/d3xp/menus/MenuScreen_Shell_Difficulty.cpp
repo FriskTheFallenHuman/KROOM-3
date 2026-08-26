@@ -31,8 +31,6 @@ If you have questions concerning this license or the applicable additional terms
 
 const static int NUM_SETTING_OPTIONS = 8;
 extern idCVar g_nightmare;
-extern idCVar g_roeNightmare;
-extern idCVar g_leNightmare;
 extern idCVar g_skill;
 /*
 ========================
@@ -179,24 +177,8 @@ void idMenuScreen_Shell_Difficulty::ShowScreen( const mainMenuTransition_t trans
 	nightmareUnlocked = false;
 
 	idMenuHandler_Shell* shell = dynamic_cast< idMenuHandler_Shell* >( menuData );
-	int type = 0;
-	if( shell != NULL )
-	{
-		type = shell->GetNewGameType();
-	}
 
-	if( type == 0 )
-	{
-		nightmareUnlocked = g_nightmare.GetBool();
-	}
-	else if( type == 1 )
-	{
-		nightmareUnlocked = g_roeNightmare.GetBool();
-	}
-	else if( type == 2 )
-	{
-		nightmareUnlocked = g_leNightmare.GetBool();
-	}
+	nightmareUnlocked = g_nightmare.GetBool();
 
 	int skill = Max( 0, g_skill.GetInteger() );
 	if( !nightmareUnlocked )

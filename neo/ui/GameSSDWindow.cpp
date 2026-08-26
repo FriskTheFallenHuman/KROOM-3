@@ -301,8 +301,6 @@ void SSDEntity::Draw()
 	persize.x = idMath::Fabs( screenBounds[1].x - screenBounds[0].x );
 	persize.y = idMath::Fabs( screenBounds[1].y - screenBounds[0].y );
 
-	idVec3 center = screenBounds.GetCenter();
-
 	x = screenBounds[0].x;
 	y = screenBounds[1].y;
 	dc->DrawMaterialRotated( x, y, persize.x, persize.y, material, matColor, 1.0f, 1.0f, DEG2RAD( rotation ) );
@@ -1136,12 +1134,12 @@ void SSDProjectile::ReadProjectiles( idFile* savefile, idGameSSDWindow* _game )
 
 const char* powerupMaterials[][2] =
 {
-	"game/SSD/powerupHealthClosed",			"game/SSD/powerupHealthOpen",
-	"game/SSD/powerupSuperBlasterClosed",	"game/SSD/powerupSuperBlasterOpen",
-	"game/SSD/powerupNukeClosed",			"game/SSD/powerupNukeOpen",
-	"game/SSD/powerupRescueClosed",			"game/SSD/powerupRescueOpen",
-	"game/SSD/powerupBonusPointsClosed",	"game/SSD/powerupBonusPointsOpen",
-	"game/SSD/powerupDamageClosed",			"game/SSD/powerupDamageOpen",
+	{ "game/SSD/powerupHealthClosed",			"game/SSD/powerupHealthOpen" },
+	{ "game/SSD/powerupSuperBlasterClosed",	"game/SSD/powerupSuperBlasterOpen" },
+	{ "game/SSD/powerupNukeClosed",			"game/SSD/powerupNukeOpen" },
+	{ "game/SSD/powerupRescueClosed",			"game/SSD/powerupRescueOpen" },
+	{ "game/SSD/powerupBonusPointsClosed",	"game/SSD/powerupBonusPointsOpen" },
+	{ "game/SSD/powerupDamageClosed",			"game/SSD/powerupDamageOpen" },
 };
 
 #define POWERUP_MATERIAL_COUNT 6

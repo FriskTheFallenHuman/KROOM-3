@@ -66,7 +66,7 @@ idHashIndex* 					cm_edgeHash;
 idBounds						cm_modelBounds;
 int								cm_vertexShift;
 
-idCVar preLoad_Collision( "preLoad_Collision", "1", CVAR_SYSTEM | CVAR_BOOL, "preload collision beginlevelload" );
+idCVar preLoad_Collision( "preLoad_Collision", "1", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "preload collision beginlevelload" );
 
 /*
 ===============================================================================

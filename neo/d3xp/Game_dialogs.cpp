@@ -268,7 +268,11 @@ void idGameDialogsLocal::AddDialog( gameDialogMessages_t msg, dialogType_t type,
 									bool leaveOnMapHeapReset, bool waitOnAtlas, bool renderDuringLoad )
 {
 
+	const bool mouse1Down = idKeyInput::IsDown( K_MOUSE1 );
+
 	idKeyInput::ClearStates();
+
+	suppressMouseRelease = mouse1Down;
 
 	Sys_ClearEvents();
 
@@ -303,6 +307,12 @@ void idGameDialogsLocal::AddDynamicDialog( gameDialogMessages_t msg, const idSta
 		const idStaticList< idStrId, 4 >& optionText, bool pause, idStrStatic< 256 > overrideMsg,
 		bool leaveOnMapHeapReset, bool waitOnAtlas, bool renderDuringLoad )
 {
+	const bool mouse1Down = idKeyInput::IsDown( K_MOUSE1 );
+
+	idKeyInput::ClearStates();
+
+	suppressMouseRelease = mouse1Down;
+
 	if( !IsRendererLoaded() )
 	{
 
@@ -754,6 +764,8 @@ idGameDialogsLocal::idGameDialogsLocal
 */
 idGameDialogsLocal::idGameDialogsLocal()
 {
+	dialog = NULL;
+	suppressMouseRelease = false;
 	dialogPause = false;
 	dialogInUse = false;
 	dialogShowingSaveIndicatorRequested  = false;

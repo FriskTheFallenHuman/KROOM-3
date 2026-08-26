@@ -37,14 +37,14 @@ idCVar s_playCinematicAudio( "s_playCinematicAudio", "1", CVAR_BOOL, "Play audio
 #ifdef ID_RETAIL
 	idCVar s_useCompression( "s_useCompression", "1", CVAR_BOOL, "Use compressed sound files (mp3/xma)" );
 	idCVar s_playDefaultSound( "s_playDefaultSound", "0", CVAR_BOOL, "play a beep for missing sounds" );
-	idCVar s_maxSamples( "s_maxSamples", "5", CVAR_INTEGER, "max samples to load per shader" );
+	idCVar s_maxSamples( "s_maxSamples", "0", CVAR_INTEGER, "max samples to load per shader" );
 #else
 	idCVar s_useCompression( "s_useCompression", "1", CVAR_BOOL, "Use compressed sound files (mp3/xma)" );
 	idCVar s_playDefaultSound( "s_playDefaultSound", "1", CVAR_BOOL, "play a beep for missing sounds" );
-	idCVar s_maxSamples( "s_maxSamples", "5", CVAR_INTEGER, "max samples to load per shader" );
+	idCVar s_maxSamples( "s_maxSamples", "0", CVAR_INTEGER, "max samples to load per shader" );
 #endif
 
-idCVar preLoad_Samples( "preLoad_Samples", "1", CVAR_SYSTEM | CVAR_BOOL, "preload samples during beginlevelload" );
+idCVar preLoad_Samples( "preLoad_Samples", "1", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "preload samples during beginlevelload" );
 
 idSoundSystemLocal soundSystemLocal;
 idSoundSystem* soundSystem = &soundSystemLocal;

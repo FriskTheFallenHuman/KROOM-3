@@ -274,24 +274,8 @@ void idTarget_EndLevel::Event_Activate( idEntity* activator )
 				player->GetAchievementManager().EventCompletesAchievement( ACHIEVEMENT_SPEED_RUN );
 			}
 
-			switch( expansion )
-			{
-				case GAME_D3XP:
-				{
-					cvarSystem->SetCVarBool( "g_roeNightmare", true );
-					break;
-				}
-				case GAME_D3LE:
-				{
-					cvarSystem->SetCVarBool( "g_leNightmare", true );
-					break;
-				}
-				case GAME_BASE:
-				{
-					cvarSystem->SetCVarBool( "g_nightmare", true );
-					break;
-				}
-			}
+			// Allow nigthmare to be unlocked regardless of expansion type, since the nightmare difficulty is available in all expansions
+			cvarSystem->SetCVarBool( "g_nightmare", true );
 		}
 		mainMenuLocal.SetGameComplete();
 		common->QueueShowShell();
