@@ -51,6 +51,7 @@ scriptEvent	void	launchHomingMissile();
 #include "script/vehicle_base.script"
 #include "script/vehicle_buggy_gun.script"
 #include "script/vehicle_buggy_turbo.script"
+#include "script/vehicle_basic.script"
 
 // ai
 #include "script/ai_monster_base.script"

@@ -1,0 +1,25 @@
+/***********************************************************************
+
+vehicle_basic.script
+
+author: Krispy
+
+Simple vehicle script, nothing fancy
+
+***********************************************************************/
+
+object vehicle_basic : vehicle_base {
+
+	void		init();
+	void		startDrive();
+	void		updateDrive();
+};
+
+void vehicle_basic::init() {
+}
+
+void vehicle_basic::startDrive(){
+}
+
+void vehicle_basic::updateDrive(){
+}
