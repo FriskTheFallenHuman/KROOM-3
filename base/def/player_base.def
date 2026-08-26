@@ -154,7 +154,7 @@ entityDef player_id_base {
 	"weapon19_allowempty"				"1"
 	"weapon19_visible"					"0"					// whether you can see this weapon in the inventory or not
 
-	"weapontoggle0"						"0,1"
+	"weapontoggle0"						"0,1,11"
 	"weapontoggle1"						"1,0"
 	"weapontoggle3"						"3,4"
 	"weapontoggle4"						"4,3"
@@ -297,9 +297,11 @@ entityDef player_id_base {
 
 	"snd_stepladder"					"player_climb_ladder"
 	"snd_weapon_switch"					"player_sounds_weapon_switch"
-	"snd_footstep"						"player_sounds_footstep"
+	"snd_footstep"						"player_elevator_sounds_footstep"
 	"snd_death"							"player_sounds_death"
 	"snd_fall"							"player_sounds_fall"
+	"snd_jump"							"player_sounds_jump"
+	"snd_jump_small"					"player_sounds_jump_small"
 	"snd_pain_small"					"player_sounds_pain_small"
 	"snd_pain_medium"					"player_sounds_pain_medium"
 	"snd_pain_large"					"player_sounds_pain_big"
