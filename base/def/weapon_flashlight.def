@@ -38,9 +38,9 @@ entityDef weapon_flashlight {
 	"ammoRequired"				"0"
 	"clipSize"					"0"
 
-	"mtr_flashLightShader"		"lights/flashlight5"
+	"mtr_flashLightShader"		"lights/flashlight2"
 	"flashLightColor"			"1 1 1"
-	"flashLightRadius"			"400"
+	"flashLightRadius"			"300"
 	"flashLightTarget"			"0 0 960"	//"0 0 1280"
 	"flashLightUp"				"0 640 0"	//"0 640 0"
 	"flashLightRight"			"-640 0 0"	//"-640 0 0"

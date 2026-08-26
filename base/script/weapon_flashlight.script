@@ -92,9 +92,6 @@ void weapon_flashlight::Idle() {
 			setNetfiring(true);
 			weaponState( "Fire", FLASHLIGHT_IDLE_TO_FIRE );
 		}
-		if ( WEAPON_RELOAD ) {
-			weaponState( "ToggleOnOff", FLASHLIGHT_IDLE_TO_RELOAD );
-		}
 		waitFrame();
 	}
 }

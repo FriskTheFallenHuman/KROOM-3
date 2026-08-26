@@ -76,7 +76,7 @@ void weapon_base_flashlight::ToggleOnOff() {
 
 /*
 =====================
-weapon_base_flashlight::TurnOff
+weapon_base_flashlight::TurnOn
 =====================
 */
 void weapon_base_flashlight::TurnOn() {
