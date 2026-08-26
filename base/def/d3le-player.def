@@ -34,6 +34,19 @@ entityDef player_base_d3le_sp {
 	"hud"								"guis/d3xp-hud.gui"
 	"mphud"								"guis/d3xp-mphud.gui"
 	"cursor"							"guis/d3xp-cursor.gui"
+
+	"snd_death"							"player_exp_sounds_death"
+	"snd_fall"							"player_exp_sounds_fall"
+	"snd_jump"							"player_exp_sounds_jump"
+	"snd_jump_small"					"player_exp_sounds_jump_small"
+	"snd_pain_small"					"player_exp_sounds_pain_small"
+	"snd_pain_medium"					"player_exp_sounds_pain_medium"
+	"snd_pain_large"					"player_exp_sounds_pain_big"
+	"snd_pain_huge"						"player_exp_sounds_pain_huge"
+	"snd_land_soft"						"player_exp_sounds_fastlanding"
+	"snd_land_hard"						"player_exp_sounds_thud"
+	"snd_doublevision"					"player_exp_sounds_doublevision"
+	"snd_thud"							"player_exp_sounds_thud"
 }
 
 

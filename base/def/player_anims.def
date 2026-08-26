@@ -80,11 +80,11 @@ model model_player_base_anims {
 	}
 	anim jump							models/md5/characters/npcs/playermoves/walkjump1.md5anim {
 		prevent_idle_override
-		frame 1							sound_body player_sounds_jump_small
+		frame 1							sound_body snd_jump_small
 	}
 	anim run_jump						models/md5/characters/npcs/playermoves/walkjump1.md5anim {
 		prevent_idle_override
-		frame 1							sound_body player_sounds_jump
+		frame 1							sound_body snd_jump
 	}
 	anim soft_land						models/md5/characters/npcs/playermoves/soft_land.md5anim {
 		prevent_idle_override

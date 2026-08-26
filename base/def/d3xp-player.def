@@ -36,6 +36,19 @@ entityDef d3xp_player_doommarine  {
 	"model"								"model_d3xp_sp_marine"
 	"def_head"							"model_d3xp_sp_head"
 
+	"snd_death"							"player_exp_sounds_death"
+	"snd_fall"							"player_exp_sounds_fall"
+	"snd_jump"							"player_exp_sounds_jump"
+	"snd_jump_small"					"player_exp_sounds_jump_small"
+	"snd_pain_small"					"player_exp_sounds_pain_small"
+	"snd_pain_medium"					"player_exp_sounds_pain_medium"
+	"snd_pain_large"					"player_exp_sounds_pain_big"
+	"snd_pain_huge"						"player_exp_sounds_pain_huge"
+	"snd_land_soft"						"player_exp_sounds_fastlanding"
+	"snd_land_hard"						"player_exp_sounds_thud"
+	"snd_doublevision"					"player_exp_sounds_doublevision"
+	"snd_thud"							"player_exp_sounds_thud"
+
 	"head_joint"						"Shoulders"
 
 	"copy_joint neckcontrol"			"neckcontrol"
