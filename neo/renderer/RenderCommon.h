@@ -888,7 +888,6 @@ public:
 
 	void					Clear();
 	void					GetCroppedViewport( idScreenRect* viewport );
-	void					PerformResolutionScaling( int& newWidth, int& newHeight );
 	int						GetFrameCount() const
 	{
 		return frameCount;
@@ -1564,7 +1563,6 @@ void RB_SetVertexColorParms( stageVertexColor_t svc );
 
 //=============================================
 
-#include "ResolutionScale.h"
 #include "RenderLog.h"
 #include "GLMatrix.h"
 

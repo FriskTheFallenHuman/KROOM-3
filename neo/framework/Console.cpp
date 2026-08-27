@@ -31,7 +31,6 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 #include "ConsoleHistory.h"
 #include "../renderer/RenderCommon.h"
-#include "../renderer/ResolutionScale.h"
 #include "Common_local.h"
 #include "../imgui/BFGimgui.h"
 
@@ -544,9 +543,6 @@ float idConsoleLocal::DrawFPS( float y )
 
 	const char* aaMode = aaValues[ r_antiAliasing.GetInteger() ];
 
-	idStr resolutionText;
-	resolutionScale.GetConsoleText( resolutionText );
-
 	int width = renderSystem->GetWidth();
 	int height = renderSystem->GetHeight();
 
@@ -554,7 +550,7 @@ float idConsoleLocal::DrawFPS( float y )
 	timeStr.Format( "===========  Performance Stats ===========" );
 	CREATE_OVERLAY( gperfstats, timeStr, JUSTIFY_RIGHT, colorWhite, TEXTSIZE_SMALL, false );
 
-	timeStr.Format( "API: %s, AA[%i, %i]: %s, %s", API, width, height, aaMode, resolutionText.c_str() );
+	timeStr.Format( "API: %s, AA[%i, %i]: %s", API, width, height, aaMode );
 	CREATE_OVERLAY( ggeneral, timeStr, JUSTIFY_RIGHT, colorCyan, TEXTSIZE_SMALL, false );
 
 	if( com_showFPS.GetInteger() > 2 )

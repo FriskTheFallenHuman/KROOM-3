@@ -5131,8 +5131,6 @@ void idRenderBackend::ExecuteBackEndCommands( const emptyCommand_t* cmds )
 	int c_setBuffers = 0;
 	int c_copyRenders = 0;
 
-	resolutionScale.SetCurrentGPUFrameTime( commonLocal.GetRendererGPUMicroseconds() );
-
 	ResizeImages();
 
 	renderLog.StartFrame();
@@ -5708,12 +5706,11 @@ idRenderBackend::PostProcess
 
 ==================
 */
-extern idCVar rs_enable;
 void idRenderBackend::PostProcess( const void* data )
 {
 	// only do the post process step if resolution scaling is enabled. Prevents the unnecessary copying of the framebuffer and
 	// corresponding full screen quad pass.
-	if( rs_enable.GetInteger() == 0 && !r_useFilmicPostProcessing.GetBool() && r_antiAliasing.GetInteger() == 0 )
+	if( !r_useFilmicPostProcessing.GetBool() && r_antiAliasing.GetInteger() == 0 )
 	{
 		return;
 	}

@@ -154,9 +154,6 @@ void idRenderSystemLocal::RenderCommandBuffers( const emptyCommand_t* const cmdH
 			backEnd.ExecuteBackEndCommands( cmdHead );
 		}
 	}
-
-	// pass in null for now - we may need to do some map specific hackery in the future
-	resolutionScale.InitForMap( NULL );
 }
 
 /*
@@ -1074,25 +1071,6 @@ Returns the current cropped pixel coordinates
 void idRenderSystemLocal::GetCroppedViewport( idScreenRect* viewport )
 {
 	*viewport = renderCrops[currentRenderCrop];
-}
-
-/*
-========================
-idRenderSystemLocal::PerformResolutionScaling
-
-The 3D rendering size can be smaller than the full window resolution to reduce
-fill rate requirements while still allowing the GUIs to be full resolution.
-In split screen mode the rendering size is also smaller.
-========================
-*/
-void idRenderSystemLocal::PerformResolutionScaling( int& newWidth, int& newHeight )
-{
-	float xScale = 1.0f;
-	float yScale = 1.0f;
-	resolutionScale.GetCurrentResolutionScale( xScale, yScale );
-
-	newWidth = idMath::Ftoi( GetWidth() * xScale );
-	newHeight = idMath::Ftoi( GetHeight() * yScale );
 }
 
 /*

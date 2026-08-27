@@ -1078,7 +1078,6 @@ void idRenderWorldLocal::RenderScene( const renderView_t* renderView )
 
 	int windowWidth = tr.GetWidth();
 	int windowHeight = tr.GetHeight();
-	tr.PerformResolutionScaling( windowWidth, windowHeight );
 
 	// screenFraction is just for quickly testing fill rate limitations
 	if( r_screenFraction.GetInteger() != 100 )
