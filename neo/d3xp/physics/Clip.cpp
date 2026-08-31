@@ -31,6 +31,8 @@ If you have questions concerning this license or the applicable additional terms
 
 
 #include "../Game_local.h"
+#include "../../cm/CollisionQuery.h"
+#include "../../cm/CollisionMerge.h"
 
 #define	MAX_SECTOR_DEPTH				12
 #define MAX_SECTORS						((1<<(MAX_SECTOR_DEPTH+1))-1)
@@ -621,7 +623,7 @@ cmHandle_t idClipModel::Handle() const
 	}
 	else if( traceModelIndex != -1 )
 	{
-		return collisionModelManager->SetupTrmModel( *GetCachedTraceModel( traceModelIndex ), material );
+		return collisionModelManager->SetupImmutableTrmModel( *GetCachedTraceModel( traceModelIndex ), material );
 	}
 	else
 	{
@@ -943,6 +945,83 @@ void idClip::Shutdown()
 idClip::ClipModelsTouchingBounds_r
 ====================
 */
+static const int CLIP_VISITED_HASH_SIZE = MAX_GENTITIES * 2;
+static const int CLIP_VISITED_SCRATCH_SLOTS = 2;
+
+struct clipVisitedEntry_t
+{
+	idClipModel* 	clipModel;
+	unsigned int	generation;
+};
+
+struct clipVisitedState_t
+{
+	clipVisitedEntry_t entries[CLIP_VISITED_HASH_SIZE];
+	unsigned int	generation;
+	bool			inUse;
+
+	clipVisitedState_t() : generation( 0 ), inUse( false )
+	{
+		memset( entries, 0, sizeof( entries ) );
+	}
+
+	void Begin()
+	{
+		generation++;
+		if( generation == 0 )
+		{
+			memset( entries, 0, sizeof( entries ) );
+			generation = 1;
+		}
+		inUse = true;
+	}
+};
+
+static thread_local clipVisitedState_t clipVisitedStates[CLIP_VISITED_SCRATCH_SLOTS];
+
+class clipVisitedScope_t
+{
+public:
+	clipVisitedScope_t() : state( NULL ), temporary( false )
+	{
+		for( int i = 0; i < CLIP_VISITED_SCRATCH_SLOTS; ++i )
+		{
+			if( !clipVisitedStates[i].inUse )
+			{
+				state = &clipVisitedStates[i];
+				break;
+			}
+		}
+		if( state == NULL )
+		{
+			state = new( TAG_PHYSICS ) clipVisitedState_t;
+			temporary = true;
+		}
+		state->Begin();
+	}
+
+	~clipVisitedScope_t()
+	{
+		if( temporary )
+		{
+			delete state;
+		}
+		else
+		{
+			state->inUse = false;
+		}
+	}
+
+	clipVisitedState_t* GetState() const
+	{
+		return state;
+	}
+
+private:
+	clipVisitedState_t* state;
+	bool				temporary;
+};
+
 typedef struct listParms_s
 {
 	idBounds		bounds;
@@ -950,7 +1029,32 @@ typedef struct listParms_s
 	idClipModel**		list;
 	int				count;
 	int				maxCount;
+	clipVisitedState_t* visited;
 } listParms_t;
+
+static bool MarkClipModelVisited( listParms_t& parms, idClipModel* clipModel )
+{
+	const size_t value = reinterpret_cast<size_t>( clipModel );
+	unsigned int index = static_cast<unsigned int>( ( value >> 4 ) ^ ( value >> 15 ) ^ ( value >> 25 ) ) &
+						 ( CLIP_VISITED_HASH_SIZE - 1 );
+	for( int probe = 0; probe < CLIP_VISITED_HASH_SIZE; ++probe )
+	{
+		clipVisitedEntry_t& entry = parms.visited->entries[index];
+		if( entry.generation == parms.visited->generation && entry.clipModel == clipModel )
+		{
+			return false;
+		}
+		if( entry.generation != parms.visited->generation )
+		{
+			entry.clipModel = clipModel;
+			entry.generation = parms.visited->generation;
+			return true;
+		}
+		index = ( index + 1 ) & ( CLIP_VISITED_HASH_SIZE - 1 );
+	}
+	gameLocal.Warning( "idClip::ClipModelsTouchingBounds_r: visited hash full" );
+	return false;
+}
 
 void idClip::ClipModelsTouchingBounds_r( const struct clipSector_s* node, listParms_t& parms ) const
 {
@@ -982,12 +1086,6 @@ void idClip::ClipModelsTouchingBounds_r( const struct clipSector_s* node, listPa
 			continue;
 		}
 
-		// avoid duplicates in the list
-		if( check->touchCount == touchCount )
-		{
-			continue;
-		}
-
 		// if the clip model does not have any contents we are looking for
 		if( !( check->contents & parms.contentMask ) )
 		{
@@ -1005,13 +1103,18 @@ void idClip::ClipModelsTouchingBounds_r( const struct clipSector_s* node, listPa
 			continue;
 		}
 
+		// Clip models may be linked into several leaf sectors.  Keep duplicate
+		// suppression in the query instead of mutating shared clip-model state.
+		if( !MarkClipModelVisited( parms, check ) )
+		{
+			continue;
+		}
+
 		if( parms.count >= parms.maxCount )
 		{
 			gameLocal.Warning( "idClip::ClipModelsTouchingBounds_r: max count" );
 			return;
 		}
-
-		check->touchCount = touchCount;
 		parms.list[parms.count] = check;
 		parms.count++;
 	}
@@ -1024,6 +1127,7 @@ idClip::ClipModelsTouchingBounds
 */
 int idClip::ClipModelsTouchingBounds( const idBounds& bounds, int contentMask, idClipModel** clipModelList, int maxCount ) const
 {
+	clipVisitedScope_t visitedScope;
 	listParms_t parms;
 
 	if(	bounds[0][0] > bounds[1][0] ||
@@ -1041,8 +1145,8 @@ int idClip::ClipModelsTouchingBounds( const idBounds& bounds, int contentMask, i
 	parms.list = clipModelList;
 	parms.count = 0;
 	parms.maxCount = maxCount;
+	parms.visited = visitedScope.GetState();
 
-	touchCount++;
 	ClipModelsTouchingBounds_r( clipSectors, parms );
 
 	return parms.count;
@@ -1249,6 +1353,71 @@ ID_INLINE bool TestHugeTranslation( trace_t& results, const idClipModel* mdl, co
 
 /*
 ============
+BuildPositionedCollisionModels
+
+Expands the game clip-model representation into the immutable placement data
+consumed by collision workers.  Keeping this in one place prevents individual
+query paths from drifting in their filtering or entity/body metadata.
+============
+*/
+static bool IsPositionedCollisionModelCandidate( const idClipModel* touch,
+		int contentMask, int knownContents )
+{
+	if( touch == NULL || touch->IsRenderModel() )
+	{
+		return false;
+	}
+	const int touchContents = touch->GetContents();
+	return ( touchContents & contentMask ) != 0 &&
+		   ( touchContents & knownContents ) != touchContents;
+}
+
+static int BuildPositionedCollisionModels( idClipModel* const* clipModelList, int numClipModels,
+		int contentMask, int knownContents,
+		idList< idPositionedCollisionModel, TAG_PHYSICS >* positionedModels )
+{
+	int numPositionedModels = 0;
+	for( int i = 0; i < numClipModels; ++i )
+	{
+		const idClipModel* touch = clipModelList[i];
+		if( !IsPositionedCollisionModelCandidate( touch, contentMask, knownContents ) )
+		{
+			continue;
+		}
+		++numPositionedModels;
+	}
+
+	if( positionedModels == NULL )
+	{
+		return numPositionedModels;
+	}
+
+	positionedModels->SetNum( numPositionedModels );
+	int positionedIndex = 0;
+	for( int i = 0; i < numClipModels; ++i )
+	{
+		const idClipModel* touch = clipModelList[i];
+		if( !IsPositionedCollisionModelCandidate( touch, contentMask, knownContents ) )
+		{
+			continue;
+		}
+		const int touchContents = touch->GetContents();
+
+		idPositionedCollisionModel& positioned = ( *positionedModels )[positionedIndex++];
+		positioned.model = touch->Handle();
+		positioned.origin = touch->GetOrigin();
+		positioned.axis = touch->GetAxis();
+		positioned.entityNum = touch->GetEntity() != NULL ? touch->GetEntity()->entityNumber : ENTITYNUM_NONE;
+		positioned.physicsId = touch->GetId();
+		positioned.bodyId = touch->GetId();
+		positioned.contentsOverride = touchContents;
+		positioned.scale = 1.0f;
+	}
+	return numPositionedModels;
+}
+
+/*
+============
 idClip::TranslationEntities
 ============
 */
@@ -1286,6 +1455,23 @@ void idClip::TranslationEntities( trace_t& results, const idVec3& start, const i
 
 	num = GetTraceClipModels( traceBounds, contentMask, passEntity, clipModelList );
 
+	// Render models use a different trace path. Loaded collision models and the
+	// map-lifetime immutable trace-model handles can be submitted together.
+	const int numPositionedModels = BuildPositionedCollisionModels(
+										clipModelList, num, contentMask, 0, NULL );
+	const bool usePositionedBatch = numPositionedModels > 1;
+	idList< idPositionedCollisionModel, TAG_PHYSICS > positionedModels;
+	idList< trace_t, TAG_PHYSICS > positionedResults;
+	if( usePositionedBatch )
+	{
+		BuildPositionedCollisionModels( clipModelList, num, contentMask, 0, &positionedModels );
+		positionedResults.SetNum( numPositionedModels );
+		idClip::numTranslations += numPositionedModels;
+		collisionModelManager->TranslationModels( positionedResults.Ptr(), numPositionedModels,
+				start, end, trm, trmAxis, contentMask, positionedModels.Ptr() );
+	}
+
+	int positionedIndex = 0;
 	for( i = 0; i < num; i++ )
 	{
 		touch = clipModelList[i];
@@ -1294,11 +1480,20 @@ void idClip::TranslationEntities( trace_t& results, const idVec3& start, const i
 		{
 			continue;
 		}
+		if( !touch->IsRenderModel() &&
+				!IsPositionedCollisionModelCandidate( touch, contentMask, 0 ) )
+		{
+			continue;
+		}
 
-		if( touch->renderModelHandle != -1 )
+		if( touch->IsRenderModel() )
 		{
 			idClip::numRenderModelTraces++;
 			TraceRenderModel( trace, start, end, radius, trmAxis, touch );
+		}
+		else if( usePositionedBatch )
+		{
+			trace = positionedResults[positionedIndex++];
 		}
 		else
 		{
@@ -1307,15 +1502,94 @@ void idClip::TranslationEntities( trace_t& results, const idVec3& start, const i
 												touch->Handle(), touch->origin, touch->axis );
 		}
 
-		if( trace.fraction < results.fraction )
+		if( idCollisionDetectionMerge::MergeTraceResult( results, trace,
+				touch->entity->entityNumber, touch->id ) && results.fraction == 0.0f )
 		{
-			results = trace;
-			results.c.entityNum = touch->entity->entityNumber;
-			results.c.id = touch->id;
-			if( results.fraction == 0.0f )
-			{
-				break;
-			}
+			break;
+		}
+	}
+}
+
+/*
+============
+idClip::RotationEntities
+
+Rotates against linked entity collision models without querying the immutable
+world model.  This is the rotation counterpart to TranslationEntities and is
+used after AF world rotations have completed as one heterogeneous CM batch.
+============
+*/
+void idClip::RotationEntities( trace_t& results, const idVec3& start,
+							   const idRotation& rotation, const idClipModel* mdl, const idMat3& trmAxis,
+							   int contentMask, const idEntity* passEntity )
+{
+	idClipModel* touch, *clipModelList[MAX_GENTITIES];
+	idBounds traceBounds;
+	trace_t trace;
+	const idTraceModel* trm = TraceModelForClipModel( mdl );
+
+	memset( &results, 0, sizeof( results ) );
+	results.fraction = 1.0f;
+	results.endpos = start;
+	results.endAxis = trmAxis * rotation.ToMat3();
+
+	if( !trm )
+	{
+		traceBounds.FromPointRotation( start, rotation );
+	}
+	else
+	{
+		traceBounds.FromBoundsRotation( trm->bounds, start, trmAxis, rotation );
+	}
+
+	const int num = GetTraceClipModels( traceBounds, contentMask, passEntity, clipModelList );
+	const int numPositionedModels = BuildPositionedCollisionModels(
+										clipModelList, num, contentMask, 0, NULL );
+	const bool usePositionedBatch = numPositionedModels > 1;
+	idList< idPositionedCollisionModel, TAG_PHYSICS > positionedModels;
+	idList< trace_t, TAG_PHYSICS > positionedResults;
+	if( usePositionedBatch )
+	{
+		BuildPositionedCollisionModels( clipModelList, num, contentMask, 0, &positionedModels );
+		positionedResults.SetNum( numPositionedModels );
+		idClip::numRotations += numPositionedModels;
+		collisionModelManager->RotationModels( positionedResults.Ptr(), numPositionedModels,
+											   start, rotation, trm, trmAxis, contentMask, positionedModels.Ptr() );
+	}
+
+	int positionedIndex = 0;
+	for( int i = 0; i < num; ++i )
+	{
+		touch = clipModelList[i];
+		if( !touch )
+		{
+			continue;
+		}
+		if( !touch->IsRenderModel() &&
+				!IsPositionedCollisionModelCandidate( touch, contentMask, 0 ) )
+		{
+			continue;
+		}
+		if( touch->IsRenderModel() )
+		{
+			continue;
+		}
+
+		if( usePositionedBatch )
+		{
+			trace = positionedResults[positionedIndex++];
+		}
+		else
+		{
+			idClip::numRotations++;
+			collisionModelManager->Rotation( &trace, start, rotation, trm, trmAxis,
+											 contentMask, touch->Handle(), touch->origin, touch->axis );
+		}
+
+		if( idCollisionDetectionMerge::MergeTraceResult( results, trace,
+				touch->entity->entityNumber, touch->id ) && results.fraction == 0.0f )
+		{
+			break;
 		}
 	}
 }
@@ -1342,13 +1616,19 @@ bool idClip::Translation( trace_t& results, const idVec3& start, const idVec3& e
 
 	trm = TraceModelForClipModel( mdl );
 
+	bool worldQueryPending = false;
 	if( !passEntity || passEntity->entityNumber != ENTITYNUM_WORLD )
 	{
-		// test world
+		// Let the immutable world-model narrow phase run while the game thread
+		// gathers dynamic entity candidates from the clip-sector broadphase.
 		idClip::numTranslations++;
-		collisionModelManager->Translation( &results, start, end, trm, trmAxis, contentMask, 0, vec3_origin, mat3_default );
-		results.c.entityNum = results.fraction != 1.0f ? ENTITYNUM_WORLD : ENTITYNUM_NONE;
-		if( results.fraction == 0.0f )
+		worldQueryPending = collisionModelManager->BeginTranslation( &results, start, end,
+							trm, trmAxis, contentMask, 0, vec3_origin, mat3_default );
+		if( !worldQueryPending )
+		{
+			results.c.entityNum = results.fraction != 1.0f ? ENTITYNUM_WORLD : ENTITYNUM_NONE;
+		}
+		if( !worldQueryPending && results.fraction == 0.0f )
 		{
 			return true;		// blocked immediately by the world
 		}
@@ -1361,19 +1641,44 @@ bool idClip::Translation( trace_t& results, const idVec3& start, const idVec3& e
 		results.endAxis = trmAxis;
 	}
 
+	const idVec3 broadphaseTranslation = worldQueryPending ? end - start : results.endpos - start;
 	if( !trm )
 	{
-		traceBounds.FromPointTranslation( start, results.endpos - start );
+		traceBounds.FromPointTranslation( start, broadphaseTranslation );
 		radius = 0.0f;
 	}
 	else
 	{
-		traceBounds.FromBoundsTranslation( trm->bounds, start, trmAxis, results.endpos - start );
+		traceBounds.FromBoundsTranslation( trm->bounds, start, trmAxis, broadphaseTranslation );
 		radius = trm->bounds.GetRadius();
 	}
 
 	num = GetTraceClipModels( traceBounds, contentMask, passEntity, clipModelList );
+	if( worldQueryPending )
+	{
+		collisionModelManager->WaitForAllQueries();
+		results.c.entityNum = results.fraction != 1.0f ? ENTITYNUM_WORLD : ENTITYNUM_NONE;
+		if( results.fraction == 0.0f )
+		{
+			return true;
+		}
+	}
 
+	const int numPositionedModels = BuildPositionedCollisionModels(
+										clipModelList, num, contentMask, 0, NULL );
+	const bool usePositionedBatch = numPositionedModels > 1;
+	idList< idPositionedCollisionModel, TAG_PHYSICS > positionedModels;
+	idList< trace_t, TAG_PHYSICS > positionedResults;
+	if( usePositionedBatch )
+	{
+		BuildPositionedCollisionModels( clipModelList, num, contentMask, 0, &positionedModels );
+		positionedResults.SetNum( numPositionedModels );
+		idClip::numTranslations += numPositionedModels;
+		collisionModelManager->TranslationModels( positionedResults.Ptr(), numPositionedModels,
+				start, end, trm, trmAxis, contentMask, positionedModels.Ptr() );
+	}
+
+	int positionedIndex = 0;
 	for( i = 0; i < num; i++ )
 	{
 		touch = clipModelList[i];
@@ -1382,11 +1687,20 @@ bool idClip::Translation( trace_t& results, const idVec3& start, const idVec3& e
 		{
 			continue;
 		}
+		if( !touch->IsRenderModel() &&
+				!IsPositionedCollisionModelCandidate( touch, contentMask, 0 ) )
+		{
+			continue;
+		}
 
-		if( touch->renderModelHandle != -1 )
+		if( touch->IsRenderModel() )
 		{
 			idClip::numRenderModelTraces++;
 			TraceRenderModel( trace, start, end, radius, trmAxis, touch );
+		}
+		else if( usePositionedBatch )
+		{
+			trace = positionedResults[positionedIndex++];
 		}
 		else
 		{
@@ -1395,15 +1709,10 @@ bool idClip::Translation( trace_t& results, const idVec3& start, const idVec3& e
 												touch->Handle(), touch->origin, touch->axis );
 		}
 
-		if( trace.fraction < results.fraction )
+		if( idCollisionDetectionMerge::MergeTraceResult( results, trace,
+				touch->entity->entityNumber, touch->id ) && results.fraction == 0.0f )
 		{
-			results = trace;
-			results.c.entityNum = touch->entity->entityNumber;
-			results.c.id = touch->id;
-			if( results.fraction == 0.0f )
-			{
-				break;
-			}
+			break;
 		}
 	}
 
@@ -1426,13 +1735,19 @@ bool idClip::Rotation( trace_t& results, const idVec3& start, const idRotation& 
 
 	trm = TraceModelForClipModel( mdl );
 
+	bool worldQueryPending = false;
 	if( !passEntity || passEntity->entityNumber != ENTITYNUM_WORLD )
 	{
-		// test world
+		// Rotation bounds do not depend on the world result, so world narrow
+		// phase and entity broadphase can always overlap safely.
 		idClip::numRotations++;
-		collisionModelManager->Rotation( &results, start, rotation, trm, trmAxis, contentMask, 0, vec3_origin, mat3_default );
-		results.c.entityNum = results.fraction != 1.0f ? ENTITYNUM_WORLD : ENTITYNUM_NONE;
-		if( results.fraction == 0.0f )
+		worldQueryPending = collisionModelManager->BeginRotation( &results, start, rotation,
+							trm, trmAxis, contentMask, 0, vec3_origin, mat3_default );
+		if( !worldQueryPending )
+		{
+			results.c.entityNum = results.fraction != 1.0f ? ENTITYNUM_WORLD : ENTITYNUM_NONE;
+		}
+		if( !worldQueryPending && results.fraction == 0.0f )
 		{
 			return true;		// blocked immediately by the world
 		}
@@ -1455,7 +1770,31 @@ bool idClip::Rotation( trace_t& results, const idVec3& start, const idRotation& 
 	}
 
 	num = GetTraceClipModels( traceBounds, contentMask, passEntity, clipModelList );
+	if( worldQueryPending )
+	{
+		collisionModelManager->WaitForAllQueries();
+		results.c.entityNum = results.fraction != 1.0f ? ENTITYNUM_WORLD : ENTITYNUM_NONE;
+		if( results.fraction == 0.0f )
+		{
+			return true;
+		}
+	}
 
+	const int numPositionedModels = BuildPositionedCollisionModels(
+										clipModelList, num, contentMask, 0, NULL );
+	const bool usePositionedBatch = numPositionedModels > 1;
+	idList< idPositionedCollisionModel, TAG_PHYSICS > positionedModels;
+	idList< trace_t, TAG_PHYSICS > positionedResults;
+	if( usePositionedBatch )
+	{
+		BuildPositionedCollisionModels( clipModelList, num, contentMask, 0, &positionedModels );
+		positionedResults.SetNum( numPositionedModels );
+		idClip::numRotations += numPositionedModels;
+		collisionModelManager->RotationModels( positionedResults.Ptr(), numPositionedModels,
+											   start, rotation, trm, trmAxis, contentMask, positionedModels.Ptr() );
+	}
+
+	int positionedIndex = 0;
 	for( i = 0; i < num; i++ )
 	{
 		touch = clipModelList[i];
@@ -1464,26 +1803,33 @@ bool idClip::Rotation( trace_t& results, const idVec3& start, const idRotation& 
 		{
 			continue;
 		}
-
-		// no rotational collision with render models
-		if( touch->renderModelHandle != -1 )
+		if( !touch->IsRenderModel() &&
+				!IsPositionedCollisionModelCandidate( touch, contentMask, 0 ) )
 		{
 			continue;
 		}
 
-		idClip::numRotations++;
-		collisionModelManager->Rotation( &trace, start, rotation, trm, trmAxis, contentMask,
-										 touch->Handle(), touch->origin, touch->axis );
-
-		if( trace.fraction < results.fraction )
+		// no rotational collision with render models
+		if( touch->IsRenderModel() )
 		{
-			results = trace;
-			results.c.entityNum = touch->entity->entityNumber;
-			results.c.id = touch->id;
-			if( results.fraction == 0.0f )
-			{
-				break;
-			}
+			continue;
+		}
+
+		if( usePositionedBatch )
+		{
+			trace = positionedResults[positionedIndex++];
+		}
+		else
+		{
+			idClip::numRotations++;
+			collisionModelManager->Rotation( &trace, start, rotation, trm, trmAxis, contentMask,
+											 touch->Handle(), touch->origin, touch->axis );
+		}
+
+		if( idCollisionDetectionMerge::MergeTraceResult( results, trace,
+				touch->entity->entityNumber, touch->id ) && results.fraction == 0.0f )
+		{
+			break;
 		}
 	}
 
@@ -1575,6 +1921,21 @@ bool idClip::Motion( trace_t& results, const idVec3& start, const idVec3& end, c
 
 		num = GetTraceClipModels( traceBounds, contentMask, passEntity, clipModelList );
 
+		const int numPositionedModels = BuildPositionedCollisionModels(
+											clipModelList, num, contentMask, 0, NULL );
+		const bool usePositionedBatch = numPositionedModels > 1;
+		idList< idPositionedCollisionModel, TAG_PHYSICS > positionedModels;
+		idList< trace_t, TAG_PHYSICS > positionedResults;
+		if( usePositionedBatch )
+		{
+			BuildPositionedCollisionModels( clipModelList, num, contentMask, 0, &positionedModels );
+			positionedResults.SetNum( numPositionedModels );
+			idClip::numTranslations += numPositionedModels;
+			collisionModelManager->TranslationModels( positionedResults.Ptr(), numPositionedModels,
+					start, end, trm, trmAxis, contentMask, positionedModels.Ptr() );
+		}
+
+		int positionedIndex = 0;
 		for( i = 0; i < num; i++ )
 		{
 			touch = clipModelList[i];
@@ -1583,11 +1944,20 @@ bool idClip::Motion( trace_t& results, const idVec3& start, const idVec3& end, c
 			{
 				continue;
 			}
+			if( !touch->IsRenderModel() &&
+					!IsPositionedCollisionModelCandidate( touch, contentMask, 0 ) )
+			{
+				continue;
+			}
 
-			if( touch->renderModelHandle != -1 )
+			if( touch->IsRenderModel() )
 			{
 				idClip::numRenderModelTraces++;
 				TraceRenderModel( trace, start, end, radius, trmAxis, touch );
+			}
+			else if( usePositionedBatch )
+			{
+				trace = positionedResults[positionedIndex++];
 			}
 			else
 			{
@@ -1596,15 +1966,10 @@ bool idClip::Motion( trace_t& results, const idVec3& start, const idVec3& end, c
 													touch->Handle(), touch->origin, touch->axis );
 			}
 
-			if( trace.fraction < translationalTrace.fraction )
+			if( idCollisionDetectionMerge::MergeTraceResult( translationalTrace, trace,
+					touch->entity->entityNumber, touch->id ) && translationalTrace.fraction == 0.0f )
 			{
-				translationalTrace = trace;
-				translationalTrace.c.entityNum = touch->entity->entityNumber;
-				translationalTrace.c.id = touch->id;
-				if( translationalTrace.fraction == 0.0f )
-				{
-					break;
-				}
+				break;
 			}
 		}
 	}
@@ -1641,6 +2006,21 @@ bool idClip::Motion( trace_t& results, const idVec3& start, const idVec3& end, c
 			num = GetTraceClipModels( traceBounds, contentMask, passEntity, clipModelList );
 		}
 
+		const int numPositionedModels = BuildPositionedCollisionModels(
+											clipModelList, num, contentMask, 0, NULL );
+		const bool usePositionedBatch = numPositionedModels > 1;
+		idList< idPositionedCollisionModel, TAG_PHYSICS > positionedModels;
+		idList< trace_t, TAG_PHYSICS > positionedResults;
+		if( usePositionedBatch )
+		{
+			BuildPositionedCollisionModels( clipModelList, num, contentMask, 0, &positionedModels );
+			positionedResults.SetNum( numPositionedModels );
+			idClip::numRotations += numPositionedModels;
+			collisionModelManager->RotationModels( positionedResults.Ptr(), numPositionedModels,
+												   endPosition, endRotation, trm, trmAxis, contentMask, positionedModels.Ptr() );
+		}
+
+		int positionedIndex = 0;
 		for( i = 0; i < num; i++ )
 		{
 			touch = clipModelList[i];
@@ -1649,26 +2029,33 @@ bool idClip::Motion( trace_t& results, const idVec3& start, const idVec3& end, c
 			{
 				continue;
 			}
-
-			// no rotational collision detection with render models
-			if( touch->renderModelHandle != -1 )
+			if( !touch->IsRenderModel() &&
+					!IsPositionedCollisionModelCandidate( touch, contentMask, 0 ) )
 			{
 				continue;
 			}
 
-			idClip::numRotations++;
-			collisionModelManager->Rotation( &trace, endPosition, endRotation, trm, trmAxis, contentMask,
-											 touch->Handle(), touch->origin, touch->axis );
-
-			if( trace.fraction < rotationalTrace.fraction )
+			// no rotational collision detection with render models
+			if( touch->IsRenderModel() )
 			{
-				rotationalTrace = trace;
-				rotationalTrace.c.entityNum = touch->entity->entityNumber;
-				rotationalTrace.c.id = touch->id;
-				if( rotationalTrace.fraction == 0.0f )
-				{
-					break;
-				}
+				continue;
+			}
+
+			if( usePositionedBatch )
+			{
+				trace = positionedResults[positionedIndex++];
+			}
+			else
+			{
+				idClip::numRotations++;
+				collisionModelManager->Rotation( &trace, endPosition, endRotation, trm, trmAxis, contentMask,
+												 touch->Handle(), touch->origin, touch->axis );
+			}
+
+			if( idCollisionDetectionMerge::MergeTraceResult( rotationalTrace, trace,
+					touch->entity->entityNumber, touch->id ) && rotationalTrace.fraction == 0.0f )
+			{
+				break;
 			}
 		}
 	}
@@ -1737,6 +2124,33 @@ int idClip::Contacts( contactInfo_t* contacts, const int maxContacts, const idVe
 
 	num = GetTraceClipModels( traceBounds, contentMask, passEntity, clipModelList );
 
+	// Each model gets an independent legacy-sized output slice. Results are
+	// merged in broad-phase order, reproducing the old maxContacts truncation.
+	const int numPositionedModels = BuildPositionedCollisionModels(
+										clipModelList, num, contentMask, 0, NULL );
+	const int remainingContacts = maxContacts - numContacts;
+	static const int MAX_BATCHED_CONTACT_SLOTS = 4096;
+	const bool usePositionedBatch = numPositionedModels > 1 && remainingContacts > 0 &&
+									numPositionedModels <= MAX_BATCHED_CONTACT_SLOTS / remainingContacts;
+	if( usePositionedBatch )
+	{
+		idList< idPositionedCollisionModel, TAG_PHYSICS > positionedModels;
+		idList< contactInfo_t, TAG_PHYSICS > positionedContacts;
+		idList< int, TAG_PHYSICS > positionedContactCounts;
+		BuildPositionedCollisionModels( clipModelList, num, contentMask, 0, &positionedModels );
+		positionedContacts.SetNum( numPositionedModels * remainingContacts );
+		positionedContactCounts.SetNum( numPositionedModels );
+
+		idClip::numContacts += numPositionedModels;
+		collisionModelManager->ContactsModels( positionedContacts.Ptr(), positionedContactCounts.Ptr(),
+											   remainingContacts, numPositionedModels, start, dir, depth, trm, trmAxis,
+											   contentMask, positionedModels.Ptr() );
+
+		return idCollisionDetectionMerge::MergeContactsResults( contacts, maxContacts,
+				numContacts, positionedContacts.Ptr(), positionedContactCounts.Ptr(),
+				remainingContacts, positionedModels.Ptr(), numPositionedModels );
+	}
+
 	for( i = 0; i < num; i++ )
 	{
 		touch = clipModelList[i];
@@ -1745,9 +2159,14 @@ int idClip::Contacts( contactInfo_t* contacts, const int maxContacts, const idVe
 		{
 			continue;
 		}
+		if( !touch->IsRenderModel() &&
+				!IsPositionedCollisionModelCandidate( touch, contentMask, 0 ) )
+		{
+			continue;
+		}
 
 		// no contacts with render models
-		if( touch->renderModelHandle != -1 )
+		if( touch->IsRenderModel() )
 		{
 			continue;
 		}
@@ -1815,6 +2234,23 @@ int idClip::Contents( const idVec3& start, const idClipModel* mdl, const idMat3&
 
 	num = GetTraceClipModels( traceBounds, -1, passEntity, clipModelList );
 
+	const int numPositionedModels = BuildPositionedCollisionModels(
+										clipModelList, num, contentMask, contents, NULL );
+
+	if( numPositionedModels > 1 )
+	{
+		idList< idPositionedCollisionModel, TAG_PHYSICS > positionedModels;
+		idList< int, TAG_PHYSICS > positionedResults;
+		BuildPositionedCollisionModels( clipModelList, num, contentMask, contents, &positionedModels );
+		positionedResults.SetNum( numPositionedModels );
+
+		idClip::numContents += numPositionedModels;
+		collisionModelManager->ContentsModels( positionedResults.Ptr(), numPositionedModels,
+											   start, trm, trmAxis, contentMask, positionedModels.Ptr() );
+		return idCollisionDetectionMerge::MergeContentsResults( contents,
+				positionedResults.Ptr(), positionedModels.Ptr(), numPositionedModels, contentMask );
+	}
+
 	for( i = 0; i < num; i++ )
 	{
 		touch = clipModelList[i];
@@ -1825,7 +2261,7 @@ int idClip::Contents( const idVec3& start, const idClipModel* mdl, const idMat3&
 		}
 
 		// no contents test with render models
-		if( touch->renderModelHandle != -1 )
+		if( touch->IsRenderModel() )
 		{
 			continue;
 		}
@@ -1935,7 +2371,7 @@ bool idClip::GetModelContactFeature( const contactInfo_t& contact, const idClipM
 		}
 		else if( clipModel->traceModelIndex != -1 )
 		{
-			handle = collisionModelManager->SetupTrmModel( *idClipModel::GetCachedTraceModel( clipModel->traceModelIndex ), clipModel->material );
+			handle = collisionModelManager->SetupImmutableTrmModel( *idClipModel::GetCachedTraceModel( clipModel->traceModelIndex ), clipModel->material );
 		}
 		else
 		{

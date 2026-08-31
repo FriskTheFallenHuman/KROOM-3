@@ -554,7 +554,7 @@ void idCollisionModelManagerLocal::RotateTrmEdgeThroughPolygon( cm_traceWork_t* 
 		edge = tw->model->edges + abs( edgeNum );
 
 		// if this edge is already checked
-		if( edge->checkcount == idCollisionModelManagerLocal::checkCount )
+		if( tw->queryCache->StateFor( edge ).checked )
 		{
 			continue;
 		}
@@ -1193,11 +1193,12 @@ bool idCollisionModelManagerLocal::RotateTrmThroughPolygon( cm_traceWork_t* tw, 
 	idVec3* rotationOrigin;
 
 	// if already checked this polygon
-	if( p->checkcount == idCollisionModelManagerLocal::checkCount )
+	cm_queryPrimitiveState_t& polygonState = tw->queryCache->StateFor( p );
+	if( polygonState.checked )
 	{
 		return false;
 	}
-	p->checkcount = idCollisionModelManagerLocal::checkCount;
+	polygonState.checked = true;
 
 	// if this polygon does not have the right contents behind it
 	if( !( p->contents & tw->contents ) )
@@ -1311,12 +1312,13 @@ bool idCollisionModelManagerLocal::RotateTrmThroughPolygon( cm_traceWork_t* tw, 
 			edgeNum = p->edges[i];
 			e = tw->model->edges + abs( edgeNum );
 
-			if( e->checkcount == idCollisionModelManagerLocal::checkCount )
+			cm_queryPrimitiveState_t& edgeState = tw->queryCache->StateFor( e );
+			if( edgeState.checked )
 			{
 				continue;
 			}
 			// set edge check count
-			e->checkcount = idCollisionModelManagerLocal::checkCount;
+			edgeState.checked = true;
 			// can never collide with internal edges
 			if( e->internal )
 			{
@@ -1329,12 +1331,13 @@ bool idCollisionModelManagerLocal::RotateTrmThroughPolygon( cm_traceWork_t* tw, 
 				v = tw->model->vertices + e->vertexNum[k ^ INT32_SIGNBITSET( edgeNum )];
 
 				// if this vertex is already checked
-				if( v->checkcount == idCollisionModelManagerLocal::checkCount )
+				cm_queryPrimitiveState_t& vertexState = tw->queryCache->StateFor( v );
+				if( vertexState.checked )
 				{
 					continue;
 				}
 				// set vertex check count
-				v->checkcount = idCollisionModelManagerLocal::checkCount;
+				vertexState.checked = true;
 
 				// if the vertex is outside the trm rotation bounds
 				if( !tw->bounds.ContainsPoint( v->p ) )
@@ -1428,7 +1431,8 @@ void idCollisionModelManagerLocal::Rotation180( trace_t* results, const idVec3& 
 	cm_trmPolygon_t* poly;
 	cm_trmEdge_t* edge;
 	cm_trmVertex_t* vert;
-	ALIGN16( static cm_traceWork_t tw );
+	cm_queryScratchScope_t queryScratch;
+	cm_traceWork_t& tw = queryScratch.TraceWork();
 
 	if( model < 0 || model > MAX_SUBMODELS || model > idCollisionModelManagerLocal::maxModels )
 	{
@@ -1440,8 +1444,6 @@ void idCollisionModelManagerLocal::Rotation180( trace_t* results, const idVec3& 
 		common->Printf( "idCollisionModelManagerLocal::Rotation180: invalid model\n" );
 		return;
 	}
-
-	idCollisionModelManagerLocal::checkCount++;
 
 	tw.trace.fraction = 1.0f;
 	tw.trace.c.contents = 0;
@@ -1839,10 +1841,10 @@ idCollisionModelManagerLocal::Rotation
 ================
 */
 #ifdef _DEBUG
-	static int entered = 0;
+	static thread_local int entered = 0;
 #endif
 
-void idCollisionModelManagerLocal::Rotation( trace_t* results, const idVec3& start, const idRotation& rotation,
+void idCollisionModelManagerLocal::RotationInternal( trace_t* results, const idVec3& start, const idRotation& rotation,
 		const idTraceModel* trm, const idMat3& trmAxis, int contentMask,
 		cmHandle_t model, const idVec3& modelOrigin, const idMat3& modelAxis )
 {

@@ -318,6 +318,8 @@ public:
 	// clip versus all entities but not the world
 	void					TranslationEntities( trace_t& results, const idVec3& start, const idVec3& end,
 			const idClipModel* mdl, const idMat3& trmAxis, int contentMask, const idEntity* passEntity );
+	void					RotationEntities( trace_t& results, const idVec3& start, const idRotation& rotation,
+			const idClipModel* mdl, const idMat3& trmAxis, int contentMask, const idEntity* passEntity );
 
 	// get a contact feature
 	bool					GetModelContactFeature( const contactInfo_t& contact, const idClipModel* clipModel, idFixedWinding& winding ) const;

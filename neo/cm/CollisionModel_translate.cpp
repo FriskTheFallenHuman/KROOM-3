@@ -205,14 +205,15 @@ CM_SetVertexSidedness
   stores for the given model vertex at which side of one of the trm edges it passes
 ================
 */
-ID_INLINE void CM_SetVertexSidedness( cm_vertex_t* v, const idPluecker& vpl, const idPluecker& epl, const int bitNum )
+ID_INLINE void CM_SetVertexSidedness( cm_traceWork_t* tw, cm_vertex_t* v, const idPluecker& vpl, const idPluecker& epl, const int bitNum )
 {
 	const int mask = 1 << bitNum;
-	if( ( v->sideSet & mask ) == 0 )
+	cm_queryPrimitiveState_t& state = tw->queryCache->StateFor( v );
+	if( ( state.sideSet & mask ) == 0 )
 	{
 		const float fl = vpl.PermutedInnerProduct( epl );
-		v->side = ( v->side & ~mask ) | ( ( fl < 0.0f ) ? mask : 0 );
-		v->sideSet |= mask;
+		state.side = ( state.side & ~mask ) | ( ( fl < 0.0f ) ? mask : 0 );
+		state.sideSet |= mask;
 	}
 }
 
@@ -223,14 +224,15 @@ CM_SetEdgeSidedness
   stores for the given model edge at which side one of the trm vertices
 ================
 */
-ID_INLINE void CM_SetEdgeSidedness( cm_edge_t* edge, const idPluecker& vpl, const idPluecker& epl, const int bitNum )
+ID_INLINE void CM_SetEdgeSidedness( cm_traceWork_t* tw, cm_edge_t* edge, const idPluecker& vpl, const idPluecker& epl, const int bitNum )
 {
 	const int mask = 1 << bitNum;
-	if( ( edge->sideSet & mask ) == 0 )
+	cm_queryPrimitiveState_t& state = tw->queryCache->StateFor( edge );
+	if( ( state.sideSet & mask ) == 0 )
 	{
 		const float fl = vpl.PermutedInnerProduct( epl );
-		edge->side = ( edge->side & ~mask ) | ( ( fl < 0.0f ) ? mask : 0 );
-		edge->sideSet |= mask;
+		state.side = ( state.side & ~mask ) | ( ( fl < 0.0f ) ? mask : 0 );
+		state.sideSet |= mask;
 	}
 }
 
@@ -254,7 +256,8 @@ void idCollisionModelManagerLocal::TranslateTrmEdgeThroughPolygon( cm_traceWork_
 		edgeNum = poly->edges[i];
 		edge = tw->model->edges + abs( edgeNum );
 		// if this edge is already checked
-		if( edge->checkcount == idCollisionModelManagerLocal::checkCount )
+		cm_queryPrimitiveState_t& edgeState = tw->queryCache->StateFor( edge );
+		if( edgeState.checked )
 		{
 			continue;
 		}
@@ -265,20 +268,20 @@ void idCollisionModelManagerLocal::TranslateTrmEdgeThroughPolygon( cm_traceWork_
 		}
 		pl = &tw->polygonEdgePlueckerCache[i];
 		// get the sides at which the trm edge vertices pass the polygon edge
-		CM_SetEdgeSidedness( edge, *pl, tw->vertices[trmEdge->vertexNum[0]].pl, trmEdge->vertexNum[0] );
-		CM_SetEdgeSidedness( edge, *pl, tw->vertices[trmEdge->vertexNum[1]].pl, trmEdge->vertexNum[1] );
+		CM_SetEdgeSidedness( tw, edge, *pl, tw->vertices[trmEdge->vertexNum[0]].pl, trmEdge->vertexNum[0] );
+		CM_SetEdgeSidedness( tw, edge, *pl, tw->vertices[trmEdge->vertexNum[1]].pl, trmEdge->vertexNum[1] );
 		// if the trm edge start and end vertex do not pass the polygon edge at different sides
-		if( !( ( ( edge->side >> trmEdge->vertexNum[0] ) ^ ( edge->side >> trmEdge->vertexNum[1] ) ) & 1 ) )
+		if( !( ( ( edgeState.side >> trmEdge->vertexNum[0] ) ^ ( edgeState.side >> trmEdge->vertexNum[1] ) ) & 1 ) )
 		{
 			continue;
 		}
 		// get the sides at which the polygon edge vertices pass the trm edge
 		v1 = tw->model->vertices + edge->vertexNum[INT32_SIGNBITSET( edgeNum )];
-		CM_SetVertexSidedness( v1, tw->polygonVertexPlueckerCache[i], trmEdge->pl, trmEdge->bitNum );
+		CM_SetVertexSidedness( tw, v1, tw->polygonVertexPlueckerCache[i], trmEdge->pl, trmEdge->bitNum );
 		v2 = tw->model->vertices + edge->vertexNum[INT32_SIGNBITNOTSET( edgeNum )];
-		CM_SetVertexSidedness( v2, tw->polygonVertexPlueckerCache[i + 1], trmEdge->pl, trmEdge->bitNum );
+		CM_SetVertexSidedness( tw, v2, tw->polygonVertexPlueckerCache[i + 1], trmEdge->pl, trmEdge->bitNum );
 		// if the polygon edge start and end vertex do not pass the trm edge at different sides
-		if( !( ( v1->side ^ v2->side ) & ( 1 << trmEdge->bitNum ) ) )
+		if( !( ( tw->queryCache->StateFor( v1 ).side ^ tw->queryCache->StateFor( v2 ).side ) & ( 1 << trmEdge->bitNum ) ) )
 		{
 			continue;
 		}
@@ -368,12 +371,12 @@ float CM_TranslationPlaneFraction( const idPlane& plane, const idVec3& start, co
 	const float d1 = plane.Distance( start );
 
 	// if completely behind the polygon
-	if( d1 < 0.0f )
+	if( d1 <= 0.0f )
 	{
 		return 1.0f;
 	}
 	// leaves polygon
-	if( d1 - d2 <= 0.0f )
+	if( d1 - d2 < idMath::FLT_SMALLEST_NON_DENORMAL )
 	{
 		return 1.0f;
 	}
@@ -399,8 +402,8 @@ void idCollisionModelManagerLocal::TranslateTrmVertexThroughPolygon( cm_traceWor
 		{
 			edgeNum = poly->edges[i];
 			edge = tw->model->edges + abs( edgeNum );
-			CM_SetEdgeSidedness( edge, tw->polygonEdgePlueckerCache[i], v->pl, bitNum );
-			if( INT32_SIGNBITSET( edgeNum ) ^ ( ( edge->side >> bitNum ) & 1 ) )
+			CM_SetEdgeSidedness( tw, edge, tw->polygonEdgePlueckerCache[i], v->pl, bitNum );
+			if( INT32_SIGNBITSET( edgeNum ) ^ ( ( tw->queryCache->StateFor( edge ).side >> bitNum ) & 1 ) )
 			{
 				return;
 			}
@@ -450,17 +453,18 @@ void idCollisionModelManagerLocal::TranslatePointThroughPolygon( cm_traceWork_t*
 			edgeNum = poly->edges[i];
 			edge = tw->model->edges + abs( edgeNum );
 			// if we didn't yet calculate the sidedness for this edge
-			if( edge->checkcount != idCollisionModelManagerLocal::checkCount )
+			cm_queryPrimitiveState_t& edgeState = tw->queryCache->StateFor( edge );
+			if( !edgeState.checked )
 			{
 				float fl;
-				edge->checkcount = idCollisionModelManagerLocal::checkCount;
+				edgeState.checked = true;
 				pl.FromLine( tw->model->vertices[edge->vertexNum[0]].p, tw->model->vertices[edge->vertexNum[1]].p );
 				fl = v->pl.PermutedInnerProduct( pl );
-				edge->side = ( fl < 0.0f );
+				edgeState.side = ( fl < 0.0f );
 			}
 			// if the point passes the edge at the wrong side
 			//if ( (edgeNum > 0) == edge->side ) {
-			if( INT32_SIGNBITSET( edgeNum ) ^ edge->side )
+			if( INT32_SIGNBITSET( edgeNum ) ^ edgeState.side )
 			{
 				return;
 			}
@@ -509,8 +513,8 @@ void idCollisionModelManagerLocal::TranslateVertexThroughTrmPolygon( cm_traceWor
 			edgeNum = trmpoly->edges[i];
 			edge = tw->edges + abs( edgeNum );
 
-			CM_SetVertexSidedness( v, pl, edge->pl, edge->bitNum );
-			if( INT32_SIGNBITSET( edgeNum ) ^ ( ( v->side >> edge->bitNum ) & 1 ) )
+			CM_SetVertexSidedness( tw, v, pl, edge->pl, edge->bitNum );
+			if( INT32_SIGNBITSET( edgeNum ) ^ ( ( tw->queryCache->StateFor( v ).side >> edge->bitNum ) & 1 ) )
 			{
 				return;
 			}
@@ -557,11 +561,12 @@ bool idCollisionModelManagerLocal::TranslateTrmThroughPolygon( cm_traceWork_t* t
 	cm_edge_t* e;
 
 	// if already checked this polygon
-	if( p->checkcount == idCollisionModelManagerLocal::checkCount )
+	cm_queryPrimitiveState_t& polygonState = tw->queryCache->StateFor( p );
+	if( polygonState.checked )
 	{
 		return false;
 	}
-	p->checkcount = idCollisionModelManagerLocal::checkCount;
+	polygonState.checked = true;
 
 	// if this polygon does not have the right contents behind it
 	if( !( p->contents & tw->contents ) )
@@ -625,20 +630,14 @@ bool idCollisionModelManagerLocal::TranslateTrmThroughPolygon( cm_traceWork_t* t
 			edgeNum = p->edges[i];
 			e = tw->model->edges + abs( edgeNum );
 			// reset sidedness cache if this is the first time we encounter this edge during this trace
-			if( e->checkcount != idCollisionModelManagerLocal::checkCount )
-			{
-				e->sideSet = 0;
-			}
+			tw->queryCache->StateFor( e );
 			// pluecker coordinate for edge
 			tw->polygonEdgePlueckerCache[i].FromLine( tw->model->vertices[e->vertexNum[0]].p,
 					tw->model->vertices[e->vertexNum[1]].p );
 
 			v = &tw->model->vertices[e->vertexNum[INT32_SIGNBITSET( edgeNum )]];
 			// reset sidedness cache if this is the first time we encounter this vertex during this trace
-			if( v->checkcount != idCollisionModelManagerLocal::checkCount )
-			{
-				v->sideSet = 0;
-			}
+			tw->queryCache->StateFor( v );
 			// pluecker coordinate for vertex movement vector
 			tw->polygonVertexPlueckerCache[i].FromRay( v->p, -tw->dir );
 		}
@@ -671,12 +670,13 @@ bool idCollisionModelManagerLocal::TranslateTrmThroughPolygon( cm_traceWork_t* t
 			edgeNum = p->edges[i];
 			e = tw->model->edges + abs( edgeNum );
 
-			if( e->checkcount == idCollisionModelManagerLocal::checkCount )
+			cm_queryPrimitiveState_t& edgeState = tw->queryCache->StateFor( e );
+			if( edgeState.checked )
 			{
 				continue;
 			}
 			// set edge check count
-			e->checkcount = idCollisionModelManagerLocal::checkCount;
+			edgeState.checked = true;
 			// can never collide with internal edges
 			if( e->internal )
 			{
@@ -688,12 +688,13 @@ bool idCollisionModelManagerLocal::TranslateTrmThroughPolygon( cm_traceWork_t* t
 
 				v = tw->model->vertices + e->vertexNum[k ^ INT32_SIGNBITSET( edgeNum )];
 				// if this vertex is already checked
-				if( v->checkcount == idCollisionModelManagerLocal::checkCount )
+				cm_queryPrimitiveState_t& vertexState = tw->queryCache->StateFor( v );
+				if( vertexState.checked )
 				{
 					continue;
 				}
 				// set vertex check count
-				v->checkcount = idCollisionModelManagerLocal::checkCount;
+				vertexState.checked = true;
 
 				// if the vertex is outside the trace bounds
 				if( !tw->bounds.ContainsPoint( v->p ) )
@@ -807,12 +808,13 @@ idCollisionModelManagerLocal::Translation
 ================
 */
 #ifdef _DEBUG
-	static int entered = 0;
+	static thread_local int entered = 0;
 #endif
 
-void idCollisionModelManagerLocal::Translation( trace_t* results, const idVec3& start, const idVec3& end,
+void idCollisionModelManagerLocal::TranslationInternal( trace_t* results, const idVec3& start, const idVec3& end,
 		const idTraceModel* trm, const idMat3& trmAxis, int contentMask,
-		cmHandle_t model, const idVec3& modelOrigin, const idMat3& modelAxis )
+		cmHandle_t model, const idVec3& modelOrigin, const idMat3& modelAxis,
+		contactInfo_t* contactBuffer, int contactCapacity, int* contactCount )
 {
 
 	int i, j;
@@ -823,7 +825,13 @@ void idCollisionModelManagerLocal::Translation( trace_t* results, const idVec3& 
 	cm_trmPolygon_t* poly;
 	cm_trmEdge_t* edge;
 	cm_trmVertex_t* vert;
-	ALIGN16( static cm_traceWork_t tw );
+	cm_queryScratchScope_t queryScratch;
+	cm_traceWork_t& tw = queryScratch.TraceWork();
+
+	if( contactCount != NULL )
+	{
+		*contactCount = 0;
+	}
 
 	assert( ( ( byte* )&start ) < ( ( byte* )results ) || ( ( byte* )&start ) >= ( ( ( byte* )results ) + sizeof( trace_t ) ) );
 	assert( ( ( byte* )&end ) < ( ( byte* )results ) || ( ( byte* )&end ) >= ( ( ( byte* )results ) + sizeof( trace_t ) ) );
@@ -854,7 +862,7 @@ void idCollisionModelManagerLocal::Translation( trace_t* results, const idVec3& 
 	// test whether or not stuck to begin with
 	if( cm_debugCollision.GetBool() )
 	{
-		if( !entered && !idCollisionModelManagerLocal::getContacts )
+		if( !entered && contactBuffer == NULL )
 		{
 			entered = 1;
 			// if already messed up to begin with
@@ -867,8 +875,6 @@ void idCollisionModelManagerLocal::Translation( trace_t* results, const idVec3& 
 	}
 #endif
 
-	idCollisionModelManagerLocal::checkCount++;
-
 	tw.trace.fraction = 1.0f;
 	tw.trace.c.contents = 0;
 	tw.trace.c.type = CONTACT_NONE;
@@ -879,9 +885,9 @@ void idCollisionModelManagerLocal::Translation( trace_t* results, const idVec3& 
 	tw.rotation = false;
 	tw.positionTest = false;
 	tw.quickExit = false;
-	tw.getContacts = idCollisionModelManagerLocal::getContacts;
-	tw.contacts = idCollisionModelManagerLocal::contacts;
-	tw.maxContacts = idCollisionModelManagerLocal::maxContacts;
+	tw.getContacts = contactBuffer != NULL && contactCapacity > 0;
+	tw.contacts = contactBuffer;
+	tw.maxContacts = contactCapacity;
 	tw.numContacts = 0;
 	tw.model = idCollisionModelManagerLocal::models[model];
 	tw.start = start - modelOrigin;
@@ -954,7 +960,10 @@ void idCollisionModelManagerLocal::Translation( trace_t* results, const idVec3& 
 			results->c.point += modelOrigin;
 			results->c.dist += modelOrigin * results->c.normal;
 		}
-		idCollisionModelManagerLocal::numContacts = tw.numContacts;
+		if( contactCount != NULL )
+		{
+			*contactCount = tw.numContacts;
+		}
 		return;
 	}
 
@@ -1185,7 +1194,10 @@ void idCollisionModelManagerLocal::Translation( trace_t* results, const idVec3& 
 				tw.contacts[i].dist += modelOrigin * tw.contacts[i].normal;
 			}
 		}
-		idCollisionModelManagerLocal::numContacts = tw.numContacts;
+		if( contactCount != NULL )
+		{
+			*contactCount = tw.numContacts;
+		}
 	}
 	else
 	{
@@ -1216,7 +1228,7 @@ void idCollisionModelManagerLocal::Translation( trace_t* results, const idVec3& 
 	// test for missed collisions
 	if( cm_debugCollision.GetBool() )
 	{
-		if( !entered && !idCollisionModelManagerLocal::getContacts )
+		if( !entered && contactBuffer == NULL )
 		{
 			entered = 1;
 			// if the trm is stuck in the model

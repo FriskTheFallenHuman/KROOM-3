@@ -63,6 +63,13 @@ class idAFBody;
 class idAFTree;
 class idPhysics_AF;
 
+// The expensive, self-contained AF constraint solve is submitted after game
+// thinking and consumed at the beginning of the following game frame.  The
+// main-thread finalize phase retains collision callbacks and clip-tree access.
+void AF_FinishDeferredPhysics();
+void AF_SubmitDeferredPhysics();
+void AF_ShutdownDeferredPhysics();
+
 typedef enum
 {
 	CONSTRAINT_INVALID,
@@ -1161,6 +1168,12 @@ public:	// common physics interface
 	void					WriteToSnapshot( idBitMsg& msg ) const;
 	void					ReadFromSnapshot( const idBitMsg& msg );
 
+	// Frame-pipelined solver entry points. These are public only so the shared
+	// job callback can execute them; gameplay should use Evaluate().
+	void					RunDeferredSolver();
+	void					FinishDeferredSolver();
+	void					CancelDeferredSolver();
+
 private:
 	// articulated figure
 	idList<idAFTree*, TAG_IDLIB_LIST_PHYSICS>		trees;							// tree structures
@@ -1226,6 +1239,12 @@ private:
 
 	idAFBody* 				masterBody;						// master body
 	idLCP* 					lcp;							// linear complementarity problem solver
+
+	bool					deferredSolverPrepared;
+	bool					deferredSolverRunning;
+	bool					deferredResultReady;
+	float					deferredTimeStep;
+	int						deferredEndTimeMSec;
 
 private:
 	void					BuildTrees();

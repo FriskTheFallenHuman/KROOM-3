@@ -2621,6 +2621,29 @@ void idGameLocal::RunSharedThink()
 
 idCVar g_recordTrace( "g_recordTrace", "0", CVAR_BOOL, "" );
 
+class idCollisionQueryFrameScope
+{
+public:
+	explicit idCollisionQueryFrameScope( idCollisionModelManager* manager_ ) : manager( manager_ )
+	{
+		if( manager != NULL )
+		{
+			manager->StartQueryFrame();
+		}
+	}
+	~idCollisionQueryFrameScope()
+	{
+		if( manager != NULL )
+		{
+			manager->SubmitQueries();
+			manager->WaitForAllQueries();
+			manager->EndQueryFrame();
+		}
+	}
+private:
+	idCollisionModelManager* manager;
+};
+
 /*
 ================
 idGameLocal::RunFrame
@@ -2659,6 +2682,8 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 		ret = gameReturn_t();
 		return;
 	}
+
+	idCollisionQueryFrameScope collisionQueryFrame( collisionModelManager );
 
 	ServerSendNetworkSyncCvars();
 

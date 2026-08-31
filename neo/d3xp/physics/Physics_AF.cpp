@@ -30,6 +30,7 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "../Game_local.h"
+#include "../../cm/CollisionMerge.h"
 
 CLASS_DECLARATION( idPhysics_Base, idPhysics_AF )
 END_CLASS
@@ -54,13 +55,111 @@ const float SUSPEND_ANGULAR_ACCELERATION	= 30.0f;
 const idVec6 vec6_lcp_epsilon				= idVec6( LCP_EPSILON, LCP_EPSILON, LCP_EPSILON,
 		LCP_EPSILON, LCP_EPSILON, LCP_EPSILON );
 
-#define AF_TIMINGS
+// Define AF_TIMINGS locally when detailed solver diagnostics are needed. The
+// shared timers are intentionally disabled for parallel AF solves.
+// #define AF_TIMINGS
 
 #ifdef AF_TIMINGS
 	static int lastTimerReset = 0;
 	static int numArticulatedFigures = 0;
 	static idTimer timer_total, timer_pc, timer_ac, timer_collision, timer_lcp;
 #endif
+
+idCVar af_deferredSolver( "af_deferredSolver", "1", CVAR_GAME | CVAR_BOOL, "run active articulated-figure constraint solves after game thinking and consume them next frame" );
+idCVar af_deferredSolverMinBodies( "af_deferredSolverMinBodies", "4", CVAR_GAME | CVAR_INTEGER, "minimum AF body count for a frame-deferred worker solve", 1, 64 );
+idCVar af_batchCollisionQueries( "af_batchCollisionQueries", "1", CVAR_GAME | CVAR_BOOL, "batch independent AF body world collision queries through the CM worker queue" );
+idCVar af_batchCollisionQueriesMinBodies( "af_batchCollisionQueriesMinBodies", "4", CVAR_GAME | CVAR_INTEGER, "minimum AF body count for heterogeneous world collision batches", 1, 64 );
+
+static const int AF_MAX_DEFERRED_SOLVERS = 4096;
+static idParallelJobList* afDeferredJobList = NULL;
+static idList< idPhysics_AF*, TAG_PHYSICS > afDeferredPrepared;
+static idList< idPhysics_AF*, TAG_PHYSICS > afDeferredRunning;
+
+static void AF_DeferredSolverJob( void* data )
+{
+	static_cast<idPhysics_AF*>( data )->RunDeferredSolver();
+}
+
+REGISTER_PARALLEL_JOB( AF_DeferredSolverJob, "AF_DeferredSolverJob" );
+
+static void AF_RemoveDeferred( idList< idPhysics_AF*, TAG_PHYSICS >& list, idPhysics_AF* physics )
+{
+	const int index = list.FindIndex( physics );
+	if( index >= 0 )
+	{
+		list.RemoveIndexFast( index );
+	}
+}
+
+void AF_FinishDeferredPhysics()
+{
+	if( afDeferredJobList != NULL && afDeferredJobList->IsSubmitted() )
+	{
+		afDeferredJobList->Wait();
+	}
+
+	for( int i = 0; i < afDeferredRunning.Num(); ++i )
+	{
+		afDeferredRunning[i]->FinishDeferredSolver();
+	}
+	afDeferredRunning.SetNum( 0 );
+}
+
+void AF_SubmitDeferredPhysics()
+{
+	if( afDeferredPrepared.Num() == 0 )
+	{
+		return;
+	}
+
+	assert( afDeferredRunning.Num() == 0 );
+	afDeferredRunning = afDeferredPrepared;
+	afDeferredPrepared.SetNum( 0 );
+
+	if( parallelJobManager == NULL )
+	{
+		for( int i = 0; i < afDeferredRunning.Num(); ++i )
+		{
+			afDeferredRunning[i]->RunDeferredSolver();
+		}
+		return;
+	}
+
+	if( afDeferredJobList == NULL )
+	{
+		afDeferredJobList = parallelJobManager->AllocJobList( JOBLIST_UTILITY,
+							JOBLIST_PRIORITY_MEDIUM, AF_MAX_DEFERRED_SOLVERS, 0, NULL );
+	}
+	assert( !afDeferredJobList->IsSubmitted() );
+	for( int i = 0; i < afDeferredRunning.Num(); ++i )
+	{
+		afDeferredJobList->AddJob( AF_DeferredSolverJob, afDeferredRunning[i] );
+	}
+	afDeferredJobList->Submit();
+}
+
+void AF_ShutdownDeferredPhysics()
+{
+	if( afDeferredJobList != NULL && afDeferredJobList->IsSubmitted() )
+	{
+		afDeferredJobList->Wait();
+	}
+	while( afDeferredPrepared.Num() > 0 )
+	{
+		afDeferredPrepared[afDeferredPrepared.Num() - 1]->CancelDeferredSolver();
+	}
+	while( afDeferredRunning.Num() > 0 )
+	{
+		afDeferredRunning[afDeferredRunning.Num() - 1]->CancelDeferredSolver();
+	}
+	afDeferredPrepared.Clear();
+	afDeferredRunning.Clear();
+	if( afDeferredJobList != NULL && parallelJobManager != NULL )
+	{
+		parallelJobManager->FreeJobList( afDeferredJobList );
+	}
+	afDeferredJobList = NULL;
+}
 
 
 
@@ -6344,6 +6443,241 @@ void idPhysics_AF::CheckForCollisions( float timeStep )
 		return;
 	}
 
+	if( af_batchCollisionQueries.GetBool() && collisionModelManager != NULL &&
+			( !selfCollision || af_skipSelfCollision.GetBool() ) &&
+			bodies.Num() >= af_batchCollisionQueriesMinBodies.GetInteger() )
+	{
+		struct afCollisionBatchState_t
+		{
+			idAFBody* body;
+			idEntity* passEntity;
+			idVec3 start;
+			idVec3 end;
+			idMat3 startAxis;
+			idRotation rotation;
+			idRotation endRotation;
+			const idTraceModel* traceModel;
+			trace_t translationTrace;
+			trace_t rotationTrace;
+			bool active;
+			bool translate;
+			bool rotate;
+			bool fallback;
+		};
+
+		idList< afCollisionBatchState_t, TAG_PHYSICS > states;
+		idList< idCollisionTranslationQuery, TAG_PHYSICS > translationQueries;
+		states.SetNum( bodies.Num() );
+
+		{
+			SCOPED_PROFILE_EVENT( "AF Collision Prepare" );
+			for( i = 0; i < bodies.Num(); ++i )
+			{
+				body = bodies[i];
+				afCollisionBatchState_t& state = states[i];
+				state.body = body;
+				state.passEntity = NULL;
+				state.active = body->clipMask != 0;
+				state.translate = false;
+				state.rotate = false;
+				state.fallback = false;
+
+				if( !state.active )
+				{
+					continue;
+				}
+
+				state.passEntity = SetupCollisionForBody( body );
+				state.start = body->current->worldOrigin;
+				state.end = body->next->worldOrigin;
+				state.startAxis = body->current->worldAxis;
+				state.traceModel = body->clipModel->GetTraceModel();
+
+				TransposeMultiply( body->current->worldAxis, body->next->worldAxis, axis );
+				state.rotation = axis.ToRotation();
+				state.rotation.SetOrigin( state.start );
+				state.translate = state.start != state.end;
+				state.rotate = state.rotation.GetAngle() != 0.0f &&
+							   state.rotation.GetVec() != vec3_origin;
+				state.fallback = state.traceModel == NULL ||
+								 ( state.end - state.start ).LengthSqr() > Square( CM_MAX_TRACE_DIST );
+
+				memset( &state.translationTrace, 0, sizeof( state.translationTrace ) );
+				state.translationTrace.fraction = 1.0f;
+				state.translationTrace.endpos = state.end;
+				state.translationTrace.endAxis = state.startAxis;
+
+				if( !state.fallback && state.translate && state.passEntity != gameLocal.world )
+				{
+					idCollisionTranslationQuery query;
+					query.result = &state.translationTrace;
+					query.start = state.start;
+					query.end = state.end;
+					query.traceModel = state.traceModel;
+					query.traceModelAxis = state.startAxis;
+					query.contentsMask = body->clipMask;
+					query.model = 0;
+					query.modelOrigin = vec3_origin;
+					query.modelAxis = mat3_default;
+					translationQueries.Append( query );
+				}
+			}
+		}
+
+		{
+			SCOPED_PROFILE_EVENT( "AF Collision World Translation Batch" );
+			if( translationQueries.Num() > 0 )
+			{
+				collisionModelManager->TranslationQueries( translationQueries.Ptr(), translationQueries.Num() );
+			}
+		}
+
+		// Dynamic clip-model broadphase and render-model traces touch mutable game
+		// state, so merge them deterministically on the game thread.
+		for( i = 0; i < states.Num(); ++i )
+		{
+			afCollisionBatchState_t& state = states[i];
+			if( !state.active || state.fallback || !state.translate )
+			{
+				continue;
+			}
+			if( state.passEntity != gameLocal.world && state.translationTrace.fraction < 1.0f )
+			{
+				state.translationTrace.c.entityNum = ENTITYNUM_WORLD;
+			}
+			if( state.translationTrace.fraction != 0.0f )
+			{
+				trace_t entityTrace;
+				SetupCollisionForBody( state.body );
+				gameLocal.clip.TranslationEntities( entityTrace, state.start, state.end,
+													state.body->clipModel, state.startAxis, state.body->clipMask, state.passEntity );
+				idCollisionDetectionMerge::MergeTraceResult( state.translationTrace, entityTrace,
+						entityTrace.fraction < 1.0f ? entityTrace.c.entityNum : ENTITYNUM_NONE,
+						entityTrace.fraction < 1.0f ? entityTrace.c.id : 0 );
+			}
+		}
+
+		idList< idCollisionRotationQuery, TAG_PHYSICS > rotationQueries;
+		for( i = 0; i < states.Num(); ++i )
+		{
+			afCollisionBatchState_t& state = states[i];
+			if( !state.active || state.fallback || !state.rotate ||
+					state.translationTrace.fraction == 0.0f )
+			{
+				continue;
+			}
+
+			state.endRotation = state.rotation;
+			state.endRotation.SetOrigin( state.translationTrace.endpos );
+			memset( &state.rotationTrace, 0, sizeof( state.rotationTrace ) );
+			state.rotationTrace.fraction = 1.0f;
+			state.rotationTrace.endpos = state.translationTrace.endpos;
+			state.rotationTrace.endAxis = state.startAxis * state.endRotation.ToMat3();
+
+			if( state.passEntity != gameLocal.world )
+			{
+				idCollisionRotationQuery query;
+				query.result = &state.rotationTrace;
+				query.start = state.translationTrace.endpos;
+				query.rotation = state.endRotation;
+				query.traceModel = state.traceModel;
+				query.traceModelAxis = state.startAxis;
+				query.contentsMask = state.body->clipMask;
+				query.model = 0;
+				query.modelOrigin = vec3_origin;
+				query.modelAxis = mat3_default;
+				rotationQueries.Append( query );
+			}
+		}
+
+		{
+			SCOPED_PROFILE_EVENT( "AF Collision World Rotation Batch" );
+			if( rotationQueries.Num() > 0 )
+			{
+				collisionModelManager->RotationQueries( rotationQueries.Ptr(), rotationQueries.Num() );
+			}
+		}
+
+		for( i = 0; i < states.Num(); ++i )
+		{
+			afCollisionBatchState_t& state = states[i];
+			if( !state.active )
+			{
+				state.body->clipModel->Link( gameLocal.clip, self, state.body->clipModel->GetId(),
+											 state.body->next->worldOrigin, state.body->next->worldAxis );
+				continue;
+			}
+
+			if( state.fallback )
+			{
+				SetupCollisionForBody( state.body );
+				if( gameLocal.clip.Motion( collision, state.start, state.end, state.rotation,
+										   state.body->clipModel, state.startAxis, state.body->clipMask, state.passEntity ) )
+				{
+					state.body->next->worldOrigin = collision.endpos;
+					state.body->next->worldAxis = collision.endAxis;
+					index = collisions.Num();
+					collisions.SetNum( index + 1 );
+					collisions[index].trace = collision;
+					collisions[index].body = state.body;
+				}
+			}
+			else
+			{
+				trace_t finalTrace = state.translationTrace;
+				bool collided = state.translate && state.translationTrace.fraction < 1.0f;
+
+				if( state.rotate && state.translationTrace.fraction != 0.0f )
+				{
+					if( state.passEntity != gameLocal.world && state.rotationTrace.fraction < 1.0f )
+					{
+						state.rotationTrace.c.entityNum = ENTITYNUM_WORLD;
+					}
+					if( state.rotationTrace.fraction != 0.0f )
+					{
+						trace_t entityTrace;
+						SetupCollisionForBody( state.body );
+						gameLocal.clip.RotationEntities( entityTrace, state.translationTrace.endpos,
+														 state.endRotation, state.body->clipModel, state.startAxis,
+														 state.body->clipMask, state.passEntity );
+						idCollisionDetectionMerge::MergeTraceResult( state.rotationTrace, entityTrace,
+								entityTrace.fraction < 1.0f ? entityTrace.c.entityNum : ENTITYNUM_NONE,
+								entityTrace.fraction < 1.0f ? entityTrace.c.id : 0 );
+					}
+
+					if( state.rotationTrace.fraction < 1.0f )
+					{
+						finalTrace = state.rotationTrace;
+					}
+					else
+					{
+						finalTrace.endAxis = state.rotationTrace.endAxis;
+					}
+					if( state.translate )
+					{
+						finalTrace.fraction = Max( state.translationTrace.fraction,
+												   state.rotationTrace.fraction );
+					}
+					collided = collided || state.rotationTrace.fraction < 1.0f;
+				}
+
+				if( collided )
+				{
+					state.body->next->worldOrigin = finalTrace.endpos;
+					state.body->next->worldAxis = finalTrace.endAxis;
+					index = collisions.Num();
+					collisions.SetNum( index + 1 );
+					collisions[index].trace = finalTrace;
+					collisions[index].body = state.body;
+				}
+			}
+
+			state.body->clipModel->Link( gameLocal.clip, self, state.body->clipModel->GetId(),
+										 state.body->next->worldOrigin, state.body->next->worldAxis );
+		}
+		return;
+	}
+
 	for( i = 0; i < bodies.Num(); i++ )
 	{
 		body = bodies[i];
@@ -7111,12 +7445,131 @@ const idBounds& idPhysics_AF::GetAbsBounds( int id ) const
 
 /*
 ================
+idPhysics_AF::RunDeferredSolver
+
+Runs only AF-local math. It deliberately avoids the clip tree, renderer and
+entity callbacks so separate articulated figures can execute concurrently.
+================
+*/
+void idPhysics_AF::RunDeferredSolver()
+{
+	SCOPED_PROFILE_EVENT( "AF Deferred Solver" );
+
+	deferredSolverPrepared = false;
+	deferredSolverRunning = true;
+
+	const idVec6 pushVelocity = current.pushVelocity;
+	AddPushVelocity( -pushVelocity );
+
+	EvaluateConstraints( deferredTimeStep );
+	ApplyFriction( deferredTimeStep, deferredEndTimeMSec );
+	AddFrameConstraints();
+	PrimaryFactor();
+	PrimaryForces( deferredTimeStep );
+	AuxiliaryForces( deferredTimeStep );
+	Evolve( deferredTimeStep );
+	ClearExternalForce();
+	RemoveFrameConstraints();
+
+	// Restore the externally visible current velocities. The evolved state must
+	// receive the same pusher velocity the synchronous path adds after swapping.
+	AddPushVelocity( pushVelocity );
+	if( pushVelocity != vec6_origin )
+	{
+		for( int i = 0; i < bodies.Num(); ++i )
+		{
+			bodies[i]->next->spatialVelocity += pushVelocity;
+		}
+	}
+}
+
+/*
+================
+idPhysics_AF::FinishDeferredSolver
+
+Consumes the previous frame's predicted state at a main-thread boundary.
+Collision queries and callbacks remain here because they touch mutable game
+state and cannot safely execute in the AF worker job.
+================
+*/
+void idPhysics_AF::FinishDeferredSolver()
+{
+	if( !deferredSolverRunning )
+	{
+		return;
+	}
+
+	SCOPED_PROFILE_EVENT( "AF Deferred Finalize" );
+
+	DebugDraw();
+	ApplyContactForces();
+	CheckForCollisions( deferredTimeStep );
+	SwapStates();
+
+	if( selfCollision && !af_skipSelfCollision.GetBool() )
+	{
+		DisableClip();
+	}
+
+	if( ApplyCollisions( deferredTimeStep ) )
+	{
+		current.atRest = gameLocal.time;
+		comeToRest = true;
+	}
+
+	if( comeToRest && TestIfAtRest( deferredTimeStep ) )
+	{
+		Rest();
+	}
+	else
+	{
+		ActivateContactEntities();
+	}
+
+	AddGravity();
+	current.pushVelocity.Zero();
+
+	if( IsOutsideWorld() )
+	{
+		gameLocal.Warning( "articulated figure moved outside world bounds for entity '%s' type '%s' at (%s)",
+						   self->name.c_str(), self->GetType()->classname, bodies[0]->current->worldOrigin.ToString( 0 ) );
+		Rest();
+	}
+
+	deferredSolverRunning = false;
+	deferredResultReady = true;
+}
+
+void idPhysics_AF::CancelDeferredSolver()
+{
+	if( deferredSolverRunning && afDeferredJobList != NULL && afDeferredJobList->IsSubmitted() )
+	{
+		afDeferredJobList->Wait();
+	}
+	AF_RemoveDeferred( afDeferredPrepared, this );
+	AF_RemoveDeferred( afDeferredRunning, this );
+	deferredSolverPrepared = false;
+	deferredSolverRunning = false;
+	deferredResultReady = false;
+}
+
+/*
+================
 idPhysics_AF::Evaluate
 ================
 */
 bool idPhysics_AF::Evaluate( int timeStepMSec, int endTimeMSec )
 {
 	float timeStep;
+	const bool completedDeferredStep = deferredResultReady;
+	deferredResultReady = false;
+
+	// Non-player AF entities normally evaluate once per frame. Guard unusual
+	// re-entry so a prepared state is never mutated before its worker consumes it.
+	if( deferredSolverPrepared || deferredSolverRunning )
+	{
+		return completedDeferredStep;
+	}
 
 	if( timeScaleRampStart < MS2SEC( endTimeMSec ) && timeScaleRampEnd > MS2SEC( endTimeMSec ) )
 	{
@@ -7159,7 +7612,14 @@ bool idPhysics_AF::Evaluate( int timeStepMSec, int endTimeMSec )
 	if( current.atRest >= 0 || timeStep <= 0.0f )
 	{
 		DebugDraw();
-		return false;
+		return completedDeferredStep;
+	}
+
+	// If pipelining was disabled after a deferred step completed, expose that
+	// result this frame and resume synchronous simulation on the next one.
+	if( completedDeferredStep && !af_deferredSolver.GetBool() )
+	{
+		return true;
 	}
 
 	// move the af velocity into the frame of a pusher
@@ -7178,6 +7638,20 @@ bool idPhysics_AF::Evaluate( int timeStepMSec, int endTimeMSec )
 
 	// setup contact constraints
 	SetupContactConstraints();
+
+	if( af_deferredSolver.GetBool() && parallelJobManager != NULL && self != NULL &&
+			self->IsType( idAFEntity_WithAttachedHead::Type ) &&
+			bodies.Num() >= af_deferredSolverMinBodies.GetInteger() )
+	{
+		// Contact generation above expects pusher-relative velocity just like the
+		// synchronous path. Restore public state until the end-of-frame job starts.
+		AddPushVelocity( current.pushVelocity );
+		deferredTimeStep = timeStep;
+		deferredEndTimeMSec = endTimeMSec;
+		deferredSolverPrepared = true;
+		afDeferredPrepared.Append( this );
+		return completedDeferredStep;
+	}
 
 #ifdef AF_TIMINGS
 	timer_collision.Stop();
@@ -7601,7 +8075,11 @@ idPhysics_AF::idPhysics_AF()
 	noImpact = false;
 	worldConstraintsLocked = false;
 	forcePushable = false;
-	truncateImpulse = true;
+	deferredSolverPrepared = false;
+	deferredSolverRunning = false;
+	deferredResultReady = false;
+	deferredTimeStep = 0.0f;
+	deferredEndTimeMSec = 0;
 
 #ifdef AF_TIMINGS
 	lastTimerReset = 0;
@@ -7616,6 +8094,8 @@ idPhysics_AF::~idPhysics_AF
 idPhysics_AF::~idPhysics_AF()
 {
 	int i;
+
+	CancelDeferredSolver();
 
 	trees.DeleteContents( true );
 

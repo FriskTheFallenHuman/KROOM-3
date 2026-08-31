@@ -36,7 +36,8 @@ idVecX - arbitrary sized vector
 
 The vector lives on 16 byte aligned and 16 byte padded memory.
 
-NOTE: due to the temporary memory pool idVecX cannot be used by multiple threads
+The temporary memory pool is thread-local so independent vectors may be used
+concurrently. Objects must still not be shared for mutation between threads.
 
 ===============================================================================
 */
@@ -121,9 +122,9 @@ private:
 	int				alloced;				// if -1 p points to data set with SetData
 	float* 			p;						// memory the vector is stored
 
-	static float	temp[VECX_MAX_TEMP + 4];	// used to store intermediate results
-	static float* 	tempPtr;				// pointer to 16 byte aligned temporary memory
-	static int		tempIndex;				// index into memory pool, wraps around
+	static thread_local float	temp[VECX_MAX_TEMP + 4];	// per-thread intermediate results
+	static thread_local float* 	tempPtr;				// pointer to aligned thread-local memory
+	static thread_local int		tempIndex;				// per-thread pool index, wraps around
 
 	ID_INLINE void	SetTempSize( int size );
 };

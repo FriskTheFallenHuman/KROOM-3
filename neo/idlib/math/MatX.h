@@ -36,7 +36,8 @@ idMatX - arbitrary sized dense real matrix
 
 The matrix lives on 16 byte aligned and 16 byte padded memory.
 
-NOTE: due to the temporary memory pool idMatX cannot be used by multiple threads.
+The temporary memory pool is thread-local so independent matrices may be used
+concurrently. Objects must still not be shared for mutation between threads.
 
 ===============================================================================
 */
@@ -261,9 +262,9 @@ private:
 	int				alloced;				// floats allocated, if -1 then mat points to data set with SetData
 	float* 			mat;					// memory the matrix is stored
 
-	static float	temp[MATX_MAX_TEMP + 4];	// used to store intermediate results
-	static float* 	tempPtr;				// pointer to 16 byte aligned temporary memory
-	static int		tempIndex;				// index into memory pool, wraps around
+	static thread_local float	temp[MATX_MAX_TEMP + 4];	// per-thread intermediate results
+	static thread_local float* 	tempPtr;				// pointer to aligned thread-local memory
+	static thread_local int		tempIndex;				// per-thread pool index, wraps around
 
 private:
 	void			SetTempSize( int rows, int columns );

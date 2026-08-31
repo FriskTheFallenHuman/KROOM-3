@@ -3,7 +3,6 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
-Copyright (C) 2012 Robert Beckebans
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -27,25 +26,29 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "precompiled.h"
-#pragma hdrstop
-
-//===============================================================
-//
-//	idVecX
-//
-//===============================================================
-
-thread_local float	idVecX::temp[VECX_MAX_TEMP + 4];
-thread_local float* 	idVecX::tempPtr = ( float* )( ( ( intptr_t ) idVecX::temp + 15 ) & ~15 );
-thread_local int		idVecX::tempIndex = 0;
-
 /*
-=============
-idVecX::ToString
-=============
+===========================================================================
+
+	Deterministic collision query result merging.
+
+===========================================================================
 */
-const char* idVecX::ToString( int precision ) const
+
+#ifndef __COLLISIONMERGE_H__
+#define __COLLISIONMERGE_H__
+
+#include "CollisionQuery.h"
+
+class idCollisionDetectionMerge
 {
-	return idStr::FloatArrayToString( ToFloatPtr(), GetDimension(), precision );
-}
+public:
+	static bool	MergeTraceResult( trace_t& result, const trace_t& candidate,
+								  int entityNum, int physicsId );
+	static int	MergeContentsResults( int initialContents, const int* results,
+									  const idPositionedCollisionModel* models, int numModels, int contentMask );
+	static int	MergeContactsResults( contactInfo_t* output, int maxContacts, int initialContacts,
+									  const contactInfo_t* inputs, const int* inputCounts, int contactsPerModel,
+									  const idPositionedCollisionModel* models, int numModels );
+};
+
+#endif /* !__COLLISIONMERGE_H__ */

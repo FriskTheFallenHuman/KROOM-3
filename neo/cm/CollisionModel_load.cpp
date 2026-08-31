@@ -202,12 +202,17 @@ void idCollisionModelManagerLocal::Clear()
 	memset( trmPolygons, 0, sizeof( trmPolygons ) );
 	trmBrushes[0] = NULL;
 	trmMaterial = NULL;
+	immutableTrmModels.Clear();
 	numProcNodes = 0;
 	procNodes = NULL;
-	getContacts = false;
-	contacts = NULL;
-	maxContacts = 0;
-	numContacts = 0;
+	queryFrameActive = false;
+	pendingQueryStats = false;
+	pendingQueryType = CM_QUERY_TRANSLATION;
+	pendingQueryStartTime = 0;
+	memset( queryCount, 0, sizeof( queryCount ) );
+	memset( queryTimeMicroSec, 0, sizeof( queryTimeMicroSec ) );
+	memset( queryParallelBatchCount, 0, sizeof( queryParallelBatchCount ) );
+	memset( queryParallelJobCount, 0, sizeof( queryParallelJobCount ) );
 }
 
 /*
@@ -457,6 +462,7 @@ idCollisionModelManagerLocal::FreeMap
 void idCollisionModelManagerLocal::FreeMap()
 {
 	int i;
+	queryJobManager.Shutdown();
 
 	if( !loaded )
 	{
@@ -969,6 +975,117 @@ cmHandle_t idCollisionModelManagerLocal::SetupTrmModel( const idTraceModel& trm,
 	model->isConvex = trm.isConvex;
 
 	return TRACE_MODEL_HANDLE;
+}
+
+/*
+================
+idCollisionModelManagerLocal::SetupImmutableTrmModel
+
+Builds a normal, map-lifetime collision model for a cached trace shape. Unlike
+SetupTrmModel this never rewrites geometry after publishing the handle, so the
+model can safely participate in worker query batches.
+================
+*/
+cmHandle_t idCollisionModelManagerLocal::SetupImmutableTrmModel( const idTraceModel& trm, const idMaterial* material )
+{
+	if( material == NULL )
+	{
+		material = trmMaterial;
+	}
+
+	for( int i = 0; i < immutableTrmModels.Num(); ++i )
+	{
+		const cm_immutableTrmModel_t& cached = immutableTrmModels[i];
+		if( cached.material == material && cached.traceModel == trm )
+		{
+			return cached.handle;
+		}
+	}
+
+	if( trm.type == TRM_INVALID || trm.numPolys <= 0 )
+	{
+		return TRACE_MODEL_HANDLE;
+	}
+	if( numModels >= MAX_SUBMODELS )
+	{
+		common->Error( "SetupImmutableTrmModel: MAX_SUBMODELS (%d) exhausted", MAX_SUBMODELS );
+		return 0;
+	}
+
+	cm_model_t* model = AllocModel();
+	model->name = va( "_immutable_trm_%d", immutableTrmModels.Num() );
+	model->node = AllocNode( model, 1 );
+	model->node->planeType = -1;
+
+	model->maxVertices = trm.numVerts;
+	model->numVertices = trm.numVerts;
+	model->vertices = static_cast<cm_vertex_t*>( Mem_ClearedAlloc(
+						  model->maxVertices * sizeof( cm_vertex_t ), TAG_COLLISION ) );
+	for( int i = 0; i < trm.numVerts; ++i )
+	{
+		model->vertices[i].p = trm.verts[i];
+	}
+
+	model->maxEdges = trm.numEdges + 1;
+	model->numEdges = trm.numEdges;
+	model->edges = static_cast<cm_edge_t*>( Mem_ClearedAlloc(
+			model->maxEdges * sizeof( cm_edge_t ), TAG_COLLISION ) );
+	for( int i = 1; i <= trm.numEdges; ++i )
+	{
+		model->edges[i].vertexNum[0] = trm.edges[i].v[0];
+		model->edges[i].vertexNum[1] = trm.edges[i].v[1];
+		model->edges[i].normal = trm.edges[i].normal;
+		model->edges[i].internal = false;
+	}
+
+	for( int i = 0; i < trm.numPolys; ++i )
+	{
+		const traceModelPoly_t& trmPoly = trm.polys[i];
+		cm_polygon_t* poly = AllocPolygon( model, trmPoly.numEdges );
+		poly->numEdges = trmPoly.numEdges;
+		for( int j = 0; j < trmPoly.numEdges; ++j )
+		{
+			poly->edges[j] = trmPoly.edges[j];
+		}
+		poly->plane.SetNormal( trmPoly.normal );
+		poly->plane.SetDist( trmPoly.dist );
+		poly->bounds = trmPoly.bounds;
+		poly->contents = -1;
+		poly->material = material;
+		AddPolygonToNode( model, model->node, poly );
+	}
+
+	if( trm.isConvex )
+	{
+		cm_brush_t* brush = AllocBrush( model, trm.numPolys );
+		brush->numPlanes = trm.numPolys;
+		for( int i = 0; i < trm.numPolys; ++i )
+		{
+			brush->planes[i].SetNormal( trm.polys[i].normal );
+			brush->planes[i].SetDist( trm.polys[i].dist );
+		}
+		brush->bounds = trm.bounds;
+		brush->contents = -1;
+		brush->material = material;
+		brush->primitiveNum = 0;
+		AddBrushToNode( model, model->node, brush );
+	}
+
+	model->bounds = trm.bounds;
+	model->contents = -1;
+	model->isConvex = trm.isConvex;
+	model->usedMemory = model->numVertices * sizeof( cm_vertex_t ) +
+						model->maxEdges * sizeof( cm_edge_t ) + model->polygonMemory + model->brushMemory +
+						model->numNodes * sizeof( cm_node_t ) + model->numPolygonRefs * sizeof( cm_polygonRef_t ) +
+						model->numBrushRefs * sizeof( cm_brushRef_t );
+
+	const cmHandle_t handle = numModels;
+	models[numModels++] = model;
+	cm_immutableTrmModel_t& cached = immutableTrmModels.Alloc();
+	cached.traceModel = trm;
+	cached.material = material;
+	cached.handle = handle;
+	return handle;
 }
 
 /*
