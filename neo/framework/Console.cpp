@@ -30,11 +30,12 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 #include "ConsoleHistory.h"
+#include "ConsoleWatch.h"
 #include "../renderer/RenderCommon.h"
+#include "../renderer/Font.h"
 #include "Common_local.h"
-#include "../imgui/BFGimgui.h"
 
-#define	CON_TEXTSIZE			0x30000
+#define CON_MAX_LINES			4096
 #define	NUM_CON_TIMES			4
 #define CONSOLE_FIRSTREPEAT		200
 #define CONSOLE_REPEAT			100
@@ -46,7 +47,6 @@ struct overlayText_t
 	idStr			text;
 	idVec4			textColor;
 	justify_t		justify;
-	textSize_t		size;
 	int				time;
 	bool			showbackground = false;
 };
@@ -58,27 +58,31 @@ class idConsoleLocal : public idConsole
 {
 public:
 	virtual	void		Init();
+	virtual void		LoadGraphics();
 	virtual void		Shutdown();
 	virtual	bool		ProcessEvent( const sysEvent_t* event, bool forceAccept );
 	virtual	bool		Active();
 	virtual	void		ClearNotifyLines();
 	virtual void		Open();
-	virtual	void		Close();
+	virtual	void		Close( bool clearNotify = true );
 	virtual	void		Print( const char* text );
-	virtual	void		Draw( bool forceFullScreen );
+	virtual	void		Draw( bool forceFullScreen, bool skipNotifyLines = false );
 
-	virtual void		PrintOverlay( idOverlayHandle& handle, justify_t justify, VERIFY_FORMAT_STRING const char* text, idVec4& textColor, bool showbackground, textSize_t size, ... );
+	virtual void		PrintOverlay( idOverlayHandle& handle, justify_t justify, VERIFY_FORMAT_STRING const char* text, idVec4& textColor, bool showbackground, ... );
 
 	virtual idDebugGraph* 	CreateGraph( int numItems );
 	virtual void			DestroyGraph( idDebugGraph* graph );
 
 	void				Dump( const char* toFile );
 	void				Clear();
+	void				Activate( float fraction );
 
 private:
 	void				KeyDownEvent( int key );
 
-	void				Linefeed();
+	void				Linefeed( int now );
+	void				PrintInternal( const char* text );
+	void				PumpThreadLines();
 
 	void				PageUp();
 	void				PageDown();
@@ -93,16 +97,15 @@ private:
 	void				SetDisplayFraction( float frac );
 	void				UpdateDisplayFraction();
 
-	void				DrawTextSmallLeftAlign( float x, float& y, const idVec4& textColor, const char* text, ... );
-	void				DrawTextSmallRightAlign( float x, float& y, const idVec4& textColor, const char* text, ... );
-	void				DrawTextBigLeftAlign( float x, float& y, const idVec4& textColor, const char* text, ... );
-	void				DrawTextBigRightAlign( float x, float& y, const idVec4& textColor, const char* text, ... );
+	void				DrawTextLeftAlign( float x, float& y, const idVec4& textColor, const char* text, ... );
+	void				DrawTextRightAlign( float x, float& y, const idVec4& textColor, const char* text, ... );
 
 	float				DrawFPS( float y );
 	float				DrawMemoryUsage( float y );
 
 	void				DrawOverlayText( float& leftY, float& rightY, float& centerY );
 	void				DrawDebugGraphs();
+	void				UpdateScreenLayout();
 
 	//============================
 
@@ -118,9 +121,9 @@ private:
 
 	bool				keyCatching;
 
-	short				text[CON_TEXTSIZE];
+	idList< short >		textLines[CON_MAX_LINES];
 	int					current;		// line where next message will be printed
-	int					x;				// offset in current line for next print
+	int					lineOffset;		// offset in current logical line for next print
 	int					display;		// bottom of console displays this line
 	int					lastKeyEvent;	// time of last key event for scroll delay
 	int					nextKeyEvent;	// keyboard repeat rate
@@ -145,9 +148,16 @@ private:
 
 	idList< overlayText_t >	overlayText;
 	idList< idDebugGraph*> debugGraphs;
+	idList< idStr >		queuedPrints;
+	idSysMutex			printMutex;
+	bool				captureWatchText;
+	idStr				watchText;
 
 	static idCVar		con_speed;
 	static idCVar		con_notifyTime;
+	static idCVar		con_fontName;
+	static idCVar		con_fontSize;
+	static idCVar		con_transparency;
 	static idCVar		con_noPrint;
 };
 
@@ -156,11 +166,157 @@ idConsole* console = &localConsole;
 
 idCVar idConsoleLocal::con_speed( "con_speed", "3", CVAR_SYSTEM, "speed at which the console moves up and down" );
 idCVar idConsoleLocal::con_notifyTime( "con_notifyTime", "3", CVAR_SYSTEM, "time messages are displayed onscreen when console is pulled up" );
+idCVar idConsoleLocal::con_fontName( "con_fontName", "Courier", CVAR_SYSTEM | CVAR_ARCHIVE, "font used by the in-game console" );
+idCVar idConsoleLocal::con_fontSize( "con_fontSize", "7", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_FLOAT, "console character width in virtual pixels", 4.0f, 32.0f );
+idCVar idConsoleLocal::con_transparency( "con_transparency", "1.0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_FLOAT, "console background opacity", 0.0f, 1.0f );
 #ifdef DEBUG
 	idCVar idConsoleLocal::con_noPrint( "con_noPrint", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "print on the console but not onscreen when console is pulled up" );
 #else
 	idCVar idConsoleLocal::con_noPrint( "con_noPrint", "1", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "print on the console but not onscreen when console is pulled up" );
 #endif
+
+static idFont* consoleRenderFont = NULL;
+
+static idFont* Con_GetFont()
+{
+	return consoleRenderFont;
+}
+
+// BFG's GUI model always projects a 640x480 surface and stretches it to the
+// current mode. Tech 5's console is authored in square screen pixels instead.
+// Use a wider logical console at widescreen aspect ratios, then map only X
+// back into BFG's virtual surface so glyphs retain the font atlas aspect.
+static float Con_LogicalScreenWidth()
+{
+	const int renderWidth = renderSystem->GetWidth();
+	const int renderHeight = renderSystem->GetHeight();
+	if( renderWidth <= 0 || renderHeight <= 0 )
+	{
+		return static_cast<float>( SCREEN_WIDTH );
+	}
+	return SCREEN_HEIGHT * ( static_cast<float>( renderWidth ) / renderHeight );
+}
+
+static float Con_ToVirtualX( float x )
+{
+	return x * ( SCREEN_WIDTH / Con_LogicalScreenWidth() );
+}
+
+static float Con_ToVirtualWidth( float width )
+{
+	return width * ( SCREEN_WIDTH / Con_LogicalScreenWidth() );
+}
+
+static void Con_DrawConsoleFilled( const idVec4& color, float x, float y, float width, float height )
+{
+	renderSystem->DrawFilled( color, Con_ToVirtualX( x ), y, Con_ToVirtualWidth( width ), height );
+}
+
+float Con_ConsoleCharWidth()
+{
+	return cvarSystem->GetCVarFloat( "con_fontSize" );
+}
+
+static float Con_FontScale()
+{
+	idFont* font = Con_GetFont();
+	const float naturalWidth = font != NULL ? font->GetGlyphWidth( 1.0f, 'M' ) : 0.0f;
+	return naturalWidth > 0.0f ? Con_ConsoleCharWidth() / naturalWidth : 1.0f;
+}
+
+float Con_ConsoleLineHeight()
+{
+	idFont* font = Con_GetFont();
+	const float height = font != NULL ? font->GetLineHeight( Con_FontScale() ) : 0.0f;
+	return Max( Con_ConsoleCharWidth() + 2.0f, height );
+}
+
+float Con_ConsoleStringWidth( const char* text )
+{
+	if( text == NULL )
+	{
+		return 0.0f;
+	}
+	int column = 0;
+	int maximum = 0;
+	while( *text != '\0' )
+	{
+		if( idStr::IsColor( text ) )
+		{
+			text += 2;
+			continue;
+		}
+		if( *text++ == '\n' )
+		{
+			maximum = Max( maximum, column );
+			column = 0;
+		}
+		else
+		{
+			++column;
+		}
+	}
+	return Max( maximum, column ) * Con_ConsoleCharWidth();
+}
+
+void Con_DrawConsoleChar( float x, float y, uint32 character, const idVec4& color )
+{
+	if( character == ' ' )
+	{
+		return;
+	}
+	idFont* font = Con_GetFont();
+	if( font == NULL )
+	{
+		return;
+	}
+	const float scale = Con_FontScale();
+	scaledGlyphInfo_t glyph;
+	font->GetScaledGlyph( scale, character, glyph );
+	if( glyph.material == NULL )
+	{
+		return;
+	}
+	const float cellOffset = 0.5f * ( Con_ConsoleCharWidth() - glyph.xSkip );
+	const float baseline = y + font->GetAscender( scale );
+	renderSystem->SetColor( color );
+	renderSystem->DrawStretchPic( Con_ToVirtualX( x + cellOffset + glyph.left ), baseline - glyph.top,
+								  Con_ToVirtualWidth( glyph.width + 1.0f ), glyph.height + 1.0f,
+								  glyph.s1, glyph.t1, glyph.s2, glyph.t2, glyph.material );
+}
+
+void Con_DrawConsoleString( float x, float y, const char* text, const idVec4& defaultColor, bool forceColor )
+{
+	if( text == NULL )
+	{
+		return;
+	}
+	const float startX = x;
+	idVec4 color = defaultColor;
+	while( *text != '\0' )
+	{
+		if( idStr::IsColor( text ) )
+		{
+			if( !forceColor )
+			{
+				color = text[1] == C_COLOR_DEFAULT ? defaultColor : idStr::ColorForIndex( text[1] );
+				color.w = defaultColor.w;
+			}
+			text += 2;
+			continue;
+		}
+		const unsigned char character = static_cast<unsigned char>( *text++ );
+		if( character == '\n' )
+		{
+			x = startX;
+			y += Con_ConsoleLineHeight();
+			continue;
+		}
+		Con_DrawConsoleChar( x, y, character, color );
+		x += Con_ConsoleCharWidth();
+	}
+	renderSystem->SetColor( colorWhite );
+}
 
 /*
 =============================================================================
@@ -172,70 +328,35 @@ idCVar idConsoleLocal::con_notifyTime( "con_notifyTime", "3", CVAR_SYSTEM, "time
 
 /*
 ==================
-idConsoleLocal::DrawSmallTextLeftAlign
+idConsoleLocal::DrawTextLeftAlign
 ==================
 */
-void idConsoleLocal::DrawTextSmallLeftAlign( float x, float& y, const idVec4& textColor, const char* text, ... )
+void idConsoleLocal::DrawTextLeftAlign( float x, float& y, const idVec4& textColor, const char* text, ... )
 {
 	char string[MAX_STRING_CHARS];
 	va_list argptr;
 	va_start( argptr, text );
 	idStr::vsnPrintf( string, sizeof( string ), text, argptr );
 	va_end( argptr );
-	renderSystem->DrawSmallStringExt( x, y + 2, string, textColor, true, true, idStr::Length( string ) );
-	y += SMALLCHAR_HEIGHT + 4;
+	Con_DrawConsoleString( x, y + 2, string, textColor, true );
+	y += Con_ConsoleLineHeight() + 4.0f;
 }
 
 /*
 ==================
-idConsoleLocal::DrawTextSmallRightAlign
+idConsoleLocal::DrawTextRightAlign
 ==================
 */
-void idConsoleLocal::DrawTextSmallRightAlign( float x, float& y, const idVec4& textColor, const char* text, ... )
-{
-	char string[MAX_STRING_CHARS];
-	va_list argptr;
-	va_start( argptr, text );
-	int i = idStr::vsnPrintf( string, sizeof( string ), text, argptr );
-	va_end( argptr );
-	renderSystem->DrawSmallStringExt( x - i * SMALLCHAR_WIDTH, y + 2, string, textColor, true, true, idStr::Length( string ) );
-	y += SMALLCHAR_HEIGHT + 4;
-}
-
-/*
-==================
-idConsoleLocal::DrawTextBigLeftAlign
-==================
-*/
-void idConsoleLocal::DrawTextBigLeftAlign( float x, float& y, const idVec4& textColor, const char* text, ... )
+void idConsoleLocal::DrawTextRightAlign( float x, float& y, const idVec4& textColor, const char* text, ... )
 {
 	char string[MAX_STRING_CHARS];
 	va_list argptr;
 	va_start( argptr, text );
 	idStr::vsnPrintf( string, sizeof( string ), text, argptr );
 	va_end( argptr );
-	renderSystem->DrawBigStringExt( x, y + 2, string, textColor, true, true, idStr::Length( string ) );
-	y += BIGCHAR_HEIGHT + 4;
+	Con_DrawConsoleString( x - Con_ConsoleStringWidth( string ) - 22, y + 2, string, textColor, true );
+	y += Con_ConsoleLineHeight() + 4.0f;
 }
-
-/*
-==================
-idConsoleLocal::DrawTextBigRightAlign
-==================
-*/
-void idConsoleLocal::DrawTextBigRightAlign( float x, float& y, const idVec4& textColor, const char* text, ... )
-{
-	char string[MAX_STRING_CHARS];
-	va_list argptr;
-	va_start( argptr, text );
-	int i = idStr::vsnPrintf( string, sizeof( string ), text, argptr );
-	va_end( argptr );
-	renderSystem->DrawBigStringExt( x - i * BIGCHAR_WIDTH, y + 2, string, textColor, true, true, idStr::Length( string ) );
-	y += BIGCHAR_HEIGHT + 4;
-}
-
-
-
 
 /*
 ==================
@@ -288,11 +409,11 @@ float idConsoleLocal::DrawFPS( float y )
 
 		if( com_showFPS.GetInteger() == 1 )
 		{
-			CREATE_OVERLAY( fps1, s, JUSTIFY_RIGHT, colorWhite, TEXTSIZE_LARGE, false );
+			CREATE_OVERLAY( fps1, s, JUSTIFY_RIGHT, colorWhite, false );
 		}
 	}
 
-	y += BIGCHAR_HEIGHT + 4;
+	y += Con_ConsoleLineHeight() + 4.0f;
 
 	// DG: "com_showFPS 1" means: show FPS only, like in classic doom3
 	if( com_showFPS.GetInteger() == 1 )
@@ -358,23 +479,23 @@ float idConsoleLocal::DrawFPS( float y )
 
 	idStr timeStr;
 	timeStr.Format( "===========  Performance Stats ===========" );
-	CREATE_OVERLAY( gperfstats, timeStr, JUSTIFY_RIGHT, colorWhite, TEXTSIZE_SMALL, false );
+	CREATE_OVERLAY( gperfstats, timeStr, JUSTIFY_RIGHT, colorWhite, false );
 
 	timeStr.Format( "API: %s, AA[%i, %i]: %s", API, width, height, aaMode );
-	CREATE_OVERLAY( ggeneral, timeStr, JUSTIFY_RIGHT, colorCyan, TEXTSIZE_SMALL, false );
+	CREATE_OVERLAY( ggeneral, timeStr, JUSTIFY_RIGHT, colorCyan, false );
 
 	if( com_showFPS.GetInteger() > 2 )
 	{
 		timeStr.Format( "Average FPS %i", fps );
-		CREATE_OVERLAY( gfpsRelative, timeStr, JUSTIFY_RIGHT, colorWhite, TEXTSIZE_SMALL, false );
+		CREATE_OVERLAY( gfpsRelative, timeStr, JUSTIFY_RIGHT, colorWhite, false );
 
 		timeStr.Format( "Relative - Frametime ms %f", previousTimesNormalized );
-		CREATE_OVERLAY( gfpsRelativeMS, timeStr, JUSTIFY_RIGHT, colorWhite, TEXTSIZE_SMALL, false );
+		CREATE_OVERLAY( gfpsRelativeMS, timeStr, JUSTIFY_RIGHT, colorWhite, false );
 	}
 	else
 	{
 		timeStr.Format( "Average FPS %i", fps );
-		CREATE_OVERLAY( gfps, timeStr, JUSTIFY_RIGHT, fps < com_engineHz_latched ? colorRed : colorYellow, TEXTSIZE_SMALL, false );
+		CREATE_OVERLAY( gfps, timeStr, JUSTIFY_RIGHT, fps < com_engineHz_latched ? colorRed : colorYellow, false );
 	}
 
 	timeStr.Format( "GENERAL: views:%i draws:%i tris:%i (shdw:%i)",
@@ -382,7 +503,7 @@ float idConsoleLocal::DrawFPS( float y )
 					commonLocal.stats_backend.c_drawElements + commonLocal.stats_backend.c_shadowElements,
 					( commonLocal.stats_backend.c_drawIndexes + commonLocal.stats_backend.c_shadowIndexes ) / 3,
 					commonLocal.stats_backend.c_shadowIndexes / 3 );
-	CREATE_OVERLAY( gviews, timeStr, JUSTIFY_RIGHT, colorCyan, TEXTSIZE_SMALL, false );
+	CREATE_OVERLAY( gviews, timeStr, JUSTIFY_RIGHT, colorCyan, false );
 
 	if( com_showFPS.GetInteger() > 2 )
 	{
@@ -393,7 +514,7 @@ float idConsoleLocal::DrawFPS( float y )
 						commonLocal.stats_frontend.c_deformedIndexes / 3,
 						commonLocal.stats_frontend.c_tangentIndexes / 3,
 						commonLocal.stats_frontend.c_guiSurfs );
-		CREATE_OVERLAY( gdyncallbacks, timeStr, JUSTIFY_RIGHT, colorLtGrey, TEXTSIZE_SMALL, false );
+		CREATE_OVERLAY( gdyncallbacks, timeStr, JUSTIFY_RIGHT, colorLtGrey, false );
 
 
 		timeStr.Format( "MASKCULL: tests:%-3i lightCulls:%i surfCulls:%i verts:%i tris:%i",
@@ -402,56 +523,56 @@ float idConsoleLocal::DrawFPS( float y )
 						commonLocal.stats_frontend.c_mocCulledSurfaces,
 						commonLocal.stats_frontend.c_mocVerts,
 						commonLocal.stats_frontend.c_mocIndexes );
-		CREATE_OVERLAY( gmaskcull, timeStr, JUSTIFY_RIGHT, colorLtGrey, TEXTSIZE_SMALL, false );
+		CREATE_OVERLAY( gmaskcull, timeStr, JUSTIFY_RIGHT, colorLtGrey, false );
 
 		timeStr.Format( "ADDMODEL: callback:%-2i createInteractions:%i createShadowVolumes:%i",
 						commonLocal.stats_frontend.c_entityDefCallbacks,
 						commonLocal.stats_frontend.c_createInteractions,
 						commonLocal.stats_frontend.c_createShadowVolumes );
-		CREATE_OVERLAY( gaddModel, timeStr, JUSTIFY_RIGHT, colorLtGrey, TEXTSIZE_SMALL, false );
+		CREATE_OVERLAY( gaddModel, timeStr, JUSTIFY_RIGHT, colorLtGrey, false );
 
 		timeStr.Format( "viewEntities:%-3i  shadowEntities:%-3i  viewLights:%i\n",	commonLocal.stats_frontend.c_visibleViewEntities,
 						commonLocal.stats_frontend.c_shadowViewEntities,
 						commonLocal.stats_frontend.c_viewLights );
-		CREATE_OVERLAY( gviewEnts, timeStr, JUSTIFY_RIGHT, colorLtGrey, TEXTSIZE_SMALL, false );
+		CREATE_OVERLAY( gviewEnts, timeStr, JUSTIFY_RIGHT, colorLtGrey, false );
 
 		timeStr.Format( "UPDATES: entityUpdates:%-3i  entityRefs:%-3i  lightUpdates:%-2i  lightRefs:%i\n",
 						commonLocal.stats_frontend.c_entityUpdates, commonLocal.stats_frontend.c_entityReferences,
 						commonLocal.stats_frontend.c_lightUpdates, commonLocal.stats_frontend.c_lightReferences );
-		CREATE_OVERLAY( gEntsupdates, timeStr, JUSTIFY_RIGHT, colorLtGrey, TEXTSIZE_SMALL, false );
+		CREATE_OVERLAY( gEntsupdates, timeStr, JUSTIFY_RIGHT, colorLtGrey, false );
 	}
 
 	timeStr.Format( "==============  CPU/GPU ==================" );
-	CREATE_OVERLAY( gcpugpu, timeStr, JUSTIFY_RIGHT, colorWhite, TEXTSIZE_SMALL, false );
+	CREATE_OVERLAY( gcpugpu, timeStr, JUSTIFY_RIGHT, colorWhite, false );
 
 	timeStr.Format( "Game+RF: %5llu us   EarlyZ:       %5llu us", gameThreadTotalTime, rendererGPUEarlyZTime );
-	CREATE_OVERLAY( grf, timeStr, JUSTIFY_RIGHT, gameThreadTotalTime > maxTime ? colorRed : colorWhite, TEXTSIZE_SMALL, false );
+	CREATE_OVERLAY( grf, timeStr, JUSTIFY_RIGHT, gameThreadTotalTime > maxTime ? colorRed : colorWhite, false );
 
 	timeStr.Format( "Game:    %5llu us   SSAO:         %5llu us", gameThreadGameTime, rendererGPU_SSAOTime );
-	CREATE_OVERLAY( gthread, timeStr, JUSTIFY_RIGHT, gameThreadGameTime > maxTime ? colorRed : colorWhite, TEXTSIZE_SMALL, false );
+	CREATE_OVERLAY( gthread, timeStr, JUSTIFY_RIGHT, gameThreadGameTime > maxTime ? colorRed : colorWhite, false );
 
 	timeStr.Format( "RF:      %5llu us   SSR:          %5llu us", gameThreadRenderTime, rendererGPU_SSRTime );
-	CREATE_OVERLAY( gthreadrf, timeStr, JUSTIFY_RIGHT, gameThreadRenderTime > maxTime ? colorRed : colorWhite, TEXTSIZE_SMALL, false );
+	CREATE_OVERLAY( gthreadrf, timeStr, JUSTIFY_RIGHT, gameThreadRenderTime > maxTime ? colorRed : colorWhite, false );
 
 	timeStr.Format( "RB:      %5llu us   AmbientPass:  %5llu us", rendererBackEndTime, rendererGPUAmbientPassTime );
-	CREATE_OVERLAY( rb, timeStr, JUSTIFY_RIGHT, rendererBackEndTime > maxTime ? colorRed : colorWhite, TEXTSIZE_SMALL, false );
+	CREATE_OVERLAY( rb, timeStr, JUSTIFY_RIGHT, rendererBackEndTime > maxTime ? colorRed : colorWhite, false );
 
 	timeStr.Format( "MOC: %5llu us   Interactions: %5llu us", rendererMaskedOcclusionCullingTime, rendererGPUInteractionsTime );
-	CREATE_OVERLAY( rbsv, timeStr, JUSTIFY_RIGHT, rendererMaskedOcclusionCullingTime > maxTime ? colorRed : colorWhite, TEXTSIZE_SMALL, false );
+	CREATE_OVERLAY( rbsv, timeStr, JUSTIFY_RIGHT, rendererMaskedOcclusionCullingTime > maxTime ? colorRed : colorWhite, false );
 
 	timeStr.Format( "                    ShaderPass:   %5llu us", rendererGPUShaderPassesTime );
-	CREATE_OVERLAY( rbgpuShader, timeStr, JUSTIFY_RIGHT, rendererGPUShaderPassesTime > maxTime ? colorRed : colorWhite, TEXTSIZE_SMALL, false );
+	CREATE_OVERLAY( rbgpuShader, timeStr, JUSTIFY_RIGHT, rendererGPUShaderPassesTime > maxTime ? colorRed : colorWhite, false );
 
 	timeStr.Format( "                    PostFX:       %5llu us", rendererGPUPostProcessingTime );
-	CREATE_OVERLAY( rbgpuPostFX, timeStr, JUSTIFY_RIGHT, rendererGPUPostProcessingTime > maxTime ? colorRed : colorWhite, TEXTSIZE_SMALL, false );
+	CREATE_OVERLAY( rbgpuPostFX, timeStr, JUSTIFY_RIGHT, rendererGPUPostProcessingTime > maxTime ? colorRed : colorWhite, false );
 
 	timeStr.Format( "Total:   %5llu us   Total:        %5llu us", totalCPUTime, rendererGPUTime );
-	CREATE_OVERLAY( rbgtotal, timeStr, JUSTIFY_RIGHT, ( totalCPUTime > maxTime || rendererGPUTime > maxTime ) ? colorRed : colorWhite, TEXTSIZE_SMALL, false );
+	CREATE_OVERLAY( rbgtotal, timeStr, JUSTIFY_RIGHT, ( totalCPUTime > maxTime || rendererGPUTime > maxTime ) ? colorRed : colorWhite, false );
 
 	timeStr.Format( "Frame:   %5llu us   Idle:         %5llu us", totalFrameTime, rendererGPUIdleTime );
-	CREATE_OVERLAY( rbgframetime, timeStr, JUSTIFY_RIGHT, totalFrameTime > maxTime ? colorRed : colorWhite, TEXTSIZE_SMALL, false );
+	CREATE_OVERLAY( rbgframetime, timeStr, JUSTIFY_RIGHT, totalFrameTime > maxTime ? colorRed : colorWhite, false );
 
-	return y + BIGCHAR_HEIGHT + 4;
+	return y + Con_ConsoleLineHeight() + 4.0f;
 }
 
 /*
@@ -499,24 +620,40 @@ static void Con_Dump_f( const idCmdArgs& args )
 
 /*
 ==============
+Con_Print_f
+==============
+*/
+static void Con_Print_f( const idCmdArgs& args )
+{
+	common->Printf( "%s\n", args.Args( 1 ) );
+}
+
+/*
+==============
+Con_Activate_f
+==============
+*/
+static void Con_Activate_f( const idCmdArgs& args )
+{
+	const float fraction = args.Argc() > 1 ? atof( args.Argv( 1 ) ) : 0.5f;
+	localConsole.Activate( idMath::ClampFloat( 0.05f, 1.0f, fraction ) );
+}
+
+/*
+==============
 idConsoleLocal::Init
 ==============
 */
 void idConsoleLocal::Init()
 {
-	int		i;
-
 	keyCatching = false;
+	captureWatchText = false;
+	watchText.Clear();
 
-	LOCALSAFE_LEFT		= 32;
-	LOCALSAFE_RIGHT		= 608;
-	LOCALSAFE_TOP		= 24;
-	LOCALSAFE_BOTTOM	= 456;
-	LOCALSAFE_WIDTH		= LOCALSAFE_RIGHT - LOCALSAFE_LEFT;
-	LOCALSAFE_HEIGHT	= LOCALSAFE_BOTTOM - LOCALSAFE_TOP;
+	UpdateScreenLayout();
 
-	LINE_WIDTH = ( ( LOCALSAFE_WIDTH / SMALLCHAR_WIDTH ) - 2 );
-	TOTAL_LINES = ( CON_TEXTSIZE / LINE_WIDTH );
+	LINE_WIDTH = Max( 1, idMath::Ftoi( LOCALSAFE_WIDTH / Con_ConsoleCharWidth() ) - 2 );
+	TOTAL_LINES = CON_MAX_LINES;
 
 	lastKeyEvent = -1;
 	nextKeyEvent = CONSOLE_FIRSTREPEAT;
@@ -524,7 +661,7 @@ void idConsoleLocal::Init()
 	consoleField.Clear();
 	consoleField.SetWidthInChars( LINE_WIDTH );
 
-	for( i = 0 ; i < COMMAND_HISTORY ; i++ )
+	for( int i = 0 ; i < COMMAND_HISTORY ; i++ )
 	{
 		historyEditLines[i].Clear();
 		historyEditLines[i].SetWidthInChars( LINE_WIDTH );
@@ -532,6 +669,38 @@ void idConsoleLocal::Init()
 
 	cmdSystem->AddCommand( "clear", Con_Clear_f, CMD_FL_SYSTEM, "clears the console" );
 	cmdSystem->AddCommand( "conDump", Con_Dump_f, CMD_FL_SYSTEM, "dumps the console text to a file" );
+	cmdSystem->AddCommand( "print", Con_Print_f, CMD_FL_SYSTEM, "prints text to the console" );
+	cmdSystem->AddCommand( "activateConsole", Con_Activate_f, CMD_FL_SYSTEM, "opens the console to an optional screen fraction" );
+	ConsoleWatch_Init();
+	Clear();
+}
+/*
+==============
+idConsoleLocal::UpdateScreenLayout
+==============
+*/
+void idConsoleLocal::UpdateScreenLayout()
+{
+	// Unlike game HUDs, the Tech 5 console does not use title-safe gutters.
+	LOCALSAFE_LEFT = 0;
+	LOCALSAFE_RIGHT = idMath::Ftoi( Con_LogicalScreenWidth() );
+	LOCALSAFE_TOP = 0;
+	LOCALSAFE_BOTTOM = SCREEN_HEIGHT;
+	LOCALSAFE_WIDTH = LOCALSAFE_RIGHT - LOCALSAFE_LEFT;
+	LOCALSAFE_HEIGHT = LOCALSAFE_BOTTOM - LOCALSAFE_TOP;
+}
+
+/*
+==============
+idConsoleLocal::LoadGraphics
+
+Font construction resolves its atlas through the decl manager. This must be
+done on the main thread before the game/draw worker starts.
+==============
+*/
+void idConsoleLocal::LoadGraphics()
+{
+	consoleRenderFont = renderSystem->RegisterFont( con_fontName.GetString() );
 }
 
 /*
@@ -543,6 +712,9 @@ void idConsoleLocal::Shutdown()
 {
 	cmdSystem->RemoveCommand( "clear" );
 	cmdSystem->RemoveCommand( "conDump" );
+	cmdSystem->RemoveCommand( "print" );
+	cmdSystem->RemoveCommand( "activateConsole" );
+	ConsoleWatch_Shutdown();
 
 	debugGraphs.DeleteContents( true );
 }
@@ -595,12 +767,26 @@ void	idConsoleLocal::Open()
 idConsoleLocal::Close
 ================
 */
-void	idConsoleLocal::Close()
+void	idConsoleLocal::Close( bool clearNotify )
 {
 	keyCatching = false;
 	SetDisplayFraction( 0 );
 	displayFrac = 0;	// don't scroll to that point, go immediately
-	ClearNotifyLines();
+	if( clearNotify )
+	{
+		ClearNotifyLines();
+	}
+}
+
+/*
+================
+idConsoleLocal::Activate
+================
+*/
+void idConsoleLocal::Activate( float fraction )
+{
+	keyCatching = true;
+	SetDisplayFraction( fraction );
 }
 
 /*
@@ -610,14 +796,14 @@ idConsoleLocal::Clear
 */
 void idConsoleLocal::Clear()
 {
-	int		i;
-
-	for( i = 0 ; i < CON_TEXTSIZE ; i++ )
+	for( int i = 0; i < CON_MAX_LINES; ++i )
 	{
-		text[i] = ( idStr::ColorIndex( C_COLOR_CYAN ) << 8 ) | ' ';
+		textLines[i].Clear();
 	}
-
-	Bottom();		// go to end
+	current = 0;
+	display = 0;
+	lineOffset = 0;
+	ClearNotifyLines();
 }
 
 /*
@@ -629,63 +815,25 @@ Save the console contents out to a file
 */
 void idConsoleLocal::Dump( const char* fileName )
 {
-	int		l, x, i;
-	short* 	line;
-	idFile* f;
-	char*	 buffer = ( char* )alloca( LINE_WIDTH + 3 );
-
-	f = fileSystem->OpenFileWrite( fileName );
+	PumpThreadLines();
+	idFile* f = fileSystem->OpenFileWrite( fileName );
 	if( !f )
 	{
 		common->Warning( "couldn't open %s", fileName );
 		return;
 	}
-
-	// skip empty lines
-	l = current - TOTAL_LINES + 1;
-	if( l < 0 )
+	const int firstLine = Max( 0, current - CON_MAX_LINES + 1 );
+	for( int lineNumber = firstLine; lineNumber <= current; ++lineNumber )
 	{
-		l = 0;
-	}
-	for( ; l <= current ; l++ )
-	{
-		line = text + ( l % TOTAL_LINES ) * LINE_WIDTH;
-		for( x = 0; x < LINE_WIDTH; x++ )
-			if( ( line[x] & 0xff ) > ' ' )
-			{
-				break;
-			}
-		if( x != LINE_WIDTH )
+		const idList< short >& line = textLines[lineNumber & ( CON_MAX_LINES - 1 )];
+		idStr plain;
+		for( int i = 0; i < line.Num(); ++i )
 		{
-			break;
+			plain.Append( static_cast<char>( line[i] & 0xff ) );
 		}
+		plain.StripTrailingWhitespace();
+		f->Printf( "%s\r\n", plain.c_str() );
 	}
-
-	// write the remaining lines
-	for( ; l <= current; l++ )
-	{
-		line = text + ( l % TOTAL_LINES ) * LINE_WIDTH;
-		for( i = 0; i < LINE_WIDTH; i++ )
-		{
-			buffer[i] = line[i] & 0xff;
-		}
-		for( x = LINE_WIDTH - 1; x >= 0; x-- )
-		{
-			if( buffer[x] <= ' ' )
-			{
-				buffer[x] = 0;
-			}
-			else
-			{
-				break;
-			}
-		}
-		buffer[x + 1] = '\r';
-		buffer[x + 2] = '\n';
-		buffer[x + 3] = 0;
-		f->Write( buffer, strlen( buffer ) );
-	}
-
 	fileSystem->CloseFile( f );
 }
 
@@ -724,7 +872,7 @@ idConsoleLocal::Top
 */
 void idConsoleLocal::Top()
 {
-	display = 0;
+	display = Max( 0, current - CON_MAX_LINES + 1 );
 }
 
 /*
@@ -771,8 +919,13 @@ void idConsoleLocal::KeyDownEvent( int key )
 	}
 
 	// enter finishes the line
-	if( key == K_ENTER || key == K_KP_ENTER )
+	if( key == K_ENTER || key == K_KP_ENTER ||
+			( key == K_M && ( idKeyInput::IsDown( K_LCTRL ) || idKeyInput::IsDown( K_RCTRL ) ) ) )
 	{
+		if( consoleField.AcceptAutoComplete() )
+		{
+			return;
+		}
 
 		common->Printf( "]%s\n", consoleField.GetBuffer() );
 
@@ -799,7 +952,7 @@ void idConsoleLocal::KeyDownEvent( int key )
 
 	if( key == K_TAB )
 	{
-		consoleField.AutoComplete();
+		consoleField.AutoComplete( idKeyInput::IsDown( K_LSHIFT ) || idKeyInput::IsDown( K_RSHIFT ) );
 		return;
 	}
 
@@ -1046,29 +1199,116 @@ PRINTING
 Linefeed
 ===============
 */
-void idConsoleLocal::Linefeed()
+void idConsoleLocal::Linefeed( int now )
 {
-	int		i;
-
-	// mark time for transparent overlay
-	if( current >= 0 )
-	{
-		times[current % NUM_CON_TIMES] = Sys_Milliseconds();
-	}
-
-	x = 0;
+	times[current & ( NUM_CON_TIMES - 1 )] = now;
 	if( display == current )
 	{
-		display++;
+		++display;
 	}
-	current++;
-	for( i = 0; i < LINE_WIDTH; i++ )
+	++current;
+	lineOffset = 0;
+	textLines[current & ( CON_MAX_LINES - 1 )].Clear();
+	times[current & ( NUM_CON_TIMES - 1 )] = now;
+}
+
+
+/*
+================
+PumpThreadLines
+================
+*/
+void idConsoleLocal::PumpThreadLines()
+{
+	if( !idLib::IsMainThread() )
 	{
-		int offset = ( ( unsigned int )current % TOTAL_LINES ) * LINE_WIDTH + i;
-		text[offset] = ( idStr::ColorIndex( C_COLOR_CYAN ) << 8 ) | ' ';
+		return;
+	}
+	idList< idStr > pending;
+	{
+		idScopedCriticalSection lock( printMutex );
+		pending = queuedPrints;
+		queuedPrints.Clear();
+	}
+	for( int i = 0; i < pending.Num(); ++i )
+	{
+		PrintInternal( pending[i].c_str() );
 	}
 }
 
+/*
+================
+PrintInternal
+================
+*/
+void idConsoleLocal::PrintInternal( const char* input )
+{
+	if( input == NULL )
+	{
+		return;
+	}
+	if( captureWatchText )
+	{
+		watchText.Append( input );
+		for( int newline = watchText.Find( '\n' ); newline >= 0; newline = watchText.Find( '\n' ) )
+		{
+			idStr line( watchText, 0, newline );
+			line.StripTrailingWhitespace();
+			consoleWatchResults.Append( line );
+			const idStr remainder( watchText.c_str() + newline + 1 );
+			watchText = remainder;
+		}
+		return;
+	}
+
+	const int now = Sys_Milliseconds();
+	int color = idStr::ColorIndex( C_COLOR_WHITE );
+	idList< short >* line = &textLines[current & ( CON_MAX_LINES - 1 )];
+	while( *input != '\0' )
+	{
+		if( idStr::IsColor( input ) )
+		{
+			color = idStr::ColorIndex( input[1] == C_COLOR_DEFAULT ? C_COLOR_WHITE : input[1] );
+			input += 2;
+			continue;
+		}
+		const unsigned char character = static_cast<unsigned char>( *input++ );
+		switch( character )
+		{
+			case '\n':
+				line->SetNum( lineOffset );
+				Linefeed( now );
+				line = &textLines[current & ( CON_MAX_LINES - 1 )];
+				break;
+			case '\r':
+				if( *input != '\n' )
+				{
+					lineOffset = 0;
+				}
+				break;
+			case '\t':
+				do
+				{
+					if( lineOffset >= line->Num() )
+					{
+						line->Append( 0 );
+					}
+					( *line )[lineOffset++] = static_cast<short>( ( color << 8 ) | ' ' );
+				}
+				while( ( lineOffset & 3 ) != 0 );
+				break;
+			default:
+				if( lineOffset >= line->Num() )
+				{
+					line->Append( 0 );
+				}
+				( *line )[lineOffset++] = static_cast<short>( ( color << 8 ) | character );
+				break;
+		}
+	}
+	line->SetNum( lineOffset );
+	times[current & ( NUM_CON_TIMES - 1 )] = now;
+}
 
 /*
 ================
@@ -1077,99 +1317,16 @@ Print
 Handles cursor positioning, line wrapping, etc
 ================
 */
-void idConsoleLocal::Print( const char* txt )
+void idConsoleLocal::Print( const char* text )
 {
-	int		y;
-	int		c, l;
-	int		color;
-
-	if( TOTAL_LINES == 0 )
+	if( !idLib::IsMainThread() )
 	{
-		// not yet initialized
+		idScopedCriticalSection lock( printMutex );
+		queuedPrints.Append( idStr( text != NULL ? text : "" ) );
 		return;
 	}
-
-	color = idStr::ColorIndex( C_COLOR_CYAN );
-
-	while( ( c = *( const unsigned char* )txt ) != 0 )
-	{
-		if( idStr::IsColor( txt ) )
-		{
-			if( *( txt + 1 ) == C_COLOR_DEFAULT )
-			{
-				color = idStr::ColorIndex( C_COLOR_CYAN );
-			}
-			else
-			{
-				color = idStr::ColorIndex( *( txt + 1 ) );
-			}
-			txt += 2;
-			continue;
-		}
-
-		y = current % TOTAL_LINES;
-
-		// if we are about to print a new word, check to see
-		// if we should wrap to the new line
-		if( c > ' ' && ( x == 0 || text[y * LINE_WIDTH + x - 1] <= ' ' ) )
-		{
-			// count word length
-			for( l = 0 ; l < LINE_WIDTH ; l++ )
-			{
-				if( txt[l] <= ' ' )
-				{
-					break;
-				}
-			}
-
-			// word wrap
-			if( l != LINE_WIDTH && ( x + l >= LINE_WIDTH ) )
-			{
-				Linefeed();
-			}
-		}
-
-		txt++;
-
-		switch( c )
-		{
-			case '\n':
-				Linefeed();
-				break;
-			case '\t':
-				do
-				{
-					text[y * LINE_WIDTH + x] = ( color << 8 ) | ' ';
-					x++;
-					if( x >= LINE_WIDTH )
-					{
-						Linefeed();
-						x = 0;
-					}
-				}
-				while( x & 3 );
-				break;
-			case '\r':
-				x = 0;
-				break;
-			default:	// display character and advance
-				text[y * LINE_WIDTH + x] = ( color << 8 ) | c;
-				x++;
-				if( x >= LINE_WIDTH )
-				{
-					Linefeed();
-					x = 0;
-				}
-				break;
-		}
-	}
-
-
-	// mark time for transparent overlay
-	if( current >= 0 )
-	{
-		times[current % NUM_CON_TIMES] = Sys_Milliseconds();
-	}
+	PumpThreadLines();
+	PrintInternal( text );
 }
 
 
@@ -1191,27 +1348,25 @@ Draw the editline after a ] prompt
 */
 void idConsoleLocal::DrawInput()
 {
-	int y, autoCompleteLength;
-
-	y = vislines - ( SMALLCHAR_HEIGHT * 2 );
+	const float charWidth = Con_ConsoleCharWidth();
+	const float lineHeight = Con_ConsoleLineHeight();
+	const int y = idMath::Ftoi( vislines - lineHeight * 2.0f );
 
 	if( consoleField.GetAutoCompleteLength() != 0 )
 	{
-		autoCompleteLength = strlen( consoleField.GetBuffer() ) - consoleField.GetAutoCompleteLength();
+		const int autoCompleteLength = strlen( consoleField.GetBuffer() ) - consoleField.GetAutoCompleteLength();
 
 		if( autoCompleteLength > 0 )
 		{
-			renderSystem->DrawFilled( idVec4( 0.8f, 0.2f, 0.2f, 0.45f ),
-									  LOCALSAFE_LEFT + 2 * SMALLCHAR_WIDTH + consoleField.GetAutoCompleteLength() * SMALLCHAR_WIDTH,
-									  y + 2, autoCompleteLength * SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT - 2 );
+			Con_DrawConsoleFilled( idVec4( 0.8f, 0.2f, 0.2f, 0.45f ),
+								   LOCALSAFE_LEFT + 2.0f * charWidth + consoleField.GetAutoCompleteLength() * charWidth,
+								   y + 2.0f, autoCompleteLength * charWidth, lineHeight - 2.0f );
 		}
 	}
 
-	renderSystem->SetColor( idStr::ColorForIndex( C_COLOR_CYAN ) );
-
-	renderSystem->DrawSmallChar( LOCALSAFE_LEFT + 1 * SMALLCHAR_WIDTH, y, ']' );
-
-	consoleField.Draw( LOCALSAFE_LEFT + 2 * SMALLCHAR_WIDTH, y, SCREEN_WIDTH - 3 * SMALLCHAR_WIDTH, true );
+	Con_DrawConsoleChar( LOCALSAFE_LEFT + charWidth, static_cast<float>( y ), ']', colorWhite );
+	consoleField.Draw( idMath::Ftoi( LOCALSAFE_LEFT + 2.0f * charWidth ), y,
+					   idMath::Ftoi( LOCALSAFE_WIDTH - 3.0f * charWidth ), true );
 }
 
 
@@ -1224,58 +1379,41 @@ Draws the last few lines of output transparently over the game top
 */
 void idConsoleLocal::DrawNotify()
 {
-	int		x, v;
-	short*	text_p;
-	int		i;
-	int		time;
-	int		currentColor;
-
 	if( con_noPrint.GetBool() )
 	{
 		return;
 	}
-
-	currentColor = idStr::ColorIndex( C_COLOR_WHITE );
-	renderSystem->SetColor( idStr::ColorForIndex( currentColor ) );
-
-	v = 0;
-	for( i = current - NUM_CON_TIMES + 1; i <= current; i++ )
+	const float charWidth = Con_ConsoleCharWidth();
+	const float lineHeight = Con_ConsoleLineHeight();
+	const int charactersWide = Max( 1, idMath::Ftoi( ( LOCALSAFE_WIDTH - charWidth ) / charWidth ) );
+	float y = 0.0f;
+	for( int lineNumber = current - NUM_CON_TIMES + 1; lineNumber <= current; ++lineNumber )
 	{
-		if( i < 0 )
+		if( lineNumber < 0 )
 		{
 			continue;
 		}
-		time = times[i % NUM_CON_TIMES];
-		if( time == 0 )
+		const int lineTime = times[lineNumber & ( NUM_CON_TIMES - 1 )];
+		if( lineTime == 0 || Sys_Milliseconds() - lineTime > con_notifyTime.GetFloat() * 1000.0f )
 		{
 			continue;
 		}
-		time = Sys_Milliseconds() - time;
-		if( time > con_notifyTime.GetFloat() * 1000 )
+		const idList< short >& line = textLines[lineNumber & ( CON_MAX_LINES - 1 )];
+		int column = 0;
+		for( int character = 0; character < line.Num(); ++character )
 		{
-			continue;
-		}
-		text_p = text + ( i % TOTAL_LINES ) * LINE_WIDTH;
-
-		for( x = 0; x < LINE_WIDTH; x++ )
-		{
-			if( ( text_p[x] & 0xff ) == ' ' )
+			if( column >= charactersWide )
 			{
-				continue;
+				column = 0;
+				y += lineHeight;
 			}
-			if( idStr::ColorIndex( text_p[x] >> 8 ) != currentColor )
-			{
-				currentColor = idStr::ColorIndex( text_p[x] >> 8 );
-				renderSystem->SetColor( idStr::ColorForIndex( currentColor ) );
-			}
-			int length = idStr::Length( va( "%c", text_p[x] & 0xff ) );
-			renderSystem->DrawSmallStringExt( LOCALSAFE_LEFT + ( x + 1 )*SMALLCHAR_WIDTH, v, va( "%c", text_p[x] & 0xff ), idStr::ColorForIndex( currentColor ), false, true, length );
+			const int glyph = line[character] & 0xff;
+			const idVec4& glyphColor = idStr::ColorForIndex( static_cast<char>( line[character] >> 8 ) );
+			Con_DrawConsoleChar( LOCALSAFE_LEFT + ( ++column ) * charWidth, y, glyph, glyphColor );
 		}
-
-		v += SMALLCHAR_HEIGHT;
+		y += lineHeight;
 	}
-
-	renderSystem->SetColor( colorCyan );
+	renderSystem->SetColor( colorWhite );
 }
 
 /*
@@ -1287,116 +1425,147 @@ Draws the console with the solid background
 */
 void idConsoleLocal::DrawSolidConsole( float frac )
 {
-	int				i, x;
-	float			y;
-	int				rows;
-	short*			text_p;
-	int				row;
-	int				lines;
-	int				currentColor;
-
-	lines = idMath::Ftoi( SCREEN_HEIGHT * frac );
+	int lines = idMath::Ftoi( SCREEN_HEIGHT * frac );
 	if( lines <= 0 )
 	{
 		return;
 	}
-
 	if( lines > SCREEN_HEIGHT )
 	{
 		lines = SCREEN_HEIGHT;
 	}
 
-	// draw the background
-	y = frac * SCREEN_HEIGHT - 2;
-	if( y < 1.0f )
+	float backgroundHeight = frac * SCREEN_HEIGHT;
+	if( backgroundHeight < 1.0f )
 	{
-		y = 0.0f;
+		backgroundHeight = 0.0f;
 	}
 	else
 	{
-		renderSystem->DrawFilled( idVec4( 0.0f, 0.0f, 0.0f, 0.75f ), 0, 0, SCREEN_WIDTH, y );
+		renderSystem->DrawFilled( idVec4( 0.0f, 0.0f, 0.0f, con_transparency.GetFloat() ),
+								  0.0f, 0.0f, SCREEN_WIDTH, backgroundHeight );
 	}
+	renderSystem->DrawFilled( colorOrange, 0.0f, backgroundHeight, SCREEN_WIDTH, 2.0f );
 
-	renderSystem->DrawFilled( colorCyan, 0, y, SCREEN_WIDTH, 2 );
-
-	// draw the version number
-
-	renderSystem->SetColor( idStr::ColorForIndex( C_COLOR_CYAN ) );
-
-	idStr version = va( "%s (Build:v%i.%i)", ENGINE_VERSION, BUILD_NUMBER, BUILD_NUMBER_MINOR );
-	i = version.Length();
-
-	for( x = 0; x < i; x++ )
+	const float charWidth = Con_ConsoleCharWidth();
+	const float lineHeight = Con_ConsoleLineHeight();
+	static int versionColorCounter = 0;
+	++versionColorCounter;
+	int colorStep = versionColorCounter % 360;
+	if( colorStep >= 180 )
 	{
-		renderSystem->DrawSmallChar( LOCALSAFE_WIDTH - ( i - x ) * SMALLCHAR_WIDTH,
-									 ( lines - ( SMALLCHAR_HEIGHT + SMALLCHAR_HEIGHT / 4 ) ), version[x] );
-
+		colorStep = 360 - colorStep;
 	}
+	const float pulse = colorStep / 180.0f;
+	idVec4 versionColor = idStr::ColorForIndex( C_COLOR_RED );
+	versionColor.x *= 0.75f + pulse * 0.25f;
+	versionColor.y *= 0.75f + pulse * 0.25f;
+	versionColor.z *= 0.75f + pulse * 0.25f;
 
+	const idStr version = va( "%s (Build:v%i.%i)", ENGINE_VERSION, BUILD_NUMBER, BUILD_NUMBER_MINOR );
+	Con_DrawConsoleString( LOCALSAFE_RIGHT - Con_ConsoleStringWidth( version.c_str() ) - 12, lines - lineHeight * 1.5f, version.c_str(), versionColor, true );
 
-	// draw the text
 	vislines = lines;
-	rows = ( lines - SMALLCHAR_WIDTH ) / SMALLCHAR_WIDTH;		// rows of text to draw
-
-	y = lines - ( SMALLCHAR_HEIGHT * 3 );
-
-	// draw from the bottom up
+	int rows = idMath::Ftoi( ( lines - lineHeight ) / lineHeight );
+	float y = lines - lineHeight * 3.0f;
+	const int charactersWide = Max( 1, idMath::Ftoi( ( LOCALSAFE_WIDTH - charWidth ) / charWidth ) );
 	if( display != current )
 	{
-		// draw arrows to show the buffer is backscrolled
-		renderSystem->SetColor( idStr::ColorForIndex( C_COLOR_CYAN ) );
-		for( x = 0; x < LINE_WIDTH; x += 4 )
+		for( int column = 0; column < charactersWide; column += 4 )
 		{
-			renderSystem->DrawSmallChar( LOCALSAFE_LEFT + ( x + 1 )*SMALLCHAR_WIDTH, idMath::Ftoi( y ), '^' );
+			Con_DrawConsoleChar( LOCALSAFE_LEFT + ( column + 1 ) * charWidth, y, '^', colorWhite );
 		}
-		y -= SMALLCHAR_HEIGHT;
-		rows--;
+		y -= lineHeight;
+		--rows;
 	}
 
-	row = display;
-
-	if( x == 0 )
+	int lineToDraw = display;
+	for( int row = 0; row < rows; ++row, --lineToDraw )
 	{
-		row--;
-	}
-
-	currentColor = idStr::ColorIndex( C_COLOR_WHITE );
-	renderSystem->SetColor( idStr::ColorForIndex( currentColor ) );
-
-	for( i = 0; i < rows; i++, y -= SMALLCHAR_HEIGHT, row-- )
-	{
-		if( row < 0 )
+		if( lineToDraw < 0 )
 		{
 			break;
 		}
-		if( current - row >= TOTAL_LINES )
+		if( current - lineToDraw >= CON_MAX_LINES )
 		{
-			// past scrollback wrap point
 			continue;
 		}
 
-		text_p = text + ( row % TOTAL_LINES ) * LINE_WIDTH;
-
-		for( x = 0; x < LINE_WIDTH; x++ )
+		const idList< short >& line = textLines[lineToDraw & ( CON_MAX_LINES - 1 )];
+		const idStr lineNumber = va( "%d", lineToDraw );
+		int column = 0;
+		for( int i = 0; i < lineNumber.Length(); ++i )
 		{
-			if( ( text_p[x] & 0xff ) == ' ' )
-			{
-				continue;
-			}
-
-			if( idStr::ColorIndex( text_p[x] >> 8 ) != currentColor )
-			{
-				currentColor = idStr::ColorIndex( text_p[x] >> 8 );
-				renderSystem->SetColor( idStr::ColorForIndex( currentColor ) );
-			}
-			renderSystem->DrawSmallChar( LOCALSAFE_LEFT + ( x + 1 )*SMALLCHAR_WIDTH, idMath::Ftoi( y ), text_p[x] & 0xff );
+			Con_DrawConsoleChar( LOCALSAFE_LEFT + ( ++column ) * charWidth, y,
+								 lineNumber[i], idStr::ColorForIndex( C_COLOR_GREEN ) );
 		}
+		const char* separator = " : ";
+		for( int i = 0; separator[i] != '\0'; ++i )
+		{
+			Con_DrawConsoleChar( LOCALSAFE_LEFT + ( ++column ) * charWidth, y,
+								 separator[i], idStr::ColorForIndex( C_COLOR_BLUE ) );
+		}
+		const int firstTextColumn = column;
+		int measureColumn = column;
+		int wraps = 0;
+		for( int character = 0; character < line.Num(); ++character )
+		{
+			if( measureColumn >= charactersWide )
+			{
+				measureColumn = firstTextColumn;
+				++wraps;
+			}
+			else if( ( line[character] & 0xff ) > ' ' &&
+					 ( character == 0 || ( line[character - 1] & 0xff ) <= ' ' ) )
+			{
+				int wordLength = 0;
+				while( character + wordLength < line.Num() &&
+						( line[character + wordLength] & 0xff ) > ' ' && wordLength < charactersWide )
+				{
+					++wordLength;
+				}
+				if( wordLength < charactersWide && measureColumn + wordLength >= charactersWide )
+				{
+					measureColumn = firstTextColumn;
+					++wraps;
+				}
+			}
+			++measureColumn;
+		}
+
+		float drawY = y - wraps * lineHeight;
+		column = firstTextColumn;
+		for( int character = 0; character < line.Num(); ++character )
+		{
+			if( column >= charactersWide )
+			{
+				column = firstTextColumn;
+				drawY += lineHeight;
+			}
+			else if( ( line[character] & 0xff ) > ' ' &&
+					 ( character == 0 || ( line[character - 1] & 0xff ) <= ' ' ) )
+			{
+				int wordLength = 0;
+				while( character + wordLength < line.Num() &&
+						( line[character + wordLength] & 0xff ) > ' ' && wordLength < charactersWide )
+				{
+					++wordLength;
+				}
+				if( wordLength < charactersWide && column + wordLength >= charactersWide )
+				{
+					column = firstTextColumn;
+					drawY += lineHeight;
+				}
+			}
+			Con_DrawConsoleChar( LOCALSAFE_LEFT + ( ++column ) * charWidth, drawY,
+								 line[character] & 0xff, idStr::ColorForIndex( static_cast<char>( line[character] >> 8 ) ) );
+		}
+		y = drawY - ( wraps + 1 ) * lineHeight;
+		rows -= wraps;
 	}
 
-	// draw the input prompt, user text, and cursor if desired
 	DrawInput();
-
-	renderSystem->SetColor( colorCyan );
+	renderSystem->SetColor( colorWhite );
 }
 
 
@@ -1407,8 +1576,12 @@ Draw
 ForceFullScreen is used by the editor
 ==============
 */
-void idConsoleLocal::Draw( bool forceFullScreen )
+void idConsoleLocal::Draw( bool forceFullScreen, bool skipNotifyLines )
 {
+	PumpThreadLines();
+	UpdateScreenLayout();
+	LINE_WIDTH = Max( 1, idMath::Ftoi( LOCALSAFE_WIDTH / Con_ConsoleCharWidth() ) - 2 );
+	consoleField.SetWidthInChars( LINE_WIDTH );
 	if( forceFullScreen )
 	{
 		// if we are forced full screen because of a disconnect,
@@ -1434,7 +1607,7 @@ void idConsoleLocal::Draw( bool forceFullScreen )
 	{
 		// only draw the notify lines if the developer cvar is set,
 		// or we are a debug build
-		if( !con_noPrint.GetBool() )
+		if( !con_noPrint.GetBool() && !skipNotifyLines )
 		{
 			DrawNotify();
 		}
@@ -1460,7 +1633,7 @@ void idConsoleLocal::Draw( bool forceFullScreen )
 idConsoleLocal::PrintOverlay
 ========================
 */
-void idConsoleLocal::PrintOverlay( idOverlayHandle& handle, justify_t justify, VERIFY_FORMAT_STRING const char* text, idVec4& textColor, bool showbackground, textSize_t size, ... )
+void idConsoleLocal::PrintOverlay( idOverlayHandle& handle, justify_t justify, VERIFY_FORMAT_STRING const char* text, idVec4& textColor, bool showbackground, ... )
 {
 	if( handle.index >= 0 && handle.index < overlayText.Num() )
 	{
@@ -1472,7 +1645,7 @@ void idConsoleLocal::PrintOverlay( idOverlayHandle& handle, justify_t justify, V
 
 	char string[MAX_PRINT_MSG];
 	va_list argptr;
-	va_start( argptr, size );
+	va_start( argptr, showbackground );
 	idStr::vsnPrintf( string, sizeof( string ), text, argptr );
 	va_end( argptr );
 
@@ -1480,7 +1653,6 @@ void idConsoleLocal::PrintOverlay( idOverlayHandle& handle, justify_t justify, V
 	overlay.text = string;
 	overlay.textColor = textColor;
 	overlay.justify = justify;
-	overlay.size = size;
 	overlay.time = Sys_Milliseconds();
 	overlay.showbackground = showbackground;
 
@@ -1515,25 +1687,25 @@ void idConsoleLocal::DrawOverlayText( float& leftY, float& rightY, float& center
 			}
 		}
 
-		const float width = maxWidth * SMALLCHAR_WIDTH;
-		const float height = numLines * ( SMALLCHAR_HEIGHT + 4 );
+		const float width = maxWidth * Con_ConsoleCharWidth();
+		const float height = numLines * ( Con_ConsoleLineHeight() + 4.0f );
 
 		if( overlayText[i].showbackground )
 		{
 			idVec4 bgColor( 0.0f, 0.0f, 0.0f, 0.75f );
 
-			const float bgAdjust = - 0.5f * SMALLCHAR_WIDTH;
+			const float bgAdjust = -0.5f * Con_ConsoleCharWidth();
 			if( overlayText[i].justify == JUSTIFY_LEFT )
 			{
-				renderSystem->DrawFilled( bgColor, LOCALSAFE_LEFT + bgAdjust, leftY, width, height );
+				Con_DrawConsoleFilled( bgColor, LOCALSAFE_LEFT + bgAdjust, leftY, width, height );
 			}
 			else if( overlayText[i].justify == JUSTIFY_RIGHT )
 			{
-				renderSystem->DrawFilled( bgColor, LOCALSAFE_RIGHT - width + bgAdjust, rightY, width, height );
+				Con_DrawConsoleFilled( bgColor, LOCALSAFE_RIGHT - width + bgAdjust, rightY, width, height );
 			}
 			else if( overlayText[i].justify == JUSTIFY_CENTER_LEFT || overlayText[i].justify == JUSTIFY_CENTER_RIGHT )
 			{
-				renderSystem->DrawFilled( bgColor, LOCALSAFE_LEFT + ( LOCALSAFE_WIDTH - width + bgAdjust ) * 0.5f, centerY, width, height );
+				Con_DrawConsoleFilled( bgColor, LOCALSAFE_LEFT + ( LOCALSAFE_WIDTH - width + bgAdjust ) * 0.5f, centerY, width, height );
 			}
 			else
 			{
@@ -1549,55 +1721,58 @@ void idConsoleLocal::DrawOverlayText( float& leftY, float& rightY, float& center
 			{
 				singleLine.Append( text[k] );
 			}
-			if( overlayText[i].size == TEXTSIZE_SMALL )
+			if( overlayText[i].justify == JUSTIFY_LEFT )
 			{
-				if( overlayText[i].justify == JUSTIFY_LEFT )
-				{
-					DrawTextSmallLeftAlign( LOCALSAFE_LEFT, leftY, overlayText[i].textColor, "%s", singleLine.c_str() );
-				}
-				else if( overlayText[i].justify == JUSTIFY_RIGHT )
-				{
-					DrawTextSmallRightAlign( LOCALSAFE_RIGHT, rightY, overlayText[i].textColor, "%s", singleLine.c_str() );
-				}
-				else if( overlayText[i].justify == JUSTIFY_CENTER_LEFT )
-				{
-					DrawTextSmallLeftAlign( LOCALSAFE_LEFT + ( LOCALSAFE_WIDTH - width ) * 0.5f, centerY, overlayText[i].textColor, "%s", singleLine.c_str() );
-				}
-				else if( overlayText[i].justify == JUSTIFY_CENTER_RIGHT )
-				{
-					DrawTextSmallRightAlign( LOCALSAFE_LEFT + ( LOCALSAFE_WIDTH + width ) * 0.5f, centerY, overlayText[i].textColor, "%s", singleLine.c_str() );
-				}
-				else
-				{
-					assert( false );
-				}
+				DrawTextLeftAlign( LOCALSAFE_LEFT, leftY, overlayText[i].textColor, "%s", singleLine.c_str() );
+			}
+			else if( overlayText[i].justify == JUSTIFY_RIGHT )
+			{
+				DrawTextRightAlign( LOCALSAFE_RIGHT, rightY, overlayText[i].textColor, "%s", singleLine.c_str() );
+			}
+			else if( overlayText[i].justify == JUSTIFY_CENTER_LEFT )
+			{
+				DrawTextLeftAlign( LOCALSAFE_LEFT + ( LOCALSAFE_WIDTH - width ) * 0.5f, centerY, overlayText[i].textColor, "%s", singleLine.c_str() );
+			}
+			else if( overlayText[i].justify == JUSTIFY_CENTER_RIGHT )
+			{
+				DrawTextRightAlign( LOCALSAFE_LEFT + ( LOCALSAFE_WIDTH + width ) * 0.5f, centerY, overlayText[i].textColor, "%s", singleLine.c_str() );
 			}
 			else
 			{
-				if( overlayText[i].justify == JUSTIFY_LEFT )
-				{
-					DrawTextBigLeftAlign( LOCALSAFE_LEFT, leftY, overlayText[i].textColor, "%s", singleLine.c_str() );
-				}
-				else if( overlayText[i].justify == JUSTIFY_RIGHT )
-				{
-					DrawTextBigRightAlign( LOCALSAFE_RIGHT, rightY, overlayText[i].textColor, "%s", singleLine.c_str() );
-				}
-				else if( overlayText[i].justify == JUSTIFY_CENTER_LEFT )
-				{
-					DrawTextBigLeftAlign( LOCALSAFE_LEFT + ( LOCALSAFE_WIDTH - width ) * 0.5f, centerY, overlayText[i].textColor, "%s", singleLine.c_str() );
-				}
-				else if( overlayText[i].justify == JUSTIFY_CENTER_RIGHT )
-				{
-					DrawTextBigRightAlign( LOCALSAFE_LEFT + ( LOCALSAFE_WIDTH + width ) * 0.5f, centerY, overlayText[i].textColor, "%s", singleLine.c_str() );
-				}
-				else
-				{
-					assert( false );
-				}
+				assert( false );
 			}
 		}
 	}
+
 	overlayText.SetNum( 0 );
+
+	consoleWatchResults.Clear();
+	for( int watchIndex = 0; watchIndex < consoleWatchList.Num(); ++watchIndex )
+	{
+		idConsoleWatch& watch = consoleWatchList[watchIndex];
+		watchText.Clear();
+		captureWatchText = true;
+		cmdSystem->ExecuteCommandText( watch.watchString.c_str() );
+		captureWatchText = false;
+		if( !watchText.IsEmpty() )
+		{
+			watchText.StripTrailingWhitespace();
+			consoleWatchResults.Append( watchText );
+			watchText.Clear();
+		}
+		const float drawX = watch.drawX >= 0 ? static_cast<float>( watch.drawX ) : LOCALSAFE_LEFT;
+		float drawY = watch.drawY >= 0 ? static_cast<float>( watch.drawY ) : leftY;
+		for( int result = 0; result < consoleWatchResults.Num(); ++result )
+		{
+			Con_DrawConsoleString( drawX, drawY + 2.0f, consoleWatchResults[result].c_str(), colorWhite, false );
+			drawY += Con_ConsoleLineHeight() + 4.0f;
+		}
+		if( watch.drawY < 0 )
+		{
+			leftY = drawY;
+		}
+		consoleWatchResults.Clear();
+	}
 }
 
 /*

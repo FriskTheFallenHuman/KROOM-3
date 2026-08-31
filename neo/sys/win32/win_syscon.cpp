@@ -261,7 +261,9 @@ LONG WINAPI InputLineWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		case WM_CHAR:
 			key = ( ( lParam >> 16 ) & 0xFF ) | ( ( ( lParam >> 24 ) & 1 ) << 7 );
 
-			GetWindowText( s_wcd.hwndInputLine, s_wcd.consoleField.GetBuffer(), MAX_EDIT_LINE );
+			char inputBuffer[MAX_EDIT_LINE];
+			GetWindowText( s_wcd.hwndInputLine, inputBuffer, MAX_EDIT_LINE );
+			s_wcd.consoleField.SetBuffer( inputBuffer );
 			SendMessage( s_wcd.hwndInputLine, EM_GETSEL, ( WPARAM ) NULL, ( LPARAM ) &cursor );
 			s_wcd.consoleField.SetCursor( cursor );
 

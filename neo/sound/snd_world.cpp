@@ -503,7 +503,7 @@ void idSoundWorldLocal::Update()
 	}
 	if( showVoices )
 	{
-		CREATE_OVERLAY( voiceHandle, showVoiceTable.c_str(), JUSTIFY_LEFT, colorWhite, TEXTSIZE_LARGE, false );
+		CREATE_OVERLAY( voiceHandle, showVoiceTable.c_str(), JUSTIFY_LEFT, colorWhite, false );
 	}
 
 	if( s_drawSounds.GetBool() && renderWorld != NULL )

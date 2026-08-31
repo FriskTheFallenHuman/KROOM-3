@@ -29,96 +29,72 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
-static autoComplete_t	globalAutoComplete;
+static idAutoComplete* completionTarget = NULL;
+static idStr completionPrefix;
 
 /*
 ===============
-FindMatches
+CollectCompletion
 ===============
 */
-static void FindMatches( const char* s )
+static void CollectCompletion( const char* text )
 {
-	int		i;
-
-	if( idStr::Icmpn( s, globalAutoComplete.completionString, strlen( globalAutoComplete.completionString ) ) != 0 )
+	if( completionTarget == NULL || text == NULL )
 	{
 		return;
 	}
-	globalAutoComplete.matchCount++;
-	if( globalAutoComplete.matchCount == 1 )
-	{
-		idStr::Copynz( globalAutoComplete.currentMatch, s, sizeof( globalAutoComplete.currentMatch ) );
-		return;
-	}
-
-	// cut currentMatch to the amount common with s
-	for( i = 0; s[i]; i++ )
-	{
-		if( tolower( globalAutoComplete.currentMatch[i] ) != tolower( s[i] ) )
-		{
-			globalAutoComplete.currentMatch[i] = 0;
-			break;
-		}
-	}
-	globalAutoComplete.currentMatch[i] = 0;
-}
-
-/*
-===============
-FindIndexMatch
-===============
-*/
-static void FindIndexMatch( const char* s )
-{
-
-	if( idStr::Icmpn( s, globalAutoComplete.completionString, strlen( globalAutoComplete.completionString ) ) != 0 )
+	if( completionPrefix.Length() != 0 && idStr::Icmpn( text, completionPrefix, completionPrefix.Length() ) != 0 )
 	{
 		return;
 	}
-
-	if( globalAutoComplete.findMatchIndex == globalAutoComplete.matchIndex )
-	{
-		idStr::Copynz( globalAutoComplete.currentMatch, s, sizeof( globalAutoComplete.currentMatch ) );
-	}
-
-	globalAutoComplete.findMatchIndex++;
+	completionTarget->Append( text );
 }
 
-/*
-===============
-PrintMatches
-===============
-*/
-static void PrintMatches( const char* s )
-{
-	if( idStr::Icmpn( s, globalAutoComplete.currentMatch, strlen( globalAutoComplete.currentMatch ) ) == 0 )
-	{
-		common->Printf( "    %s\n", s );
-	}
-}
-
-/*
-===============
-PrintCvarMatches
-===============
-*/
-static void PrintCvarMatches( const char* s )
-{
-	if( idStr::Icmpn( s, globalAutoComplete.currentMatch, strlen( globalAutoComplete.currentMatch ) ) == 0 )
-	{
-		common->Printf( "    %s" S_COLOR_WHITE " = \"%s\"\n", s, cvarSystem->GetCVarString( s ) );
-	}
-}
 
 /*
 ===============
 idEditField::idEditField
 ===============
 */
-idEditField::idEditField()
+idEditField::idEditField() : cursor( 0 ), scroll( 0 ), widthInChars( 0 )
 {
-	widthInChars = 0;
 	Clear();
+}
+
+/*
+===============
+idEditField::idEditField
+
+Autocomplete owns parsed command arguments whose argv entries point back into
+the owning object. History entries only need the editable text and cursor
+state, so rebuild autocomplete on demand instead of copying those pointers.
+===============
+*/
+idEditField::idEditField( const idEditField& other ) :
+	cursor( other.cursor ),
+	scroll( other.scroll ),
+	widthInChars( other.widthInChars ),
+	buffer( other.buffer )
+{
+	autoComplete.Clear();
+}
+
+/*
+===============
+idEditField::operator=
+===============
+*/
+idEditField& idEditField::operator=( const idEditField& other )
+{
+	if( this != &other )
+	{
+		cursor = other.cursor;
+		scroll = other.scroll;
+		widthInChars = other.widthInChars;
+		buffer = other.buffer;
+		autoComplete.Clear();
+	}
+	return *this;
 }
 
 /*
@@ -137,11 +113,10 @@ idEditField::Clear
 */
 void idEditField::Clear()
 {
-	buffer[0] = 0;
+	buffer.Clear();
 	cursor = 0;
 	scroll = 0;
-	autoComplete.length = 0;
-	autoComplete.valid = false;
+	autoComplete.Clear();
 }
 
 /*
@@ -149,10 +124,10 @@ void idEditField::Clear()
 idEditField::SetWidthInChars
 ===============
 */
-void idEditField::SetWidthInChars( int w )
+void idEditField::SetWidthInChars( int width )
 {
-	assert( w <= MAX_EDIT_LINE );
-	widthInChars = w;
+	widthInChars = Max( 1, width );
+	MakeCursorVisible();
 }
 
 /*
@@ -160,10 +135,10 @@ void idEditField::SetWidthInChars( int w )
 idEditField::SetCursor
 ===============
 */
-void idEditField::SetCursor( int c )
+void idEditField::SetCursor( int position )
 {
-	assert( c <= MAX_EDIT_LINE );
-	cursor = c;
+	cursor = idMath::ClampInt( 0, buffer.Length(), position );
+	MakeCursorVisible();
 }
 
 /*
@@ -178,21 +153,73 @@ int idEditField::GetCursor() const
 
 /*
 ===============
+idEditField::Erase
+===============
+*/
+void idEditField::Erase( int start, int count )
+{
+	if( count <= 0 || start < 0 || start >= buffer.Length() )
+	{
+		return;
+	}
+	const int end = Min( buffer.Length(), start + count );
+	idStr result( buffer, 0, start );
+	result.Append( buffer.c_str() + end );
+	buffer = result;
+}
+
+/*
+===============
+idEditField::MakeCursorVisible
+===============
+*/
+void idEditField::MakeCursorVisible()
+{
+	if( cursor < scroll )
+	{
+		scroll = cursor;
+	}
+	if( cursor >= scroll + widthInChars )
+	{
+		scroll = cursor - widthInChars + 1;
+	}
+	if( scroll < 0 )
+	{
+		scroll = 0;
+	}
+}
+
+/*
+===============
 idEditField::ClearAutoComplete
 ===============
 */
 void idEditField::ClearAutoComplete()
 {
-	if( autoComplete.length > 0 && autoComplete.length <= ( int ) strlen( buffer ) )
+	if( autoComplete.matchLength > 0 && autoComplete.matchLength <= buffer.Length() )
 	{
-		buffer[autoComplete.length] = '\0';
-		if( cursor > autoComplete.length )
-		{
-			cursor = autoComplete.length;
-		}
+		buffer.CapLength( autoComplete.matchLength );
+		cursor = Min( cursor, buffer.Length() );
 	}
-	autoComplete.length = 0;
-	autoComplete.valid = false;
+	autoComplete.Clear();
+	MakeCursorVisible();
+}
+
+/*
+===============
+idEditField::AcceptAutoComplete
+===============
+*/
+bool idEditField::AcceptAutoComplete()
+{
+	if( autoComplete.NumSuggestions() == 0 || autoComplete.matchLength <= 0 )
+	{
+		return false;
+	}
+	autoComplete.Clear();
+	cursor = buffer.Length();
+	MakeCursorVisible();
+	return true;
 }
 
 /*
@@ -202,7 +229,7 @@ idEditField::GetAutoCompleteLength
 */
 int idEditField::GetAutoCompleteLength() const
 {
-	return autoComplete.length;
+	return autoComplete.matchLength;
 }
 
 /*
@@ -210,119 +237,61 @@ int idEditField::GetAutoCompleteLength() const
 idEditField::AutoComplete
 ===============
 */
-void idEditField::AutoComplete()
+void idEditField::AutoComplete( bool reverseOrder )
 {
-	char completionArgString[MAX_EDIT_LINE];
-	idCmdArgs args;
-
-	if( !autoComplete.valid )
+	if( autoComplete.NumSuggestions() == 0 )
 	{
-		args.TokenizeString( buffer, false );
-		idStr::Copynz( autoComplete.completionString, args.Argv( 0 ), sizeof( autoComplete.completionString ) );
-		idStr::Copynz( completionArgString, args.Args(), sizeof( completionArgString ) );
-		autoComplete.matchCount = 0;
-		autoComplete.matchIndex = 0;
-		autoComplete.currentMatch[0] = 0;
-
-		if( strlen( autoComplete.completionString ) == 0 )
+		autoComplete.Clear();
+		autoComplete.args.TokenizeString( buffer.c_str(), false );
+		if( autoComplete.args.Argc() == 0 )
 		{
 			return;
 		}
 
-		globalAutoComplete = autoComplete;
+		autoComplete.matchLength = buffer.Length();
+		completionTarget = &autoComplete;
+		completionPrefix = buffer;
 
-		cmdSystem->CommandCompletion( FindMatches );
-		cvarSystem->CommandCompletion( FindMatches );
-
-		autoComplete = globalAutoComplete;
-
-		if( autoComplete.matchCount == 0 )
+		const bool completingArgument = strchr( buffer.c_str(), ' ' ) != NULL;
+		if( completingArgument )
 		{
-			return;	// no matches
-		}
-
-		// when there's only one match or there's an argument
-		if( autoComplete.matchCount == 1 || completionArgString[0] != '\0' )
-		{
-
-			/// try completing arguments
-			idStr::Append( autoComplete.completionString, sizeof( autoComplete.completionString ), " " );
-			idStr::Append( autoComplete.completionString, sizeof( autoComplete.completionString ), completionArgString );
-			autoComplete.matchCount = 0;
-
-			globalAutoComplete = autoComplete;
-
-			cmdSystem->ArgCompletion( autoComplete.completionString, FindMatches );
-			cvarSystem->ArgCompletion( autoComplete.completionString, FindMatches );
-
-			autoComplete = globalAutoComplete;
-
-			idStr::snPrintf( buffer, sizeof( buffer ), "%s", autoComplete.currentMatch );
-
-			if( autoComplete.matchCount == 0 )
-			{
-				// no argument matches
-				idStr::Append( buffer, sizeof( buffer ), " " );
-				idStr::Append( buffer, sizeof( buffer ), completionArgString );
-				SetCursor( strlen( buffer ) );
-				return;
-			}
+			cmdSystem->ArgCompletion( buffer.c_str(), CollectCompletion );
+			cvarSystem->ArgCompletion( buffer.c_str(), CollectCompletion );
 		}
 		else
 		{
-
-			// multiple matches, complete to shortest
-			idStr::snPrintf( buffer, sizeof( buffer ), "%s", autoComplete.currentMatch );
-			if( strlen( completionArgString ) )
-			{
-				idStr::Append( buffer, sizeof( buffer ), " " );
-				idStr::Append( buffer, sizeof( buffer ), completionArgString );
-			}
+			cmdSystem->CommandCompletion( CollectCompletion );
+			cvarSystem->CommandCompletion( CollectCompletion );
 		}
 
-		autoComplete.length = strlen( buffer );
-		autoComplete.valid = ( autoComplete.matchCount != 1 );
-		SetCursor( autoComplete.length );
+		completionTarget = NULL;
+		completionPrefix.Clear();
+		if( autoComplete.NumSuggestions() == 0 )
+		{
+			autoComplete.Clear();
+			return;
+		}
 
-		common->Printf( "]%s\n", buffer );
-
-		// run through again, printing matches
-		globalAutoComplete = autoComplete;
-
-		cmdSystem->CommandCompletion( PrintMatches );
-		cmdSystem->ArgCompletion( autoComplete.completionString, PrintMatches );
-		cvarSystem->CommandCompletion( PrintCvarMatches );
-		cvarSystem->ArgCompletion( autoComplete.completionString, PrintMatches );
-
+		common->Printf( "]%s\n", buffer.c_str() );
+		for( int i = 0; i < autoComplete.NumSuggestions(); ++i )
+		{
+			common->Printf( "    %s\n", autoComplete.GetSuggestion( i ).c_str() );
+		}
+		autoComplete.currentIndex = reverseOrder ? autoComplete.NumSuggestions() - 1 : 0;
 	}
-	else if( autoComplete.matchCount != 1 )
+	else
 	{
-
-		// get the next match and show instead
-		autoComplete.matchIndex++;
-		if( autoComplete.matchIndex == autoComplete.matchCount )
-		{
-			autoComplete.matchIndex = 0;
-		}
-		autoComplete.findMatchIndex = 0;
-
-		globalAutoComplete = autoComplete;
-
-		cmdSystem->CommandCompletion( FindIndexMatch );
-		cmdSystem->ArgCompletion( autoComplete.completionString, FindIndexMatch );
-		cvarSystem->CommandCompletion( FindIndexMatch );
-		cvarSystem->ArgCompletion( autoComplete.completionString, FindIndexMatch );
-
-		autoComplete = globalAutoComplete;
-
-		// and print it
-		idStr::snPrintf( buffer, sizeof( buffer ), autoComplete.currentMatch );
-		if( autoComplete.length > ( int )strlen( buffer ) )
-		{
-			autoComplete.length = strlen( buffer );
-		}
-		SetCursor( autoComplete.length );
+		const int count = autoComplete.NumSuggestions();
+		autoComplete.currentIndex = ( autoComplete.currentIndex + ( reverseOrder ? count - 1 : 1 ) ) % count;
 	}
+
+	buffer = autoComplete.GetSuggestion( autoComplete.currentIndex );
+	if( autoComplete.NumSuggestions() == 1 && strchr( buffer.c_str(), ' ' ) == NULL )
+	{
+		buffer.Append( ' ' );
+	}
+	cursor = autoComplete.matchLength;
+	MakeCursorVisible();
 }
 
 /*
@@ -330,90 +299,62 @@ void idEditField::AutoComplete()
 idEditField::CharEvent
 ===============
 */
-void idEditField::CharEvent( int ch )
+void idEditField::CharEvent( int character )
 {
-	int		len;
-
-	if( ch == 'v' - 'a' + 1 )  	// ctrl-v is paste
+	if( character == 'v' - 'a' + 1 )
 	{
+		ClearAutoComplete();
 		Paste();
 		return;
 	}
-
-	if( ch == 'c' - 'a' + 1 )  	// ctrl-c clears the field
+	if( character == 'c' - 'a' + 1 )
 	{
 		Clear();
 		return;
 	}
-
-	len = strlen( buffer );
-
-	if( ch == 'h' - 'a' + 1 || ch == K_BACKSPACE )  	// ctrl-h is backspace
+	if( character == 'a' - 'a' + 1 )
 	{
+		SetCursor( 0 );
+		return;
+	}
+	if( character == 'e' - 'a' + 1 )
+	{
+		SetCursor( buffer.Length() );
+		return;
+	}
+	if( character == 'k' - 'a' + 1 )
+	{
+		ClearAutoComplete();
+		buffer.CapLength( cursor );
+		return;
+	}
+	if( character == 'h' - 'a' + 1 || character == K_BACKSPACE )
+	{
+		ClearAutoComplete();
 		if( cursor > 0 )
 		{
-			memmove( buffer + cursor - 1, buffer + cursor, len + 1 - cursor );
-			cursor--;
-			if( cursor < scroll )
-			{
-				scroll--;
-			}
+			Erase( cursor - 1, 1 );
+			--cursor;
+			MakeCursorVisible();
 		}
 		return;
 	}
-
-	if( ch == 'a' - 'a' + 1 )  	// ctrl-a is home
-	{
-		cursor = 0;
-		scroll = 0;
-		return;
-	}
-
-	if( ch == 'e' - 'a' + 1 )  	// ctrl-e is end
-	{
-		cursor = len;
-		scroll = cursor - widthInChars;
-		return;
-	}
-
-	//
-	// ignore any other non printable chars
-	//
-	if( ch < 32 )
+	if( character < 32 )
 	{
 		return;
 	}
 
-	if( idKeyInput::GetOverstrikeMode() )
+	ClearAutoComplete();
+	if( idKeyInput::GetOverstrikeMode() && cursor < buffer.Length() )
 	{
-		if( cursor == MAX_EDIT_LINE - 1 )
-		{
-			return;
-		}
-		buffer[cursor] = ch;
-		cursor++;
+		buffer[cursor] = static_cast<char>( character );
 	}
-	else  	// insert mode
+	else
 	{
-		if( len == MAX_EDIT_LINE - 1 )
-		{
-			return; // all full
-		}
-		memmove( buffer + cursor + 1, buffer + cursor, len + 1 - cursor );
-		buffer[cursor] = ch;
-		cursor++;
+		buffer.Insert( static_cast<char>( character ), cursor );
 	}
-
-
-	if( cursor >= widthInChars )
-	{
-		scroll++;
-	}
-
-	if( cursor == len + 1 )
-	{
-		buffer[cursor] = 0;
-	}
+	++cursor;
+	MakeCursorVisible();
 }
 
 /*
@@ -423,139 +364,88 @@ idEditField::KeyDownEvent
 */
 void idEditField::KeyDownEvent( int key )
 {
-	int		len;
+	const bool control = idKeyInput::IsDown( K_LCTRL ) || idKeyInput::IsDown( K_RCTRL );
+	const bool shift = idKeyInput::IsDown( K_LSHIFT ) || idKeyInput::IsDown( K_RSHIFT );
 
-	// shift-insert is paste
-	if( ( ( key == K_INS ) || ( key == K_KP_0 ) ) && ( idKeyInput::IsDown( K_LSHIFT ) || idKeyInput::IsDown( K_RSHIFT ) ) )
+	if( ( key == K_INS || key == K_KP_0 ) && shift )
 	{
 		ClearAutoComplete();
 		Paste();
 		return;
 	}
-
-	len = strlen( buffer );
-
 	if( key == K_DEL )
 	{
-		if( autoComplete.length )
+		if( autoComplete.NumSuggestions() != 0 )
 		{
 			ClearAutoComplete();
 		}
-		else if( cursor < len )
+		else
 		{
-			memmove( buffer + cursor, buffer + cursor + 1, len - cursor );
+			Erase( cursor, 1 );
 		}
 		return;
 	}
-
 	if( key == K_RIGHTARROW )
 	{
-		if( idKeyInput::IsDown( K_LCTRL ) || idKeyInput::IsDown( K_RCTRL ) )
+		AcceptAutoComplete();
+		if( control )
 		{
-			// skip to next word
-			while( ( cursor < len ) && ( buffer[ cursor ] != ' ' ) )
+			while( cursor < buffer.Length() && buffer[cursor] != ' ' )
 			{
-				cursor++;
+				++cursor;
 			}
-
-			while( ( cursor < len ) && ( buffer[ cursor ] == ' ' ) )
+			while( cursor < buffer.Length() && buffer[cursor] == ' ' )
 			{
-				cursor++;
+				++cursor;
 			}
 		}
-		else
+		else if( cursor < buffer.Length() )
 		{
-			cursor++;
+			++cursor;
 		}
-
-		if( cursor > len )
-		{
-			cursor = len;
-		}
-
-		if( cursor >= scroll + widthInChars )
-		{
-			scroll = cursor - widthInChars + 1;
-		}
-
-		if( autoComplete.length > 0 )
-		{
-			autoComplete.length = cursor;
-		}
+		MakeCursorVisible();
 		return;
 	}
-
 	if( key == K_LEFTARROW )
 	{
-		if( idKeyInput::IsDown( K_LCTRL ) || idKeyInput::IsDown( K_RCTRL ) )
+		ClearAutoComplete();
+		if( control )
 		{
-			// skip to previous word
-			while( ( cursor > 0 ) && ( buffer[ cursor - 1 ] == ' ' ) )
+			while( cursor > 0 && buffer[cursor - 1] == ' ' )
 			{
-				cursor--;
+				--cursor;
 			}
-
-			while( ( cursor > 0 ) && ( buffer[ cursor - 1 ] != ' ' ) )
+			while( cursor > 0 && buffer[cursor - 1] != ' ' )
 			{
-				cursor--;
+				--cursor;
 			}
 		}
-		else
+		else if( cursor > 0 )
 		{
-			cursor--;
+			--cursor;
 		}
-
-		if( cursor < 0 )
-		{
-			cursor = 0;
-		}
-		if( cursor < scroll )
-		{
-			scroll = cursor;
-		}
-
-		if( autoComplete.length )
-		{
-			autoComplete.length = cursor;
-		}
+		MakeCursorVisible();
 		return;
 	}
-
-	if( key == K_HOME || ( key == K_A && ( idKeyInput::IsDown( K_LCTRL ) || idKeyInput::IsDown( K_RCTRL ) ) ) )
+	if( key == K_HOME || ( key == K_A && control ) )
 	{
-		cursor = 0;
-		scroll = 0;
-		if( autoComplete.length )
-		{
-			autoComplete.length = cursor;
-			autoComplete.valid = false;
-		}
+		ClearAutoComplete();
+		SetCursor( 0 );
 		return;
 	}
-
-	if( key == K_END || ( key == K_E && ( idKeyInput::IsDown( K_LCTRL ) || idKeyInput::IsDown( K_RCTRL ) ) ) )
+	if( key == K_END || ( key == K_E && control ) )
 	{
-		cursor = len;
-		if( cursor >= scroll + widthInChars )
-		{
-			scroll = cursor - widthInChars + 1;
-		}
-		if( autoComplete.length )
-		{
-			autoComplete.length = cursor;
-			autoComplete.valid = false;
-		}
+		AcceptAutoComplete();
+		SetCursor( buffer.Length() );
 		return;
 	}
-
 	if( key == K_INS )
 	{
 		idKeyInput::SetOverstrikeMode( !idKeyInput::GetOverstrikeMode() );
 		return;
 	}
-
-	// clear autocompletion buffer on normal key input
-	if( key != K_CAPSLOCK && key != K_LALT && key != K_LCTRL && key != K_LSHIFT && key != K_RALT && key != K_RCTRL && key != K_RSHIFT )
+	if( key != K_CAPSLOCK && key != K_LALT && key != K_LCTRL && key != K_LSHIFT &&
+			key != K_RALT && key != K_RCTRL && key != K_RSHIFT )
 	{
 		ClearAutoComplete();
 	}
@@ -568,24 +458,16 @@ idEditField::Paste
 */
 void idEditField::Paste()
 {
-	char*	cbd;
-	int		pasteLen, i;
-
-	cbd = Sys_GetClipboardData();
-
-	if( !cbd )
+	char* clipboard = Sys_GetClipboardData();
+	if( clipboard == NULL )
 	{
 		return;
 	}
-
-	// send as if typed, so insert / overstrike works properly
-	pasteLen = strlen( cbd );
-	for( i = 0; i < pasteLen; i++ )
+	for( const char* text = clipboard; *text != '\0'; ++text )
 	{
-		CharEvent( cbd[i] );
+		CharEvent( static_cast<unsigned char>( *text ) );
 	}
-
-	Mem_Free( cbd );
+	Mem_Free( clipboard );
 }
 
 /*
@@ -593,9 +475,9 @@ void idEditField::Paste()
 idEditField::GetBuffer
 ===============
 */
-char* idEditField::GetBuffer()
+const char* idEditField::GetBuffer() const
 {
-	return buffer;
+	return buffer.c_str();
 }
 
 /*
@@ -603,11 +485,12 @@ char* idEditField::GetBuffer()
 idEditField::SetBuffer
 ===============
 */
-void idEditField::SetBuffer( const char* buf )
+void idEditField::SetBuffer( const char* text )
 {
-	Clear();
-	idStr::Copynz( buffer, buf, sizeof( buffer ) );
-	SetCursor( strlen( buffer ) );
+	buffer = text != NULL ? text : "";
+	autoComplete.Clear();
+	cursor = buffer.Length();
+	MakeCursorVisible();
 }
 
 /*
@@ -617,92 +500,18 @@ idEditField::Draw
 */
 void idEditField::Draw( int x, int y, int width, bool showCursor )
 {
-	int		len;
-	int		drawLen;
-	int		prestep;
-	int		cursorChar;
-	char	str[MAX_EDIT_LINE];
-	int		size;
+	const int drawChars = Max( 1, widthInChars );
+	MakeCursorVisible();
+	const int end = Min( buffer.Length(), scroll + drawChars );
+	idStr visible( buffer, scroll, end );
+	Con_DrawConsoleString( static_cast<float>( x ), static_cast<float>( y ), visible.c_str(), colorWhite, false );
 
-	size = SMALLCHAR_WIDTH;
-
-	drawLen = widthInChars;
-	len = strlen( buffer ) + 1;
-
-	// guarantee that cursor will be visible
-	if( len <= drawLen )
-	{
-		prestep = 0;
-	}
-	else
-	{
-		if( scroll + drawLen > len )
-		{
-			scroll = len - drawLen;
-			if( scroll < 0 )
-			{
-				scroll = 0;
-			}
-		}
-		prestep = scroll;
-
-		// Skip color code
-		if( idStr::IsColor( buffer + prestep ) )
-		{
-			prestep += 2;
-		}
-		if( prestep > 0 && idStr::IsColor( buffer + prestep - 1 ) )
-		{
-			prestep++;
-		}
-	}
-
-	if( prestep + drawLen > len )
-	{
-		drawLen = len - prestep;
-	}
-
-	// extract <drawLen> characters from the field at <prestep>
-	if( drawLen >= MAX_EDIT_LINE )
-	{
-		common->Error( "drawLen >= MAX_EDIT_LINE" );
-	}
-
-	memcpy( str, buffer + prestep, drawLen );
-	str[ drawLen ] = 0;
-
-	// draw it
-	renderSystem->DrawSmallStringExt( x, y, str, colorWhite, false, false, 0.0f );
-
-	// draw the cursor
-	if( !showCursor )
+	if( !showCursor || ( ( idLib::frameNumber >> 4 ) & 1 ) != 0 )
 	{
 		return;
 	}
-
-	if( ( int )( idLib::frameNumber >> 4 ) & 1 )
-	{
-		return;		// off blink
-	}
-
-	if( idKeyInput::GetOverstrikeMode() )
-	{
-		cursorChar = 11;
-	}
-	else
-	{
-		cursorChar = 10;
-	}
-
-	// Move the cursor back to account for color codes
-	for( int i = 0; i < cursor; i++ )
-	{
-		if( idStr::IsColor( &str[i] ) )
-		{
-			i++;
-			prestep += 2;
-		}
-	}
-
-	renderSystem->DrawSmallChar( x + ( cursor - prestep ) * size, y, cursorChar );
+	const int cursorColumn = idMath::ClampInt( 0, drawChars, cursor - scroll );
+	const char cursorCharacter = idKeyInput::GetOverstrikeMode() ? '|' : '_';
+	Con_DrawConsoleChar( static_cast<float>( x ) + cursorColumn * Con_ConsoleCharWidth(),
+						 static_cast<float>( y ), cursorCharacter, colorWhite );
 }

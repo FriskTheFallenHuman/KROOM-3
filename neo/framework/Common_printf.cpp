@@ -177,6 +177,10 @@ void idCommonLocal::VPrintf( const char* fmt, va_list args )
 #endif
 
 
+	// The Tech 5 console owns a thread-safe print queue.  Feed it before the
+	// worker-thread early out so renderer and streaming jobs are visible.
+	console->Print( msg );
+
 	if( !idLib::IsMainThread() )
 	{
 		// Still send to debugger/terminal for immediate visibility
@@ -190,9 +194,6 @@ void idCommonLocal::VPrintf( const char* fmt, va_list args )
 		threadedPrintQueue.Append( msg );
 		return;
 	}
-
-	// echo to console buffer
-	console->Print( msg );
 
 	// remove any color codes
 	idStr::RemoveColors( msg );

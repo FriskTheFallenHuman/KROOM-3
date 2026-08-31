@@ -26,55 +26,47 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#ifndef __EDITFIELD_H__
-#define __EDITFIELD_H__
-
-/*
-===============================================================================
-
-	Edit field
-
-===============================================================================
-*/
+#include "precompiled.h"
+#pragma hdrstop
 
 #include "AutoComplete.h"
 
-// The native Win32 console uses this only as the size of its temporary input
-// buffer.  The in-game edit field itself is dynamically allocated.
-const int MAX_EDIT_LINE = MAX_STRING_CHARS;
-
-class idEditField
+/*
+==================
+idAutoComplete::idAutoComplete
+==================
+*/
+idAutoComplete::idAutoComplete()
 {
-public:
-	idEditField();
-	idEditField( const idEditField& other );
-	~idEditField();
-	idEditField& 	operator=( const idEditField& other );
+	Clear();
+}
 
-	void			Clear();
-	void			SetWidthInChars( int w );
-	void			SetCursor( int c );
-	int				GetCursor() const;
-	void			ClearAutoComplete();
-	bool			AcceptAutoComplete();
-	int				GetAutoCompleteLength() const;
-	void			AutoComplete( bool reverseOrder = false );
-	void			CharEvent( int c );
-	void			KeyDownEvent( int key );
-	void			Paste();
-	const char* 	GetBuffer() const;
-	void			Draw( int x, int y, int width, bool showCursor );
-	void			SetBuffer( const char* text );
+/*
+==================
+idAutoComplete::Clear
+==================
+*/
+void idAutoComplete::Clear()
+{
+	matchLength = 0;
+	currentIndex = -1;
+	args.Clear();
+	suggestions.Clear();
+}
 
-private:
-	void			Erase( int start, int count );
-	void			MakeCursorVisible();
-
-	int				cursor;
-	int				scroll;
-	int				widthInChars;
-	idStr			buffer;
-	idAutoComplete	autoComplete;
-};
-
-#endif /* !__EDITFIELD_H__ */
+/*
+==================
+idAutoComplete::Append
+==================
+*/
+void idAutoComplete::Append( const idStr& suggestion )
+{
+	for( int i = 0; i < suggestions.Num(); ++i )
+	{
+		if( suggestions[i].Icmp( suggestion ) == 0 )
+		{
+			return;
+		}
+	}
+	suggestions.Append( suggestion );
+}

@@ -26,55 +26,24 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#ifndef __EDITFIELD_H__
-#define __EDITFIELD_H__
+#ifndef __CONSOLEWATCH_H__
+#define __CONSOLEWATCH_H__
 
-/*
-===============================================================================
-
-	Edit field
-
-===============================================================================
-*/
-
-#include "AutoComplete.h"
-
-// The native Win32 console uses this only as the size of its temporary input
-// buffer.  The in-game edit field itself is dynamically allocated.
-const int MAX_EDIT_LINE = MAX_STRING_CHARS;
-
-class idEditField
+class idConsoleWatch
 {
 public:
-	idEditField();
-	idEditField( const idEditField& other );
-	~idEditField();
-	idEditField& 	operator=( const idEditField& other );
+	idConsoleWatch() : drawX( -1 ), drawY( -1 ) {}
+	idConsoleWatch( const char* command, int x, int y ) : watchString( command ), drawX( x ), drawY( y ) {}
 
-	void			Clear();
-	void			SetWidthInChars( int w );
-	void			SetCursor( int c );
-	int				GetCursor() const;
-	void			ClearAutoComplete();
-	bool			AcceptAutoComplete();
-	int				GetAutoCompleteLength() const;
-	void			AutoComplete( bool reverseOrder = false );
-	void			CharEvent( int c );
-	void			KeyDownEvent( int key );
-	void			Paste();
-	const char* 	GetBuffer() const;
-	void			Draw( int x, int y, int width, bool showCursor );
-	void			SetBuffer( const char* text );
-
-private:
-	void			Erase( int start, int count );
-	void			MakeCursorVisible();
-
-	int				cursor;
-	int				scroll;
-	int				widthInChars;
-	idStr			buffer;
-	idAutoComplete	autoComplete;
+	idStr	watchString;
+	int		drawX;
+	int		drawY;
 };
 
-#endif /* !__EDITFIELD_H__ */
+extern idList< idConsoleWatch > consoleWatchList;
+extern idList< idStr > consoleWatchResults;
+
+void ConsoleWatch_Init();
+void ConsoleWatch_Shutdown();
+
+#endif /* !__CONSOLEWATCH_H__ */

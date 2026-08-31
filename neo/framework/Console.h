@@ -37,12 +37,6 @@ enum justify_t
 	JUSTIFY_CENTER_RIGHT
 };
 
-enum textSize_t
-{
-	TEXTSIZE_SMALL,
-	TEXTSIZE_LARGE
-};
-
 class idOverlayHandle
 {
 	friend class idConsoleLocal;
@@ -52,6 +46,14 @@ private:
 	int		index;
 	int		time;
 };
+
+// Shared by the in-game console and its edit field.  These draw through the
+// renderer's idFont/newfonts path, not the legacy 8x16 console bitmap.
+float	Con_ConsoleCharWidth();
+float	Con_ConsoleLineHeight();
+float	Con_ConsoleStringWidth( const char* text );
+void	Con_DrawConsoleChar( float x, float y, uint32 character, const idVec4& color );
+void	Con_DrawConsoleString( float x, float y, const char* text, const idVec4& color, bool forceColor );
 
 /*
 ===============================================================================
@@ -72,6 +74,11 @@ public:
 	virtual			~idConsole() {}
 
 	virtual void	Init() = 0;
+
+	// Called on the main thread after the renderer and decl manager are ready.
+	// Draw() runs on the game thread and must never register font materials.
+	virtual void	LoadGraphics() = 0;
+
 	virtual void	Shutdown() = 0;
 
 	virtual bool	ProcessEvent( const sysEvent_t* event, bool forceAccept ) = 0;
@@ -86,12 +93,12 @@ public:
 	virtual void	Open() = 0;
 
 	// some console commands, like timeDemo, will force the console closed before they start
-	virtual void	Close() = 0;
+	virtual void	Close( bool clearNotify = true ) = 0;
 
-	virtual void	Draw( bool forceFullScreen ) = 0;
+	virtual void	Draw( bool forceFullScreen, bool skipNotifyLines = false ) = 0;
 	virtual void	Print( const char* text ) = 0;
 
-	virtual void	PrintOverlay( idOverlayHandle& handle, justify_t justify, VERIFY_FORMAT_STRING const char* text, idVec4& textColor, bool showbackground, textSize_t size, ... ) = 0;
+	virtual void	PrintOverlay( idOverlayHandle& handle, justify_t justify, VERIFY_FORMAT_STRING const char* text, idVec4& textColor, bool showbackground, ... ) = 0;
 
 	virtual idDebugGraph* 	CreateGraph( int numItems ) = 0;
 	virtual void			DestroyGraph( idDebugGraph* graph ) = 0;
@@ -100,8 +107,8 @@ public:
 extern idConsole* 	console;	// statically initialized to an idConsoleLocal
 
 // helper macro for creating overlay text with a single call
-#define CREATE_OVERLAY( name, text, textPos, textColor, textSize, textBkg ) \
+#define CREATE_OVERLAY( name, text, textPos, textColor, textBkg ) \
 	static idOverlayHandle name; \
-	console->PrintOverlay( name, textPos, text, textColor, textBkg, textSize );
+	console->PrintOverlay( name, textPos, text, textColor, textBkg );
 
 #endif /* !__CONSOLE_H__ */
