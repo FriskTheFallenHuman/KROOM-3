@@ -401,6 +401,7 @@ void NewFrame()
 
 		// Start the frame
 		ImGui::NewFrame();
+
 		g_haveNewFrame = true;
 	}
 }

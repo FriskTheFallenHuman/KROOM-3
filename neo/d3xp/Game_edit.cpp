@@ -502,6 +502,38 @@ void idGameEditLocal::MapCopyDictToEntity( const char* name, const idDict* dict 
 
 /*
 ================
+idGameEditLocal::MapCopyDictToEntityAtOrigin
+================
+*/
+void idGameEditLocal::MapCopyDictToEntityAtOrigin( const idVec3& origin, const idDict* dict ) const
+{
+	idMapFile* mapFile = gameLocal.GetLevelMap();
+	if( mapFile )
+	{
+		idMapEntity* mapent = mapFile->FindEntityAtOrigin( origin );
+		if( mapent )
+		{
+			for( int i = 0; i < dict->GetNumKeyVals(); i++ )
+			{
+				const idKeyValue* kv = dict->GetKeyVal( i );
+				const char* key = kv->GetKey();
+				const char* val = kv->GetValue();
+
+				if( val[0] == '\0' )
+				{
+					mapent->epairs.Delete( key );
+				}
+				else
+				{
+					mapent->epairs.Set( key, val );
+				}
+			}
+		}
+	}
+}
+
+/*
+================
 idGameEditLocal::MapGetUniqueMatchingKeyVals
 ================
 */
