@@ -5271,8 +5271,8 @@ textures/object/tecpipebraid2dirt
 	diffusemap		textures/object/tecpipebraid2dirt_d.tga
 	specularmap		textures/object/tecpipebraid2dirt_s.tga
 	
-		plastic
-
+	plastic
+}
 
 textures/object/tecpipebraid2
 {
