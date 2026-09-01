@@ -3,6 +3,7 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2026 Justin Marshall(justinmarshall20@gmail.com)
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -26,31 +27,50 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#ifndef __COMPILER_PUBLIC_H__
-#define __COMPILER_PUBLIC_H__
+#ifndef __AAS2_BRUSH_SURFACE_H__
+#define __AAS2_BRUSH_SURFACE_H__
 
-/*
-===============================================================================
+#include "AAS2_Cspace.h"
+#include "AAS2_Types.h"
 
-	Compilers for map, model, video etc. processing.
+#include <cstddef>
+#include <vector>
 
-===============================================================================
-*/
+enum class BrushSurfaceError
+{
+	none,
+	invalidPlane,
+	unboundedOrDegenerateBrush,
+	fragmentLimit
+};
 
-// map processing (also see SuperOptimizeOccluders in tr_local.h)
-void Dmap_f( const idCmdArgs& args );
+struct BrushSurfaceResult
+{
+	BrushSurfaceError error = BrushSurfaceError::none;
+	size_t sourceBrush = 0;
+	size_t sourcePlane = 0;
+	size_t boundaryFaces = 0;
+	size_t floorFaces = 0;
+	size_t floorTriangles = 0;
+	size_t discardedDegenerateTriangles = 0;
+	size_t candidatePairs = 0;
+	size_t rejectedCandidatePairs = 0;
+	size_t peakFragments = 0;
+	size_t peakFragmentPoints = 0;
 
-// AAS2 file compiler
-void AAS2Build_f( const idCmdArgs& args );
-void AAS2BuildAll_f( const idCmdArgs& args );
-void AAS2CompilerSelfTest_f( const idCmdArgs& args );
+	explicit operator bool() const
+	{
+		return error == BrushSurfaceError::none;
+	}
+};
 
-// video file encoding
-void RoQFileEncode_f( const idCmdArgs& args );
+// Intersects normalized convex-brush half-spaces, reconstructs each finite
+// boundary polygon, and emits walkable outward-facing polygons as triangles.
+// Floor polygons are CSG-subtracted against the other convex brushes before
+// triangulation. Full solid BSP node construction and clearance pruning remain
+// subsequent stages.
+BrushSurfaceResult BuildBrushFloorGeometry(	const std::vector<ConvexBrush>& brushes, float maxFloorSlopeDegrees, float epsilon,	SourceGeometry& output,	ProgressCallback progress = nullptr, void* progressUserData = nullptr );
 
-// wav amplitude processort
-void Amplitude_f( const idCmdArgs& args );
+const char* BrushSurfaceErrorName( BrushSurfaceError error );
 
-void RegisterCompilerThreadCommands();
-
-#endif	/* !__COMPILER_PUBLIC_H__ */
+#endif /* !__AAS2_BRUSH_SURFACE_H__ */

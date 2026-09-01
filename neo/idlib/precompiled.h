@@ -129,9 +129,9 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 // collision detection system
 #include "cm/CollisionModel.h"
 
-// AAS files and manager
-#include "tools/compilers/aas/AASFile.h"
-#include "tools/compilers/aas/AASFileManager.h"
+// AAS2 files and manager
+#include "aas2file/AAS2File.h"
+#include "gamelib/aas2/AAS2.h"
 
 // game
 #include "d3xp/Game.h"

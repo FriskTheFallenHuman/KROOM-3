@@ -142,47 +142,47 @@ static void Dmap_Threaded_f( const idCmdArgs& args )
 
 /*
 ========================
-RunAAS_Threaded_f
+AAS2Build_Threaded_f
 ========================
 */
-static void RunAAS_Threaded_f( const idCmdArgs& args )
+static void AAS2Build_Threaded_f( const idCmdArgs& args )
 {
 	if( g_compilerThread.IsRunning() )
 	{
 		idLib::Printf( "Compiler already running.\n" );
 		return;
 	}
-	g_compilerThread.Dispatch( RunAAS_f, args, "AASThread" );
+	g_compilerThread.Dispatch( AAS2Build_f, args, "AAS2Thread" );
 }
 
 /*
 ========================
-RunAASDir_Threaded_f
+AAS2BuildAll_Threaded_f
 ========================
 */
-static void RunAASDir_Threaded_f( const idCmdArgs& args )
+static void AAS2BuildAll_Threaded_f( const idCmdArgs& args )
 {
 	if( g_compilerThread.IsRunning() )
 	{
 		idLib::Printf( "Compiler already running.\n" );
 		return;
 	}
-	g_compilerThread.Dispatch( RunAASDir_f, args, "AASDirThread" );
+	g_compilerThread.Dispatch( AAS2BuildAll_f, args, "AAS2BuildAllThread" );
 }
 
 /*
 ========================
-RunReach_Threaded_f
+AAS2CompilerSelfTest_Threaded_f
 ========================
 */
-static void RunReach_Threaded_f( const idCmdArgs& args )
+static void AAS2CompilerSelfTest_Threaded_f( const idCmdArgs& args )
 {
 	if( g_compilerThread.IsRunning() )
 	{
 		idLib::Printf( "Compiler already running.\n" );
 		return;
 	}
-	g_compilerThread.Dispatch( RunReach_f, args, "ReachThread" );
+	g_compilerThread.Dispatch( AAS2CompilerSelfTest_f, args, "AAS2SelfTestThread" );
 }
 
 /*
@@ -253,9 +253,9 @@ RegisterCompilerThreadCommands
 void RegisterCompilerThreadCommands()
 {
 	cmdSystem->AddCommand( "dmap", Dmap_Threaded_f, CMD_FL_TOOL, "compiles a map", idCmdSystem::ArgCompletion_MapName );
-	cmdSystem->AddCommand( "runAAS", RunAAS_Threaded_f, CMD_FL_TOOL, "compiles an AAS file for a map", idCmdSystem::ArgCompletion_MapName );
-	cmdSystem->AddCommand( "runAASDir", RunAASDir_Threaded_f, CMD_FL_TOOL, "compiles AAS files for all maps in a folder", idCmdSystem::ArgCompletion_MapName );
-	cmdSystem->AddCommand( "runReach", RunReach_Threaded_f, CMD_FL_TOOL, "calculates reachability for an AAS file", idCmdSystem::ArgCompletion_MapName );
+	cmdSystem->AddCommand( "aas2build", AAS2Build_Threaded_f, CMD_FL_TOOL, "compiles a map and AAS declaration to maps/..._<profile>.aas2", idCmdSystem::ArgCompletion_MapName );
+	cmdSystem->AddCommand( "aas2buildall", AAS2BuildAll_Threaded_f, CMD_FL_TOOL, "compiles AAS2 for every map under a maps/ folder, skipping _extra_ents maps" );
+	cmdSystem->AddCommand( "aas2selftest", AAS2CompilerSelfTest_Threaded_f, CMD_FL_TOOL, "runs AAS2 compiler structural tests" );
 	cmdSystem->AddCommand( "roq", RoQFileEncode_Threaded_f, CMD_FL_TOOL, "encodes a roq file" );
 	cmdSystem->AddCommand( "amplitude", Amplitude_Threaded_f, CMD_FL_TOOL, "encodes a wav file into a amp file", idCmdSystem::ArgCompletion_SoundName );
 	cmdSystem->AddCommand( "compiler_wait", Compiler_Wait_f, CMD_FL_TOOL, "block until the background compiler finishes" );

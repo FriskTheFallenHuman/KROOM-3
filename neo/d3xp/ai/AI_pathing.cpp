@@ -973,7 +973,7 @@ FindOptimalPath
   Returns true if there is a path all the way to the goal.
 ============
 */
-bool FindOptimalPath( const pathNode_t* root, const obstacle_t* obstacles, int numObstacles, const float height, const idVec3& curDir, idVec3& seekPos )
+bool FindOptimalPath( const pathNode_t* root, const obstacle_t* obstacles, int numObstacles, const float height, const idVec3& curDir, idVec3& seekPos, idVec3& nextSeekPos )
 {
 	int i, numPathPoints, bestNumPathPoints;
 	const pathNode_t* node, *lastNode, *bestNode;
@@ -983,6 +983,7 @@ bool FindOptimalPath( const pathNode_t* root, const obstacle_t* obstacles, int n
 
 	seekPos.Zero();
 	seekPos.z = height;
+	nextSeekPos = seekPos;
 
 	pathToGoalExists = false;
 	optimizedPathCalculated = false;
@@ -1008,6 +1009,7 @@ bool FindOptimalPath( const pathNode_t* root, const obstacle_t* obstacles, int n
 					bestNumPathPoints = OptimizePath( root, bestNode, obstacles, numObstacles, optimizedPath );
 					bestPathLength = PathLength( optimizedPath, bestNumPathPoints, curDir.ToVec2() );
 					seekPos.ToVec2() = optimizedPath[1];
+					nextSeekPos.ToVec2() = optimizedPath[bestNumPathPoints > 2 ? 2 : 1];
 				}
 
 				numPathPoints = OptimizePath( root, node, obstacles, numObstacles, optimizedPath );
@@ -1019,6 +1021,7 @@ bool FindOptimalPath( const pathNode_t* root, const obstacle_t* obstacles, int n
 					bestNumPathPoints = numPathPoints;
 					bestPathLength = pathLength;
 					seekPos.ToVec2() = optimizedPath[1];
+					nextSeekPos.ToVec2() = optimizedPath[numPathPoints > 2 ? 2 : 1];
 				}
 				optimizedPathCalculated = true;
 
@@ -1064,11 +1067,13 @@ bool FindOptimalPath( const pathNode_t* root, const obstacle_t* obstacles, int n
 			{
 				seekPos.ToVec2() = root->pos;
 			}
+			nextSeekPos = seekPos;
 		}
 		else if( !optimizedPathCalculated )
 		{
-			OptimizePath( root, bestNode, obstacles, numObstacles, optimizedPath );
+			numPathPoints = OptimizePath( root, bestNode, obstacles, numObstacles, optimizedPath );
 			seekPos.ToVec2() = optimizedPath[1];
+			nextSeekPos.ToVec2() = optimizedPath[numPathPoints > 2 ? 2 : 1];
 		}
 
 		if( ai_showObstacleAvoidance.GetBool() )
@@ -1095,7 +1100,7 @@ idAI::FindPathAroundObstacles
   Finds a path around dynamic obstacles using a path tree with clockwise and counter clockwise edge walks.
 ============
 */
-bool idAI::FindPathAroundObstacles( const idPhysics* physics, const idAAS* aas, const idEntity* ignore, const idVec3& startPos, const idVec3& seekPos, obstaclePath_t& path )
+bool idAI::FindPathAroundObstacles( const idPhysics* physics, const idAAS* aas, const idEntity* ignore, const idVec3& startPos, const idVec3& seekPos, const idVec3& currentDirection, obstaclePath_t& path )
 {
 	int numObstacles, areaNum, insideObstacle;
 	obstacle_t obstacles[MAX_OBSTACLES];
@@ -1105,6 +1110,7 @@ bool idAI::FindPathAroundObstacles( const idPhysics* physics, const idAAS* aas, 
 	bool pathToGoalExists;
 
 	path.seekPos = seekPos;
+	path.nextSeekPos = seekPos;
 	path.firstObstacle = NULL;
 	path.startPosOutsideObstacles = startPos;
 	path.startPosObstacle = NULL;
@@ -1163,7 +1169,8 @@ bool idAI::FindPathAroundObstacles( const idPhysics* physics, const idAAS* aas, 
 	PrunePathTree( root, path.seekPosOutsideObstacles.ToVec2() );
 
 	// find the optimal path
-	pathToGoalExists = FindOptimalPath( root, obstacles, numObstacles, physics->GetOrigin().z, physics->GetLinearVelocity(), path.seekPos );
+	pathToGoalExists = FindOptimalPath( root, obstacles, numObstacles, physics->GetOrigin().z,
+										currentDirection, path.seekPos, path.nextSeekPos );
 
 	// free the tree
 	FreePathTree_r( root );

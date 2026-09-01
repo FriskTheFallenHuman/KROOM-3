@@ -628,8 +628,8 @@ static void TonemapDepth( float* depth, unsigned char* image, int w, int h )
 	{
 		if( depth[i] > 0.0f )
 		{
-			minW = std::min( minW, depth[i] );
-			maxW = std::max( maxW, depth[i] );
+			minW = Min( minW, depth[i] );
+			maxW = Max( maxW, depth[i] );
 		}
 	}
 

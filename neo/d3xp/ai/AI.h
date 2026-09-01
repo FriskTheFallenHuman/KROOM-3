@@ -123,6 +123,7 @@ typedef enum
 typedef struct obstaclePath_s
 {
 	idVec3				seekPos;					// seek position avoiding obstacles
+	idVec3				nextSeekPos;				// following corner used to advance past the current one
 	idEntity* 			firstObstacle;				// if != NULL the first obstacle along the path
 	idVec3				startPosOutsideObstacles;	// start position outside obstacles
 	idEntity* 			startPosObstacle;			// if != NULL the obstacle containing the start position
@@ -221,6 +222,8 @@ public:
 	int						nextWanderTime;
 	int						blockTime;
 	idEntityPtr<idEntity>	obstacle;
+	idEntityPtr<idEntity>	avoidanceObstacle;
+	idVec3					avoidanceSeek;
 	idVec3					lastMoveOrigin;
 	int						lastMoveTime;
 	int						anim;
@@ -298,7 +301,7 @@ public:
 	static void				List_f( const idCmdArgs& args );
 
 	// Finds a path around dynamic obstacles.
-	static bool				FindPathAroundObstacles( const idPhysics* physics, const idAAS* aas, const idEntity* ignore, const idVec3& startPos, const idVec3& seekPos, obstaclePath_t& path );
+	static bool				FindPathAroundObstacles( const idPhysics* physics, const idAAS* aas, const idEntity* ignore, const idVec3& startPos, const idVec3& seekPos, const idVec3& currentDirection, obstaclePath_t& path );
 	// Frees any nodes used for the dynamic obstacle avoidance.
 	static void				FreeObstacleAvoidanceNodes();
 	// Predicts movement, returns true if a stop event was triggered.
@@ -482,7 +485,7 @@ protected:
 	// movement
 	virtual void			ApplyImpulse( idEntity* ent, int id, const idVec3& point, const idVec3& impulse );
 	void					GetMoveDelta( const idMat3& oldaxis, const idMat3& axis, idVec3& delta );
-	void					CheckObstacleAvoidance( const idVec3& goalPos, idVec3& newPos );
+	void					CheckObstacleAvoidance( const idVec3& goalPos, idVec3& newPos, const aasPath_t* routePath = NULL );
 	void					DeadMove();
 	void					AnimMove();
 	void					SlideMove();
@@ -506,7 +509,7 @@ protected:
 	int						PointReachableAreaNum( const idVec3& pos, const float boundsScale = 2.0f ) const;
 	bool					PathToGoal( aasPath_t& path, int areaNum, const idVec3& origin, int goalAreaNum, const idVec3& goalOrigin ) const;
 	void					DrawRoute() const;
-	bool					GetMovePos( idVec3& seekPos );
+	bool					GetMovePos( idVec3& seekPos, aasPath_t* routePath = NULL );
 	bool					MoveDone() const;
 	bool					EntityCanSeePos( idActor* actor, const idVec3& actorOrigin, const idVec3& pos );
 	void					BlockedFailSafe();

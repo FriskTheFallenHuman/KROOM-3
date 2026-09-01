@@ -3,6 +3,7 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2026 Justin Marshall(justinmarshall20@gmail.com)
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -26,26 +27,21 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#ifndef __AASFILEMANAGER_H__
-#define __AASFILEMANAGER_H__
+#ifndef __AAS2_FLOOR_MERGE_H__
+#define __AAS2_FLOOR_MERGE_H__
 
-/*
-===============================================================================
+#include "AAS2_Types.h"
 
-	AAS File Manager
+#include <cstddef>
 
-===============================================================================
-*/
-
-class idAASFileManager
+struct FloorMergeResult
 {
-public:
-	virtual						~idAASFileManager() {}
-
-	virtual idAASFile* 			LoadAAS( const char* fileName, unsigned int mapFileCRC ) = 0;
-	virtual void				FreeAAS( idAASFile* file ) = 0;
+	size_t mergedPairs = 0;
 };
 
-extern idAASFileManager* 		AASFileManager;
+// Greedily joins adjacent coplanar floor areas when their combined boundary is
+// a single convex polygon. Interior triangulation edges are removed and the
+// remaining edge array is compacted.
+FloorMergeResult MergeCoplanarFloors( File& file, float normalDegrees, float planeDistanceEpsilon );
 
-#endif /* !__AASFILEMANAGER_H__ */
+#endif /* !__AAS2_FLOOR_MERGE_H__ */

@@ -3,6 +3,7 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2026 Justin Marshall(justinmarshall20@gmail.com)
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -26,38 +27,66 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#ifndef __AASCLUSTER_H__
-#define __AASCLUSTER_H__
+#ifndef __AAS2_CSPACE_H__
+#define __AAS2_CSPACE_H__
 
-/*
-===============================================================================
+#include "AAS2_Types.h"
 
-	Area Clustering
+#include <cstddef>
+#include <cstdint>
+#include <vector>
 
-===============================================================================
-*/
-
-class idAASCluster
+// Plane convention: points inside a convex brush satisfy
+// Dot(plane.normal, point) <= plane.distance.
+struct BrushPlane
 {
-
-public:
-	bool					Build( idAASFileLocal* file );
-	bool					BuildSingleCluster( idAASFileLocal* file );
-
-private:
-	idAASFileLocal* 		file;
-	bool					noFaceFlood;
-
-private:
-	bool					UpdatePortal( int areaNum, int clusterNum );
-	bool					FloodClusterAreas_r( int areaNum, int clusterNum );
-	void					RemoveAreaClusterNumbers();
-	void					NumberClusterAreas( int clusterNum );
-	bool					FindClusters();
-	void					CreatePortals();
-	bool					TestPortals();
-	void					ReportEfficiency();
-	void					RemoveInvalidPortals();
+	Vec3 normal{};
+	float distance = 0.0f;
 };
 
-#endif /* !__AASCLUSTER_H__ */
+struct ConvexBrush
+{
+	std::vector<BrushPlane> planes;
+	uint32 contents = 0;
+	uint32 sourceEntity = 0;
+	uint32 sourcePrimitive = 0;
+};
+
+struct AgentBounds
+{
+	Vec3 mins{};
+	Vec3 maxs{};
+};
+
+enum class CSpaceError
+{
+	none,
+	invalidAgentBounds,
+	emptyBrush,
+	invalidPlane
+};
+
+struct CSpaceResult
+{
+	CSpaceError error = CSpaceError::none;
+	size_t sourceBrush = 0;
+	size_t sourcePlane = 0;
+	size_t brushes = 0;
+	size_t planes = 0;
+
+	explicit operator bool() const
+	{
+		return error == CSpaceError::none;
+	}
+};
+
+AgentBounds MakeAgentBounds( float radius, float height );
+
+// Builds obstacle configuration space for an agent whose origin is translated
+// through the world. This is the convex-brush Minkowski expansion that precedes
+// BSP construction; brush contents and source provenance are preserved.
+CSpaceResult ExpandConfigurationSpace( const std::vector<ConvexBrush>& input, const AgentBounds& agent, std::vector<ConvexBrush>& output );
+
+const char* CSpaceErrorName( CSpaceError error );
+
+#endif /* !__AAS2_CSPACE_H__ */

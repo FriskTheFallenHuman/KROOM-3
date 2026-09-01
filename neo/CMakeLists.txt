@@ -494,6 +494,9 @@ endif()
 
 ##################### Core ###########################
 
+file(GLOB src_aas2file aas2file/*.cpp aas2file/*.h)
+source_group("AAS2File" FILES ${src_aas2file})
+
 file(GLOB src_cm cm/*.cpp cm/*.h)
 source_group("CM" FILES ${src_cm})
 
@@ -564,6 +567,7 @@ list(REMOVE_ITEM src_ui ${CMAKE_CURRENT_SOURCE_DIR}/ui/GameWindow.cpp)
 source_group("UI" FILES ${src_ui})
 
 set(src_core
+	${src_aas2file}
 	${src_cm}
 	${src_framework}
 	${src_framework_imgui}
@@ -626,8 +630,8 @@ source_group("Tools\\Compilers" FILES ${src_tools_compilers})
 file(GLOB src_dmap tools/compilers/dmap/*.cpp tools/compilers/dmap/*.h)
 source_group("Tools\\Compilers\\Dmap" FILES ${src_dmap})
 
-file(GLOB src_aas tools/compilers/aas/*.cpp tools/compilers/aas/*.h)
-source_group("Tools\\Compilers\\AAS" FILES ${src_aas})
+file(GLOB src_aas2build tools/compilers/aas2build/*.cpp tools/compilers/aas2build/*.h)
+source_group("Tools\\Compilers\\AAS2Build" FILES ${src_aas2build})
 
 file(GLOB src_roq tools/compilers/roqvq/*.cpp tools/compilers/roqvq/*.h)
 source_group("Tools\\Compilers\\RoqVq" FILES ${src_roq})
@@ -641,7 +645,7 @@ source_group("Tools\\Debugger\\Server" FILES ${src_debugger_server})
 set(src_compilers
 	${src_tools_compilers}
 	${src_dmap}
-	${src_aas}
+	${src_aas2build}
 	${src_roq}
 	${src_amplitude}
 	${src_debugger_server})
@@ -731,6 +735,7 @@ include_directories(
 	${CMAKE_SOURCE_DIR}/extern/cpptrace/include)
 
 add_subdirectory(idlib)
+add_subdirectory(gamelib)
 add_subdirectory(extern)
 
 add_definitions(-D__DOOM__)
@@ -833,7 +838,7 @@ endif()
 add_executable(${CMAKE_PROJECT_NAME} MACOSX_BUNDLE WIN32 ${src_core})
 add_dependencies(${CMAKE_PROJECT_NAME} idLib external ${sys_thirdparty_dependencies})
 
-target_link_libraries(${CMAKE_PROJECT_NAME} idLib external ${sys_libs} ${sys_thirdparty})
+target_link_libraries(${CMAKE_PROJECT_NAME} idLib gameLib external ${sys_libs} ${sys_thirdparty})
 if(USE_PRECOMPILED_HEADERS)
 	target_precompile_headers(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/idlib/precompiled.h)
 endif()

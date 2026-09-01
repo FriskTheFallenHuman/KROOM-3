@@ -3,6 +3,7 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2026 Justin Marshall(justinmarshall20@gmail.com)
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -26,43 +27,45 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#ifndef __AASREACH_H__
-#define __AASREACH_H__
+#ifndef __AAS2_MAP_ADAPTER_H__
+#define __AAS2_MAP_ADAPTER_H__
 
-/*
-===============================================================================
+#include "AAS2_CSpace.h"
 
-	Reachabilities
+#include <cstddef>
+#include <vector>
 
-===============================================================================
-*/
+class idMapFile;
 
-class idAASReach
+struct AAS2MapStatistics
 {
-
-public:
-	bool					Build( const idMapFile* mapFile, idAASFileLocal* file );
-
-private:
-	const idMapFile* 		mapFile;
-	idAASFileLocal* 		file;
-	int						numReachabilities;
-	bool					allowSwimReachabilities;
-	bool					allowFlyReachabilities;
-
-private:	// reachability
-	void					FlagReachableAreas( idAASFileLocal* file );
-	bool					ReachabilityExists( int fromAreaNum, int toAreaNum );
-	bool					CanSwimInArea( int areaNum );
-	bool					AreaHasFloor( int areaNum );
-	bool					AreaIsClusterPortal( int areaNum );
-	void					AddReachabilityToArea( idReachability* reach, int areaNum );
-	void					Reachability_Fly( int areaNum );
-	void					Reachability_Swim( int areaNum );
-	void					Reachability_EqualFloorHeight( int areaNum );
-	bool					Reachability_Step_Barrier_WaterJump_WalkOffLedge( int fromAreaNum, int toAreaNum );
-	void					Reachability_WalkOffLedge( int areaNum );
-
+	size_t entities = 0;
+	size_t brushPrimitives = 0;
+	size_t patchPrimitives = 0;
+	size_t acceptedBrushes = 0;
+	size_t ignoredBrushes = 0;
+	size_t ignoredPatches = 0;
+	size_t acceptedPatchBrushes = 0;
+	size_t areaVolumes = 0;
+	size_t taggedAreas = 0;
 };
 
-#endif /* !__AASREACH_H__ */
+struct AAS2PrimitivePolicy
+{
+	bool includeBrushes = true;
+	bool includePatches = false;
+};
+
+struct AAS2AreaVolume
+{
+	idBounds bounds;
+	unsigned short areaFlags = 0;
+};
+
+// Converts worldspawn and func_aas_obstacle brushes from Doom's parsed map
+// representation into the portable compiler model. Material contents determine
+// whether a brush participates in AAS construction.
+bool CollectAAS2Brushes( const idMapFile& mapFile, const AAS2PrimitivePolicy& primitivePolicy,	std::vector<ConvexBrush>& output, std::vector<AAS2AreaVolume>& areaVolumes, AAS2MapStatistics& statistics );
+void ApplyAAS2AreaVolumes( File& file, const std::vector<AAS2AreaVolume>& areaVolumes, const AgentBounds& agent, AAS2MapStatistics& statistics );
+
+#endif /* !__AAS2_MAP_ADAPTER_H__ */

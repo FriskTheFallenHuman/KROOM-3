@@ -481,8 +481,8 @@ void Dmap( const idCmdArgs& args )
 
 		if( !noAAS && !region )
 		{
-			// create AAS files
-			RunAAS_f( args );
+			// create AAS2 files
+			AAS2Build_f( args );
 		}
 	}
 

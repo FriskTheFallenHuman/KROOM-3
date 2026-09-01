@@ -3,6 +3,7 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2026 Justin Marshall(justinmarshall20@gmail.com)
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -26,31 +27,47 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#ifndef __COMPILER_PUBLIC_H__
-#define __COMPILER_PUBLIC_H__
+#ifndef __AAS2_BUILD_H__
+#define __AAS2_BUILD_H__
 
-/*
-===============================================================================
+#include "AAS2_Brush_Surface.h"
+#include "AAS2_Compiler.h"
+#include "AAS2_Cspace.h"
 
-	Compilers for map, model, video etc. processing.
+#include <vector>
 
-===============================================================================
-*/
+struct BuildSettings
+{
+	Settings navigation{};
+	AgentBounds agent{{ -16.0f, -16.0f, 0.0f},
+		{16.0f, 16.0f, 72.0f}};
+	float geometryEpsilon = 0.01f;
+	ProgressCallback progress = nullptr;
+	void* progressUserData = nullptr;
+};
 
-// map processing (also see SuperOptimizeOccluders in tr_local.h)
-void Dmap_f( const idCmdArgs& args );
+enum class BuildError
+{
+	none,
+	configurationSpace,
+	brushSurface,
+	surfaceCompiler
+};
 
-// AAS2 file compiler
-void AAS2Build_f( const idCmdArgs& args );
-void AAS2BuildAll_f( const idCmdArgs& args );
-void AAS2CompilerSelfTest_f( const idCmdArgs& args );
+struct BuildResult
+{
+	BuildError error = BuildError::none;
+	CSpaceResult configurationSpace{};
+	BrushSurfaceResult brushSurface{};
+	Result surface{};
 
-// video file encoding
-void RoQFileEncode_f( const idCmdArgs& args );
+	explicit operator bool() const
+	{
+		return error == BuildError::none;
+	}
+};
 
-// wav amplitude processort
-void Amplitude_f( const idCmdArgs& args );
+BuildResult CompileBrushes( const std::vector<ConvexBrush>& source, const BuildSettings& settings, File& output );
+const char* BuildErrorName( BuildError error );
 
-void RegisterCompilerThreadCommands();
-
-#endif	/* !__COMPILER_PUBLIC_H__ */
+#endif /* !__AAS2_BUILD_H__ */

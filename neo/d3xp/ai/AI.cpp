@@ -48,6 +48,36 @@ static const char* moveCommandString[ NUM_MOVE_COMMANDS ] =
 	"MOVE_WANDER"
 };
 
+namespace
+{
+bool AAS2ObstacleLogSample()
+{
+	if( aas2_debugPathing.GetInteger() < 3 )
+	{
+		return false;
+	}
+	static int interval = -1;
+	static int count = 0;
+	const int currentInterval = Sys_Milliseconds() / 1000;
+	if( interval != currentInterval )
+	{
+		interval = currentInterval;
+		count = 0;
+	}
+	return count++ < 32;
+}
+
+const char* AAS2ObstacleName( const idEntity* entity )
+{
+	return entity != NULL ? entity->name.c_str() : "-";
+}
+
+// Wolf's obstacle avoidance starts turning before an animation-driven actor
+// reaches a polygon corner.  Steering at the exact corner does not work for
+// root-motion walkers: collision clipping stops their origin short of the
+// corner, so they can continue walking into it indefinitely.
+}
+
 /*
 =====================
 idMoveState::idMoveState
@@ -71,6 +101,8 @@ idMoveState::idMoveState()
 	nextWanderTime		= 0;
 	blockTime			= 0;
 	obstacle			= NULL;
+	avoidanceObstacle	= NULL;
+	avoidanceSeek		= vec3_origin;
 	lastMoveOrigin		= vec3_origin;
 	lastMoveTime		= 0;
 	anim				= 0;
@@ -99,6 +131,8 @@ void idMoveState::Save( idSaveGame* savefile ) const
 	savefile->WriteInt( nextWanderTime );
 	savefile->WriteInt( blockTime );
 	obstacle.Save( savefile );
+	avoidanceObstacle.Save( savefile );
+	savefile->WriteVec3( avoidanceSeek );
 	savefile->WriteVec3( lastMoveOrigin );
 	savefile->WriteInt( lastMoveTime );
 	savefile->WriteInt( anim );
@@ -127,6 +161,8 @@ void idMoveState::Restore( idRestoreGame* savefile )
 	savefile->ReadInt( nextWanderTime );
 	savefile->ReadInt( blockTime );
 	obstacle.Restore( savefile );
+	avoidanceObstacle.Restore( savefile );
+	savefile->ReadVec3( avoidanceSeek );
 	savefile->ReadVec3( lastMoveOrigin );
 	savefile->ReadInt( lastMoveTime );
 	savefile->ReadInt( anim );
@@ -2562,7 +2598,7 @@ bool idAI::NewWanderDir( const idVec3& dest )
 idAI::GetMovePos
 =====================
 */
-bool idAI::GetMovePos( idVec3& seekPos )
+bool idAI::GetMovePos( idVec3& seekPos, aasPath_t* routePath )
 {
 	int			areaNum;
 	aasPath_t	path;
@@ -2629,6 +2665,10 @@ bool idAI::GetMovePos( idVec3& seekPos )
 			if( PathToGoal( path, areaNum, org, move.toAreaNum, move.moveDest ) )
 			{
 				seekPos = path.moveGoal;
+				if( routePath != NULL )
+				{
+					*routePath = path;
+				}
 				result = true;
 				move.nextWanderTime = 0;
 			}
@@ -2960,15 +3000,9 @@ void idAI::GetMoveDelta( const idMat3& oldaxis, const idMat3& axis, idVec3& delt
 idAI::CheckObstacleAvoidance
 =====================
 */
-void idAI::CheckObstacleAvoidance( const idVec3& goalPos, idVec3& newPos )
+void idAI::CheckObstacleAvoidance( const idVec3& goalPos, idVec3& newPos, const aasPath_t* routePath )
 {
-	idEntity*		obstacle;
-	obstaclePath_t	path;
-	idVec3			dir;
-	float			dist;
-	bool			foundPath;
-
-	if( ignore_obstacles )
+	if( ignore_obstacles || aas == NULL )
 	{
 		newPos = goalPos;
 		move.obstacle = NULL;
@@ -2976,99 +3010,119 @@ void idAI::CheckObstacleAvoidance( const idVec3& goalPos, idVec3& newPos )
 	}
 
 	const idVec3& origin = physicsObj.GetOrigin();
-
-	obstacle = NULL;
-	AI_OBSTACLE_IN_PATH = false;
-	foundPath = FindPathAroundObstacles( &physicsObj, aas, enemy.GetEntity(), origin, goalPos, path );
-	if( ai_showObstacleAvoidance.GetBool() )
+	aasPath_t directPath;
+	if( routePath == NULL )
 	{
-		gameRenderWorld->DebugLine( colorBlue, goalPos + idVec3( 1.0f, 1.0f, 0.0f ), goalPos + idVec3( 1.0f, 1.0f, 64.0f ), 1 );
-		gameRenderWorld->DebugLine( foundPath ? colorYellow : colorRed, path.seekPos, path.seekPos + idVec3( 0.0f, 0.0f, 64.0f ), 1 );
+		directPath.moveGoal = directPath.obstacleGoal = goalPos;
+		directPath.moveAreaNum = directPath.obstacleAreaNum = PointReachableAreaNum( goalPos );
+		directPath.obstacleRoute.numAreas = 1;
+		directPath.obstacleRoute.areas[0].areaNum = PointReachableAreaNum( origin );
+		directPath.obstacleRoute.areas[0].start = origin;
+		directPath.obstacleRoute.areas[0].end = goalPos;
+		routePath = &directPath;
 	}
 
-	if( !foundPath )
+	idBounds queryBounds;
+	queryBounds.Clear();
+	queryBounds.AddPoint( origin );
+	queryBounds.AddPoint( routePath->obstacleGoal );
+	float queryRadius = aas->GetSettings()->obstaclePVSRadius;
+	if( queryRadius > 256.0f )
 	{
-		// couldn't get around obstacles
-		if( path.firstObstacle )
+		queryRadius = 256.0f;
+	}
+	queryBounds.ExpandSelf( queryRadius );
+	idClipModel* clipModels[128];
+	const int numClipModels = gameLocal.clip.ClipModelsTouchingBounds(
+								  queryBounds, physicsObj.GetClipMask(), clipModels, 128 );
+	idAAS2AvoidanceObstacle dynamicObstacles[64];
+	int numDynamicObstacles = 0;
+	float stepHeight, headHeight;
+	physicsObj.GetAbsBounds().AxisProjection( -physicsObj.GetGravityNormal(), stepHeight, headHeight );
+	stepHeight += aas->GetSettings()->maxStepHeight;
+	for( int i = 0; i < numClipModels && numDynamicObstacles < 64; ++i )
+	{
+		idClipModel* clipModel = clipModels[i];
+		idEntity* entity = clipModel->GetEntity();
+		if( entity == NULL || entity == this || entity == enemy.GetEntity() || !clipModel->IsTraceModel() )
 		{
-			AI_OBSTACLE_IN_PATH = true;
-			if( physicsObj.GetAbsBounds().Expand( 2.0f ).IntersectsBounds( path.firstObstacle->GetPhysics()->GetAbsBounds() ) )
+			continue;
+		}
+		if( entity->IsType( idActor::Type ) )
+		{
+			if( entity->health <= 0 )
 			{
-				obstacle = path.firstObstacle;
+				continue;
 			}
 		}
-		else if( path.startPosObstacle )
+		else if( !entity->IsType( idMoveable::Type ) )
 		{
-			AI_OBSTACLE_IN_PATH = true;
-			if( physicsObj.GetAbsBounds().Expand( 2.0f ).IntersectsBounds( path.startPosObstacle->GetPhysics()->GetAbsBounds() ) )
-			{
-				obstacle = path.startPosObstacle;
-			}
+			continue;
 		}
-		else
+		float obstacleMin, obstacleMax;
+		clipModel->GetAbsBounds().AxisProjection( -physicsObj.GetGravityNormal(), obstacleMin, obstacleMax );
+		if( obstacleMax < stepHeight || obstacleMin > headHeight )
 		{
-			// Blocked by wall
-			move.moveStatus = MOVE_STATUS_BLOCKED_BY_WALL;
+			continue;
 		}
-#if 0
-	}
-	else if( path.startPosObstacle )
-	{
-		// check if we're past where the our origin was pushed out of the obstacle
-		dir = goalPos - origin;
-		dir.Normalize();
-		dist = ( path.seekPos - origin ) * dir;
-		if( dist < 1.0f )
-		{
-			AI_OBSTACLE_IN_PATH = true;
-			obstacle = path.startPosObstacle;
-		}
-#endif
-	}
-	else if( path.seekPosObstacle )
-	{
-		// if the AI is very close to the path.seekPos already and path.seekPosObstacle != NULL
-		// then we want to push the path.seekPosObstacle entity out of the way
-		AI_OBSTACLE_IN_PATH = true;
-
-		// check if we're past where the goalPos was pushed out of the obstacle
-		dir = goalPos - origin;
-		dir.Normalize();
-		dist = ( path.seekPos - origin ) * dir;
-		if( dist < 1.0f )
-		{
-			obstacle = path.seekPosObstacle;
-		}
+		dynamicObstacles[numDynamicObstacles].bounds = clipModel->GetAbsBounds();
+		dynamicObstacles[numDynamicObstacles].entity = entity;
+		dynamicObstacles[numDynamicObstacles].soft = entity->IsType( idActor::Type );
+		++numDynamicObstacles;
 	}
 
-	// if we had an obstacle, set our move status based on the type, and kick it out of the way if it's a moveable
-	if( obstacle )
+	idVec3 lastDirection = move.avoidanceObstacle.GetEntity() != NULL ?
+						   move.avoidanceSeek - origin : physicsObj.GetLinearVelocity();
+	lastDirection.z = 0.0f;
+	if( lastDirection.LengthSqr() < 1.0f )
 	{
-		if( obstacle->IsType( idActor::Type ) )
+		lastDirection = viewAxis[0] * physicsObj.GetGravityAxis();
+		lastDirection.z = 0.0f;
+	}
+	idAAS2AvoidancePath path;
+	const int startAreaNum = PointReachableAreaNum( origin );
+	const bool foundPath = aas->FindPathAroundObstacles( path, *routePath,
+						   startAreaNum, origin, physicsObj.GetBounds(), lastDirection,
+						   dynamicObstacles, numDynamicObstacles );
+	const int seekIndex = path.seekPosPlane.Normal().LengthSqr() > 0.0f &&
+						  path.seekPosPlane.Distance( origin ) >= -0.01f ? 1 : 0;
+	newPos = foundPath ? path.seekPos[seekIndex] : origin;
+
+	AI_OBSTACLE_IN_PATH = !foundPath;
+	move.obstacle = foundPath ? NULL : path.firstObstacle;
+	if( path.firstObstacle != NULL )
+	{
+		move.avoidanceObstacle = path.firstObstacle;
+		move.avoidanceSeek = newPos;
+		if( !foundPath )
 		{
-			// monsters aren't kickable
-			if( obstacle == enemy.GetEntity() )
-			{
-				move.moveStatus = MOVE_STATUS_BLOCKED_BY_ENEMY;
-			}
-			else
-			{
-				move.moveStatus = MOVE_STATUS_BLOCKED_BY_MONSTER;
-			}
+			move.moveStatus = path.firstObstacle->IsType( idActor::Type ) ?
+							  ( path.firstObstacle == enemy.GetEntity() ? MOVE_STATUS_BLOCKED_BY_ENEMY : MOVE_STATUS_BLOCKED_BY_MONSTER ) :
+							  MOVE_STATUS_BLOCKED_BY_OBJECT;
 		}
-		else
-		{
-			// try kicking the object out of the way
-			move.moveStatus = MOVE_STATUS_BLOCKED_BY_OBJECT;
-		}
-		newPos = obstacle->GetPhysics()->GetOrigin();
-		//newPos = path.seekPos;
-		move.obstacle = obstacle;
 	}
 	else
 	{
-		newPos = path.seekPos;
-		move.obstacle = NULL;
+		move.avoidanceObstacle = NULL;
+		move.avoidanceSeek.Zero();
+	}
+
+	if( ai_showObstacleAvoidance.GetBool() )
+	{
+		gameRenderWorld->DebugArrow( foundPath ? colorYellow : colorRed, origin, newPos, 2.0f, 1 );
+		gameRenderWorld->DebugArrow( colorCyan, path.seekPos[0], path.seekPos[1], 2.0f, 1 );
+	}
+	if( ( path.firstObstacle != NULL || !foundPath ) && AAS2ObstacleLogSample() )
+	{
+		common->Printf( "[AAS2DBG] native avoid npc='%s' found=%d area=%d routeAreas=%d "
+						"from=(%.1f %.1f %.1f) goal=(%.1f %.1f %.1f) "
+						"seek0=(%.1f %.1f %.1f) seek1=(%.1f %.1f %.1f) selected=%d first='%s'\n",
+						name.c_str(), foundPath ? 1 : 0, startAreaNum, routePath->obstacleRoute.numAreas,
+						origin.x, origin.y, origin.z,
+						routePath->obstacleGoal.x, routePath->obstacleGoal.y, routePath->obstacleGoal.z,
+						path.seekPos[0].x, path.seekPos[0].y, path.seekPos[0].z,
+						path.seekPos[1].x, path.seekPos[1].y, path.seekPos[1].z,
+						seekIndex, AAS2ObstacleName( path.firstObstacle ) );
 	}
 }
 
@@ -3101,6 +3155,7 @@ void idAI::AnimMove()
 	idVec3				goalDelta;
 	float				goalDist;
 	idVec3				newDest;
+	aasPath_t			routePath;
 
 	idVec3 oldorigin = physicsObj.GetOrigin();
 	idMat3 oldaxis = viewAxis;
@@ -3124,11 +3179,11 @@ void idAI::AnimMove()
 		TurnToward( move.goalEntity.GetEntity()->GetPhysics()->GetOrigin() );
 		goalPos = oldorigin;
 	}
-	else if( GetMovePos( goalPos ) )
+	else if( GetMovePos( goalPos, &routePath ) )
 	{
 		if( move.moveCommand != MOVE_WANDER )
 		{
-			CheckObstacleAvoidance( goalPos, newDest );
+			CheckObstacleAvoidance( goalPos, newDest, &routePath );
 			TurnToward( newDest );
 		}
 		else
@@ -3247,6 +3302,7 @@ void idAI::SlideMove()
 	idVec3				goalDelta;
 	float				goalDist;
 	idVec3				newDest;
+	aasPath_t			routePath;
 
 	idVec3 oldorigin = physicsObj.GetOrigin();
 
@@ -3269,9 +3325,9 @@ void idAI::SlideMove()
 		TurnToward( move.goalEntity.GetEntity()->GetPhysics()->GetOrigin() );
 		goalPos = move.moveDest;
 	}
-	else if( GetMovePos( goalPos ) )
+	else if( GetMovePos( goalPos, &routePath ) )
 	{
-		CheckObstacleAvoidance( goalPos, newDest );
+		CheckObstacleAvoidance( goalPos, newDest, &routePath );
 		TurnToward( newDest );
 		goalPos = newDest;
 	}
@@ -3582,6 +3638,7 @@ void idAI::FlyMove()
 	idVec3	goalPos;
 	idVec3	oldorigin;
 	idVec3	newDest;
+	aasPath_t routePath;
 
 	AI_BLOCKED = false;
 	if( ( move.moveCommand != MOVE_NONE ) && ReachedPos( move.moveDest, move.moveCommand ) )
@@ -3598,9 +3655,9 @@ void idAI::FlyMove()
 	{
 		idVec3 vel = physicsObj.GetLinearVelocity();
 
-		if( GetMovePos( goalPos ) )
+		if( GetMovePos( goalPos, &routePath ) )
 		{
-			CheckObstacleAvoidance( goalPos, newDest );
+			CheckObstacleAvoidance( goalPos, newDest, &routePath );
 			goalPos = newDest;
 		}
 

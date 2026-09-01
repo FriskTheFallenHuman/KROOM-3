@@ -3,6 +3,7 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2026 Justin Marshall(justinmarshall20@gmail.com)
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -26,31 +27,13 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#ifndef __COMPILER_PUBLIC_H__
-#define __COMPILER_PUBLIC_H__
+#ifndef __AAS2_TREE_H__
+#define __AAS2_TREE_H__
 
-/*
-===============================================================================
+#include "AAS2_Types.h"
 
-	Compilers for map, model, video etc. processing.
+// Creates one deterministic world-up median-split tree. Negative child values
+// encode area leaves as -(areaIndex + 1).
+void BuildAreaTree( File& file );
 
-===============================================================================
-*/
-
-// map processing (also see SuperOptimizeOccluders in tr_local.h)
-void Dmap_f( const idCmdArgs& args );
-
-// AAS2 file compiler
-void AAS2Build_f( const idCmdArgs& args );
-void AAS2BuildAll_f( const idCmdArgs& args );
-void AAS2CompilerSelfTest_f( const idCmdArgs& args );
-
-// video file encoding
-void RoQFileEncode_f( const idCmdArgs& args );
-
-// wav amplitude processort
-void Amplitude_f( const idCmdArgs& args );
-
-void RegisterCompilerThreadCommands();
-
-#endif	/* !__COMPILER_PUBLIC_H__ */
+#endif /* !__AAS2_TREE_H__ */

@@ -3,6 +3,7 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2026 Justin Marshall(justinmarshall20@gmail.com)
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -26,56 +27,95 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "precompiled.h"
-#pragma hdrstop
+#ifndef __AAS2_TYPES_H__
+#define __AAS2_TYPES_H__
 
+#include <cstddef>
+#include <cstdint>
+#include <string>
+#include <vector>
 
-#include "AASFile.h"
-#include "AASFile_local.h"
+typedef void ( *ProgressCallback )( const char* stage,
+									size_t current,
+									size_t total,
+									void* userData );
 
-/*
-===============================================================================
-
-	AAS File Manager
-
-===============================================================================
-*/
-
-class idAASFileManagerLocal : public idAASFileManager
+struct Vec3
 {
-public:
-	virtual						~idAASFileManagerLocal() {}
-
-	virtual idAASFile* 			LoadAAS( const char* fileName, unsigned int mapFileCRC );
-	virtual void				FreeAAS( idAASFile* file );
+	float x = 0.0f;
+	float y = 0.0f;
+	float z = 0.0f;
 };
 
-idAASFileManagerLocal			AASFileManagerLocal;
-idAASFileManager* 				AASFileManager = &AASFileManagerLocal;
-
-
-/*
-================
-idAASFileManagerLocal::LoadAAS
-================
-*/
-idAASFile* idAASFileManagerLocal::LoadAAS( const char* fileName, unsigned int mapFileCRC )
+struct Bounds
 {
-	idAASFileLocal* file = new( TAG_AAS ) idAASFileLocal();
-	if( !file->Load( fileName, mapFileCRC ) )
-	{
-		delete file;
-		return NULL;
-	}
-	return file;
-}
+	Vec3 mins{};
+	Vec3 maxs{};
+};
 
-/*
-================
-idAASFileManagerLocal::FreeAAS
-================
-*/
-void idAASFileManagerLocal::FreeAAS( idAASFile* file )
+struct SourceTriangle
 {
-	delete file;
-}
+	uint32 vertices[3] {};
+	uint32 flags = 0;
+};
+
+struct SourceGeometry
+{
+	std::vector<Vec3> vertices;
+	std::vector<SourceTriangle> triangles;
+};
+
+struct Edge
+{
+	uint32 vertices[2] {};
+	uint32 flags = 0;
+};
+
+struct Reachability
+{
+	uint32 fromArea = 0;
+	uint32 toArea = 0;
+	uint32 travelFlags = 0;
+	Vec3 start{};
+	Vec3 end{};
+	std::string name;
+};
+
+struct Area
+{
+	Bounds bounds{};
+	Vec3 center{};
+	Vec3 floorNormal{0.0f, 0.0f, 1.0f};
+	uint16 flags = 0;
+	uint32 travelFlags = 0;
+	uint32 tree = 0;
+	std::vector<uint32> edges;
+	std::vector<uint32> reachabilities;
+};
+
+struct Node
+{
+	Vec3 normal{};
+	float distance = 0.0f;
+	int32 children[2] {};
+	Bounds bounds{};
+};
+
+struct Tree
+{
+	int32 rootNode = -1;
+	Vec3 floorNormal{0.0f, 0.0f, 1.0f};
+	std::vector<uint32> areas;
+};
+
+struct File
+{
+	std::vector<Vec3> vertices;
+	std::vector<Edge> edges;
+	std::vector<Area> areas;
+	std::vector<Node> nodes;
+	std::vector<Reachability> reachabilities;
+	std::vector<Tree> trees;
+};
+
+#endif /* !__AAS2_TYPES_H__ */
