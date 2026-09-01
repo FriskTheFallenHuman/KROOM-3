@@ -175,7 +175,7 @@ bool idAAS2RuntimeLocal::RouteToGoalAreaChain( int startAreaNum, const idVec3& o
 
 		const aas2Area_t& area = file->GetArea( current.areaNum );
 		const idVec3& routePoint = incomingReach[current.areaNum] == NULL ?
-			origin : file->AreaCenter( current.areaNum );
+								   origin : file->AreaCenter( current.areaNum );
 
 		for( aas2Reachability_t* candidate = area.reach; candidate != NULL; candidate = candidate->next )
 		{

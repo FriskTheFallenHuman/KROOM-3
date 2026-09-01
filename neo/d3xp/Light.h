@@ -44,46 +44,6 @@ extern const idEventDef EV_Light_SetLightParms;
 /*
 ===============================================================================
 
-  Predefined light styles
-
-===============================================================================
-*/
-
-static char* predef_lightstyles[] =
-{
-	"m",
-	"mmnmmommommnonmmonqnmmo",
-	"abcdefghijklmnopqrstuvwxyzyxwvutsrqponmlkjihgfedcba",
-	"mmmmmaaaaammmmmaaaaaabcdefgabcdefg",
-	"mamamamamama",
-	"jklmnopqrstuvwxyzyxwvutsrqponmlkj",
-	"nmonqnmomnmomomno",
-	"mmmaaaabcdefgmmmmaaaammmaamm",
-	"mmmaaammmaaammmabcdefaaaammmmabcdefmmmaaaa",
-	"aaaaaaaazzzzzzzz",
-	"mmamammmmammamamaaamammma",
-	"abcdefghijklmnopqrrqponmlkjihgfedcba"
-};
-
-static char* predef_lightstylesinfo[] =
-{
-	"Normal",
-	"Flicker A",
-	"Slow Strong Pulse",
-	"Candle A",
-	"Fast Strobe",
-	"Gentle Pulse",
-	"Flicker B",
-	"Candle B",
-	"Candle C",
-	"Slow Strobe",
-	"Fluorescent Flicker",
-	"Slow Pulse (no black)"
-};
-
-/*
-===============================================================================
-
   idLightStyleState_t
 
 ===============================================================================

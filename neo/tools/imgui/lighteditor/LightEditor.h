@@ -4,6 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 Copyright (C) 2015 Daniel Gibson
+Copyright (C) 2016-2023 Robert Beckebans
 
 This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
 
@@ -40,11 +41,18 @@ If you have questions concerning this license or the applicable additional terms
 namespace ImGuiTools
 {
 
+enum ELightType
+{
+	LIGHT_POINT,
+	LIGHT_SPOT,
+	LIGHT_SUN
+};
+
 class LightInfo
 {
 public:
-	bool		pointLight;
-	float		fallOff;
+	ELightType	lightType;
+
 	idStr		strTexture;
 	bool		equalRadius;
 	bool		explicitStartEnd;
@@ -57,23 +65,20 @@ public:
 	idVec3		color;
 	idVec3		origin;
 
-
-#if 0 // FIXME: unused, delete?
-	bool		fog;
-	idVec4		fogDensity;
-#endif // 0
-
 	idVec3		lightRadius;
 	bool		castShadows;
-	bool		castSpecular;
+	bool		skipSpecular;
 	bool		hasCenter;
-	bool		isParallel;
+
+	int			lightStyle;
 
 	LightInfo();
 
 	void		Defaults();
-	void		DefaultProjected();
+
 	void		DefaultPoint();
+	void		DefaultProjected();
+	void		DefaultSun();
 	void		FromDict( const idDict* e );
 	void		ToDict( idDict* e );
 };
@@ -81,58 +86,64 @@ public:
 class LightEditor
 {
 private:
-	bool	isShown;
+	bool				isShown;
 
-	idStr	title;
-	idStr	entityName;
-	idVec3	entityPos;
+	idStr				title;
+	idStr				entityName;
+	idVec3				entityPos;
 
-	LightInfo original;
-	LightInfo cur; // current status of the light
+	LightInfo			original;
+	LightInfo			cur; // current status of the light
 
-	idEntity* lightEntity;
+	idEntity*			lightEntity;
 
-	idList<idStr> textureNames;
-	int currentTextureIndex;
-	idImage* currentTexture;
-	const idMaterial* currentTextureMaterial;
+	idList<idStr>		textureNames;
+	int					currentTextureIndex;
+	idImage*			currentTexture;
+	const idMaterial*	currentTextureMaterial;
 
-	void Init( const idDict* dict, idEntity* light );
-	void Reset();
+	idList<idStr>		styleNames;
+	int					currentStyleIndex;
 
-	void LoadLightTextures();
-	static const char* TextureItemsGetter( void* data, int idx );
-	void LoadCurrentTexture();
+	void				LoadLightStyles();
+	static const char* 	StyleItemsGetter( void* data, int idx );
 
-	void DrawWindow();
+	void				Init( const idDict* dict, idEntity* light );
+	void				Reset();
 
-	void TempApplyChanges();
-	void SaveChanges();
-	void CancelChanges();
+	void				LoadLightTextures();
+	static const char* 	TextureItemsGetter( void* data, int idx );
+	void				LoadCurrentTexture();
+
+	void				TempApplyChanges();
+	void				SaveChanges();
+	void				CancelChanges();
 
 	LightEditor()
 	{
 		isShown = false;
+
 		Reset();
 	}
 
 public:
-	static LightEditor&	Instance();
-	static void	ReInit( const idDict* dict, idEntity* light );
 
-	ID_INLINE void	ShowIt( bool show )
+	static LightEditor&	Instance();
+	static void			ReInit( const idDict* dict, idEntity* light );
+
+	ID_INLINE void			ShowIt( bool show )
 	{
 		isShown = show;
 	}
 
-	ID_INLINE bool	IsShown() const
+	ID_INLINE bool			IsShown() const
 	{
 		return isShown;
 	}
 
-	void	Draw();
+	void				Draw();
 };
 
 } //namespace ImGuiTools
 
-#endif /* NEO_TOOLS_EDITORS_LIGHTEDITOR_H_ */
+#endif
