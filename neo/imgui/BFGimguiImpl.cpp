@@ -13,6 +13,7 @@
 #pragma hdrstop
 
 #include "BFGimgui.h"
+#include "../extern/imguizmo/ImGuizmo.h"
 #include "renderer/RenderCommon.h"
 #include "renderer/RenderBackend.h"
 
@@ -175,6 +176,9 @@ bool HandleKeyEvent( const sysEvent_t& keyEvent )
 		io.AddKeyEvent( ImGuiKey_RightShift, usercmdGen->KeyState( K_RSHIFT ) == 1 );
 		io.AddKeyEvent( ImGuiKey_LeftAlt, usercmdGen->KeyState( K_LALT ) == 1 );
 		io.AddKeyEvent( ImGuiKey_RightAlt, usercmdGen->KeyState( K_RALT ) == 1 );
+		io.AddKeyEvent( ImGuiMod_Ctrl, usercmdGen->KeyState( K_LCTRL ) == 1 || usercmdGen->KeyState( K_RCTRL ) == 1 );
+		io.AddKeyEvent( ImGuiMod_Shift, usercmdGen->KeyState( K_LSHIFT ) == 1 || usercmdGen->KeyState( K_RSHIFT ) == 1 );
+		io.AddKeyEvent( ImGuiMod_Alt, usercmdGen->KeyState( K_LALT ) == 1 || usercmdGen->KeyState( K_RALT ) == 1 );
 
 		return true;
 	}
@@ -401,6 +405,7 @@ void NewFrame()
 
 		// Start the frame
 		ImGui::NewFrame();
+		ImGuizmo::BeginFrame();
 
 		g_haveNewFrame = true;
 	}
