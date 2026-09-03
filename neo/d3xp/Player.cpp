@@ -1470,6 +1470,11 @@ idPlayer::idPlayer():
 	serverOverridePositionTime( 0 ),
 	clientFireCount( 0 )
 {
+	freeCamActive				= false;
+	freeCamPreviousNoclip		= false;
+	freeCamPreviousThirdPerson	= false;
+	freeCamCameraOrigin			= vec3_zero;
+	freeCamCameraAngles			= ang_zero;
 
 	noclip					= false;
 	godmode					= false;
@@ -6041,6 +6046,10 @@ idPlayer::FlashlightOn
 */
 void idPlayer::FlashlightOn()
 {
+	if( freeCamActive )
+	{
+		return;
+	}
 	if( flashlightBattery < idMath::Ftoi( flashlight_minActivatePercent.GetFloat() * flashlight_batteryDrainTimeMS.GetFloat() ) )
 	{
 		return;
@@ -7577,6 +7586,83 @@ bool idPlayer::UseThirdPersonCamera( void )
 
 /*
 ==============
+idPlayer::EnableFreeCam
+==============
+*/
+void idPlayer::EnableFreeCam()
+{
+	if( freeCamActive )
+	{
+		return;
+	}
+
+	freeCamActive = true;
+	freeCamPreviousNoclip = noclip;
+	freeCamPreviousThirdPerson = pm_thirdPerson.GetBool();
+	freeCamCameraOrigin = GetEyePosition();
+	freeCamCameraAngles = viewAngles;
+	noclip = false;
+	pm_thirdPerson.SetBool( true );
+
+	// Don't let the player use any gun.
+	hiddenWeapon = true;
+	if( weapon.GetEntity() )
+	{
+		weapon.GetEntity()->LowerWeapon();
+	}
+}
+
+/*
+==============
+idPlayer::DisableFreeCam
+==============
+*/
+void idPlayer::DisableFreeCam()
+{
+	if( !freeCamActive )
+	{
+		return;
+	}
+
+	noclip = freeCamPreviousNoclip;
+	pm_thirdPerson.SetBool( freeCamPreviousThirdPerson );
+	freeCamActive = false;
+
+	hiddenWeapon = false;
+}
+
+/*
+==============
+idPlayer::MoveFreeCamera
+==============
+*/
+void idPlayer::MoveFreeCamera()
+{
+	if( !ImGuiHook::RightMouseActive() )
+	{
+		return;
+	}
+
+	const float frameSeconds = MS2SEC( gameLocal.time - gameLocal.previousTime );
+	const idMat3 cameraAxis = viewAngles.ToMat3() * physicsObj.GetGravityAxis();
+	const float speed = pm_noclipspeed.GetFloat() * frameSeconds / 127.0f;
+
+	freeCamCameraAngles = viewAngles;
+	freeCamCameraOrigin += cameraAxis[0] * ( float )usercmd.forwardmove * speed;
+	freeCamCameraOrigin += cameraAxis[1] * ( float )usercmd.rightmove * speed;
+
+	if( usercmd.buttons & BUTTON_JUMP )
+	{
+		freeCamCameraOrigin += cameraAxis[2] * ( 127.0f * speed );
+	}
+	if( usercmd.buttons & BUTTON_CROUCH )
+	{
+		freeCamCameraOrigin -= cameraAxis[2] * ( 127.0f * speed );
+	}
+}
+
+/*
+==============
 idPlayer::SetupForRiding
 ==============
 */
@@ -7778,6 +7864,12 @@ void idPlayer::PerformImpulse( int impulse )
 {
 	const bool isIntroMap = false;
 
+	// No impulses while in freecam
+	if( freeCamActive )
+	{
+		return;
+	}
+
 	// Normal 1 - 0 Keys.
 	if( impulse >= IMPULSE_0 && impulse <= IMPULSE_12 && !isIntroMap )
 	{
@@ -7964,7 +8056,10 @@ void idPlayer::EvaluateControls()
 	AdjustSpeed();
 
 	// update the viewangles
-	UpdateViewAngles();
+	if( !freeCamActive )
+	{
+		UpdateViewAngles();
+	}
 }
 
 /*
@@ -8418,6 +8513,12 @@ idPlayer::Move
 */
 void idPlayer::Move()
 {
+	if( freeCamActive )
+	{
+		MoveFreeCamera();
+		return;
+	}
+
 	float newEyeOffset;
 	idVec3 oldOrigin;
 	idVec3 oldVelocity;
@@ -9076,7 +9177,7 @@ void idPlayer::Think()
 
 	EvaluateControls();
 
-	if( !af.IsActive() )
+	if( !freeCamActive && !af.IsActive() )
 	{
 		AdjustBodyAngles();
 		CopyJointsFromBodyToHead();
@@ -10814,7 +10915,13 @@ void idPlayer::CalculateRenderView()
 	renderView->viewID = 0;
 
 	// check if we should be drawing from a camera's POV
-	if( !noclip && ( gameLocal.GetCamera() || privateCameraView ) )
+	if( freeCamActive )
+	{
+		renderView->vieworg = freeCamCameraOrigin;
+		renderView->viewaxis = freeCamCameraAngles.ToMat3() * physicsObj.GetGravityAxis();
+		renderSystem->CalcFov( CalcFov( true ), renderView->fov_x, renderView->fov_y );
+	}
+	else if( !noclip && ( gameLocal.GetCamera() || privateCameraView ) )
 	{
 		// get origin, axis, and fov
 		if( privateCameraView )
@@ -11607,7 +11714,7 @@ void idPlayer::ClientThink( const int curTime, const float fraction, const bool 
 
 	AdjustSpeed();
 
-	if( IsLocallyControlled() )
+	if( IsLocallyControlled() && !freeCamActive )
 	{
 		UpdateViewAngles();
 	}
@@ -11619,7 +11726,7 @@ void idPlayer::ClientThink( const int curTime, const float fraction, const bool 
 
 	smoothedOriginUpdated = false;
 
-	if( !af.IsActive() )
+	if( !freeCamActive && !af.IsActive() )
 	{
 		AdjustBodyAngles();
 	}

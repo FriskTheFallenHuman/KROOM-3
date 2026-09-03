@@ -478,6 +478,7 @@ const char* LightEditor::TextureItemsGetter( void* data, int idx )
 void LightEditor::LoadCurrentTexture()
 {
 	currentTexture = NULL;
+	currentTextureMaterial = NULL;
 
 	if( currentTextureIndex > 0 && cur.strTexture.Length() > 0 )
 	{
@@ -1159,9 +1160,9 @@ exitLightEditor:
 
 	if( isShown && !showTool )
 	{
-
+		gameEdit->PlayerEnableFreeCam( false );
 		isShown = showTool;
-		impl::SetReleaseToolMouse( false );
+		SetReleaseToolMouse( false );
 	}
 }
 

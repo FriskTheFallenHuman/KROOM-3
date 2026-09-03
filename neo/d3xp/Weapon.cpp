@@ -2104,7 +2104,6 @@ void idWeapon::FlashlightOn()
 	func = scriptObject.GetFunction( "TurnOn" );
 	if( !func )
 	{
-		common->Warning( "Can't find function 'TurnOn' in object '%s'", scriptObject.GetTypeName() );
 		return;
 	}
 
@@ -2133,7 +2132,6 @@ void idWeapon::FlashlightOff()
 	func = scriptObject.GetFunction( "TurnOff" );
 	if( !func )
 	{
-		common->Warning( "Can't find function 'TurnOff' in object '%s'", scriptObject.GetTypeName() );
 		return;
 	}
 

@@ -140,14 +140,9 @@ If you have questions concerning this license or the applicable additional terms
 
 namespace ImGuiTools
 {
-
-// things in impl need to be used in at least one other file, but should generally not be touched
-namespace impl
-{
+bool	IsFreeCameraActive();
 
 void	SetReleaseToolMouse( bool doRelease );
-
-} //namespace impl
 
 bool	ReleaseMouseForTools();
 

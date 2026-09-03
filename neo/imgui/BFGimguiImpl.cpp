@@ -161,6 +161,23 @@ bool HandleKeyEvent( const sysEvent_t& keyEvent )
 
 	ImGuiIO& io = ImGui::GetIO();
 
+	if( keyNum == K_MOUSE2 )
+	{
+		// RB: allow navigation like in a level editor
+		g_MousePressed[1] = pressed;
+
+		ImGuiTools::SetReleaseToolMouse( !pressed );
+
+		//common->Printf( "mouse2 pressed %d\n", int( pressed ) );
+
+		return true;
+	}
+
+	if( g_MousePressed[1] )
+	{
+		return false;
+	}
+
 	if( keyNum < K_JOY1 )
 	{
 		ImGuiKey imguiKey = MapCustomKeyToImGuiKey( keyNum );
@@ -311,10 +328,15 @@ bool UseInput()
 	return ( ImGuiTools::ReleaseMouseForTools() || imgui_showDemoWindow.GetBool() );
 }
 
+bool UseInputForUsercmd()
+{
+	return UseInput() && !ImGuiTools::IsFreeCameraActive();
+}
+
 // inject a sys event
 bool InjectSysEvent( const sysEvent_t* event )
 {
-	if( IsInitialized() && UseInput() )
+	if( IsInitialized() && ( UseInput() || RightMouseActive() ) )
 	{
 		if( event == NULL )
 		{
@@ -351,6 +373,11 @@ bool InjectSysEvent( const sysEvent_t* event )
 		}
 	}
 	return false;
+}
+
+bool RightMouseActive()
+{
+	return g_MousePressed[1];
 }
 
 bool InjectMouseWheel( int delta )
