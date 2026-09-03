@@ -1,76 +1,50 @@
 /*
- * ImGui integration into Doom3BFG/OpenTechEngine.
- * Based on ImGui SDL and OpenGL3 examples.
- *  Copyright (c) 2014-2015 Omar Cornut and ImGui contributors
- *
- * Doom3-specific Code (and ImGui::DragXYZ(), based on ImGui::DragFloatN())
- *  Copyright (C) 2015 Daniel Gibson
- *
- * This file is under MIT License, like the original code from ImGui.
- */
+===========================================================================
+
+Doom 3 BFG Edition GPL Source Code
+Copyright (C) 2016 Daniel Gibson
+
+This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
+
+Doom 3 BFG Edition Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 BFG Edition Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 BFG Edition Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 BFG Edition Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 BFG Edition Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
 
 #include "precompiled.h"
 #pragma hdrstop
 
-#include "BFGimgui.h"
 #include "../extern/imgui/imgui_internal.h"
 #include "../extern/imguizmo/ImGuizmo.h"
+#include "../tools/imgui/ImGuiTools_local.h"
 #include "renderer/RenderCommon.h"
 #include "renderer/RenderBackend.h"
-#include "../tools/imgui/lighteditor/LightEditor.h"
-
-extern idCVar g_editEntityMode;
 
 idCVar imgui_showDemoWindow( "imgui_showDemoWindow", "0", CVAR_GUI | CVAR_BOOL, "show big ImGui demo window" );
 
-// our custom ImGui functions from BFGimgui.h
+/*
+===============================================================================
 
-// like DragFloat3(), but with "X: ", "Y: " or "Z: " prepended to each display_format, for vectors
-// if !ignoreLabelWidth, it makes sure the label also fits into the current item width.
-//    note that this screws up alignment with consecutive "value+label widgets" (like Drag* or ColorEdit*)
-bool ImGui::DragVec3( const char* label, idVec3& v, float v_speed, float v_min, float v_max, const char* display_format, float power, bool ignoreLabelWidth )
-{
-	bool value_changed = false;
-	ImGui::BeginGroup();
-	ImGui::PushID( label );
+	idImGuiSystemLocal - the ImGui hooks to integrate it into the engine
 
-	ImGuiStyle& style = ImGui::GetStyle();
-	float wholeWidth = ImGui::CalcItemWidth() - 2.0f * style.ItemSpacing.x;
-	float spacing = style.ItemInnerSpacing.x;
-	float labelWidth = ignoreLabelWidth ? 0.0f : ( ImGui::CalcTextSize( label, NULL, true ).x + spacing );
-	float coordWidth = ( wholeWidth - labelWidth - 2.0f * spacing ) * ( 1.0f / 3.0f ); // width of one x/y/z dragfloat
+===============================================================================
+*/
 
-	ImGui::PushItemWidth( coordWidth );
-	for( int i = 0; i < 3; i++ )
-	{
-		ImGui::PushID( i );
-		char format[64];
-		idStr::snPrintf( format, sizeof( format ), "%c: %s", "XYZ"[i], display_format );
-		value_changed |= ImGui::DragFloat( "##v", &v[i], v_speed, v_min, v_max, format, power );
-
-		ImGui::PopID();
-		ImGui::SameLine( 0.0f, spacing );
-	}
-	ImGui::PopItemWidth();
-	ImGui::PopID();
-
-	const char* labelEnd = strstr( label, "##" );
-	ImGui::TextUnformatted( label, labelEnd );
-
-	ImGui::EndGroup();
-
-	return value_changed;
-}
-
-// shortcut for DragXYZ with ignorLabelWidth = false
-// very similar, but adjusts width to width of label to make sure it's not cut off
-// sometimes useful, but might not align with consecutive "value+label widgets" (like Drag* or ColorEdit*)
-bool ImGui::DragVec3fitLabel( const char* label, idVec3& v, float v_speed, float v_min, float v_max, const char* display_format, float power )
-{
-	return ImGui::DragVec3( label, v, v_speed, v_min, v_max, display_format, power, false );
-}
-
-// the ImGui hooks to integrate it into the engine
 class idImGuiSystemLocal : public idImGuiSystem
 {
 public:
@@ -79,9 +53,9 @@ public:
 
 	virtual bool Init( int windowWidth, int windowHeight );
 	virtual void Destroy();
+	virtual idImGuiEditor* GetEditor();
 	virtual void RegisterWindow( idImGuiWindow& window );
-	virtual void InitializeLightEditor( const idDict* dict, idEntity* entity );
-	virtual void SetReleaseToolMouse( bool doRelease );
+	virtual void ReleaseMouse( bool doRelease );
 	virtual void NotifyDisplaySizeChanged( int width, int height );
 	virtual bool InjectSysEvent( const sysEvent_t* keyEvent );
 	virtual bool InjectMouseWheel( int delta );
@@ -91,9 +65,6 @@ public:
 	virtual bool IsInitialized() const;
 	virtual bool RightMouseActive() const;
 	virtual void RegisterDockWindow( const char* windowName, DockRegion region );
-	virtual bool AreEditorsActive() const;
-	virtual bool ReleaseMouseForTools() const;
-	virtual bool IsFreeCameraActive() const;
 	virtual bool UseInput() const;
 	virtual bool UseInputForUsercmd() const;
 	virtual void DrawWindows();
@@ -107,18 +78,6 @@ private:
 	bool ShowWindows() const;
 	void SetupDefaultDockLayout();
 
-	struct DockWindowRequest
-	{
-		DockWindowRequest()
-		{
-			name = "";
-			region = DOCK_REGION_CENTER;
-		}
-		
-		idStr name;
-		DockRegion region;
-	};
-
 	bool isInitialized;
 	double lastFrameTime;
 	bool mousePressed[5];
@@ -129,26 +88,62 @@ private:
 	bool haveNewFrame;
 	bool releaseMouse;
 	idList<idImGuiWindow*> windows;
+	struct DockWindowRequest
+	{
+		DockWindowRequest();
+
+		idStr name;
+		DockRegion region;
+	};
+
 	idList<DockWindowRequest> dockWindowRequests;
+	idImGuiEditorLocal editor;
 };
 
 static idImGuiSystemLocal localImGuiSystem;
 idImGuiSystem* imguiSystem = &localImGuiSystem;
 
-idImGuiSystemLocal::idImGuiSystemLocal()
+/*
+=================
+idImGuiSystemLocal::DockWindowRequest::DockWindowRequest
+=================
+*/
+idImGuiSystemLocal::DockWindowRequest::DockWindowRequest()
+	: name( "" ), region( DOCK_REGION_CENTER )
 {
 }
 
+/*
+=================
+idImGuiSystemLocal::idImGuiSystemLocal
+=================
+*/
+idImGuiSystemLocal::idImGuiSystemLocal()
+	: editor( this )
+{
+	Clear();
+}
+
+/*
+=================
+idImGuiSystemLocal::~idImGuiSystemLocal
+=================
+*/
 idImGuiSystemLocal::~idImGuiSystemLocal()
 {
 }
 
+/*
+=================
+idImGuiSystemLocal::Clear
+=================
+*/
 void idImGuiSystemLocal::Clear()
 {
 	isInitialized = false;
 	lastFrameTime = 0.0f;
 
-	for (int i = 0; i < 5; ++i)
+	for( int i = 0; i < 5; ++i )
 	{
 		mousePressed[i] = false;
 	}
@@ -158,11 +153,19 @@ void idImGuiSystemLocal::Clear()
 	displaySize = ImVec2( 0.0f, 0.0f );
 	engineContext = nullptr;
 	haveNewFrame = false;
-
+	releaseMouse = false;
 	windows.Clear();
+
+	editor.ReleaseMouse( false );
+	editor.SetRightMouseActive( false );
 	dockWindowRequests.Clear();
 }
 
+/*
+=================
+idImGuiSystemLocal::Init
+=================
+*/
 bool idImGuiSystemLocal::Init( int windowWidth, int windowHeight )
 {
 	if( IsInitialized() )
@@ -211,6 +214,11 @@ bool idImGuiSystemLocal::Init( int windowWidth, int windowHeight )
 	return true;
 }
 
+/*
+=================
+idImGuiSystemLocal::Destroy
+=================
+*/
 void idImGuiSystemLocal::Destroy()
 {
 	if( IsInitialized() )
@@ -226,6 +234,21 @@ void idImGuiSystemLocal::Destroy()
 	}
 }
 
+/*
+=================
+idImGuiSystemLocal::GetEditor
+=================
+*/
+idImGuiEditor* idImGuiSystemLocal::GetEditor()
+{
+	return &editor;
+}
+
+/*
+=================
+idImGuiSystemLocal::RegisterWindow
+=================
+*/
 void idImGuiSystemLocal::RegisterWindow( idImGuiWindow& window )
 {
 	for( int i = 0; i < windows.Num(); ++i )
@@ -240,64 +263,23 @@ void idImGuiSystemLocal::RegisterWindow( idImGuiWindow& window )
 	RegisterDockWindow( window.GetWindowName(), window.GetDockRegion() );
 }
 
-void idImGuiSystemLocal::SetReleaseToolMouse( bool doRelease )
+/*
+=================
+idImGuiSystemLocal::ReleaseMouse
+=================
+*/
+void idImGuiSystemLocal::ReleaseMouse( bool doRelease )
 {
 	releaseMouse = doRelease;
 }
 
-bool idImGuiSystemLocal::AreEditorsActive() const
-{
-	return g_editEntityMode.GetInteger() > 0 || com_editors != 0;
-}
+/*
+=================
+idImGuiSystemLocal::HandleKeyEvent
 
-bool idImGuiSystemLocal::ReleaseMouseForTools() const
-{
-	return AreEditorsActive() && releaseMouse && !RightMouseActive();
-}
-
-bool idImGuiSystemLocal::IsFreeCameraActive() const
-{
-	for( int i = 0; i < windows.Num(); ++i )
-	{
-		if( windows[i]->IsShown() && windows[i]->IsFreeCameraActive() )
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-void idImGuiSystemLocal::DrawWindows()
-{
-	for( int i = 0; i < windows.Num(); ++i )
-	{
-		if( windows[i]->IsShown() )
-		{
-			windows[i]->Draw();
-		}
-	}
-}
-
-void idImGuiSystemLocal::InitializeLightEditor( const idDict* dict, idEntity* ent )
-{
-	if( dict == NULL || ent == NULL )
-	{
-		return;
-	}
-
-	idassert( idStr::Icmp( dict->GetString( "spawnclass" ), "idLight" ) == 0
-			  && "InitializeLightEditor() must only be called with light entities or NULL!" );
-
-	LightEditor::Instance().ShowIt( true );
-	RegisterWindow( LightEditor::Instance() );
-	SetReleaseToolMouse( true );
-	gameEdit->PlayerEnableFreeCam( true );
-	RegisterDockWindow( "Light Texture Browser", DOCK_REGION_BOTTOM );
-
-	LightEditor::ReInit( dict, ent );
-}
-
-// Map custom key codes to ImGui key codes
+Map custom key codes to ImGui key codes
+=================
+*/
 ImGuiKey idImGuiSystemLocal::MapCustomKeyToImGuiKey( keyNum_t keyNum ) const
 {
 	switch( keyNum )
@@ -359,6 +341,11 @@ ImGuiKey idImGuiSystemLocal::MapCustomKeyToImGuiKey( keyNum_t keyNum ) const
 	return ImGuiKey_None;
 }
 
+/*
+=================
+idImGuiSystemLocal::HandleKeyEvent
+=================
+*/
 bool idImGuiSystemLocal::HandleKeyEvent( const sysEvent_t& keyEvent )
 {
 	assert( keyEvent.evType == SE_KEY );
@@ -373,7 +360,8 @@ bool idImGuiSystemLocal::HandleKeyEvent( const sysEvent_t& keyEvent )
 		// RB: allow navigation like in a level editor
 		mousePressed[1] = pressed;
 
-		imguiSystem->SetReleaseToolMouse( !pressed );
+		imguiSystem->GetEditor()->SetRightMouseActive( pressed );
+		imguiSystem->GetEditor()->ReleaseMouse( !pressed );
 
 		//common->Printf( "mouse2 pressed %d\n", int( pressed ) );
 
@@ -420,9 +408,17 @@ bool idImGuiSystemLocal::HandleKeyEvent( const sysEvent_t& keyEvent )
 	return false;
 }
 
-// Sys_GetClipboardData() expects that you Mem_Free() its returned data
-// ImGui can't do that, of course, so copy it into a static buffer here,
-// Mem_Free() and return the copy
+
+
+/*
+=================
+idImGuiSystemLocal::GetClipboardText
+
+Sys_GetClipboardData() expects that you Mem_Free() its returned data
+ImGui can't do that, of course, so copy it into a static buffer here,
+Mem_Free() and return the copy
+=================
+*/
 const char* idImGuiSystemLocal::GetClipboardText( void* )
 {
 	char* txt = Sys_GetClipboardData();
@@ -439,17 +435,45 @@ const char* idImGuiSystemLocal::GetClipboardText( void* )
 	return clipboardBuf.c_str();
 }
 
+/*
+=================
+idImGuiSystemLocal::SetClipboardText
+=================
+*/
 void idImGuiSystemLocal::SetClipboardText( void*, const char* text )
 {
 	Sys_SetClipboardData( text );
 }
 
 
+/*
+=================
+idImGuiSystemLocal::ShowWindows
+=================
+*/
 bool idImGuiSystemLocal::ShowWindows() const
 {
-	return ( g_editEntityMode.GetInteger() > 0 || com_editors != 0 || imgui_showDemoWindow.GetBool() );
+	if( editor.AreEditorsActive() || imgui_showDemoWindow.GetBool() )
+	{
+		return true;
+	}
+
+	for( int i = 0; i < windows.Num(); ++i )
+	{
+		if( windows[i]->IsShown() )
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
+/*
+=================
+idImGuiSystemLocal::RegisterDockWindow
+=================
+*/
 void idImGuiSystemLocal::RegisterDockWindow( const char* windowName, DockRegion region )
 {
 	if( windowName == NULL || windowName[0] == '\0' )
@@ -472,6 +496,11 @@ void idImGuiSystemLocal::RegisterDockWindow( const char* windowName, DockRegion 
 	dockWindowRequests.Append( request );
 }
 
+/*
+=================
+idImGuiSystemLocal::SetupDefaultDockLayout
+=================
+*/
 void idImGuiSystemLocal::SetupDefaultDockLayout()
 {
 	static bool initialized = false;
@@ -522,6 +551,11 @@ void idImGuiSystemLocal::SetupDefaultDockLayout()
 	initialized = true;
 }
 
+/*
+=================
+idImGuiSystemLocal::NotifyDisplaySizeChanged
+=================
+*/
 void idImGuiSystemLocal::NotifyDisplaySizeChanged( int width, int height )
 {
 	if( displaySize.x != width || displaySize.y != height )
@@ -546,18 +580,51 @@ void idImGuiSystemLocal::NotifyDisplaySizeChanged( int width, int height )
 	}
 }
 
-// is a imgui windows requestion input?
+/*
+=================
+idImGuiSystemLocal::UseInputForUsercmd
+
+is a imgui windows requestion input?
+=================
+*/
 bool idImGuiSystemLocal::UseInput() const
 {
-	return ReleaseMouseForTools() || imgui_showDemoWindow.GetBool();
+	return releaseMouse || editor.IsMouseRelease() || imgui_showDemoWindow.GetBool();
 }
 
+/*
+=================
+idImGuiSystemLocal::UseInputForUsercmd
+=================
+*/
 bool idImGuiSystemLocal::UseInputForUsercmd() const
 {
-	return UseInput() && !IsFreeCameraActive();
+	return UseInput() && !editor.IsFreeCameraActive();
 }
 
-// inject a sys event
+/*
+=================
+idImGuiSystemLocal::DrawWindows
+=================
+*/
+void idImGuiSystemLocal::DrawWindows()
+{
+	for( int i = 0; i < windows.Num(); ++i )
+	{
+		if( windows[i]->IsShown() )
+		{
+			windows[i]->Draw();
+		}
+	}
+}
+
+/*
+=================
+idImGuiSystemLocal::InjectSysEvent
+
+inject a sys event
+=================
+*/
 bool idImGuiSystemLocal::InjectSysEvent( const sysEvent_t* event )
 {
 	if( IsInitialized() && ( UseInput() || RightMouseActive() ) )
@@ -599,11 +666,21 @@ bool idImGuiSystemLocal::InjectSysEvent( const sysEvent_t* event )
 	return false;
 }
 
+/*
+=================
+idImGuiSystemLocal::RightMouseActive
+=================
+*/
 bool idImGuiSystemLocal::RightMouseActive() const
 {
 	return mousePressed[1];
 }
 
+/*
+=================
+idImGuiSystemLocal::InjectMouseWheel
+=================
+*/
 bool idImGuiSystemLocal::InjectMouseWheel( int delta )
 {
 	if( IsInitialized() && UseInput() && delta != 0 )
@@ -614,6 +691,11 @@ bool idImGuiSystemLocal::InjectMouseWheel( int delta )
 	return false;
 }
 
+/*
+=================
+idImGuiSystemLocal::NewFrame
+=================
+*/
 void idImGuiSystemLocal::NewFrame()
 {
 	if( !haveNewFrame && IsInitialized() && ShowWindows() )
@@ -661,6 +743,11 @@ void idImGuiSystemLocal::NewFrame()
 	}
 }
 
+/*
+=================
+idImGuiSystemLocal::IsReadyToRender
+=================
+*/
 bool idImGuiSystemLocal::IsReadyToRender()
 {
 	if( IsInitialized() && ShowWindows() )
@@ -678,6 +765,11 @@ bool idImGuiSystemLocal::IsReadyToRender()
 	return false;
 }
 
+/*
+=================
+idImGuiSystemLocal::Render
+=================
+*/
 void idImGuiSystemLocal::Render()
 {
 	if( IsInitialized() && ShowWindows() )
@@ -695,7 +787,8 @@ void idImGuiSystemLocal::Render()
 		static ImGuiDockNodeFlags dockspaceFlags = ImGuiDockNodeFlags_PassthruCentralNode;
 		ImGui::DockSpaceOverViewport( ImHashStr( "Kroom3MainDockSpace" ), NULL, dockspaceFlags, NULL );
 
-		imguiSystem->DrawWindows();
+		DrawWindows();
+		editor.DrawWindows();
 
 		if( imgui_showDemoWindow.GetBool() )
 		{

@@ -29,6 +29,92 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
-#include "../imgui/BFGimgui.h"
-#include "../idlib/CmdArgs.h"
+#include "ImGuiTools_local.h"
+#include "lighteditor/LightEditor.h"
 
+extern idCVar g_editEntityMode;
+
+idImGuiEditorLocal::idImGuiEditorLocal( idImGuiSystem* system_ )
+	: system( system_ ), releaseMouse( false ), rightMouseActive( false )
+{
+}
+
+idImGuiEditorLocal::~idImGuiEditorLocal()
+{
+}
+
+void idImGuiEditorLocal::RegisterWindow( idImGuiWindow& window )
+{
+	for( int i = 0; i < windows.Num(); ++i )
+	{
+		if( windows[i] == &window )
+		{
+			return;
+		}
+	}
+
+	windows.Append( &window );
+	system->RegisterDockWindow( window.GetWindowName(), window.GetDockRegion() );
+}
+
+void idImGuiEditorLocal::ReleaseMouse( bool doRelease )
+{
+	releaseMouse = doRelease;
+}
+
+void idImGuiEditorLocal::SetRightMouseActive( bool active )
+{
+	rightMouseActive = active;
+}
+
+bool idImGuiEditorLocal::AreEditorsActive() const
+{
+	return g_editEntityMode.GetInteger() > 0 || com_editors != 0;
+}
+
+bool idImGuiEditorLocal::IsMouseRelease() const
+{
+	return AreEditorsActive() && releaseMouse && !rightMouseActive;
+}
+
+bool idImGuiEditorLocal::IsFreeCameraActive() const
+{
+	for( int i = 0; i < windows.Num(); ++i )
+	{
+		if( windows[i]->IsShown() && windows[i]->IsFreeCameraActive() )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+void idImGuiEditorLocal::DrawWindows()
+{
+	for( int i = 0; i < windows.Num(); ++i )
+	{
+		if( windows[i]->IsShown() )
+		{
+			windows[i]->Draw();
+		}
+	}
+}
+
+void idImGuiEditorLocal::InitializeLightEditor( const idDict* dict, idEntity* ent )
+{
+	if( dict == NULL || ent == NULL )
+	{
+		return;
+	}
+
+	idassert( idStr::Icmp( dict->GetString( "spawnclass" ), "idLight" ) == 0
+			  && "InitializeLightEditor() must only be called with light entities or NULL!" );
+
+	LightEditor::Instance().ShowIt( true );
+	RegisterWindow( LightEditor::Instance() );
+	ReleaseMouse( true );
+	gameEdit->PlayerEnableFreeCam( true );
+	system->RegisterDockWindow( "Light Texture Browser", DOCK_REGION_BOTTOM );
+
+	LightEditor::ReInit( dict, ent );
+}

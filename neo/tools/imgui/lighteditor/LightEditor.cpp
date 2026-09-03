@@ -33,7 +33,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "LightEditor.h"
 
-#include "../imgui/BFGimgui.h"
 #include "../../../extern/imgui/imgui_internal.h"
 
 #include "renderer/GLMatrix.h"
@@ -1223,7 +1222,7 @@ exitLightEditor:
 	{
 		gameEdit->PlayerEnableFreeCam( false );
 		isShown = showTool;
-		imguiSystem->SetReleaseToolMouse( false );
+		imguiSystem->GetEditor()->ReleaseMouse( false );
 	}
 }
 

@@ -26,10 +26,8 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#ifndef NEO_IMGUI_IMGUI_HOOKS_H_
-#define NEO_IMGUI_IMGUI_HOOKS_H_
-
-#include "../sys/sys_public.h"
+#ifndef __IMGUIGUISYSTEM_H_
+#define __IMGUIGUISYSTEM_H_
 
 enum DockRegion
 {
@@ -54,11 +52,16 @@ public:
 	virtual bool IsShown() const = 0;
 
 	// Returns whether this window currently owns the editor free camera.
-	virtual bool IsFreeCameraActive() const { return false; }
+	virtual bool IsFreeCameraActive() const
+	{
+		return false;
+	}
 
 	// Submits this window's ImGui widgets for the current frame.
 	virtual void Draw() = 0;
 };
+
+class idImGuiEditor;
 
 class idImGuiSystem
 {
@@ -71,14 +74,14 @@ public:
 	// Releases the ImGui context and all renderer-owned ImGui resources.
 	virtual void Destroy() = 0;
 
-	// Registers an ImGui window with the system and its docking layout.
+	// Returns the editor subsystem used to manage in-game ImGui tools.
+	virtual idImGuiEditor* GetEditor() = 0;
+
+	// Registers a ImGui window with the system.
 	virtual void RegisterWindow( idImGuiWindow& window ) = 0;
 
-	// Initializes the in-game light editor for the selected entity.
-	virtual void InitializeLightEditor( const idDict* dict, idEntity* entity ) = 0;
-
-	// Sets whether editor tools may release the engine mouse cursor.
-	virtual void SetReleaseToolMouse( bool doRelease ) = 0;
+	// Sets whether a ImGui window may release the engine mouse cursor.
+	virtual void ReleaseMouse( bool doRelease ) = 0;
 
 	// Updates the display size after the engine window changes dimensions.
 	virtual void NotifyDisplaySizeChanged( int width, int height ) = 0;
@@ -107,25 +110,17 @@ public:
 	// Registers an additional named window in the docking layout.
 	virtual void RegisterDockWindow( const char* windowName, DockRegion region ) = 0;
 
-	// Returns whether an editor mode currently requires ImGui handling.
-	virtual bool AreEditorsActive() const = 0;
-
-	// Returns whether ImGui should receive the current input event.
-	virtual bool ReleaseMouseForTools() const = 0;
-
-	// Returns whether a registered window currently owns the free camera.
-	virtual bool IsFreeCameraActive() const = 0;
-
 	// Returns whether ImGui should consume engine input.
 	virtual bool UseInput() const = 0;
 
 	// Returns whether ImGui should inhibit normal player user commands.
 	virtual bool UseInputForUsercmd() const = 0;
 
-	// Draws every registered window that is currently shown.
+	// Draws every registered non-editor ImGui window that is currently shown.
 	virtual void DrawWindows() = 0;
+
 };
 
 extern idImGuiSystem* imguiSystem;
 
-#endif /* NEO_IMGUI_IMGUI_HOOKS_H_ */
+#endif /* !__IMGUIGUISYSTEM_H_ */

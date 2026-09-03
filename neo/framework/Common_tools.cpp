@@ -101,7 +101,7 @@ void idCommonLocal::InitTool( const toolFlag_t tool, const idDict* dict, idEntit
 #else
 	if( tool & EDITOR_LIGHT )
 	{
-		imguiSystem->InitializeLightEditor( dict, entity );
+		imguiSystem->GetEditor()->InitializeLightEditor( dict, entity );
 	}
 #endif
 }
