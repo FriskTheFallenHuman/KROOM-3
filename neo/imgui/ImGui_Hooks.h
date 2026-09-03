@@ -31,42 +31,101 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "../sys/sys_public.h"
 
-namespace ImGuiHook
+enum DockRegion
 {
+	DOCK_REGION_RIGHT,
+	DOCK_REGION_BOTTOM,
+	DOCK_REGION_LEFT,
+	DOCK_REGION_CENTER
+};
 
-bool	Init( int windowWidth, int windowHeight );
+class idImGuiWindow
+{
+public:
+	virtual ~idImGuiWindow() {}
 
-bool	IsInitialized();
+	// Returns the stable ImGui window name used for docking and identification.
+	virtual const char* GetWindowName() const = 0;
 
-bool	UseInput();
+	// Returns the default docking region assigned to this window.
+	virtual DockRegion GetDockRegion() const = 0;
 
-bool	UseInputForUsercmd();
+	// Returns whether the window should be submitted during the current frame.
+	virtual bool IsShown() const = 0;
 
-// tell imgui that the (game) window size has changed
-void	NotifyDisplaySizeChanged( int width, int height );
+	// Returns whether this window currently owns the editor free camera.
+	virtual bool IsFreeCameraActive() const { return false; }
 
-// inject a sys event (keyboard, mouse, unicode character)
-bool	InjectSysEvent( const sysEvent_t* keyEvent );
+	// Submits this window's ImGui widgets for the current frame.
+	virtual void Draw() = 0;
+};
 
-// inject the current mouse wheel delta for scrolling
-bool	InjectMouseWheel( int delta );
+class idImGuiSystem
+{
+public:
+	virtual ~idImGuiSystem() {}
 
-// call this once per frame *before* calling ImGui::* commands to draw widgets etc
-// (but ideally after getting all new events)
-void	NewFrame();
+	// Initializes the ImGui context and connects it to the engine window.
+	virtual bool Init( int windowWidth, int windowHeight ) = 0;
 
-// call this to enable custom ImGui windows which are not editors
-bool	IsReadyToRender();
+	// Releases the ImGui context and all renderer-owned ImGui resources.
+	virtual void Destroy() = 0;
 
-// call this once per frame (at the end) - it'll render all ImGui::* commands
-// since NewFrame()
-void	Render();
+	// Registers an ImGui window with the system and its docking layout.
+	virtual void RegisterWindow( idImGuiWindow& window ) = 0;
 
-void	Destroy();
+	// Initializes the in-game light editor for the selected entity.
+	virtual void InitializeLightEditor( const idDict* dict, idEntity* entity ) = 0;
 
-bool	RightMouseActive();
+	// Sets whether editor tools may release the engine mouse cursor.
+	virtual void SetReleaseToolMouse( bool doRelease ) = 0;
 
-} //namespace ImGuiHook
+	// Updates the display size after the engine window changes dimensions.
+	virtual void NotifyDisplaySizeChanged( int width, int height ) = 0;
 
+	// Injects an engine system event into ImGui input processing.
+	virtual bool InjectSysEvent( const sysEvent_t* keyEvent ) = 0;
+
+	// Injects the current engine mouse-wheel delta into ImGui.
+	virtual bool InjectMouseWheel( int delta ) = 0;
+
+	// Starts a new ImGui frame after engine input has been collected.
+	virtual void NewFrame() = 0;
+
+	// Ensures a frame exists when rendering is requested outside the normal loop.
+	virtual bool IsReadyToRender() = 0;
+
+	// Renders all registered ImGui windows through the engine renderer.
+	virtual void Render() = 0;
+
+	// Returns whether the ImGui context is initialized.
+	virtual bool IsInitialized() const = 0;
+
+	// Returns whether the right mouse button is currently held.
+	virtual bool RightMouseActive() const = 0;
+
+	// Registers an additional named window in the docking layout.
+	virtual void RegisterDockWindow( const char* windowName, DockRegion region ) = 0;
+
+	// Returns whether an editor mode currently requires ImGui handling.
+	virtual bool AreEditorsActive() const = 0;
+
+	// Returns whether ImGui should receive the current input event.
+	virtual bool ReleaseMouseForTools() const = 0;
+
+	// Returns whether a registered window currently owns the free camera.
+	virtual bool IsFreeCameraActive() const = 0;
+
+	// Returns whether ImGui should consume engine input.
+	virtual bool UseInput() const = 0;
+
+	// Returns whether ImGui should inhibit normal player user commands.
+	virtual bool UseInputForUsercmd() const = 0;
+
+	// Draws every registered window that is currently shown.
+	virtual void DrawWindows() = 0;
+};
+
+extern idImGuiSystem* imguiSystem;
 
 #endif /* NEO_IMGUI_IMGUI_HOOKS_H_ */

@@ -138,20 +138,4 @@ If you have questions concerning this license or the applicable additional terms
 // RB end
 
 
-namespace ImGuiTools
-{
-bool	IsFreeCameraActive();
-
-void	SetReleaseToolMouse( bool doRelease );
-
-bool	ReleaseMouseForTools();
-
-bool	AreEditorsActive();
-
-void	DrawToolWindows();
-
-void	LightEditorInit( const idDict* dict, idEntity* entity );
-
-}
-
 #endif /* !__EDIT_PUBLIC_H__ */
