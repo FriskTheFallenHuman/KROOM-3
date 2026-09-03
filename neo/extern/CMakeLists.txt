@@ -28,6 +28,10 @@ file(GLOB src_external_imgui imgui/*.cpp imgui/misc/cpp/*.cpp imgui/misc/cpp/*.h
 source_group("ImGUI" FILES ${src_external_imgui})
 list(APPEND src_external ${src_external_imgui})
 
+file(GLOB src_external_imguizmo imguizmo/*.cpp imguizmo/*.h)
+source_group("ImGUIZmo" FILES ${src_external_imguizmo})
+list(APPEND src_external ${src_external_imguizmo})
+
 if(WIN32)
 if(NOT USE_VULKAN)
 file(GLOB src_external_glew glew/src/*.c glew/include/GL/*.h)

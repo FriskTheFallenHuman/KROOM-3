@@ -413,6 +413,22 @@ void idGameEditLocal::PlayerGetEyePosition( idVec3& org ) const
 	org = gameLocal.GetLocalPlayer()->GetEyePosition();
 }
 
+/*
+================
+idGameEditLocal::PlayerGetRenderView
+================
+*/
+bool idGameEditLocal::PlayerGetRenderView( renderView_t& rv ) const
+{
+	renderView_t* view = gameLocal.GetLocalPlayer()->GetRenderView();
+	if( view )
+	{
+		rv = *view;
+		return true;
+	}
+
+	return false;
+}
 
 /*
 ================
@@ -1735,11 +1751,18 @@ void idGameEditLocal::ParseSpawnArgsToRenderLight( const idDict* args, renderLig
 	{
 		if( !args->GetMatrix( "rotation", "1 0 0 0 1 0 0 0 1", mat ) )
 		{
-			args->GetFloat( "angle", "0", angles[ 1 ] );
-			angles[ 0 ] = 0;
-			angles[ 1 ] = idMath::AngleNormalize360( angles[ 1 ] );
-			angles[ 2 ] = 0;
-			mat = angles.ToMat3();
+			if( args->GetAngles( "angles", "0 0 0", angles ) )
+			{
+				mat = angles.ToMat3();
+			}
+			else
+			{
+				args->GetFloat( "angle", "0", angles[ 1 ] );
+				angles[ 0 ] = 0;
+				angles[ 1 ] = idMath::AngleNormalize360( angles[ 1 ] );
+				angles[ 2 ] = 0;
+				mat = angles.ToMat3();
+			}
 		}
 	}
 

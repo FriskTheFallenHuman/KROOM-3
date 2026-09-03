@@ -707,7 +707,7 @@ void idEditEntities::DisplayEntities()
 			// RB: use renderer backend to display light properties
 			if( ent->fl.selected )
 			{
-				drawArrows = true;
+				//drawArrows = true;
 
 				idLight* light = static_cast<idLight*>( ent );
 

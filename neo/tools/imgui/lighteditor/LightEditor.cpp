@@ -35,8 +35,9 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "../imgui/BFGimgui.h"
 
+#include "renderer/GLMatrix.h"
+#include "renderer/RenderCommon.h"
 #include "renderer/Material.h"
-#include "renderer/Image.h"
 
 namespace ImGuiTools
 {
@@ -61,6 +62,9 @@ void LightInfo::Defaults()
 	skipSpecular = false;
 	hasCenter = false;
 	lightStyle = -1;
+
+	angles.Zero();
+	scale.Set( 1, 1, 1 );
 }
 
 
@@ -172,6 +176,32 @@ void LightInfo::FromDict( const idDict* e )
 	}
 
 	lightStyle = e->GetInt( "style", -1 );
+
+	// get the rotation matrix in either full form, or single angle form
+	idMat3 axis;
+
+	if( !e->GetMatrix( "rotation", "1 0 0 0 1 0 0 0 1", axis ) )
+	{
+		if( e->GetAngles( "angles", "0 0 0", angles ) )
+		{
+			axis = angles.ToMat3();
+		}
+		else
+		{
+			float angle = e->GetFloat( "angle" );
+			if( angle != 0.0f )
+			{
+				axis = idAngles( 0.0f, angle, 0.0f ).ToMat3();
+			}
+			else
+			{
+				axis.Identity();
+			}
+		}
+	}
+
+	angles = axis.ToAngles();
+	scale.Set( 1, 1, 1 );
 }
 
 // the returned idDict is supposed to be used by idGameEdit::EntityChangeSpawnArgs()
@@ -265,6 +295,12 @@ void LightInfo::ToDict( idDict* e )
 	{
 		e->Set( "style", DELETE_VAL );
 	}
+
+	e->Set( "rotation", DELETE_VAL );
+	//if( angles.yaw != 0.0f || angles.pitch != 0.0f || angles.roll != 0.0f )
+	{
+		e->SetAngles( "angles", angles );
+	}
 }
 
 LightInfo::LightInfo()
@@ -285,7 +321,6 @@ LightEditor& LightEditor::Instance()
 // static
 void LightEditor::ReInit( const idDict* dict, idEntity* light )
 {
-	// TODO: if the lighteditor is currently shown, show a warning first about saving current changes to the last light?
 	Instance().Init( dict, light );
 }
 
@@ -355,6 +390,19 @@ void LightEditor::Reset()
 	currentTexture = NULL;
 	currentTextureMaterial = NULL;
 	currentStyleIndex = 0;
+
+	mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
+	mCurrentGizmoMode = ImGuizmo::WORLD;
+
+	useSnap = false;
+	//snap = { 1.f, 1.f, 1.f };
+	//bounds[] = { -0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f };
+	//boundsSnap[] = { 0.1f, 0.1f, 0.1f };
+	boundSizing = false;
+	boundSizingSnap = false;
+
+	shortcutSaveMapEnabled = true;
+	shortcutDuplicateLightEnabled = true;
 }
 
 namespace
@@ -381,7 +429,7 @@ void LightEditor::LoadLightTextures()
 		const idMaterial* mat = declManager->MaterialByIndex( i, false );
 
 		idStr matName = mat->GetName();
-		matName.ToLower(); // FIXME: why? (this is from old doom3 code)
+		matName.ToLower();
 
 		if( matName.Icmpn( "lights/", strlen( "lights/" ) ) == 0 || matName.Icmpn( "fogs/", strlen( "fogs/" ) ) == 0 )
 		{
@@ -513,7 +561,7 @@ void LightEditor::TempApplyChanges()
 	}
 }
 
-void LightEditor::SaveChanges()
+void LightEditor::SaveChanges( bool saveMap )
 {
 	idDict d;
 	cur.ToDict( &d );
@@ -528,7 +576,12 @@ void LightEditor::SaveChanges()
 		gameEdit->MapCopyDictToEntityAtOrigin( entityPos, &d );
 	}
 
-	gameEdit->MapSave();
+	original = cur;
+
+	if( saveMap )
+	{
+		gameEdit->MapSave();
+	}
 }
 
 void LightEditor::CancelChanges()
@@ -543,19 +596,56 @@ void LightEditor::CancelChanges()
 	}
 }
 
+void LightEditor::DuplicateLight()
+{
+	if( lightEntity != NULL )
+	{
+		// store current light properties to game idMapFile
+		SaveChanges( false );
+
+		// spawn the new light
+		idDict d;
+		cur.ToDict( &d );
+		d.DeleteEmptyKeys();
+
+		entityName = gameEdit->GetUniqueEntityName( "light" );
+		d.Set( "name", entityName );
+		d.Set( "classname", "light" );
+
+		idEntity* light = NULL;
+		gameEdit->SpawnEntityDef( d, &light );
+
+		if( light )
+		{
+			gameEdit->MapAddEntity( &d );
+			gameEdit->ClearEntitySelection();
+			gameEdit->AddSelectedEntity( light );
+
+			Init( &d, light );
+		}
+	}
+}
+
 // a kinda ugly hack to get a float* (as used by imgui) from idVec3
 static float* vecToArr( idVec3& v )
 {
 	return &v.x;
 }
 
+
+
 void LightEditor::Draw()
 {
+	bool changes = false;
 	bool showTool = isShown;
-	if( ImGui::Begin( title, &showTool ) ) //, ImGuiWindowFlags_ShowBorders ) )
-	{
-		bool changes = false;
+	bool isOpen;
 
+	ImGuiIO& io = ImGui::GetIO();
+
+	static ImGuiWindowFlags mainflags = ImGuiWindowFlags_AlwaysAutoResize;
+
+	if( ImGui::Begin( title, &isOpen, mainflags ) )
+	{
 		// RB: handle arrow key inputs like in TrenchBroom
 		if( ImGui::IsKeyDown( ImGuiKey_Escape ) )
 		{
@@ -564,9 +654,28 @@ void LightEditor::Draw()
 		}
 
 		// TODO use view direction like just global values
-		if( ImGui::IsKeyDown( ImGuiKey_LeftAlt ) )
+		if( io.KeyCtrl )
 		{
-			if( ImGui::IsKeyDown( ImGuiKey_UpArrow ) )
+			if( ImGui::IsKeyDown( ImGuiKey_S ) && shortcutSaveMapEnabled )
+			{
+				SaveChanges( true );
+				shortcutSaveMapEnabled = false;
+			}
+			else if( ImGui::IsKeyDown( ImGuiKey_D ) && shortcutDuplicateLightEnabled )
+			{
+				DuplicateLight();
+				shortcutDuplicateLightEnabled = false;
+			}
+		}
+		else if( io.KeyAlt )
+		{
+			if( ImGui::IsKeyDown( ImGuiKey_R ) )
+			{
+				// reset rotation like in Blender
+				cur.angles.Zero();
+				changes = true;
+			}
+			else if( ImGui::IsKeyDown( ImGuiKey_UpArrow ) )
 			{
 				cur.origin.z += 1;
 				changes = true;
@@ -596,6 +705,22 @@ void LightEditor::Draw()
 		{
 			cur.origin.y -= 1;
 			changes = true;
+		}
+
+		// reenable commands if keys were released
+		if( ( !io.KeyCtrl || !ImGui::IsKeyDown( ImGuiKey_S ) ) && !shortcutSaveMapEnabled )
+		{
+			shortcutSaveMapEnabled = true;
+		}
+
+		if( ( !io.KeyCtrl || !ImGui::IsKeyDown( ImGuiKey_D ) ) && !shortcutDuplicateLightEnabled )
+		{
+			shortcutDuplicateLightEnabled = true;
+		}
+
+		if( !entityName.IsEmpty() )
+		{
+			ImGui::SeparatorText( entityName.c_str() );
 		}
 
 		ImGui::SeparatorText( "Light Volume" );
@@ -689,6 +814,97 @@ void LightEditor::Draw()
 
 		ImGui::Unindent();
 
+		ImGui::SeparatorText( "Transform" );
+
+		if( ImGui::IsKeyDown( ImGuiKey_G ) )
+		{
+			mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
+		}
+
+		if( ImGui::IsKeyDown( ImGuiKey_R ) )
+		{
+			mCurrentGizmoOperation = ImGuizmo::ROTATE;
+		}
+
+		//if( ImGui::IsKeyPressed( ImGuiKey_S ) )
+		if( ImGui::IsKeyDown( ImGuiKey_S ) )
+		{
+			mCurrentGizmoOperation = ImGuizmo::SCALE;
+		}
+
+		if( mCurrentGizmoOperation != ImGuizmo::SCALE )
+		{
+			if( ImGui::RadioButton( "Local", mCurrentGizmoMode == ImGuizmo::LOCAL ) )
+			{
+				mCurrentGizmoMode = ImGuizmo::LOCAL;
+			}
+			ImGui::SameLine();
+			if( ImGui::RadioButton( "World", mCurrentGizmoMode == ImGuizmo::WORLD ) )
+			{
+				mCurrentGizmoMode = ImGuizmo::WORLD;
+			}
+		}
+		else
+		{
+			mCurrentGizmoMode = ImGuizmo::LOCAL;
+		}
+
+		if( ImGui::RadioButton( "Translate", mCurrentGizmoOperation == ImGuizmo::TRANSLATE ) )
+		{
+			mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
+		}
+		ImGui::SameLine();
+		if( ImGui::RadioButton( "Rotate", mCurrentGizmoOperation == ImGuizmo::ROTATE ) )
+		{
+			mCurrentGizmoOperation = ImGuizmo::ROTATE;
+		}
+		ImGui::SameLine();
+		if( ImGui::RadioButton( "Scale", mCurrentGizmoOperation == ImGuizmo::SCALE ) )
+		{
+			mCurrentGizmoOperation = ImGuizmo::SCALE;
+		}
+		//if( ImGui::RadioButton( "Universal", mCurrentGizmoOperation == ImGuizmo::UNIVERSAL ) )
+		//{
+		//	mCurrentGizmoOperation = ImGuizmo::UNIVERSAL;
+		//}
+
+		changes |= ImGui::DragVec3( "Origin", cur.origin, 1.0f, 0.0f, 0.0f, "%.1f" );
+		changes |= ImGui::InputFloat3( "Angles", cur.angles.ToFloatPtr() );
+		//changes |= ImGui::DragVec3( "Angles", cur.origin, 1.0f, 0.0f, 0.0f, "%.1f" );
+
+		ImGui::SeparatorText( "Snapping" );
+
+		ImGui::Checkbox( "Use Snapping", &useSnap );
+		//ImGui::SameLine();
+
+		if( useSnap )
+		{
+			switch( mCurrentGizmoOperation )
+			{
+				case ImGuizmo::TRANSLATE:
+					ImGui::InputFloat3( "Grid Snap", &gridSnap[0] );
+					break;
+				case ImGuizmo::ROTATE:
+					ImGui::InputFloat( "Angle Snap", &angleSnap );
+					break;
+				case ImGuizmo::SCALE:
+					ImGui::InputFloat( "Scale Snap", &scaleSnap );
+					break;
+			}
+		}
+
+#if 0
+		ImGui::Checkbox( "Bound Sizing", &boundSizing );
+		if( boundSizing )
+		{
+			ImGui::PushID( 3 );
+			ImGui::Checkbox( "##BoundSizing", &boundSizingSnap );
+			ImGui::SameLine();
+			ImGui::InputFloat3( "Snap", boundsSnap );
+			ImGui::PopID();
+		}
+#endif
+
 		ImGui::SeparatorText( "Color & Texturing" );
 
 		changes |= ImGui::ColorEdit3( "Color", vecToArr( cur.color ) );
@@ -735,7 +951,7 @@ void LightEditor::Draw()
 
 		if( ImGui::Button( "Save to .map" ) )
 		{
-			SaveChanges();
+			SaveChanges( true );
 			showTool = false;
 		}
 		else if( ImGui::SameLine(), ImGui::Button( "Cancel" ) )
@@ -743,12 +959,203 @@ void LightEditor::Draw()
 			CancelChanges();
 			showTool = false;
 		}
-		else if( changes )
+
+		viewDef_t viewDef;
+		if( gameEdit->PlayerGetRenderView( viewDef.renderView ) )
 		{
-			TempApplyChanges();
+			ImGui::Separator();
+
+			ImGui::Text( "X: %f Y: %f", io.MousePos.x, io.MousePos.y );
+			if( ImGuizmo::IsUsing() )
+			{
+				ImGui::Text( "Using gizmo" );
+			}
+			else
+			{
+				ImGui::Text( ImGuizmo::IsOver() ? "Over gizmo" : "" );
+				ImGui::SameLine();
+				ImGui::Text( ImGuizmo::IsOver( ImGuizmo::TRANSLATE ) ? "Over translate gizmo" : "" );
+				ImGui::SameLine();
+				ImGui::Text( ImGuizmo::IsOver( ImGuizmo::ROTATE ) ? "Over rotate gizmo" : "" );
+				ImGui::SameLine();
+				ImGui::Text( ImGuizmo::IsOver( ImGuizmo::SCALE ) ? "Over scale gizmo" : "" );
+			}
 		}
+
+		static bool use_work_area = true;
+		static ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove
+										| ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoInputs;// | ImGuiWindowFlags_MenuBar;
+
+		// We demonstrate using the full viewport area or the work area (without menu-bars, task-bars etc.)
+		// Based on your use case you may want one or the other.
+		const ImGuiViewport* viewport = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos( use_work_area ? viewport->WorkPos : viewport->Pos );
+		ImGui::SetNextWindowSize( use_work_area ? viewport->WorkSize : viewport->Size );
+
+		if( ImGui::Begin( "Example: Fullscreen window", &showTool, flags ) )
+		{
+			if( ImGui::BeginMainMenuBar() )
+			{
+				if( ImGui::BeginMenu( "File" ) )
+				{
+					//ShowExampleMenuFile();
+					if( ImGui::MenuItem( "Save Map", "Ctrl+S" ) )
+					{
+						SaveChanges( true );
+					}
+					ImGui::EndMenu();
+				}
+				if( ImGui::BeginMenu( "Edit" ) )
+				{
+					//if( ImGui::MenuItem( "Undo", "CTRL+Z" ) ) {}
+					//if( ImGui::MenuItem( "Redo", "CTRL+Y", false, false ) ) {} // Disabled item
+
+					//ImGui::Separator();
+
+					//if( ImGui::MenuItem( "Cut", "CTRL+X" ) ) {}
+					//if( ImGui::MenuItem( "Copy", "CTRL+C" ) ) {}
+					//if( ImGui::MenuItem( "Paste", "CTRL+V" ) ) {}
+
+					if( ImGui::MenuItem( "Duplicate", "CTRL+D" ) )
+					{
+						DuplicateLight();
+					}
+
+					//if( ImGui::MenuItem( "Delete", "Backspace" ) )
+					//{
+					// TODO
+					//	goto exitLightEditor;
+					//}
+					ImGui::EndMenu();
+				}
+				ImGui::EndMainMenuBar();
+			}
+
+			// backup state before moving the light
+			if( !ImGuizmo::IsUsing() )
+			{
+				curNotMoving = cur;
+			}
+
+			//
+			// GIZMO
+			//
+
+			ImGuizmo::SetRect( 0, 0, io.DisplaySize.x, io.DisplaySize.y );
+			ImGuizmo::SetOrthographic( false );
+			ImGuizmo::SetDrawlist();
+
+			ImGuizmo::SetID( 0 );
+
+
+			//viewDef_t viewDef;
+			//if( gameEdit->PlayerGetRenderView( viewDef.renderView ) )
+			{
+				R_SetupViewMatrix( &viewDef );
+				R_SetupProjectionMatrix( &viewDef );
+
+				float* cameraView = viewDef.worldSpace.modelViewMatrix;
+				float* cameraProjection = viewDef.projectionMatrix;
+
+				idMat3 rotateMatrix = cur.angles.ToMat3();
+				idMat3 scaleMatrix = mat3_identity;
+				scaleMatrix[0][0] = 16;
+				scaleMatrix[1][1] = 16;
+				scaleMatrix[2][2] = 16;
+
+				idMat4 objectMatrix( scaleMatrix * rotateMatrix,  cur.origin );
+				ImGuizmo::DrawCubes( cameraView, cameraProjection, objectMatrix.Transpose().ToFloatPtr(), 1 );
+
+				scaleMatrix[0][0] = 1;
+				scaleMatrix[1][1] = 1;
+				scaleMatrix[2][2] = 1;
+
+				idMat4 gizmoMatrix( scaleMatrix * rotateMatrix,  cur.origin );
+				idMat4 manipMatrix = gizmoMatrix.Transpose();
+
+				const float* snap = NULL;
+				if( useSnap )
+				{
+					switch( mCurrentGizmoOperation )
+					{
+						case ImGuizmo::TRANSLATE:
+							snap = &gridSnap[0];
+							break;
+						case ImGuizmo::ROTATE:
+							snap = &angleSnap;
+							break;
+						case ImGuizmo::SCALE:
+							snap = &scaleSnap;
+							break;
+					}
+				}
+
+				ImGuizmo::Manipulate( cameraView, cameraProjection, mCurrentGizmoOperation, mCurrentGizmoMode, manipMatrix.ToFloatPtr(), NULL, useSnap ? snap : NULL, boundSizing ? bounds : NULL, boundSizingSnap ? boundsSnap : NULL );
+
+				if( ImGuizmo::IsUsing() )
+				{
+					//if( mCurrentGizmoOperation == ImGuizmo::TRANSLATE )
+					{
+						gizmoMatrix = manipMatrix.Transpose();
+						cur.origin = gizmoMatrix.GetTranslation();
+
+						changes = true;
+					}
+
+					if( ( mCurrentGizmoOperation & ImGuizmo::SCALE ) == 0 )
+					{
+						idMat3 axis = gizmoMatrix.ToMat3();
+						cur.angles = axis.ToAngles();
+
+						changes = true;
+					}
+
+					if( mCurrentGizmoOperation == ImGuizmo::SCALE )
+					{
+						// Use DecomposeMatrixToComponents just for the scaling
+						float matrixTranslation[3], matrixRotation[3], matrixScale[3];
+						ImGuizmo::DecomposeMatrixToComponents( &manipMatrix[0][0], matrixTranslation, matrixRotation, matrixScale );
+
+						cur.scale.x = matrixScale[0];
+						cur.scale.y = matrixScale[1];
+						cur.scale.z = matrixScale[2];
+
+						if( matrixScale[0] != 1.0f || matrixScale[1] != 1.0f || matrixScale[2] != 1.0f )
+						{
+							if( cur.lightType == LIGHT_SPOT )
+							{
+								cur.lightRight = curNotMoving.lightRight * matrixScale[0];
+								cur.lightUp = curNotMoving.lightUp * matrixScale[1];
+								cur.lightTarget = curNotMoving.lightTarget * matrixScale[2];
+							}
+							else //if( cur.lightType == LIGHT_POINT )
+							{
+								cur.lightRadius.x = curNotMoving.lightRadius.x * matrixScale[0];
+								cur.lightRadius.y = curNotMoving.lightRadius.y * matrixScale[1];
+								cur.lightRadius.z = curNotMoving.lightRadius.z * matrixScale[2];
+
+								if( matrixScale[0] != matrixScale[1] || matrixScale[1] != matrixScale[2] )
+								{
+									cur.equalRadius = false;
+								}
+							}
+
+							changes = true;
+						}
+					}
+				}
+			}
+		}
+		ImGui::End();
 	}
 	ImGui::End();
+
+	if( changes )
+	{
+		TempApplyChanges();
+	}
+
+exitLightEditor:
 
 	if( isShown && !showTool )
 	{

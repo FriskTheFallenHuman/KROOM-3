@@ -338,6 +338,7 @@ public:
 	virtual void				PlayerGetAxis( idMat3& axis ) const = 0;
 	virtual void				PlayerGetViewAngles( idAngles& angles ) const = 0;
 	virtual void				PlayerGetEyePosition( idVec3& org ) const = 0;
+	virtual bool				PlayerGetRenderView( renderView_t& rv ) const = 0;
 
 	// In game map editing support.
 	virtual const idDict* 		MapGetEntityDict( const char* name ) const = 0;
