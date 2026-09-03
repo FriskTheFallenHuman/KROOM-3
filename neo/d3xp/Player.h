@@ -286,6 +286,11 @@ public:
 	class idPlayerView		playerView;			// handles damage kicks and effects
 
 	bool					noclip;
+	bool					freeCamActive;
+	bool					freeCamPreviousNoclip;
+	bool					freeCamPreviousThirdPerson;
+	idVec3					freeCamCameraOrigin;
+	idAngles					freeCamCameraAngles;
 	bool					godmode;
 	bool					demigodmode;
 
@@ -476,6 +481,9 @@ public:
 
 	void					UpdateConditions();
 	void					SetViewAngles( const idAngles& angles );
+	void					EnableFreeCam();
+	void					DisableFreeCam();
+	void					MoveFreeCamera();
 
 	// Controller Shake
 	void					ControllerShakeFromDamage( int damage );

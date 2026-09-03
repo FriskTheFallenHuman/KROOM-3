@@ -432,6 +432,29 @@ bool idGameEditLocal::PlayerGetRenderView( renderView_t& rv ) const
 
 /*
 ================
+idGameEditLocal::PlayerSetLightEditorCamera
+================
+*/
+void idGameEditLocal::PlayerEnableFreeCam( bool enabled )
+{
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	if( !player )
+	{
+		return;
+	}
+
+	if( enabled )
+	{
+		player->EnableFreeCam();
+	}
+	else
+	{
+		player->DisableFreeCam();
+	}
+}
+
+/*
+================
 idGameEditLocal::MapGetEntityDict
 ================
 */

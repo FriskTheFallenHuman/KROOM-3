@@ -105,6 +105,7 @@ public:
 	virtual void				PlayerGetViewAngles( idAngles& angles ) const;
 	virtual void				PlayerGetEyePosition( idVec3& org ) const;
 	virtual bool				PlayerGetRenderView( renderView_t& rv ) const;
+	virtual void				PlayerEnableFreeCam( bool enabled );
 
 	// In game map editing support.
 	virtual const idDict* 		MapGetEntityDict( const char* name ) const;

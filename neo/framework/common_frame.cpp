@@ -533,7 +533,7 @@ void idCommonLocal::Frame()
 
 		// DG: Add pause from com_pause cvar
 		if( com_pause.GetInteger() || console->Active() || Dialog().IsDialogActive() || session->IsSystemUIShowing()
-				|| ( game && game->InhibitControls() ) || ImGuiHook::UseInput() )
+				|| ( game && game->InhibitControls() ) || ImGuiHook::UseInputForUsercmd() )
 			// DG end
 		{
 			// RB: don't release the mouse when opening a PDA or menu
@@ -547,7 +547,7 @@ void idCommonLocal::Frame()
 		}
 		else
 		{
-			Sys_GrabMouseCursor( true );
+			Sys_GrabMouseCursor( !ImGuiTools::IsFreeCameraActive() || ImGuiHook::RightMouseActive() );
 			usercmdGen->InhibitUsercmd( INHIBIT_SESSION, false );
 		}
 

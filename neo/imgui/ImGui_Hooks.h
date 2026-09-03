@@ -31,7 +31,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "../sys/sys_public.h"
 
-
 namespace ImGuiHook
 {
 
@@ -40,6 +39,8 @@ bool	Init( int windowWidth, int windowHeight );
 bool	IsInitialized();
 
 bool	UseInput();
+
+bool	UseInputForUsercmd();
 
 // tell imgui that the (game) window size has changed
 void	NotifyDisplaySizeChanged( int width, int height );
@@ -62,6 +63,8 @@ bool	IsReadyToRender();
 void	Render();
 
 void	Destroy();
+
+bool	RightMouseActive();
 
 } //namespace ImGuiHook
 
