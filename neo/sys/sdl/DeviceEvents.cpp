@@ -513,7 +513,7 @@ sysEvent_t Sys_GetEvent()
 			case SDL_MOUSEMOTION:
 				// DG: return event with absolute mouse-coordinates when in menu
 				// to fix cursor problems in windowed mode
-				if( game && ( game->Shell_IsActive() || imguiSystem->ReleaseMouseForTools() ) )
+				if( game && ( game->Shell_IsActive() || imguiSystem->GetEditor()->IsMouseRelease() ) )
 				{
 					res.evType = SE_MOUSE_ABSOLUTE;
 					res.evValue = ev.motion.x;

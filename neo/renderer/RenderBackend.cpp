@@ -36,9 +36,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "RenderCommon.h"
 #include "Framebuffer.h"
 
-#include "imgui/ImGui_Hooks.h"
-
-
 idCVar r_motionBlur( "r_motionBlur", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "1 - 5, log2 of the number of motion blur samples" );
 idCVar r_skipShaderPasses( "r_skipShaderPasses", "0", CVAR_RENDERER | CVAR_BOOL, "" );
 idCVar r_skipInteractionFastPath( "r_skipInteractionFastPath", "1", CVAR_RENDERER | CVAR_BOOL, "" );

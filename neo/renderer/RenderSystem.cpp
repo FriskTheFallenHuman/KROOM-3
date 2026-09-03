@@ -33,7 +33,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "RenderCommon.h"
 #include "../framework/Common_local.h"
-#include "../imgui/BFGimgui.h"
 
 idRenderSystemLocal	tr;
 idRenderBackend backEnd;

@@ -28,16 +28,9 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-// a GUI light editor, based loosely on the one from original Doom3 (neo/tools/radiant/LightDlg.*)
-// LightInfo was CLightInfo, the LightEditor itself was written from scratch.
+#ifndef __LIGHTEDITOR_H_
+#define __LIGHTEDITOR_H_
 
-#ifndef NEO_TOOLS_EDITORS_LIGHTEDITOR_H_
-#define NEO_TOOLS_EDITORS_LIGHTEDITOR_H_
-
-#include <idlib/Dict.h>
-#include "../../edit_public.h"
-
-#include "../imgui/BFGimgui.h"
 #include "../imguizmo/ImGuizmo.h"
 
 enum ELightType
@@ -148,10 +141,23 @@ private:
 	}
 
 public:
-	const char* GetWindowName() const override { return "###LightEditor"; }
-	DockRegion GetDockRegion() const override { return DOCK_REGION_RIGHT; }
-	bool IsShown() const override { return isShown; }
-	bool IsFreeCameraActive() const override { return IsShown(); }
+	const char* GetWindowName() const override
+	{
+		return "###LightEditor";
+	}
+	DockRegion GetDockRegion() const override
+	{
+		return DOCK_REGION_RIGHT;
+	}
+	bool IsShown() const override
+	{
+		return isShown;
+	}
+	bool IsFreeCameraActive() const override
+	{
+		return IsShown();
+	}
+
 	void Draw() override;
 
 	static LightEditor&	Instance();
@@ -164,4 +170,4 @@ public:
 
 };
 
-#endif
+#endif /* !__LIGHTEDITOR_H_ */

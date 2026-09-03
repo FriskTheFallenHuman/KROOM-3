@@ -153,13 +153,7 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 #include "sys/sys_achievements.h"
 
 // tools
-
-// The editor entry points are always declared, but may just be
-// stubbed out on non-windows platforms.
-//#if defined(USE_MFC_TOOLS)
-#include "imgui/ImGui_Hooks.h"
 #include "tools/edit_public.h"
-//#endif
 
 // Compilers for map, model, video etc. processing.
 #include "tools/compilers/compiler_public.h"
@@ -174,7 +168,9 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 
 	#else
 
-		#include "framework/DemoChecksum.h"
+		#include "framework/ImGuiSystemUtils.h"
+		#include "framework/ImGuiSystem.h"
+		#include "tools/imgui/ImGuiTools.h"
 
 		// framework
 		#include "framework/Compressor.h"

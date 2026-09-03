@@ -510,9 +510,6 @@ set_source_files_properties(
 	PROPERTIES
 	SKIP_PRECOMPILE_HEADERS ON)
 
-file(GLOB src_framework_imgui imgui/*.cpp imgui/*.h)
-source_group("Framework\\ImGUI" FILES ${src_framework_imgui})
-
 file(GLOB src_renderer_base renderer/*.cpp renderer/*.c renderer/*.h)
 list(REMOVE_ITEM src_renderer_base ${CMAKE_CURRENT_SOURCE_DIR}/renderer/BoundsTrack.cpp ${CMAKE_CURRENT_SOURCE_DIR}/renderer/BoundsTrack.h)
 source_group("Renderer" FILES ${src_renderer_base})
@@ -570,7 +567,6 @@ set(src_core
 	${src_aas2file}
 	${src_cm}
 	${src_framework}
-	${src_framework_imgui}
 	${src_renderer_base}
 	${src_renderer_color}
 	${src_renderer_dxt}
