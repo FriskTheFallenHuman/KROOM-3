@@ -373,7 +373,7 @@ void idCommonLocal::Draw()
 		SCOPED_PROFILE_EVENT( "Post-Draw" );
 
 		// draw Imgui before the console
-		ImGuiHook::Render();
+		imguiSystem->Render();
 
 		// draw the wipe material on top of this if it hasn't completed yet
 		DrawWipeModel();
@@ -526,19 +526,19 @@ void idCommonLocal::Frame()
 		renderSystem->OnFrame();
 
 		// DG: prepare new ImGui frame - I guess this is a good place, as all new events should be available?
-		ImGuiHook::NewFrame();
+		imguiSystem->NewFrame();
 
 		// if the console or another gui is down, we don't need to hold the mouse cursor
 		bool chatting = false;
 
 		// DG: Add pause from com_pause cvar
 		if( com_pause.GetInteger() || console->Active() || Dialog().IsDialogActive() || session->IsSystemUIShowing()
-				|| ( game && game->InhibitControls() ) || ImGuiHook::UseInputForUsercmd() )
+				|| ( game && game->InhibitControls() ) || imguiSystem->UseInputForUsercmd() )
 			// DG end
 		{
 			// RB: don't release the mouse when opening a PDA or menu
 			// SRS - but always release at main menu after exiting game or demo
-			if( console->Active() || !mapSpawned || ImGuiHook::UseInput() )
+			if( console->Active() || !mapSpawned || imguiSystem->UseInput() )
 			{
 				Sys_GrabMouseCursor( false );
 			}
@@ -547,7 +547,7 @@ void idCommonLocal::Frame()
 		}
 		else
 		{
-			Sys_GrabMouseCursor( !ImGuiTools::IsFreeCameraActive() || ImGuiHook::RightMouseActive() );
+			Sys_GrabMouseCursor( !imguiSystem->IsFreeCameraActive() || imguiSystem->RightMouseActive() );
 			usercmdGen->InhibitUsercmd( INHIBIT_SESSION, false );
 		}
 

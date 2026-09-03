@@ -1495,8 +1495,8 @@ void idCommonLocal::Shutdown()
 		game->Shell_Cleanup();
 	}
 
-	printf( "ImGuiHook::Destroy();\n" );
-	ImGuiHook::Destroy();
+	printf( "imguiSystem->Destroy();\n" );
+	imguiSystem->Destroy();
 
 	printf( "delete renderWorld;\n" );
 	// SRS - Call FreeRenderWorld() vs. delete, otherwise worlds list not updated on shutdown
@@ -1798,7 +1798,7 @@ bool idCommonLocal::ProcessEvent( const sysEvent_t* event )
 		return true;
 	}
 
-	if( ImGuiHook::InjectSysEvent( event ) )
+	if( imguiSystem->InjectSysEvent( event ) )
 	{
 		return true;
 	}

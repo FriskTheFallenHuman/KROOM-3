@@ -553,7 +553,7 @@ void R_SetNewMode( const bool fullInit )
 				// it worked
 
 				// DG: ImGui must be initialized after the window has been created, it needs an opengl context
-				ImGuiHook::Init( parms.width, parms.height );
+				imguiSystem->Init( parms.width, parms.height );
 
 				setModeWorked = true;
 				break;
@@ -567,7 +567,7 @@ void R_SetNewMode( const bool fullInit )
 				// it worked
 
 				// DG: ImGui must know about the changed window size
-				ImGuiHook::NotifyDisplaySizeChanged( parms.width, parms.height );
+				imguiSystem->NotifyDisplaySizeChanged( parms.width, parms.height );
 
 				setModeWorked = true;
 				break;

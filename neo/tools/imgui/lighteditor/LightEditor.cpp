@@ -34,13 +34,11 @@ If you have questions concerning this license or the applicable additional terms
 #include "LightEditor.h"
 
 #include "../imgui/BFGimgui.h"
+#include "../../../extern/imgui/imgui_internal.h"
 
 #include "renderer/GLMatrix.h"
 #include "renderer/RenderCommon.h"
 #include "renderer/Material.h"
-
-namespace ImGuiTools
-{
 
 void LightInfo::Defaults()
 {
@@ -66,8 +64,6 @@ void LightInfo::Defaults()
 	angles.Zero();
 	scale.Set( 1, 1, 1 );
 }
-
-
 void LightInfo::DefaultPoint()
 {
 	idVec3 oldColor = color;
@@ -302,7 +298,6 @@ void LightInfo::ToDict( idDict* e )
 		e->SetAngles( "angles", angles );
 	}
 }
-
 LightInfo::LightInfo()
 {
 	Defaults();
@@ -500,6 +495,79 @@ void LightEditor::LoadCurrentTexture()
 	}
 }
 
+bool LightEditor::DrawLightTextureBrowser()
+{
+	bool changed = false;
+
+	if( ImGui::Begin( "Light Texture Browser" ) )
+	{
+		ImGui::BeginChild( "LightTextureNames", ImVec2( 240.0f, 0.0f ), ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX );
+		ImGui::SetCursorPosY( 6.0f );
+		if( ImGui::Selectable( "<No Texture>", currentTextureIndex == 0 ) )
+		{
+			currentTextureIndex = 0;
+			cur.strTexture = "";
+			LoadCurrentTexture();
+			changed = true;
+		}
+		for( int i = 0; i < textureNames.Num(); ++i )
+		{
+			const bool selected = currentTextureIndex == i + 1;
+			if( ImGui::Selectable( textureNames[i].c_str(), selected ) )
+			{
+				currentTextureIndex = i + 1;
+				cur.strTexture = textureNames[i];
+				LoadCurrentTexture();
+				changed = true;
+			}
+			if( selected )
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+		ImGui::EndChild();
+
+		ImGui::SameLine();
+		ImGui::BeginChild( "LightTexturePreview", ImVec2( 0.0f, 0.0f ), ImGuiChildFlags_Borders, ImGuiWindowFlags_AlwaysVerticalScrollbar );
+		ImGui::SetCursorPos( ImVec2( 6.0f, 6.0f ) );
+		const float cellWidth = 112.0f;
+		const float thumbnailSize = 72.0f;
+		const int columns = Max( 1, ( int )( ImGui::GetContentRegionAvail().x / cellWidth ) );
+		for( int i = 0; i < textureNames.Num(); ++i )
+		{
+			const idMaterial* material = declManager->FindMaterial( textureNames[i], false );
+			idImage* image = material != NULL ? material->GetLightEditorImage() : NULL;
+			if( image != NULL )
+			{
+				idStr uiName( "lighteditor/" );
+				uiName += image->GetName();
+				const idMaterial* previewMaterial = declManager->FindMaterial( uiName, true );
+				if( previewMaterial != NULL )
+				{
+					ImGui::BeginGroup();
+					ImGui::Image( ( void* )previewMaterial, ImVec2( thumbnailSize, thumbnailSize ) );
+					if( ImGui::Selectable( textureNames[i].c_str(), currentTextureIndex == i + 1, 0, ImVec2( cellWidth - 8.0f, 0.0f ) ) )
+					{
+						currentTextureIndex = i + 1;
+						cur.strTexture = textureNames[i];
+						LoadCurrentTexture();
+						changed = true;
+					}
+					ImGui::EndGroup();
+					if( ( i + 1 ) % columns != 0 )
+					{
+						ImGui::SameLine();
+					}
+				}
+			}
+		}
+		ImGui::EndChild();
+	}
+	ImGui::End();
+
+	return changed;
+}
+
 void LightEditor::LoadLightStyles()
 {
 	styleNames.Clear();
@@ -639,11 +707,11 @@ void LightEditor::Draw()
 {
 	bool changes = false;
 	bool showTool = isShown;
-	bool isOpen;
+	bool isOpen = isShown;
 
 	ImGuiIO& io = ImGui::GetIO();
 
-	static ImGuiWindowFlags mainflags = ImGuiWindowFlags_AlwaysAutoResize;
+	static ImGuiWindowFlags mainflags = ImGuiWindowFlags_NoCollapse;
 
 	if( ImGui::Begin( title, &isOpen, mainflags ) )
 	{
@@ -912,23 +980,6 @@ void LightEditor::Draw()
 
 		ImGui::Spacing();
 
-		if( ImGui::Combo( "Texture", &currentTextureIndex, TextureItemsGetter, this, textureNames.Num() + 1 ) )
-		{
-			changes = true;
-
-			// -1 because 0 is "<No Texture>"
-			cur.strTexture = ( currentTextureIndex > 0 ) ? textureNames[currentTextureIndex - 1] : "";
-			LoadCurrentTexture();
-		}
-
-		if( currentTextureMaterial != nullptr && currentTexture != nullptr )
-		{
-			ImVec2 size( currentTexture->GetUploadWidth(), currentTexture->GetUploadHeight() );
-
-			ImGui::Image( ( void* )currentTextureMaterial, size, ImVec2( 0, 0 ), ImVec2( 1, 1 ),
-						  ImColor( 255, 255, 255, 255 ), ImColor( 255, 255, 255, 128 ) );
-		}
-
 		ImGui::SeparatorText( "Flicker Style" );
 
 		if( ImGui::Combo( "Style", &currentStyleIndex, StyleItemsGetter, this, styleNames.Num() + 1 ) )
@@ -983,15 +1034,20 @@ void LightEditor::Draw()
 			}
 		}
 
-		static bool use_work_area = true;
 		static ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove
 										| ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoInputs;// | ImGuiWindowFlags_MenuBar;
 
-		// We demonstrate using the full viewport area or the work area (without menu-bars, task-bars etc.)
-		// Based on your use case you may want one or the other.
 		const ImGuiViewport* viewport = ImGui::GetMainViewport();
-		ImGui::SetNextWindowPos( use_work_area ? viewport->WorkPos : viewport->Pos );
-		ImGui::SetNextWindowSize( use_work_area ? viewport->WorkSize : viewport->Size );
+		ImVec2 scenePos = viewport->WorkPos;
+		ImVec2 sceneSize = viewport->WorkSize;
+		ImGuiDockNode* centralNode = ImGui::DockBuilderGetCentralNode( ImHashStr( "Kroom3MainDockSpace" ) );
+		if( centralNode != NULL )
+		{
+			scenePos = centralNode->Pos;
+			sceneSize = centralNode->Size;
+		}
+		ImGui::SetNextWindowPos( scenePos );
+		ImGui::SetNextWindowSize( sceneSize );
 
 		if( ImGui::Begin( "Example: Fullscreen window", &showTool, flags ) )
 		{
@@ -1151,6 +1207,11 @@ void LightEditor::Draw()
 	}
 	ImGui::End();
 
+	if( showTool )
+	{
+		changes |= DrawLightTextureBrowser();
+	}
+
 	if( changes )
 	{
 		TempApplyChanges();
@@ -1162,8 +1223,7 @@ exitLightEditor:
 	{
 		gameEdit->PlayerEnableFreeCam( false );
 		isShown = showTool;
-		SetReleaseToolMouse( false );
+		imguiSystem->SetReleaseToolMouse( false );
 	}
 }
 
-} //namespace ImGuiTools

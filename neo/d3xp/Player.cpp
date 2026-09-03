@@ -7638,7 +7638,7 @@ idPlayer::MoveFreeCamera
 */
 void idPlayer::MoveFreeCamera()
 {
-	if( !ImGuiHook::RightMouseActive() )
+	if( !imguiSystem->RightMouseActive() )
 	{
 		return;
 	}

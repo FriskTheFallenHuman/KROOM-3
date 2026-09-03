@@ -40,9 +40,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "../imgui/BFGimgui.h"
 #include "../imguizmo/ImGuizmo.h"
 
-namespace ImGuiTools
-{
-
 enum ELightType
 {
 	LIGHT_POINT,
@@ -88,7 +85,7 @@ public:
 	void		ToDict( idDict* e );
 };
 
-class LightEditor
+class LightEditor : public idImGuiWindow
 {
 private:
 	bool				isShown;
@@ -135,6 +132,7 @@ private:
 	void				LoadLightTextures();
 	static const char* 	TextureItemsGetter( void* data, int idx );
 	void				LoadCurrentTexture();
+	bool				DrawLightTextureBrowser();
 
 	void				TempApplyChanges();
 	void				SaveChanges( bool saveMap );
@@ -150,6 +148,11 @@ private:
 	}
 
 public:
+	const char* GetWindowName() const override { return "###LightEditor"; }
+	DockRegion GetDockRegion() const override { return DOCK_REGION_RIGHT; }
+	bool IsShown() const override { return isShown; }
+	bool IsFreeCameraActive() const override { return IsShown(); }
+	void Draw() override;
 
 	static LightEditor&	Instance();
 	static void			ReInit( const idDict* dict, idEntity* light );
@@ -159,14 +162,6 @@ public:
 		isShown = show;
 	}
 
-	ID_INLINE bool			IsShown() const
-	{
-		return isShown;
-	}
-
-	void				Draw();
 };
-
-} //namespace ImGuiTools
 
 #endif
