@@ -25,6 +25,7 @@ entityDef light {
 	"editor_mins"				"-8 -8 -8"
 	"editor_maxs"				"8 8 8"
 	"editor_rotatable"			"1"
+	"editor_icon"				"light_icon"
 
 	"editor_usage"				"Light source.  If health is set, light becomes breakable and turns off when shot."
 	
@@ -67,7 +68,7 @@ entityDef speaker {
 	"editor_mins"					"-8 -8 -8"
 	"editor_maxs"					"8 8 8"
 	"editor_material"				"textures/common/speaker"
-	
+	"editor_icon"					"speaker_icon"
 
 	"editor_usage"					""
 	

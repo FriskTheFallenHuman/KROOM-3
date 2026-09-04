@@ -467,6 +467,20 @@ idEditEntities::idEditEntities()
 
 /*
 =============
+idEditEntities::ClearEntityBillboards
+=============
+*/
+void idEditEntities::ClearEntityBillboards()
+{
+	for( int i = 0; i < entityBillboards.Num(); ++i )
+	{
+		gameRenderWorld->FreeEntityDef( entityBillboards[i] );
+	}
+	entityBillboards.Clear();
+}
+
+/*
+=============
 idEditEntities::SelectEntity
 =============
 */
@@ -604,6 +618,8 @@ void idEditEntities::DisplayEntities()
 {
 	idEntity* ent;
 
+	ClearEntityBillboards();
+
 	if( !gameLocal.GetLocalPlayer() )
 	{
 		return;
@@ -668,6 +684,7 @@ void idEditEntities::DisplayEntities()
 	for( ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() )
 	{
 		idVec4 color;
+		idVec4 customColor;
 
 		textKey = "";
 		if( !EntityIsSelectable( ent, &color, &textKey ) )
@@ -676,6 +693,8 @@ void idEditEntities::DisplayEntities()
 		}
 
 		bool drawArrows = false;
+		bool drawBillboards = !ent->fl.selected;
+		bool useCustomColor = false;
 		if( ent->GetType() == &idAFEntity_Base::Type )
 		{
 			if( !static_cast<idAFEntity_Base*>( ent )->IsActiveAF() )
@@ -685,10 +704,10 @@ void idEditEntities::DisplayEntities()
 		}
 		else if( ent->GetType() == &idSound::Type )
 		{
-			if( ent->fl.selected )
-			{
-				drawArrows = true;
-			}
+			//if( ent->fl.selected )
+			//{
+			//	drawArrows = true;
+			//}
 			const idSoundShader* ss = declManager->FindSound( ent->spawnArgs.GetString( textKey ) );
 			if( ss->HasDefaultSound() || ss->base->GetState() == DS_DEFAULTED )
 			{
@@ -704,15 +723,20 @@ void idEditEntities::DisplayEntities()
 		}
 		else if( ent->GetType() == &idLight::Type )
 		{
+			idLight* light = static_cast<idLight*>( ent );
+
+			light->GetColor( customColor );
+			customColor.w = 1.0f;
+
+			useCustomColor = true;
+
 			// RB: use renderer backend to display light properties
 			if( ent->fl.selected )
 			{
 				//drawArrows = true;
 
-				idLight* light = static_cast<idLight*>( ent );
-
-				r_singleLight.SetInteger( light->GetLightDefHandle() );
-				r_showLights.SetInteger( 3 );
+				cvarSystem->SetCVarInteger( "r_singleLight", light->GetLightDefHandle() );
+				cvarSystem->SetCVarInteger( "r_showLights", 3 );
 
 				renderLight_t renderLight = light->GetRenderLight();
 
@@ -750,7 +774,58 @@ void idEditEntities::DisplayEntities()
 			continue;
 		}
 
-		gameRenderWorld->DebugBounds( color, idBounds( ent->GetPhysics()->GetOrigin() ).Expand( 8 ) );
+		if( drawBillboards )
+		{
+			renderEntity_t billboard = {};
+			billboard.hModel = renderModelManager->FindModel( "_SPRITE" );
+			billboard.origin = ent->GetPhysics()->GetOrigin() + idVec3( 0, 0, 12 );
+			billboard.axis = mat3_identity;
+
+			const idDict* entityDef = gameEdit->FindEntityDefDict( ent->spawnArgs.GetString( "classname" ), false );
+			const char* editorMaterialName = entityDef != NULL ? entityDef->GetString( "editor_icon" ) : "";
+			if( editorMaterialName[0] == '\0' && entityDef != NULL )
+			{
+				editorMaterialName = entityDef->GetString( "editor_material" );
+			}
+			const idMaterial* editorIcon = declManager->FindMaterial( editorMaterialName, false );
+			if( editorIcon != NULL )
+			{
+				billboard.customShader = editorIcon;
+			}
+			else
+			{
+				billboard.customShader = declManager->FindMaterial( "_white" );
+			}
+
+			if( useCustomColor )
+			{
+				billboard.shaderParms[ SHADERPARM_RED ] = customColor.x;
+				billboard.shaderParms[ SHADERPARM_GREEN ] = customColor.y;
+				billboard.shaderParms[ SHADERPARM_BLUE ] = customColor.z;
+				billboard.shaderParms[ SHADERPARM_ALPHA ] = customColor.w;
+			}
+			else
+			{
+				billboard.shaderParms[ SHADERPARM_RED ] = color.x;
+				billboard.shaderParms[ SHADERPARM_GREEN ] = color.y;
+				billboard.shaderParms[ SHADERPARM_BLUE ] = color.z;
+				billboard.shaderParms[ SHADERPARM_ALPHA ] = color.w;
+			}
+
+			billboard.shaderParms[ SHADERPARM_SPRITE_WIDTH ] = 64.0f;
+			billboard.shaderParms[ SHADERPARM_SPRITE_HEIGHT ] = 64.0f;
+			billboard.noShadow = true;
+			billboard.noSelfShadow = true;
+			billboard.noDynamicInteractions = true;
+			billboard.noOverlays = true;
+			entityBillboards.Append( gameRenderWorld->AddEntityDef( &billboard ) );
+		}
+
+		// draw bounding box
+		//{
+		//	gameRenderWorld->DebugBounds( color, idBounds( ent->GetPhysics()->GetOrigin() ).Expand( 8 ) );
+		//}
+
 		if( drawArrows )
 		{
 			idVec3 start = ent->GetPhysics()->GetOrigin();

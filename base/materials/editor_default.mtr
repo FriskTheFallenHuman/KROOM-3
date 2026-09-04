@@ -1,17 +1,127 @@
+//
+// Default materials
+//
 _emptyName
 {
 	description	"Empty-name editor texture"
-	qer_editorimage	textures/_emptyname.tga
-	diffusemap	textures/_emptyname.tga
-	bumpmap	textures/_emptyname_local.tga
-	specularmap	textures/_emptyname_s.tga
+	qer_editorimage	textures/_emptyname.png
+	diffusemap	textures/_emptyname.png
+	bumpmap	textures/_emptyname_local.png
+	specularmap	textures/_emptyname_s.png
 }
 
 textures/default
 {
 	description	"Default editor texture"
-	qer_editorimage	textures/_emptyname.tga
-	diffusemap	textures/_emptyname.tga
-	bumpmap	textures/_emptyname_local.tga
-	specularmap	textures/_emptyname_s.tga
+	qer_editorimage	textures/_emptyname.png
+	diffusemap	textures/_emptyname.png
+	bumpmap	textures/_emptyname_local.png
+	specularmap	textures/_emptyname_s.png
+}
+
+//
+// Editor Icons
+//
+light_icon
+{
+    translucent
+    noselfshadow
+    noshadows
+    twosided
+
+    {
+        blend gl_src_alpha, gl_one_minus_src_alpha
+        map textures/editoricons/light.png
+    }
+}
+
+speaker_icon
+{
+    translucent
+    noselfshadow
+    noshadows
+    twosided
+
+    {
+        blend gl_src_alpha, gl_one_minus_src_alpha
+        map textures/editoricons/speaker.png
+    }
+}
+
+text_icon
+{
+    translucent
+    noselfshadow
+    noshadows
+    twosided
+
+    {
+        blend gl_src_alpha, gl_one_minus_src_alpha
+        map textures/editoricons/text.png
+    }
+}
+
+sun_icon
+{
+    translucent
+    noselfshadow
+    noshadows
+    twosided
+
+    {
+        blend gl_src_alpha, gl_one_minus_src_alpha
+        map textures/editoricons/sun.png
+    }
+}
+
+target_icon
+{
+    translucent
+    noselfshadow
+    noshadows
+    twosided
+
+    {
+        blend gl_src_alpha, gl_one_minus_src_alpha
+        map textures/editoricons/target.png
+    }
+}
+
+cubemap_icon
+{
+    translucent
+    noselfshadow
+    noshadows
+    twosided
+
+    {
+        blend gl_src_alpha, gl_one_minus_src_alpha
+        map textures/editoricons/cubemap.png
+    }
+}
+
+path_corner_icon
+{
+    translucent
+    noselfshadow
+    noshadows
+    twosided
+
+    {
+        blend gl_src_alpha, gl_one_minus_src_alpha
+        map textures/editoricons/path_corner.png
+    }
+}
+
+path_track_icon
+{
+    translucent
+    noselfshadow
+    noshadows
+    twosided
+
+    {
+        blend gl_src_alpha, gl_one_minus_src_alpha
+        map textures/editoricons/path_track.png
+    }
 }

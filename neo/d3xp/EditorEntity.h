@@ -117,9 +117,12 @@ public:
 	void					DisplayEntities();
 	bool					EntityIsSelectable( idEntity* ent, idVec4* color = NULL, idStr* text = NULL );
 private:
+	void						ClearEntityBillboards();
+
 	int						nextSelectTime;
 	idList<selectedTypeInfo_t> selectableEntityClasses;
 	idList<idEntity*>		selectedEntities;
+	idList<qhandle_t>				entityBillboards;
 };
 
 #endif /* !__EDITORENTITY_H__ */

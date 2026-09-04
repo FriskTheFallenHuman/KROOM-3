@@ -31,6 +31,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "RenderCommon.h"
 #include "Model_local.h"
+#include "GLMatrix.h"
 
 
 /*
@@ -150,8 +151,18 @@ idRenderModel* 	idRenderModelSprite::InstantiateDynamicModel( const struct rende
 	int	blue		= idMath::Ftoi( renderEntity->shaderParms[ SHADERPARM_BLUE ] * 255.0f );
 	int	alpha		= idMath::Ftoi( renderEntity->shaderParms[ SHADERPARM_ALPHA ] * 255.0f );
 
-	idVec3 right	= idVec3( 0.0f, renderEntity->shaderParms[ SHADERPARM_SPRITE_WIDTH ] * 0.5f, 0.0f );
-	idVec3 up		= idVec3( 0.0f, 0.0f, renderEntity->shaderParms[ SHADERPARM_SPRITE_HEIGHT ] * 0.5f );
+	float modelMatrix[16];
+	R_AxisToModelMatrix( renderEntity->axis, renderEntity->origin, modelMatrix );
+	idVec3 right;
+	idVec3 up;
+	R_GlobalVectorToLocal( modelMatrix, viewDef->renderView.viewaxis[1], right );
+	R_GlobalVectorToLocal( modelMatrix, viewDef->renderView.viewaxis[2], up );
+	if( viewDef->isMirror )
+	{
+		right = vec3_origin - right;
+	}
+	right *= renderEntity->shaderParms[ SHADERPARM_SPRITE_WIDTH ] * 0.5f;
+	up *= renderEntity->shaderParms[ SHADERPARM_SPRITE_HEIGHT ] * 0.5f;
 
 	tri->verts[ 0 ].xyz = up + right;
 	tri->verts[ 0 ].color[ 0 ] = red;
