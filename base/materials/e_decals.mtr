@@ -128,7 +128,7 @@ textures/decals/new/bulletglass
 	
 	{
 	 	blend	add
-		map	 textures/decals/bulletglass1.tga
+		map	 textures/decals/bulletglass1_d.tga
 		vertexColor
 	}
 }
