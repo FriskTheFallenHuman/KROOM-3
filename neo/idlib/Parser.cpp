@@ -1147,45 +1147,38 @@ int idParser::ReadLine( idToken* token )
 idParser::Directive_include
 ================
 */
-// RB: added token as parameter
-int idParser::Directive_include( idToken* token, bool supressWarning )
+int idParser::Directive_include()
 {
 	idLexer* script;
+	idToken token;
 	idStr path;
 
-	if( !idParser::ReadSourceToken( token ) )
+	if( !idParser::ReadSourceToken( &token ) )
 	{
 		idParser::Error( "#include without file name" );
 		return false;
 	}
-	if( token->linesCrossed > 0 )
+	if( token.linesCrossed > 0 )
 	{
 		idParser::Error( "#include without file name" );
 		return false;
 	}
-	if( token->type == TT_STRING )
+	if( token.type == TT_STRING )
 	{
 		script = new( TAG_IDLIB_PARSER ) idLexer;
 		// try relative to the current file
 		path = scriptstack->GetFileName();
 		path.StripFilename();
-		// first remove any trailing path overlap with token
-		idStr token_path = *token;
-		if( !path.StripTrailingOnce( token_path.StripFilename() ) )
+		path += "/";
+		path += token;
+		if( !script->LoadFile( path, OSPath ) )
 		{
-			// if no path overlap add separator before token
-			path += "/";
-		}
-		path += *token;
-		// try assuming a full os path from GetFileName()
-		if( !script->LoadFile( path, true ) )
-		{
-			// try from the token path
-			path = *token;
+			// try absolute path
+			path = token;
 			if( !script->LoadFile( path, OSPath ) )
 			{
 				// try from the include path
-				path = includepath + *token;
+				path = includepath + token;
 				if( !script->LoadFile( path, OSPath ) )
 				{
 					delete script;
@@ -1194,23 +1187,23 @@ int idParser::Directive_include( idToken* token, bool supressWarning )
 			}
 		}
 	}
-	else if( token->type == TT_PUNCTUATION && *token == "<" )
+	else if( token.type == TT_PUNCTUATION && token == "<" )
 	{
 		path = idParser::includepath;
-		while( idParser::ReadSourceToken( token ) )
+		while( idParser::ReadSourceToken( &token ) )
 		{
-			if( token->linesCrossed > 0 )
+			if( token.linesCrossed > 0 )
 			{
-				idParser::UnreadSourceToken( token );
+				idParser::UnreadSourceToken( &token );
 				break;
 			}
-			if( token->type == TT_PUNCTUATION && *token == ">" )
+			if( token.type == TT_PUNCTUATION && token == ">" )
 			{
 				break;
 			}
-			path += *token;
+			path += token;
 		}
-		if( *token != ">" )
+		if( token != ">" )
 		{
 			idParser::Warning( "#include missing trailing >" );
 		}
@@ -1235,13 +1228,9 @@ int idParser::Directive_include( idToken* token, bool supressWarning )
 		idParser::Error( "#include without file name" );
 		return false;
 	}
-
 	if( !script )
 	{
-		if( !supressWarning )
-		{
-			idParser::Error( "file '%s' not found", path.c_str() );
-		}
+		idParser::Error( "file '%s' not found", path.c_str() );
 		return false;
 	}
 	script->SetFlags( idParser::flags );
@@ -1249,7 +1238,6 @@ int idParser::Directive_include( idToken* token, bool supressWarning )
 	idParser::PushScript( script );
 	return true;
 }
-// RB end
 
 /*
 ================
@@ -2806,8 +2794,7 @@ int idParser::ReadDirective()
 			if( token == "include" )
 			{
 				// RB lets override for embedded shaders
-				idToken filename;
-				return Directive_include( &filename );
+				return Directive_include();
 				// RB end
 			}
 			else if( token == "define" )

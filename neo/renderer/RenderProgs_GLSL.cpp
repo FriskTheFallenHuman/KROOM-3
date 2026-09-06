@@ -32,7 +32,6 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "RenderCommon.h"
-#include "RenderProgs_embedded.h"
 
 idCVar r_skipStripDeadCode( "r_skipStripDeadCode", "0", CVAR_BOOL, "Skip stripping dead code" );
 
@@ -319,147 +318,6 @@ const char* idRenderProgManager::GLSLMacroNames[MAX_SHADER_MACRO_NAMES] =
 };
 // RB end
 
-
-// RB: added embedded Cg shader resources
-const char* idRenderProgManager::FindEmbeddedSourceShader( const char* name )
-{
-	const char* embeddedSource = NULL;
-	for( int i = 0 ; cg_renderprogs[i].name ; i++ )
-	{
-		if( !idStr::Icmp( cg_renderprogs[i].name, name ) )
-		{
-			embeddedSource = cg_renderprogs[i].shaderText;
-			break;
-		}
-	}
-
-	return embeddedSource;
-}
-
-class idParser_EmbeddedGLSL : public idParser
-{
-public:
-	idParser_EmbeddedGLSL( int flags ) : idParser( flags )
-	{
-	}
-
-private:
-	int		Directive_include( idToken* token, bool supressWarning )
-	{
-		if( idParser::Directive_include( token, true ) )
-		{
-			// RB: try local shaders in base/renderprogs/ first
-			return true;
-		}
-
-		idLexer* script;
-
-		idStr path;
-
-		/*
-		token was already parsed
-		if( !idParser::ReadSourceToken( &token ) )
-		{
-			idParser::Error( "#include without file name" );
-			return false;
-		}
-		*/
-
-		if( token->linesCrossed > 0 )
-		{
-			idParser::Error( "#include without file name" );
-			return false;
-		}
-
-		if( token->type == TT_STRING )
-		{
-			script = new idLexer;
-
-			// try relative to the current file
-			path = scriptstack->GetFileName();
-			path.StripFilename();
-			path += "/";
-			path += *token;
-
-			//if( !script->LoadFile( path, OSPath ) )
-			const char* embeddedSource = idRenderProgManager::FindEmbeddedSourceShader( path );
-			if( embeddedSource == NULL )
-			{
-				// try absolute path
-				path = *token;
-				embeddedSource = idRenderProgManager::FindEmbeddedSourceShader( path );
-				if( embeddedSource == NULL )
-				{
-					// try from the include path
-					path = includepath + *token;
-					embeddedSource = idRenderProgManager::FindEmbeddedSourceShader( path );
-				}
-			}
-
-			if( embeddedSource == NULL || !script->LoadMemory( embeddedSource, strlen( embeddedSource ), path ) )
-			{
-				delete script;
-				script = NULL;
-			}
-		}
-		else if( token->type == TT_PUNCTUATION && *token == "<" )
-		{
-			path = idParser::includepath;
-			while( idParser::ReadSourceToken( token ) )
-			{
-				if( token->linesCrossed > 0 )
-				{
-					idParser::UnreadSourceToken( token );
-					break;
-				}
-				if( token->type == TT_PUNCTUATION && *token == ">" )
-				{
-					break;
-				}
-				path += *token;
-			}
-			if( *token != ">" )
-			{
-				idParser::Warning( "#include missing trailing >" );
-			}
-			if( !path.Length() )
-			{
-				idParser::Error( "#include without file name between < >" );
-				return false;
-			}
-			if( idParser::flags & LEXFL_NOBASEINCLUDES )
-			{
-				return true;
-			}
-			script = new idLexer;
-
-			const char* embeddedSource = idRenderProgManager::FindEmbeddedSourceShader( includepath + path );
-
-			if( embeddedSource == NULL || !script->LoadMemory( embeddedSource, strlen( embeddedSource ), path ) )
-			{
-				delete script;
-				script = NULL;
-			}
-		}
-		else
-		{
-			idParser::Error( "#include without file name" );
-			return false;
-		}
-
-		if( !script )
-		{
-			idParser::Error( "file '%s' not found", path.c_str() );
-			return false;
-		}
-		script->SetFlags( idParser::flags );
-		script->SetPunctuations( idParser::punctuations );
-		idParser::PushScript( script );
-		return true;
-	}
-};
-// RB end
-
 /*
 ========================
 StripDeadCode
@@ -472,8 +330,7 @@ idStr idRenderProgManager::StripDeadCode( const idStr& in, const char* name, con
 		return in;
 	}
 
-	//idLexer src( LEXFL_NOFATALERRORS );
-	idParser_EmbeddedGLSL src( LEXFL_NOFATALERRORS );
+	idParser src( LEXFL_NOFATALERRORS );
 	src.LoadMemory( in.c_str(), in.Length(), name );
 
 	idStrStatic<256> sourceName = "filename ";

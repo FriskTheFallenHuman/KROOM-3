@@ -708,8 +708,6 @@ public:
 	void		ClearPipelines();
 #endif
 
-	static const char* FindEmbeddedSourceShader( const char* name );
-
 private:
 	void		LoadShader( int index, rpStage_t stage );
 
