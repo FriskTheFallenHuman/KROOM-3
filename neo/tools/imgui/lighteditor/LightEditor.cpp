@@ -429,7 +429,7 @@ void LightEditor::LoadLightTextures()
 			if( material != NULL )
 			{
 				// check if the material has textures or is just a leftover from the development
-				idImage* editorImage = mat->GetLightEditorImage();
+				idImage* editorImage = mat->GetEditorImage();
 				if( !editorImage->IsLoaded() )
 				{
 					editorImage->ActuallyLoadImage( false );
@@ -476,7 +476,7 @@ void LightEditor::LoadCurrentTexture()
 		const idMaterial* mat = declManager->FindMaterial( cur.strTexture, false );
 		if( mat != NULL )
 		{
-			currentTexture = mat->GetLightEditorImage();
+			currentTexture = mat->GetEditorImage();
 			if( currentTexture )
 			{
 				// RB: create extra 2D material of the image for UI rendering
@@ -532,7 +532,7 @@ bool LightEditor::DrawLightTextureBrowser()
 		for( int i = 0; i < textureNames.Num(); ++i )
 		{
 			const idMaterial* material = declManager->FindMaterial( textureNames[i], false );
-			idImage* image = material != NULL ? material->GetLightEditorImage() : NULL;
+			idImage* image = material != NULL ? material->GetEditorImage() : NULL;
 			if( image != NULL )
 			{
 				idStr uiName( "lighteditor/" );
@@ -993,19 +993,6 @@ void LightEditor::Draw()
 		//       then only the changed attribute (e.g. color) would be set to all lights,
 		//       but they'd keep their other individual properties (eg radius)
 
-		ImGui::Spacing();
-
-		if( ImGui::Button( "Save to .map" ) )
-		{
-			SaveChanges( true );
-			showTool = false;
-		}
-		else if( ImGui::SameLine(), ImGui::Button( "Cancel" ) )
-		{
-			CancelChanges();
-			showTool = false;
-		}
-
 		viewDef_t viewDef = {};
 		if( gameEdit->PlayerGetRenderView( viewDef.renderView ) )
 		{
@@ -1043,7 +1030,7 @@ void LightEditor::Draw()
 		ImGui::SetNextWindowPos( scenePos );
 		ImGui::SetNextWindowSize( sceneSize );
 
-		if( ImGui::Begin( "Example: Fullscreen window", &showTool, flags ) )
+		if( ImGui::Begin( "###LightEditorToolBar", &showTool, flags ) )
 		{
 			if( ImGui::BeginMainMenuBar() )
 			{
@@ -1054,6 +1041,15 @@ void LightEditor::Draw()
 					{
 						SaveChanges( true );
 					}
+
+					ImGui::Separator();
+
+					if( ImGui::MenuItem( "Close" ) )
+					{
+						CancelChanges();
+						showTool = false;
+					}
+
 					ImGui::EndMenu();
 				}
 				if( ImGui::BeginMenu( "Edit" ) )
@@ -1072,11 +1068,6 @@ void LightEditor::Draw()
 						DuplicateLight();
 					}
 
-					//if( ImGui::MenuItem( "Delete", "Backspace" ) )
-					//{
-					// TODO
-					//	goto exitLightEditor;
-					//}
 					ImGui::EndMenu();
 				}
 				ImGui::EndMainMenuBar();
@@ -1091,7 +1082,6 @@ void LightEditor::Draw()
 			//
 			// GIZMO
 			//
-
 			ImGuizmo::SetRect( 0, 0, io.DisplaySize.x, io.DisplaySize.y );
 			ImGuizmo::SetOrthographic( false );
 			ImGuizmo::SetDrawlist();
@@ -1210,8 +1200,6 @@ void LightEditor::Draw()
 	{
 		TempApplyChanges();
 	}
-
-exitLightEditor:
 
 	if( isShown && !showTool )
 	{

@@ -59,6 +59,8 @@ public:
 	ID_TIME_T			LoadFromGeneratedFile( ID_TIME_T sourceFileTime );
 	ID_TIME_T			WriteGeneratedFile( ID_TIME_T sourceFileTime );
 
+	bool				LoadGeneratedFileHeader( bimageFile_t& header );
+
 	const bimageFile_t& 	GetFileHeader()
 	{
 		return fileData;

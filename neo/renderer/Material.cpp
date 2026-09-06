@@ -207,6 +207,31 @@ void idMaterial::FreeData()
 
 /*
 ==============
+R_EditorImageSourceExists
+==============
+*/
+static bool R_EditorImageSourceExists( const char* name )
+{
+	if( name == NULL || name[0] == '\0' )
+	{
+		return false;
+	}
+	idStrStatic< MAX_OSPATH > generatedName = name;
+	idImage::GetGeneratedName( generatedName, TD_DEFAULT, CF_2D );
+	idBinaryImage binaryImage( generatedName );
+	bimageFile_t header;
+	if( binaryImage.LoadGeneratedFileHeader( header ) )
+	{
+		return true;
+	}
+
+	ID_TIME_T sourceTime = FILE_NOT_FOUND_TIMESTAMP;
+	R_LoadImageProgram( name, NULL, NULL, NULL, &sourceTime );
+	return sourceTime != FILE_NOT_FOUND_TIMESTAMP;
+}
+
+/*
+==============
 idMaterial::GetEditorImage
 ==============
 */
@@ -244,8 +269,25 @@ idImage* idMaterial::GetEditorImage() const
 	}
 	else
 	{
-		// look for an explicit one
-		editorImage = globalImages->ImageFromFile( editorImageName, TF_DEFAULT, TR_REPEAT, TD_DEFAULT );
+		if( R_EditorImageSourceExists( editorImageName ) )
+		{
+			editorImage = globalImages->ImageFromFile( editorImageName, TF_DEFAULT, TR_REPEAT, TD_DEFAULT );
+		}
+		else if( numStages && stages )
+		{
+			for( int i = 0; i < numStages; ++i )
+			{
+				if( stages[i].lighting == SL_DIFFUSE && stages[i].texture.image != NULL )
+				{
+					editorImage = stages[i].texture.image;
+					break;
+				}
+			}
+			if( editorImage == NULL )
+			{
+				editorImage = stages[0].texture.image;
+			}
+		}
 	}
 
 	if( !editorImage )
@@ -255,25 +297,6 @@ idImage* idMaterial::GetEditorImage() const
 
 	return editorImage;
 }
-
-// RB - just look for first stage and fallback to editor image like D3Radiant does
-idImage* idMaterial::GetLightEditorImage() const
-{
-	if( numStages && stages )
-	{
-		for( int i = 0; i < numStages; i++ )
-		{
-			idImage* image = stages[i].texture.image;
-			if( image )
-			{
-				return image;
-			}
-		}
-	}
-
-	return GetEditorImage();
-}
-// RB end
 
 // info parms
 typedef struct
