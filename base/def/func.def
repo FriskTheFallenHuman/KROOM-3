@@ -288,6 +288,7 @@ entityDef func_emitter {
 	"editor_mins"				"-12 -12 -12"
 	"editor_maxs"				"12 12 12"
 	"editor_rotatable"			"1"
+	"editor_icon"				"target_icon"
 
 	"editor_usage"				"Inherits from a func_static but is fixed size and shows a rotation arrow."
 	"editor_usage1"				"Use it to orient particle models"
