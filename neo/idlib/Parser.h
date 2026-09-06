@@ -227,9 +227,7 @@ protected:
 	static define_t* FindDefine( define_t* defines, const char* name );
 	static define_t* DefineFromString( const char* string );
 	define_t* 		CopyFirstDefine();
-	// RB: allow override
-	virtual int		Directive_include( idToken* token, bool supressWarning = false );
-	// RB end
+	int				Directive_include();
 	int				Directive_undef();
 	int				Directive_if_def( int type );
 	int				Directive_ifdef();
