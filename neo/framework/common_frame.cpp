@@ -547,7 +547,7 @@ void idCommonLocal::Frame()
 		}
 		else
 		{
-			Sys_GrabMouseCursor( !imguiSystem->GetEditor()->IsFreeCameraActive() || imguiSystem->RightMouseActive() );
+			Sys_GrabMouseCursor( !imguiSystem->GetEditor()->IsFreeCameraActive() );
 			usercmdGen->InhibitUsercmd( INHIBIT_SESSION, false );
 		}
 
