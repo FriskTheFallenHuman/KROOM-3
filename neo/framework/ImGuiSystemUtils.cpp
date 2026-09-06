@@ -73,3 +73,165 @@ bool ImGui::DragVec3fitLabel( const char* label, idVec3& v, float v_speed, float
 {
 	return ImGui::DragVec3( label, v, v_speed, v_min, v_max, display_format, power, false );
 }
+
+
+struct InputTextCallback_UserData
+{
+	idStr* 					Str;
+	ImGuiInputTextCallback	ChainCallback;
+	void* 					ChainCallbackUserData;
+};
+
+static int InputTextCallback( ImGuiInputTextCallbackData* data )
+{
+	InputTextCallback_UserData* user_data = ( InputTextCallback_UserData* )data->UserData;
+
+	if( data->EventFlag == ImGuiInputTextFlags_CallbackResize )
+	{
+		// Resize string callback
+		// If for some reason we refuse the new length (BufTextLen) and/or capacity (BufSize) we need to set them back to what we want.
+		idStr* str = user_data->Str;
+		IM_ASSERT( data->Buf == str->c_str() );
+		int length = data->BufTextLen > 0 ? data->BufTextLen : 1;
+		str->ReAllocate( length, true );
+		data->Buf = ( char* )str->c_str();
+	}
+	else if( user_data->ChainCallback )
+	{
+		// Forward to user callback, if any
+		data->UserData = user_data->ChainCallbackUserData;
+		return user_data->ChainCallback( data );
+	}
+	return 0;
+}
+
+bool ImGui::InputTextStr( const char* label, idStr* str, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void* user_data )
+{
+	IM_ASSERT( ( flags & ImGuiInputTextFlags_CallbackResize ) == 0 );
+	flags |= ImGuiInputTextFlags_CallbackResize;
+
+	InputTextCallback_UserData cb_user_data;
+	cb_user_data.Str = str;
+	cb_user_data.ChainCallback = callback;
+	cb_user_data.ChainCallbackUserData = user_data;
+
+	bool result = ImGui::InputText( label, ( char* )str->c_str(), str->Length() + 1, flags, InputTextCallback, &cb_user_data );
+
+	// fix the length (characters get appended directly into the buffer allocated by idStr)
+	idStr tmp = str->c_str();
+	*str = tmp;
+
+	return result;
+}
+
+bool ImGui::InputTextMultilineStr( const char* label, idStr* str, const ImVec2& size, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void* user_data )
+{
+	IM_ASSERT( ( flags & ImGuiInputTextFlags_CallbackResize ) == 0 );
+	flags |= ImGuiInputTextFlags_CallbackResize;
+
+	InputTextCallback_UserData cb_user_data;
+	cb_user_data.Str = str;
+	cb_user_data.ChainCallback = callback;
+	cb_user_data.ChainCallbackUserData = user_data;
+
+	bool result = ImGui::InputTextMultiline( label, ( char* )str->c_str(), str->Length() + 1, size, flags, InputTextCallback, &cb_user_data );
+
+	// fix the length (characters get appended directly into the buffer allocated by idStr)
+	idStr tmp = str->c_str();
+	*str = tmp;
+
+	return result;
+}
+
+bool ImGui::InputDialogName( const char* text, const char* label, idStr* str )
+{
+	bool accepted = false;
+
+	if( ImGui::BeginPopupModal( label, nullptr, ImGuiWindowFlags_AlwaysAutoResize ) )
+	{
+		ImGui::TextUnformatted( text );
+		if( ImGui::InputTextStr( "Name", str ) )
+		{
+			// nop
+		}
+
+		if( ImGui::Button( "OK" ) )
+		{
+			accepted = true;
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::SameLine();
+		if( ImGui::Button( "Cancel" ) )
+		{
+			accepted = false;
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::EndPopup();
+	}
+
+	return accepted;
+}
+
+bool ImGui::InputMessageBox( const char* text, const char* label, bool allowCancel )
+{
+	bool accepted = false;
+
+	ImGui::OpenPopup( label );
+
+	if( ImGui::BeginPopupModal( label, nullptr, ImGuiWindowFlags_AlwaysAutoResize ) )
+	{
+		ImGui::TextUnformatted( text );
+
+		if( ImGui::Button( "OK" ) )
+		{
+			accepted = true;
+			ImGui::CloseCurrentPopup();
+		}
+		if( allowCancel )
+		{
+			ImGui::SameLine();
+			if( ImGui::Button( "Cancel" ) )
+			{
+				accepted = false;
+				ImGui::CloseCurrentPopup();
+			}
+		}
+
+		ImGui::EndPopup();
+	}
+
+	return accepted;
+}
+
+// NOTE: this code is adapted from https://github.com/goossens/ObjectTalk/blob/62977f72389a2bbdde4d2535faadad46ab2920a1/gfx/framework/OtUi.cpp#L202
+bool ImGui::ToggleButton( const char* label, bool* value, const ImVec2& size )
+{
+	bool		changed = false;
+	ImVec4*		colors = ImGui::GetStyle().Colors;
+
+	if( *value )
+	{
+		ImGui::PushStyleColor( ImGuiCol_Button, colors[ImGuiCol_ButtonActive] );
+		ImGui::PushStyleColor( ImGuiCol_ButtonHovered, colors[ImGuiCol_ButtonActive] );
+		ImGui::PushStyleColor( ImGuiCol_ButtonActive, colors[ImGuiCol_TableBorderLight] );
+	}
+	else
+	{
+		ImGui::PushStyleColor( ImGuiCol_Button, colors[ImGuiCol_TableBorderLight] );
+		ImGui::PushStyleColor( ImGuiCol_ButtonHovered, colors[ImGuiCol_TableBorderLight] );
+		ImGui::PushStyleColor( ImGuiCol_ButtonActive, colors[ImGuiCol_ButtonActive] );
+	}
+
+	ImGui::Button( label, size );
+
+	if( ImGui::IsItemClicked( ImGuiMouseButton_Left ) )
+	{
+		*value = !*value;
+		changed = true;
+	}
+
+	ImGui::PopStyleColor( 3 );
+
+	return changed;
+}

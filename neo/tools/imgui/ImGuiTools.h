@@ -2,7 +2,9 @@
 ===========================================================================
 
 Doom 3 BFG Edition GPL Source Code
-Copyright (C) 2016 Daniel Gibson
+Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2015 Daniel Gibson
+Copyright (C) 2020-2023 Robert Beckebans
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -37,8 +39,8 @@ public:
 	// Registers an editor window and its default docking location.
 	virtual void RegisterWindow( idImGuiWindow& window ) = 0;
 
-	// Initializes the light editor for the selected game entity.
-	virtual void InitializeLightEditor( const idDict* dict, idEntity* entity ) = 0;
+	// Initializes a tool.
+	virtual void InitTool( const toolFlag_t tool, const idDict* dict, idEntity* entity = NULL ) = 0;
 
 	// Updates whether editor tools may release the engine mouse cursor.
 	virtual void ReleaseMouse( bool doRelease ) = 0;

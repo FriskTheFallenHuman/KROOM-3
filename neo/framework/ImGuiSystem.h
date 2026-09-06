@@ -31,6 +31,7 @@ If you have questions concerning this license or the applicable additional terms
 
 enum DockRegion
 {
+	DOCK_REGION_NONE = 0,
 	DOCK_REGION_RIGHT,
 	DOCK_REGION_BOTTOM,
 	DOCK_REGION_LEFT,

@@ -33,10 +33,13 @@ If you have questions concerning this license or the applicable additional terms
 
 namespace ImGui
 {
-
 bool DragVec3( const char* label, idVec3& v, float v_speed = 1.0f, float v_min = 0.0f, float v_max = 0.0f, const char* display_format = "%.1f", float power = 1.0f, bool ignoreLabelWidth = true );
 bool DragVec3fitLabel( const char* label, idVec3& v, float v_speed = 1.0f, float v_min = 0.0f, float v_max = 0.0f, const char* display_format = "%.1f", float power = 1.0f );
-
+bool InputTextStr( const char* label, idStr* str, ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = nullptr, void* user_data = nullptr );
+bool InputTextMultilineStr( const char* label, idStr* str, const ImVec2& size = ImVec2( 0, 0 ), ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = nullptr, void* user_data = nullptr );
+bool InputDialogName( const char* text, const char* label, idStr* str );
+bool InputMessageBox( const char* text, const char* label, bool allowCancel = false );
+bool ToggleButton( const char* label, bool* value, const ImVec2& size );
 }
 
 #endif /* __IMGUISYSTEMUTILS_H_ */

@@ -33,7 +33,7 @@ public:
 	virtual ~idImGuiEditorLocal();
 
 	virtual void RegisterWindow( idImGuiWindow& window );
-	virtual void InitializeLightEditor( const idDict* dict, idEntity* entity );
+	virtual void InitTool( const toolFlag_t tool, const idDict* dict, idEntity* entity = NULL );
 	virtual void ReleaseMouse( bool doRelease );
 	virtual void SetRightMouseActive( bool active );
 	virtual bool AreEditorsActive() const;
