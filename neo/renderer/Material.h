@@ -758,7 +758,7 @@ public:
 
 	// gets an image for the editor to use
 	idImage* 			GetEditorImage() const;
-	idImage* 			GetLightEditorImage() const; // RB
+
 	int					GetImageWidth() const;
 	int					GetImageHeight() const;
 
