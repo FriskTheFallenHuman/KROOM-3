@@ -262,6 +262,7 @@ void idImGuiSystemLocal::RegisterWindow( idImGuiWindow& window )
 	}
 
 	windows.Append( &window );
+
 	RegisterDockWindow( window.GetWindowName(), window.GetDockRegion() );
 }
 
@@ -638,16 +639,28 @@ inject a sys event
 */
 bool idImGuiSystemLocal::InjectSysEvent( const sysEvent_t* event )
 {
-	if( IsInitialized() && ( UseInput() || RightMouseActive() ) )
+	if( !IsInitialized() )
 	{
 		if( event == NULL )
 		{
 			assert( 0 ); // I think this shouldn't happen
 			return false;
 		}
+	}
 
-		const sysEvent_t& ev = *event;
+	const sysEvent_t& ev = *event;
 
+	if( ev.evType == SE_KEY && static_cast<keyNum_t>( ev.evValue ) == K_MOUSE2 )
+	{
+		const bool pressed = ev.evValue2 > 0;
+		mousePressed[1] = pressed;
+		editor.SetRightMouseActive( pressed );
+		editor.ReleaseMouse( !pressed );
+		return true;
+	}
+
+	if( UseInput() || ( editor.IsFreeCameraActive() && RightMouseActive() ) )
+	{
 		switch( ev.evType )
 		{
 			case SE_KEY:

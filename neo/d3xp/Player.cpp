@@ -7601,6 +7601,12 @@ void idPlayer::EnableFreeCam()
 	freeCamPreviousThirdPerson = pm_thirdPerson.GetBool();
 	freeCamCameraOrigin = GetEyePosition();
 	freeCamCameraAngles = viewAngles;
+	for( int i = 0; i < 3; i++ )
+	{
+		freeCamDeltaAngles[i] = viewAngles[i] - SHORT2ANGLE( usercmd.angles[i] );
+	}
+	freeCamFlyMode = false;
+	freeCamRMBLatch = imguiSystem->RightMouseActive();
 	noclip = false;
 	pm_thirdPerson.SetBool( true );
 
@@ -7624,6 +7630,8 @@ void idPlayer::DisableFreeCam()
 		return;
 	}
 
+	UpdateDeltaViewAngles( viewAngles );
+
 	noclip = freeCamPreviousNoclip;
 	pm_thirdPerson.SetBool( freeCamPreviousThirdPerson );
 	freeCamActive = false;
@@ -7638,18 +7646,46 @@ idPlayer::MoveFreeCamera
 */
 void idPlayer::MoveFreeCamera()
 {
-	if( !imguiSystem->RightMouseActive() )
+	// toggle fly mode on RMB pres
+	const bool rmbDown = imguiSystem->RightMouseActive();
+	if( rmbDown && !freeCamRMBLatch )
+	{
+		freeCamFlyMode = !freeCamFlyMode;
+		if( freeCamFlyMode )
+		{
+			// re-sync
+			for( int i = 0; i < 3; i++ )
+			{
+				freeCamDeltaAngles[i] = freeCamCameraAngles[i] - SHORT2ANGLE( usercmd.angles[i] );
+			}
+		}
+	}
+	freeCamRMBLatch = rmbDown;
+
+	if( !freeCamFlyMode )
 	{
 		return;
 	}
 
+	for( int i = 0; i < 3; i++ )
+	{
+		freeCamCameraAngles[i] = idMath::AngleNormalize180( SHORT2ANGLE( usercmd.angles[i] ) + freeCamDeltaAngles[i] );
+	}
+	if( freeCamCameraAngles.pitch > 89.0f )
+	{
+		freeCamCameraAngles.pitch = 89.0f;
+	}
+	else if( freeCamCameraAngles.pitch < -89.0f )
+	{
+		freeCamCameraAngles.pitch = -89.0f;
+	}
+
 	const float frameSeconds = MS2SEC( gameLocal.time - gameLocal.previousTime );
-	const idMat3 cameraAxis = viewAngles.ToMat3() * physicsObj.GetGravityAxis();
+	const idMat3 cameraAxis = freeCamCameraAngles.ToMat3() * physicsObj.GetGravityAxis();
 	const float speed = pm_noclipspeed.GetFloat() * frameSeconds / 127.0f;
 
-	freeCamCameraAngles = viewAngles;
 	freeCamCameraOrigin += cameraAxis[0] * ( float )usercmd.forwardmove * speed;
-	freeCamCameraOrigin += cameraAxis[1] * ( float )usercmd.rightmove * speed;
+	freeCamCameraOrigin -= cameraAxis[1] * ( float )usercmd.rightmove * speed;
 
 	if( usercmd.buttons & BUTTON_JUMP )
 	{

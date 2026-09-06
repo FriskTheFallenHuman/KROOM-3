@@ -290,7 +290,10 @@ public:
 	bool					freeCamPreviousNoclip;
 	bool					freeCamPreviousThirdPerson;
 	idVec3					freeCamCameraOrigin;
-	idAngles					freeCamCameraAngles;
+	idAngles				freeCamCameraAngles;
+	idAngles				freeCamDeltaAngles;
+	bool					freeCamFlyMode;
+	bool					freeCamRMBLatch;
 	bool					godmode;
 	bool					demigodmode;
 
