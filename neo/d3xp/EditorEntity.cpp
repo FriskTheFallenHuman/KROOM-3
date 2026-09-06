@@ -472,6 +472,11 @@ idEditEntities::ClearEntityBillboards
 */
 void idEditEntities::ClearEntityBillboards()
 {
+	if( entityBillboards.Num() == 0 )
+	{
+		return;
+	}
+
 	for( int i = 0; i < entityBillboards.Num(); ++i )
 	{
 		gameRenderWorld->FreeEntityDef( entityBillboards[i] );
@@ -712,13 +717,6 @@ void idEditEntities::DisplayEntities()
 			if( ss->HasDefaultSound() || ss->base->GetState() == DS_DEFAULTED )
 			{
 				color.Set( 1.0f, 0.0f, 1.0f, 1.0f );
-			}
-		}
-		else if( ent->GetType() == &idFuncEmitter::Type )
-		{
-			if( ent->fl.selected )
-			{
-				drawArrows = true;
 			}
 		}
 		else if( ent->GetType() == &idLight::Type )
