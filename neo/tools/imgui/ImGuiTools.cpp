@@ -2,7 +2,9 @@
 ===========================================================================
 
 Doom 3 BFG Edition GPL Source Code
-Copyright (C) 2016 Daniel Gibson
+Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2015 Daniel Gibson
+Copyright (C) 2020-2023 Robert Beckebans
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -30,7 +32,6 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "ImGuiTools_local.h"
-#include "lighteditor/LightEditor.h"
 
 extern idCVar g_editEntityMode;
 
@@ -100,21 +101,34 @@ void idImGuiEditorLocal::DrawWindows()
 	}
 }
 
-void idImGuiEditorLocal::InitializeLightEditor( const idDict* dict, idEntity* ent )
+void idImGuiEditorLocal::InitTool( const toolFlag_t tool, const idDict* dict, idEntity* entity )
 {
-	if( dict == NULL || ent == NULL )
+	if( tool & EDITOR_SOUND )
 	{
-		return;
+		SoundEditorInit( dict, entity );
 	}
-
-	idassert( idStr::Icmp( dict->GetString( "spawnclass" ), "idLight" ) == 0
-			  && "InitializeLightEditor() must only be called with light entities or NULL!" );
-
-	LightEditor::Instance().ShowIt( true );
-	RegisterWindow( LightEditor::Instance() );
-	ReleaseMouse( true );
-	gameEdit->PlayerEnableFreeCam( true );
-	system->RegisterDockWindow( "Light Texture Browser", DOCK_REGION_BOTTOM );
-
-	LightEditor::ReInit( dict, ent );
+	else if( tool & EDITOR_LIGHT )
+	{
+		LightEditorInit( dict, entity );
+	}
+	else if( tool & EDITOR_PARTICLE )
+	{
+		ParticleEditorInit( dict, entity );
+	}
+	else if( tool & EDITOR_AF )
+	{
+		AFEditorInit(); // TODO: dict ?
+	}
+	else if( tool & EDITOR_PDA )
+	{
+		//PDAEditorInit( dict );
+	}
+	else if( tool & EDITOR_SCRIPT )
+	{
+		ScriptEditorInit( dict );
+	}
+	else if( tool & EDITOR_DECL )
+	{
+		DeclBrowserInit();
+	}
 }

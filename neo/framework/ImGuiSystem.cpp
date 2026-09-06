@@ -97,6 +97,7 @@ private:
 	};
 
 	idList<DockWindowRequest> dockWindowRequests;
+	bool dockLayoutDirty;
 	idImGuiEditorLocal editor;
 };
 
@@ -159,6 +160,7 @@ void idImGuiSystemLocal::Clear()
 	editor.ReleaseMouse( false );
 	editor.SetRightMouseActive( false );
 	dockWindowRequests.Clear();
+	dockLayoutDirty = true;
 }
 
 /*
@@ -481,11 +483,17 @@ void idImGuiSystemLocal::RegisterDockWindow( const char* windowName, DockRegion 
 		return;
 	}
 
+	if( region == DOCK_REGION_NONE )
+	{
+		return;
+	}
+
 	for( int i = 0; i < dockWindowRequests.Num(); ++i )
 	{
 		if( dockWindowRequests[i].name == windowName )
 		{
 			dockWindowRequests[i].region = region;
+			dockLayoutDirty = true;
 			return;
 		}
 	}
@@ -494,6 +502,7 @@ void idImGuiSystemLocal::RegisterDockWindow( const char* windowName, DockRegion 
 	request.name = windowName;
 	request.region = region;
 	dockWindowRequests.Append( request );
+	dockLayoutDirty = true;
 }
 
 /*
@@ -503,8 +512,11 @@ idImGuiSystemLocal::SetupDefaultDockLayout
 */
 void idImGuiSystemLocal::SetupDefaultDockLayout()
 {
-	static bool initialized = false;
-	if( initialized )
+	if( !dockLayoutDirty )
+	{
+		return;
+	}
+	if( dockWindowRequests.Num() == 0 )
 	{
 		return;
 	}
@@ -512,8 +524,7 @@ void idImGuiSystemLocal::SetupDefaultDockLayout()
 	const ImGuiID dockspaceId = ImHashStr( "Kroom3MainDockSpace" );
 	if( ImGui::DockBuilderGetNode( dockspaceId ) != NULL )
 	{
-		initialized = true;
-		return;
+		ImGui::DockBuilderRemoveNode( dockspaceId );
 	}
 
 	ImGui::DockBuilderAddNode( dockspaceId, ImGuiDockNodeFlags_DockSpace );
@@ -548,7 +559,7 @@ void idImGuiSystemLocal::SetupDefaultDockLayout()
 		ImGui::DockBuilderDockWindow( dockWindowRequests[i].name.c_str(), regionId );
 	}
 	ImGui::DockBuilderFinish( dockspaceId );
-	initialized = true;
+	dockLayoutDirty = false;
 }
 
 /*

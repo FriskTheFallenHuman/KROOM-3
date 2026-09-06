@@ -653,12 +653,36 @@ list(APPEND src_core ${src_compilers})
 file(GLOB src_imgui_editor tools/imgui/*.cpp tools/imgui/*.h)
 source_group("Tools\\ImGUI" FILES ${src_imgui_editor})
 
+file(GLOB src_imgui_utils tools/imgui/util/*.cpp tools/imgui/util/*.h)
+source_group("Tools\\ImGUI\\Utils" FILES ${src_imgui_utils})
+
 file(GLOB src_imgui_lighteditor tools/imgui/lighteditor/*.cpp tools/imgui/lighteditor/*.h)
 source_group("Tools\\ImGUI\\LightEditor" FILES ${src_imgui_lighteditor})
 
+file(GLOB src_imgui_soundeditor tools/imgui/soundeditor/*.cpp tools/imgui/soundeditor/*.h)
+source_group("Tools\\ImGUI\\SoundEditor" FILES ${src_imgui_soundeditor})
+
+file(GLOB src_imgui_afeditor tools/imgui/afeditor/*.cpp tools/imgui/afeditor/*.h)
+source_group("Tools\\ImGUI\\AFEditor" FILES ${src_imgui_afeditor})
+
+file(GLOB src_imgui_particleeditor tools/imgui/particleeditor/*.cpp tools/imgui/particleeditor/*.h)
+source_group("Tools\\ImGUI\\ParticleEditor" FILES ${src_imgui_particleeditor})
+
+file(GLOB src_imgui_decleditor tools/imgui/decleditor/*.cpp tools/imgui/decleditor/*.h)
+source_group("Tools\\ImGUI\\DeclEditor" FILES ${src_imgui_decleditor})
+
+file(GLOB src_imgui_scripteditor tools/imgui/scripteditor/*.cpp tools/imgui/scripteditor/*.h)
+source_group("Tools\\ImGUI\\ScriptEditor" FILES ${src_imgui_scripteditor})
+
 set(src_tools_imgui
 	${src_imgui_editor}
-	${src_imgui_lighteditor})
+	${src_imgui_utils}
+	${src_imgui_lighteditor}
+	${src_imgui_soundeditor}
+	${src_imgui_afeditor}
+	${src_imgui_decleditor}
+	${src_imgui_scripteditor}
+	${src_imgui_particleeditor})
 
 list(APPEND src_core ${src_tools_imgui})
 
@@ -676,14 +700,8 @@ source_group("Tools\\Common" FILES ${src_common})
 file(GLOB src_proptree tools/common/PropTree/*.cpp tools/common/PropTree/*.h)
 source_group("Tools\\Common\\PropTree" FILES ${src_proptree})
 
-file(GLOB src_afeditor tools/af/*.cpp tools/af/*.h)
-source_group("Tools\\AF" FILES ${src_afeditor})
-
 file(GLOB src_debugger_client tools/debugger/client/*.cpp tools/debugger/client/*.h)
 source_group("Tools\\Debugger\\Client" FILES ${src_debugger_client})
-
-file(GLOB src_decleditor tools/decl/*.cpp tools/decl/*.h)
-source_group("Tools\\Decl" FILES ${src_decleditor})
 
 file(GLOB src_guieditor tools/guied/*.cpp tools/guied/*.h)
 source_group("Tools\\GuiEd" FILES ${src_guieditor})
@@ -691,36 +709,19 @@ source_group("Tools\\GuiEd" FILES ${src_guieditor})
 file(GLOB src_materialeditor tools/materialeditor/*.cpp tools/materialeditor/*.h)
 source_group("Tools\\MaterialEditor" FILES ${src_materialeditor})
 
-file(GLOB src_particleeditor tools/particle/*.cpp tools/particle/*.h)
-source_group("Tools\\Particle" FILES ${src_particleeditor})
-
-file(GLOB src_pdaeditor tools/pda/*.cpp tools/pda/*.h)
-source_group("Tools\\PDA" FILES ${src_pdaeditor})
-
 file(GLOB src_radianteditor tools/radiant/*.cpp tools/radiant/*.h)
 source_group("Tools\\Radiant" FILES ${src_radianteditor})
-
-file(GLOB src_scripteditor tools/script/*.cpp tools/script/*.h)
-source_group("Tools\\Script" FILES ${src_scripteditor})
-
-file(GLOB src_soundeditor tools/sound/*.cpp tools/sound/*.h)
-source_group("Tools\\Sound" FILES ${src_soundeditor})
 
 set(src_tools
 	${src_tools_base}
 	${src_comafx}
 	${src_common}
 	${src_proptree}
-	${src_afeditor}
 	${src_debugger_client}
 	${src_decleditor}
 	${src_guieditor}
 	${src_materialeditor}
-	${src_particleeditor}
-	${src_pdaeditor}
-	${src_radianteditor}
-	${src_scripteditor}
-	${src_soundeditor})
+	${src_radianteditor})
 
 include_directories(
 	${CMAKE_BINARY_DIR}

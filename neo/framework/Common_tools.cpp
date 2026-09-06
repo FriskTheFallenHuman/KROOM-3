@@ -99,9 +99,9 @@ void idCommonLocal::InitTool( const toolFlag_t tool, const idDict* dict, idEntit
 		AFEditorInit( dict );
 	}
 #else
-	if( tool & EDITOR_LIGHT )
+	if( imguiSystem != NULL )
 	{
-		imguiSystem->GetEditor()->InitializeLightEditor( dict, entity );
+		imguiSystem->GetEditor()->InitTool( tool, dict, entity );
 	}
 #endif
 }
@@ -174,23 +174,76 @@ static void Com_EditLights_f( const idCmdArgs& args )
 	if( cvarSystem->GetCVarInteger( "g_editEntityMode" ) != 1 )
 	{
 		cvarSystem->SetCVarInteger( "g_editEntityMode", 1 );
-
-		// turn off com_smp multithreading so we can load and check light textures on main thread
 		com_editors |= EDITOR_LIGHT;
 	}
 	else
 	{
 		cvarSystem->SetCVarInteger( "g_editEntityMode", 0 );
-
 		com_editors &= ~EDITOR_LIGHT;
 
 		// turn off light debug drawing in the render backend
 		cvarSystem->SetCVarInteger( "r_singleLight", -1 );
 		cvarSystem->SetCVarInteger( "r_showLights", 0 );
 	}
+}
 
-	// put player into fly mode
-	//Cmd_Noclip_f( args );
+/*
+==================
+Com_EditSounds_f
+==================
+*/
+static void Com_EditSounds_f( const idCmdArgs& args )
+{
+	if( cvarSystem->GetCVarInteger( "g_editEntityMode" ) != 2 )
+	{
+		cvarSystem->SetCVarInteger( "g_editEntityMode", 2 );
+		com_editors |= EDITOR_SOUND;
+	}
+	else
+	{
+		cvarSystem->SetCVarInteger( "g_editEntityMode", 0 );
+		com_editors &= ~EDITOR_SOUND;
+	}
+}
+
+/*
+==================
+Com_EditAFs_f
+==================
+*/
+static void Com_EditAFs_f( const idCmdArgs& args )
+{
+	AFEditorInit();
+}
+
+/*
+==================
+Com_EditParticles_f
+==================
+*/
+static void Com_EditParticles_f( const idCmdArgs& args )
+{
+	ParticleEditorInit( NULL, NULL );
+}
+
+/*
+==================
+Com_EditScripts_f
+==================
+*/
+static void Com_EditScripts_f( const idCmdArgs& args )
+{
+	ScriptEditorInit( NULL );
+}
+
+/*
+==================
+Com_EditDecls_f
+==================
+*/
+static void Com_EditDecls_f( const idCmdArgs& args )
+{
+	DeclBrowserInit();
 }
 
 /*
@@ -198,7 +251,7 @@ static void Com_EditLights_f( const idCmdArgs& args )
 idCommonLocal::InitCommands
 =================
 */
-void idCommonLocal::InitCommands( void )
+void idCommonLocal::InitCommands()
 {
 	if( !IsServer() )
 	{
@@ -209,18 +262,18 @@ void idCommonLocal::InitCommands( void )
 #ifdef ID_ALLOW_TOOLS
 	// editors
 	cmdSystem->AddCommand( "editor", Com_Editor_f, CMD_FL_TOOL, "launches the level editor Radiant" );
-	cmdSystem->AddCommand( "editSounds", Com_EditSounds_f, CMD_FL_TOOL, "launches the in-game Sound Editor" );
-	cmdSystem->AddCommand( "editDecls", Com_EditDecls_f, CMD_FL_TOOL, "launches the in-game Declaration Editor" );
-	cmdSystem->AddCommand( "editAFs", Com_EditAFs_f, CMD_FL_TOOL, "launches the in-game Articulated Figure Editor" );
-	cmdSystem->AddCommand( "editParticles", Com_EditParticles_f, CMD_FL_TOOL, "launches the in-game Particle Editor" );
-	cmdSystem->AddCommand( "editScripts", Com_EditScripts_f, CMD_FL_TOOL, "launches the in-game Script Editor" );
 	cmdSystem->AddCommand( "editGUIs", Com_EditGUIs_f, CMD_FL_TOOL, "launches the GUI Editor" );
-	cmdSystem->AddCommand( "editPDAs", Com_EditPDAs_f, CMD_FL_TOOL, "launches the in-game PDA Editor" );
 	cmdSystem->AddCommand( "debugger", Com_ScriptDebugger_f, CMD_FL_TOOL, "launches the Script Debugger" );
 
 	//BSM Nerve: Add support for the material editor
 	cmdSystem->AddCommand( "materialEditor", Com_MaterialEditor_f, CMD_FL_TOOL, "launches the Material Editor" );
-#else
-	cmdSystem->AddCommand( "editLights", Com_EditLights_f, CMD_FL_TOOL, "launches the in-game Light Editor" );
 #endif
+
+	cmdSystem->AddCommand( "editLights", Com_EditLights_f, CMD_FL_TOOL, "launches the in-game Light Editor" );
+	cmdSystem->AddCommand( "editSounds", Com_EditSounds_f, CMD_FL_TOOL, "launches the in-game Sound Editor" );
+	//cmdSystem->AddCommand( "editPDAs", Com_EditPDAs_f, CMD_FL_TOOL, "launches the in-game PDA Editor" ); // TODO: Implement this in the game side
+	cmdSystem->AddCommand( "editAFs", Com_EditAFs_f, CMD_FL_TOOL, "launches the in-game Articulated Figure Editor" );
+	cmdSystem->AddCommand( "editDecls", Com_EditDecls_f, CMD_FL_TOOL, "launches the in-game Declaration Editor" );
+	cmdSystem->AddCommand( "editParticles", Com_EditParticles_f, CMD_FL_TOOL, "launches the in-game Particle Editor" );
+	cmdSystem->AddCommand( "editScripts", Com_EditScripts_f, CMD_FL_TOOL, "launches the in-game Script Editor" );
 }

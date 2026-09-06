@@ -25,12 +25,16 @@ source_group("Mesa" FILES ${src_external_mesa})
 list(APPEND src_external ${src_external_mesa})
 
 file(GLOB src_external_imgui imgui/*.cpp imgui/misc/cpp/*.cpp imgui/misc/cpp/*.h imgui/*.h)
-source_group("ImGUI" FILES ${src_external_imgui})
+source_group("ImGUI\\Core" FILES ${src_external_imgui})
 list(APPEND src_external ${src_external_imgui})
 
 file(GLOB src_external_imguizmo imguizmo/*.cpp imguizmo/*.h)
-source_group("ImGUIZmo" FILES ${src_external_imguizmo})
+source_group("ImGUI\\ImGUIZmo" FILES ${src_external_imguizmo})
 list(APPEND src_external ${src_external_imguizmo})
+
+file(GLOB src_external_imguicolortextedit ImGuiColorTextEdit/*.cpp ImGuiColorTextEdit/*.h)
+source_group("ImGUI\\ImGuiColorTextEdit" FILES ${src_external_imguicolortextedit})
+list(APPEND src_external ${src_external_imguicolortextedit})
 
 if(WIN32)
 if(NOT USE_VULKAN)

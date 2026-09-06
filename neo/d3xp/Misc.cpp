@@ -1844,7 +1844,7 @@ idStaticEntity::ShowEditingDialog
 */
 void idStaticEntity::ShowEditingDialog()
 {
-	common->InitTool( EDITOR_PARTICLE, &spawnArgs );
+	common->InitTool( EDITOR_PARTICLE, &spawnArgs, this );
 }
 /*
 ================
