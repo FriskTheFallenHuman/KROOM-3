@@ -46,11 +46,20 @@ public:
 	// Returns the stable ImGui window name used for docking and identification.
 	virtual const char* GetWindowName() const = 0;
 
+	// Full title shown in Begin(). Defaults to GetWindowName()
+	virtual const char* GetDisplayTitle() const
+	{
+		return GetWindowName();
+	}
+
 	// Returns the default docking region assigned to this window.
 	virtual DockRegion GetDockRegion() const = 0;
 
 	// Returns whether the window should be submitted during the current frame.
 	virtual bool IsShown() const = 0;
+
+	// Shows or hides this window.
+	virtual void ShowIt( bool show ) = 0;
 
 	// Returns whether this window currently owns the editor free camera.
 	virtual bool IsFreeCameraActive() const
@@ -58,8 +67,47 @@ public:
 		return false;
 	}
 
+	// Extra ImGuiWindowFlags on top of the derived base flags.
+	virtual ImGuiWindowFlags GetExtraWindowFlags() const
+	{
+		return ImGuiWindowFlags_None;
+	}
+
+	// Draws this window's contents.
+	virtual void DrawContents( bool& showTool ) {}
+
+	// Called once, the frame this window transitions from shown to
+	// hidden.
+	virtual void OnClosed() {}
+
+	// Derives NoDocking from GetDockRegion
+	ImGuiWindowFlags GetBaseWindowFlags() const
+	{
+		ImGuiWindowFlags flags = GetExtraWindowFlags();
+		if( GetDockRegion() == DOCK_REGION_NONE )
+		{
+			flags |= ImGuiWindowFlags_NoDocking;
+		}
+		return flags;
+	}
+
 	// Submits this window's ImGui widgets for the current frame.
-	virtual void Draw() = 0;
+	virtual void Draw()
+	{
+		bool showTool = IsShown();
+
+		if( ImGui::Begin( GetDisplayTitle(), &showTool, GetBaseWindowFlags() ) )
+		{
+			DrawContents( showTool );
+		}
+		ImGui::End();
+
+		if( IsShown() && !showTool )
+		{
+			ShowIt( false );
+			OnClosed();
+		}
+	}
 };
 
 class idImGuiEditor;

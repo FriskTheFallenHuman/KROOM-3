@@ -34,8 +34,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "../util/ImGui_IdWidgets.h"
 
-static bool showDockedTool = false;
-
 static const char* BodyItemGetter( void* data, int index )
 {
 	idDeclAF* decl = reinterpret_cast<idDeclAF*>( data );
@@ -114,10 +112,12 @@ void AfEditor::Draw()
 {
 	bool showTool = isShown;
 
-	static ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove
-									| ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoInputs;
+	static ImGuiWindowFlags outerFlags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove
+										  | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground
+										  | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoInputs
+										  | ImGuiWindowFlags_NoDocking;
 
-	if( ImGui::Begin( "Example: Fullscreen window", &showTool, flags ) )
+	if( ImGui::Begin( "###ArticulatedFigureEditorToolBar", &showTool, outerFlags ) )
 	{
 		bool openedAfBrowser = false;
 		bool clickedNew = false;
@@ -262,7 +262,13 @@ void AfEditor::Draw()
 
 		if( showDockedTool )
 		{
-			static ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize;
+			static ImGuiWindowFlags contentFlags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize;
+
+			ImGuiWindowFlags flags = contentFlags;
+			if( GetDockRegion() == DOCK_REGION_NONE )
+			{
+				flags |= ImGuiWindowFlags_NoDocking;
+			}
 
 			if( ImGui::Begin( "Articulated Figure Editor###ArticulatedFigureEditor", &showDockedTool, flags ) )
 			{

@@ -119,57 +119,9 @@ private:
 
 class ParticleEditor : public idImGuiWindow
 {
-
-public:
-	ParticleEditor();   // standard constructor
-
-	static ParticleEditor& Instance();
-	static void ReInit( const idDict* dict, idEntity* entity );
-
-	void				SelectParticle( const char* name );
-	void				SetParticleVisualization( int i );
-	void				SetVectorControlUpdate( idQuat rotation );
-
-	enum { TESTMODEL, IMPACT, MUZZLE, FLIGHT, SELECTED };
-
-	void					Reset();
-
-	const char* GetWindowName() const override
-	{
-		return "###ParticleEditor";
-	}
-	DockRegion GetDockRegion() const override
-	{
-		return DOCK_REGION_LEFT;
-	}
-	bool IsShown() const override
-	{
-		return isShown;
-	}
-	bool IsFreeCameraActive() const override
-	{
-		return IsShown();
-	}
-	void Draw() override;
-
-	void			ShowIt( bool show )
-	{
-		isShown = show;
-	}
-
-private:
-	void		OnCbnSelchangeComboPath();
-	void		OnLbnSelchangeListStages();
-	void		ButtonColor();
-	void		ButtonFadeColor();
-	void		ButtonEntityColor();
-	void		OnBnClickedButtonSave();
-	void		OnBnClickedButtonSaveParticles();
-	void		OnBnClickedButtonUpdate();
-	void		OnBnClickedParticleMode();
-
 private:
 	bool				isShown;
+	bool				showParticleEditor;
 
 	DeclNewSelect		particleNewDlg;
 	DeclSelect			particleSelectDlg;
@@ -260,8 +212,16 @@ private:
 	idVec3				gizmoOrigin;
 	idMat3				gizmoAxis;
 
-private:
-	void				DrawGizmo();
+	void				OnCbnSelchangeComboPath();
+	void				OnLbnSelchangeListStages();
+	void				ButtonColor();
+	void				ButtonFadeColor();
+	void				ButtonEntityColor();
+	void				OnBnClickedButtonSave();
+	void				OnBnClickedButtonSaveParticles();
+	void				OnBnClickedButtonUpdate();
+	void				OnBnClickedParticleMode();
+
 	void				AddStage( bool clone );
 	void				RemoveStage();
 	void				RemoveStageThink();
@@ -281,6 +241,47 @@ private:
 	void				EnableStageControls();
 	void				EnableEditControls();
 	void				UpdateSelectedOrigin( float x, float y, float z );
+
+	void				DrawGizmo();
+
+	ParticleEditor();
+
+public:
+
+
+	static ParticleEditor& Instance();
+	static void ReInit( const idDict* dict, idEntity* entity );
+
+	void				SelectParticle( const char* name );
+	void				SetParticleVisualization( int i );
+	void				SetVectorControlUpdate( idQuat rotation );
+
+	enum { TESTMODEL, IMPACT, MUZZLE, FLIGHT, SELECTED };
+
+	void					Reset();
+
+	const char* GetWindowName() const override
+	{
+		return "###ParticleEditor";
+	}
+	DockRegion GetDockRegion() const override
+	{
+		return DOCK_REGION_LEFT;
+	}
+	bool IsShown() const override
+	{
+		return isShown;
+	}
+	void ShowIt( bool show ) override
+	{
+		isShown = show;
+	}
+	bool IsFreeCameraActive() const override
+	{
+		return IsShown();
+	}
+
+	void Draw() override;
 };
 
 #endif /* !__PARTICLEEDITOR_H__ */
