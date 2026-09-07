@@ -62,9 +62,7 @@ idCVar com_forceGenericSIMD( "com_forceGenericSIMD", "0", CVAR_BOOL | CVAR_SYSTE
 idCVar com_allowConsole( "com_allowConsole", "1", CVAR_BOOL | CVAR_SYSTEM | CVAR_ARCHIVE, "allow toggling the console with the tilde key" );
 idCVar com_developer( "developer", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "developer mode" );
 idCVar com_speeds( "com_speeds", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "show engine timings" );
-// DG: support "com_showFPS 1" for fps-only view like in classic doom3 => make it CVAR_INTEGER
 idCVar com_showFPS( "com_showFPS", "0", CVAR_INTEGER | CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_NOCHEAT, "show frames rendered per second. 0: off, 1: only show FPS (classic view), 2: default bfg values" );
-// DG end
 idCVar com_showMemoryUsage( "com_showMemoryUsage", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "show total and per frame memory usage" );
 idCVar com_updateLoadSize( "com_updateLoadSize", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "update the load size after loading a map" );
 
@@ -74,10 +72,12 @@ idCVar preload_CommonAssets( "preload_CommonAssets", "1", CVAR_SYSTEM | CVAR_BOO
 
 idCVar net_inviteOnly( "net_inviteOnly", "1", CVAR_BOOL | CVAR_ARCHIVE, "whether or not the private server you create allows friends to join or invite only" );
 
-// DG: add cvar for pause
 idCVar com_pause( "com_pause", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "set to 1 to pause game, to 0 to unpause again" );
-// DG end
 idCVar com_activeApp( "com_activeApp", "1", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "this is set to 0 if running in background" );
+
+idCVar com_enableDebuggerServer( "com_enableDebuggerServer", "0", CVAR_BOOL | CVAR_SYSTEM, "toggle debugger server and try to connect to com_dbgClientAdr" );
+idCVar com_dbgClientAdr( "com_dbgClientAdr", "localhost", CVAR_SYSTEM | CVAR_ARCHIVE, "debuggerApp client address" );
+idCVar com_dbgServerAdr( "com_dbgServerAdr", "localhost", CVAR_SYSTEM | CVAR_ARCHIVE, "debugger server address" );
 
 extern idCVar g_demoMode;
 
@@ -98,8 +98,10 @@ idCommon* 		common = &commonLocal;
 
 #ifdef ID_RETAIL
 	idCVar com_skipIntroVideos( "com_skipIntroVideos", "0", CVAR_BOOL , "skips intro videos" );
+	idCVar com_skipLegalScreens( "com_skipLegalScreens", "0", CVAR_BOOL, "skips the legal splash screens" );
 #else
 	idCVar com_skipIntroVideos( "com_skipIntroVideos", "1", CVAR_BOOL , "skips intro videos" );
+	idCVar com_skipLegalScreens( "com_skipLegalScreens", "1", CVAR_BOOL, "skips the legal splash screens" );
 #endif
 
 /*
@@ -1266,9 +1268,11 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 
 		photsensitivityScreen = declManager->FindMaterial( "guis/assets/splash/legal_photosensitivity" );
 
-		const int legalMinTime = 8000;
+#ifdef ID_RETAIL
+		const int legalMinTime = com_skipLegalScreens.GetBool() ? 0 : 8000;
+#endif
 		const bool showVideo = ( !com_skipIntroVideos.GetBool() && fileSystem->UsingResourceFiles() );
-		const bool showSplash = true;
+		const bool showSplash = ( !com_skipLegalScreens.GetBool() && fileSystem->UsingResourceFiles() );
 		if( showVideo )
 		{
 			RenderBink( "video\\loadvideo.bik" );
@@ -1284,8 +1288,9 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 			RenderSplash();
 		}
 
-
+#ifdef ID_RETAIL
 		int legalStartTime = Sys_Milliseconds();
+#endif
 		declManager->Init2();
 
 		// initialize string database so we can use it for loading messages
@@ -1307,7 +1312,10 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 		uiManager->Init();
 
 		// startup the script debugger
-		// DebuggerServerInit();
+		if( com_enableDebuggerServer.GetBool() )
+		{
+			DebuggerServerInit();
+		}
 
 		// load the game dll
 		LoadGameDLL();
@@ -1379,6 +1387,7 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 		AddStartupCommands();
 
 		StartMenu( true );
+
 // SRS - changed ifndef to ifdef since legalMinTime should apply to retail builds, not dev builds
 #ifdef ID_RETAIL
 		while( Sys_Milliseconds() - legalStartTime < legalMinTime && !isQuitRequested )
@@ -1478,7 +1487,10 @@ void idCommonLocal::Shutdown()
 	soundSystem->StopAllSounds();
 
 	// shutdown the script debugger
-	// DebuggerServerShutdown();
+	if( com_enableDebuggerServer.GetBool() )
+	{
+		DebuggerServerShutdown();
+	}
 
 	if( aviCaptureMode )
 	{
@@ -1828,6 +1840,19 @@ idCommonLocal::ResetPlayerInput
 void idCommonLocal::ResetPlayerInput( int playerIndex )
 {
 	userCmdMgr.ResetPlayer( playerIndex );
+}
+
+/*
+========================
+idCommonLocal::DebuggerCheckBreakpoint
+========================
+*/
+void idCommonLocal::DebuggerCheckBreakpoint( idInterpreter* interpreter, idProgram* program, int instructionPointer )
+{
+	if( com_enableDebuggerServer.GetBool() )
+	{
+		DebuggerServerCheckBreakpoint( interpreter, program, instructionPointer );
+	}
 }
 
 /*

@@ -106,6 +106,17 @@ void idCommonLocal::InitTool( const toolFlag_t tool, const idDict* dict, idEntit
 #endif
 }
 
+
+/*
+==================
+idCommonLocal::IsToolActive
+==================
+*/
+bool idCommonLocal::IsToolActive() const
+{
+	return com_editorActive;
+}
+
 /*
 ==================
 idCommonLocal::ActivateTool

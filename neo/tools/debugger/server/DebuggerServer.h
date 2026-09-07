@@ -1,0 +1,157 @@
+/*
+===========================================================================
+
+Doom 3 BFG Edition GPL Source Code
+Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
+
+Doom 3 BFG Edition Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 BFG Edition Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 BFG Edition Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 BFG Edition Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 BFG Edition Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
+
+#ifndef __DEBUGGERSERVER_H__
+#define __DEBUGGERSERVER_H__
+
+#ifndef __DEBUGGERMESSAGES_H__
+	#include "DebuggerMessages.h"
+#endif
+
+#ifndef __DEBUGGERBREAKPOINT_H__
+	#include "DebuggerBreakpoint.h"
+#endif
+
+#include "../d3xp/Game.h"
+
+// DG: SDL.h somehow needs the following functions, so #undef those silly
+//     "don't use" #defines from Str.h
+#undef strncmp
+#undef strcasecmp
+#undef vsnprintf
+// DG end
+
+#include <SDL2/SDL.h>
+
+class idInterpreter;
+class idProgram;
+
+class function_t;
+typedef struct prstack_s prstack_t;
+
+class rvDebuggerServer
+{
+public:
+
+	rvDebuggerServer();
+	~rvDebuggerServer();
+
+	bool		Initialize();
+	void		Shutdown();
+
+	bool		ProcessMessages();
+
+	bool		IsConnected();
+
+	void		CheckBreakpoints( idInterpreter* interpreter, idProgram* program, int instructionPointer );
+
+	void		Print( const char* text );
+
+	void		OSPathToRelativePath( const char* osPath, idStr& qpath );
+
+	bool		GameSuspended();
+private:
+
+	void		ClearBreakpoints();
+
+	void		Break( idInterpreter* interpreter, idProgram* program, int instructionPointer );
+	void		Resume();
+
+	void		SendMessage( EDebuggerMessage dbmsg );
+	void		SendPacket( void* data, int datasize );
+
+	// Message handlers
+	void		HandleAddBreakpoint( idBitMsg* msg );
+	void		HandleRemoveBreakpoint( idBitMsg* msg );
+	void		HandleResume( idBitMsg* msg );
+	void		HandleInspectVariable( idBitMsg* msg );
+	void		HandleInspectCallstack( idBitMsg* msg );
+	void		HandleInspectThreads( idBitMsg* msg );
+	void		HandleInspectScripts( idBitMsg* msg );
+	void		HandleExecCommand( idBitMsg* msg );
+	////
+
+	bool							mConnected;
+	netadr_t						mClientAdr;
+	idUDP							mPort;
+	idList<rvDebuggerBreakpoint*>	mBreakpoints;
+	SDL_mutex*						mCriticalSection;
+
+
+	SDL_cond*						mGameThreadBreakCond;
+	SDL_mutex*						mGameThreadBreakLock;
+	bool							mBreak;
+
+	bool							mBreakNext;
+	bool							mBreakStepOver;
+	bool							mBreakStepInto;
+	int								mBreakStepOverDepth;
+	const function_t*				mBreakStepOverFunc1;
+	const function_t*				mBreakStepOverFunc2;
+	idProgram*						mBreakProgram;
+	int								mBreakInstructionPointer;
+	idInterpreter*					mBreakInterpreter;
+
+	idStr							mLastStatementFile;
+	int								mLastStatementLine;
+	uintptr_t						mGameDLLHandle;
+	idStrList						mScriptFileList;
+
+};
+
+/*
+================
+rvDebuggerServer::IsConnected
+================
+*/
+ID_INLINE bool rvDebuggerServer::IsConnected()
+{
+	return mConnected;
+}
+
+/*
+================
+rvDebuggerServer::SendPacket
+================
+*/
+ID_INLINE void rvDebuggerServer::SendPacket( void* data, int size )
+{
+	mPort.SendPacket( mClientAdr, data, size );
+}
+
+/*
+================
+rvDebuggerServer::GameSuspended
+================
+*/
+ID_INLINE bool rvDebuggerServer::GameSuspended()
+{
+	return mBreak;
+}
+
+#endif /* __DEBUGGERSERVER_H__ */

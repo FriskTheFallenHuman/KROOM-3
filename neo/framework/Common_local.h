@@ -156,9 +156,11 @@ public:
 	virtual void				UpdateLevelLoadPacifier();  // Indefinate
 	virtual void				StartupVariable( const char* match );
 	virtual void				InitTool( const toolFlag_t tool, const idDict* dict, idEntity* entity = NULL );
+	virtual bool				IsToolActive() const;
 	virtual void				ActivateTool( bool active );
 	virtual void				WriteConfigToFile( const char* filename );
 	virtual void				WriteFlaggedCVarsToFile( const char* filename, int flags, const char* setCmd );
+	virtual void				DebuggerCheckBreakpoint( idInterpreter* interpreter, idProgram* program, int instructionPointer );
 	virtual void				BeginRedirect( char* buffer, int buffersize, void ( *flush )( const char* ) );
 	virtual void				EndRedirect();
 	virtual void				SetRefreshOnPrint( bool set );

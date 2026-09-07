@@ -66,10 +66,10 @@ void	ScriptEditorInit( const idDict* spawnArgs );
 void	DeclBrowserInit();
 
 // Script Debugger (Server)
-//bool	DebuggerServerInit();
-//void	DebuggerServerShutdown();
-//void	DebuggerServerPrint( const char* text );
-//void	DebuggerServerCheckBreakpoint( idInterpreter* interpreter, idProgram* program, int instructionPointer );
+bool	DebuggerServerInit();
+void	DebuggerServerShutdown();
+void	DebuggerServerPrint( const char* text );
+void	DebuggerServerCheckBreakpoint( idInterpreter* interpreter, idProgram* program, int instructionPointer );
 
 // Radiant Level Editor
 //void	RadiantInit();

@@ -1335,7 +1335,7 @@ void idGameLocal::PopulateEnvironmentProbes()
 idGameLocal::InitFromNewMap
 ===================
 */
-void idGameLocal::InitFromNewMap( const char* mapName, idRenderWorld* renderWorld, idSoundWorld* soundWorld, int gameMode, int randseed )
+void idGameLocal::InitFromNewMap( const char* mapName, idRenderWorld* renderWorld, idSoundWorld* soundWorld, int gameMode, int randseed, int activeEditors )
 {
 
 	this->gameType = ( gameType_t )idMath::ClampInt( GAME_SP, GAME_COUNT - 1, gameMode );
@@ -1347,6 +1347,7 @@ void idGameLocal::InitFromNewMap( const char* mapName, idRenderWorld* renderWorl
 
 	Printf( "----------- Game Map Init ------------\n" );
 
+	editors = activeEditors;
 	gamestate = GAMESTATE_STARTUP;
 
 	gameRenderWorld = renderWorld;
@@ -1388,7 +1389,7 @@ void idGameLocal::InitFromNewMap( const char* mapName, idRenderWorld* renderWorl
 idGameLocal::InitFromSaveGame
 =================
 */
-bool idGameLocal::InitFromSaveGame( const char* mapName, idRenderWorld* renderWorld, idSoundWorld* soundWorld, idFile* saveGameFile, idFile* stringTableFile, int saveGameVersion )
+bool idGameLocal::InitFromSaveGame( const char* mapName, idRenderWorld* renderWorld, idSoundWorld* soundWorld, idFile* saveGameFile, idFile* stringTableFile, int saveGameVersion, int activeEditors )
 {
 	int i;
 	int num;
@@ -1402,6 +1403,7 @@ bool idGameLocal::InitFromSaveGame( const char* mapName, idRenderWorld* renderWo
 
 	Printf( "------- Game Map Init SaveGame -------\n" );
 
+	editors = activeEditors;
 	gamestate = GAMESTATE_STARTUP;
 
 	gameRenderWorld = renderWorld;
@@ -1721,6 +1723,18 @@ void idGameLocal::MapShutdown()
 		gameRenderWorld->DebugClearLines( 0 );
 		gameRenderWorld->DebugClearPolygons( 0 );
 	}
+
+	// RB: kill ingame editors to prevent crashes during shutdown
+	if( editors != 0 )
+	{
+		editors = 0;
+		g_editEntityMode.SetInteger( 0 );
+
+		// turn off light debug drawing in the render backend
+		cvarSystem->SetCVarInteger( "r_singleLight", -1 );
+		cvarSystem->SetCVarInteger( "r_showLights", 0 );
+	}
+	// RB end
 
 	// clear out camera if we're in a cinematic
 	if( inCinematic )
@@ -2649,7 +2663,7 @@ private:
 idGameLocal::RunFrame
 ================
 */
-void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
+void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, int activeEditors, gameReturn_t& ret )
 {
 	idEntity* 	ent;
 	int			num;
@@ -2686,6 +2700,8 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 	idCollisionQueryFrameScope collisionQueryFrame( collisionModelManager );
 
 	ServerSendNetworkSyncCvars();
+
+	editors = activeEditors;
 
 	player = GetLocalPlayer();
 

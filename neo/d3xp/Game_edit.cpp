@@ -1819,3 +1819,312 @@ void idGameEditLocal::ParseSpawnArgsToRenderLight( const idDict* args, renderLig
 	// allow this to be NULL
 	renderLight->shader = declManager->FindMaterial( texture, false );
 }
+
+
+
+/***********************************************************************
+
+  Debugger
+
+***********************************************************************/
+
+bool idGameEditLocal::IsLineCode( const char* filename, int linenumber ) const
+{
+	idStr fileStr;
+	idProgram* program = &gameLocal.program;
+	for( int i = 0; i < program->NumStatements(); i++ )
+	{
+		fileStr = program->GetFilename( program->GetStatement( i ).file );
+		fileStr.BackSlashesToSlashes();
+
+		if( strcmp( filename, fileStr.c_str() ) == 0
+				&& program->GetStatement( i ).linenumber == linenumber
+		  )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+/*
+================
+idGameEditLocal::GetLoadedScripts
+================
+*/
+void idGameEditLocal::GetLoadedScripts( idStrList** result )
+{
+	( *result )->Clear();
+	idProgram* program = &gameLocal.program;
+
+	for( int i = 0; i < program->NumFilenames(); i++ )
+	{
+		( *result )->AddUnique( idStr( program->GetFilename( i ) ) );
+	}
+}
+
+/*
+================
+idGameEditLocal::MSG_WriteScriptList
+================
+*/
+void idGameEditLocal::MSG_WriteScriptList( idBitMsg* msg )
+{
+	idProgram* program = &gameLocal.program;
+
+	msg->WriteLong( program->NumFilenames() );
+	for( int i = 0; i < program->NumFilenames(); i++ )
+	{
+		idStr file = program->GetFilename( i );
+		//fix this. it seams that scripts triggered by the runtime are stored with a wrong path
+		//the use // instead of '\'
+		file.BackSlashesToSlashes();
+		msg->WriteString( file );
+	}
+}
+
+/*
+================
+idGameEditLocal::GetFilenameForStatement
+================
+*/
+const char* idGameEditLocal::GetFilenameForStatement( idProgram* program, int index ) const
+{
+	return program->GetFilenameForStatement( index );
+}
+
+/*
+================
+idGameEditLocal::GetLineNumberForStatement
+================
+*/
+int idGameEditLocal::GetLineNumberForStatement( idProgram* program, int index ) const
+{
+	return program->GetLineNumberForStatement( index );
+}
+
+/*
+====================
+idGameEditLocal::CheckForBreakPointHit
+====================
+*/
+bool idGameEditLocal::CheckForBreakPointHit( const idInterpreter* interpreter, const function_t* function1, const function_t* function2, int depth ) const
+{
+	return ( ( interpreter->GetCurrentFunction( ) == function1 ||
+			   interpreter->GetCurrentFunction( ) == function2 ) &&
+			 ( interpreter->GetCallstackDepth( )  <= depth ) );
+}
+
+/*
+====================
+idGameEditLocal::ReturnedFromFunction
+====================
+*/
+bool idGameEditLocal::ReturnedFromFunction( const idProgram* program, const idInterpreter* interpreter, int index ) const
+{
+
+	return ( const_cast<idProgram*>( program )->GetStatement( index ).op == OP_RETURN && interpreter->GetCallstackDepth( ) <= 1 );
+}
+
+/*
+====================
+idGameEditLocal::GetRegisterValue
+====================
+*/
+bool idGameEditLocal::GetRegisterValue( const idInterpreter* interpreter, const char* name, idStr& out, int scopeDepth ) const
+{
+	return const_cast<idInterpreter*>( interpreter )->GetRegisterValue( name, out, scopeDepth );
+}
+
+/*
+====================
+idGameEditLocal::GetThread
+====================
+*/
+const idThread* idGameEditLocal::GetThread( const idInterpreter* interpreter ) const
+{
+	return interpreter->GetThread();
+}
+
+/*
+====================
+idGameEditLocal::MSG_WriteCallstackFunc
+====================
+*/
+void idGameEditLocal::MSG_WriteCallstackFunc( idBitMsg* msg, const prstack_t* stack, const idProgram* program, int instructionPtr )
+{
+	const statement_t*	st;
+	const function_t*	func;
+
+	func  = stack->f;
+
+	// If the function is unknown then just fill in with default data.
+	if( !func )
+	{
+		msg->WriteString( "<UNKNOWN>" );
+		msg->WriteString( "<UNKNOWN>" );
+		msg->WriteLong( 0 );
+		return;
+	}
+	else
+	{
+		msg->WriteString( va( "%s(  )", func->Name() ) );
+	}
+
+	if( stack->s == -1 ) //this is a fake stack created by debugger, use intruction pointer for retrieval.
+	{
+		st = &const_cast<idProgram*>( program )->GetStatement( instructionPtr );
+	}
+	else // Use the calling statement as the filename and linenumber where the call was made from
+	{
+		st = &const_cast<idProgram*>( program )->GetStatement( stack->s );
+	}
+
+	if( st )
+	{
+		idStr qpath = const_cast<idProgram*>( program )->GetFilename( st->file );
+		if( idStr::FindChar( qpath, ':' ) != -1 )
+		{
+			qpath = fileSystem->OSPathToRelativePath( qpath.c_str() );
+		}
+		qpath.BackSlashesToSlashes( );
+		msg->WriteString( qpath );
+		msg->WriteLong( st->linenumber );
+	}
+	else
+	{
+		msg->WriteString( "<UNKNOWN>" );
+		msg->WriteLong( 0 );
+	}
+}
+
+/*
+====================
+idGameEditLocal::MSG_WriteInterpreterInfo
+====================
+*/
+void idGameEditLocal::MSG_WriteInterpreterInfo( idBitMsg* msg, const idInterpreter* interpreter, const idProgram* program, int instructionPtr )
+{
+	int			i;
+	prstack_s	temp;
+
+	msg->WriteShort( ( int )interpreter->GetCallstackDepth( ) );
+
+	// write out the current function
+	temp.f = interpreter->GetCurrentFunction( );
+	temp.s = -1;
+	temp.stackbase = 0;
+	MSG_WriteCallstackFunc( msg, &temp, program, instructionPtr );
+
+	// Run through all of the callstack and write each to the msg
+	for( i = interpreter->GetCallstackDepth() - 1; i > 0; i-- )
+	{
+		MSG_WriteCallstackFunc( msg, interpreter->GetCallstack( ) + i, program, instructionPtr );
+	}
+}
+
+/*
+====================
+idGameEditLocal::GetInterpreterCallStackDepth
+====================
+*/
+int idGameEditLocal::GetInterpreterCallStackDepth( const idInterpreter* interpreter )
+{
+	return interpreter->GetCallstackDepth();
+}
+
+/*
+====================
+idGameEditLocal::GetInterpreterCallStackFunction
+====================
+*/
+const function_t* idGameEditLocal::GetInterpreterCallStackFunction( const idInterpreter* interpreter, int stackDepth/* = -1*/ )
+{
+	return interpreter->GetCallstack( )[ stackDepth > -1 ? stackDepth : interpreter->GetCallstackDepth( ) ].f;
+}
+
+/*
+================
+idGameEditLocal::ThreadGetNum
+================
+*/
+int idGameEditLocal::ThreadGetNum( const idThread* thread ) const
+{
+	return const_cast<idThread*>( thread )->GetThreadNum();
+}
+
+/*
+================
+idGameEditLocal::ThreadGetName
+================
+*/
+const char* idGameEditLocal::ThreadGetName( const idThread* thread ) const
+{
+	return const_cast<idThread*>( thread )->GetThreadName();
+}
+
+/*
+================
+idGameEditLocal::GetTotalScriptThreads
+================
+*/
+int	idGameEditLocal::GetTotalScriptThreads() const
+{
+	return idThread::GetThreads().Num();
+}
+
+/*
+================
+idGameEditLocal::GetThreadByIndex
+================
+*/
+const idThread* idGameEditLocal::GetThreadByIndex( int index ) const
+{
+	return idThread::GetThreads()[index];
+}
+
+/*
+================
+idGameEditLocal::ThreadIsDoneProcessing
+================
+*/
+bool idGameEditLocal::ThreadIsDoneProcessing( const idThread* thread ) const
+{
+	return const_cast<idThread*>( thread )->IsDoneProcessing();
+}
+
+/*
+================
+idGameEditLocal::ThreadIsWaiting
+================
+*/
+bool idGameEditLocal::ThreadIsWaiting( const idThread* thread ) const
+{
+	return const_cast<idThread*>( thread )->IsWaiting();
+}
+
+/*
+================
+idGameEditLocal::ThreadIsDying
+================
+*/
+bool idGameEditLocal::ThreadIsDying( const idThread* thread ) const
+{
+	return const_cast<idThread*>( thread )->IsDying();
+}
+
+/*
+================
+idGameEditLocal::MSG_WriteThreadInfo
+================
+*/
+void idGameEditLocal::MSG_WriteThreadInfo( idBitMsg* msg, const idThread* thread, const idInterpreter* interpreter )
+{
+	msg->WriteString( const_cast<idThread*>( thread )->GetThreadName() );
+	msg->WriteLong( const_cast<idThread*>( thread )->GetThreadNum() );
+
+	msg->WriteBits( ( int )( thread == interpreter->GetThread() ), 1 );
+	msg->WriteBits( ( int )const_cast<idThread*>( thread )->IsDoneProcessing(), 1 );
+	msg->WriteBits( ( int )const_cast<idThread*>( thread )->IsWaiting(), 1 );
+	msg->WriteBits( ( int )const_cast<idThread*>( thread )->IsDying(), 1 );
+}

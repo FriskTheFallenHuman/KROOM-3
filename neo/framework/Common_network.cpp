@@ -467,7 +467,7 @@ void idCommonLocal::InterpolateSnapshot( netTimes_t& prev, netTimes_t& next, flo
 	Game()->SetServerGameTimeMs( serverTime );		// Set the global server time to the interpolated time of the server
 	Game()->SetInterpolation( fraction, serverTime, prev.serverTime, next.serverTime );
 
-	//Game()->RunFrame( &userCmdMgr, &ret, true );
+	//Game()->RunFrame( &userCmdMgr, com_editors, &ret, true );
 
 }
 

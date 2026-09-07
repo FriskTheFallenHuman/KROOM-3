@@ -403,7 +403,7 @@ void idCommonLocal::ExecuteMapChange()
 	// load and spawn all other entities ( from a savegame possibly )
 	if( mapSpawnData.savegameFile )
 	{
-		if( !game->InitFromSaveGame( fullMapName, renderWorld, soundWorld, mapSpawnData.savegameFile, mapSpawnData.stringTableFile, mapSpawnData.savegameVersion ) )
+		if( !game->InitFromSaveGame( fullMapName, renderWorld, soundWorld, mapSpawnData.savegameFile, mapSpawnData.stringTableFile, mapSpawnData.savegameVersion, com_editors ) )
 		{
 			// If the loadgame failed, end the session, which will force us to go back to the main menu
 			session->QuitMatchToTitle();
@@ -419,7 +419,7 @@ void idCommonLocal::ExecuteMapChange()
 			game->SetPersistentPlayerInfo( 0, mapSpawnData.persistentPlayerInfo );
 		}
 		game->SetServerInfo( matchParameters.serverInfo );
-		game->InitFromNewMap( fullMapName, renderWorld, soundWorld, matchParameters.gameMode, Sys_Milliseconds() );
+		game->InitFromNewMap( fullMapName, renderWorld, soundWorld, matchParameters.gameMode, Sys_Milliseconds(), com_editors );
 	}
 
 	game->Shell_CreateMenu( true );
@@ -453,11 +453,11 @@ void idCommonLocal::ExecuteMapChange()
 		}
 		if( IsClient() )
 		{
-			game->ClientRunFrame( emptyCommandManager, false, emptyGameReturn );
+			game->ClientRunFrame( emptyCommandManager, com_editors, false, emptyGameReturn );
 		}
 		else
 		{
-			game->RunFrame( emptyCommandManager, emptyGameReturn );
+			game->RunFrame( emptyCommandManager, com_editors, emptyGameReturn );
 		}
 	}
 
@@ -480,7 +480,7 @@ void idCommonLocal::ExecuteMapChange()
 			{
 				emptyCommandManager.PutUserCmdForPlayer( playerIndex, usercmd_t() );
 			}
-			game->RunFrame( emptyCommandManager, emptyGameReturn );
+			game->RunFrame( emptyCommandManager, com_editors, emptyGameReturn );
 		}
 
 		// kick off an auto-save of the game (so we can always continue in this map if we die before hitting an autosave)

@@ -106,7 +106,7 @@ int idGameThread::Run()
 			SCOPED_PROFILE_EVENT( "Client Prediction" );
 			if( userCmdMgr )
 			{
-				game->ClientRunFrame( *userCmdMgr, ( i == numGameFrames - 1 ), ret );
+				game->ClientRunFrame( *userCmdMgr, com_editors, ( i == numGameFrames - 1 ), ret );
 			}
 			if( ret.syncNextGameFrame || ret.sessionCommand[0] != 0 )
 			{
@@ -122,7 +122,7 @@ int idGameThread::Run()
 			SCOPED_PROFILE_EVENT( "GameTic" );
 			if( userCmdMgr )
 			{
-				game->RunFrame( *userCmdMgr, ret );
+				game->RunFrame( *userCmdMgr, com_editors, ret );
 			}
 			if( ret.syncNextGameFrame || ret.sessionCommand[0] != 0 )
 			{
@@ -520,6 +520,19 @@ void idCommonLocal::Frame()
 
 		// write config file if anything changed
 		WriteConfiguration();
+
+		// check if the debugger server should be started or stopped
+		if( com_enableDebuggerServer.IsModified() )
+		{
+			if( com_enableDebuggerServer.GetBool() )
+			{
+				DebuggerServerInit();
+			}
+			else
+			{
+				DebuggerServerShutdown();
+			}
+		}
 
 		eventLoop->RunEventLoop();
 
