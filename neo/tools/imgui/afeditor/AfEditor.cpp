@@ -113,9 +113,9 @@ void AfEditor::Draw()
 	bool showTool = isShown;
 
 	static ImGuiWindowFlags outerFlags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove
-										  | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground
-										  | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoInputs
-										  | ImGuiWindowFlags_NoDocking;
+										 | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground
+										 | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoInputs
+										 | ImGuiWindowFlags_NoDocking;
 
 	if( ImGui::Begin( "###ArticulatedFigureEditorToolBar", &showTool, outerFlags ) )
 	{

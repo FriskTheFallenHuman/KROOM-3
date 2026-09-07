@@ -39,8 +39,6 @@ If you have questions concerning this license or the applicable additional terms
 ==============================================================
 */
 
-extern idCVar com_engineHz;
-extern idCVar com_hiResClock;
 extern float com_engineHz_latched;
 extern const int64 com_engineHz_numerator;
 extern int64 com_engineHz_denominator;
@@ -144,6 +142,12 @@ extern idCVar		com_showFPS;
 extern idCVar		com_showMemoryUsage;
 extern idCVar		com_updateLoadSize;
 extern idCVar		com_productionMode;
+extern idCVar		com_enableDebuggerServer;
+extern idCVar		com_dbgClientAdr;
+extern idCVar		com_dbgServerAdr;
+extern idCVar		com_engineHz;
+extern idCVar		com_hiResClock;
+
 extern int			com_editors;			// current active editor(s)
 extern bool			com_editorActive;		// true if an editor has focus
 
@@ -195,6 +199,9 @@ struct mpMap_t
 
 static const int	MAX_LOGGED_STATS = 60 * 120;		// log every half second
 
+class idInterpreter;
+class idProgram;
+
 class idCommon
 {
 public:
@@ -235,6 +242,9 @@ public:
 	// Initializes a tool with the given dictionary.
 	virtual void				InitTool( const toolFlag_t tool, const idDict* dict, idEntity* entity = NULL ) = 0;
 
+	// Returns true if an editor has focus
+	virtual bool				IsToolActive() const = 0;
+
 	// Activates or deactivates a tool.
 	virtual void				ActivateTool( bool active ) = 0;
 
@@ -243,6 +253,9 @@ public:
 
 	// Writes cvars with the given flags to a file.
 	virtual void				WriteFlaggedCVarsToFile( const char* filename, int flags, const char* setCmd ) = 0;
+
+	// Debbugger hook to check if a breakpoint has been hit
+	virtual void				DebuggerCheckBreakpoint( idInterpreter* interpreter, idProgram* program, int instructionPointer ) = 0;
 
 
 	// Begins redirection of console output to the given buffer.

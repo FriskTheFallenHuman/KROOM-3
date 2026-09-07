@@ -99,10 +99,10 @@ public:
 	virtual void				SetPersistentPlayerInfo( int clientNum, const idDict& playerInfo ) = 0;
 
 	// Loads a map and spawns all the entities.
-	virtual void				InitFromNewMap( const char* mapName, idRenderWorld* renderWorld, idSoundWorld* soundWorld, int gameMode, int randseed ) = 0;
+	virtual void				InitFromNewMap( const char* mapName, idRenderWorld* renderWorld, idSoundWorld* soundWorld, int gameMode, int randseed, int activeEditors ) = 0;
 
 	// Loads a map from a savegame file.
-	virtual bool				InitFromSaveGame( const char* mapName, idRenderWorld* renderWorld, idSoundWorld* soundWorld, idFile* saveGameFile, idFile* stringTableFile, int saveGameVersion ) = 0;
+	virtual bool				InitFromSaveGame( const char* mapName, idRenderWorld* renderWorld, idSoundWorld* soundWorld, idFile* saveGameFile, idFile* stringTableFile, int saveGameVersion, int activeEditors ) = 0;
 
 	// Saves the current game state, common may have written some data to the file already.
 	virtual void				SaveGame( idFile* saveGameFile, idFile* stringTableFile ) = 0;
@@ -119,7 +119,7 @@ public:
 	virtual void				Preload( const idPreloadManifest& manifest ) = 0;
 
 	// Runs a game frame, may return a session command for level changing, etc
-	virtual void				RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& gameReturn ) = 0;
+	virtual void				RunFrame( idUserCmdMgr& cmdMgr, int activeEditors, gameReturn_t& gameReturn ) = 0;
 
 	// Makes rendering and sound system calls to display for a given clientNum.
 	virtual bool				Draw( int clientNum ) = 0;
@@ -138,7 +138,7 @@ public:
 	virtual void				ClientReadSnapshot( const idSnapShot& ss ) = 0;
 
 	// Runs prediction on entities at the client.
-	virtual void				ClientRunFrame( idUserCmdMgr& cmdMgr, bool lastPredictFrame, gameReturn_t& ret ) = 0;
+	virtual void				ClientRunFrame( idUserCmdMgr& cmdMgr, int activeEditors, bool lastPredictFrame, gameReturn_t& ret ) = 0;
 
 	// Used to manage divergent time-lines
 	virtual int					GetTimeGroupTime( int timeGroup ) = 0;
@@ -270,6 +270,11 @@ enum
 
 class idEntity;
 class idMD5Anim;
+class idThread;
+class function_t;
+class idProgram;
+class idInterpreter;
+typedef struct prstack_s prstack_t;
 
 class idGameEdit
 {
@@ -340,6 +345,36 @@ public:
 	virtual void				PlayerGetEyePosition( idVec3& org ) const = 0;
 	virtual bool				PlayerGetRenderView( renderView_t& rv ) const = 0;
 	virtual void				PlayerEnableFreeCam( bool enabled ) = 0;
+
+	// In game script Debugging Support
+	// IdProgram
+	virtual void				GetLoadedScripts( idStrList** result ) = 0;
+	virtual bool				IsLineCode( const char* filename, int linenumber ) const = 0;
+	virtual const char* 		GetFilenameForStatement( idProgram* program, int index ) const = 0;
+	virtual int					GetLineNumberForStatement( idProgram* program, int index ) const = 0;
+
+	// idInterpreter
+	virtual bool				CheckForBreakPointHit( const idInterpreter* interpreter, const function_t* function1, const function_t* function2, int depth ) const = 0;
+	virtual bool				ReturnedFromFunction( const idProgram* program, const idInterpreter* interpreter, int index ) const = 0;
+	virtual bool				GetRegisterValue( const idInterpreter* interpreter, const char* name, idStr& out, int scopeDepth ) const = 0;
+	virtual const idThread*		GetThread( const idInterpreter* interpreter ) const = 0;
+	virtual int					GetInterpreterCallStackDepth( const idInterpreter* interpreter ) = 0;
+	virtual const function_t*	GetInterpreterCallStackFunction( const idInterpreter* interpreter, int stackDepth = -1 ) = 0;
+
+	// IdThread
+	virtual const char* 		ThreadGetName( const idThread* thread ) const = 0;
+	virtual int					ThreadGetNum( const idThread* thread ) const = 0;
+	virtual bool				ThreadIsDoneProcessing( const idThread* thread ) const = 0;
+	virtual bool				ThreadIsWaiting( const idThread* thread ) const = 0;
+	virtual bool				ThreadIsDying( const idThread* thread ) const = 0;
+	virtual int					GetTotalScriptThreads( ) const = 0;
+	virtual const idThread*		GetThreadByIndex( int index ) const = 0;
+
+	// MSG helpers
+	virtual void				MSG_WriteThreadInfo( idBitMsg* msg, const idThread* thread, const idInterpreter* interpreter ) = 0;
+	virtual void				MSG_WriteCallstackFunc( idBitMsg* msg, const prstack_t* stack, const idProgram* program, int instructionPtr ) = 0;
+	virtual void				MSG_WriteInterpreterInfo( idBitMsg* msg, const idInterpreter* interpreter, const idProgram* program, int instructionPtr ) = 0;
+	virtual void				MSG_WriteScriptList( idBitMsg* msg ) = 0;
 
 	// In game map editing support.
 	virtual const idDict* 		MapGetEntityDict( const char* name ) const = 0;

@@ -363,6 +363,8 @@ public:
 	idEntityPtr<idEntity>	lastGUIEnt;				// last entity with a GUI, used by Cmd_NextGUI_f
 	int						lastGUI;				// last GUI on the lastGUIEnt
 
+	int						editors;				// Mirrored editors flags from common determine which editors are running
+
 	idEntityPtr<idPlayer>	playerActivateFragChamber;	// The player that activated the frag chamber
 
 	idEntityPtr<idEntity>	portalSkyEnt;
@@ -403,14 +405,14 @@ public:
 
 	virtual const idDict& 	GetPersistentPlayerInfo( int clientNum );
 	virtual void			SetPersistentPlayerInfo( int clientNum, const idDict& playerInfo );
-	virtual void			InitFromNewMap( const char* mapName, idRenderWorld* renderWorld, idSoundWorld* soundWorld, int gameType, int randSeed );
-	virtual bool			InitFromSaveGame( const char* mapName, idRenderWorld* renderWorld, idSoundWorld* soundWorld, idFile* saveGameFile, idFile* stringTableFile, int saveGameVersion );
+	virtual void			InitFromNewMap( const char* mapName, idRenderWorld* renderWorld, idSoundWorld* soundWorld, int gameType, int randSeed, int activeEditors );
+	virtual bool			InitFromSaveGame( const char* mapName, idRenderWorld* renderWorld, idSoundWorld* soundWorld, idFile* saveGameFile, idFile* stringTableFile, int saveGameVersion, int activeEditors );
 	virtual void			SaveGame( idFile* saveGameFile, idFile* stringTableFile );
 	virtual void			GetSaveGameDetails( idSaveGameDetails& gameDetails );
 	virtual void			MapShutdown();
 	virtual void			CacheDictionaryMedia( const idDict* dict );
 	virtual void			Preload( const idPreloadManifest& manifest );
-	virtual void			RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& gameReturn );
+	virtual void			RunFrame( idUserCmdMgr& cmdMgr, int activeEditors, gameReturn_t& gameReturn );
 	void					RunAllUserCmdsForPlayer( idUserCmdMgr& cmdMgr, const int playerNumber );
 	void					RunSingleUserCmd( usercmd_t& cmd, idPlayer& player );
 	void					RunEntityThink( idEntity& ent, idUserCmdMgr& userCmdMgr );
@@ -420,7 +422,7 @@ public:
 	virtual void			ServerWriteSnapshot( idSnapShot& ss );
 	virtual void			ProcessReliableMessage( int clientNum, int type, const idBitMsg& msg );
 	virtual void			ClientReadSnapshot( const idSnapShot& ss );
-	virtual void			ClientRunFrame( idUserCmdMgr& cmdMgr, bool lastPredictFrame, gameReturn_t& ret );
+	virtual void			ClientRunFrame( idUserCmdMgr& cmdMgr, int activeEditors, bool lastPredictFrame, gameReturn_t& ret );
 	void					BuildReturnValue( gameReturn_t& ret );
 
 	virtual int				GetMPGameModes( const char** * gameModes, const char** * gameModesDisplay );

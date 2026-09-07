@@ -557,7 +557,7 @@ file(GLOB src_sys_common sys/common/*.cpp sys/common/*.h)
 source_group("Sys\\Common" FILES ${src_sys_common})
 
 file(GLOB src_sys_sdl sys/sdl/*.cpp sys/sdl/*.h)
-source_group("Sys//SDL" FILES ${src_sys_sdl})
+source_group("Sys\\SDL" FILES ${src_sys_sdl})
 
 file(GLOB src_ui ui/*.cpp ui/*.h)
 list(REMOVE_ITEM src_ui ${CMAKE_CURRENT_SOURCE_DIR}/ui/GameWindow.cpp)
@@ -620,6 +620,9 @@ list(APPEND src_core ${src_d3xp})
 
 ##################### Compilers ###########################
 
+file(GLOB src_tools tools/*.cpp tools/*.h)
+source_group("Tools" FILES ${src_tools})
+
 file(GLOB src_tools_compilers tools/compilers/*.cpp tools/compilers/*.h)
 source_group("Tools\\Compilers" FILES ${src_tools_compilers})
 
@@ -639,6 +642,7 @@ file(GLOB src_debugger_server tools/debugger/server/*.cpp tools/debugger/server/
 source_group("Tools\\Debugger\\Server" FILES ${src_debugger_server})
 
 set(src_compilers
+	${src_tools}
 	${src_tools_compilers}
 	${src_dmap}
 	${src_aas2build}

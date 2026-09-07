@@ -1189,9 +1189,11 @@ void idGameLocal::ClientProcessReliableMessage( int type, const idBitMsg& msg )
 idGameLocal::ClientRunFrame
 ================
 */
-void idGameLocal::ClientRunFrame( idUserCmdMgr& cmdMgr, bool lastPredictFrame, gameReturn_t& ret )
+void idGameLocal::ClientRunFrame( idUserCmdMgr& cmdMgr, int activeEditors, bool lastPredictFrame, gameReturn_t& ret )
 {
 	idEntity* ent;
+
+	editors = activeEditors;
 
 	// update the game time
 	previousTime = FRAME_TO_MSEC( framenum );
