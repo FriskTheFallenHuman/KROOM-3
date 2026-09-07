@@ -116,139 +116,111 @@ void ScriptEditor::Reset()
 	UpdateStatusBar();
 }
 
-void ScriptEditor::Draw()
+void ScriptEditor::DrawContents( bool& showTool )
 {
-	bool showTool = isShown;
 	bool clickedNew = false;
 	bool clickedSelect = false;
 
-	if( ImGui::Begin( windowText.c_str(), &showTool, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking ) )
+	if( ImGui::BeginMenuBar() )
 	{
-		if( ImGui::BeginMenuBar() )
+		if( ImGui::BeginMenu( "File" ) )
 		{
-			if( ImGui::BeginMenu( "File" ) )
+			if( ImGui::MenuItem( "New", "Ctrl+N" ) )
 			{
-				if( ImGui::MenuItem( "New", "Ctrl+N" ) )
-				{
-					clickedNew = true;
-				}
-
-				if( ImGui::MenuItem( "Open..", "Ctrl+O" ) )
-				{
-					clickedSelect = true;
-				}
-
-				if( ImGui::MenuItem( "Save", "Ctrl+S", false, scriptEdit.IsEdited() ) )
-				{
-					OnBnClickedOk();
-				}
-
-				ImGui::Separator();
-
-				if( ImGui::MenuItem( "Close", "Ctrl+W" ) )
-				{
-					showTool = false;
-				}
-
-				ImGui::EndMenu();
+				clickedNew = true;
 			}
-
-			if( ImGui::BeginMenu( "Edit" ) )
+			if( ImGui::MenuItem( "Open..", "Ctrl+O" ) )
 			{
-				if( ImGui::MenuItem( "Undo", "Ctrl+Z", false, scriptEdit.CanUndo() ) )
-				{
-					scriptEdit.Undo();
-				}
-
-				if( ImGui::MenuItem( "Redo", "Ctrl+Y", false, scriptEdit.CanRedo() ) )
-				{
-					scriptEdit.Redo();
-				}
-
-				ImGui::Separator();
-
-				if( ImGui::MenuItem( "Cut", "Ctrl+X", false, scriptEdit.CanCut() ) )
-				{
-					scriptEdit.Cut();
-				}
-
-				if( ImGui::MenuItem( "Copy", "Ctrl+C", false, scriptEdit.CanCopy() ) )
-				{
-					scriptEdit.Copy();
-				}
-
-				if( ImGui::MenuItem( "Paste", "Ctrl+V", false, scriptEdit.CanPaste() ) )
-				{
-					scriptEdit.Paste();
-				}
-
-				ImGui::Separator();
-
-				if( ImGui::MenuItem( "Delete", "Del", false, scriptEdit.CanDelete() ) )
-				{
-					scriptEdit.Delete();
-				}
-
-				ImGui::EndMenu();
+				clickedSelect = true;
 			}
-
-			if( ImGui::BeginMenu( "Misc" ) )
+			if( ImGui::MenuItem( "Save", "Ctrl+S", false, scriptEdit.IsEdited() ) )
 			{
-				if( ImGui::MenuItem( "Find / Replace", "Ctrl+F" ) )
-				{
-					scriptEdit.GetTextEditor()->OpenFindReplaceWindow();
-				}
-				if( ImGui::MenuItem( "Go To Line", "Ctrl+G" ) )
-				{
-					scriptEdit.OnEditGoToLine();
-				}
-				ImGui::EndMenu();
+				OnBnClickedOk();
 			}
-
-			ImGui::EndMenuBar();
+			ImGui::Separator();
+			if( ImGui::MenuItem( "Close", "Ctrl+W" ) )
+			{
+				showTool = false;
+			}
+			ImGui::EndMenu();
 		}
 
-		if( clickedNew )
+		if( ImGui::BeginMenu( "Edit" ) )
 		{
+			if( ImGui::MenuItem( "Undo", "Ctrl+Z", false, scriptEdit.CanUndo() ) )
+			{
+				scriptEdit.Undo();
+			}
+			if( ImGui::MenuItem( "Redo", "Ctrl+Y", false, scriptEdit.CanRedo() ) )
+			{
+				scriptEdit.Redo();
+			}
+			ImGui::Separator();
+			if( ImGui::MenuItem( "Cut", "Ctrl+X", false, scriptEdit.CanCut() ) )
+			{
+				scriptEdit.Cut();
+			}
+			if( ImGui::MenuItem( "Copy", "Ctrl+C", false, scriptEdit.CanCopy() ) )
+			{
+				scriptEdit.Copy();
+			}
+			if( ImGui::MenuItem( "Paste", "Ctrl+V", false, scriptEdit.CanPaste() ) )
+			{
+				scriptEdit.Paste();
+			}
+			ImGui::Separator();
+			if( ImGui::MenuItem( "Delete", "Del", false, scriptEdit.CanDelete() ) )
+			{
+				scriptEdit.Delete();
+			}
+			ImGui::EndMenu();
 		}
 
-		if( clickedSelect )
+		if( ImGui::BeginMenu( "Misc" ) )
 		{
+			if( ImGui::MenuItem( "Find / Replace", "Ctrl+F" ) )
+			{
+				scriptEdit.GetTextEditor()->OpenFindReplaceWindow();
+			}
+			if( ImGui::MenuItem( "Go To Line", "Ctrl+G" ) )
+			{
+				scriptEdit.OnEditGoToLine();
+			}
+			ImGui::EndMenu();
 		}
 
-		if( ImGui::IsKeyChordPressed( ImGuiMod_Ctrl | ImGuiKey_G ) )
-		{
-			scriptEdit.OnEditGoToLine();
-		}
-
-		scriptEdit.Draw();
-
-		float item_spacing_y = ImGui::GetStyle().ItemSpacing.y;
-		float bar_height = ImGui::GetFrameHeight();
-		float status_bar_y = ImGui::GetWindowHeight() - bar_height - ImGui::GetStyle().WindowPadding.y;
-
-		ImGui::SetCursorPosY( status_bar_y );
-
-		ImGui::Separator();
-
-		ImGui::TextColored( ImVec4( 1, 0, 0, 1 ), "%s", errorText.c_str() );
-		ImGui::SameLine();
-
-		float right_side_offset = 140.0f;
-
-		UpdateStatusBar();
-
-		ImGui::SameLine( ImGui::GetWindowWidth() - right_side_offset );
-		ImGui::TextUnformatted( statusBarText.c_str() );
+		ImGui::EndMenuBar();
 	}
-	ImGui::End();
 
-	if( isShown && !showTool )
+	if( clickedNew ) {}
+	if( clickedSelect ) {}
+
+	if( ImGui::IsKeyChordPressed( ImGuiMod_Ctrl | ImGuiKey_G ) )
 	{
-		isShown = showTool;
-		com_editors &= ~EDITOR_SCRIPT;
-		imguiSystem->GetEditor()->ReleaseMouse( false );
+		scriptEdit.OnEditGoToLine();
 	}
+
+	scriptEdit.Draw();
+
+	float bar_height = ImGui::GetFrameHeight();
+	float status_bar_y = ImGui::GetWindowHeight() - bar_height - ImGui::GetStyle().WindowPadding.y;
+	ImGui::SetCursorPosY( status_bar_y );
+
+	ImGui::Separator();
+
+	ImGui::TextColored( ImVec4( 1, 0, 0, 1 ), "%s", errorText.c_str() );
+	ImGui::SameLine();
+
+	UpdateStatusBar();
+
+	ImGui::SameLine( ImGui::GetWindowWidth() - 140.0f );
+	ImGui::TextUnformatted( statusBarText.c_str() );
+}
+
+void ScriptEditor::OnClosed()
+{
+	com_editors &= ~EDITOR_SCRIPT;
+	imguiSystem->GetEditor()->ReleaseMouse( false );
 }
 
 /*

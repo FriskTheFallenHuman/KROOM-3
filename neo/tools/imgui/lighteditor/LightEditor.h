@@ -145,6 +145,10 @@ public:
 	{
 		return "###LightEditor";
 	}
+	const char* GetDisplayTitle() const override
+	{
+		return title.c_str();
+	}
 	DockRegion GetDockRegion() const override
 	{
 		return DOCK_REGION_RIGHT;
@@ -153,21 +157,24 @@ public:
 	{
 		return isShown;
 	}
+	void ShowIt( bool show ) override
+	{
+		isShown = show;
+	}
 	bool IsFreeCameraActive() const override
 	{
 		return IsShown();
 	}
+	ImGuiWindowFlags GetExtraWindowFlags() const override
+	{
+		return ImGuiWindowFlags_NoCollapse;
+	}
 
-	void Draw() override;
+	void DrawContents( bool& showTool ) override;
+	void OnClosed() override;
 
 	static LightEditor&	Instance();
 	static void			ReInit( const idDict* dict, idEntity* light );
-
-	ID_INLINE void			ShowIt( bool show )
-	{
-		isShown = show;
-	}
-
 };
 
 #endif /* !__LIGHTEDITOR_H_ */

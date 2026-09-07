@@ -60,45 +60,7 @@ public:
 
 class SoundEditor : public idImGuiWindow
 {
-public:
-	static SoundEditor& Instance();
-	static void ReInit( const idDict* dict, idEntity* entity );
-
-	const char* GetWindowName() const override
-	{
-		return "###SoundEditor";
-	}
-	DockRegion GetDockRegion() const override
-	{
-		return DOCK_REGION_RIGHT;
-	}
-	bool IsShown() const override
-	{
-		return isShown;
-	}
-	bool IsFreeCameraActive() const override
-	{
-		return isShown;
-	}
-	void Draw() override;
-
-	void ShowIt( bool show )
-	{
-		isShown = show;
-	}
-
 private:
-	SoundEditor();
-	void Init( const idDict* dict, idEntity* entity );
-	void Reset();
-	void ApplyChanges();
-	void SaveChanges();
-	void CancelChanges();
-	void PlayShader( const char* shader ) const;
-	void DrawGizmo( bool& changed );
-	static const char* ShaderItemsGetter( void* data, int index );
-	void LoadShaders();
-
 	bool isShown;
 	idStr title;
 	idStr entityName;
@@ -112,6 +74,60 @@ private:
 	bool useSnap;
 	float gridSnap[3];
 	float angleSnap;
+
+	void Init( const idDict* dict, idEntity* entity );
+	void Reset();
+
+	void ApplyChanges();
+	void SaveChanges();
+	void CancelChanges();
+	void PlayShader( const char* shader ) const;
+	void DrawGizmo( bool& changed );
+	static const char* ShaderItemsGetter( void* data, int index );
+	void LoadShaders();
+
+	SoundEditor()
+	{
+		isShown = false;
+
+		Reset();
+	}
+
+public:
+	static SoundEditor& Instance();
+	static void ReInit( const idDict* dict, idEntity* entity );
+
+	const char* GetWindowName() const override
+	{
+		return "###SoundEditor";
+	}
+	const char* GetDisplayTitle() const override
+	{
+		return title.c_str();
+	}
+	DockRegion GetDockRegion() const override
+	{
+		return DOCK_REGION_RIGHT;
+	}
+	bool IsShown() const override
+	{
+		return isShown;
+	}
+	void ShowIt( bool show ) override
+	{
+		isShown = show;
+	}
+	bool IsFreeCameraActive() const override
+	{
+		return isShown;
+	}
+	ImGuiWindowFlags GetExtraWindowFlags() const override
+	{
+		return ImGuiWindowFlags_NoCollapse;
+	}
+
+	void DrawContents( bool& showTool ) override;
+	void OnClosed() override;
 };
 
 #endif /* !__SOUNDEDITOR_H__ */

@@ -40,14 +40,6 @@ If you have questions concerning this license or the applicable additional terms
 class	idProgram;
 class	idInterpreter;
 
-// Radiant Level Editor
-//void	RadiantInit();
-//void	RadiantShutdown();
-//void	RadiantRun();
-//void	RadiantPrint( const char* text );
-//void	RadiantSync( const char* mapName, const idVec3& viewOrg, const idAngles& viewAngles );
-
-
 // in-game Light Editor
 void	LightEditorInit( const idDict* spawnArgs, idEntity* ent );
 
@@ -73,6 +65,19 @@ void	ScriptEditorInit( const idDict* spawnArgs );
 // in-game Declaration Browser
 void	DeclBrowserInit();
 
+// Script Debugger (Server)
+//bool	DebuggerServerInit();
+//void	DebuggerServerShutdown();
+//void	DebuggerServerPrint( const char* text );
+//void	DebuggerServerCheckBreakpoint( idInterpreter* interpreter, idProgram* program, int instructionPointer );
+
+// Radiant Level Editor
+//void	RadiantInit();
+//void	RadiantShutdown();
+//void	RadiantRun();
+//void	RadiantPrint( const char* text );
+//void	RadiantSync( const char* mapName, const idVec3& viewOrg, const idAngles& viewAngles );
+
 // GUI Editor
 //void	GUIEditorInit();
 //void	GUIEditorShutdown();
@@ -80,13 +85,9 @@ void	DeclBrowserInit();
 //bool	GUIEditorHandleMessage( void* msg );
 
 
-// Script Debugger
+// Script Debugger (Client)
 //void	DebuggerClientLaunch();
 //void	DebuggerClientInit( const char* cmdline );
-//bool	DebuggerServerInit();
-//void	DebuggerServerShutdown();
-//void	DebuggerServerPrint( const char* text );
-//void	DebuggerServerCheckBreakpoint( idInterpreter* interpreter, idProgram* program, int instructionPointer );
 
 //Material Editor
 //void	MaterialEditorInit();

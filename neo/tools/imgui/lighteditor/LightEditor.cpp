@@ -697,497 +697,488 @@ static float* vecToArr( idVec3& v )
 	return &v.x;
 }
 
-void LightEditor::Draw()
+void LightEditor::DrawContents( bool& showTool )
 {
-	bool changes = false;
-	bool showTool = isShown;
-	bool isOpen = isShown;
-
 	ImGuiIO& io = ImGui::GetIO();
+	bool changes = false;
 
-	static ImGuiWindowFlags mainflags = ImGuiWindowFlags_NoCollapse;
-
-	if( ImGui::Begin( title, &isOpen, mainflags ) )
+	// RB: handle arrow key inputs like in TrenchBroom
+	if( ImGui::IsKeyDown( ImGuiKey_Escape ) )
 	{
-		// RB: handle arrow key inputs like in TrenchBroom
-		if( ImGui::IsKeyDown( ImGuiKey_Escape ) )
-		{
-			CancelChanges();
-			showTool = false;
-		}
+		CancelChanges();
+		showTool = false;
+	}
 
-		// TODO use view direction like just global values
-		if( io.KeyCtrl )
+	// TODO use view direction like just global values
+	if( io.KeyCtrl )
+	{
+		if( ImGui::IsKeyDown( ImGuiKey_S ) && shortcutSaveMapEnabled )
 		{
-			if( ImGui::IsKeyDown( ImGuiKey_S ) && shortcutSaveMapEnabled )
-			{
-				SaveChanges( true );
-				shortcutSaveMapEnabled = false;
-			}
-			else if( ImGui::IsKeyDown( ImGuiKey_D ) && shortcutDuplicateLightEnabled )
-			{
-				DuplicateLight();
-				shortcutDuplicateLightEnabled = false;
-			}
+			SaveChanges( true );
+			shortcutSaveMapEnabled = false;
 		}
-		else if( io.KeyAlt )
+		else if( ImGui::IsKeyDown( ImGuiKey_D ) && shortcutDuplicateLightEnabled )
 		{
-			if( ImGui::IsKeyDown( ImGuiKey_R ) )
-			{
-				// reset rotation like in Blender
-				cur.angles.Zero();
-				changes = true;
-			}
-			else if( ImGui::IsKeyDown( ImGuiKey_UpArrow ) )
-			{
-				cur.origin.z += 1;
-				changes = true;
-			}
-			else if( ImGui::IsKeyDown( ImGuiKey_DownArrow ) )
-			{
-				cur.origin.z -= 1;
-				changes = true;
-			}
+			DuplicateLight();
+			shortcutDuplicateLightEnabled = false;
 		}
-		else if( ImGui::IsKeyDown( ImGuiKey_RightArrow ) )
+	}
+	else if( io.KeyAlt )
+	{
+		if( ImGui::IsKeyDown( ImGuiKey_R ) )
 		{
-			cur.origin.x += 1;
-			changes = true;
-		}
-		else if( ImGui::IsKeyDown( ImGuiKey_LeftArrow ) )
-		{
-			cur.origin.x -= 1;
+			// reset rotation like in Blender
+			cur.angles.Zero();
 			changes = true;
 		}
 		else if( ImGui::IsKeyDown( ImGuiKey_UpArrow ) )
 		{
-			cur.origin.y += 1;
+			cur.origin.z += 1;
 			changes = true;
 		}
 		else if( ImGui::IsKeyDown( ImGuiKey_DownArrow ) )
 		{
-			cur.origin.y -= 1;
+			cur.origin.z -= 1;
+			changes = true;
+		}
+	}
+	else if( ImGui::IsKeyDown( ImGuiKey_RightArrow ) )
+	{
+		cur.origin.x += 1;
+		changes = true;
+	}
+	else if( ImGui::IsKeyDown( ImGuiKey_LeftArrow ) )
+	{
+		cur.origin.x -= 1;
+		changes = true;
+	}
+	else if( ImGui::IsKeyDown( ImGuiKey_UpArrow ) )
+	{
+		cur.origin.y += 1;
+		changes = true;
+	}
+	else if( ImGui::IsKeyDown( ImGuiKey_DownArrow ) )
+	{
+		cur.origin.y -= 1;
+		changes = true;
+	}
+
+	// reenable commands if keys were released
+	if( ( !io.KeyCtrl || !ImGui::IsKeyDown( ImGuiKey_S ) ) && !shortcutSaveMapEnabled )
+	{
+		shortcutSaveMapEnabled = true;
+	}
+
+	if( ( !io.KeyCtrl || !ImGui::IsKeyDown( ImGuiKey_D ) ) && !shortcutDuplicateLightEnabled )
+	{
+		shortcutDuplicateLightEnabled = true;
+	}
+
+	if( !entityName.IsEmpty() )
+	{
+		ImGui::SeparatorText( entityName.c_str() );
+	}
+
+	ImGui::SeparatorText( "Light Volume" );
+
+	ImGui::Spacing();
+
+	int lightSelectionRadioBtn = cur.lightType;
+
+	changes |= ImGui::RadioButton( "Point Light", &lightSelectionRadioBtn, 0 );
+	ImGui::SameLine();
+	changes |= ImGui::RadioButton( "Spot Light", &lightSelectionRadioBtn, 1 );
+	ImGui::SameLine();
+	changes |= ImGui::RadioButton( "Sun Light", &lightSelectionRadioBtn, 2 );
+
+	ImGui::Indent();
+
+	ImGui::Spacing();
+
+	if( lightSelectionRadioBtn == LIGHT_POINT || lightSelectionRadioBtn == LIGHT_SUN )
+	{
+		if( lightSelectionRadioBtn == LIGHT_POINT && lightSelectionRadioBtn != cur.lightType )
+		{
+			cur.DefaultPoint();
+			changes = true;
+		}
+		else if( lightSelectionRadioBtn == LIGHT_SUN && lightSelectionRadioBtn != cur.lightType )
+		{
+			cur.DefaultSun();
 			changes = true;
 		}
 
-		// reenable commands if keys were released
-		if( ( !io.KeyCtrl || !ImGui::IsKeyDown( ImGuiKey_S ) ) && !shortcutSaveMapEnabled )
-		{
-			shortcutSaveMapEnabled = true;
-		}
+		ImGui::PushItemWidth( -1.0f ); // align end of Drag* with right window border
 
-		if( ( !io.KeyCtrl || !ImGui::IsKeyDown( ImGuiKey_D ) ) && !shortcutDuplicateLightEnabled )
-		{
-			shortcutDuplicateLightEnabled = true;
-		}
-
-		if( !entityName.IsEmpty() )
-		{
-			ImGui::SeparatorText( entityName.c_str() );
-		}
-
-		ImGui::SeparatorText( "Light Volume" );
-
-		ImGui::Spacing();
-
-		int lightSelectionRadioBtn = cur.lightType;
-
-		changes |= ImGui::RadioButton( "Point Light", &lightSelectionRadioBtn, 0 );
-		ImGui::SameLine();
-		changes |= ImGui::RadioButton( "Spot Light", &lightSelectionRadioBtn, 1 );
-		ImGui::SameLine();
-		changes |= ImGui::RadioButton( "Sun Light", &lightSelectionRadioBtn, 2 );
-
+		changes |= ImGui::Checkbox( "Equilateral Radius", &cur.equalRadius );
+		ImGui::Text( "Radius:" );
 		ImGui::Indent();
-
-		ImGui::Spacing();
-
-		if( lightSelectionRadioBtn == LIGHT_POINT || lightSelectionRadioBtn == LIGHT_SUN )
+		if( cur.equalRadius )
 		{
-			if( lightSelectionRadioBtn == LIGHT_POINT && lightSelectionRadioBtn != cur.lightType )
+			if( ImGui::DragFloat( "##radEquil", &cur.lightRadius.x, 1.0f, 0.0f, 10000.0f, "%.1f" ) )
 			{
-				cur.DefaultPoint();
+				cur.lightRadius.z = cur.lightRadius.y = cur.lightRadius.x;
 				changes = true;
-			}
-			else if( lightSelectionRadioBtn == LIGHT_SUN && lightSelectionRadioBtn != cur.lightType )
-			{
-				cur.DefaultSun();
-				changes = true;
-			}
-
-			ImGui::PushItemWidth( -1.0f ); // align end of Drag* with right window border
-
-			changes |= ImGui::Checkbox( "Equilateral Radius", &cur.equalRadius );
-			ImGui::Text( "Radius:" );
-			ImGui::Indent();
-			if( cur.equalRadius )
-			{
-				if( ImGui::DragFloat( "##radEquil", &cur.lightRadius.x, 1.0f, 0.0f, 10000.0f, "%.1f" ) )
-				{
-					cur.lightRadius.z = cur.lightRadius.y = cur.lightRadius.x;
-					changes = true;
-				}
-			}
-			else
-			{
-				changes |= ImGui::DragVec3( "##radXYZ", cur.lightRadius );
-			}
-			ImGui::Unindent();
-
-			ImGui::Spacing();
-
-			//changes |= ImGui::Checkbox( "Parallel", &cur.isParallel );
-
-			//ImGui::Spacing();
-
-			changes |= ImGui::Checkbox( "Center", &cur.hasCenter );
-			if( cur.hasCenter )
-			{
-				ImGui::Indent();
-				changes |= ImGui::DragVec3( "##centerXYZ", cur.lightCenter, 1.0f, 0.0f, 10000.0f, "%.1f" );
-				ImGui::Unindent();
-			}
-			ImGui::PopItemWidth(); // back to default alignment on right side
-		}
-		else if( lightSelectionRadioBtn == LIGHT_SPOT )
-		{
-			if( cur.lightType != lightSelectionRadioBtn )
-			{
-				cur.DefaultProjected();
-				changes = true;
-			}
-
-			changes |= ImGui::DragVec3( "Target", cur.lightTarget, 1.0f, 0.0f, 0.0f, "%.1f" );
-			changes |= ImGui::DragVec3( "Right", cur.lightRight, 1.0f, 0.0f, 0.0f, "%.1f" );
-			changes |= ImGui::DragVec3( "Up", cur.lightUp, 1.0f, 0.0f, 0.0f, "%.1f" );
-
-			ImGui::Spacing();
-
-			changes |= ImGui::Checkbox( "Explicit start/end points", &cur.explicitStartEnd );
-
-			ImGui::Spacing();
-			if( cur.explicitStartEnd )
-			{
-				changes |= ImGui::DragVec3( "Start", cur.lightStart, 1.0f, 0.0f, 0.0f, "%.1f" );
-				changes |= ImGui::DragVec3( "End", cur.lightEnd, 1.0f, 0.0f, 0.0f, "%.1f" );
-			}
-		}
-
-		cur.lightType = ELightType( lightSelectionRadioBtn );
-
-		ImGui::Unindent();
-
-		ImGui::SeparatorText( "Transform" );
-
-		if( ImGui::IsKeyDown( ImGuiKey_G ) )
-		{
-			mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
-		}
-
-		if( ImGui::IsKeyDown( ImGuiKey_R ) )
-		{
-			mCurrentGizmoOperation = ImGuizmo::ROTATE;
-		}
-
-		//if( ImGui::IsKeyPressed( ImGuiKey_S ) )
-		if( ImGui::IsKeyDown( ImGuiKey_S ) )
-		{
-			mCurrentGizmoOperation = ImGuizmo::SCALE;
-		}
-
-		if( mCurrentGizmoOperation != ImGuizmo::SCALE )
-		{
-			if( ImGui::RadioButton( "Local", mCurrentGizmoMode == ImGuizmo::LOCAL ) )
-			{
-				mCurrentGizmoMode = ImGuizmo::LOCAL;
-			}
-			ImGui::SameLine();
-			if( ImGui::RadioButton( "World", mCurrentGizmoMode == ImGuizmo::WORLD ) )
-			{
-				mCurrentGizmoMode = ImGuizmo::WORLD;
 			}
 		}
 		else
 		{
-			mCurrentGizmoMode = ImGuizmo::LOCAL;
+			changes |= ImGui::DragVec3( "##radXYZ", cur.lightRadius );
 		}
-
-		if( ImGui::RadioButton( "Translate", mCurrentGizmoOperation == ImGuizmo::TRANSLATE ) )
-		{
-			mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
-		}
-		ImGui::SameLine();
-		if( ImGui::RadioButton( "Rotate", mCurrentGizmoOperation == ImGuizmo::ROTATE ) )
-		{
-			mCurrentGizmoOperation = ImGuizmo::ROTATE;
-		}
-		ImGui::SameLine();
-		if( ImGui::RadioButton( "Scale", mCurrentGizmoOperation == ImGuizmo::SCALE ) )
-		{
-			mCurrentGizmoOperation = ImGuizmo::SCALE;
-		}
-		//if( ImGui::RadioButton( "Universal", mCurrentGizmoOperation == ImGuizmo::UNIVERSAL ) )
-		//{
-		//	mCurrentGizmoOperation = ImGuizmo::UNIVERSAL;
-		//}
-
-		changes |= ImGui::DragVec3( "Origin", cur.origin, 1.0f, 0.0f, 0.0f, "%.1f" );
-		changes |= ImGui::InputFloat3( "Angles", cur.angles.ToFloatPtr() );
-		//changes |= ImGui::DragVec3( "Angles", cur.origin, 1.0f, 0.0f, 0.0f, "%.1f" );
-
-		ImGui::SeparatorText( "Snapping" );
-
-		ImGui::Checkbox( "Use Snapping", &useSnap );
-		//ImGui::SameLine();
-
-		if( useSnap )
-		{
-			switch( mCurrentGizmoOperation )
-			{
-				case ImGuizmo::TRANSLATE:
-					ImGui::InputFloat3( "Grid Snap", &gridSnap[0] );
-					break;
-				case ImGuizmo::ROTATE:
-					ImGui::InputFloat( "Angle Snap", &angleSnap );
-					break;
-				case ImGuizmo::SCALE:
-					ImGui::InputFloat( "Scale Snap", &scaleSnap );
-					break;
-			}
-		}
-
-#if 0
-		ImGui::Checkbox( "Bound Sizing", &boundSizing );
-		if( boundSizing )
-		{
-			ImGui::PushID( 3 );
-			ImGui::Checkbox( "##BoundSizing", &boundSizingSnap );
-			ImGui::SameLine();
-			ImGui::InputFloat3( "Snap", boundsSnap );
-			ImGui::PopID();
-		}
-#endif
-
-		ImGui::SeparatorText( "Color & Texturing" );
-
-		changes |= ImGui::ColorEdit3( "Color", vecToArr( cur.color ) );
+		ImGui::Unindent();
 
 		ImGui::Spacing();
 
-		ImGui::SeparatorText( "Flicker Style" );
+		//changes |= ImGui::Checkbox( "Parallel", &cur.isParallel );
 
-		if( ImGui::Combo( "Style", &currentStyleIndex, StyleItemsGetter, this, styleNames.Num() + 1 ) )
+		//ImGui::Spacing();
+
+		changes |= ImGui::Checkbox( "Center", &cur.hasCenter );
+		if( cur.hasCenter )
 		{
+			ImGui::Indent();
+			changes |= ImGui::DragVec3( "##centerXYZ", cur.lightCenter, 1.0f, 0.0f, 10000.0f, "%.1f" );
+			ImGui::Unindent();
+		}
+		ImGui::PopItemWidth(); // back to default alignment on right side
+	}
+	else if( lightSelectionRadioBtn == LIGHT_SPOT )
+	{
+		if( cur.lightType != lightSelectionRadioBtn )
+		{
+			cur.DefaultProjected();
 			changes = true;
-
-			// -1 because 0 is "<No Lightstyle>"
-			cur.lightStyle = ( currentStyleIndex > 0 ) ? currentStyleIndex - 1 : -1;
 		}
 
-		ImGui::SeparatorText( "Misc Options" );
+		changes |= ImGui::DragVec3( "Target", cur.lightTarget, 1.0f, 0.0f, 0.0f, "%.1f" );
+		changes |= ImGui::DragVec3( "Right", cur.lightRight, 1.0f, 0.0f, 0.0f, "%.1f" );
+		changes |= ImGui::DragVec3( "Up", cur.lightUp, 1.0f, 0.0f, 0.0f, "%.1f" );
 
-		changes |= ImGui::Checkbox( "Cast Shadows", &cur.castShadows );
-		changes |= ImGui::Checkbox( "Skip Specular", &cur.skipSpecular );
+		ImGui::Spacing();
 
-		// TODO: allow multiple lights selected at the same time + "apply different" button?
-		//       then only the changed attribute (e.g. color) would be set to all lights,
-		//       but they'd keep their other individual properties (eg radius)
+		changes |= ImGui::Checkbox( "Explicit start/end points", &cur.explicitStartEnd );
 
-		viewDef_t viewDef = {};
-		if( gameEdit->PlayerGetRenderView( viewDef.renderView ) )
+		ImGui::Spacing();
+		if( cur.explicitStartEnd )
 		{
-			ImGui::Separator();
+			changes |= ImGui::DragVec3( "Start", cur.lightStart, 1.0f, 0.0f, 0.0f, "%.1f" );
+			changes |= ImGui::DragVec3( "End", cur.lightEnd, 1.0f, 0.0f, 0.0f, "%.1f" );
+		}
+	}
 
-			ImGui::Text( "X: %f Y: %f", io.MousePos.x, io.MousePos.y );
+	cur.lightType = ELightType( lightSelectionRadioBtn );
+
+	ImGui::Unindent();
+
+	ImGui::SeparatorText( "Transform" );
+
+	if( ImGui::IsKeyDown( ImGuiKey_G ) )
+	{
+		mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
+	}
+
+	if( ImGui::IsKeyDown( ImGuiKey_R ) )
+	{
+		mCurrentGizmoOperation = ImGuizmo::ROTATE;
+	}
+
+	//if( ImGui::IsKeyPressed( ImGuiKey_S ) )
+	if( ImGui::IsKeyDown( ImGuiKey_S ) )
+	{
+		mCurrentGizmoOperation = ImGuizmo::SCALE;
+	}
+
+	if( mCurrentGizmoOperation != ImGuizmo::SCALE )
+	{
+		if( ImGui::RadioButton( "Local", mCurrentGizmoMode == ImGuizmo::LOCAL ) )
+		{
+			mCurrentGizmoMode = ImGuizmo::LOCAL;
+		}
+		ImGui::SameLine();
+		if( ImGui::RadioButton( "World", mCurrentGizmoMode == ImGuizmo::WORLD ) )
+		{
+			mCurrentGizmoMode = ImGuizmo::WORLD;
+		}
+	}
+	else
+	{
+		mCurrentGizmoMode = ImGuizmo::LOCAL;
+	}
+
+	if( ImGui::RadioButton( "Translate", mCurrentGizmoOperation == ImGuizmo::TRANSLATE ) )
+	{
+		mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
+	}
+	ImGui::SameLine();
+	if( ImGui::RadioButton( "Rotate", mCurrentGizmoOperation == ImGuizmo::ROTATE ) )
+	{
+		mCurrentGizmoOperation = ImGuizmo::ROTATE;
+	}
+	ImGui::SameLine();
+	if( ImGui::RadioButton( "Scale", mCurrentGizmoOperation == ImGuizmo::SCALE ) )
+	{
+		mCurrentGizmoOperation = ImGuizmo::SCALE;
+	}
+	//if( ImGui::RadioButton( "Universal", mCurrentGizmoOperation == ImGuizmo::UNIVERSAL ) )
+	//{
+	//	mCurrentGizmoOperation = ImGuizmo::UNIVERSAL;
+	//}
+
+	changes |= ImGui::DragVec3( "Origin", cur.origin, 1.0f, 0.0f, 0.0f, "%.1f" );
+	changes |= ImGui::InputFloat3( "Angles", cur.angles.ToFloatPtr() );
+	//changes |= ImGui::DragVec3( "Angles", cur.origin, 1.0f, 0.0f, 0.0f, "%.1f" );
+
+	ImGui::SeparatorText( "Snapping" );
+
+	ImGui::Checkbox( "Use Snapping", &useSnap );
+	//ImGui::SameLine();
+
+	if( useSnap )
+	{
+		switch( mCurrentGizmoOperation )
+		{
+			case ImGuizmo::TRANSLATE:
+				ImGui::InputFloat3( "Grid Snap", &gridSnap[0] );
+				break;
+			case ImGuizmo::ROTATE:
+				ImGui::InputFloat( "Angle Snap", &angleSnap );
+				break;
+			case ImGuizmo::SCALE:
+				ImGui::InputFloat( "Scale Snap", &scaleSnap );
+				break;
+		}
+	}
+
+#if 0
+	ImGui::Checkbox( "Bound Sizing", &boundSizing );
+	if( boundSizing )
+	{
+		ImGui::PushID( 3 );
+		ImGui::Checkbox( "##BoundSizing", &boundSizingSnap );
+		ImGui::SameLine();
+		ImGui::InputFloat3( "Snap", boundsSnap );
+		ImGui::PopID();
+	}
+#endif
+
+	ImGui::SeparatorText( "Color & Texturing" );
+
+	changes |= ImGui::ColorEdit3( "Color", vecToArr( cur.color ) );
+
+	ImGui::Spacing();
+
+	ImGui::SeparatorText( "Flicker Style" );
+
+	if( ImGui::Combo( "Style", &currentStyleIndex, StyleItemsGetter, this, styleNames.Num() + 1 ) )
+	{
+		changes = true;
+
+		// -1 because 0 is "<No Lightstyle>"
+		cur.lightStyle = ( currentStyleIndex > 0 ) ? currentStyleIndex - 1 : -1;
+	}
+
+	ImGui::SeparatorText( "Misc Options" );
+
+	changes |= ImGui::Checkbox( "Cast Shadows", &cur.castShadows );
+	changes |= ImGui::Checkbox( "Skip Specular", &cur.skipSpecular );
+
+	// TODO: allow multiple lights selected at the same time + "apply different" button?
+	//       then only the changed attribute (e.g. color) would be set to all lights,
+	//       but they'd keep their other individual properties (eg radius)
+
+	viewDef_t viewDef = {};
+	if( gameEdit->PlayerGetRenderView( viewDef.renderView ) )
+	{
+		ImGui::Separator();
+
+		ImGui::Text( "X: %f Y: %f", io.MousePos.x, io.MousePos.y );
+		if( ImGuizmo::IsUsing() )
+		{
+			ImGui::Text( "Using gizmo" );
+		}
+		else
+		{
+			ImGui::Text( ImGuizmo::IsOver() ? "Over gizmo" : "" );
+			ImGui::SameLine();
+			ImGui::Text( ImGuizmo::IsOver( ImGuizmo::TRANSLATE ) ? "Over translate gizmo" : "" );
+			ImGui::SameLine();
+			ImGui::Text( ImGuizmo::IsOver( ImGuizmo::ROTATE ) ? "Over rotate gizmo" : "" );
+			ImGui::SameLine();
+			ImGui::Text( ImGuizmo::IsOver( ImGuizmo::SCALE ) ? "Over scale gizmo" : "" );
+		}
+	}
+
+	static ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove
+									| ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoInputs;// | ImGuiWindowFlags_MenuBar;
+
+	const ImGuiViewport* viewport = ImGui::GetMainViewport();
+	ImVec2 scenePos = viewport->WorkPos;
+	ImVec2 sceneSize = viewport->WorkSize;
+	ImGuiDockNode* centralNode = ImGui::DockBuilderGetCentralNode( ImHashStr( "Kroom3MainDockSpace" ) );
+	if( centralNode != NULL )
+	{
+		scenePos = centralNode->Pos;
+		sceneSize = centralNode->Size;
+	}
+	ImGui::SetNextWindowPos( scenePos );
+	ImGui::SetNextWindowSize( sceneSize );
+
+	if( ImGui::Begin( "###LightEditorToolBar", &showTool, flags ) )
+	{
+		if( ImGui::BeginMainMenuBar() )
+		{
+			if( ImGui::BeginMenu( "File" ) )
+			{
+				//ShowExampleMenuFile();
+				if( ImGui::MenuItem( "Save Map", "Ctrl+S" ) )
+				{
+					SaveChanges( true );
+				}
+
+				ImGui::Separator();
+
+				if( ImGui::MenuItem( "Close" ) )
+				{
+					CancelChanges();
+					showTool = false;
+				}
+
+				ImGui::EndMenu();
+			}
+			if( ImGui::BeginMenu( "Edit" ) )
+			{
+				//if( ImGui::MenuItem( "Undo", "CTRL+Z" ) ) {}
+				//if( ImGui::MenuItem( "Redo", "CTRL+Y", false, false ) ) {} // Disabled item
+
+				//ImGui::Separator();
+
+				//if( ImGui::MenuItem( "Cut", "CTRL+X" ) ) {}
+				//if( ImGui::MenuItem( "Copy", "CTRL+C" ) ) {}
+				//if( ImGui::MenuItem( "Paste", "CTRL+V" ) ) {}
+
+				if( ImGui::MenuItem( "Duplicate", "CTRL+D" ) )
+				{
+					DuplicateLight();
+				}
+
+				ImGui::EndMenu();
+			}
+			ImGui::EndMainMenuBar();
+		}
+
+		// backup state before moving the light
+		if( !ImGuizmo::IsUsing() )
+		{
+			curNotMoving = cur;
+		}
+
+		//
+		// GIZMO
+		//
+		ImGuizmo::SetRect( 0, 0, io.DisplaySize.x, io.DisplaySize.y );
+		ImGuizmo::SetOrthographic( false );
+		ImGuizmo::SetDrawlist();
+
+		ImGuizmo::SetID( 0 );
+
+
+		//viewDef_t viewDef;
+		//if( gameEdit->PlayerGetRenderView( viewDef.renderView ) )
+		{
+			R_SetupViewMatrix( &viewDef );
+			R_SetupProjectionMatrix( &viewDef );
+
+			float* cameraView = viewDef.worldSpace.modelViewMatrix;
+			float* cameraProjection = viewDef.projectionMatrix;
+
+			idMat3 rotateMatrix = cur.angles.ToMat3();
+			idMat3 scaleMatrix = mat3_identity;
+			scaleMatrix[0][0] = 16;
+			scaleMatrix[1][1] = 16;
+			scaleMatrix[2][2] = 16;
+
+			idMat4 objectMatrix( scaleMatrix * rotateMatrix,  cur.origin );
+			ImGuizmo::DrawCubes( cameraView, cameraProjection, objectMatrix.Transpose().ToFloatPtr(), 1 );
+
+			scaleMatrix[0][0] = 1;
+			scaleMatrix[1][1] = 1;
+			scaleMatrix[2][2] = 1;
+
+			idMat4 gizmoMatrix( scaleMatrix * rotateMatrix,  cur.origin );
+			idMat4 manipMatrix = gizmoMatrix.Transpose();
+
+			const float* snap = NULL;
+			if( useSnap )
+			{
+				switch( mCurrentGizmoOperation )
+				{
+					case ImGuizmo::TRANSLATE:
+						snap = &gridSnap[0];
+						break;
+					case ImGuizmo::ROTATE:
+						snap = &angleSnap;
+						break;
+					case ImGuizmo::SCALE:
+						snap = &scaleSnap;
+						break;
+				}
+			}
+
+			ImGuizmo::Manipulate( cameraView, cameraProjection, mCurrentGizmoOperation, mCurrentGizmoMode, manipMatrix.ToFloatPtr(), NULL, useSnap ? snap : NULL, boundSizing ? bounds : NULL, boundSizingSnap ? boundsSnap : NULL );
+
 			if( ImGuizmo::IsUsing() )
 			{
-				ImGui::Text( "Using gizmo" );
-			}
-			else
-			{
-				ImGui::Text( ImGuizmo::IsOver() ? "Over gizmo" : "" );
-				ImGui::SameLine();
-				ImGui::Text( ImGuizmo::IsOver( ImGuizmo::TRANSLATE ) ? "Over translate gizmo" : "" );
-				ImGui::SameLine();
-				ImGui::Text( ImGuizmo::IsOver( ImGuizmo::ROTATE ) ? "Over rotate gizmo" : "" );
-				ImGui::SameLine();
-				ImGui::Text( ImGuizmo::IsOver( ImGuizmo::SCALE ) ? "Over scale gizmo" : "" );
-			}
-		}
-
-		static ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove
-										| ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoInputs;// | ImGuiWindowFlags_MenuBar;
-
-		const ImGuiViewport* viewport = ImGui::GetMainViewport();
-		ImVec2 scenePos = viewport->WorkPos;
-		ImVec2 sceneSize = viewport->WorkSize;
-		ImGuiDockNode* centralNode = ImGui::DockBuilderGetCentralNode( ImHashStr( "Kroom3MainDockSpace" ) );
-		if( centralNode != NULL )
-		{
-			scenePos = centralNode->Pos;
-			sceneSize = centralNode->Size;
-		}
-		ImGui::SetNextWindowPos( scenePos );
-		ImGui::SetNextWindowSize( sceneSize );
-
-		if( ImGui::Begin( "###LightEditorToolBar", &showTool, flags ) )
-		{
-			if( ImGui::BeginMainMenuBar() )
-			{
-				if( ImGui::BeginMenu( "File" ) )
+				//if( mCurrentGizmoOperation == ImGuizmo::TRANSLATE )
 				{
-					//ShowExampleMenuFile();
-					if( ImGui::MenuItem( "Save Map", "Ctrl+S" ) )
-					{
-						SaveChanges( true );
-					}
+					gizmoMatrix = manipMatrix.Transpose();
+					cur.origin = gizmoMatrix.GetTranslation();
 
-					ImGui::Separator();
-
-					if( ImGui::MenuItem( "Close" ) )
-					{
-						CancelChanges();
-						showTool = false;
-					}
-
-					ImGui::EndMenu();
-				}
-				if( ImGui::BeginMenu( "Edit" ) )
-				{
-					//if( ImGui::MenuItem( "Undo", "CTRL+Z" ) ) {}
-					//if( ImGui::MenuItem( "Redo", "CTRL+Y", false, false ) ) {} // Disabled item
-
-					//ImGui::Separator();
-
-					//if( ImGui::MenuItem( "Cut", "CTRL+X" ) ) {}
-					//if( ImGui::MenuItem( "Copy", "CTRL+C" ) ) {}
-					//if( ImGui::MenuItem( "Paste", "CTRL+V" ) ) {}
-
-					if( ImGui::MenuItem( "Duplicate", "CTRL+D" ) )
-					{
-						DuplicateLight();
-					}
-
-					ImGui::EndMenu();
-				}
-				ImGui::EndMainMenuBar();
-			}
-
-			// backup state before moving the light
-			if( !ImGuizmo::IsUsing() )
-			{
-				curNotMoving = cur;
-			}
-
-			//
-			// GIZMO
-			//
-			ImGuizmo::SetRect( 0, 0, io.DisplaySize.x, io.DisplaySize.y );
-			ImGuizmo::SetOrthographic( false );
-			ImGuizmo::SetDrawlist();
-
-			ImGuizmo::SetID( 0 );
-
-
-			//viewDef_t viewDef;
-			//if( gameEdit->PlayerGetRenderView( viewDef.renderView ) )
-			{
-				R_SetupViewMatrix( &viewDef );
-				R_SetupProjectionMatrix( &viewDef );
-
-				float* cameraView = viewDef.worldSpace.modelViewMatrix;
-				float* cameraProjection = viewDef.projectionMatrix;
-
-				idMat3 rotateMatrix = cur.angles.ToMat3();
-				idMat3 scaleMatrix = mat3_identity;
-				scaleMatrix[0][0] = 16;
-				scaleMatrix[1][1] = 16;
-				scaleMatrix[2][2] = 16;
-
-				idMat4 objectMatrix( scaleMatrix * rotateMatrix,  cur.origin );
-				ImGuizmo::DrawCubes( cameraView, cameraProjection, objectMatrix.Transpose().ToFloatPtr(), 1 );
-
-				scaleMatrix[0][0] = 1;
-				scaleMatrix[1][1] = 1;
-				scaleMatrix[2][2] = 1;
-
-				idMat4 gizmoMatrix( scaleMatrix * rotateMatrix,  cur.origin );
-				idMat4 manipMatrix = gizmoMatrix.Transpose();
-
-				const float* snap = NULL;
-				if( useSnap )
-				{
-					switch( mCurrentGizmoOperation )
-					{
-						case ImGuizmo::TRANSLATE:
-							snap = &gridSnap[0];
-							break;
-						case ImGuizmo::ROTATE:
-							snap = &angleSnap;
-							break;
-						case ImGuizmo::SCALE:
-							snap = &scaleSnap;
-							break;
-					}
+					changes = true;
 				}
 
-				ImGuizmo::Manipulate( cameraView, cameraProjection, mCurrentGizmoOperation, mCurrentGizmoMode, manipMatrix.ToFloatPtr(), NULL, useSnap ? snap : NULL, boundSizing ? bounds : NULL, boundSizingSnap ? boundsSnap : NULL );
-
-				if( ImGuizmo::IsUsing() )
+				if( ( mCurrentGizmoOperation & ImGuizmo::SCALE ) == 0 )
 				{
-					//if( mCurrentGizmoOperation == ImGuizmo::TRANSLATE )
+					idMat3 axis = gizmoMatrix.ToMat3();
+					cur.angles = axis.ToAngles();
+
+					changes = true;
+				}
+
+				if( mCurrentGizmoOperation == ImGuizmo::SCALE )
+				{
+					// Use DecomposeMatrixToComponents just for the scaling
+					float matrixTranslation[3], matrixRotation[3], matrixScale[3];
+					ImGuizmo::DecomposeMatrixToComponents( &manipMatrix[0][0], matrixTranslation, matrixRotation, matrixScale );
+
+					cur.scale.x = matrixScale[0];
+					cur.scale.y = matrixScale[1];
+					cur.scale.z = matrixScale[2];
+
+					if( matrixScale[0] != 1.0f || matrixScale[1] != 1.0f || matrixScale[2] != 1.0f )
 					{
-						gizmoMatrix = manipMatrix.Transpose();
-						cur.origin = gizmoMatrix.GetTranslation();
-
-						changes = true;
-					}
-
-					if( ( mCurrentGizmoOperation & ImGuizmo::SCALE ) == 0 )
-					{
-						idMat3 axis = gizmoMatrix.ToMat3();
-						cur.angles = axis.ToAngles();
-
-						changes = true;
-					}
-
-					if( mCurrentGizmoOperation == ImGuizmo::SCALE )
-					{
-						// Use DecomposeMatrixToComponents just for the scaling
-						float matrixTranslation[3], matrixRotation[3], matrixScale[3];
-						ImGuizmo::DecomposeMatrixToComponents( &manipMatrix[0][0], matrixTranslation, matrixRotation, matrixScale );
-
-						cur.scale.x = matrixScale[0];
-						cur.scale.y = matrixScale[1];
-						cur.scale.z = matrixScale[2];
-
-						if( matrixScale[0] != 1.0f || matrixScale[1] != 1.0f || matrixScale[2] != 1.0f )
+						if( cur.lightType == LIGHT_SPOT )
 						{
-							if( cur.lightType == LIGHT_SPOT )
-							{
-								cur.lightRight = curNotMoving.lightRight * matrixScale[0];
-								cur.lightUp = curNotMoving.lightUp * matrixScale[1];
-								cur.lightTarget = curNotMoving.lightTarget * matrixScale[2];
-							}
-							else //if( cur.lightType == LIGHT_POINT )
-							{
-								cur.lightRadius.x = curNotMoving.lightRadius.x * matrixScale[0];
-								cur.lightRadius.y = curNotMoving.lightRadius.y * matrixScale[1];
-								cur.lightRadius.z = curNotMoving.lightRadius.z * matrixScale[2];
-
-								if( matrixScale[0] != matrixScale[1] || matrixScale[1] != matrixScale[2] )
-								{
-									cur.equalRadius = false;
-								}
-							}
-
-							changes = true;
+							cur.lightRight = curNotMoving.lightRight * matrixScale[0];
+							cur.lightUp = curNotMoving.lightUp * matrixScale[1];
+							cur.lightTarget = curNotMoving.lightTarget * matrixScale[2];
 						}
+						else //if( cur.lightType == LIGHT_POINT )
+						{
+							cur.lightRadius.x = curNotMoving.lightRadius.x * matrixScale[0];
+							cur.lightRadius.y = curNotMoving.lightRadius.y * matrixScale[1];
+							cur.lightRadius.z = curNotMoving.lightRadius.z * matrixScale[2];
+
+							if( matrixScale[0] != matrixScale[1] || matrixScale[1] != matrixScale[2] )
+							{
+								cur.equalRadius = false;
+							}
+						}
+
+						changes = true;
 					}
 				}
 			}
 		}
-		ImGui::End();
 	}
 	ImGui::End();
 
@@ -1200,13 +1191,12 @@ void LightEditor::Draw()
 	{
 		TempApplyChanges();
 	}
+}
 
-	if( isShown && !showTool )
-	{
-		gameEdit->PlayerEnableFreeCam( false );
-		isShown = showTool;
-		imguiSystem->GetEditor()->ReleaseMouse( false );
-	}
+void LightEditor::OnClosed()
+{
+	gameEdit->PlayerEnableFreeCam( false );
+	imguiSystem->GetEditor()->ReleaseMouse( false );
 }
 
 void LightEditorInit( const idDict* spawnArgs, idEntity* ent )

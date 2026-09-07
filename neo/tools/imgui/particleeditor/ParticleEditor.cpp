@@ -38,8 +38,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "renderer/GLMatrix.h"
 #include "renderer/RenderCommon.h"
 
-static bool showParticleEditor = false;
-
 static const char* customPathValues[] =
 {
 	"standard",
@@ -88,6 +86,7 @@ ParticleEditor::ParticleEditor()
 	, gizmoAxis( mat3_identity )
 {
 	isShown = false;
+	showParticleEditor = false;
 }
 
 void ParticleEditor::Draw()
@@ -98,9 +97,11 @@ void ParticleEditor::Draw()
 	bool clickedSelect = false;
 
 	static ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove
-									| ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoInputs;
+									| ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground
+									| ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoInputs
+									| ImGuiWindowFlags_NoDocking;
 
-	if( ImGui::Begin( "Example: Fullscreen window", &showTool, flags ) )
+	if( ImGui::Begin( "###ParticleEditorToolBar", &showTool, flags ) )
 	{
 		bool updateParticleView = false;
 
@@ -246,7 +247,13 @@ void ParticleEditor::Draw()
 			SetCurParticle( dp );
 		}
 
-		if( ImGui::Begin( "Particle Editor###ParticleEditor", &showTool, ImGuiWindowFlags_AlwaysAutoResize ) )
+		ImGuiWindowFlags contentFlags = ImGuiWindowFlags_AlwaysAutoResize;
+		if( GetDockRegion() == DOCK_REGION_NONE )
+		{
+			contentFlags |= ImGuiWindowFlags_NoDocking;
+		}
+
+		if( ImGui::Begin( "Particle Editor###ParticleEditor", &showTool, contentFlags ) )
 		{
 			ImGui::TextUnformatted( inFileText.IsEmpty() ? "(no file opened)" : inFileText.c_str() );
 			ImGui::SameLine();

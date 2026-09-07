@@ -125,11 +125,6 @@ void SoundEditor::ReInit( const idDict* dict, idEntity* entity )
 	Instance().Init( dict, entity );
 }
 
-SoundEditor::SoundEditor()
-{
-	Reset();
-}
-
 void SoundEditor::Reset()
 {
 	isShown = false;
@@ -303,111 +298,101 @@ void SoundEditor::DrawGizmo( bool& changed )
 	ImGui::End();
 }
 
-void SoundEditor::Draw()
+void SoundEditor::DrawContents( bool& showTool )
 {
-	if( !isShown || soundEntity == NULL )
-	{
-		return;
-	}
-
 	bool changed = false;
-	bool showTool = true;
-	if( ImGui::Begin( title, &showTool, ImGuiWindowFlags_NoCollapse ) )
+
+	if( ImGui::IsKeyPressed( ImGuiKey_Escape ) )
 	{
-		if( ImGui::IsKeyPressed( ImGuiKey_Escape ) )
-		{
-			CancelChanges();
-			showTool = false;
-		}
+		CancelChanges();
+		showTool = false;
+	}
 
-		ImGui::SeparatorText( "Speaker" );
-		ImGui::Text( "%s", entityName.c_str() );
-		if( ImGui::Combo( "Shader", &currentShaderIndex, ShaderItemsGetter, this, shaderNames.Num() ) )
-		{
-			current.shader = shaderNames[currentShaderIndex];
-			changed = true;
-		}
-		if( ImGui::Button( "Play" ) )
-		{
-			PlayShader( current.shader );
-		}
-		ImGui::SameLine();
-		if( ImGui::Button( "Trigger" ) )
-		{
-			gameEdit->TriggerSelected();
-		}
+	ImGui::SeparatorText( "Speaker" );
+	ImGui::Text( "%s", entityName.c_str() );
+	if( ImGui::Combo( "Shader", &currentShaderIndex, ShaderItemsGetter, this, shaderNames.Num() ) )
+	{
+		current.shader = shaderNames[currentShaderIndex];
+		changed = true;
+	}
+	if( ImGui::Button( "Play" ) )
+	{
+		PlayShader( current.shader );
+	}
+	ImGui::SameLine();
+	if( ImGui::Button( "Trigger" ) )
+	{
+		gameEdit->TriggerSelected();
+	}
 
-		ImGui::SeparatorText( "Sound Properties" );
-		changed |= ImGui::DragFloat( "Volume", &current.volume, 0.01f, -100.0f, 100.0f, "%.2f" );
-		changed |= ImGui::DragFloat( "Min Distance", &current.minDistance, 0.1f, 0.0f, 100000.0f, "%.1f" );
-		changed |= ImGui::DragFloat( "Max Distance", &current.maxDistance, 0.1f, 0.0f, 100000.0f, "%.1f" );
-		changed |= ImGui::DragFloat( "Lead Through", &current.leadThrough, 0.01f, 0.0f, 100.0f, "%.2f" );
-		changed |= ImGui::DragFloat( "Random", &current.random, 0.01f, 0.0f, 100000.0f, "%.2f" );
-		changed |= ImGui::DragFloat( "Wait", &current.wait, 0.01f, 0.0f, 100000.0f, "%.2f" );
-		changed |= ImGui::DragFloat( "Shakes", &current.shakes, 0.01f, 0.0f, 100000.0f, "%.2f" );
-		bool waitForTrigger = current.waitForTrigger != 0;
-		if( ImGui::Checkbox( "Wait For Trigger", &waitForTrigger ) )
-		{
-			current.waitForTrigger = waitForTrigger ? 1 : 0;
-			changed = true;
-		}
-		changed |= ImGui::Checkbox( "Omni", &current.omni );
-		changed |= ImGui::Checkbox( "Occlusion", &current.occlusion );
-		changed |= ImGui::Checkbox( "Plain", &current.plain );
-		changed |= ImGui::Checkbox( "Looping", &current.looping );
-		changed |= ImGui::Checkbox( "Unclamped", &current.unclamped );
+	ImGui::SeparatorText( "Sound Properties" );
+	changed |= ImGui::DragFloat( "Volume", &current.volume, 0.01f, -100.0f, 100.0f, "%.2f" );
+	changed |= ImGui::DragFloat( "Min Distance", &current.minDistance, 0.1f, 0.0f, 100000.0f, "%.1f" );
+	changed |= ImGui::DragFloat( "Max Distance", &current.maxDistance, 0.1f, 0.0f, 100000.0f, "%.1f" );
+	changed |= ImGui::DragFloat( "Lead Through", &current.leadThrough, 0.01f, 0.0f, 100.0f, "%.2f" );
+	changed |= ImGui::DragFloat( "Random", &current.random, 0.01f, 0.0f, 100000.0f, "%.2f" );
+	changed |= ImGui::DragFloat( "Wait", &current.wait, 0.01f, 0.0f, 100000.0f, "%.2f" );
+	changed |= ImGui::DragFloat( "Shakes", &current.shakes, 0.01f, 0.0f, 100000.0f, "%.2f" );
+	bool waitForTrigger = current.waitForTrigger != 0;
+	if( ImGui::Checkbox( "Wait For Trigger", &waitForTrigger ) )
+	{
+		current.waitForTrigger = waitForTrigger ? 1 : 0;
+		changed = true;
+	}
+	changed |= ImGui::Checkbox( "Omni", &current.omni );
+	changed |= ImGui::Checkbox( "Occlusion", &current.occlusion );
+	changed |= ImGui::Checkbox( "Plain", &current.plain );
+	changed |= ImGui::Checkbox( "Looping", &current.looping );
+	changed |= ImGui::Checkbox( "Unclamped", &current.unclamped );
 
-		ImGui::SeparatorText( "Transform" );
-		changed |= ImGui::DragVec3( "Origin", current.origin, 1.0f, 0.0f, 0.0f, "%.1f" );
-		changed |= ImGui::InputFloat3( "Angles", current.angles.ToFloatPtr() );
-		if( ImGui::RadioButton( "Translate", currentGizmoOperation == ImGuizmo::TRANSLATE ) )
+	ImGui::SeparatorText( "Transform" );
+	changed |= ImGui::DragVec3( "Origin", current.origin, 1.0f, 0.0f, 0.0f, "%.1f" );
+	changed |= ImGui::InputFloat3( "Angles", current.angles.ToFloatPtr() );
+	if( ImGui::RadioButton( "Translate", currentGizmoOperation == ImGuizmo::TRANSLATE ) )
+	{
+		currentGizmoOperation = ImGuizmo::TRANSLATE;
+	}
+	ImGui::SameLine();
+	if( ImGui::RadioButton( "Rotate", currentGizmoOperation == ImGuizmo::ROTATE ) )
+	{
+		currentGizmoOperation = ImGuizmo::ROTATE;
+	}
+	ImGui::Checkbox( "Use Snapping", &useSnap );
+	if( useSnap )
+	{
+		if( currentGizmoOperation == ImGuizmo::TRANSLATE )
 		{
-			currentGizmoOperation = ImGuizmo::TRANSLATE;
+			ImGui::InputFloat3( "Grid Snap", gridSnap );
 		}
-		ImGui::SameLine();
-		if( ImGui::RadioButton( "Rotate", currentGizmoOperation == ImGuizmo::ROTATE ) )
+		else
 		{
-			currentGizmoOperation = ImGuizmo::ROTATE;
-		}
-		ImGui::Checkbox( "Use Snapping", &useSnap );
-		if( useSnap )
-		{
-			if( currentGizmoOperation == ImGuizmo::TRANSLATE )
-			{
-				ImGui::InputFloat3( "Grid Snap", gridSnap );
-			}
-			else
-			{
-				ImGui::InputFloat( "Angle Snap", &angleSnap );
-			}
-		}
-
-		if( ImGui::Button( "Save to .map" ) )
-		{
-			SaveChanges();
-			showTool = false;
-		}
-		ImGui::SameLine();
-		if( ImGui::Button( "Cancel" ) )
-		{
-			CancelChanges();
-			showTool = false;
+			ImGui::InputFloat( "Angle Snap", &angleSnap );
 		}
 	}
-	ImGui::End();
+
+	if( ImGui::Button( "Save to .map" ) )
+	{
+		SaveChanges();
+		showTool = false;
+	}
+	ImGui::SameLine();
+	if( ImGui::Button( "Cancel" ) )
+	{
+		CancelChanges();
+		showTool = false;
+	}
 
 	DrawGizmo( changed );
 	if( changed )
 	{
 		ApplyChanges();
 	}
+}
 
-	if( isShown && !showTool )
-	{
-		isShown = false;
-		gameEdit->PlayerEnableFreeCam( false );
-		imguiSystem->GetEditor()->ReleaseMouse( false );
-	}
+void SoundEditor::OnClosed()
+{
+	gameEdit->PlayerEnableFreeCam( false );
+	imguiSystem->GetEditor()->ReleaseMouse( false );
 }
 
 void SoundEditorInit( const idDict* spawnArgs, idEntity* ent )

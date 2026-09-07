@@ -49,10 +49,9 @@ private:
 	idStr					fileName;
 	int						firstLine;
 
-	void				InitScriptEvents();
-	void				UpdateStatusBar();
-
-	void				Reset();
+	void					InitScriptEvents();
+	void					UpdateStatusBar();
+	void					Reset();
 
 	ScriptEditor()
 	{
@@ -73,6 +72,10 @@ public:
 	{
 		return "###ScriptEditor";
 	}
+	const char* GetDisplayTitle() const override
+	{
+		return windowText.c_str();
+	}
 	DockRegion GetDockRegion() const override
 	{
 		return DOCK_REGION_NONE;
@@ -81,21 +84,25 @@ public:
 	{
 		return isShown;
 	}
+	void ShowIt( bool show ) override
+	{
+		isShown = show;
+	}
 	bool IsFreeCameraActive() const override
 	{
 		return false;
 	}
+	ImGuiWindowFlags GetExtraWindowFlags() const override
+	{
+		return ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_MenuBar;
+	}
 
-	void Draw() override;
+	void DrawContents( bool& showTool ) override;
+	void OnClosed() override;
 
 	void OpenFile( const char* fileName );
 
 	static ScriptEditor&	Instance();
-
-	ID_INLINE void			ShowIt( bool show )
-	{
-		isShown = show;
-	}
 };
 
 #endif /* !_SCRIPTEDITOR_H__ */

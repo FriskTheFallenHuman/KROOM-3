@@ -54,6 +54,7 @@ private:
 	};
 
 	bool					isShown;
+	bool					showDockedTool;
 	int						fileSelection;
 	int						currentAf;
 	int						currentConstraint;
@@ -86,6 +87,7 @@ private:
 	AfEditor()
 	{
 		isShown = false;
+		showDockedTool = false;
 
 		Reset();
 	}
@@ -104,6 +106,10 @@ public:
 	{
 		return isShown;
 	}
+	void ShowIt( bool show ) override
+	{
+		isShown = show;
+	}
 	bool IsFreeCameraActive() const override
 	{
 		return false;
@@ -113,11 +119,6 @@ public:
 
 	static AfEditor&	Instance();
 	static void			Enable( const idCmdArgs& args );
-
-	ID_INLINE void			ShowIt( bool show )
-	{
-		isShown = show;
-	}
 };
 
 #endif /* !__AFEDITOR_H__ */
