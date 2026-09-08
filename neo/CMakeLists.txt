@@ -318,7 +318,8 @@ if(USE_VULKAN)
 
 		find_or_fetch(VulkanMemoryAllocator
 			GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
-			GIT_TAG v3.4.0)
+			GIT_TAG v3.4.0
+			GIT_SHALLOW TRUE)
 
 		set(VMA_LIBRARY VulkanMemoryAllocator::Headers GPUOpen::VulkanMemoryAllocator)
 
@@ -389,7 +390,8 @@ else()
 	# OpenAL
 	find_or_fetch(OpenAL
 		GIT_REPOSITORY https://github.com/kcat/openal-soft.git
-		GIT_TAG 1.25.2)
+		GIT_TAG 1.25.2
+		GIT_SHALLOW TRUE)
 
 	set(OPENAL_LIBRARY OpenAL::OpenAL)
 endif()
@@ -410,7 +412,8 @@ else()
 	# SDL2
 	find_or_fetch(SDL2
 		GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
-		GIT_TAG release-2.30.10)
+		GIT_TAG release-2.30.10
+		GIT_SHALLOW TRUE)
 
 	set(SDLX_LIBRARY SDL2::SDL2 SDL2::SDL2main)
 endif()
@@ -446,7 +449,8 @@ SET_FORCED_OPTION(REPROC_TIDY OFF)
 
 find_or_fetch(reproc
 	GIT_REPOSITORY https://github.com/daandemeyer/reproc.git
-	GIT_TAG v14.2.7)
+	GIT_TAG v14.2.7
+	GIT_SHALLOW TRUE)
 
 include_directories(${reproc_SOURCE_DIR}/reproc++/include)
 
@@ -460,7 +464,8 @@ SET_FORCED_OPTION(CPPTRACE_BUILD_TOOLS OFF)
 
 find_or_fetch(cpptrace
 	GIT_REPOSITORY https://github.com/jeremy-rifkin/cpptrace.git
-	GIT_TAG v1.0.4)
+	GIT_TAG v1.0.4
+	GIT_SHALLOW TRUE)
 
 # libBinkDec
 SET_FORCED_OPTION(CREATE_INSTALL OFF)
@@ -468,7 +473,8 @@ SET_FORCED_OPTION(BUILD_STATIC OFF)
 
 find_or_fetch(libbinkdec
 	GIT_REPOSITORY https://github.com/FriskTheFallenHuman/libbinkdec.git
-	GIT_TAG v1.0.0-hotfix)
+	GIT_TAG v1.0.0-hotfix
+	GIT_SHALLOW TRUE)
 list(APPEND sys_thirdparty_dependencies BINKDEC::BINKDEC)
 list(APPEND sys_thirdparty BINKDEC::BINKDEC)
 
