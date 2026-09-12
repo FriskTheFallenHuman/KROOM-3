@@ -34,8 +34,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "renderer/Model.h"
 
-#define ARRAY_COUNT IM_ARRAYSIZE
-
 static const char* bodyTypeNames[] =
 {
 	"none",
@@ -66,7 +64,7 @@ static const char* afVecTypeNames[] =
 
 static const char* ModelTypeItemGetter( void* data, int index )
 {
-	if( index < 0 || index >= ARRAY_COUNT( bodyTypeNames ) )
+	if( index < 0 || index >= IM_ARRAYSIZE( bodyTypeNames ) )
 	{
 		return "";
 	}
@@ -143,7 +141,7 @@ bool AfBodyEditor::Do()
 			body->jointName = joints[comboJoint1];
 			changed = true;
 		}
-		changed = ImGui::Combo( "Modify", ( int* )&body->jointMod, modifyJointsNames, ARRAY_COUNT( modifyJointsNames ) ) || changed;
+		changed = ImGui::Combo( "Modify", ( int* )&body->jointMod, modifyJointsNames, IM_ARRAYSIZE( modifyJointsNames ) ) || changed;
 		changed = ImGui::InputTextStr( "Contained Joints", &body->containedJoints ) || changed;
 	}
 
@@ -174,7 +172,7 @@ bool AfBodyEditor::Position()
 
 	ImGui::Columns( 2, "positionColumns2" );
 
-	changed = ImGui::Combo( "Type", ( int* )&body->origin.type, afVecTypeNames, ARRAY_COUNT( afVecTypeNames ) ) || changed;
+	changed = ImGui::Combo( "Type", ( int* )&body->origin.type, afVecTypeNames, IM_ARRAYSIZE( afVecTypeNames ) ) || changed;
 
 	ImGui::NextColumn();
 	changed = PositionProperty() || changed;
@@ -291,7 +289,7 @@ bool AfBodyEditor::CollisionModel()
 	ImGui::PushID( "CollisionModel" );
 
 	ImGui::Columns( 2, "collisonColumns2" );
-	changed = ImGui::Combo( "Model Type", &body->modelType, ModelTypeItemGetter, nullptr, ARRAY_COUNT( bodyTypeNames ) ) || changed;
+	changed = ImGui::Combo( "Model Type", &body->modelType, ModelTypeItemGetter, nullptr, IM_ARRAYSIZE( bodyTypeNames ) ) || changed;
 	changed = ImGui::DragFloat( "Density", &body->density ) || changed;
 	ImGui::NextColumn();
 	changed = CollisionModelSize() || changed;

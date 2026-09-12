@@ -29,10 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
-#if defined( ID_ALLOW_TOOLS )
-	#include "../client/DebuggerApp.h"
-#endif
-
 #include "DebuggerScript.h"
 #include "../../ui/Window.h"
 #include "../../ui/UserInterfaceLocal.h"

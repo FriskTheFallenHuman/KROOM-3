@@ -13,7 +13,7 @@ project(Kroom3BFG
 
 option(FORCE_COLOR_OUTPUT "Always produce ANSI-colored output (GNU/Clang only)." OFF)
 option(COMPILE_COMMANDS "Generate compile_commands.json" OFF)
-option(TOOLS "Compile the built-in MFC based tools" OFF)
+option(TOOLS "Compile the built-in wxWidgets based tools" ON)
 option(USE_PRECOMPILED_HEADERS "Use precompiled headers during build" ON)
 option(FFMPEG "Use FMPEG to render other video formats" OFF)
 option(USE_VULKAN "Use Vulkan instead of OpenGL" OFF)
@@ -275,16 +275,10 @@ elseif(MSVC)
 			list(APPEND sys_libs "${WINSDK_LIB_DIR}/dxguid.lib")
 		endif()
 	endif()
+endif()
 
-	if(TOOLS)
-		add_definitions(-D_AFXDLL)
-
-		# 0: Use Standard Windows Libraries
-		# 1: Use MFC in a Static Library
-		# 2: Use MFC in a Shared DLL
-		set(CMAKE_MFC_FLAG 2)
-	endif()
-
+if(TOOLS)
+	add_definitions(-DID_ALLOW_TOOLS)
 endif()
 
 add_definitions(-DID_PC)
@@ -477,6 +471,29 @@ find_or_fetch(libbinkdec
 	GIT_SHALLOW TRUE)
 list(APPEND sys_thirdparty_dependencies BINKDEC::BINKDEC)
 list(APPEND sys_thirdparty BINKDEC::BINKDEC)
+
+# wxWidgets
+if(UNIX)
+	find_package(wxWidgets REQUIRED COMPONENTS core base)
+	include(${wxWidgets_USE_FILE})
+	set(WXWIDGETS_LIBRARY ${wxWidgets_LIBRARIES})
+else()
+	SET_FORCED_OPTION(wxBUILD_SAMPLES OFF)
+	SET_FORCED_OPTION(wxBUILD_TESTS OFF)
+	SET_FORCED_OPTION(wxBUILD_DEMOS OFF)
+	SET_FORCED_OPTION(wxBUILD_INSTALL OFF)
+	SET_FORCED_OPTION(wxBUILD_MONOLITHIC ON)
+	SET_FORCED_OPTION(wxBUILD_SHARED ON)
+
+	find_or_fetch(wxWidgets
+		GIT_REPOSITORY https://github.com/wxWidgets/wxWidgets.git
+		GIT_TAG v3.3.3
+		GIT_SHALLOW TRUE
+	)
+	
+	set(WXWIDGETS_LIBRARY wxWidgets::wxWidgets)
+endif()
+list(APPEND sys_thirdparty ${WXWIDGETS_LIBRARY})
 
 # optimize this source file even in debug builds, to make speed (esp. loading times) more bearable
 # used for libs integrated here like stb_* and miniz(ip)
@@ -696,7 +713,7 @@ set(src_tools_imgui
 
 list(APPEND src_core ${src_tools_imgui})
 
-##################### Tools MFC ###########################
+##################### Tools wxWidgets ###########################
 
 file(GLOB src_tools_base tools/*.h)
 source_group("Tools" FILES ${src_tools_base})
@@ -732,6 +749,10 @@ set(src_tools
 	${src_guieditor}
 	${src_materialeditor}
 	${src_radianteditor})
+
+if(TOOLS)
+	list(APPEND src_core ${src_tools})
+endif()
 
 include_directories(
 	${CMAKE_BINARY_DIR}
@@ -895,6 +916,13 @@ if(MSVC)
 	  TARGET ${CMAKE_PROJECT_NAME} POST_BUILD COMMAND
 	  ${CMAKE_COMMAND} -E copy_if_different
 		$<TARGET_FILE:BINKDEC::BINKDEC>
+		$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>
+	  VERBATIM )
+
+	add_custom_command(
+	  TARGET ${CMAKE_PROJECT_NAME} POST_BUILD COMMAND
+	  ${CMAKE_COMMAND} -E copy_if_different
+		$<TARGET_FILE:wx::mono>
 		$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>
 	  VERBATIM )
 endif()

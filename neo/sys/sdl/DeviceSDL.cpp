@@ -733,6 +733,15 @@ int main( int argc, char* argv[] )
 		Sys_ShowConsole( 0, false );
 	}
 
+	// Launch the script debugger
+	if( strstr( sys_cmdline, "+debugger" ) )
+	{
+#ifdef ID_ALLOW_TOOLS
+		DebuggerClientInit( sys_cmdline );
+#endif
+		return 0;
+	}
+
 	// main game loop
 	while( 1 )
 	{

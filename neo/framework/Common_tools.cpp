@@ -41,7 +41,6 @@ bool			com_editorActive;		//  true if an editor has focus
 #endif
 
 #ifdef _WIN32
-
 /*
 ==================
 EnumWindowsProc
@@ -81,29 +80,10 @@ idCommonLocal::InitTool
 */
 void idCommonLocal::InitTool( const toolFlag_t tool, const idDict* dict, idEntity* entity )
 {
-#ifdef ID_ALLOW_TOOLS
-	if( tool & EDITOR_SOUND )
-	{
-		SoundEditorInit( dict );
-	}
-	else if( tool & EDITOR_LIGHT )
-	{
-		LightEditorInit( dict );
-	}
-	else if( tool & EDITOR_PARTICLE )
-	{
-		ParticleEditorInit( dict );
-	}
-	else if( tool & EDITOR_AF )
-	{
-		AFEditorInit( dict );
-	}
-#else
 	if( imguiSystem != NULL )
 	{
 		imguiSystem->GetEditor()->InitTool( tool, dict, entity );
 	}
-#endif
 }
 
 
@@ -257,6 +237,31 @@ static void Com_EditDecls_f( const idCmdArgs& args )
 	DeclBrowserInit();
 }
 
+#ifdef ID_ALLOW_TOOLS
+/*
+=============
+Com_ScriptDebugger_f
+=============
+*/
+static void Com_ScriptDebugger_f( const idCmdArgs& args )
+{
+	// Make sure it wasnt on the command line
+	if( !( com_editors & EDITOR_DEBUGGER ) )
+	{
+
+		//start debugger server if needed
+		if( !com_enableDebuggerServer.GetBool() )
+		{
+			com_enableDebuggerServer.SetBool( true );
+		}
+
+		//start debugger client.
+		DebuggerClientLaunch();
+
+	}
+}
+#endif
+
 /*
 =================
 idCommonLocal::InitCommands
@@ -272,12 +277,12 @@ void idCommonLocal::InitCommands()
 
 #ifdef ID_ALLOW_TOOLS
 	// editors
-	cmdSystem->AddCommand( "editor", Com_Editor_f, CMD_FL_TOOL, "launches the level editor Radiant" );
-	cmdSystem->AddCommand( "editGUIs", Com_EditGUIs_f, CMD_FL_TOOL, "launches the GUI Editor" );
+	//cmdSystem->AddCommand( "editor", Com_Editor_f, CMD_FL_TOOL, "launches the level editor Radiant" );
+	//cmdSystem->AddCommand( "editGUIs", Com_EditGUIs_f, CMD_FL_TOOL, "launches the GUI Editor" );
 	cmdSystem->AddCommand( "debugger", Com_ScriptDebugger_f, CMD_FL_TOOL, "launches the Script Debugger" );
 
 	//BSM Nerve: Add support for the material editor
-	cmdSystem->AddCommand( "materialEditor", Com_MaterialEditor_f, CMD_FL_TOOL, "launches the Material Editor" );
+	//cmdSystem->AddCommand( "materialEditor", Com_MaterialEditor_f, CMD_FL_TOOL, "launches the Material Editor" );
 #endif
 
 	cmdSystem->AddCommand( "editLights", Com_EditLights_f, CMD_FL_TOOL, "launches the in-game Light Editor" );

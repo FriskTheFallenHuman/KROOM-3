@@ -3,6 +3,8 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
+Copyright (C) 1999-2011 Raven Software
+Copyright (C) 2021 Harrie van Ginneken
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -26,37 +28,53 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "precompiled.h"
-#pragma hdrstop
+#ifndef __TOOLBARSTRIP_H__
+#define __TOOLBARSTRIP_H__
 
-#include "DebuggerBreakpoint.h"
+#include <wx/wx.h>
+#include <wx/image.h>
+#include <vector>
 
-int rvDebuggerBreakpoint::mNextID = 1;
-
-rvDebuggerBreakpoint::rvDebuggerBreakpoint( const char* filename, int linenumber, int id, bool onceOnly )
+class rvToolbarImageStrip
 {
-	mFilename = filename;
-	mLineNumber = linenumber;
-	mEnabled = true;
-	mOnceOnly = onceOnly;
+public:
+	rvToolbarImageStrip();
+	~rvToolbarImageStrip();
 
-	if( id == -1 )
+	bool Load( const char* relativePath, int iconWidth = 16, int iconHeight = 16, const wxColour& transparentKey = wxColour() );
+	bool LoadFromMemory( const void* data, int size, int iconWidth = 16, int iconHeight = 16, const wxColour& transparentKey = wxColour() );
+
+	int GetIconCount()  const
 	{
-		mID = mNextID++;
+		return ( int )m_icons.size();
 	}
-	else
+	int GetIconWidth()  const
 	{
-		mID = id;
+		return m_iconWidth;
 	}
-}
+	int GetIconHeight() const
+	{
+		return m_iconHeight;
+	}
+	bool IsOk()         const
+	{
+		return !m_icons.empty();
+	}
 
-rvDebuggerBreakpoint::rvDebuggerBreakpoint( rvDebuggerBreakpoint& bp )
-{
-	mFilename = bp.mFilename;
-	mEnabled = bp.mEnabled;
-	mLineNumber = bp.mLineNumber;
-}
+	// Index 0-based, reading the grid left-to-right, top-to-bottom.
+	// Returns an invalid bitmap if index is out of range.
+	const wxBitmap& GetIcon( int index ) const;
 
-rvDebuggerBreakpoint::~rvDebuggerBreakpoint()
-{
-}
+	wxImageList* CreateImageList() const;
+
+private:
+	void SliceIntoIcons();
+	bool DecodeBMP( const void* data, int size, wxImage& out );
+
+	wxImage                   m_strip;
+	std::vector<wxBitmap>     m_icons;
+	int                       m_iconWidth;
+	int                       m_iconHeight;
+};
+
+#endif /* !__TOOLBARSTRIP_H__ */
