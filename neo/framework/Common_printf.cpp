@@ -647,9 +647,19 @@ void idCommonLocal::Error( const char* fmt, ... )
 	// add the message to the error list
 	errorList.AddUnique( errorMessage );
 
-	Stop();
+	// Dont shut down the session for gui editor or debugger
+	if( !( com_editors & ( EDITOR_GUI | EDITOR_DEBUGGER ) ) )
+	{
+		Stop();
+	}
 
 	if( code == ERP_DISCONNECT )
+	{
+		com_errorEntered = ERP_NONE;
+		throw idException( errorMessage );
+	}
+	// The gui editor doesnt want thing to com_error so it handles exceptions instead
+	else if( com_editors & ( EDITOR_GUI | EDITOR_DEBUGGER ) )
 	{
 		com_errorEntered = ERP_NONE;
 		throw idException( errorMessage );

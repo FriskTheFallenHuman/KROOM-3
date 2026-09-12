@@ -3,6 +3,8 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
+Copyright (C) 1999-2011 Raven Software
+Copyright (C) 2021 Harrie van Ginneken
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -26,37 +28,39 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "precompiled.h"
-#pragma hdrstop
+#ifndef __DEBUGGERFINDDLG_H__
+#define __DEBUGGERFINDDLG_H__
 
-#include "DebuggerBreakpoint.h"
+#include <wx/dialog.h>
+#include <wx/textctrl.h>
+#include <wx/button.h>
+#include <wx/sizer.h>
+#include <wx/stattext.h>
 
-int rvDebuggerBreakpoint::mNextID = 1;
+class rvDebuggerWindow;
 
-rvDebuggerBreakpoint::rvDebuggerBreakpoint( const char* filename, int linenumber, int id, bool onceOnly )
+class rvDebuggerFindDlg : public wxDialog
 {
-	mFilename = filename;
-	mLineNumber = linenumber;
-	mEnabled = true;
-	mOnceOnly = onceOnly;
+public:
+	rvDebuggerFindDlg( wxWindow* parent );
+	virtual ~rvDebuggerFindDlg();
 
-	if( id == -1 )
-	{
-		mID = mNextID++;
-	}
-	else
-	{
-		mID = id;
-	}
+	bool DoModal();
+	const char* GetFindText() const;
+
+private:
+	void OnOK( wxCommandEvent& event );
+	void OnCancel( wxCommandEvent& event );
+
+	wxTextCtrl*     mTextCtrl;
+	const char*		mFindText;
+
+	wxDECLARE_EVENT_TABLE();
+};
+
+ID_INLINE const char* rvDebuggerFindDlg::GetFindText() const
+{
+	return mFindText;
 }
 
-rvDebuggerBreakpoint::rvDebuggerBreakpoint( rvDebuggerBreakpoint& bp )
-{
-	mFilename = bp.mFilename;
-	mEnabled = bp.mEnabled;
-	mLineNumber = bp.mLineNumber;
-}
-
-rvDebuggerBreakpoint::~rvDebuggerBreakpoint()
-{
-}
+#endif /* !__DEBUGGERFINDDLG_H__ */

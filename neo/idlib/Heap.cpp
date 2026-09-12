@@ -44,25 +44,30 @@ If you have questions concerning this license or the applicable additional terms
 Mem_Alloc16
 ==================
 */
-// RB: 64 bit fixes, changed int to size_t
 void* Mem_Alloc16( const size_t size, const memTag_t tag )
-// RB end
 {
+	( void )tag;
+
 	if( !size )
 	{
 		return NULL;
 	}
-	const size_t paddedSize = ( size + 15 ) & ~15;
+
+	const size_t paddedSize = ( size + 15 ) & ~( size_t )15;
+
+#if defined( _WIN32 ) && ( defined( _WIN64 ) || defined( _M_X64 ) || defined( __x86_64__ ) )
+	return malloc( paddedSize );
+#else
 #ifdef _WIN32
 	// this should work with MSVC and mingw, as long as __MSVCRT_VERSION__ >= 0x0700
 	return _aligned_malloc( paddedSize, 16 );
-#else // not _WIN32
+#else
 	// DG: the POSIX solution for linux etc
-	void* ret;
+	void* ret = nullptr;
 	posix_memalign( &ret, 16, paddedSize );
 	return ret;
-	// DG end
-#endif // _WIN32
+#endif
+#endif
 }
 
 /*
@@ -76,14 +81,18 @@ void Mem_Free16( void* ptr )
 	{
 		return;
 	}
+
+#if defined( _WIN32 ) && ( defined( _WIN64 ) || defined( _M_X64 ) || defined( __x86_64__ ) )
+	free( ptr );
+#else
 #ifdef _WIN32
 	_aligned_free( ptr );
-#else // not _WIN32
+#else
 	// DG: Linux/POSIX compatibility
 	// can use normal free() for aligned memory
 	free( ptr );
-	// DG end
-#endif // _WIN32
+#endif
+#endif
 }
 
 /*

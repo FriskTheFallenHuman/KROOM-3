@@ -71,28 +71,30 @@ void	DebuggerServerShutdown();
 void	DebuggerServerPrint( const char* text );
 void	DebuggerServerCheckBreakpoint( idInterpreter* interpreter, idProgram* program, int instructionPointer );
 
-// Radiant Level Editor
-//void	RadiantInit();
-//void	RadiantShutdown();
-//void	RadiantRun();
-//void	RadiantPrint( const char* text );
-//void	RadiantSync( const char* mapName, const idVec3& viewOrg, const idAngles& viewAngles );
+#ifdef ID_ALLOW_TOOLS
+	// Radiant Level Editor
+	//void	RadiantInit();
+	//void	RadiantShutdown();
+	//void	RadiantRun();
+	//void	RadiantPrint( const char* text );
+	//void	RadiantSync( const char* mapName, const idVec3& viewOrg, const idAngles& viewAngles );
 
-// GUI Editor
-//void	GUIEditorInit();
-//void	GUIEditorShutdown();
-//void	GUIEditorRun();
-//bool	GUIEditorHandleMessage( void* msg );
+	// GUI Editor
+	//void	GUIEditorInit();
+	//void	GUIEditorShutdown();
+	//void	GUIEditorRun();
+	//bool	GUIEditorHandleMessage( void* msg );
 
 
-// Script Debugger (Client)
-//void	DebuggerClientLaunch();
-//void	DebuggerClientInit( const char* cmdline );
+	// Script Debugger (Client)
+	void	DebuggerClientLaunch();
+	void	DebuggerClientInit( const char* cmdline );
 
-//Material Editor
-//void	MaterialEditorInit();
-//void	MaterialEditorRun();
-//void	MaterialEditorShutdown();
-//void	MaterialEditorPrintConsole( const char* msg );
+	//Material Editor
+	//void	MaterialEditorInit();
+	//void	MaterialEditorRun();
+	//void	MaterialEditorShutdown();
+	//void	MaterialEditorPrintConsole( const char* msg );
+#endif
 
 #endif /* !__EDIT_PUBLIC_H__ */

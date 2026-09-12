@@ -3,6 +3,8 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
+Copyright (C) 1999-2011 Raven Software
+Copyright (C) 2021 Harrie van Ginneken
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -26,37 +28,58 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "precompiled.h"
-#pragma hdrstop
+#ifndef __DEBUGGERQUICKWATCHDLG_H__
+#define __DEBUGGERQUICKWATCHDLG_H__
 
-#include "DebuggerBreakpoint.h"
+#include <wx/dialog.h>
+#include <wx/listctrl.h>
+#include <wx/textctrl.h>
+#include <wx/button.h>
+#include <wx/stattext.h>
+#include <wx/sizer.h>
 
-int rvDebuggerBreakpoint::mNextID = 1;
+class rvDebuggerWindow;
 
-rvDebuggerBreakpoint::rvDebuggerBreakpoint( const char* filename, int linenumber, int id, bool onceOnly )
+class rvDebuggerQuickWatchDlg : public wxDialog
 {
-	mFilename = filename;
-	mLineNumber = linenumber;
-	mEnabled = true;
-	mOnceOnly = onceOnly;
+public:
+	rvDebuggerQuickWatchDlg( wxWindow* parent, rvDebuggerWindow* debuggerWin, int callstackDepth, const char* variable = NULL );
+	virtual ~rvDebuggerQuickWatchDlg();
 
-	if( id == -1 )
+	bool	DoModal();
+
+private:
+	enum
 	{
-		mID = mNextID++;
-	}
-	else
-	{
-		mID = id;
-	}
-}
+		ID_QUICKWATCH_ADDWATCH = wxID_HIGHEST + 1,
+		ID_QUICKWATCH_RECALC,
+		ID_QUICKWATCH_CLOSE,
+	};
 
-rvDebuggerBreakpoint::rvDebuggerBreakpoint( rvDebuggerBreakpoint& bp )
-{
-	mFilename = bp.mFilename;
-	mEnabled = bp.mEnabled;
-	mLineNumber = bp.mLineNumber;
-}
+	void	OnAddWatch( wxCommandEvent& event );
+	void	OnRecalc( wxCommandEvent& event );
+	void	OnClose( wxCommandEvent& event );
+	void	OnVariableChange( wxCommandEvent& event );
 
-rvDebuggerBreakpoint::~rvDebuggerBreakpoint()
-{
-}
+
+protected:
+
+	int					mCallstackDepth;
+	idStr				mVariable;
+	rvDebuggerWindow*	mDebuggerWindow;
+
+	void				SetVariable( const char* varname, bool force = false );
+
+private:
+
+	wxTextCtrl*     mVarText;
+	wxListView*     mValueList;
+	wxButton*       mAddWatchBtn;
+	wxButton*       mRecalcBtn;
+	wxButton*       mCloseBtn;
+	wxStaticText*   mValueLabel;
+
+	wxDECLARE_EVENT_TABLE();
+};
+
+#endif /* !__DEBUGGERQUICKWATCHDLG_H__ */

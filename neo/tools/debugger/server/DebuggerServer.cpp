@@ -711,13 +711,13 @@ void rvDebuggerServer::Break( idInterpreter* interpreter, idProgram* program, in
 	// This is to give some time between the keypress that
 	// told us to resume and the setforeground window.  Otherwise the quake window
 	// would just flash
-	Sleep( 150 );
+	Sys_Sleep( 150 );
 
 	// Bring the window back to the foreground
-	SetForegroundWindow( win32.hWnd );
-	SetActiveWindow( win32.hWnd );
-	UpdateWindow( win32.hWnd );
-	SetFocus( win32.hWnd );
+	SDL_RaiseWindow( sdl.window );
+#if !defined(USE_VULKAN)
+	SDL_GL_SwapWindow( sdl.window );
+#endif
 #endif
 
 	// Give the mouse cursor back to the game

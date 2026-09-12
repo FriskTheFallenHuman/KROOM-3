@@ -50,38 +50,40 @@ enum utf8Encoding_t
 };
 
 // these library functions should not be used for cross platform compatibility
-#define strcmp			idStr::Cmp		// use_idStr_Cmp
-#define strncmp			use_idStr_Cmpn
+#if 0
+	#define strcmp			idStr::Cmp		// use_idStr_Cmp
+	#define strncmp			use_idStr_Cmpn
 
-#if defined( StrCmpN )
-	#undef StrCmpN
+	#if defined( StrCmpN )
+		#undef StrCmpN
+	#endif
+	#define StrCmpN			use_idStr_Cmpn
+
+	#if defined( strcmpi )
+		#undef strcmpi
+	#endif
+	#define strcmpi			use_idStr_Icmp
+
+	#if defined( StrCmpI )
+		#undef StrCmpI
+	#endif
+	#define StrCmpI			use_idStr_Icmp
+
+	#if defined( StrCmpNI )
+		#undef StrCmpNI
+	#endif
+	#define StrCmpNI		use_idStr_Icmpn
+
+	#define stricmp			idStr::Icmp		// use_idStr_Icmp
+
+	#undef strcasecmp // DG: redefining this without undefining it causes tons of compiler warnings
+
+	#define _stricmp		use_idStr_Icmp
+	#define strcasecmp		use_idStr_Icmp
+	#define strnicmp		use_idStr_Icmpn
+	#define _strnicmp		use_idStr_Icmpn
+	#define _memicmp		use_idStr_Icmpn
 #endif
-#define StrCmpN			use_idStr_Cmpn
-
-#if defined( strcmpi )
-	#undef strcmpi
-#endif
-#define strcmpi			use_idStr_Icmp
-
-#if defined( StrCmpI )
-	#undef StrCmpI
-#endif
-#define StrCmpI			use_idStr_Icmp
-
-#if defined( StrCmpNI )
-	#undef StrCmpNI
-#endif
-#define StrCmpNI		use_idStr_Icmpn
-
-#define stricmp			idStr::Icmp		// use_idStr_Icmp
-
-#undef strcasecmp // DG: redefining this without undefining it causes tons of compiler warnings
-
-#define _stricmp		use_idStr_Icmp
-#define strcasecmp		use_idStr_Icmp
-#define strnicmp		use_idStr_Icmpn
-#define _strnicmp		use_idStr_Icmpn
-#define _memicmp		use_idStr_Icmpn
 
 class idVec4;
 

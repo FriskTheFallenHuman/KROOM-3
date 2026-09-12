@@ -358,7 +358,7 @@ void idSysLocal::StartProcess( const char* exePath, bool quit )
 idSysLocal::StartProcess
 ========================
 */
-void idSysLocal::StartProcess( idCmdArgs& args, void* data, bool quit )
+void idSysLocal::StartProcess( void* data, bool quit )
 {
 	const char* extraArgs = static_cast<const char*>( data );
 	idStr exePath;

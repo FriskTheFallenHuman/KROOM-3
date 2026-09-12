@@ -31,7 +31,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #if defined( ID_ALLOW_TOOLS )
 	#include "DebuggerServer.h"
-	#include "../../sys/win32/rc/debugger_resource.h"
 	#include "../client/DebuggerApp.h"
 #else
 	#include "DebuggerServer.h"
@@ -46,89 +45,9 @@ If you have questions concerning this license or the applicable additional terms
 
 #include <SDL2/SDL.h>
 
-#if defined( ID_ALLOW_TOOLS )
-	rvDebuggerApp					gDebuggerApp; // this is also used in other source files
-	static HWND						gDebuggerWindow = NULL;
-#endif
-
 static rvDebuggerServer*		gDebuggerServer			= NULL;
 static SDL_Thread*				gDebuggerServerThread   = NULL;
 static bool						gDebuggerServerQuit     = false;
-
-#if defined( ID_ALLOW_TOOLS )
-/*
-================
-DebuggerMain
-
-Main entry point for the debugger application
-================
-*/
-void DebuggerClientInit( const char* cmdline )
-{
-	// See if the debugger is already running
-	if( rvDebuggerWindow::Activate() )
-	{
-		goto DebuggerClientInitDone;
-	}
-
-	if( !gDebuggerApp.Initialize( win32.hInstance ) )
-	{
-		goto DebuggerClientInitDone;
-	}
-
-	// hide the doom window by default
-	::ShowWindow( win32.hWnd, SW_HIDE );
-
-	gDebuggerApp.Run();
-
-DebuggerClientInitDone:
-
-	common->Quit();
-}
-
-/*
-================
-DebuggerLaunch
-
-Launches another instance of the running executable with +debugger appended
-to the end to indicate that the debugger should start up.
-================
-*/
-void DebuggerClientLaunch()
-{
-	if( renderSystem->IsFullScreen() )
-	{
-		common->Printf( "Cannot run the script debugger in fullscreen mode.\n"
-						"Set r_vidfullscreen to 0 and vid_restart.\n" );
-		return;
-	}
-
-	// See if the debugger is already running
-	if( rvDebuggerWindow::Activate() )
-	{
-		return;
-	}
-
-	char exeFile[MAX_PATH];
-	char curDir[MAX_PATH];
-
-	STARTUPINFO			startup;
-	PROCESS_INFORMATION	process;
-
-	ZeroMemory( &startup, sizeof( startup ) );
-	startup.cb = sizeof( startup );
-
-	GetCurrentDirectory( MAX_PATH, curDir );
-
-	GetModuleFileName( NULL, exeFile, MAX_PATH );
-	const char* s = va( "%s +set com_skipIntroVideos 1 +set com_skipLegalScreens 1+set fs_game %s +set fs_basepath %s +debugger", exeFile, cvarSystem->GetCVarString( "fs_game" ), cvarSystem->GetCVarString( "fs_basepath" ) );
-	CreateProcess( NULL, ( LPSTR )s,
-				   NULL, NULL, FALSE, 0, NULL, curDir, &startup, &process );
-
-	CloseHandle( process.hThread );
-	CloseHandle( process.hProcess );
-}
-#endif // #if defined( ID_ALLOW_TOOLS )
 
 /*
 ================

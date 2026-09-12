@@ -66,7 +66,7 @@ public:
 
 	virtual void			OpenURL( const char* url, bool quit );
 	virtual void			StartProcess( const char* exeName, bool quit );
-	virtual void			StartProcess( idCmdArgs& args, void* data, bool quit );
+	virtual void			StartProcess( void* data, bool quit );
 	virtual void			ReLaunch( void* data );
 	virtual bool			Exec( const char* appPath, const char* workingPath, const char* args,
 								  execProcessWorkFunction_t workFn, execOutputFunction_t outputFn,
