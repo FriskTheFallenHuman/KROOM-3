@@ -35,11 +35,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "ImGui_IdWidgets.h"
 #include "SyntaxRichEditCtrl.h"
 
-static keyWord_t defaultKeyWords[] =
-{
-	{ NULL, vec3_origin, "" }
-};
-
 /*
 ================
 SyntaxRichEditCtrl::SyntaxRichEditCtrl
@@ -51,8 +46,6 @@ SyntaxRichEditCtrl::SyntaxRichEditCtrl()
 	, scriptEditSize( 400.0f, 400.0f )
 	, firstLine( 0 )
 {
-	keyWords = defaultKeyWords;
-	keyWordLengths = NULL;
 	caseSensitive = false;
 	allowPathNames = true;
 	keyWordAutoCompletion = true;
@@ -68,7 +61,6 @@ SyntaxRichEditCtrl::~SyntaxRichEditCtrl
 */
 SyntaxRichEditCtrl::~SyntaxRichEditCtrl()
 {
-	FreeKeyWordsFromFile();
 }
 
 /*
@@ -78,35 +70,6 @@ SyntaxRichEditCtrl::RebuildLanguage
 */
 void SyntaxRichEditCtrl::RebuildLanguage()
 {
-	int i, numKeyWords, hash;
-
-	for( numKeyWords = 0; keyWords[numKeyWords].keyWord; numKeyWords++ )
-	{
-		assert( numKeyWords < 4096 );
-	}
-
-	delete[] keyWordLengths;
-	if( numKeyWords > 0 )
-	{
-		keyWordLengths = new( TAG_CRAP ) int[numKeyWords];
-		for( i = 0; i < numKeyWords; i++ )
-		{
-			keyWordLengths[i] = idStr::Length( keyWords[i].keyWord );
-		}
-	}
-	else
-	{
-		keyWordLengths = NULL;
-	}
-
-	keyWordHash.Clear( 1024, 1024 );
-	for( i = 0; i < numKeyWords; i++ )
-	{
-		hash = caseSensitive ? idStr::Hash( keyWords[i].keyWord, keyWordLengths[i] )
-			   : idStr::IHash( keyWords[i].keyWord, keyWordLengths[i] );
-		keyWordHash.Add( hash, i );
-	}
-
 	language = *TextEditor::Language::Cpp();
 	language.name = "doomscript";
 	language.caseSensitive = caseSensitive;
@@ -114,15 +77,18 @@ void SyntaxRichEditCtrl::RebuildLanguage()
 	language.identifiers.clear();
 	language.declarations.clear();
 
-	for( i = 0; i < numKeyWords; i++ )
+	const int count = m_keywords.GetCount();
+	for( int i = 0; i < count; i++ )
 	{
-		if( keyWords[i].description && keyWords[i].description[0] != '\0' )
+		const SyntaxKeywords::Entry& entry = m_keywords.GetEntry( i );
+
+		if( entry.description.Length() > 0 )
 		{
-			language.identifiers.insert( keyWords[i].keyWord );
+			language.identifiers.insert( entry.name.c_str() );
 		}
 		else
 		{
-			language.keywords.insert( keyWords[i].keyWord );
+			language.keywords.insert( entry.name.c_str() );
 		}
 	}
 
@@ -185,54 +151,21 @@ void SyntaxRichEditCtrl::Draw()
 
 /*
 ================
-SyntaxRichEditCtrl::FindKeyWord
-================
-*/
-ID_INLINE int SyntaxRichEditCtrl::FindKeyWord( const char* keyWord, int length ) const
-{
-	int i, hash;
-
-	if( caseSensitive )
-	{
-		hash = idStr::Hash( keyWord, length );
-	}
-	else
-	{
-		hash = idStr::IHash( keyWord, length );
-	}
-	for( i = keyWordHash.First( hash ); i != -1; i = keyWordHash.Next( i ) )
-	{
-		if( length != keyWordLengths[i] )
-		{
-			continue;
-		}
-		if( caseSensitive )
-		{
-			if( idStr::Cmpn( keyWords[i].keyWord, keyWord, length ) != 0 )
-			{
-				continue;
-			}
-		}
-		else
-		{
-			if( idStr::Icmpn( keyWords[i].keyWord, keyWord, length ) != 0 )
-			{
-				continue;
-			}
-		}
-		return i;
-	}
-	return -1;
-}
-
-/*
-================
 SyntaxRichEditCtrl::SetKeyWords
 ================
 */
 void SyntaxRichEditCtrl::SetKeyWords( const keyWord_t kws[] )
 {
-	keyWords = kws;
+	m_keywords.Clear();
+
+	if( kws != NULL )
+	{
+		for( int i = 0; kws[i].keyWord; i++ )
+		{
+			m_keywords.Add( kws[i].keyWord, kws[i].description, kws[i].color );
+		}
+	}
+
 	RebuildLanguage();
 }
 
@@ -243,90 +176,11 @@ SyntaxRichEditCtrl::LoadKeyWordsFromFile
 */
 bool SyntaxRichEditCtrl::LoadKeyWordsFromFile( const char* fileName )
 {
-	idParser src;
-	idToken token, name, description;
-	byte red, green, blue;
-	keyWord_t keyword;
+	const bool ok = m_keywords.LoadFromFile( fileName );
 
-	if( !src.LoadFile( fileName ) )
-	{
-		return false;
-	}
+	RebuildLanguage();
 
-	FreeKeyWordsFromFile();
-
-	while( src.ReadToken( &token ) )
-	{
-		if( token.Icmp( "keywords" ) == 0 )
-		{
-			src.ExpectTokenString( "{" );
-			while( src.ReadToken( &token ) )
-			{
-				if( token == "}" )
-				{
-					break;
-				}
-				if( token == "{" )
-				{
-
-					// parse name
-					src.ExpectTokenType( TT_STRING, 0, &name );
-					src.ExpectTokenString( "," );
-
-					// parse color
-					src.ExpectTokenString( "(" );
-					src.ExpectTokenType( TT_NUMBER, TT_INTEGER, &token );
-					red = token.GetIntValue();
-					src.ExpectTokenString( "," );
-					src.ExpectTokenType( TT_NUMBER, TT_INTEGER, &token );
-					green = token.GetIntValue();
-					src.ExpectTokenString( "," );
-					src.ExpectTokenType( TT_NUMBER, TT_INTEGER, &token );
-					blue = token.GetIntValue();
-					src.ExpectTokenString( ")" );
-					src.ExpectTokenString( "," );
-
-					// parse description
-					src.ExpectTokenType( TT_STRING, 0, &description );
-					src.ExpectTokenString( "}" );
-
-					keyword.keyWord = Mem_CopyString( name );
-					keyword.color = idVec3( red / 255.0f, green / 255.0f, blue / 255.0f );
-					keyword.description = Mem_CopyString( description );
-
-					keyWordsFromFile.Append( keyword );
-				}
-			}
-		}
-		else
-		{
-			src.SkipBracedSection();
-		}
-	}
-
-	keyword.keyWord = NULL;
-	keyword.color = idVec3( 1.0f, 1.0f, 1.0f );
-	keyword.description = NULL;
-	keyWordsFromFile.Append( keyword );
-
-	SetKeyWords( keyWordsFromFile.Ptr() );
-
-	return true;
-}
-
-/*
-================
-SyntaxRichEditCtrl::FreeKeyWordsFromFile
-================
-*/
-void SyntaxRichEditCtrl::FreeKeyWordsFromFile()
-{
-	for( int i = 0; i < keyWordsFromFile.Num(); i++ )
-	{
-		Mem_Free( const_cast<char*>( keyWordsFromFile[i].keyWord ) );
-		Mem_Free( const_cast<char*>( keyWordsFromFile[i].description ) );
-	}
-	keyWordsFromFile.Clear();
+	return ok;
 }
 
 /*
@@ -414,13 +268,12 @@ void SyntaxRichEditCtrl::AutoCompleteCallback( TextEditor::AutoCompleteState& st
 		return;
 	}
 
-	for( int i = 0; keyWords[i].keyWord; i++ )
+	std::vector<idStr> matches;
+	m_keywords.CollectByPrefix( state.searchTerm.c_str(), ( int )state.searchTerm.length(), matches );
+
+	for( size_t i = 0; i < matches.size(); i++ )
 	{
-		if( state.searchTerm.empty()
-				|| idStr::Cmpn( keyWords[i].keyWord, state.searchTerm.c_str(), ( int )state.searchTerm.length() ) == 0 )
-		{
-			state.suggestions.push_back( keyWords[i].keyWord );
-		}
+		state.suggestions.push_back( matches[i].c_str() );
 	}
 }
 
@@ -446,10 +299,10 @@ void SyntaxRichEditCtrl::TextHoverCallback( TextEditor::PopupData& data )
 		return;
 	}
 
-	int keyWordIndex = FindKeyWord( word.c_str(), word.Length() );
-	if( keyWordIndex != -1 && keyWords[keyWordIndex].description[0] != '\0' )
+	const SyntaxKeywords::Entry* entry = m_keywords.Find( word.c_str() );
+	if( entry != NULL && entry->description.Length() > 0 )
 	{
-		ImGui::TextUnformatted( keyWords[keyWordIndex].description );
+		ImGui::TextUnformatted( entry->description.c_str() );
 		return;
 	}
 

@@ -1,0 +1,265 @@
+// ===========================================================================
+//
+//  material.def
+//
+//  Keyword list for the Material Editor source text view.
+//
+//
+// ===========================================================================
+
+// Material-level keywords
+qer_editorimage
+description
+polygonOffset
+noShadows
+suppressInSubview
+portalSky
+noSelfShadow
+noPortalFog
+forceShadows
+noOverlays
+forceOverlays
+translucent
+zeroclamp
+clamp
+alphazeroclamp
+forceOpaque
+twoSided
+backSided
+fogLight
+blendLight
+ambientLight
+mirror
+noFog
+unsmoothedTangents
+lightFalloffImage
+guisurf
+sort
+spectrum
+deform
+decalInfo
+renderbump
+diffusemap
+basecolormap
+specularmap
+rmaomap
+reflectionmap
+pbrmap
+bumpmap
+normalmap
+DECAL_MACRO
+lod1
+lod2
+lod3
+lod4
+persistentLOD
+
+// guisurf targets
+entity
+entity2
+entity3
+
+// Surface / content flags
+solid
+water
+playerclip
+monsterclip
+moveableclip
+ikclip
+blood
+trigger
+aassolid
+aasobstacle
+flashlight_trigger
+nonsolid
+nullNormal
+areaportal
+qer_nocarve
+discrete
+noFragment
+occlusion
+slick
+collision
+noimpact
+nodamage
+ladder
+nosteps
+metal
+stone
+flesh
+wood
+cardboard
+liquid
+glass
+plastic
+ricochet
+surftype10
+surftype11
+surftype12
+surftype13
+surftype14
+surftype15
+
+// Sort values
+subview
+opaque
+decal
+far
+medium
+close
+almostNearest
+nearest
+postProcess
+portalSky
+
+// Deform types
+sprite
+tube
+flare
+expand
+move
+turbulent
+eyeBall
+particle
+particle2
+
+// Stage-level keywords
+name
+blend
+map
+remoteRenderMap
+mirrorRenderMap
+xrayRenderMap
+screen
+screen2
+glassWarp
+videomap
+loop
+soundmap
+cubeMap
+cameraCubeMap
+ignoreAlphaTest
+nearest
+linear
+clamp
+noclamp
+zeroclamp
+alphazeroclamp
+forceHighQuality
+highquality
+uncompressedCubeMap
+nopicmip
+vertexColor
+inverseVertexColor
+privatePolygonOffset
+texGen
+wobbleSky
+scroll
+translate
+scale
+centerScale
+shear
+rotate
+maskRed
+maskGreen
+maskBlue
+maskAlpha
+maskColor
+maskDepth
+alphaTest
+colored
+color
+red
+green
+blue
+alpha
+rgb
+rgba
+if
+program
+fragmentProgram
+vertexProgram
+vertexParm
+vertexParm2
+fragmentMap
+
+// texGen modes
+normal
+reflect
+skybox
+
+// Blend shortcuts and stage lighting values
+add
+filter
+modulate
+none
+bumpmap
+diffusemap
+basecolormap
+specularmap
+rmaomap
+normalmap
+
+// Blend functions
+GL_ONE
+GL_ZERO
+GL_DST_COLOR
+GL_ONE_MINUS_DST_COLOR
+GL_SRC_ALPHA
+GL_ONE_MINUS_SRC_ALPHA
+GL_DST_ALPHA
+GL_ONE_MINUS_DST_ALPHA
+GL_SRC_ALPHA_SATURATE
+GL_SRC_COLOR
+GL_ONE_MINUS_SRC_COLOR
+
+// fragmentMap / fragmentProgram modifier keywords
+normalMap
+uncompressed
+
+// Expression registers
+time
+parm0
+parm1
+parm2
+parm3
+parm4
+parm5
+parm6
+parm7
+parm8
+parm9
+parm10
+parm11
+global0
+global1
+global2
+global3
+global4
+global5
+global6
+global7
+sound
+fragmentPrograms
+
+// ---------------------------------------------------------------------------
+// Expression operators
+//
+// These are punctuation and would normally be coloured by the lexer, but
+// listing them keeps the list self-documenting and harmless.
+// ---------------------------------------------------------------------------
+//
+and
+or
+
+//
+// ---------------------------------------------------------------------------
+// Common table names referenced by expressions
+//
+// Tables are user-defined idDeclTable assets, but sinTable and cosTable are
+// referenced directly by the rotate stage modifier and are always present
+// in base data.
+// ---------------------------------------------------------------------------
+//
+sinTable
+cosTable

@@ -153,7 +153,7 @@ void DeclEditor::Start( idDecl* decl )
 			declEdit.LoadKeyWordsFromFile( "editors/entity.def" );
 			break;
 		case DECL_MATERIAL:
-			declEdit.LoadKeyWordsFromFile( "editors/material.def" );
+			declEdit.LoadKeyWordsFromFile( "editors/defs/material.def" );
 			break;
 		case DECL_SKIN:
 			declEdit.LoadKeyWordsFromFile( "editors/skin.def" );
