@@ -40,15 +40,16 @@ public:
 	static const int MAX_MRU_SIZE = 4;
 
 	rvRegistryOptions();
+	virtual ~rvRegistryOptions() {}
 
 	// Sets namespace prefix
 	void			Init( const char* fileName, const char* keyPrefix );
 
 	// Save all options
-	bool			Save();
+	virtual bool	Save();
 
 	// Load options
-	bool			Load();
+	virtual bool	Load();
 
 	// Window placement
 	void			SetWindowPlacement( const char* name, wxWindow* win );

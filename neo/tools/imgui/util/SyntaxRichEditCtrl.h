@@ -31,6 +31,7 @@ If you have questions concerning this license or the applicable additional terms
 #define __SYNTAXRICHEDITCTR_H__
 
 #include "../../extern/ImGuiColorTextEdit/TextEditor.h"
+#include "../../common/SyntaxKeywords.h"
 
 /*
 ===============================================================================
@@ -111,19 +112,20 @@ public:
 
 	void					OnEditGoToLine();
 
-private:
+	SyntaxKeywords&			GetKeywords()
+	{
+		return m_keywords;
+	}
 
-	TextEditor* 			scriptEdit;
+private:
+	TextEditor*				scriptEdit;
 	ImVec2					scriptEditPos;
 	ImVec2					scriptEditSize;
 	GoToLineDialog			gotoDlg;
 	MessageBoxDialog		msgBoxDlg;
 	int						firstLine;
 
-	idList<keyWord_t>		keyWordsFromFile;
-	const keyWord_t* 		keyWords;
-	int* 					keyWordLengths;
-	idHashIndex				keyWordHash;
+	SyntaxKeywords			m_keywords;
 
 	bool					caseSensitive;
 	bool					allowPathNames;
@@ -138,8 +140,6 @@ private:
 
 private:
 	void					RebuildLanguage();
-	void					FreeKeyWordsFromFile();
-	int						FindKeyWord( const char* keyWord, int length ) const;
 
 	void					AutoCompleteCallback( TextEditor::AutoCompleteState& state );
 	void					TextHoverCallback( TextEditor::PopupData& data );

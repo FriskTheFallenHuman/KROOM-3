@@ -98,8 +98,6 @@ wxBEGIN_EVENT_TABLE( rvDebuggerWindow, wxFrame )
 	EVT_LIST_BEGIN_LABEL_EDIT( wxID_ANY, rvDebuggerWindow::OnWatchBeginLabelEdit )
 	EVT_LIST_END_LABEL_EDIT( wxID_ANY, rvDebuggerWindow::OnWatchEndLabelEdit )
 	EVT_LIST_KEY_DOWN( wxID_ANY, rvDebuggerWindow::OnWatchKeyDown )
-
-	EVT_TEXT_ENTER( wxID_ANY, rvDebuggerWindow::OnConsoleEnter )
 wxEND_EVENT_TABLE()
 
 rvDebuggerWindow* rvDebuggerWindow::s_instance = nullptr;
@@ -115,8 +113,7 @@ rvDebuggerWindow::rvDebuggerWindow()
 	mWndScript = NULL;
 	mWndOutput = NULL;
 	mWndTabs = NULL;
-	mWndConsole = NULL;
-	mWndConsoleInput = NULL;
+	m_consoleWidget = NULL;
 	mWndCallstack = NULL;
 	mWndScriptList = NULL;
 	mWndBreakList = NULL;
@@ -190,14 +187,16 @@ bool rvDebuggerWindow::Create()
 	mWndOutput = new wxTextCtrl( mWndTabs, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY | wxTE_RICH );
 	mWndTabs->AddPage( mWndOutput, "Output" );
 
-	wxPanel* consolePanel = new wxPanel( mWndTabs );
-	wxBoxSizer* consoleSizer = new wxBoxSizer( wxVERTICAL );
-	mWndConsole = new wxTextCtrl( consolePanel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY | wxTE_RICH );
-	mWndConsoleInput = new wxTextCtrl( consolePanel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER );
-	consoleSizer->Add( mWndConsole, 1, wxEXPAND | wxALL, 2 );
-	consoleSizer->Add( mWndConsoleInput, 0, wxEXPAND | wxALL, 2 );
-	consolePanel->SetSizer( consoleSizer );
-	mWndTabs->AddPage( consolePanel, "Console" );
+	m_consoleWidget = new ConsoleWidget( mWndTabs );
+	m_consoleWidget->SetCommandHandler( [this]( const char* cmd )
+	{
+		this->OnConsoleCommand( cmd );
+	} );
+	m_consoleWidget->SetQuitHandler( [this]()
+	{
+		this->Close( true );
+	} );
+	mWndTabs->AddPage( m_consoleWidget, "Console" );
 
 	mWndCallstack = new wxListView( mWndTabs, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLC_REPORT );
 	mWndCallstack->AppendColumn( "Function", wxLIST_FORMAT_LEFT, 150 );
@@ -521,8 +520,7 @@ void rvDebuggerWindow::ProcessNetMessage( idBitMsg* msg )
 		case DBMSG_PRINT:
 		{
 			const char* text = ( const char* )msg->GetReadData() + msg->GetReadCount();
-			mWndConsole->AppendText( text );
-			mWndConsole->ShowPosition( mWndConsole->GetLastPosition() );
+			m_consoleWidget->AddText( text );
 			break;
 		}
 
@@ -1551,19 +1549,23 @@ void rvDebuggerWindow::OnNotebookPageChanged( wxNotebookEvent& event )
 
 /*
 ================
-rvDebuggerWindow::OnConsoleEnter
+rvDebuggerWindow::OnConsoleCommand
 ================
 */
-void rvDebuggerWindow::OnConsoleEnter( wxCommandEvent& event )
+void rvDebuggerWindow::OnConsoleCommand( const char* cmd )
 {
+	if( !cmd || !cmd[0] )
+	{
+		return;
+	}
+
+	idStr echo( cmd );
+	echo += "\n";
+	m_consoleWidget->AddText( echo.c_str() );
+
 	if( mClient->IsConnected() )
 	{
-		wxString cmd = mWndConsoleInput->GetValue();
-		if( !cmd.IsEmpty() )
-		{
-			mClient->SendCommand( cmd.c_str() );
-			mWndConsoleInput->Clear();
-		}
+		mClient->SendCommand( cmd );
 	}
 }
 

@@ -43,7 +43,10 @@ If you have questions concerning this license or the applicable additional terms
 #include <wx/menu.h>
 #include <wx/sizer.h>
 #include <wx/statusbr.h>
-#include <wx/textdlg.h>
+
+#ifndef __CONSOLEWIDGET_H__
+	#include "../../common/ConsoleWidget.h"
+#endif
 
 #ifndef __TOOLBARSTRIP_H__
 	#include "../../common/ToolBarStrip.h"
@@ -126,7 +129,7 @@ protected:
 	void							OnWatchEndLabelEdit( wxListEvent& event );
 	void							OnWatchKeyDown( wxListEvent& event );
 	void							OnNotebookPageChanged( wxNotebookEvent& event );
-	void							OnConsoleEnter( wxCommandEvent& event );
+	void							OnConsoleCommand( const char* cmd );
 
 private:
 	wxStyledTextCtrl*				CreateScriptEditor();
@@ -225,8 +228,7 @@ private:
 	wxStyledTextCtrl*				mWndScript;
 	wxTextCtrl*						mWndOutput;
 	wxNotebook*						mWndTabs;
-	wxTextCtrl*						mWndConsole;
-	wxTextCtrl*						mWndConsoleInput;
+	ConsoleWidget*                  m_consoleWidget;
 	wxListView*						mWndCallstack;
 	wxListView*						mWndScriptList;
 	wxListView*						mWndBreakList;

@@ -1,0 +1,237 @@
+// ===========================================================================
+//
+//  MaterialEditorDefs.med
+//
+//  Schema for the Material Editor property grid.
+//
+//      materialprops         - top-level material attributes
+//      stageprops            - attributes on a normal stage
+//      specialmapstageprops  - attributes on a special map stage
+//                              (bumpmap / diffusemap / specularmap)
+//
+//  Syntax for a single entry:
+//
+//      TYPE_<type>, "<dictname>", "<display name>", "<help text>"
+//      TYPE_STRING, "<dictname>", "<display name>", "<help text>", <quotes>
+//
+//  Types:
+//      TYPE_GROUP   - tree group header
+//      TYPE_BOOL    - checkbox; writes the keyword alone when true
+//      TYPE_STRING  - text field; when <quotes> is 1, wraps the value in
+//                     double quotes on write
+//      TYPE_FLOAT   - floating point field
+//      TYPE_INT     - integer field
+//
+//  Every <dictname> below matches a keyword the material parser accepts.
+//  See Material.cpp / MaterialDoc.cpp for how each value is read and
+//  regenerated.
+//
+// ===========================================================================
+
+materialprops
+{
+	TYPE_GROUP,		"mat_info",			"Material Info",			"Basic material information."
+
+	TYPE_STRING,	"description",		"Description",				"Human-readable description of the material.",					1
+	TYPE_STRING,	"qer_editorimage",	"Editor Image",				"Image used to represent this material in the editor.",			0
+
+	TYPE_GROUP,		"mat_appearance",	"Appearance",				"Visual and rendering attributes."
+
+	TYPE_BOOL,		"twoSided",			"Two Sided",				"Render both faces of the surface."
+	TYPE_BOOL,		"backSided",		"Back Sided",				"Render only the back face."
+	TYPE_BOOL,		"translucent",		"Translucent",				"Render as a translucent surface."
+	TYPE_BOOL,		"forceOpaque",		"Force Opaque",				"Render as opaque even if the blend mode is translucent."
+	TYPE_BOOL,		"mirror",			"Mirror",					"Render as a subview mirror."
+	TYPE_BOOL,		"portalSky",		"Portal Sky",				"Mark this material as a portal sky."
+
+	TYPE_GROUP,		"mat_shadows",		"Shadows",					"Shadow-casting behavior."
+
+	TYPE_BOOL,		"noShadows",		"No Shadows",				"Suppress shadow casting."
+	TYPE_BOOL,		"noSelfShadow",		"No Self Shadow",			"Disable self-shadowing."
+	TYPE_BOOL,		"noPortalFog",		"No Portal Fog",			"Disable portal fog interaction."
+	TYPE_BOOL,		"forceShadows",		"Force Shadows",			"Cast shadows even on nodraw surfaces."
+	TYPE_BOOL,		"unsmoothedTangents","Unsmoothed Tangents",	"Disable tangent smoothing."
+
+	TYPE_GROUP,		"mat_overlays",		"Overlays and Decals",		"Overlay and decal behavior."
+
+	TYPE_BOOL,		"noOverlays",		"No Overlays",				"Suppress bullet holes and blood decals."
+	TYPE_BOOL,		"forceOverlays",	"Force Overlays",			"Force overlays even on translucent surfaces."
+	TYPE_BOOL,		"polygonOffset",	"Polygon Offset",			"Enable polygon offset (defaults to 1; edit text for a custom value)."
+	TYPE_BOOL,		"DECAL_MACRO",		"Decal Macro",				"Shorthand that sets polygonOffset, discrete, decal sort and noShadows."
+
+	TYPE_GROUP,		"mat_light",		"Light Material",			"Special light-material types."
+
+	TYPE_BOOL,		"fogLight",			"Fog Light",				"This material is a fog light."
+	TYPE_BOOL,		"blendLight",		"Blend Light",				"This material is a blend light."
+	TYPE_BOOL,		"ambientLight",		"Ambient Light",			"This material is an ambient light."
+
+	TYPE_GROUP,		"mat_special",		"Special Behavior",			"Special material settings."
+
+	TYPE_BOOL,		"suppressInSubview","Suppress In Subview",		"Hide the material inside subviews."
+	TYPE_BOOL,		"noFog",			"No Fog",					"Disable fog on this material."
+	TYPE_BOOL,		"clamp",			"Clamp (Global)",			"Default texture clamp for stages that do not override it."
+	TYPE_BOOL,		"zeroclamp",		"Zero Clamp (Global)",		"Default texture zero-clamp for stages."
+	TYPE_BOOL,		"alphazeroclamp",	"Alpha Zero Clamp (Global)","Default alpha zero-clamp for stages."
+	TYPE_INT,		"spectrum",			"Spectrum",					"Sound spectrum index for audio-reactive materials."
+	TYPE_STRING,	"sort",				"Sort",						"Sort value: subview, opaque, decal, far, medium, close, almostNearest, nearest, postProcess, portalSky, or a numeric value.",	0
+	TYPE_STRING,	"deform",			"Deform",					"Deform type: sprite, tube, flare, expand, move, turbulent, eyeBall, particle, particle2 (arguments after the type must be edited in the text view).",	0
+	TYPE_STRING,	"decalInfo",		"Decal Info",				"Decal lifespan and color fade: staySeconds fadeSeconds ( start rgba ) ( end rgba ).",	0
+	TYPE_STRING,	"renderbump",		"Render Bump",				"Arguments passed to the renderbump utility.",			0
+	TYPE_STRING,	"lightFalloffImage","Light Falloff Image",		"Image used for the light falloff on projected lights.",	0
+	TYPE_STRING,	"guisurf",			"GUI Surface",				"Either 'entity', 'entity2', 'entity3', or a path to a .gui file.",	0
+
+	TYPE_GROUP,		"mat_content",		"Content Flags",			"Solidity and content types."
+
+	TYPE_BOOL,		"solid",			"Solid",					"Solid to players and monsters."
+	TYPE_BOOL,		"nonsolid",			"Nonsolid",					"Clear the solid flag."
+	TYPE_BOOL,		"water",			"Water",					"Water volume."
+	TYPE_BOOL,		"playerclip",		"Player Clip",				"Clip against players."
+	TYPE_BOOL,		"monsterclip",		"Monster Clip",				"Clip against monsters."
+	TYPE_BOOL,		"moveableclip",		"Moveable Clip",			"Clip against moveable entities."
+	TYPE_BOOL,		"ikclip",			"IK Clip",					"Clip against IK."
+	TYPE_BOOL,		"blood",			"Blood",					"Blood decal surface."
+	TYPE_BOOL,		"trigger",			"Trigger",					"Trigger volume."
+	TYPE_BOOL,		"aassolid",			"AAS Solid",				"Solid for AAS pathing."
+	TYPE_BOOL,		"aasobstacle",		"AAS Obstacle",				"Obstacle for AAS pathing."
+	TYPE_BOOL,		"flashlight_trigger","Flashlight Trigger",		"Trigger activated by the flashlight."
+	TYPE_BOOL,		"areaportal",		"Area Portal",				"Area portal dividing two areas (clears solid)."
+	TYPE_BOOL,		"qer_nocarve",		"No CSG",					"Prevents carving in the editor (clears solid)."
+	TYPE_BOOL,		"nullNormal",		"Null Normal",				"Render with a flat normal in renderbump."
+
+	TYPE_GROUP,		"mat_surfprops",	"Surface Properties",		"Physical properties used by effects and physics."
+
+	TYPE_BOOL,		"discrete",			"Discrete",					"Do not merge or clip in the world."
+	TYPE_BOOL,		"noFragment",		"No Fragment",				"Do not fragment."
+	TYPE_BOOL,		"occlusion",		"Occlusion",				"Serve as a vis blocker."
+	TYPE_BOOL,		"slick",			"Slick",					"Slick surface."
+	TYPE_BOOL,		"collision",		"Collision",				"Collision surface."
+	TYPE_BOOL,		"noimpact",			"No Impact",				"Do not spawn impact effects."
+	TYPE_BOOL,		"nodamage",			"No Damage",				"Do not apply falling damage."
+	TYPE_BOOL,		"ladder",			"Ladder",					"Climbable surface."
+	TYPE_BOOL,		"nosteps",			"No Steps",					"Suppress footstep sounds."
+
+	TYPE_GROUP,		"mat_surftype",		"Surface Type",				"Physical material type used for effects and sounds.  Choose one."
+
+	TYPE_BOOL,		"metal",			"Metal",					"Metal surface."
+	TYPE_BOOL,		"stone",			"Stone",					"Stone surface."
+	TYPE_BOOL,		"flesh",			"Flesh",					"Flesh surface."
+	TYPE_BOOL,		"wood",				"Wood",						"Wood surface."
+	TYPE_BOOL,		"cardboard",		"Cardboard",				"Cardboard surface."
+	TYPE_BOOL,		"liquid",			"Liquid",					"Liquid surface."
+	TYPE_BOOL,		"glass",			"Glass",					"Glass surface."
+	TYPE_BOOL,		"plastic",			"Plastic",					"Plastic surface."
+	TYPE_BOOL,		"ricochet",			"Ricochet",					"Metal-like but with a ricochet sound."
+	TYPE_BOOL,		"surftype10",		"Surface Type 10",			"Unassigned surface type slot."
+	TYPE_BOOL,		"surftype11",		"Surface Type 11",			"Unassigned surface type slot."
+	TYPE_BOOL,		"surftype12",		"Surface Type 12",			"Unassigned surface type slot."
+	TYPE_BOOL,		"surftype13",		"Surface Type 13",			"Unassigned surface type slot."
+	TYPE_BOOL,		"surftype14",		"Surface Type 14",			"Unassigned surface type slot."
+	TYPE_BOOL,		"surftype15",		"Surface Type 15",			"Unassigned surface type slot."
+
+	TYPE_GROUP,		"mat_lod",			"Level of Detail",			"LOD assignment."
+
+	TYPE_BOOL,		"lod1",				"LOD 1",					"Assign to LOD group 1."
+	TYPE_BOOL,		"lod2",				"LOD 2",					"Assign to LOD group 2."
+	TYPE_BOOL,		"lod3",				"LOD 3",					"Assign to LOD group 3."
+	TYPE_BOOL,		"lod4",				"LOD 4",					"Assign to LOD group 4."
+	TYPE_BOOL,		"persistentLOD",	"Persistent LOD",			"LOD is always visible."
+}
+
+stageprops
+{
+	TYPE_GROUP,		"stage_info",		"Stage Info",				"Basic stage settings."
+
+	TYPE_STRING,	"name",				"Name",						"The stage name shown in the stage list.",	1
+	TYPE_STRING,	"map",				"Map",						"Image used by this stage.",				0
+	TYPE_STRING,	"blend",			"Blend",					"Blend mode: blend, add, filter, modulate, none, bumpmap, diffusemap, specularmap, rmaomap, or a pair of gl_* names separated by a comma.",	0
+
+	TYPE_GROUP,		"stage_color",		"Color",					"Color modulation expressions for this stage."
+
+	TYPE_BOOL,		"colored",			"Colored",					"Use vertex parms 0-3 as the color (equivalent to 'color parm0 parm1 parm2 parm3')."
+	TYPE_STRING,	"color",			"Color",					"Four RGBA expressions on one line.",		0
+	TYPE_STRING,	"red",				"Red",						"Red component expression.",				0
+	TYPE_STRING,	"green",			"Green",					"Green component expression.",				0
+	TYPE_STRING,	"blue",				"Blue",						"Blue component expression.",				0
+	TYPE_STRING,	"alpha",			"Alpha",					"Alpha component expression.",				0
+	TYPE_STRING,	"rgb",				"RGB",						"Single expression used for R, G, and B.",	0
+	TYPE_STRING,	"rgba",				"RGBA",						"Single expression used for R, G, B, and A.",0
+
+	TYPE_GROUP,		"stage_tex",		"Texture Settings",			"Texture filtering and addressing."
+
+	TYPE_BOOL,		"nearest",			"Nearest",					"Use nearest-neighbor filtering."
+	TYPE_BOOL,		"linear",			"Linear",					"Use linear filtering."
+	TYPE_BOOL,		"clamp",			"Clamp",					"Clamp the texture to the edge."
+	TYPE_BOOL,		"noclamp",			"Noclamp",					"Repeat the texture (default)."
+	TYPE_BOOL,		"zeroclamp",		"Zero Clamp",				"Clamp to black outside the edge."
+	TYPE_BOOL,		"alphazeroclamp",	"Alpha Zero Clamp",			"Clamp to transparent black outside the edge."
+	TYPE_BOOL,		"nopicmip",			"No Picmip",				"Disable picmip for this stage's texture."
+	TYPE_BOOL,		"forceHighQuality",	"Force High Quality",		"Force the uncompressed source image."
+	TYPE_BOOL,		"highquality",		"High Quality",				"Alias for forceHighQuality."
+	TYPE_BOOL,		"uncompressedCubeMap","Uncompressed Cube Map","Use an uncompressed cube map for this stage."
+	TYPE_BOOL,		"ignoreAlphaTest",	"Ignore Alpha Test",		"Do not apply alpha test to this stage."
+
+	TYPE_GROUP,		"stage_vertex",		"Vertex",					"Per-vertex modulation options."
+
+	TYPE_BOOL,		"vertexColor",		"Vertex Color",				"Modulate by the vertex color."
+	TYPE_BOOL,		"inverseVertexColor","Inverse Vertex Color",	"Inverse-modulate by the vertex color."
+
+	TYPE_GROUP,		"stage_masks",		"Color Masks",				"Enable or disable individual color channels."
+
+	TYPE_BOOL,		"maskRed",			"Mask Red",					"Disable the red channel."
+	TYPE_BOOL,		"maskGreen",		"Mask Green",				"Disable the green channel."
+	TYPE_BOOL,		"maskBlue",			"Mask Blue",				"Disable the blue channel."
+	TYPE_BOOL,		"maskAlpha",		"Mask Alpha",				"Disable the alpha channel."
+	TYPE_BOOL,		"maskColor",		"Mask Color",				"Disable R, G, and B."
+	TYPE_BOOL,		"maskDepth",		"Mask Depth",				"Disable depth writes."
+
+	TYPE_GROUP,		"stage_alpha",		"Alpha Test",				"Alpha test settings."
+
+	TYPE_STRING,	"alphaTest",		"Alpha Test",				"Enable alpha test with the given threshold expression.",	0
+
+	TYPE_GROUP,		"stage_texgen",		"TexGen",					"Automatic texture coordinate generation."
+
+	TYPE_STRING,	"texGen",			"TexGen",					"TexGen mode: normal, reflect, skybox, wobbleSky.",	0
+	TYPE_BOOL,		"screen",			"Screen",					"Project texture coordinates to screen space."
+	TYPE_BOOL,		"screen2",			"Screen 2",					"Second screen-projection variant."
+	TYPE_BOOL,		"glassWarp",		"Glass Warp",				"Glass warp projection."
+	TYPE_STRING,	"cubeMap",			"Cube Map",					"Cube map image for this stage.",			0
+	TYPE_STRING,	"cameraCubeMap",	"Camera Cube Map",			"Camera cube map image for this stage.",	0
+
+	TYPE_GROUP,		"stage_dynamic",	"Dynamic Sources",			"Dynamic texture sources."
+
+	TYPE_STRING,	"videomap",			"Video Map",				"Play a cinematic on this stage's texture.  Optionally prefix with 'loop'.",	0
+	TYPE_STRING,	"soundmap",			"Sound Map",				"Render a sound visualization on this stage's texture.",	0
+	TYPE_STRING,	"remoteRenderMap",	"Remote Render Map",		"Render the view from a remote camera: <width> <height>.",	0
+	TYPE_STRING,	"mirrorRenderMap",	"Mirror Render Map",		"Render a mirror view: <width> <height>.",	0
+	TYPE_STRING,	"xrayRenderMap",	"Xray Render Map",			"Render an xray view: <width> <height>.",	0
+
+	TYPE_GROUP,		"stage_tcmod",		"Texture Coordinate Transforms", "Per-stage texture coordinate manipulations."
+
+	TYPE_STRING,	"scroll",			"Scroll",					"Scroll the texture: <dx> <dy>.",			0
+	TYPE_STRING,	"translate",		"Translate",				"Alias for scroll.",						0
+	TYPE_STRING,	"scale",			"Scale",					"Scale the texture: <sx> <sy>.",			0
+	TYPE_STRING,	"centerScale",		"Center Scale",				"Scale the texture around the center: <sx> <sy>.",	0
+	TYPE_STRING,	"shear",			"Shear",					"Shear the texture: <hx> <hy>.",			0
+	TYPE_STRING,	"rotate",			"Rotate",					"Rotate the texture: <turns>.",				0
+
+	TYPE_GROUP,		"stage_programs",	"Programs",					"GLSL/HLSL shader program overrides."
+
+	TYPE_STRING,	"program",			"Program",					"Use the same program for the vertex and fragment stages.",	0
+	TYPE_STRING,	"vertexProgram",	"Vertex Program",			"Use a specific vertex program.",			0
+	TYPE_STRING,	"fragmentProgram",	"Fragment Program",			"Use a specific fragment program.",			0
+	TYPE_STRING,	"vertexParm",		"Vertex Parm",				"Vertex program parameter: <index> <exprs...>.",	0
+	TYPE_STRING,	"vertexParm2",		"Vertex Parm 2",			"Vertex program parameter with all four components: <index> <x> <y> <z> <w>.",	0
+	TYPE_STRING,	"fragmentMap",		"Fragment Map",				"Fragment program texture unit: <unit> <image> [options].",	0
+
+	TYPE_GROUP,		"stage_misc",		"Misc",						"Other stage options."
+
+	TYPE_BOOL,		"privatePolygonOffset","Private Polygon Offset","Apply stage-local polygon offset (defaults to 1; edit text for a custom value)."
+	TYPE_STRING,	"if",				"Conditional",				"Conditional expression; the stage is only drawn if the expression is nonzero.",	0
+}
+
+specialmapstageprops
+{
+	TYPE_GROUP,		"smap_info",		"Special Map Info",			"Properties of a special map stage."
+
+	TYPE_STRING,	"map",				"Map",						"Image used by this bump / diffuse / specular stage.",	0
+}
