@@ -78,8 +78,6 @@ bool rvDebuggerMainApp::OnInit()
 	return true;
 }
 
-wxIMPLEMENT_APP_NO_MAIN( rvDebuggerMainApp );
-
 /*
 ============================================
 
@@ -123,16 +121,10 @@ Initializes the debugger application by creating the debugger window
 */
 bool rvDebuggerApp::Initialize()
 {
-	int argc = 0;
-	char** argv = NULL;
-
-	if( !wxEntryStart( argc, argv ) )
+	wxApp::SetInstance( new rvDebuggerMainApp() );
+	if( !wxInitialize() )
 	{
-		return false;
-	}
-
-	if( !wxTheApp || !wxTheApp->CallOnInit() )
-	{
+		common->Error( "rvDebuggerApp::Initialize: wxInitialize failed" );
 		return false;
 	}
 
@@ -169,28 +161,6 @@ rvDebuggerApp::OnNetworkPollTimer
 void rvDebuggerApp::OnNetworkPollTimer( wxTimerEvent& event )
 {
 	mClient.ProcessMessages();
-}
-
-/*
-================
-rvDebuggerApp::ProcessWindowMessages
-
-Process windows messages
-================
-*/
-bool rvDebuggerApp::ProcessWindowMessages()
-{
-	if( !wxTheApp )
-	{
-		return false;
-	}
-
-	while( wxTheApp->Pending() )
-	{
-		wxTheApp->Dispatch();
-	}
-
-	return !wxTheApp->IsMainLoopRunning();
 }
 
 /*
