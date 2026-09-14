@@ -1,0 +1,15 @@
+keywords
+{
+	{
+		"skin", ( 0, 128, 255 ), "Skin declaration"
+	}
+	{
+		"model", ( 0, 160, 0 ), "Associated model"
+	}
+	{
+		"*", ( 255, 128, 0 ), "Wildcard material mapping"
+	}
+	{
+		"_default", ( 160, 0, 255 ), "Default material"
+	}
+}

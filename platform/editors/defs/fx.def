@@ -1,0 +1,96 @@
+keywords
+{
+	{
+		"fx", ( 0, 128, 255 ), "FX declaration"
+	}
+	{
+		"bindto", ( 0, 160, 0 ), "Bind FX to a joint"
+	}
+	{
+		"shake", ( 255, 128, 0 ), "Shake event"
+	}
+	{
+		"noshadows", ( 0, 160, 0 ), "Disable shadows"
+	}
+	{
+		"name", ( 0, 160, 0 ), "Event name"
+	}
+	{
+		"fire", ( 0, 160, 0 ), "Fire event"
+	}
+	{
+		"random", ( 0, 160, 0 ), "Random delay range"
+	}
+	{
+		"delay", ( 0, 160, 0 ), "Event delay"
+	}
+	{
+		"rotate", ( 0, 160, 0 ), "Rotation"
+	}
+	{
+		"duration", ( 0, 160, 0 ), "Event duration"
+	}
+	{
+		"trackorigin", ( 0, 160, 0 ), "Track origin"
+	}
+	{
+		"restart", ( 0, 160, 0 ), "Restart time"
+	}
+	{
+		"fadeIn", ( 0, 160, 0 ), "Fade-in time"
+	}
+	{
+		"fadeOut", ( 0, 160, 0 ), "Fade-out time"
+	}
+	{
+		"size", ( 0, 160, 0 ), "Effect size"
+	}
+	{
+		"offset", ( 0, 160, 0 ), "Offset"
+	}
+	{
+		"axis", ( 0, 160, 0 ), "Explicit axis"
+	}
+	{
+		"angle", ( 0, 160, 0 ), "Angles"
+	}
+	{
+		"uselight", ( 255, 128, 0 ), "Use light event"
+	}
+	{
+		"attachlight", ( 255, 128, 0 ), "Attach light event"
+	}
+	{
+		"attachentity", ( 255, 128, 0 ), "Attach entity event"
+	}
+	{
+		"launch", ( 255, 128, 0 ), "Launch entity event"
+	}
+	{
+		"useModel", ( 255, 128, 0 ), "Use model event"
+	}
+	{
+		"light", ( 255, 128, 0 ), "Light event"
+	}
+	{
+		"model", ( 255, 128, 0 ), "Model event"
+	}
+	{
+		"particle", ( 255, 128, 0 ), "Particle event"
+	}
+	{
+		"decal", ( 255, 128, 0 ), "Decal event"
+	}
+	{
+		"particleTrackVelocity", ( 0, 160, 0 ), "Particle tracks velocity"
+	}
+	{
+		"sound", ( 255, 128, 0 ), "Sound event"
+	}
+	{
+		"ignoreMaster", ( 0, 160, 0 ), "Shake ignores master"
+	}
+	{
+		"shockwave", ( 255, 128, 0 ), "Shockwave event"
+	}
+}

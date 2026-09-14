@@ -1,0 +1,12 @@
+keywords
+{
+	{
+		"table", ( 0, 128, 255 ), "Table declaration"
+	}
+	{
+		"snap", ( 255, 128, 0 ), "Use nearest value instead of interpolating"
+	}
+	{
+		"clamp", ( 255, 128, 0 ), "Clamp lookup input to the table range"
+	}
+}

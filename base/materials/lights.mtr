@@ -917,29 +917,6 @@ lights/flashlight4
 	}
 }
 
-
-lights/defaultPointLight
-{
-	lightFalloffImage	makeintensity( lights/squarelight1a.tga )	// this will also be the falloff for any
-																	// point light shaders that don't specify one
-	{
-		forceHighQuality
-		map lights/squarelight1.tga
-		colored
-		zeroClamp
-	}
-}
-
-lights/default3DLight		// just for research
-{
-	{
-		forceHighQuality
-		map _cubicLight
-		colored
-		zeroClamp
-	}
-}
-
 lights/desertambientlight
 {
 	ambientLight
@@ -977,46 +954,6 @@ lights/desertlight
 		zeroClamp
 	}
 }
-
-lights/defaultProjectedLight
-{
-	lightFalloffImage	_noFalloff		// by default, stay bright almost all the way to the end
-	{
-		forceHighQuality
-		map lights/squarelight1.tga
-		colored
-		zeroClamp
-	}
-}
-
-
-// an ambient light will do non-directional bump mapping, and won't have specular lighting
-// or shadows
-lights/ambientLight
-{
-	ambientLight
-	lightFalloffImage	makeintensity( lights/squarelight1a.tga )
-	{
-		forceHighQuality
-		map lights/squarelight1.tga
-		colored
-		zeroClamp
-	}
-}
-
-
-lights/ambientLight2
-{
-	ambientLight
-	lightFalloffImage	makeintensity( lights/squarelight1a.tga )
-	{
-		forceHighQuality
-		map lights/squarelight.tga
-		colored
-		zeroClamp
-	}
-}
-
 
 //parm 3=flicker speed	parm 4=offset
 

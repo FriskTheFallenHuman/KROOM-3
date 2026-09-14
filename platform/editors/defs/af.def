@@ -1,0 +1,195 @@
+keywords
+{
+	{
+		"articulatedFigure", ( 0, 128, 255 ), "Articulated figure declaration"
+	}
+	{
+		"settings", ( 0, 128, 255 ), "AF settings block"
+	}
+	{
+		"body", ( 0, 128, 255 ), "AF body block or CONTENTS_BODY value"
+	}
+	{
+		"fixed", ( 0, 160, 160 ), "Fixed constraint"
+	}
+	{
+		"ballAndSocketJoint", ( 0, 160, 160 ), "Ball-and-socket joint constraint"
+	}
+	{
+		"universalJoint", ( 0, 160, 160 ), "Universal joint constraint"
+	}
+	{
+		"hinge", ( 0, 160, 160 ), "Hinge constraint"
+	}
+	{
+		"slider", ( 0, 160, 160 ), "Slider constraint"
+	}
+	{
+		"spring", ( 0, 160, 160 ), "Spring constraint"
+	}
+	{
+		"model", ( 0, 160, 0 ), "Body model"
+	}
+	{
+		"box", ( 255, 128, 0 ), "Box body model"
+	}
+	{
+		"octahedron", ( 255, 128, 0 ), "Octahedron body model"
+	}
+	{
+		"dodecahedron", ( 255, 128, 0 ), "Dodecahedron body model"
+	}
+	{
+		"cylinder", ( 255, 128, 0 ), "Cylinder body model"
+	}
+	{
+		"cone", ( 255, 128, 0 ), "Cone body model"
+	}
+	{
+		"bone", ( 255, 128, 0 ), "Bone body model"
+	}
+	{
+		"custom", ( 255, 128, 0 ), "Custom body model"
+	}
+	{
+		"origin", ( 0, 160, 0 ), "Body origin"
+	}
+	{
+		"angles", ( 0, 160, 0 ), "Body angles"
+	}
+	{
+		"joint", ( 0, 160, 0 ), "Joint name"
+	}
+	{
+		"mod", ( 0, 160, 0 ), "Joint modification mode"
+	}
+	{
+		"orientation", ( 160, 0, 255 ), "Joint mod: orientation"
+	}
+	{
+		"position", ( 160, 0, 255 ), "Joint mod: position"
+	}
+	{
+		"both", ( 160, 0, 255 ), "Joint mod: both"
+	}
+	{
+		"density", ( 0, 160, 0 ), "Body density"
+	}
+	{
+		"inertiaScale", ( 0, 160, 0 ), "Inertia scale matrix"
+	}
+	{
+		"friction", ( 0, 160, 0 ), "Friction values"
+	}
+	{
+		"contents", ( 0, 160, 0 ), "Contents mask"
+	}
+	{
+		"clipMask", ( 0, 160, 0 ), "Clip mask"
+	}
+	{
+		"selfCollision", ( 0, 160, 0 ), "Self collision flag"
+	}
+	{
+		"containedJoints", ( 0, 160, 0 ), "Contained joints"
+	}
+	{
+		"frictionDirection", ( 0, 160, 0 ), "Friction direction"
+	}
+	{
+		"contactMotorDirection", ( 0, 160, 0 ), "Contact motor direction"
+	}
+	{
+		"body1", ( 0, 160, 0 ), "First constraint body"
+	}
+	{
+		"body2", ( 0, 160, 0 ), "Second constraint body"
+	}
+	{
+		"anchor", ( 0, 160, 0 ), "Constraint anchor"
+	}
+	{
+		"anchor1", ( 0, 160, 0 ), "First spring anchor"
+	}
+	{
+		"anchor2", ( 0, 160, 0 ), "Second spring anchor"
+	}
+	{
+		"shafts", ( 0, 160, 0 ), "Universal joint shafts"
+	}
+	{
+		"axis", ( 0, 160, 0 ), "Constraint axis"
+	}
+	{
+		"limit", ( 0, 160, 0 ), "Hinge limit"
+	}
+	{
+		"coneLimit", ( 0, 160, 0 ), "Cone limit"
+	}
+	{
+		"pyramidLimit", ( 0, 160, 0 ), "Pyramid limit"
+	}
+	{
+		"stretch", ( 0, 160, 0 ), "Spring stretch"
+	}
+	{
+		"compress",( 0, 160, 0 ), "Spring compress"
+	}
+	{
+		"damping",( 0, 160, 0 ), "Spring damping"
+	}
+	{
+		"restLength", ( 0, 160, 0 ), "Spring rest length"
+	}
+	{
+		"minLength", ( 0, 160, 0 ), "Spring minimum length"
+	}
+	{
+		"maxLength", ( 0, 160, 0 ), "Spring maximum length"
+	}
+	{
+		"mesh", ( 0, 160, 0 ), "Settings mesh"
+	}
+	{
+		"anim", ( 0, 160, 0 ), "Settings animation"
+	}
+	{
+		"skin", ( 0, 160, 0 ), "Settings skin"
+	}
+	{
+		"totalMass",( 0, 160, 0 ), "Total mass"
+	}
+	{
+		"suspendSpeed", ( 0, 160, 0 ), "Suspend speed"
+	}
+	{
+		"noMoveTime", ( 0, 160, 0 ), "No-move time"
+	}
+	{
+		"noMoveTranslation", ( 0, 160, 0 ), "No-move translation"
+	}
+	{
+		"noMoveRotation", ( 0, 160, 0 ), "No-move rotation"
+	}
+	{
+		"minMoveTime", ( 0, 160, 0 ), "Minimum move time"
+	}
+	{
+		"maxMoveTime", ( 0, 160, 0 ), "Maximum move time"
+	}
+	{
+		"none", ( 255, 0, 128 ), "Contents: none"
+	}
+	{
+		"solid", ( 255, 0, 128 ), "Contents: solid"
+	}
+	{
+		"corpse", ( 255, 0, 128 ), "Contents: corpse"
+	}
+	{
+		"playerclip", ( 255, 0, 128 ), "Contents: playerclip"
+	}
+	{
+		"monsterclip", ( 255, 0, 128 ), "Contents: monsterclip"
+	}
+}

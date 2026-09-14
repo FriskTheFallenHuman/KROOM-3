@@ -922,6 +922,7 @@ public:
 	const idMaterial*		imgGuiMaterial; // RB
 	const idMaterial* 		defaultPointLight;
 	const idMaterial* 		defaultProjectedLight;
+	const idMaterial* 		defaultAmbientLight;
 	const idMaterial* 		defaultMaterial;
 	idImage* 				testImage;
 	idCinematic* 			testVideo;

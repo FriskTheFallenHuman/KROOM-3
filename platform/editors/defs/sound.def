@@ -1,0 +1,96 @@
+keywords
+{
+	{
+		"sound", ( 0, 128, 255 ), "Sound shader declaration"
+	}
+	{
+		"minSamples", ( 0, 160, 0 ), "Minimum sample count"
+	}
+	{
+		"description", ( 0, 160, 0 ), "Description"
+	}
+	{
+		"mindistance", ( 0, 160, 0 ), "Minimum distance"
+	}
+	{
+		"maxdistance", ( 0, 160, 0 ), "Maximum distance"
+	}
+	{
+		"shakes", ( 0, 160, 0 ), "Screen shake amount"
+	}
+	{
+		"reverb", ( 0, 160, 0 ), "Reverb"
+	}
+	{
+		"volume", ( 0, 160, 0 ), "Volume"
+	}
+	{
+		"leadinVolume", ( 0, 160, 0 ), "Lead-in volume"
+	}
+	{
+		"mask_center", ( 255, 128, 0 ), "Speaker mask: center"
+	}
+	{
+		"mask_left", ( 255, 128, 0 ), "Speaker mask: left"
+	}
+	{
+		"mask_right", ( 255, 128, 0 ), "Speaker mask: right"
+	}
+	{
+		"mask_backright", ( 255, 128, 0 ), "Speaker mask: back right"
+	}
+	{
+		"mask_backleft", ( 255, 128, 0 ), "Speaker mask: back left"
+	}
+	{
+		"mask_lfe", ( 255, 128, 0 ), "Speaker mask: LFE"
+	}
+	{
+		"soundClass", ( 0, 160, 0 ), "Sound class"
+	}
+	{
+		"altSound", ( 0, 160, 0 ), "Alternate sound"
+	}
+	{
+		"ordered", ( 128, 128, 128 ), "Deprecated: ordered"
+	}
+	{
+		"no_dups", ( 0, 160, 0 ), "No duplicates"
+	}
+	{
+		"no_flicker", ( 0, 160, 0 ), "No flicker"
+	}
+	{
+		"plain", ( 128, 128, 128 ), "Deprecated: plain"
+	}
+	{
+		"looping", ( 0, 160, 0 ), "Looping sound"
+	}
+	{
+		"no_occlusion", ( 0, 160, 0 ), "No occlusion"
+	}
+	{
+		"private", ( 0, 160, 0 ), "Private sound"
+	}
+	{
+		"antiPrivate", ( 0, 160, 0 ), "Anti-private sound"
+	}
+	{
+		"playonce", ( 0, 160, 0 ), "Play once"
+	}
+	{
+		"global", ( 0, 160, 0 ), "Global sound"
+	}
+	{
+		"unclamped", ( 0, 160, 0 ), "Unclamped volume"
+	}
+	{
+		"omnidirectional", ( 0, 160, 0 ), "Omnidirectional sound"
+	}
+	{
+		"onDemand", ( 128, 128, 128 ), "Deprecated: on demand"
+	}
+	{
+		"leadin", ( 0, 160, 0 ), "Lead-in sound"
+	}
+}

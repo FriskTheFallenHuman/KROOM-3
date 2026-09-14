@@ -1,0 +1,147 @@
+keywords
+{
+	{
+		"particle", ( 0, 128, 255 ), "Particle declaration"
+	}
+	{
+		"depthHack", ( 0, 160, 0 ), "Depth hack value"
+	}
+	{
+		"material", ( 0, 160, 0 ), "Particle material"
+	}
+	{
+		"count", ( 0, 160, 0 ), "Particle count"
+	}
+	{
+		"time", ( 0, 160, 0 ), "Particle lifetime"
+	}
+	{
+		"cycles", ( 0, 160, 0 ), "Cycle count"
+	}
+	{
+		"timeOffset", ( 0, 160, 0 ), "Time offset"
+	}
+	{
+		"deadTime", ( 0, 160, 0 ), "Dead time"
+	}
+	{
+		"randomDistribution", ( 0, 160, 0 ), "Random distribution"
+	}
+	{
+		"bunching", ( 0, 160, 0 ), "Spawn bunching"
+	}
+	{
+		"distribution", ( 0, 160, 0 ), "Distribution type"
+	}
+	{
+		"rect", ( 255, 128, 0 ), "Rect distribution"
+	}
+	{
+		"cylinder", ( 255, 128, 0 ), "Cylinder distribution"
+	}
+	{
+		"sphere", ( 255, 128, 0 ), "Sphere distribution"
+	}
+	{
+		"direction", ( 0, 160, 0 ), "Direction type"
+	}
+	{
+		"cone", ( 255, 128, 0 ), "Cone direction"
+	}
+	{
+		"outward", ( 255, 128, 0 ), "Outward direction"
+	}
+	{
+		"orientation", ( 0, 160, 0 ), "Orientation type"
+	}
+	{
+		"view", ( 255, 128, 0 ), "View orientation"
+	}
+	{
+		"aimed", ( 255, 128, 0 ), "Aimed orientation"
+	}
+	{
+		"x", ( 255, 128, 0 ), "X orientation"
+	}
+	{
+		"y", ( 255, 128, 0 ), "Y orientation"
+	}
+	{
+		"z", ( 255, 128, 0 ), "Z orientation"
+	}
+	{
+		"customPath", ( 0, 160, 0 ), "Custom path type"
+	}
+	{
+		"standard", ( 255, 128, 0 ), "Standard custom path"
+	}
+	{
+		"helix", ( 255, 128, 0 ), "Helix custom path"
+	}
+	{
+		"flies", ( 255, 128, 0 ), "Flies custom path"
+	}
+	{
+		"spherical", ( 255, 128, 0 ), "Spherical custom path"
+	}
+	{
+		"orbit", ( 255, 128, 0 ), "Orbit custom path"
+	}
+	{
+		"drip", ( 255, 128, 0 ), "Drip custom path"
+	}
+	{
+		"speed", ( 0, 160, 0 ), "Speed"
+	}
+	{
+		"rotation", ( 0, 160, 0 ), "Rotation speed"
+	}
+	{
+		"angle", ( 0, 160, 0 ), "Initial angle"
+	}
+	{
+		"entityColor", ( 0, 160, 0 ), "Use entity color"
+	}
+	{
+		"size", ( 0, 160, 0 ), "Particle size"
+	}
+	{
+		"aspect", ( 0, 160, 0 ), "Particle aspect"
+	}
+	{
+		"fadeIn", ( 0, 160, 0 ), "Fade-in fraction"
+	}
+	{
+		"fadeOut", ( 0, 160, 0 ), "Fade-out fraction"
+	}
+	{
+		"fadeIndex", ( 0, 160, 0 ), "Fade-index fraction"
+	}
+	{
+		"color", ( 0, 160, 0 ), "Particle color"
+	}
+	{
+		"fadeColor", ( 0, 160, 0 ), "Fade color"
+	}
+	{
+		"offset", ( 0, 160, 0 ), "Particle offset"
+	}
+	{
+		"animationFrames", ( 0, 160, 0 ), "Animation frames"
+	}
+	{
+		"animationRate", ( 0, 160, 0 ), "Animation rate"
+	}
+	{
+		"boundsExpansion", ( 0, 160, 0 ), "Bounds expansion"
+	}
+	{
+		"gravity", ( 0, 160, 0 ), "Gravity"
+	}
+	{
+		"world", ( 255, 128, 0 ), "Use world gravity"
+	}
+	{
+		"to", ( 255, 128, 0 ), "Parametric range separator"
+	}
+}

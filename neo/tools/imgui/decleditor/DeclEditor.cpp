@@ -150,34 +150,34 @@ void DeclEditor::Start( idDecl* decl )
 	{
 		case DECL_ENTITYDEF:
 			//declEdit.SetStringColor( SRE_COLOR_BLUE, SRE_COLOR_DARK_CYAN );
-			declEdit.LoadKeyWordsFromFile( "editors/entity.def" );
+			declEdit.LoadKeyWordsFromFile( "editors/defs/entity.def" );
 			break;
 		case DECL_MATERIAL:
 			declEdit.LoadKeyWordsFromFile( "editors/defs/material.def" );
 			break;
 		case DECL_SKIN:
-			declEdit.LoadKeyWordsFromFile( "editors/skin.def" );
+			declEdit.LoadKeyWordsFromFile( "editors/defs/skin.def" );
 			break;
 		case DECL_SOUND:
-			declEdit.LoadKeyWordsFromFile( "editors/sound.def" );
+			declEdit.LoadKeyWordsFromFile( "editors/defs/sound.def" );
 			break;
 		case DECL_FX:
-			declEdit.LoadKeyWordsFromFile( "editors/fx.def" );
+			declEdit.LoadKeyWordsFromFile( "editors/defs/fx.def" );
 			break;
 		case DECL_PARTICLE:
-			declEdit.LoadKeyWordsFromFile( "editors/particle.def" );
+			declEdit.LoadKeyWordsFromFile( "editors/defs/particle.def" );
 			break;
 		case DECL_AF:
-			declEdit.LoadKeyWordsFromFile( "editors/af.def" );
+			declEdit.LoadKeyWordsFromFile( "editors/defs/af.def" );
 			break;
 		case DECL_TABLE:
-			declEdit.LoadKeyWordsFromFile( "editors/table.def" );
+			declEdit.LoadKeyWordsFromFile( "editors/defs/table.def" );
 			break;
 		case DECL_MODELDEF:
-			declEdit.LoadKeyWordsFromFile( "editors/model.def" );
+			declEdit.LoadKeyWordsFromFile( "editors/defs/model.def" );
 			break;
 		default:
-			declEdit.LoadKeyWordsFromFile( va( "editors/%s.def", declManager->GetDeclNameFromType( decl->GetType() ) ) );
+			declEdit.LoadKeyWordsFromFile( va( "editors/defs/%s.def", declManager->GetDeclNameFromType( decl->GetType() ) ) );
 			break;
 	}
 

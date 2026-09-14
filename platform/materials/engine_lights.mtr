@@ -1,0 +1,38 @@
+lights/defaultPointLight
+{
+	// this will also be the falloff for any
+	// point light shaders that don't specify one
+	lightFalloffImage	makeintensity( textures/lights/lighta )
+	{
+		forceHighQuality
+		map textures/lights/light
+		colored
+		zeroClamp
+	}
+}
+
+lights/defaultProjectedLight
+{
+	lightFalloffImage	_noFalloff		// by default, stay bright almost all the way to the end
+	{
+		forceHighQuality
+		map textures/lights/light
+		colored
+		zeroClamp
+	}
+}
+
+
+lights/defaultAmbientLight
+{
+	// an ambient light will do non-directional bump mapping, and won't have specular lighting or shadows
+	ambientLight
+
+	lightFalloffImage	makeintensity( textures/lights/lighta )
+	{
+		forceHighQuality
+		map textures/lights/light
+		colored
+		zeroClamp
+	}
+}
