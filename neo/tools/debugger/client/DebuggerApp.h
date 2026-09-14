@@ -89,8 +89,6 @@ protected:
 
 private:
 	void	OnNetworkPollTimer( wxTimerEvent& event );
-	bool	ProcessNetMessages();
-	bool	ProcessWindowMessages();
 };
 
 ID_INLINE rvDebuggerClient& rvDebuggerApp::GetClient()
