@@ -517,21 +517,24 @@ idFatalException::idFatalException( const char* text, bool doStackTrace, bool em
 	}
 
 #ifdef _WIN32
-	if( !idLib::IsMainThread() )
+	if( !IsDebuggerPresent() )
 	{
-		int bRet = MessageBox( NULL, text, GAME_NAME " Unhandled Exception", MB_SYSTEMMODAL | MB_CANCELTRYCONTINUE );
-		if( bRet == IDCANCEL )
+		if( !idLib::IsMainThread() )
 		{
+			int bRet = MessageBox( NULL, text, GAME_NAME " Unhandled Exception", MB_SYSTEMMODAL | MB_CANCELTRYCONTINUE );
+			if( bRet == IDCANCEL )
+			{
+			}
+			else if( bRet == IDCONTINUE )
+			{
+			}
 		}
-		else if( bRet == IDCONTINUE )
+		else
 		{
+			HWND hParentWindow = FindParentWindow();
+			HINSTANCE hParentInstance = GetApplicationInstance();
+			DialogBox( hParentInstance, MAKEINTRESOURCE( 4001 /*IDD_CRASH_DIALOG*/ ), hParentWindow, CrashHandlerDialogProc );
 		}
-	}
-	else
-	{
-		HWND hParentWindow = FindParentWindow();
-		HINSTANCE hParentInstance = GetApplicationInstance();
-		DialogBox( hParentInstance, MAKEINTRESOURCE( 4001 /*IDD_CRASH_DIALOG*/ ), hParentWindow, CrashHandlerDialogProc );
 	}
 #endif
 
