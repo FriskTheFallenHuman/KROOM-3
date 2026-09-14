@@ -1,0 +1,15 @@
+keywords
+{
+	{
+		"entityDef", ( 0, 128, 255 ), "Entity definition"
+	}
+	{
+		"inherit", ( 255, 128, 0 ), "Inherit keys from another entityDef"
+	}
+	{
+		"classname", ( 160, 0, 255 ), "Automatically set to the entityDef name"
+	}
+	{
+		"DEFAULTED", ( 128, 128, 128 ), "Defaulted entityDef marker"
+	}
+}

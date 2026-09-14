@@ -1,0 +1,33 @@
+keywords
+{
+	{
+		"MD5Version", ( 0, 128, 255 ), "MD5 anim version"
+	}
+	{
+		"commandline", ( 0, 160, 0 ), "Export command line"
+	}
+	{
+		"numFrames", ( 0, 160, 0 ), "Number of frames"
+	}
+	{
+		"numJoints", ( 0, 160, 0 ), "Number of joints"
+	}
+	{
+		"frameRate", ( 0, 160, 0 ), "Frame rate"
+	}
+	{
+		"numAnimatedComponents", ( 0, 160, 0 ), "Number of animated components"
+	}
+	{
+		"hierarchy", ( 0, 160, 0 ), "Joint hierarchy block"
+	}
+	{
+		"bounds", ( 0, 160, 0 ), "Bounds block"
+	}
+	{
+		"baseframe", ( 0, 160, 0 ), "Base frame block"
+	}
+	{
+		"frame", ( 0, 160, 0 ), "Frame block"
+	}
+}

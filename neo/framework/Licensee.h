@@ -56,6 +56,7 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 
 // paths
+#define PLATFORM_GAMEDIR				"platform"
 #define	BASE_GAMEDIR					"base"
 
 // filenames

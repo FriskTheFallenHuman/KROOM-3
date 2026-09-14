@@ -712,7 +712,7 @@ void idFileSystemLocal::BeginLevelLoad( const char* name, char* _blockBuffer, in
 	ReOpenCacheFiles();
 	manifestName.StripPath();
 
-	if( UsingResourceFiles() )
+	if( UsingResourceFiles() && idStr::Icmp( "_startup", manifestName ) != 0 )
 	{
 		AddResourceFile( va( "%s.resources", manifestName.c_str() ) );
 	}
@@ -1891,6 +1891,12 @@ Returns a fully qualified path that can be used with stdio libraries
 */
 const char* idFileSystemLocal::RelativePathToOSPath( const char* relativePath, const char* basePath )
 {
+	// The platform folder its a special folder, do not interpret it like a game folder
+	if( idStr::Icmp( basePath, PLATFORM_GAMEDIR ) == 0 )
+	{
+		return BuildOSPath( fs_basepath.GetString(), PLATFORM_GAMEDIR, relativePath );
+	}
+
 	const char* path = cvarSystem->GetCVarString( basePath );
 	if( !path[0] )
 	{
@@ -3001,19 +3007,14 @@ idVec2i idFileSystemLocal::AddResourceFile( const char* resourceFileName )
 	}
 	// RB end
 
-	for( int sp = fileSystemLocal.searchPaths.Num() - 1; sp >= 0; sp-- )
+	idResourceContainer* rc = new idResourceContainer();
+	if( rc->Init( resourceFile ) )
 	{
-		searchpath_t& search = fileSystemLocal.searchPaths[sp];
-
-		idResourceContainer* rc = new idResourceContainer();
-		if( rc->Init( resourceFile ) )
-		{
-			search.resourceFiles.Append( rc );
-			common->Printf( S_COLOR_GRAY "  ...loading resource file" S_COLOR_WHITE " %s\n", resourceFile.c_str() );
-			return idVec2i( sp, search.resourceFiles.Num() - 1 );
-		}
-		delete rc;
+		searchpath_t& search = fileSystemLocal.searchPaths[ fileSystemLocal.searchPaths.Num() - 1 ];
+		search.resourceFiles.Append( rc );
+		return idVec2i( fileSystemLocal.searchPaths.Num() - 1, search.resourceFiles.Num() - 1 );
 	}
+	delete rc;
 
 	return idVec2i( -1, -1 );
 }
@@ -3156,34 +3157,43 @@ void idFileSystemLocal::AddGameDirectory( const char* path, const char* dir )
 
 					resourceFilesFound = true;
 				}
+				else
+				{
+					delete rc;
+				}
 			}
 		}
 
 		// RB: Zip support
-		if( i == 0 )
 		{
-			pakfile = BuildOSPath( path, dir, "" );
-			pakfile[ pakfile.Length() - 1 ] = 0;	// strip the trailing slash
-
-			idStrList pakfiles;
-			ListOSFiles( pakfile, ".pk4", pakfiles );
-			pakfiles.SortWithTemplate( idSort_PathStr() );
-			if( pakfiles.Num() > 0 )
+			idStr zipScanDir = ( i == 1 ) ? BuildOSPath( path, dir, "maps" ) : BuildOSPath( path, dir, "" );
+			if( i == 0 )
 			{
-				for( int j = 0; j < pakfiles.Num(); j++ )
+				zipScanDir[ zipScanDir.Length() - 1 ] = 0;   // strip trailing slash
+			}
+
+			idStrList zipFilesOnDisk;
+			ListOSFiles( zipScanDir, ".pk4", zipFilesOnDisk );
+			zipFilesOnDisk.SortWithTemplate( idSort_PathStr() );
+			for( int j = 0; j < zipFilesOnDisk.Num(); j++ )
+			{
+				idStr relName = zipFilesOnDisk[j];
+				if( i == 1 )
 				{
-					pakfile = pakfiles[j];
+					relName.Insert( "maps/", 0 );
+				}
 
-					pakfile = BuildOSPath( path, dir, pakfiles[j] );
-					idZipContainer* zip = new idZipContainer();
-					if( zip->Init( pakfile ) )
-					{
-						search.zipFiles.Append( zip );
-						common->Printf( S_COLOR_GRAY "  ...loading pk4 file" S_COLOR_WHITE " %s" S_COLOR_GRAY "with checksum" S_COLOR_WHITE " 0x%x\n", pakfile.c_str(), zip->GetChecksum() );
-						//com_productionMode.SetInteger( 2 );
-
-						zipFilesFound = true;
-					}
+				pakfile = BuildOSPath( path, dir, relName );
+				idZipContainer* zip = new idZipContainer();
+				if( zip->Init( pakfile ) )
+				{
+					search.zipFiles.Append( zip );
+					common->Printf( S_COLOR_GRAY "  ...loading pk4 file" S_COLOR_WHITE " %s" S_COLOR_GRAY " with checksum" S_COLOR_WHITE " 0x%x\n", pakfile.c_str(), zip->GetChecksum() );
+					zipFilesFound = true;
+				}
+				else
+				{
+					delete zip;
 				}
 			}
 		}
@@ -3252,6 +3262,12 @@ void idFileSystemLocal::Startup()
 	common->Printf( "------ Initializing File System ------\n" );
 
 	InitPrecache();
+
+	// Add our platform folder
+	if( fs_basepath.GetString()[0] )
+	{
+		AddGameDirectory( fs_basepath.GetString(), PLATFORM_GAMEDIR );
+	}
 
 	SetupGameDirectories( BASE_GAMEDIR );
 

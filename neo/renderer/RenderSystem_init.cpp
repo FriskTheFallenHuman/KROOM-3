@@ -1682,6 +1682,7 @@ void R_InitMaterials()
 	}
 	tr.defaultPointLight = declManager->FindMaterial( "lights/defaultPointLight" );
 	tr.defaultProjectedLight = declManager->FindMaterial( "lights/defaultProjectedLight" );
+	tr.defaultAmbientLight = declManager->FindMaterial( "lights/defaultAmbientLight" );
 	tr.whiteMaterial = declManager->FindMaterial( "_white", false );
 	tr.charSetMaterial = declManager->FindMaterial( "textures/bigchars" );
 
