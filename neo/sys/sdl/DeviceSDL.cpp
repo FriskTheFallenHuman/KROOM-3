@@ -51,6 +51,7 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 
 #include "../sys_local.h"
+#include "DeviceConsole.h"
 #include "DeviceSDL.h"
 #include "DeviceManagerLocal.h"
 
@@ -233,9 +234,6 @@ void Sys_Error( const char* error, ... )
 {
 	va_list		argptr;
 	char		text[4096];
-#ifdef _WIN32
-	MSG        msg;
-#endif
 
 	va_start( argptr, error );
 	vsprintf( text, error, argptr );
@@ -244,12 +242,23 @@ void Sys_Error( const char* error, ... )
 	Conbuf_AppendText( text );
 	Conbuf_AppendText( "\n" );
 
-#ifdef _WIN32
-	void Win_SetErrorText( const char* buf );
 	Win_SetErrorText( text );
-#endif
 
 	Sys_Printf( "%s\n", text );
+
+	if( idDeviceManager::GetInstance() )
+	{
+		idDeviceManagerSDL* device = dynamic_cast<idDeviceManagerSDL*>( idDeviceManager::GetInstance() );
+		if( device )
+		{
+			device->GrabInput( GRAB_SETSTATE );
+		}
+	}
+
+	SDL_ShowCursor( SDL_ENABLE );
+	//SDL_HideWindow( sdl.window );
+	SDL_SetRelativeMouseMode( SDL_FALSE );
+
 	Sys_ShowConsole( 1, true );
 
 	timerHiRes.Shutdown();
@@ -261,22 +270,39 @@ void Sys_Error( const char* error, ... )
 		idDeviceManager::GetInstance()->Shutdown();
 	}
 
-#ifdef _WIN32
 	extern idCVar com_productionMode;
 	if( com_productionMode.GetInteger() == 0 )
 	{
 		// wait for the user to quit
-		while( 1 )
+		while( wxTheApp )
 		{
-			if( !GetMessage( &msg, NULL, 0, 0 ) )
+			if( Sys_ConsoleQuitRequested() )
 			{
-				common->Quit();
+				break;
 			}
-			TranslateMessage( &msg );
-			DispatchMessage( &msg );
+
+			while( wxTheApp->Pending() )
+			{
+				wxTheApp->Dispatch();
+			}
+
+			SDL_Event ev;
+			while( SDL_PollEvent( &ev ) )
+			{
+				if( ev.type == SDL_QUIT )
+				{
+					break;
+				}
+			}
+
+			Sys_Sleep( 10 );
+
+			if( !Sys_ConsoleExists() )
+			{
+				break;
+			}
 		}
 	}
-#endif
 
 	Sys_DestroyConsole();
 
@@ -665,6 +691,14 @@ static void Sys_Frame()
 	{
 		sdl.sdl_viewlog.ClearModified();
 	}
+
+	if( wxTheApp )
+	{
+		while( wxTheApp->Pending() )
+		{
+			wxTheApp->Dispatch();
+		}
+	}
 }
 
 /*
@@ -695,6 +729,8 @@ int main( int argc, char* argv[] )
 	Sys_CreateConsole();
 
 #ifdef _WIN32
+	_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF );
+
 	// Register the unhandled exception
 	LONG WINAPI Sys_UnhandledExceptionFilter( EXCEPTION_POINTERS * exceptionInfo );
 	SetUnhandledExceptionFilter( Sys_UnhandledExceptionFilter );
@@ -733,14 +769,14 @@ int main( int argc, char* argv[] )
 		Sys_ShowConsole( 0, false );
 	}
 
+#ifdef ID_ALLOW_TOOLS
 	// Launch the script debugger
 	if( strstr( sys_cmdline, "+debugger" ) )
 	{
-#ifdef ID_ALLOW_TOOLS
 		DebuggerClientInit( sys_cmdline );
-#endif
 		return 0;
 	}
+#endif
 
 	// main game loop
 	while( 1 )
