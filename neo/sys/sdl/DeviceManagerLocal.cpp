@@ -484,8 +484,8 @@ bool idDeviceManagerSDL::Init( vidParms_t parms )
 		else // parms.fullScreen == 0 (windowed) or -2 (fullscreen on current display)
 		{
 			// For windowed mode, use provided coordinates (if any) or let SDL choose
-			windowPosX = ( parms.x != -1 ) ? parms.x : SDL_WINDOWPOS_UNDEFINED;
-			windowPosY = ( parms.y != -1 ) ? parms.y : SDL_WINDOWPOS_UNDEFINED;
+			windowPosX = ( parms.x != -1 ) ? parms.x : SDL_WINDOWPOS_CENTERED;
+			windowPosY = ( parms.y != -1 ) ? parms.y : SDL_WINDOWPOS_CENTERED;
 		}
 
 		// Show whether this is a 32-bit or 64-bit binary
