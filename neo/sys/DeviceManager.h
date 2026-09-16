@@ -93,9 +93,10 @@ public:
 
 	// the number of displays can be found by itterating this until it returns false
 	// displayNum is the 0 based value passed to EnumDisplayDevices(), you must add
-	// 1 to this to get an r_fullScreen value.
+	// 1 to this to get an r_vidFullscreen value.
 	virtual bool		GetModeListForDisplay( const int displayNum, idList<vidMode_t>& modeList, const int minHeight ) = 0;
 	virtual bool		GetDefaultDisplayMode( int& defaultDisplayNum, vidMode_t& defaultMode ) = 0;
+	virtual bool		GetRefreshRatesForDisplay( const int displayNum, const int width, const int height, idList<int>& rateList ) = 0;
 
 	// Sets the hardware gamma ramps for gamma and brightness adjustment.
 	// These are now taken as 16 bit values, so we can take full advantage
@@ -103,6 +104,8 @@ public:
 	virtual void		SetGamma( unsigned short red[256], unsigned short green[256], unsigned short blue[256] ) = 0;
 
 	virtual void		SwapBuffers() = 0;
+
+	virtual int			GetNumVideoDisplays() = 0;
 	virtual void		DumpAllDisplayDevices() = 0;
 
 public:

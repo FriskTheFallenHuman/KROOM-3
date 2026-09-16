@@ -292,6 +292,10 @@ void idMenuScreen_Shell_GraphicsOptions::HideScreen( const mainMenuTransition_t 
 					{
 						cmdLine.Append( " +set com_skipIntroVideos 1" );
 					}
+					if( cmdLine.Find( "com_skipLegalScreens" ) < 0 )
+					{
+						cmdLine.Append( " +set com_skipLegalScreens 1" );
+					}
 					sys->ReLaunch( ( void* )cmdLine.c_str() );
 				}
 				return idSWFScriptVar();

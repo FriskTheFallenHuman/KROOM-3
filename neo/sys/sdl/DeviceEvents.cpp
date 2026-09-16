@@ -362,6 +362,8 @@ sysEvent_t Sys_GetEvent()
 				switch( ev.window.event )
 				{
 					case SDL_WINDOWEVENT_FOCUS_GAINED:
+					case SDL_WINDOWEVENT_RESTORED:
+					case SDL_WINDOWEVENT_SHOWN:
 					{
 						// unset modifier, in case alt-tab was used to leave window and ALT is still set
 						// as that can cause fullscreen-toggling when pressing enter...
@@ -383,6 +385,8 @@ sysEvent_t Sys_GetEvent()
 					}
 
 					case SDL_WINDOWEVENT_FOCUS_LOST:
+					case SDL_WINDOWEVENT_MINIMIZED:
+					case SDL_WINDOWEVENT_HIDDEN:
 						// DG: pause the game when focus is lost, that also un-grabs the input
 						cvarSystem->SetCVarBool( "com_pause", true );
 						cvarSystem->SetCVarBool( "com_activeApp", false );
@@ -399,11 +403,15 @@ sysEvent_t Sys_GetEvent()
 					{
 						int w = ev.window.data1;
 						int h = ev.window.data2;
-						r_windowWidth.SetInteger( w );
-						r_windowHeight.SetInteger( h );
 
 						glConfig.nativeScreenWidth = w;
 						glConfig.nativeScreenHeight = h;
+
+						if( glConfig.isFullscreen <= 0 )
+						{
+							r_windowWidth.SetInteger( w );
+							r_windowHeight.SetInteger( h );
+						}
 						break;
 					}
 
@@ -411,8 +419,12 @@ sysEvent_t Sys_GetEvent()
 					{
 						int x = ev.window.data1;
 						int y = ev.window.data2;
-						r_windowX.SetInteger( x );
-						r_windowY.SetInteger( y );
+
+						if( glConfig.isFullscreen <= 0 )
+						{
+							r_windowX.SetInteger( x );
+							r_windowY.SetInteger( y );
+						}
 						break;
 					}
 				}
@@ -427,10 +439,10 @@ sysEvent_t Sys_GetEvent()
 					if( ! renderSystem->IsFullScreen() )
 					{
 						// this will be handled as "fullscreen on current window"
-						// r_fullscreen 1 means "fullscreen on first window" in d3 bfg
+						// r_vidFullscreen 1 means "fullscreen on first window" in d3 bfg
 						fullscreen = -2;
 					}
-					cvarSystem->SetCVarInteger( "r_fullscreen", fullscreen );
+					cvarSystem->SetCVarInteger( "r_vidFullscreen", fullscreen );
 					// DG end
 					cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "vid_restart\n" );
 					continue; // handle next event

@@ -50,8 +50,10 @@ public:
 	virtual bool		SetScreenParms( vidParms_t parms );
 	virtual bool		GetModeListForDisplay( const int displayNum, idList<vidMode_t>& modeList, const int minHeight );
 	virtual bool		GetDefaultDisplayMode( int& defaultDisplayNum, vidMode_t& defaultMode );
+	virtual bool		GetRefreshRatesForDisplay( const int displayNum, const int width, const int height, idList<int>& rateList );
 	virtual void		SetGamma( unsigned short red[256], unsigned short green[256], unsigned short blue[256] );
 	virtual void		SwapBuffers();
+	virtual int			GetNumVideoDisplays();
 	virtual void		DumpAllDisplayDevices();
 
 public:

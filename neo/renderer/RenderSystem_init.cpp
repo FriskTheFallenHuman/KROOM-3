@@ -73,7 +73,7 @@ idCVar r_vidFullscreen( "r_vidFullscreen", "1", CVAR_RENDERER | CVAR_ARCHIVE | C
 idCVar r_vidMonitor( "r_vidMonitor", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "monitor to use in fullscreen when r_vidMode is 0", 1, idMath::MAX_INT );
 idCVar r_vidWidth( "r_vidWidth", "1280", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "fullscreen width when r_vidMode is 0", 0, idMath::MAX_INT );
 idCVar r_vidHeight( "r_vidHeight", "720", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "fullscreen height when r_vidMode is 0", 0, idMath::MAX_INT );
-idCVar r_vidDisplayRefresh( "r_vidDisplayRefresh", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "fullscreen display refresh rate when r_vidMode is 0; this cvar can be 0, which means not specified", 0, idMath::MAX_INT );
+idCVar r_vidDisplayRefresh( "r_vidDisplayRefresh", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "display refresh rate when; this cvar can be 0, which means guess from current resolution", 0, idMath::MAX_INT );
 idCVar r_vidCustomMonitor( "r_vidCustomMonitor", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "monitor to use in fullscreen when r_vidMode is -1", 1, idMath::MAX_INT );
 idCVar r_vidCustomWidth( "r_vidCustomWidth", "1280", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "custom fullscreen width when r_vidMode is -1", 0, idMath::MAX_INT );
 idCVar r_vidCustomHeight( "r_vidCustomHeight", "720", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "custom fullscreen height when r_vidMode is -1", 0, idMath::MAX_INT );
@@ -347,7 +347,7 @@ static bool R_SetDefaultVideoParms()
 	vidMode_t defaultMode = {};
 
 	// get the default display and its default mode
-	if( !idDeviceManager::GetInstance() && idDeviceManager::GetInstance()->GetDefaultDisplayMode( defaultDisplay, defaultMode ) )
+	if( !idDeviceManager::GetInstance() || !idDeviceManager::GetInstance()->GetDefaultDisplayMode( defaultDisplay, defaultMode ) )
 	{
 		idLib::Printf( "Couldn't get default video mode.\n" );
 		return false;
@@ -355,7 +355,7 @@ static bool R_SetDefaultVideoParms()
 
 	// make sure the default mode is on the list of modes for the default display
 	idList<vidMode_t> modeList;
-	if( !idDeviceManager::GetInstance() && idDeviceManager::GetInstance()->GetModeListForDisplay( defaultDisplay, modeList, 1 ) )
+	if( !idDeviceManager::GetInstance() || !idDeviceManager::GetInstance()->GetModeListForDisplay( defaultDisplay, modeList, 1 ) )
 	{
 		idLib::Printf( "Couldn't get mode list for default display.\n" );
 		return false;
@@ -421,7 +421,7 @@ static void R_FillParmsForFullscreenMode( vidParms_t& parms, bool& defaultParmsC
 	{
 		// get the mode list for this monitor
 		idList<vidMode_t> modeList;
-		if( !defaultParmsCalled && !idDeviceManager::GetInstance() && idDeviceManager::GetInstance()->GetModeListForDisplay( r_vidMonitor.GetInteger() - 1, modeList, 1 ) )
+		if( !defaultParmsCalled && ( !idDeviceManager::GetInstance() || !idDeviceManager::GetInstance()->GetModeListForDisplay( r_vidMonitor.GetInteger() - 1, modeList, 1 ) ) )
 		{
 			idLib::Printf( "Mode list failed for display %d. Using default video parms.\n", r_vidMonitor.GetInteger() );
 			defaultParmsCalled = true;
@@ -671,10 +671,11 @@ R_ListModes_f
 */
 static void R_ListModes_f( const idCmdArgs& args )
 {
-	for( int displayNum = 0 ; ; displayNum++ )
+	const int numDisplays = ( idDeviceManager::GetInstance() && idDeviceManager::GetInstance()->GetNumVideoDisplays() );
+	for( int displayNum = 0; displayNum < numDisplays; ++displayNum )
 	{
 		idList<vidMode_t> modeList;
-		if( !idDeviceManager::GetInstance() && idDeviceManager::GetInstance()->GetModeListForDisplay( displayNum, modeList, 1 ) )
+		if( !idDeviceManager::GetInstance() || !idDeviceManager::GetInstance()->GetModeListForDisplay( displayNum, modeList, 1 ) )
 		{
 			break;
 		}

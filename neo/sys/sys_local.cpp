@@ -400,6 +400,7 @@ void idSysLocal::ReLaunch( void* data )
 #if defined(_WIN32)
 	static HANDLE hProcessMutex;
 	CloseHandle( hProcessMutex );
+	AllowSetForegroundWindow( ASFW_ANY );
 #endif
 
 	reproc::process proc;
@@ -410,7 +411,7 @@ void idSysLocal::ReLaunch( void* data )
 		return;
 	}
 
-	cmdSystem->AppendCommandText( "quit\n" );
+	cmdSystem->BufferCommandText( CMD_EXEC_NOW, "quit\n" );
 }
 
 /*

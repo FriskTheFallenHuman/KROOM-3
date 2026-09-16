@@ -1197,7 +1197,7 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 		// initialize the declaration manager
 		declManager->Init();
 
-		// force r_fullscreen 0 if running a tool
+		// force r_vidFullscreen 0 if running a tool
 		CheckToolMode();
 
 		// init journalling, etc

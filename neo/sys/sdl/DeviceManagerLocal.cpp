@@ -48,6 +48,9 @@ If you have questions concerning this license or the applicable additional terms
 // DG end
 
 #include <SDL2/SDL.h>
+#ifdef _WIN32
+	#include <SDL2/SDL_syswm.h>
+#endif
 #if defined(USE_VULKAN)
 	#include <SDL2/SDL_vulkan.h>
 	#include <vulkan/vulkan.h>
@@ -495,6 +498,39 @@ bool idDeviceManagerSDL::Init( vidParms_t parms )
 									   windowPosX, windowPosY,
 									   parms.width, parms.height, flags );
 		// DG end
+
+#if defined(_WIN32)
+		// HACK HACK: horrible hack, this forces the windows to be present when relaunching
+		SDL_SysWMinfo wmInfo = {};
+		SDL_VERSION( &wmInfo.version );
+		if( SDL_GetWindowWMInfo( sdl.window, &wmInfo ) )
+		{
+			HWND hwnd = wmInfo.info.win.window;
+			LONG exstyle  = GetWindowLong( hwnd, GWL_EXSTYLE );
+
+			SetWindowLongPtr( hwnd, GWLP_HWNDPARENT, ( LONG_PTR )0 );
+
+			exstyle &= ~WS_EX_TOOLWINDOW;
+			exstyle |=  WS_EX_APPWINDOW;
+			SetWindowLong( hwnd, GWL_EXSTYLE, exstyle );
+
+			if( IsIconic( hwnd ) )
+			{
+				ShowWindow( hwnd, SW_RESTORE );
+			}
+			else
+			{
+				ShowWindow( hwnd, SW_SHOW );
+			}
+
+			SetWindowPos( hwnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW | SWP_FRAMECHANGED );
+			SetForegroundWindow( hwnd );
+		}
+#else
+		SDL_ShowWindow( sdl.window );
+		SDL_RaiseWindow( sdl.window );
+#endif
+
 #if !defined(USE_VULKAN)
 		sdl.context = SDL_GL_CreateContext( sdl.window );
 #endif
@@ -650,6 +686,16 @@ void idDeviceManagerSDL::DumpAllDisplayDevices()
 
 /*
 ====================
+GetNumVideoDisplays
+====================
+*/
+int idDeviceManagerSDL::GetNumVideoDisplays()
+{
+	return SDL_GetNumVideoDisplays();
+}
+
+/*
+====================
 idSort_VidMode
 ====================
 */
@@ -748,6 +794,60 @@ bool idDeviceManagerSDL::GetDefaultDisplayMode( int& defaultDisplayNum, vidMode_
 }
 
 /*
+====================
+idDeviceManagerSDL::GetRefreshRatesForDisplay
+
+Returns all distinct refresh rates available for a given resolution on
+the given display.
+====================
+*/
+bool idDeviceManagerSDL::GetRefreshRatesForDisplay( const int displayNum, const int width, const int height, idList<int>& rateList )
+{
+	rateList.Clear();
+
+	if( displayNum < 0 || displayNum >= SDL_GetNumVideoDisplays() )
+	{
+		return false;
+	}
+
+	if( width <= 0 || height <= 0 )
+	{
+		return false;
+	}
+
+	const int numModes = SDL_GetNumDisplayModes( displayNum );
+	for( int i = 0; i < numModes; i++ )
+	{
+		SDL_DisplayMode mode = {};
+		if( SDL_GetDisplayMode( displayNum, i, &mode ) != 0 )
+		{
+			continue;
+		}
+		if( mode.w != width || mode.h != height )
+		{
+			continue;
+		}
+
+		const int rate = ( mode.refresh_rate > 0 ) ? mode.refresh_rate : 60;
+		rateList.AddUnique( rate );
+	}
+
+	for( int i = 1; i < rateList.Num(); i++ )
+	{
+		const int key = rateList[i];
+		int j = i - 1;
+		while( j >= 0 && rateList[j] > key )
+		{
+			rateList[j + 1] = rateList[j];
+			j--;
+		}
+		rateList[j + 1] = key;
+	}
+
+	return rateList.Num() > 0;
+}
+
+/*
 ===================
 idDeviceManagerSDL::ScreenParmsHandleDisplayIndex
 
@@ -843,9 +943,6 @@ idDeviceManagerSDL::SetScreenParmsWindowed
 */
 bool idDeviceManagerSDL::SetScreenParmsWindowed( vidParms_t parms )
 {
-	SDL_SetWindowSize( sdl.window, parms.width, parms.height );
-	SDL_SetWindowPosition( sdl.window, parms.x, parms.y );
-
 	// if we're currently in fullscreen mode, we need to disable that
 	if( SDL_GetWindowFlags( sdl.window ) & SDL_WINDOW_FULLSCREEN )
 	{
@@ -855,6 +952,11 @@ bool idDeviceManagerSDL::SetScreenParmsWindowed( vidParms_t parms )
 			return false;
 		}
 	}
+
+	SDL_SetWindowBordered( sdl.window, SDL_TRUE );
+	SDL_SetWindowSize( sdl.window, parms.width, parms.height );
+	SDL_SetWindowPosition( sdl.window, parms.x, parms.y );
+
 	return true;
 }
 
@@ -867,16 +969,16 @@ bool idDeviceManagerSDL::SetScreenParms( vidParms_t parms )
 {
 	if( parms.fullScreen == -1 )
 	{
-		// Switch to borderless window at given position/size
-		SDL_SetWindowBordered( sdl.window, SDL_FALSE );
-		SDL_SetWindowPosition( sdl.window, parms.x, parms.y );
-		SDL_SetWindowSize( sdl.window, parms.width, parms.height );
-
 		// If currently fullscreen, exit fullscreen mode first
 		if( SDL_GetWindowFlags( sdl.window ) & SDL_WINDOW_FULLSCREEN )
 		{
 			SDL_SetWindowFullscreen( sdl.window, SDL_FALSE );
 		}
+
+		// Switch to borderless window at given position/size
+		SDL_SetWindowBordered( sdl.window, SDL_FALSE );
+		SDL_SetWindowPosition( sdl.window, parms.x, parms.y );
+		SDL_SetWindowSize( sdl.window, parms.width, parms.height );
 	}
 	else if( parms.fullScreen > 0 || parms.fullScreen == -2 )
 	{
@@ -909,6 +1011,9 @@ bool idDeviceManagerSDL::SetScreenParms( vidParms_t parms )
 	SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, parms.multiSamples );
 #endif
 
+	// Re-applies our icon windows icon
+	SetWindowsIcon( sdl.window );
+
 	return true;
 }
 
@@ -919,7 +1024,11 @@ idDeviceManagerSDL::Shutdown
 */
 void idDeviceManagerSDL::Shutdown( bool shutdownSDL )
 {
+#if !defined(USE_VULKAN)
 	common->Printf( "Shutting down OpenGL subsystem\n" );
+#else
+	common->Printf( "Shutting down Vulkan subsystem\n" );
+#endif
 
 	RestoreGamma();
 
