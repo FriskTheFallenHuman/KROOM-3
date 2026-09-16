@@ -1068,26 +1068,21 @@ void idRenderSystemLocal::TakeScreenshot( int width, int height, const char* fil
 	{
 		buffer = ( byte* )R_StaticAlloc( pix * 3 * 2 );
 	}
-	else if( exten == PNG )
+	else if( exten == PNG || exten == JPG )
 	{
 		buffer = ( byte* )R_StaticAlloc( pix * 3 );
 	}
-	else if( exten == TGA )
+	else
 	{
 		buffer = ( byte* )R_StaticAlloc( bufferSize );
 		memset( buffer, 0, bufferSize );
 	}
 
+	const int pixelOffset = ( exten == TGA ) ? 18 : 0;
+
 	if( blends <= 1 )
 	{
-		if( exten == PNG || exten == EXR )
-		{
-			R_ReadTiledPixels( width, height, buffer, ref );
-		}
-		else if( exten == TGA )
-		{
-			R_ReadTiledPixels( width, height, buffer + 18, ref );
-		}
+		R_ReadTiledPixels( width, height, buffer + pixelOffset, ref );
 	}
 	else
 	{
@@ -1099,39 +1094,18 @@ void idRenderSystemLocal::TakeScreenshot( int width, int height, const char* fil
 
 		for( i = 0 ; i < blends ; i++ )
 		{
-			if( exten == PNG )
-			{
-				R_ReadTiledPixels( width, height, buffer, ref );
-			}
-			else if( exten == TGA )
-			{
-				R_ReadTiledPixels( width, height, buffer + 18, ref );
-			}
+			R_ReadTiledPixels( width, height, buffer + pixelOffset, ref );
 
 			for( j = 0 ; j < pix * 3 ; j++ )
 			{
-				if( exten == PNG )
-				{
-					shortBuffer[j] += buffer[j];
-				}
-				else if( exten == TGA )
-				{
-					shortBuffer[j] += buffer[18 + j];
-				}
+				shortBuffer[j] += buffer[pixelOffset + j];
 			}
 		}
 
 		// divide back to bytes
 		for( i = 0 ; i < pix * 3 ; i++ )
 		{
-			if( exten == PNG )
-			{
-				buffer[i] = shortBuffer[i] / blends;
-			}
-			else if( exten == TGA )
-			{
-				buffer[18 + i] = shortBuffer[i] / blends;
-			}
+			buffer[pixelOffset + i] = shortBuffer[i] / blends;
 		}
 
 		R_StaticFree( shortBuffer );
@@ -1140,12 +1114,15 @@ void idRenderSystemLocal::TakeScreenshot( int width, int height, const char* fil
 
 	if( exten == EXR )
 	{
-		R_WriteEXR( finalFileName, buffer, 3, width, height, "fs_basepath" );
-		//R_WritePNG( finalFileName, buffer, 3, width, height, false, "fs_basepath" );
+		R_WriteEXR( finalFileName, buffer, 3, width, height, "fs_savepath" );
 	}
 	else if( exten == PNG )
 	{
-		R_WritePNG( finalFileName, buffer, 3, width, height, false, "fs_basepath" );
+		R_WritePNG( finalFileName, buffer, 3, width, height, false, "fs_savepath" );
+	}
+	else if( exten == JPG )
+	{
+		R_WriteJPEG( finalFileName, buffer, 3, width, height, false, "fs_savepath" );
 	}
 	else
 	{
@@ -1167,7 +1144,7 @@ void idRenderSystemLocal::TakeScreenshot( int width, int height, const char* fil
 			buffer[i + 2] = temp;
 		}
 
-		fileSystem->WriteFile( finalFileName, buffer, c, "fs_basepath" );
+		fileSystem->WriteFile( finalFileName, buffer, c, "fs_savepath" );
 	}
 
 	R_StaticFree( buffer );
@@ -1324,7 +1301,7 @@ void R_ScreenShot_f( const idCmdArgs& args )
 	// put the console away
 	console->Close();
 
-	tr.TakeScreenshot( width, height, checkname, blends, NULL, PNG );
+	tr.TakeScreenshot( width, height, checkname, blends, NULL, TGA );
 
 	common->Printf( "Wrote %s\n", checkname.c_str() );
 }

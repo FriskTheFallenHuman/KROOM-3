@@ -193,8 +193,30 @@ void R_WriteTGA( const char* filename, const byte* data, int width, int height, 
 	STBWriteContext ctx;
 	// 4 = RGBA channels; STB handles the RGB→BGR swap required by TGA format internally
 	stbi_write_tga_to_func( STB_WriteCallback, &ctx, width, height, 4, data );
+}
 
-	fileSystem->WriteFile( filename, ctx.data.Ptr(), ctx.data.Num(), basePath );
+/*
+================
+R_WriteJPEG
+================
+*/
+void R_WriteJPEG( const char* filename, const byte* data, int bytesPerPixel, int width, int height, bool flipVertical, const char* basePath )
+{
+	if( bytesPerPixel != 4  && bytesPerPixel != 3 )
+	{
+		common->Error( "R_WriteJPEG( %s ): bytesPerPixel = %i not supported", filename, bytesPerPixel );
+	}
+
+	idFileLocal file( fileSystem->OpenFileWrite( filename, basePath ) );
+	if( file == NULL )
+	{
+		common->Printf( "R_WriteJPEG: Failed to open %s\n", filename );
+		return;
+	}
+
+	stbi_flip_vertically_on_write( !flipVertical ? 1 : 0 );
+
+	stbi_write_jpg_to_func( WriteScreenshotForSTBIW, file, width, height, bytesPerPixel, data, 100 );
 }
 
 /*
@@ -215,6 +237,8 @@ void R_WritePNG( const char* filename, const byte* data, int bytesPerPixel, int 
 		common->Printf( "R_WritePNG: Failed to open %s\n", filename );
 		return;
 	}
+
+	stbi_flip_vertically_on_write( !flipVertical ? 1 : 0 );
 
 	//stbi_write_png_compression_level = idMath::ClampInt( 0, 9, r_screenshotPngCompression.GetInteger() );
 	stbi_write_png_to_func( WriteScreenshotForSTBIW, file, width, height, bytesPerPixel, data, bytesPerPixel * width );
