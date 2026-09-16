@@ -571,7 +571,7 @@ private:
 		}
 		bool operator==( const optionData_t& other ) const
 		{
-			return ( monitor == other.monitor ) && ( ( monitor == 0 ) || ( width == other.width && height == other.height && displayHz == other.displayHz ) );
+			return ( monitor == other.monitor ) && ( ( monitor == 0 ) || ( width == other.width && height == other.height ) );
 		}
 		int monitor; // a value of 0 means fullscreen is disabled; a value > 0 is the monitor number
 		int width;
@@ -1382,6 +1382,8 @@ public:
 		enum systemSettingFields_t
 		{
 			SYSTEM_FIELD_FULLSCREEN,
+			SYSTEM_FIELD_RESOLUTION,
+			SYSTEM_FIELD_REFRESH_RATE,
 			SYSTEM_FIELD_FRAMERATE_INT,
 			SYSTEM_FIELD_FRAMERATE_FRAC,
 			SYSTEM_FIELD_HIGH_RESOLUTION_CLOCK,
@@ -1418,6 +1420,7 @@ public:
 		int originalHighResolutionClock;
 		int originalVsync;
 		bool wentToFullscreenMenu;
+		idList<int> refreshRates;
 	};
 
 	idMenuScreen_Shell_SystemOptions() :

@@ -38,6 +38,8 @@ extern idCVar r_vidWidth;
 extern idCVar r_vidHeight;
 extern idCVar r_vidDisplayRefresh;
 extern idCVar r_swapInterval;
+extern idCVar r_windowWidth;
+extern idCVar r_windowHeight;
 
 /*
 ========================
@@ -72,12 +74,29 @@ void idMenuScreen_Shell_SystemOptions::Initialize( idMenuHandler* data )
 	AddChild( btnBack );
 
 	idMenuWidget_ControlButton* control;
+
 	control = new( TAG_SWF ) idMenuWidget_ControlButton();
 	control->SetOptionType( OPTION_SLIDER_TEXT );
 	control->SetLabel( "#str_02154" );
 	control->SetDataSource( &systemData, idMenuDataSource_SystemSettings::SYSTEM_FIELD_FULLSCREEN );
 	control->SetupEvents( DEFAULT_REPEAT_TIME, options->GetChildren().Num() );
 	control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, idMenuDataSource_SystemSettings::SYSTEM_FIELD_FULLSCREEN );
+	options->AddChild( control );
+
+	control = new( TAG_SWF ) idMenuWidget_ControlButton();
+	control->SetOptionType( OPTION_SLIDER_TEXT );
+	control->SetLabel( "#str_swf_resolution" );
+	control->SetDataSource( &systemData, idMenuDataSource_SystemSettings::SYSTEM_FIELD_RESOLUTION );
+	control->SetupEvents( DEFAULT_REPEAT_TIME, options->GetChildren().Num() );
+	control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, idMenuDataSource_SystemSettings::SYSTEM_FIELD_RESOLUTION );
+	options->AddChild( control );
+
+	control = new( TAG_SWF ) idMenuWidget_ControlButton();
+	control->SetOptionType( OPTION_SLIDER_TEXT );
+	control->SetLabel( "Refresh Rate" );
+	control->SetDataSource( &systemData, idMenuDataSource_SystemSettings::SYSTEM_FIELD_REFRESH_RATE );
+	control->SetupEvents( DEFAULT_REPEAT_TIME, options->GetChildren().Num() );
+	control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, idMenuDataSource_SystemSettings::SYSTEM_FIELD_REFRESH_RATE );
 	options->AddChild( control );
 
 	control = new( TAG_SWF ) idMenuWidget_ControlButton();
@@ -181,30 +200,7 @@ idMenuScreen_Shell_SystemOptions::ShowScreen
 */
 void idMenuScreen_Shell_SystemOptions::ShowScreen( const mainMenuTransition_t transitionType )
 {
-
 	systemData.LoadData();
-	if( options != NULL )
-	{
-		idMenuWidget_ControlButton* controlFullscreen = dynamic_cast<idMenuWidget_ControlButton*>( &options->GetChildByIndex( idMenuDataSource_SystemSettings::SYSTEM_FIELD_FULLSCREEN ) );
-		if( controlFullscreen )
-		{
-			if( r_vidFullscreen.GetInteger() == 1 && r_vidMode.GetInteger() == 0 )
-			{
-				idStr str;
-				str.Append( va( "%s %d: ", idLocalization::GetString( "#str_swf_monitor" ), r_vidMonitor.GetInteger() ) );
-				str.Append( va( "%d x %d", r_vidWidth.GetInteger(), r_vidHeight.GetInteger() ) );
-				if( r_vidDisplayRefresh.GetInteger() > 0 )
-				{
-					str.Append( va( " @ %dhz", r_vidDisplayRefresh.GetInteger() ) );
-				}
-				controlFullscreen->SetDescription( str.c_str() );
-			}
-			else
-			{
-				controlFullscreen->SetDescription( "" );
-			}
-		}
-	}
 
 	idMenuScreen::ShowScreen( transitionType );
 }
@@ -243,6 +239,10 @@ void idMenuScreen_Shell_SystemOptions::HideScreen( const mainMenuTransition_t tr
 					if( cmdLine.Find( "com_skipIntroVideos" ) < 0 )
 					{
 						cmdLine.Append( " +set com_skipIntroVideos 1" );
+					}
+					if( cmdLine.Find( "com_skipLegalScreens" ) < 0 )
+					{
+						cmdLine.Append( " +set com_skipLegalScreens 1" );
 					}
 					sys->ReLaunch( ( void* )cmdLine.c_str() );
 				}
@@ -302,18 +302,16 @@ bool idMenuScreen_Shell_SystemOptions::HandleAction( idWidgetAction& action, con
 	{
 		if( widget )
 		{
-			if( widget->GetDataSourceFieldIndex() == idMenuDataSource_SystemSettings::SYSTEM_FIELD_FULLSCREEN )
-			{
-				menuData->SetNextScreen( SHELL_AREA_RESOLUTION, MENU_TRANSITION_SIMPLE );
-				return true;
-			}
-			else if( widget->GetDataSourceFieldIndex() == idMenuDataSource_SystemSettings::SYSTEM_FIELD_FRAMERATE_INT || widget->GetDataSourceFieldIndex() == idMenuDataSource_SystemSettings::SYSTEM_FIELD_FRAMERATE_FRAC )
+			if( widget->GetDataSourceFieldIndex() == idMenuDataSource_SystemSettings::SYSTEM_FIELD_FULLSCREEN ||
+				widget->GetDataSourceFieldIndex() == idMenuDataSource_SystemSettings::SYSTEM_FIELD_FRAMERATE_INT ||
+				widget->GetDataSourceFieldIndex() == idMenuDataSource_SystemSettings::SYSTEM_FIELD_FRAMERATE_FRAC )
 			{
 				if( widget->GetDataSource() == NULL || widget->GetParent() == NULL || parms.Num() < 1 )
 				{
 					return true;
 				}
 				widget->GetDataSource()->AdjustField( widget->GetDataSourceFieldIndex(), parms[0].ToInteger() );
+				widget->GetParent()->GetChildByIndex( idMenuDataSource_SystemSettings::SYSTEM_FIELD_FULLSCREEN ).Update();
 				widget->GetParent()->GetChildByIndex( idMenuDataSource_SystemSettings::SYSTEM_FIELD_FRAMERATE_INT ).Update();
 				widget->GetParent()->GetChildByIndex( idMenuDataSource_SystemSettings::SYSTEM_FIELD_FRAMERATE_FRAC ).Update();
 				return true;
@@ -331,7 +329,7 @@ bool idMenuScreen_Shell_SystemOptions::HandleAction( idWidgetAction& action, con
 		{
 			selectionIndex = parms[0].ToInteger();
 		}
-		if( selectionIndex == idMenuDataSource_SystemSettings::SYSTEM_FIELD_FULLSCREEN )
+		else if( selectionIndex == idMenuDataSource_SystemSettings::SYSTEM_FIELD_RESOLUTION )
 		{
 			menuData->SetNextScreen( SHELL_AREA_RESOLUTION, MENU_TRANSITION_SIMPLE );
 		}
@@ -393,6 +391,57 @@ void idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings::LoadData
 	}
 	originalHighResolutionClock = com_hiResClock.GetInteger();
 	originalVsync = r_swapInterval.GetInteger();
+
+	// Rebuild the refresh-rate list for the current resolution.
+	refreshRates.Clear();
+	refreshRates.Append( 0 );
+
+	if( idDeviceManager::GetInstance() != NULL )
+	{
+		int displayIdx = r_vidMonitor.GetInteger() - 1;
+		if( displayIdx < 0 )
+		{
+			displayIdx = 0;
+		}
+
+		int width = r_vidWidth.GetInteger();
+		int height = r_vidHeight.GetInteger();
+		if( r_vidFullscreen.GetInteger() == 0 )
+		{
+			// In windows mode the effective resolution is the window size.
+			width = r_windowWidth.GetInteger();
+			height = r_windowHeight.GetInteger();
+		}
+
+		idList<int> rates;
+		if( idDeviceManager::GetInstance()->GetRefreshRatesForDisplay( displayIdx, width, height, rates ) )
+		{
+			for( int i = 0; i < rates.Num(); i++ )
+			{
+				refreshRates.Append( rates[i] );
+			}
+		}
+	}
+
+	// If the currently selected rate is not available at this resolution,
+	// fall back to Auto.
+	const int curRate = r_vidDisplayRefresh.GetInteger();
+	if( curRate != 0 )
+	{
+		bool found = false;
+		for( int i = 0; i < refreshRates.Num(); i++ )
+		{
+			if( refreshRates[i] == curRate )
+			{
+				found = true;
+				break;
+			}
+		}
+		if( !found )
+		{
+			r_vidDisplayRefresh.SetInteger( 0 );
+		}
+	}
 }
 
 /*
@@ -469,6 +518,72 @@ void idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings::AdjustFi
 	}
 	switch( fieldIndex )
 	{
+		case idMenuDataSource_SystemSettings::SYSTEM_FIELD_FULLSCREEN:
+		{
+			static const int numValues = 3;
+			static const int values[numValues] = { -1, 0, 1 };
+
+			int current = r_vidFullscreen.GetInteger();
+			if( current == -2 )
+			{
+				current = 1;
+			}
+			const int next = AdjustOption( current, values, numValues, adjustAmount );
+
+			if( next != current )
+			{
+				r_vidFullscreen.SetInteger( next );
+
+				static int lastVidRestartQueueTime = 0;
+				const int now = ( int )Sys_Milliseconds();
+				if( now - lastVidRestartQueueTime > 500 )
+				{
+					lastVidRestartQueueTime = now;
+					cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "vid_restart\n" );
+				}
+			}
+			break;
+		}
+		case idMenuDataSource_SystemSettings::SYSTEM_FIELD_REFRESH_RATE:
+		{
+			if( refreshRates.Num() == 0 )
+			{
+				break;
+			}
+
+			int currentRate = r_vidDisplayRefresh.GetInteger();
+			int idx = 0;
+			for( int i = 0; i < refreshRates.Num(); i++ )
+			{
+				if( refreshRates[i] == currentRate )
+				{
+					idx = i;
+					break;
+				}
+			}
+
+			idx += adjustAmount;
+			while( idx < 0 )
+			{
+				idx += refreshRates.Num();
+			}
+			idx %= refreshRates.Num();
+
+			const int newRate = refreshRates[idx];
+			if( newRate != currentRate )
+			{
+				r_vidDisplayRefresh.SetInteger( newRate );
+
+				static int lastRefreshRestartTime = 0;
+				const int now = ( int )Sys_Milliseconds();
+				if( now - lastRefreshRestartTime > 500 )
+				{
+					lastRefreshRestartTime = now;
+					cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "vid_restart\n" );
+				}
+			}
+			break;
+		}
 		case idMenuDataSource_SystemSettings::SYSTEM_FIELD_FRAMERATE_INT:
 		{
 			float engineHz = com_engineHz.GetFloat();
@@ -537,24 +652,29 @@ idSWFScriptVar idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings
 	{
 		case idMenuDataSource_SystemSettings::SYSTEM_FIELD_FULLSCREEN:
 		{
-			const int fullscreen = r_vidFullscreen.GetInteger();
-			const int vidmode = r_vidMode.GetInteger();
-			if( fullscreen == 0 )
+			const int fs = r_vidFullscreen.GetInteger();
+			if( fs == -1 )
 			{
-				return "#str_swf_disabled";
+				return "Borderless";
 			}
-			if( fullscreen == -1 || vidmode == -1 )
+			if( fs == 0 )
 			{
-				return "???";
+				return "Windowed";
 			}
-			if( r_vidDisplayRefresh.GetInteger() > 0 )
+			return "Fullscreen";
+		}
+		case idMenuDataSource_SystemSettings::SYSTEM_FIELD_RESOLUTION:
+		{
+			return va( "%dx%d", r_windowWidth.GetInteger(), r_windowHeight.GetInteger() );
+		}
+		case idMenuDataSource_SystemSettings::SYSTEM_FIELD_REFRESH_RATE:
+		{
+			const int rate = r_vidDisplayRefresh.GetInteger();
+			if( rate == 0 )
 			{
-				return va( "%dx%d %dhz", r_vidWidth.GetInteger(), r_vidHeight.GetInteger(), r_vidDisplayRefresh.GetInteger() );
+				return "Auto";
 			}
-			else
-			{
-				return va( "%dx%d", r_vidWidth.GetInteger(), r_vidHeight.GetInteger() );
-			}
+			return va( "%d Hz", rate );
 		}
 		case idMenuDataSource_SystemSettings::SYSTEM_FIELD_FRAMERATE_INT:
 		{
@@ -729,4 +849,3 @@ void idMenuWidget_SystemOptionsList::Scroll( const int scrollAmount, const bool 
 	//idLib::Printf( "scroll = %i, index = %i -> %i, offset = %i -> %i, focus = %i -> %i\n", scrollAmount, oldViewIndex, newIndex, oldViewOffset, newOffset, oldFocusIndex, GetFocusIndex() );
 }
 // RB end
-

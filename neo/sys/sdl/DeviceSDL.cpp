@@ -699,6 +699,8 @@ static void Sys_Frame()
 			wxTheApp->Dispatch();
 		}
 	}
+
+	SDL_PumpEvents();
 }
 
 /*

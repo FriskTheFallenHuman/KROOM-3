@@ -167,16 +167,16 @@ void idMenuScreen_Shell_Resolution::ShowScreen( const mainMenuTransition_t trans
 	originalVidMode = r_vidMode.GetInteger();
 
 	idList< idList< idStr, TAG_IDLIB_LIST_MENU >, TAG_IDLIB_LIST_MENU > menuOptions;
-	menuOptions.Alloc().Alloc() = "#str_swf_disabled";
 	optionData.Clear();
-	optionData.Append( optionData_t( 0, 0, 0, 0 ) ); // monitor == 0 in optionData_t means fullscreen disabled
 
 	int viewIndex = 0;
 	idList< idList<vidMode_t> > displays;
-	for( int displayNum = 0; ; displayNum++ )
+
+	const int numDisplays = ( idDeviceManager::GetInstance() && idDeviceManager::GetInstance()->GetNumVideoDisplays() );
+	for( int displayNum = 0; displayNum < numDisplays; ++displayNum )
 	{
 		idList<vidMode_t>& modeList = displays.Alloc();
-		if( !idDeviceManager::GetInstance() && idDeviceManager::GetInstance()->GetModeListForDisplay( displayNum, modeList, 600 ) ) // get modes with height >= 600 only
+		if( !idDeviceManager::GetInstance() || !idDeviceManager::GetInstance()->GetModeListForDisplay( displayNum, modeList, 600 ) ) // get modes with height >= 600 only
 		{
 			displays.RemoveIndex( displays.Num() - 1 );
 			break;
@@ -185,23 +185,48 @@ void idMenuScreen_Shell_Resolution::ShowScreen( const mainMenuTransition_t trans
 	for( int displayNum = 0; displayNum < displays.Num(); displayNum++ )
 	{
 		idList<vidMode_t>& modeList = displays[displayNum];
+
+		idList<vidMode_t> uniqueModes;
 		for( int i = 0; i < modeList.Num(); i++ )
 		{
-			const optionData_t thisOption( displayNum + 1, modeList[i].width, modeList[i].height, modeList[i].displayHz );
-			if( originalFullscreen == 1 && originalVidMode == 0 && originalOption == thisOption )
+			const vidMode_t& m = modeList[i];
+			bool merged = false;
+			for( int j = 0; j < uniqueModes.Num(); j++ )
+			{
+				if( uniqueModes[j].width == m.width && uniqueModes[j].height == m.height )
+				{
+					if( m.displayHz > uniqueModes[j].displayHz )
+					{
+						uniqueModes[j].displayHz = m.displayHz;
+					}
+					merged = true;
+					break;
+				}
+			}
+			if( !merged )
+			{
+				uniqueModes.Append( m );
+			}
+		}
+
+		for( int i = 0; i < uniqueModes.Num(); i++ )
+		{
+			const vidMode_t& m = uniqueModes[i];
+			const optionData_t thisOption( displayNum + 1, m.width, m.height, m.displayHz );
+
+			// Mark the currently selected resolution as the focused entry.
+			if( originalVidMode == 0 && originalOption == thisOption )
 			{
 				viewIndex = menuOptions.Num();
 			}
+
 			idStr str;
 			if( displays.Num() > 1 )
 			{
 				str.Append( va( "%s %d: ", idLocalization::GetString( "#str_swf_monitor" ), displayNum + 1 ) );
 			}
-			str.Append( va( "%d x %d", modeList[i].width, modeList[i].height ) );
-			if( modeList[i].displayHz > 0 )
-			{
-				str.Append( va( " @ %dhz", modeList[i].displayHz ) );
-			}
+			str.Append( va( "%d x %d", m.width, m.height ) );
+
 			menuOptions.Alloc().Alloc() = str;
 			optionData.Append( thisOption );
 		}
@@ -288,81 +313,108 @@ bool idMenuScreen_Shell_Resolution::HandleAction( idWidgetAction& action, const 
 				}
 				const optionData_t& currentOption = optionData[options->GetViewIndex()];
 
-				if( ( originalFullscreen == 0 && currentOption.monitor == 0 ) || ( originalFullscreen == 1 && originalVidMode == 0 && currentOption == originalOption ) )
+				if( originalVidMode == 0 && currentOption == originalOption )
 				{
-					// Adjust framerate only
-					R_AdjustFramerateFromDisplayHz( currentOption.displayHz ); // in case currentOption.monitor is 0 (windowed), currentOption.displayHz is also 0 and the default framerate will be set
-					menuData->SetNextScreen( SHELL_AREA_SYSTEM_OPTIONS, MENU_TRANSITION_SIMPLE );
-				}
-				else if( currentOption.monitor == 0 )
-				{
-					// Changing to windowed mode
-					r_vidFullscreen.SetInteger( 0 );
-					cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "vid_restart\n" );
-					R_AdjustFramerateFromDisplayHz( 0 ); // set the default framerate
+					// Same resolution as before? nothing to do.
 					menuData->SetNextScreen( SHELL_AREA_SYSTEM_OPTIONS, MENU_TRANSITION_SIMPLE );
 				}
 				else
 				{
-					// Changing to fullscreen mode
-					r_vidFullscreen.SetInteger( 1 );
+					// Change the resolution.
 					r_vidMode.SetInteger( 0 );
 					r_vidMonitor.SetInteger( currentOption.monitor );
 					r_vidWidth.SetInteger( currentOption.width );
 					r_vidHeight.SetInteger( currentOption.height );
-					r_vidDisplayRefresh.SetInteger( currentOption.displayHz );
+					r_windowWidth.SetInteger( currentOption.width );
+					r_windowHeight.SetInteger( currentOption.height );
+
+					// If the current refresh rate is not available at the new
+					// resolution, fall back to auto.
+					const int curRate = r_vidDisplayRefresh.GetInteger();
+					if( curRate != 0 && idDeviceManager::GetInstance() != NULL )
+					{
+						idList<int> rates;
+						bool found = false;
+						if( idDeviceManager::GetInstance()->GetRefreshRatesForDisplay( currentOption.monitor - 1, currentOption.width, currentOption.height, rates ) )
+						{
+							for( int i = 0; i < rates.Num(); i++ )
+							{
+								if( rates[i] == curRate )
+								{
+									found = true;
+									break;
+								}
+							}
+						}
+						if( !found )
+						{
+							r_vidDisplayRefresh.SetInteger( 0 );
+						}
+					}
+
 					cvarSystem->ClearModifiedFlags( CVAR_ARCHIVE );
 					cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "vid_restart\n" );
 
-					class idSWFFuncAcceptVideoChanges : public idSWFScriptFunction_RefCounted
+					if( r_vidFullscreen.GetInteger() > 0 )
 					{
-					public:
-						idSWFFuncAcceptVideoChanges( idMenuHandler* _menu, gameDialogMessages_t _msg, const optionData_t& _optionData, int _fullscreen, int _vidMode, bool _accept )
+						class idSWFFuncAcceptVideoChanges : public idSWFScriptFunction_RefCounted
 						{
-							menuHandler = _menu;
-							msg = _msg;
-							optionData = _optionData;
-							fullscreen = _fullscreen;
-							vidMode = _vidMode;
-							accept = _accept;
-						}
-						idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
-						{
-							common->Dialog().ClearDialog( msg );
-							if( accept )
+						public:
+							idSWFFuncAcceptVideoChanges( idMenuHandler* _menu, gameDialogMessages_t _msg, const optionData_t& _optionData, int _fullscreen, int _vidMode, bool _accept )
 							{
-								R_AdjustFramerateFromDisplayHz( optionData.displayHz );
-								cvarSystem->SetModifiedFlags( CVAR_ARCHIVE );
-								if( menuHandler != NULL )
+								menuHandler = _menu;
+								msg = _msg;
+								optionData = _optionData;
+								fullscreen = _fullscreen;
+								vidMode = _vidMode;
+								accept = _accept;
+							}
+							idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
+							{
+								common->Dialog().ClearDialog( msg );
+								if( accept )
 								{
-									menuHandler->SetNextScreen( SHELL_AREA_SYSTEM_OPTIONS, MENU_TRANSITION_SIMPLE );
+									R_AdjustFramerateFromDisplayHz( optionData.displayHz );
+									cvarSystem->SetModifiedFlags( CVAR_ARCHIVE );
+									if( menuHandler != NULL )
+									{
+										menuHandler->SetNextScreen( SHELL_AREA_SYSTEM_OPTIONS, MENU_TRANSITION_SIMPLE );
+									}
 								}
+								else
+								{
+									r_vidFullscreen.SetInteger( fullscreen );
+									r_vidMode.SetInteger( vidMode );
+									r_vidMonitor.SetInteger( optionData.monitor );
+									r_vidWidth.SetInteger( optionData.width );
+									r_vidHeight.SetInteger( optionData.height );
+									r_vidDisplayRefresh.SetInteger( optionData.displayHz );
+									cvarSystem->ClearModifiedFlags( CVAR_ARCHIVE );
+									// this callback is called from the game thread if the revert timer expires, and since
+									// vid_restart must be called from the main thread, CMD_EXEC_APPEND "must be" used here
+									// with BufferCommandText instead of CMD_EXEC_NOW
+									cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "vid_restart\n" );
+								}
+								return idSWFScriptVar();
 							}
-							else
-							{
-								r_vidFullscreen.SetInteger( fullscreen );
-								r_vidMode.SetInteger( vidMode );
-								r_vidMonitor.SetInteger( optionData.monitor );
-								r_vidWidth.SetInteger( optionData.width );
-								r_vidHeight.SetInteger( optionData.height );
-								r_vidDisplayRefresh.SetInteger( optionData.displayHz );
-								cvarSystem->ClearModifiedFlags( CVAR_ARCHIVE );
-								// this callback is called from the game thread if the revert timer expires, and since
-								// vid_restart must be called from the main thread, CMD_EXEC_APPEND "must be" used here
-								// with BufferCommandText instead of CMD_EXEC_NOW
-								cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "vid_restart\n" );
-							}
-							return idSWFScriptVar();
-						}
-					private:
-						idMenuHandler* menuHandler;
-						gameDialogMessages_t msg;
-						optionData_t optionData;
-						int fullscreen;
-						int vidMode;
-						bool accept;
-					};
-					common->Dialog().AddDialog( GDM_CONFIRM_VIDEO_CHANGES, DIALOG_TIMER_ACCEPT_REVERT, new( TAG_SWF ) idSWFFuncAcceptVideoChanges( menuData, GDM_CONFIRM_VIDEO_CHANGES, currentOption, 1, 0, true ), new( TAG_SWF ) idSWFFuncAcceptVideoChanges( menuData, GDM_CONFIRM_VIDEO_CHANGES, originalOption, originalFullscreen, originalVidMode, false ), true );
+						private:
+							idMenuHandler* menuHandler;
+							gameDialogMessages_t msg;
+							optionData_t optionData;
+							int fullscreen;
+							int vidMode;
+							bool accept;
+						};
+						common->Dialog().AddDialog( GDM_CONFIRM_VIDEO_CHANGES, DIALOG_TIMER_ACCEPT_REVERT,
+												   new( TAG_SWF ) idSWFFuncAcceptVideoChanges( menuData, GDM_CONFIRM_VIDEO_CHANGES, currentOption, 1, 0, true ),
+												   new( TAG_SWF ) idSWFFuncAcceptVideoChanges( menuData, GDM_CONFIRM_VIDEO_CHANGES, originalOption, originalFullscreen, originalVidMode, false ),
+												   true );
+					}
+					else
+					{
+						R_AdjustFramerateFromDisplayHz( currentOption.displayHz );
+						menuData->SetNextScreen( SHELL_AREA_SYSTEM_OPTIONS, MENU_TRANSITION_SIMPLE );
+					}
 				}
 				return true;
 			}
