@@ -79,8 +79,8 @@ idCVar r_vidCustomWidth( "r_vidCustomWidth", "1280", CVAR_RENDERER | CVAR_ARCHIV
 idCVar r_vidCustomHeight( "r_vidCustomHeight", "720", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "custom fullscreen height when r_vidMode is -1", 0, idMath::MAX_INT );
 idCVar r_vidCustomDisplayRefresh( "r_vidCustomDisplayRefresh", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "custom fullscreen display refresh rate when r_vidMode is -1; this cvar can be 0, which means not specified", 0, idMath::MAX_INT );
 idCVar r_vidConfigRunOnce( "r_vidConfigRunOnce", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "if 0 run default video config on init. becomes 1 automatically." );
-idCVar r_windowX( "r_windowX", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "Non-fullscreen parameter" );
-idCVar r_windowY( "r_windowY", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "Non-fullscreen parameter" );
+idCVar r_windowX( "r_windowX", "-1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "Non-fullscreen parameter" );
+idCVar r_windowY( "r_windowY", "-1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "Non-fullscreen parameter" );
 idCVar r_windowWidth( "r_windowWidth", "1280", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "Non-fullscreen parameter" );
 idCVar r_windowHeight( "r_windowHeight", "720", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "Non-fullscreen parameter" );
 idCVar r_aspectRatio( "r_aspectRatio", "-1", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "aspect ratio\n0 is 4:3\n1 is 16:9\n2 is 16:10\n3 is 5:4\n 4 uses r_customAspectRatioH and r_customAspectRatioV\n-1 auto guess from resolution", -1, 4 );
