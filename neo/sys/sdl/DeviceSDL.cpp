@@ -704,6 +704,31 @@ static void Sys_Frame()
 }
 
 /*
+====================
+Sys_IsDroppedFolder
+
+ref: https://en.cppreference.com/cpp/filesystem/exists
+	 https://en.cppreference.com/cpp/filesystem/is_directory
+====================
+*/
+static std::vector<fs::path> Sys_IsDroppedFolder( int argc, char* argv[] )
+{
+	std::vector<fs::path> droppedFolders;
+
+	for( int i = 1; i < argc; ++i )
+	{
+		fs::path pathToCheck( argv[i] );
+
+		if( fs::exists( pathToCheck ) && Sys_IsFolder( pathToCheck.string().c_str() ) )
+		{
+			droppedFolders.push_back( pathToCheck );
+		}
+	}
+
+	return droppedFolders;
+}
+
+/*
 ==================
 main
 ==================
@@ -724,6 +749,38 @@ int main( int argc, char* argv[] )
 		if( i < argc - 1 )
 		{
 			strcat( sys_cmdline, " " );
+		}
+	}
+
+	// Check if we are dorpping a folder
+	std::vector<fs::path> folder = Sys_IsDroppedFolder( argc, argv );
+	if( !folder.empty() )
+	{
+		// only allow two folders.
+		if( folder.size() > 2 )
+		{
+			folder.resize( 2 );
+		}
+
+		char dropArgs[2 * MAX_OSPATH + 64];
+		dropArgs[0] = '\0';
+
+		// The first folder its fs_game
+		const std::string gameName = folder[0].lexically_normal().filename().string();
+		idStr::snPrintf( dropArgs, sizeof( dropArgs ), " +set fs_game \"%s\"", gameName.c_str() );
+
+		// The second folder its fs_game_base
+		if( folder.size() >= 2 )
+		{
+			const std::string gameBaseName = folder[1].lexically_normal().filename().string();
+			char extra[MAX_OSPATH + 32];
+			idStr::snPrintf( extra, sizeof( extra ), " +set fs_game_base \"%s\"", gameBaseName.c_str() );
+			strcat( dropArgs, extra );
+		}
+
+		if( strlen( sys_cmdline ) + strlen( dropArgs ) < sizeof( sys_cmdline ) )
+		{
+			strcat( sys_cmdline, dropArgs );
 		}
 	}
 

@@ -303,8 +303,8 @@ bool idMenuScreen_Shell_SystemOptions::HandleAction( idWidgetAction& action, con
 		if( widget )
 		{
 			if( widget->GetDataSourceFieldIndex() == idMenuDataSource_SystemSettings::SYSTEM_FIELD_FULLSCREEN ||
-				widget->GetDataSourceFieldIndex() == idMenuDataSource_SystemSettings::SYSTEM_FIELD_FRAMERATE_INT ||
-				widget->GetDataSourceFieldIndex() == idMenuDataSource_SystemSettings::SYSTEM_FIELD_FRAMERATE_FRAC )
+					widget->GetDataSourceFieldIndex() == idMenuDataSource_SystemSettings::SYSTEM_FIELD_FRAMERATE_INT ||
+					widget->GetDataSourceFieldIndex() == idMenuDataSource_SystemSettings::SYSTEM_FIELD_FRAMERATE_FRAC )
 			{
 				if( widget->GetDataSource() == NULL || widget->GetParent() == NULL || parms.Num() < 1 )
 				{
