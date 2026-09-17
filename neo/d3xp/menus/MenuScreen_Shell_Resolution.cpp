@@ -406,9 +406,9 @@ bool idMenuScreen_Shell_Resolution::HandleAction( idWidgetAction& action, const 
 							bool accept;
 						};
 						common->Dialog().AddDialog( GDM_CONFIRM_VIDEO_CHANGES, DIALOG_TIMER_ACCEPT_REVERT,
-												   new( TAG_SWF ) idSWFFuncAcceptVideoChanges( menuData, GDM_CONFIRM_VIDEO_CHANGES, currentOption, 1, 0, true ),
-												   new( TAG_SWF ) idSWFFuncAcceptVideoChanges( menuData, GDM_CONFIRM_VIDEO_CHANGES, originalOption, originalFullscreen, originalVidMode, false ),
-												   true );
+													new( TAG_SWF ) idSWFFuncAcceptVideoChanges( menuData, GDM_CONFIRM_VIDEO_CHANGES, currentOption, 1, 0, true ),
+													new( TAG_SWF ) idSWFFuncAcceptVideoChanges( menuData, GDM_CONFIRM_VIDEO_CHANGES, originalOption, originalFullscreen, originalVidMode, false ),
+													true );
 					}
 					else
 					{
