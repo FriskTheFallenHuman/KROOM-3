@@ -580,11 +580,11 @@ void idBrittleFracture::Present()
 	// add to refresh list
 	if( modelDefHandle == -1 )
 	{
-		modelDefHandle = gameRenderWorld->AddEntityDef( &renderEntity );
+		modelDefHandle = gameRenderWorld->AddRenderEntity( &renderEntity );
 	}
 	else
 	{
-		gameRenderWorld->UpdateEntityDef( modelDefHandle, &renderEntity );
+		renderEntity.CommitThisFrame();
 	}
 
 	changed = true;

@@ -3,8 +3,6 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
-Copyright (C) 2014-2016 Robert Beckebans
-Copyright (C) 2014-2016 Kot in Action Creative Artel
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -33,136 +31,63 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "RenderCommon.h"
 
-idRenderEntityLocal::idRenderEntityLocal()
+idRenderEntity::idRenderEntity()
 {
-	memset( &parms, 0, sizeof( parms ) );
-	memset( modelMatrix, 0, sizeof( modelMatrix ) );
-
-	world					= NULL;
-	index					= 0;
-	lastModifiedFrameNum	= 0;
-	archived				= false;
-	dynamicModel			= NULL;
-	dynamicModelFrameCount	= 0;
-	cachedDynamicModel		= NULL;
-	localReferenceBounds	= bounds_zero;
-	globalReferenceBounds	= bounds_zero;
-	viewCount				= 0;
-	viewEntity				= NULL;
-	decals					= NULL;
-	overlays				= NULL;
-	entityRefs				= NULL;
-	firstInteraction		= NULL;
-	lastInteraction			= NULL;
-	needsPortalSky			= false;
+	memset( static_cast< renderEntity_t* >( this ), 0, sizeof( renderEntity_t ) );
+	world = NULL;
+	index = -1;
+	committed = NULL;
+	needsCommit = false;
+	needsCommit = false;
 }
 
-void idRenderEntityLocal::FreeRenderEntity()
+idRenderEntity::~idRenderEntity()
 {
+	FreeRenderEntity();
 }
 
-void idRenderEntityLocal::UpdateRenderEntity( const renderEntity_t* re, bool forceUpdate )
+void idRenderEntity::CommitThisFrame( bool forceUpdate )
 {
+	if( world != NULL && index >= 0 )
+	{
+		if( forceUpdate )
+		{
+			this->forceUpdate = true;
+		}
+		world->QueueRenderEntity( this );
+	}
 }
 
-void idRenderEntityLocal::GetRenderEntity( renderEntity_t* re )
+void idRenderEntity::FreeRenderEntity()
 {
+	if( world != NULL && index >= 0 )
+	{
+		world->FreeEntityDef( index );
+	}
 }
 
-void idRenderEntityLocal::ForceUpdate()
+void idRenderEntity::ForceUpdate()
 {
+	CommitThisFrame( true );
 }
 
-int idRenderEntityLocal::GetIndex()
+void idRenderEntity::ProjectOverlay( const idPlane localTextureAxis[2], const idMaterial* material )
 {
-	return index;
+	if( world != NULL && index >= 0 )
+	{
+		world->ProjectOverlay( index, localTextureAxis, material, 0 );
+	}
 }
 
-void idRenderEntityLocal::ProjectOverlay( const idPlane localTextureAxis[2], const idMaterial* material )
+void idRenderEntity::RemoveDecals()
 {
-}
-void idRenderEntityLocal::RemoveDecals()
-{
-}
-
-//======================================================================
-
-idRenderLightLocal::idRenderLightLocal()
-{
-	memset( &parms, 0, sizeof( parms ) );
-	memset( lightProject, 0, sizeof( lightProject ) );
-
-	lightHasMoved			= false;
-	world					= NULL;
-	index					= 0;
-	areaNum					= 0;
-	lastModifiedFrameNum	= 0;
-	archived				= false;
-	lightShader				= NULL;
-	falloffImage			= NULL;
-	globalLightOrigin		= vec3_zero;
-	viewCount				= 0;
-	viewLight				= NULL;
-	references				= NULL;
-	foggedPortals			= NULL;
-	firstInteraction		= NULL;
-	lastInteraction			= NULL;
-
-	baseLightProject.Zero();
-	inverseBaseLightProject.Zero();
+	if( world != NULL && index >= 0 )
+	{
+		world->RemoveDecals( index );
+	}
 }
 
-void idRenderLightLocal::FreeRenderLight()
-{
-}
-void idRenderLightLocal::UpdateRenderLight( const renderLight_t* re, bool forceUpdate )
-{
-}
-void idRenderLightLocal::GetRenderLight( renderLight_t* re )
-{
-}
-void idRenderLightLocal::ForceUpdate()
-{
-}
-int idRenderLightLocal::GetIndex()
-{
-	return index;
-}
-
-//======================================================================
-
-RenderEnvprobeLocal::RenderEnvprobeLocal()
-{
-	memset( &parms, 0, sizeof( parms ) );
-
-	envprobeHasMoved		= false;
-	world					= NULL;
-	index					= 0;
-	areaNum					= 0;
-	lastModifiedFrameNum	= 0;
-	archived				= false;
-	references				= NULL;
-}
-
-void RenderEnvprobeLocal::FreeRenderEnvprobe()
-{
-}
-void RenderEnvprobeLocal::UpdateRenderEnvprobe( const renderEnvironmentProbe_t* ep, bool forceUpdate )
-{
-}
-void RenderEnvprobeLocal::GetRenderEnvprobe( renderEnvironmentProbe_t* ep )
-{
-}
-void RenderEnvprobeLocal::ForceUpdate()
-{
-}
-int RenderEnvprobeLocal::GetIndex()
-{
-	return index;
-}
-
-
-void idRenderEntityLocal::ReadFromDemoFile( class idDemoFile* f )
+void idRenderEntityCommitted::ReadFromDemoFile( class idDemoFile* f )
 {
 	int i;
 	renderEntity_t ent;
@@ -282,7 +207,7 @@ void idRenderEntityLocal::ReadFromDemoFile( class idDemoFile* f )
 		common->Printf( "DC_UPDATE_ENTITYDEF: %i = %s\n", index, parms.hModel ? parms.hModel->Name() : "NULL" );
 	}
 }
-void idRenderEntityLocal::WriteToDemoFile( class idDemoFile* f ) const
+void idRenderEntityCommitted::WriteToDemoFile( class idDemoFile* f ) const
 {
 	f->WriteInt( index );
 	f->WriteInt( dynamicModelFrameCount );
@@ -361,4 +286,133 @@ void idRenderEntityLocal::WriteToDemoFile( class idDemoFile* f ) const
 	{
 		common->Printf( "write DC_UPDATE_ENTITYDEF: %i = %s\n", index, parms.hModel ? parms.hModel->Name() : "NULL" );
 	}
+}
+
+idRenderLight::idRenderLight()
+{
+	memset( static_cast< renderLight_t* >( this ), 0, sizeof( renderLight_t ) );
+	world = NULL;
+	index = -1;
+	committed = NULL;
+}
+
+idRenderLight::~idRenderLight()
+{
+	FreeRenderLight();
+}
+
+void idRenderLight::CommitThisFrame( bool forceUpdate )
+{
+	if( world != NULL && index >= 0 )
+	{
+		tr.pc.c_lightCommitRequests++;
+		needsCommit = true;
+	}
+}
+
+void idRenderLight::FreeRenderLight()
+{
+	if( world != NULL && index >= 0 )
+	{
+		world->FreeLightDef( index );
+	}
+}
+
+void idRenderLight::ForceUpdate()
+{
+	CommitThisFrame( true );
+}
+
+idRenderEntityCommitted::idRenderEntityCommitted()
+{
+	memset( &parms, 0, sizeof( parms ) );
+	memset( modelMatrix, 0, sizeof( modelMatrix ) );
+	owner					= NULL;
+
+	world					= NULL;
+	index					= 0;
+	lastModifiedFrameNum	= 0;
+	archived				= false;
+	dynamicModel			= NULL;
+	dynamicModelFrameCount	= 0;
+	cachedDynamicModel		= NULL;
+	localReferenceBounds	= bounds_zero;
+	globalReferenceBounds	= bounds_zero;
+	viewCount				= 0;
+	viewEntity				= NULL;
+	decals					= NULL;
+	overlays				= NULL;
+	entityRefs				= NULL;
+
+	needsPortalSky			= false;
+}
+
+//======================================================================
+
+idRenderLightCommitted::idRenderLightCommitted()
+{
+	memset( &parms, 0, sizeof( parms ) );
+	memset( lightProject, 0, sizeof( lightProject ) );
+
+	lightHasMoved			= false;
+	world					= NULL;
+	index					= 0;
+	areaNum					= 0;
+	lastModifiedFrameNum	= 0;
+	archived				= false;
+	lightShader				= NULL;
+	falloffImage			= NULL;
+	globalLightOrigin		= vec3_zero;
+	viewCount				= 0;
+	viewLight				= NULL;
+	references				= NULL;
+	needsReferences			= false;
+	foggedPortals			= NULL;
+
+	baseLightProject.Zero();
+	inverseBaseLightProject.Zero();
+}
+
+idRenderLightLocal::idRenderLightLocal() : idRenderLightCommitted()
+{
+	memset( &gameParms, 0, sizeof( gameParms ) );
+	owner = NULL;
+	stagedLightShader = NULL;
+	stagedFalloffImage = NULL;
+	needsCommit = false;
+	needsPostCommit = false;
+}
+
+//======================================================================
+
+RenderEnvprobeLocal::RenderEnvprobeLocal()
+{
+	memset( &parms, 0, sizeof( parms ) );
+
+	envprobeHasMoved		= false;
+	world					= NULL;
+	index					= 0;
+	areaNum					= 0;
+	lastModifiedFrameNum	= 0;
+	archived				= false;
+
+	references				= NULL;
+}
+
+
+void RenderEnvprobeLocal::FreeRenderEnvprobe()
+{
+}
+void RenderEnvprobeLocal::UpdateRenderEnvprobe( const renderEnvironmentProbe_t* ep, bool forceUpdate )
+{
+}
+void RenderEnvprobeLocal::GetRenderEnvprobe( renderEnvironmentProbe_t* ep )
+{
+}
+void RenderEnvprobeLocal::ForceUpdate()
+{
+}
+int RenderEnvprobeLocal::GetIndex()
+{
+	return index;
 }

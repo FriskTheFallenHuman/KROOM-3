@@ -525,9 +525,8 @@ float idConsoleLocal::DrawFPS( float y )
 						commonLocal.stats_frontend.c_mocIndexes );
 		CREATE_OVERLAY( gmaskcull, timeStr, JUSTIFY_RIGHT, colorLtGrey, false );
 
-		timeStr.Format( "ADDMODEL: callback:%-2i createInteractions:%i createShadowVolumes:%i",
+		timeStr.Format( "ADDMODEL: callback:%-2i createShadowVolumes:%i",
 						commonLocal.stats_frontend.c_entityDefCallbacks,
-						commonLocal.stats_frontend.c_createInteractions,
 						commonLocal.stats_frontend.c_createShadowVolumes );
 		CREATE_OVERLAY( gaddModel, timeStr, JUSTIFY_RIGHT, colorLtGrey, false );
 

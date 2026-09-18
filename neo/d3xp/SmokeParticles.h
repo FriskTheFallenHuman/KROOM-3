@@ -88,7 +88,7 @@ public:
 private:
 	bool						initialized;
 
-	renderEntity_t				renderEntity;			// used to present a model to the renderer
+	idRenderEntity				renderEntity;			// game-facing render entity
 	int							renderEntityHandle;		// handle to static renderer model
 
 	static const int			MAX_SMOKE_PARTICLES = 10000;

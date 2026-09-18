@@ -41,7 +41,7 @@ idSmokeParticles::idSmokeParticles
 idSmokeParticles::idSmokeParticles()
 {
 	initialized = false;
-	memset( &renderEntity, 0, sizeof( renderEntity ) );
+	memset( static_cast< renderEntity_t* >( &renderEntity ), 0, sizeof( renderEntity_t ) );
 	renderEntityHandle = -1;
 	memset( smokes, 0, sizeof( smokes ) );
 	freeSmokes = NULL;
@@ -72,7 +72,7 @@ void idSmokeParticles::Init()
 
 	activeStages.Clear();
 
-	memset( &renderEntity, 0, sizeof( renderEntity ) );
+	memset( static_cast< renderEntity_t* >( &renderEntity ), 0, sizeof( renderEntity_t ) );
 
 	renderEntity.bounds.Clear();
 	renderEntity.axis = mat3_identity;
@@ -93,7 +93,7 @@ void idSmokeParticles::Init()
 
 	renderEntity.callback = idSmokeParticles::ModelCallback;
 	// add to renderer list
-	renderEntityHandle = gameRenderWorld->AddEntityDef( &renderEntity );
+	renderEntityHandle = gameRenderWorld->AddRenderEntity( &renderEntity );
 
 	currentParticleTime = -1;
 
@@ -110,7 +110,7 @@ void idSmokeParticles::Shutdown()
 	// make sure the render entity is freed before the model is freed
 	if( renderEntityHandle != -1 )
 	{
-		gameRenderWorld->FreeEntityDef( renderEntityHandle );
+		renderEntity.FreeRenderEntity();
 		renderEntityHandle = -1;
 	}
 	if( renderEntity.hModel != NULL )

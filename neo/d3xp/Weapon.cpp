@@ -875,7 +875,7 @@ void idWeapon::Clear()
 		nozzleGlowHandle = -1;
 	}
 
-	memset( &renderEntity, 0, sizeof( renderEntity ) );
+	memset( static_cast< renderEntity_t* >( &renderEntity ), 0, sizeof( renderEntity_t ) );
 	renderEntity.entityNum	= entityNumber;
 
 	renderEntity.noShadow		= true;

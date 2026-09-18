@@ -68,10 +68,10 @@ void R_ShadowBounds( const idBounds& modelBounds, const idBounds& lightBounds, c
 
 /*
 ============================
-idRenderEntityLocal::IsDirectlyVisible()
+idRenderEntityCommitted::IsDirectlyVisible()
 ============================
 */
-bool idRenderEntityLocal::IsDirectlyVisible() const
+bool idRenderEntityCommitted::IsDirectlyVisible() const
 {
 	if( viewCount != tr.viewCount )
 	{
@@ -463,8 +463,6 @@ static void R_AddSingleLight( viewLight_t* vLight )
 	// this bool array will be set true whenever the entity will visibly interact with the light
 	vLight->entityInteractionState = ( byte* )R_ClearedFrameAlloc( light->world->entityDefs.Num() * sizeof( vLight->entityInteractionState[0] ), FRAME_ALLOC_INTERACTION_STATE );
 
-	idInteraction** const interactionTableRow = light->world->interactionTable + light->index * light->world->interactionTableWidth;
-
 	for( areaReference_t* lref = light->references; lref != NULL; lref = lref->ownerNext )
 	{
 		portalArea_t* area = lref->area;
@@ -492,21 +490,8 @@ static void R_AddSingleLight( viewLight_t* vLight )
 			// until proven otherwise
 			vLight->entityInteractionState[ edef->index ] = viewLight_t::INTERACTION_NO;
 
-			// The table is updated at interaction::AllocAndLink() and interaction::UnlinkAndFree()
-			const idInteraction* inter = interactionTableRow[ edef->index ];
-
 			const renderEntity_t& eParms = edef->parms;
 			const idRenderModel* eModel = eParms.hModel;
-
-			// a large fraction of static entity / light pairs will still have no interactions even though
-			// they are both present in the same area(s)
-			if( eModel != NULL && !eModel->IsDynamicModel() && inter == INTERACTION_EMPTY )
-			{
-				// the interaction was statically checked, and it didn't generate any surfaces,
-				// so there is no need to force the entity onto the view list if it isn't
-				// already there
-				continue;
-			}
 
 			// non-shadow casting entities don't need to be added if they aren't
 			// directly visible
@@ -521,23 +506,12 @@ static void R_AddSingleLight( viewLight_t* vLight )
 				continue;
 			}
 
-			// no interaction present, so either the light or entity has moved
-			// assert( lightHasMoved || edef->entityHasMoved );
-			if( inter == NULL )
+			// Evaluate overlap from committed spatial state for this view. The old
+			// noDynamicInteractions depended on the removed prebuilt pair cache, so
+			// it cannot suppress this path without dropping static-world lighting.
+			if( R_CullModelBoundsToLight( light, edef->localReferenceBounds, edef->modelRenderMatrix ) )
 			{
-				// some big outdoor meshes are flagged to not create any dynamic interactions
-				// when the level designer knows that nearby moving lights shouldn't actually hit them
-				if( eParms.noDynamicInteractions )
-				{
-					continue;
-				}
-
-				// do a check of the entity reference bounds against the light frustum to see if they can't
-				// possibly interact, despite sharing one or more world areas
-				if( R_CullModelBoundsToLight( light, edef->localReferenceBounds, edef->modelRenderMatrix ) )
-				{
-					continue;
-				}
+				continue;
 			}
 
 			// we now know that the entity and light do overlap

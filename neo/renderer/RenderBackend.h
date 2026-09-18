@@ -249,6 +249,7 @@ struct ImDrawData;
 class idRenderBackend
 {
 	friend class Framebuffer;
+	friend class idRenderContext;
 
 public:
 	idRenderBackend();
@@ -299,14 +300,11 @@ private:
 	void				DrawSingleInteraction( drawInteraction_t* din, bool useFastPath, bool useIBL, bool setInteractionShader );
 	int					DrawShaderPasses( const drawSurf_t* const* const drawSurfs, const int numDrawSurfs );
 
-	void				RenderInteractions( const drawSurf_t* surfList, const viewLight_t* vLight, int depthFunc, bool performStencilTest, bool useLightDepthBounds );
+	void				RenderInteractions( const drawSurf_t* surfList, const viewLight_t* vLight, int depthFunc, bool useShadowMap, bool useLightDepthBounds );
 
 	// RB
 	void				AmbientPass( const drawSurf_t* const* drawSurfs, int numDrawSurfs, bool fillGbuffer );
 	void				ShadowMapPass( const drawSurf_t* drawSurfs, const viewLight_t* vLight, int side );
-
-	void				StencilShadowPass( const drawSurf_t* drawSurfs, const viewLight_t* vLight );
-	void				StencilSelectLight( const viewLight_t* vLight );
 
 	// RB: HDR stuff
 
