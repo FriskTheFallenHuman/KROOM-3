@@ -29,6 +29,40 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __IMGUIGUISYSTEM_H_
 #define __IMGUIGUISYSTEM_H_
 
+typedef int idImGuiWindowFlags;
+
+// Carbon copy of imgui flags
+typedef enum
+{
+	FLAGS_NONE						= 0,
+
+	FLAGS_NOTITLEBAR				= BIT( 0 ),		// Disable title-bar
+	FLAGS_NORESIZE					= BIT( 1 ),		// Disable user resizing with the lower-right grip
+	FLAGS_NOMOVE					= BIT( 2 ),		// Disable user moving the window
+	FLAGS_NOSCROLLBAR				= BIT( 3 ),		// Disable scrollbars (window can still scroll with mouse or programmatically)
+	FLAGS_NOSCROLLWITHMOUSE			= BIT( 4 ),		// Disable user vertically scrolling with mouse wheel. On child window, mouse wheel will be forwarded to the parent unless NoScrollbar is also set.
+	FLAGS_NOCOLLAPSE				= BIT( 5 ),		// Disable user collapsing window by double-clicking on it. Also referred to as Window Menu Button (e.g. within a docking node).
+	FLAGS_ALWAYSAUTORESIZE			= BIT( 6 ),		// Resize every window to its content every frame
+	FLAGS_NOBACKGROUND				= BIT( 7 ),		// Disable drawing background color (WindowBg, etc.) and outside border. Similar as using SetNextWindowBgAlpha(0.0f).
+	FLAGS_NOSAVEDSETTINGS			= BIT( 8 ),		// Never load/save settings in .ini file
+	FLAGS_NOMOUSEINPUTS				= BIT( 9 ),		// Disable catching mouse, hovering test with pass through.
+	FLAGS_MENUBAR					= BIT( 10 ),	// Has a menu-bar
+	FLAGS_HORIZONTALSCROLLBAR		= BIT( 11 ),	// Allow horizontal scrollbar to appear (off by default). You may use SetNextWindowContentSize(ImVec2(width,0.0f)); prior to calling Begin() to specify width. Read code in imgui_demo in the "Horizontal Scrolling" section.
+	FLAGS_NOFOCUSONAPPEARING		= BIT( 12 ),	// Disable taking focus when transitioning from hidden to visible state
+	FLAGS_NOBRINGTOFRONTONFOCUS		= BIT( 13 ),	// Disable bringing window to front when taking focus (e.g. clicking on it or programmatically giving it focus)
+	FLAGS_ALWAYSVERTICALSCROLLBAR	= BIT( 14 ),	// Always show vertical scrollbar (even if ContentSize.y < Size.y)
+	FLAGS_ALWAYSHORIZONTALSCROLLBAR	= BIT( 15 ),	// Always show horizontal scrollbar (even if ContentSize.x < Size.x)
+	FLAGS_NONAVINPUTS				= BIT( 16 ),	// No keyboard/gamepad navigation within the window
+	FLAGS_NONAVFOCUS				= BIT( 17 ),	// No focusing toward this window with keyboard/gamepad navigation (e.g. skipped by Ctrl+Tab)
+	FLAGS_UNSAVEDDOCUMENT			= BIT( 18 ),	// Display a dot next to the title. When used in a tab/docking context, tab is selected when clicking the X + closure is not assumed (will wait for user to stop submitting the tab). Otherwise closure is assumed when pressing the X, so if you keep submitting the tab may reappear at end of tab bar.
+	FLAGS_NODOCKING					= BIT( 19 ),	// Disable docking of this window
+
+	FLAGS_NONAV						= FLAGS_NONAVINPUTS | FLAGS_NONAVFOCUS,
+	FLAGS_NODECORATION				= FLAGS_NOTITLEBAR | FLAGS_NORESIZE | FLAGS_NOSCROLLBAR | FLAGS_NOCOLLAPSE,
+	FLAGS_NOINPUTS					= FLAGS_NOMOUSEINPUTS | FLAGS_NONAVINPUTS | FLAGS_NONAVFOCUS,
+
+} idImGuiWindowFlags_;
+
 enum DockRegion
 {
 	DOCK_REGION_NONE = 0,
@@ -68,9 +102,9 @@ public:
 	}
 
 	// Extra ImGuiWindowFlags on top of the derived base flags.
-	virtual ImGuiWindowFlags GetExtraWindowFlags() const
+	virtual idImGuiWindowFlags GetExtraWindowFlags() const
 	{
-		return ImGuiWindowFlags_None;
+		return FLAGS_NONE;
 	}
 
 	// Draws this window's contents.
@@ -81,33 +115,18 @@ public:
 	virtual void OnClosed() {}
 
 	// Derives NoDocking from GetDockRegion
-	ImGuiWindowFlags GetBaseWindowFlags() const
+	idImGuiWindowFlags GetBaseWindowFlags() const
 	{
-		ImGuiWindowFlags flags = GetExtraWindowFlags();
+		idImGuiWindowFlags flags = GetExtraWindowFlags();
 		if( GetDockRegion() == DOCK_REGION_NONE )
 		{
-			flags |= ImGuiWindowFlags_NoDocking;
+			flags |= FLAGS_NODOCKING;
 		}
 		return flags;
 	}
 
 	// Submits this window's ImGui widgets for the current frame.
-	virtual void Draw()
-	{
-		bool showTool = IsShown();
-
-		if( ImGui::Begin( GetDisplayTitle(), &showTool, GetBaseWindowFlags() ) )
-		{
-			DrawContents( showTool );
-		}
-		ImGui::End();
-
-		if( IsShown() && !showTool )
-		{
-			ShowIt( false );
-			OnClosed();
-		}
-	}
+	virtual void Draw();
 };
 
 class idImGuiEditor;

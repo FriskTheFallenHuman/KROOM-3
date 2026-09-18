@@ -759,8 +759,8 @@ public:
 	// gets an image for the editor to use
 	idImage* 			GetEditorImage() const;
 
-	int					GetImageWidth() const;
-	int					GetImageHeight() const;
+	virtual int			GetImageWidth() const;
+	virtual int			GetImageHeight() const;
 
 	void				SetGui( const char* _gui ) const;
 

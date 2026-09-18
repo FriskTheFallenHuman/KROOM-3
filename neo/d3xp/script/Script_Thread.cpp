@@ -2057,7 +2057,7 @@ idThread::Event_GetTicsPerSecond
 */
 void idThread::Event_GetTicsPerSecond()
 {
-	idThread::ReturnFloat( com_engineHz_latched );
+	idThread::ReturnFloat( common->GetEngineHzLatched() );
 }
 
 /*

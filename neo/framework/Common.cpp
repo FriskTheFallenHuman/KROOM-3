@@ -70,16 +70,12 @@ idCVar com_productionMode( "com_productionMode", "0", CVAR_SYSTEM | CVAR_BOOL, "
 
 idCVar preload_CommonAssets( "preload_CommonAssets", "1", CVAR_SYSTEM | CVAR_BOOL, "preload common assets" );
 
-idCVar net_inviteOnly( "net_inviteOnly", "1", CVAR_BOOL | CVAR_ARCHIVE, "whether or not the private server you create allows friends to join or invite only" );
-
 idCVar com_pause( "com_pause", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "set to 1 to pause game, to 0 to unpause again" );
 idCVar com_activeApp( "com_activeApp", "1", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "this is set to 0 if running in background" );
 
 idCVar com_enableDebuggerServer( "com_enableDebuggerServer", "0", CVAR_BOOL | CVAR_SYSTEM, "toggle debugger server and try to connect to com_dbgClientAdr" );
 idCVar com_dbgClientAdr( "com_dbgClientAdr", "localhost", CVAR_SYSTEM | CVAR_ARCHIVE, "debuggerApp client address" );
 idCVar com_dbgServerAdr( "com_dbgServerAdr", "localhost", CVAR_SYSTEM | CVAR_ARCHIVE, "debugger server address" );
-
-extern idCVar g_demoMode;
 
 idCVar com_engineHz( "com_engineHz", "60", CVAR_FLOAT | CVAR_ARCHIVE, "Frames per second the engine runs at", 10.0f, 1024.0f );
 idCVar com_hiResClock( "com_hiResClock", "2", CVAR_INTEGER | CVAR_ARCHIVE, "high resolution clock: 0 = disabled, 1 = enabled, 2 = enabled + thread affinity", 0, 2 );
@@ -91,6 +87,8 @@ int64 com_engineHz_denominator = 100LL * 60LL;
 	idGame* 		game = NULL;
 	idGameEdit* 	gameEdit = NULL;
 	idLeaderboards*	leaderBoards = NULL;
+	idGameDialogs*	dialogs = NULL;
+	idGameMainMenu*	mainMenu = NULL;
 #endif
 
 idCommonLocal	commonLocal;
@@ -420,7 +418,64 @@ void idCommonLocal::WriteConfiguration()
 
 /*
 ===============
-KeysFromBinding()
+idCommonLocal::ClearStates
+===============
+*/
+const char* idCommonLocal::KeyNumToString( keyNum_t keyNum )
+{
+	return idKeyInput::KeyNumToString( keyNum );
+}
+
+/*
+===============
+idCommonLocal::ClearStates
+===============
+*/
+void idCommonLocal::ClearStates()
+{
+	idKeyInput::ClearStates();
+}
+
+/*
+===============
+idCommonLocal::SetBinding
+
+Sets a key bind
+===============
+*/
+void idCommonLocal::SetBinding( int keynum, const char* binding )
+{
+	idKeyInput::SetBinding( keynum, binding );
+}
+
+/*
+===============
+idCommonLocal::GetBinding
+
+Gets a key bind
+===============
+*/
+const char* idCommonLocal::GetBinding( int keyNum )
+{
+	return idKeyInput::GetBinding( keyNum );
+}
+
+/*
+===============
+idCommonLocal::ExecKeyBinding
+
+Executes a keybind
+===============
+*/
+bool idCommonLocal::ExecKeyBinding( int keyNum )
+{
+	return idKeyInput::ExecKeyBinding( keyNum );
+}
+
+/*
+===============
+idCommonLocal::KeysFromBinding
+
 Returns the key bound to the command
 ===============
 */
@@ -431,7 +486,19 @@ const char* idCommonLocal::KeysFromBinding( const char* bind )
 
 /*
 ===============
-BindingFromKey()
+idCommonLocal::KeysFromBinding
+===============
+*/
+keyBindings_t idCommonLocal::KeyBindingsFromBinding( const char* bind, bool firstOnly, bool localized )
+{
+	return idKeyInput::KeyBindingsFromBinding( bind, firstOnly, localized );
+}
+
+
+/*
+===============
+idCommonLocal::BindingFromKey
+
 Returns the binding bound to key
 ===============
 */
@@ -442,7 +509,8 @@ const char* idCommonLocal::BindingFromKey( const char* key )
 
 /*
 ===============
-ButtonState()
+idCommonLocal::ButtonState
+
 Returns the state of the button
 ===============
 */
@@ -453,13 +521,34 @@ int	idCommonLocal::ButtonState( int key )
 
 /*
 ===============
-ButtonState()
+idCommonLocal::ButtonState
+
 Returns the state of the key
 ===============
 */
 int	idCommonLocal::KeyState( int key )
 {
 	return usercmdGen->KeyState( key );
+}
+
+/*
+============
+idCommonLocal::WriteDemoInt
+============
+*/
+void idCommonLocal::WriteDemoInt( int value )
+{
+	writeDemo->WriteInt( value );
+}
+
+/*
+============
+idCommonLocal::ReadDemoInt
+============
+*/
+int idCommonLocal::ReadDemoInt( int& var )
+{
+	return readDemo->ReadInt( var );
 }
 
 /*
@@ -673,21 +762,19 @@ void idCommonLocal::CheckStartupStorageRequirements()
 
 	if( ( int64 )( requiredSizeBytes - availableSpace ) > 0 )
 	{
-		class idSWFScriptFunction_Continue : public idSWFScriptFunction_RefCounted
+		class idDialogContinueCallback : public idDialogCallback
 		{
 		public:
-			virtual ~idSWFScriptFunction_Continue() {}
-			idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
+			void Call() override
 			{
-				common->Dialog().ClearDialog( GDM_INSUFFICENT_STORAGE_SPACE );
+				dialogs->ClearDialog( GDM_INSUFFICENT_STORAGE_SPACE );
 				common->Quit();
-				return idSWFScriptVar();
 			}
 		};
 
-		idStaticList< idSWFScriptFunction*, 4 > callbacks;
+		idStaticList< idDialogCallback*, 4 > callbacks;
 		idStaticList< idStrId, 4 > optionText;
-		callbacks.Append( new( TAG_SWF ) idSWFScriptFunction_Continue() );
+		callbacks.Append( new( TAG_SWF ) idDialogContinueCallback() );
 		optionText.Append( idStrId( "#STR_SWF_ACCEPT" ) );
 
 		// build custom space required string
@@ -704,7 +791,7 @@ void idCommonLocal::CheckStartupStorageRequirements()
 		}
 		idStr msg = va( format.c_str(), size.c_str() );
 
-		common->Dialog().AddDynamicDialog( GDM_INSUFFICENT_STORAGE_SPACE, callbacks, optionText, true, msg );
+		ADD_DYNAMIC_DIALOG( GDM_INSUFFICENT_STORAGE_SPACE, callbacks, optionText, true, msg );
 	}
 
 
@@ -860,10 +947,10 @@ void idCommonLocal::RenderSplash( bool photsensitivity )
 
 /*
 =================
-idCommonLocal::RenderBink
+idCommonLocal::RenderVideo
 =================
 */
-void idCommonLocal::RenderBink( const char* path )
+void idCommonLocal::RenderVideo( const char* path )
 {
 	const float sysWidth = renderSystem->GetWidth();
 	const float sysHeight = renderSystem->GetHeight();
@@ -895,6 +982,11 @@ void idCommonLocal::RenderBink( const char* path )
 
 		// queue system events ready for polling
 		Sys_GetEvent();
+
+		if( isQuitRequested )
+		{
+			break;
+		}
 
 		// RB: allow to escape video by pressing anything
 		int numKeyEvents = Sys_PollKeyboardInputEvents();
@@ -1025,13 +1117,15 @@ void idCommonLocal::LoadGameDLL()
 	if( !GetGameAPI )
 	{
 		Sys_DLL_Unload( gameDLL );
-		gameDLL = NULL;
+		gameDLL = 0;
 		common->FatalError( "couldn't find game DLL API" );
 		return;
 	}
 
 	gameImport.version					= GAME_API_VERSION;
 	gameImport.sys						= ::sys;
+	gameImport.keys						= ::keys;
+	gameImport.session					= ::session;
 	gameImport.common					= ::common;
 	gameImport.cmdSystem				= ::cmdSystem;
 	gameImport.cvarSystem				= ::cvarSystem;
@@ -1048,7 +1142,7 @@ void idCommonLocal::LoadGameDLL()
 	if( gameExport.version != GAME_API_VERSION )
 	{
 		Sys_DLL_Unload( gameDLL );
-		gameDLL = NULL;
+		gameDLL = 0;
 		common->FatalError( "wrong game DLL API version" );
 		return;
 	}
@@ -1056,6 +1150,8 @@ void idCommonLocal::LoadGameDLL()
 	game								= gameExport.game;
 	gameEdit							= gameExport.gameEdit;
 	leaderBoards						= gameExport.leaderBoards;
+	mainMenu							= gameExport.mainMenu;
+	dialogs								= gameExport.dialogs;
 
 #endif
 
@@ -1090,6 +1186,8 @@ void idCommonLocal::UnloadGameDLL()
 	game = NULL;
 	gameEdit = NULL;
 	leaderBoards = NULL;
+	mainMenu = NULL;
+	dialogs = NULL;
 
 #endif
 }
@@ -1211,7 +1309,7 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 
 #ifdef CONFIG_FILE
 		// skip the config file if "safe" is on the command line
-		if( !SafeMode() && !g_demoMode.GetBool() )
+		if( !SafeMode() )
 		{
 			cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec " CONFIG_FILE "\n" );
 		}
@@ -1274,7 +1372,7 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 		const bool showSplash = ( !com_skipLegalScreens.GetBool() && fileSystem->UsingResourceFiles() );
 		if( showVideo )
 		{
-			RenderBink( "video\\loadvideo.bik" );
+			RenderVideo( "video\\loadvideo.bik" );
 			RenderSplash();
 			RenderSplash();
 		}
@@ -1373,12 +1471,17 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 			leaderBoards->Init();
 		}
 
-		if( game != NULL )
+		// Initialize the main menu
+		if( mainMenu != NULL )
 		{
-			game->Shell_InitMenu();
+			mainMenu->InitMenu();
 		}
 
-		commonDialog.Init();
+		// Initialize the dialog system
+		if( dialogs != NULL )
+		{
+			dialogs->Init();
+		}
 
 		// load the console history file
 		consoleHistory.LoadHistoryFile();
@@ -1500,10 +1603,10 @@ void idCommonLocal::Shutdown()
 	printf( "Stop();\n" );
 	Stop();
 
-	printf( "game->Shell_Cleanup();\n" );
-	if( game != NULL )
+	printf( "mainMenu->Shell_Cleanup();\n" );
+	if( mainMenu != NULL )
 	{
-		game->Shell_Cleanup();
+		mainMenu->Cleanup();
 	}
 
 	printf( "imguiSystem->Destroy();\n" );
@@ -1565,8 +1668,11 @@ void idCommonLocal::Shutdown()
 	printf( "soundSystem->Shutdown();\n" );
 	soundSystem->Shutdown();
 
-	printf( "commonDialog.Shutdown();\n" );
-	commonDialog.Shutdown();
+	printf( "dialogs->Shutdown();\n" );
+	if( dialogs != NULL )
+	{
+		dialogs->Shutdown();
+	}
 
 	// unload the game dll
 	printf( "UnloadGameDLL();\n" );
@@ -1638,9 +1744,9 @@ void idCommonLocal::Stop( bool resetSession )
 	insideExecuteMapChange = false;
 
 	// drop all guis
-	if( game )
+	if( mainMenu )
 	{
-		game->Shell_Show( false );
+		mainMenu->Show( false );
 	}
 
 	if( resetSession )
@@ -1715,9 +1821,9 @@ void idCommonLocal::LeaveGame()
 
 	Stop( false );
 
-	if( game != NULL )
+	if( mainMenu != NULL )
 	{
-		game->Shell_InitMenu();
+		mainMenu->InitMenu();
 	}
 
 	StartMenu();
@@ -1742,14 +1848,14 @@ bool idCommonLocal::ProcessEvent( const sysEvent_t* event )
 			{
 				game->SkipCinematicScene();
 			}
-			else if( game->Shell_IsShowingIntro() )
+			else if( mainMenu->IsShowingIntro() )
 			{
-				game->Shell_HandleGuiEvent( event );
+				mainMenu->HandleGuiEvent( event );
 				return true;
 			}
 			else
 			{
-				if( !game->Shell_IsActive() )
+				if( !mainMenu->IsActive() )
 				{
 
 					// menus / etc
@@ -1781,7 +1887,7 @@ bool idCommonLocal::ProcessEvent( const sysEvent_t* event )
 						return true;
 					}
 
-					game->Shell_ClosePause();
+					mainMenu->ClosePause();
 				}
 			}
 		}
@@ -1797,9 +1903,9 @@ bool idCommonLocal::ProcessEvent( const sysEvent_t* event )
 		return true;
 	}
 
-	if( Dialog().IsDialogActive() )
+	if( dialogs->IsDialogActive() )
 	{
-		Dialog().HandleDialogEvent( event );
+		dialogs->HandleDialogEvent( event );
 		return true;
 	}
 

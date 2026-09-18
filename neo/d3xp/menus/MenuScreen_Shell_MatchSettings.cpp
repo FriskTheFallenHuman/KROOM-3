@@ -280,11 +280,6 @@ bool idMenuScreen_Shell_MatchSettings::HandleAction( idWidgetAction& action, con
 // SCREEN SETTINGS
 /////////////////////////////////
 
-extern idCVar si_timeLimit;
-extern idCVar si_fragLimit;
-extern idCVar si_map;
-extern idCVar si_mode;
-
 /*
 ========================
 idMenuScreen_Shell_MatchSettings::idMenuDataSource_MatchSettings::idMenuDataSource_MatchSettings

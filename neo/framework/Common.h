@@ -43,33 +43,11 @@ extern float com_engineHz_latched;
 extern const int64 com_engineHz_numerator;
 extern int64 com_engineHz_denominator;
 
-// Returns the msec the frame starts on
-ID_INLINE int FRAME_TO_MSEC( int64 frame )
-{
-	return ( int )( ( frame * com_engineHz_numerator ) / com_engineHz_denominator );
-}
-// Rounds DOWN to the nearest frame
-ID_INLINE int MSEC_TO_FRAME_FLOOR( int msec )
-{
-	return ( int )( ( ( ( int64 )msec * com_engineHz_denominator ) + ( com_engineHz_denominator - 1 ) ) / com_engineHz_numerator );
-}
-// Rounds UP to the nearest frame
-ID_INLINE int MSEC_TO_FRAME_CEIL( int msec )
-{
-	return ( int )( ( ( ( int64 )msec * com_engineHz_denominator ) + ( com_engineHz_numerator - 1 ) ) / com_engineHz_numerator );
-}
-// Aligns msec so it starts on a frame bondary
-ID_INLINE int MSEC_ALIGN_TO_FRAME( int msec )
-{
-	return FRAME_TO_MSEC( MSEC_TO_FRAME_CEIL( msec ) );
-}
-
 class idGame;
 class idEntity;
 class idRenderWorld;
 class idSoundWorld;
 class idSession;
-class idCommonDialog;
 class idDemoFile;
 class idUserInterface;
 class idSaveLoadParms;
@@ -201,6 +179,23 @@ static const int	MAX_LOGGED_STATS = 60 * 120;		// log every half second
 
 class idInterpreter;
 class idProgram;
+class idUserCmdMgr;
+
+struct keyBindings_t
+{
+	idStr keyboard;
+	idStr mouse;
+	idStr gamepad;
+};
+
+typedef enum
+{
+	DS_FINISHED,
+	DS_RENDER,
+	DS_SOUND,
+	DS_GAME,
+	DS_VERSION
+} demoSystem_t;
 
 class idCommon
 {
@@ -297,8 +292,22 @@ public:
 	// static internal errors or cases where the system may be corrupted.
 	virtual void                FatalError( VERIFY_FORMAT_STRING const char* fmt, ... ) ID_INSTANCE_ATTRIBUTE_PRINTF( 1, 2 ) = 0;
 
+	// Returns the language dictionary, which is used for localization.
+	virtual idLangDict* 		GetLanguageDictionary() = 0;
+
+	// This is the inverse of StringToKeyNum, used for config files
+	virtual const char* 		KeyNumToString( keyNum_t keyNum ) = 0;
+
+	virtual void				ClearStates() = 0;
+
+	virtual void				SetBinding( int keynum, const char* binding ) = 0;
+	virtual const char* 		GetBinding( int keyNum ) = 0;
+
+	virtual bool				ExecKeyBinding( int keyNum ) = 0;
+
 	// Returns key bound to the command
 	virtual const char* 		KeysFromBinding( const char* bind ) = 0;
+	virtual keyBindings_t		KeyBindingsFromBinding( const char* bind, bool firstOnly = false, bool localized = false ) = 0;
 
 	// Returns the binding bound to the key
 	virtual const char* 		BindingFromKey( const char* key ) = 0;
@@ -334,12 +343,14 @@ public:
 	virtual idDemoFile* 		ReadDemo() = 0;
 	virtual idDemoFile* 		WriteDemo() = 0;
 
+	virtual void				WriteDemoInt( int value ) = 0;
+	virtual int					ReadDemoInt( int& var ) = 0;
+
 	virtual idGame* 			Game() = 0;
 	virtual idRenderWorld* 		RW() = 0;
 	virtual idSoundWorld* 		SW() = 0;
 	virtual idSoundWorld* 		MenuSW() = 0;
 	virtual idSession* 			Session() = 0;
-	virtual idCommonDialog& 	Dialog() = 0;
 
 	virtual void				OnSaveCompleted( idSaveLoadParms& parms ) = 0;
 	virtual void				OnLoadCompleted( idSaveLoadParms& parms ) = 0;
@@ -353,13 +364,19 @@ public:
 	virtual int					GetGameFrame() = 0;
 
 	virtual void				InitializeMPMapsModes() = 0;
-	virtual const idStrList& 			GetModeList() const = 0;
-	virtual const idStrList& 			GetModeDisplayList() const = 0;
-	virtual const idList<mpMap_t>& 		GetMapList() const = 0;
+	virtual const idStrList&	GetModeList() const = 0;
+	virtual const idStrList&	GetModeDisplayList() const = 0;
+	virtual const idList<mpMap_t>&	GetMapList() const = 0;
 
 	virtual void				ResetPlayerInput( int playerIndex ) = 0;
 
 	virtual void				QueueShowShell() = 0;		// Will activate the shell on the next frame.
+
+	virtual idUserCmdMgr& 		GetUCmdMgr() = 0;
+
+	virtual float				GetEngineHzLatched() = 0;
+	virtual int64				GetEngineHzNumerator() = 0;
+	virtual int64				GetEngineHzDenominator() = 0;
 
 	// Headless Server
 	virtual bool				GetServerDedicated() = 0;
@@ -389,5 +406,37 @@ public:
 };
 
 extern idCommon* 		common;
+
+// Returns the msec the frame starts on
+ID_INLINE int FRAME_TO_MSEC( int64 frame )
+{
+	return ( int )( ( frame * common->GetEngineHzNumerator() ) / common->GetEngineHzDenominator() );
+}
+
+// Rounds DOWN to the nearest frame
+ID_INLINE int MSEC_TO_FRAME_FLOOR( int msec )
+{
+	return ( int )( ( ( ( int64 )msec * common->GetEngineHzDenominator() ) + ( common->GetEngineHzDenominator() - 1 ) ) / common->GetEngineHzNumerator() );
+}
+
+// Rounds UP to the nearest frame
+ID_INLINE int MSEC_TO_FRAME_CEIL( int msec )
+{
+	return ( int )( ( ( ( int64 )msec * common->GetEngineHzDenominator() ) + ( common->GetEngineHzNumerator() - 1 ) ) / common->GetEngineHzNumerator() );
+}
+
+// Aligns msec so it starts on a frame bondary
+ID_INLINE int MSEC_ALIGN_TO_FRAME( int msec )
+{
+	return FRAME_TO_MSEC( MSEC_TO_FRAME_CEIL( msec ) );
+}
+
+#define ADD_DIALOG( ... ) if( dialogs ) { \
+	dialogs->AddDialog( __VA_ARGS__ ); \
+}
+
+#define ADD_DYNAMIC_DIALOG( ... ) if( dialogs ) { \
+	dialogs->AddDynamicDialog( __VA_ARGS__ ); \
+}
 
 #endif /* !__COMMON_H__ */

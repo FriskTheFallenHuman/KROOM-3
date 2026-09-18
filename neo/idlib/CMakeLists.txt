@@ -23,10 +23,11 @@ source_group("Sys" FILES ${src_idlib_sys})
 
 if(MSVC)
 file(GLOB src_idlib_sys_platform sys/win32/*.cpp sys/win32/*.h)
+source_group("Sys\\Win32" FILES ${src_idlib_sys_platform})
 else()
 file(GLOB src_idlib_sys_platform sys/posix/*.cpp sys/posix/*.h)
+source_group("Sys\\Posix" FILES ${src_idlib_sys_platform})
 endif()
-source_group("Sys\\Threads" FILES ${src_idlib_sys_platform})
 
 set(src_idlib
 	${src_idlib_base}

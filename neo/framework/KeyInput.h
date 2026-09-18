@@ -29,13 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __KEYINPUT_H__
 #define __KEYINPUT_H__
 
-struct keyBindings_t
-{
-	idStr keyboard;
-	idStr mouse;
-	idStr gamepad;
-};
-
 class idSerializer;
 
 // Converts from a USB HID code to a K_ code
@@ -70,5 +63,22 @@ public:
 	static void				WriteBindings( idFile* f );
 	static keyBindings_t	KeyBindingsFromBinding( const char* bind, bool firstOnly = false, bool localized = false );
 };
+
+class idKey
+{
+public:
+	idKey()
+	{
+		down = false;
+		repeats = 0;
+		usercmdAction = 0;
+	}
+	bool			down;
+	int				repeats;		// if > 1, it is autorepeating
+	idStr			binding;
+	int				usercmdAction;	// for testing by the asyncronous usercmd generation
+};
+
+extern idKey* keys;
 
 #endif /* !__KEYINPUT_H__ */

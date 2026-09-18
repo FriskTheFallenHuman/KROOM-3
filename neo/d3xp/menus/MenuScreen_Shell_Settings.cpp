@@ -36,7 +36,7 @@ enum settingMenuCmds_t
 	SETTING_CMD_CONTROLS,
 	SETTING_CMD_GAMEPLAY,
 	SETTING_CMD_SYSTEM,
-	SETTING_GRAPHICS_SYSTEM,
+	SETTING_CMD_GRAPHICS_SYSTEM,
 };
 
 /*
@@ -244,7 +244,7 @@ bool idMenuScreen_Shell_Settings::HandleAction( idWidgetAction& action, const id
 					menuData->SetNextScreen( SHELL_AREA_GAME_OPTIONS, MENU_TRANSITION_SIMPLE );
 					break;
 				}
-				case SETTING_GRAPHICS_SYSTEM:
+				case SETTING_CMD_GRAPHICS_SYSTEM:
 				{
 					menuData->SetNextScreen( SHELL_AREA_GRAPHICS_OPTIONS, MENU_TRANSITION_SIMPLE );
 					break;

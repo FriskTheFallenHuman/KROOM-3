@@ -58,7 +58,7 @@ bool AAS2ObstacleLogSample()
 	}
 	static int interval = -1;
 	static int count = 0;
-	const int currentInterval = Sys_Milliseconds() / 1000;
+	const int currentInterval = sys->GetMilliseconds() / 1000;
 	if( interval != currentInterval )
 	{
 		interval = currentInterval;

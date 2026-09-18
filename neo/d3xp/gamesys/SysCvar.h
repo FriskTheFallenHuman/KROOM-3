@@ -38,6 +38,10 @@ extern idCVar	g_monsters;
 extern idCVar	g_decals;
 extern idCVar	g_knockback;
 extern idCVar	g_skill;
+extern idCVar	g_nightmare;
+extern idCVar	g_roeNightmare;
+extern idCVar	g_leNightmare;
+extern idCVar	g_nightmare;
 extern idCVar	g_gravity;
 extern idCVar	g_skipFX;
 extern idCVar	g_bloodEffects;
@@ -231,6 +235,29 @@ extern idCVar	g_grabberHardStop;
 extern idCVar	g_grabberDamping;
 
 extern idCVar	g_xp_bind_run_once;
+extern idCVar	g_checkpoints;
+extern idCVar	g_demoMode;
+
+extern idCVar	aa_targetAimAssistEnable;
+
+extern idCVar	aa_targetAdhesionEnable;
+extern idCVar	aa_targetFrictionEnable;
+
+extern idCVar	aa_targetMaxDistance;
+extern idCVar	aa_targetSelectionRadius;
+
+extern idCVar	aa_targetAdhesionRadius;
+extern idCVar	aa_targetAdhesionYawSpeedMax;
+extern idCVar	aa_targetAdhesionPitchSpeedMax;
+extern idCVar	aa_targetAdhesionContributionPctMax;
+extern idCVar	aa_targetAdhesionPlayerSpeedThreshold;
+
+extern idCVar	aa_targetFrictionMaxDistance;
+extern idCVar	aa_targetFrictionOptimalDistance;
+extern idCVar	aa_targetFrictionRadius;
+extern idCVar	aa_targetFrictionOptimalRadius;
+extern idCVar	aa_targetFrictionMultiplierMin;
+extern idCVar	aa_targetFrictionMultiplierMax;
 
 extern idCVar	aas_test;
 extern idCVar	aas_showAreas;
@@ -249,19 +276,22 @@ extern idCVar	si_timeLimit;
 extern idCVar	si_fragLimit;
 extern idCVar	si_spectators;
 
-extern idCVar si_flagDropTimeLimit;
-extern idCVar si_midnight;
+extern idCVar	si_map;
+extern idCVar	si_mode;
+extern idCVar	si_flagDropTimeLimit;
+extern idCVar	si_midnight;
 
-extern idCVar g_flagAttachJoint;
-extern idCVar g_flagAttachOffsetX;
-extern idCVar g_flagAttachOffsetY;
-extern idCVar g_flagAttachOffsetZ;
-extern idCVar g_flagAttachAngleX;
-extern idCVar g_flagAttachAngleY;
-extern idCVar g_flagAttachAngleZ;
+extern idCVar	g_flagAttachJoint;
+extern idCVar	g_flagAttachOffsetX;
+extern idCVar	g_flagAttachOffsetY;
+extern idCVar	g_flagAttachOffsetZ;
+extern idCVar	g_flagAttachAngleX;
+extern idCVar	g_flagAttachAngleY;
+extern idCVar	g_flagAttachAngleZ;
 
-extern idCVar g_CTFArrows;
+extern idCVar	g_CTFArrows;
 
 extern idCVar	net_clientSelfSmoothing;
+extern idCVar	net_inviteOnly;
 
 #endif /* !__SYS_CVAR_H__ */

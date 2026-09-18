@@ -288,7 +288,7 @@ saveGameHandle_t idSessionLocal::SaveGameAsync( const char* name, const saveFile
 		idSaveLoadParms& parms = processorSaveFiles->GetParmsNonConst();
 		parms.errorCode = SAVEGAME_E_UNKNOWN;
 
-		common->Dialog().ShowSaveIndicator( false );
+		dialogs->ShowSaveIndicator( false );
 		// Uniform error handling
 		OnSaveCompleted( &parms );
 	}
@@ -315,7 +315,7 @@ void idSessionLocal::OnSaveCompleted( idSaveLoadParms* parms )
 	// Only turn off the indicator if we're not also going to save the profile settings
 	if( parms->GetError() != SAVEGAME_E_NONE || !master || !master->GetProfile() || !master->GetProfile()->IsDirty() )
 	{
-		common->Dialog().ShowSaveIndicator( false );
+		dialogs->ShowSaveIndicator( false );
 	}
 
 	if( parms->GetError() == SAVEGAME_E_NONE )
@@ -645,7 +645,7 @@ saveGameHandle_t idSessionLocal::DeleteSaveGameAsync( const char* name )
 	if( processorDelete->InitDelete( name ) )
 	{
 		processorDelete->AddCompletedCallback( MakeCallback( this, &idSessionLocal::OnDeleteCompleted, &processorDelete->GetParmsNonConst() ) );
-		common->Dialog().ShowSaveIndicator( true );
+		dialogs->ShowSaveIndicator( true );
 		handle = GetSaveGameManager().ExecuteProcessor( processorDelete );
 	}
 
@@ -670,7 +670,7 @@ idSessionLocal::OnDeleteCompleted
 */
 void idSessionLocal::OnDeleteCompleted( idSaveLoadParms* parms )
 {
-	common->Dialog().ShowSaveIndicator( false );
+	dialogs->ShowSaveIndicator( false );
 
 	if( parms->GetError() == SAVEGAME_E_NONE )
 	{

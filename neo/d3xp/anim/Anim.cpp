@@ -1197,7 +1197,7 @@ void idAnimManager::Preload( const idPreloadManifest& manifest )
 	if( manifest.NumResources() >= 0 )
 	{
 		common->Printf( "Preloading anims...\n" );
-		int	start = Sys_Milliseconds();
+		int	start = sys->GetMilliseconds();
 		int numLoaded = 0;
 		for( int i = 0; i < manifest.NumResources(); i++ )
 		{
@@ -1208,7 +1208,7 @@ void idAnimManager::Preload( const idPreloadManifest& manifest )
 				numLoaded++;
 			}
 		}
-		int	end = Sys_Milliseconds();
+		int	end = sys->GetMilliseconds();
 		common->Printf( S_COLOR_GRAY "%05d " S_COLOR_WHITE "anims preloaded ( or were already loaded ) in" S_COLOR_GRAY " %5.1f " S_COLOR_WHITE "seconds\n", numLoaded, ( end - start ) * 0.001 );
 		common->Printf( "----------------------------------------\n" );
 	}

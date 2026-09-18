@@ -98,6 +98,17 @@ idLocalization
 class idLocalization
 {
 public:
+	// Called once from the exe after loading the dictionary.
+	// All modules then route through this pointer.
+	static void				SetDictionaryPtr( idLangDict* dict )
+	{
+		dictionaryPtr = dict;
+	}
+	static idLangDict* 		GetDictionaryPtr()
+	{
+		return dictionaryPtr;
+	}
+
 	static const char* 		GetString( const char* inString );		// returns inString if string not found
 	static const char* 		FindString( const char* inString );	// Returns NULL if string not found
 
@@ -112,8 +123,12 @@ public:
 
 	static utf8Encoding_t	VerifyUTF8( const uint8* buffer, const int bufferLen, const char* name );
 
-private:
+public:
 	static idLangDict					languageDict;
+
+private:
+	static idLangDict* 					dictionaryPtr;
+
 	friend class idStrId;
 };
 

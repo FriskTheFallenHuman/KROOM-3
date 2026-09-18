@@ -2131,7 +2131,7 @@ void idGuidedProjectile::Launch( const idVec3& start, const idVec3& dir, const i
 	angles = vel.ToAngles();
 	speed = vel.Length();
 	rndScale = spawnArgs.GetAngles( "random", "15 15 0" );
-	turn_max = spawnArgs.GetFloat( "turn_max", "180" ) / com_engineHz_latched;
+	turn_max = spawnArgs.GetFloat( "turn_max", "180" ) / common->GetEngineHzLatched();
 	clamp_dist = spawnArgs.GetFloat( "clamp_dist", "256" );
 	burstMode = spawnArgs.GetBool( "burstMode" );
 	unGuided = false;
@@ -3919,7 +3919,7 @@ void idHomingProjectile::Launch( const idVec3& start, const idVec3& dir, const i
 	angles = vel.ToAngles();
 	speed = vel.Length();
 	rndScale = spawnArgs.GetAngles( "random", "15 15 0" );
-	turn_max = spawnArgs.GetFloat( "turn_max", "180" ) / com_engineHz_latched;
+	turn_max = spawnArgs.GetFloat( "turn_max", "180" ) / common->GetEngineHzLatched();
 	clamp_dist = spawnArgs.GetFloat( "clamp_dist", "256" );
 	burstMode = spawnArgs.GetBool( "burstMode" );
 	unGuided = false;

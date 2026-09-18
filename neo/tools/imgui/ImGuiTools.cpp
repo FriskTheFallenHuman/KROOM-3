@@ -70,7 +70,7 @@ void idImGuiEditorLocal::SetRightMouseActive( bool active )
 
 bool idImGuiEditorLocal::AreEditorsActive() const
 {
-	return g_editEntityMode.GetInteger() > 0 || com_editors != 0;
+	return cvarSystem->GetCVarInteger( "g_editEntityMode" ) > 0 || com_editors != 0;
 }
 
 bool idImGuiEditorLocal::IsMouseRelease() const

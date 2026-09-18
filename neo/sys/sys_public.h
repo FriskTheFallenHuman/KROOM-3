@@ -545,19 +545,6 @@ void			Sys_GrabMouseCursor( bool grabIt );
 void			Sys_ShowWindow( bool show );
 bool			Sys_IsWindowVisible();
 
-// This really isn't the right place to have this, but since this is the 'top level' include
-// and has a function signature with 'FILE' in it, it kinda needs to be here =/
-
-// RB begin
-#if defined(_WIN32)
-	typedef HANDLE idFileHandle;
-#else
-	typedef FILE* idFileHandle;
-#endif
-// RB end
-
-ID_TIME_T		Sys_FileTimeStamp( const char* path );
-
 // NOTE: do we need to guarantee the same output on all platforms?
 const char* 	Sys_TimeStampToStr( ID_TIME_T timeStamp );
 const char* 	Sys_SecToStr( int sec );
@@ -749,7 +736,11 @@ public:
 	virtual void			DebugPrintf( VERIFY_FORMAT_STRING const char* fmt, ... ) = 0;
 	virtual void			DebugVPrintf( const char* fmt, va_list arg ) = 0;
 
+	virtual void			SysSleep( int msec ) = 0;
+
 	virtual unsigned int	GetMilliseconds() = 0;
+	virtual uint64			GetMicroseconds() = 0;
+
 	virtual double			GetClockTicks() = 0;
 	virtual double			ClockTicksPerSecond() = 0;
 	virtual int				GetProcessorId() = 0;
@@ -763,6 +754,14 @@ public:
 	virtual void			DLL_Unload( int dllHandle ) = 0;
 	virtual void			DLL_GetFileName( const char* baseName, char* dllName, int maxLength ) = 0;
 
+	virtual int				PollKeyboardInputEvents() = 0;
+	virtual int				ReturnKeyboardInputEvent( const int n, int& ch, bool& state ) = 0;
+	virtual void			EndKeyboardInputEvents() = 0;
+	virtual int				PollMouseInputEvents( int mouseEvents[MAX_MOUSE_EVENTS][2] ) = 0;
+
+	virtual void			GenerateEvents() = 0;
+	virtual sysEvent_t		GetEvent() = 0;
+	virtual void			ClearEvents() = 0;
 	virtual sysEvent_t		GenerateMouseButtonEvent( int button, bool down ) = 0;
 	virtual sysEvent_t		GenerateMouseMoveEvent( int deltax, int deltay ) = 0;
 
@@ -773,6 +772,9 @@ public:
 	virtual bool			Exec( const char* appPath, const char* workingPath, const char* args,
 								  execProcessWorkFunction_t workFn, execOutputFunction_t outputFn,
 								  const int waitMS, unsigned int& exitCode ) = 0;
+
+	virtual const char*		TimeStampToStr( ID_TIME_T timeStamp ) = 0;
+	virtual const char*		SecToStr( int sec ) = 0;
 };
 
 extern idSys* 				sys;

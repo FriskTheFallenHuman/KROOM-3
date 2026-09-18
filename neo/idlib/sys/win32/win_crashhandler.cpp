@@ -234,7 +234,7 @@ void Sys_WriteMiniDump( EXCEPTION_POINTERS* exceptionInfo )
 	// Engine version
 	if( cvarSystem && cvarSystem->IsInitialized() )
 	{
-		fprintf( f, "Engine version : %s\n", com_version.GetString() );
+		fprintf( f, "Engine version : %s\n", cvarSystem->GetCVarString( "com_version" ) );
 	}
 	fprintf( f, "Time           : %04d-%02d-%02d %02d:%02d:%02d\n\n",
 			 st.wYear, st.wMonth, st.wDay,

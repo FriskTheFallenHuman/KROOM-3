@@ -167,33 +167,10 @@ public:
 	// Get the current tonemap settings for the player's view, used for syncing with the backend.
 	virtual bool				GetActiveTonemapState( int& preset, float& exposure, float& saturation, float& contrast, float& hdrKey ) = 0;
 
-	// Release the mouse when the PDA is open
+	// Release the mouse when the PDA/Chat area is open
 	virtual bool				IsPDAOpen() const = 0;
 	virtual bool				IsPlayerChatting() const = 0;
-
-	// MAIN MENU FUNCTIONS
 	virtual bool				InhibitControls() = 0;
-	virtual void				Shell_Init( const char* filename, idSoundWorld* sw ) = 0;
-	virtual void				Shell_InitMenu() = 0;
-	virtual bool				Shell_IsLoadingActive() const = 0;
-	virtual void				Shell_LoadingGui( const char* mapName, bool& hellMap ) = 0;
-	virtual void				Shell_RenderLoadingShell() = 0;
-	virtual void				Shell_Cleanup( bool onlyLoading = false ) = 0;
-	virtual void				Shell_CreateMenu( bool inGame ) = 0;
-	virtual void				Shell_ClosePause() = 0;
-	virtual void				Shell_Show( bool show ) = 0;
-	virtual bool				Shell_IsActive() const = 0;
-	virtual bool				Shell_HandleGuiEvent( const sysEvent_t* sev ) = 0;
-	virtual void				Shell_Render() = 0;
-	virtual void				Shell_ResetMenu() = 0;
-	virtual void				Shell_SyncWithSession() = 0;
-	virtual void				Shell_UpdateSavedGames() = 0;
-	virtual void				Shell_SetCanContinue( bool valid ) = 0;
-	virtual void				Shell_UpdateClientCountdown( int countdown ) = 0;
-	virtual void				Shell_UpdateLeaderboard( const idLeaderboardCallback* callback ) = 0;
-	virtual void				Shell_SetGameComplete() = 0;
-	virtual bool				Shell_IsShowingIntro() = 0;
-	virtual bool				Shell_IsGameComplete() = 0;
 
 	// Skip Cinematic process
 	virtual bool				SkipCinematicScene() = 0;
@@ -205,6 +182,370 @@ public:
 };
 
 extern idGame* 					game;
+
+/*
+================================================================================================
+
+	Main Menu
+
+================================================================================================
+*/
+
+class idGameMainMenu
+{
+public:
+	virtual						~idGameMainMenu() {}
+
+	// Initiallize the menu system.
+	virtual void				Initialize() = 0;
+	virtual void				Shutdown() = 0;
+
+	// MAIN MENU FUNCTIONS
+	virtual void				Init( const char* filename, idSoundWorld* sw ) = 0;
+	virtual void				InitMenu() = 0;
+	virtual bool				IsLoadingActive() const = 0;
+	virtual void				LoadingGui( const char* mapName, bool& hellMap ) = 0;
+	virtual void				RenderLoadingShell() = 0;
+	virtual void				Cleanup( bool onlyLoading = false ) = 0;
+	virtual void				CreateMenu( bool inGame ) = 0;
+	virtual void				ClosePause() = 0;
+	virtual void				Show( bool show ) = 0;
+	virtual bool				IsActive() const = 0;
+	virtual bool				HandleGuiEvent( const sysEvent_t* sev ) = 0;
+	virtual void				Render() = 0;
+	virtual void				ResetMenu() = 0;
+	virtual void				SyncWithSession() = 0;
+	virtual void				UpdateSavedGames() = 0;
+	virtual void				SetCanContinue( bool valid ) = 0;
+	virtual void				UpdateClientCountdown( int countdown ) = 0;
+	virtual void				UpdateLeaderboard( const idLeaderboardCallback* callback ) = 0;
+	virtual void				SetGameComplete() = 0;
+	virtual bool				IsShowingIntro() = 0;
+	virtual bool				IsGameComplete() = 0;
+};
+
+extern idGameMainMenu* 		mainMenu;
+
+/*
+================================================================================================
+
+	Dialogs
+
+================================================================================================
+*/
+
+static const int	MAX_DIALOGS			= 4;		// maximum dialogs that can be open at one time
+static const int	PC_KEYBOARD_WAIT	= 20000;
+
+/*
+================================================
+Dialog box message types
+================================================
+*/
+enum gameDialogMessages_t
+{
+	GDM_INVALID,
+	GDM_SWAP_DISKS_TO1,
+	GDM_SWAP_DISKS_TO2,
+	GDM_SWAP_DISKS_TO3,
+	GDM_NO_GAMER_PROFILE,
+	GDM_PLAY_ONLINE_NO_PROFILE,
+	GDM_LEADERBOARD_ONLINE_NO_PROFILE,
+	GDM_NO_STORAGE_SELECTED,
+	GDM_ONLINE_INCORRECT_PERMISSIONS,
+	GDM_SP_QUIT_SAVE,
+	GDM_SP_RESTART_SAVE,
+	GDM_SP_SIGNIN_CHANGE,
+	GDM_SERVER_NOT_AVAILABLE,
+	GDM_CONNECTION_LOST_HOST,
+	GDM_CONNECTION_LOST,
+	GDM_OPPONENT_CONNECTION_LOST,
+	GDM_HOST_CONNECTION_LOST,
+	GDM_HOST_CONNECTION_LOST_STATS,
+	GDM_FAILED_TO_LOAD_RANKINGS,
+	GDM_HOST_QUIT,
+	GDM_BECAME_HOST_PARTY,			// Became host of party
+	GDM_NEW_HOST_PARTY,				// Someone else became host of party
+	GDM_LOBBY_BECAME_HOST_GAME,		// In lobby, you became game host
+	GDM_LOBBY_NEW_HOST_GAME,		// In lobby, new game host was chosen (not you)
+	GDM_NEW_HOST_GAME,				// Host left/DC'd, someone else is new host, unranked game
+	GDM_NEW_HOST_GAME_STATS_DROPPED,// Host left/DC'd, someone else is new host, ranked game so stats were dropped
+	GDM_BECAME_HOST_GAME,				// Host left/DC'd, you became host, unranked game
+	GDM_BECAME_HOST_GAME_STATS_DROPPED, // Host left/DC'd, you became host, ranked game so stats were dropped
+	GDM_LOBBY_DISBANDED,
+	GDM_LEAVE_WITH_PARTY,
+	GDM_LEAVE_LOBBY_RET_MAIN,
+	GDM_LEAVE_LOBBY_RET_NEW_PARTY,
+	GDM_MIGRATING,
+	GDM_OPPONENT_LEFT,
+	GDM_NO_MATCHES_FOUND,
+	GDM_INVALID_INVITE,
+	GDM_KICKED,
+	GDM_BANNED,
+	GDM_SAVING,
+	GDM_OVERWRITE_SAVE,
+	GDM_LOAD_REQUEST,
+	GDM_AUTOSAVE_DISABLED_STORAGE_REMOVED,
+	GDM_STORAGE_INVALID,
+	GDM_STORAGE_REMOVED,
+	GDM_CONNECTING,
+	GDM_REFRESHING,
+	GDM_DELETE_SAVE,
+	GDM_DELETING,
+	GDM_BINDING_ALREDY_SET,
+	GDM_CANNOT_BIND,
+	GDM_OVERLAY_DISABLED,
+	GDM_DIRECT_MAP_CHANGE,
+	GDM_DELETE_AUTOSAVE,
+	GDM_QUICK_SAVE,
+	GDM_MULTI_RETRY,
+	GDM_MULTI_SELF_DESTRUCT,
+	GDM_MULTI_VDM_QUIT,
+	GDM_MULTI_COOP_QUIT,
+	GDM_LOADING_PROFILE,
+	GDM_STORAGE_REQUIRED,
+	GDM_INSUFFICENT_STORAGE_SPACE,
+	GDM_PARTNER_LEFT,
+	GDM_RESTORE_CORRUPT_SAVEGAME,
+	GDM_UNRECOVERABLE_SAVEGAME,
+	GDM_PROFILE_SAVE_ERROR,
+	GDM_LOBBY_FULL,
+	GDM_QUIT_GAME,
+	GDM_CONNECTION_PROBLEMS,
+	GDM_VOICE_RESTRICTED,
+	GDM_LOAD_DAMAGED_FILE,
+	GDM_MUST_SIGNIN,
+	GDM_CONNECTION_LOST_NO_LEADERBOARD,
+	GDM_SP_SIGNIN_CHANGE_POST,
+	GDM_MIGRATING_WAITING,
+	GDM_MIGRATING_RELAUNCHING,
+	GDM_MIGRATING_FAILED_CONNECTION,
+	GDM_MIGRATING_FAILED_CONNECTION_STATS,
+	GDM_MIGRATING_FAILED_DISBANDED,
+	GDM_MIGRATING_FAILED_DISBANDED_STATS,
+	GDM_MIGRATING_FAILED_PARTNER_LEFT,
+	GDM_HOST_RETURNED_TO_LOBBY,
+	GDM_HOST_RETURNED_TO_LOBBY_STATS_DROPPED,
+	GDM_FAILED_JOIN_LOCAL_SESSION,
+	GDM_DELETE_CORRUPT_SAVEGAME,
+	GDM_LEAVE_INCOMPLETE_INSTANCE,
+	GDM_UNBIND_CONFIRM,
+	GDM_BINDINGS_RESTORE,
+	GDM_NEW_HOST,
+	GDM_CONFIRM_VIDEO_CHANGES,
+	GDM_UNABLE_TO_USE_SELECTED_STORAGE_DEVICE,
+	GDM_ERROR_LOADING_SAVEGAME,
+	GDM_ERROR_SAVING_SAVEGAME,
+	GDM_DISCARD_CHANGES,
+	GDM_LEAVE_LOBBY,
+	GDM_LEAVE_LOBBY_AND_TEAM,
+	GDM_CONTROLLER_DISCONNECTED_0,
+	GDM_CONTROLLER_DISCONNECTED_1,
+	GDM_CONTROLLER_DISCONNECTED_2,
+	GDM_CONTROLLER_DISCONNECTED_3,
+	GDM_CONTROLLER_DISCONNECTED_4,
+	GDM_CONTROLLER_DISCONNECTED_5,
+	GDM_CONTROLLER_DISCONNECTED_6,
+	GDM_DLC_ERROR_REMOVED,
+	GDM_DLC_ERROR_CORRUPT,
+	GDM_DLC_ERROR_MISSING,
+	GDM_DLC_ERROR_MISSING_GENERIC,
+	GDM_DISC_SWAP,
+	GDM_NEEDS_INSTALL,
+	GDM_NO_SAVEGAMES_AVAILABLE,
+	GDM_ERROR_JOIN_TWO_PROFILES_ONE_BOX,
+	GDM_WARNING_PLAYING_COOP_SOLO,
+	GDM_MULTI_COOP_QUIT_LOSE_LEADERBOARDS,
+	GDM_CORRUPT_CONTINUE,
+	GDM_MULTI_VDM_QUIT_LOSE_LEADERBOARDS,
+	GDM_WARNING_PLAYING_VDM_SOLO,
+	GDM_NO_GUEST_SUPPORT,
+	GDM_DISC_SWAP_CONFIRMATION,
+	GDM_ERROR_LOADING_PROFILE,
+	GDM_CANNOT_INVITE_LOBBY_FULL,
+	GDM_WARNING_FOR_NEW_DEVICE_ABOUT_TO_LOSE_PROGRESS,
+	GDM_DISCONNECTED,
+	GDM_INCOMPATIBLE_NEWER_SAVE,
+	GDM_ACHIEVEMENTS_DISABLED_DUE_TO_CHEATING,
+	GDM_INCOMPATIBLE_POINTER_SIZE,
+	GDM_TEXTUREDETAIL_RESTARTREQUIRED,
+	GDM_TEXTUREDETAIL_INSUFFICIENT_CPU,
+	GDM_CHECKPOINT_SAVE,
+	GDM_CALCULATING_BENCHMARK,
+	GDM_DISPLAY_BENCHMARK,
+	GDM_DISPLAY_CHANGE_FAILED,
+	GDM_GPU_TRANSCODE_FAILED,
+	GDM_OUT_OF_MEMORY,
+	GDM_CORRUPT_PROFILE,
+	GDM_PROFILE_TOO_OUT_OF_DATE_DEVELOPMENT_ONLY,
+	GDM_SP_LOAD_SAVE,
+	GDM_INSTALLING_TROPHIES,
+	GDM_XBOX_DEPLOYMENT_TYPE_FAIL,
+	GDM_SAVEGAME_WRONG_LANGUAGE,
+	GDM_GAME_RESTART_REQUIRED,
+	GDM_GAME_ERROR,
+	GDM_MAX
+};
+
+/*
+================================================
+Dialog box types
+================================================
+*/
+enum dialogType_t
+{
+	DIALOG_INVALID = -1,
+	DIALOG_ACCEPT,
+	DIALOG_CONTINUE,
+	DIALOG_ACCEPT_CANCEL,
+	DIALOG_YES_NO,
+	DIALOG_CANCEL,
+	DIALOG_WAIT,
+	DIALOG_WAIT_BLACKOUT,
+	DIALOG_WAIT_CANCEL,
+	DIALOG_DYNAMIC,
+	DIALOG_QUICK_SAVE,
+	DIALOG_TIMER_ACCEPT_REVERT,
+	DIALOG_CRAWL_SAVE,
+	DIALOG_CONTINUE_LARGE,
+	DIALOG_BENCHMARK,
+};
+
+/*
+================================================
+idDialogCallback
+
+Generic engine-level callback interface for dialog buttons.
+================================================
+*/
+class idDialogCallback
+{
+public:
+	idDialogCallback() : refCount( 0 ) {}
+	virtual ~idDialogCallback() {}
+
+	void    AddRef()
+	{
+		refCount++;
+	}
+	void    Release()
+	{
+		if( --refCount <= 0 )
+		{
+			delete this;
+		}
+	}
+
+	virtual void Call() = 0;
+
+private:
+	int refCount;
+};
+
+/*
+================================================
+idDialogInfo
+================================================
+*/
+class idDialogInfo
+{
+public:
+	idDialogInfo()
+	{
+		msg = GDM_INVALID;
+		type = DIALOG_ACCEPT;
+		acceptCB = NULL;
+		cancelCB = NULL;
+		altCBOne = NULL;
+		altCBTwo = NULL;
+		showing = false;
+		clear = false;
+		waitClear = false;
+		pause = false;
+		startTime = 0;
+		killTime = 0;
+		leaveOnClear = false;
+		renderDuringLoad = false;
+	}
+	gameDialogMessages_t	msg;
+	dialogType_t			type;
+	idDialogCallback* 		acceptCB;
+	idDialogCallback* 		cancelCB;
+	idDialogCallback* 		altCBOne;
+	idDialogCallback* 		altCBTwo;
+	bool					showing;
+	bool					clear;
+	bool					waitClear;
+	bool					pause;
+	bool					forcePause;
+	bool					leaveOnClear;
+	bool					renderDuringLoad;
+	int						startTime;
+	int						killTime;
+	idStrStatic< 256 >		overrideMsg;
+
+	idStrId					txt1;
+	idStrId					txt2;
+	idStrId					txt3;
+	idStrId					txt4;
+};
+
+class idGameDialogs
+{
+public:
+	virtual						~idGameDialogs() {}
+
+	virtual void				Init() = 0;
+	virtual void				Shutdown() = 0;
+	virtual void				Restart() = 0;
+
+	virtual void				Render( bool loading ) = 0;
+
+	virtual void				AddDialog( gameDialogMessages_t msg, dialogType_t type, idDialogCallback* acceptCallback, idDialogCallback* cancelCallback, bool pause, const char* location = NULL, int lineNumber = 0, bool leaveOnMapHeapReset = false, bool waitOnAtlas = false, bool renderDuringLoad = false ) = 0;
+	virtual void				AddDynamicDialog( gameDialogMessages_t msg, const idStaticList< idDialogCallback*, 4 >& callbacks, const idStaticList< idStrId, 4 >& optionText, bool pause, idStrStatic< 256 > overrideMsg, bool leaveOnMapHeapReset = false, bool waitOnAtlas = false, bool renderDuringLoad = false ) = 0;
+
+	virtual void				AddDialogIntVal( const char* name, int val ) = 0;
+
+	virtual void				ClearDialog( gameDialogMessages_t msg, const char* location = NULL, int lineNumber = 0 ) = 0;
+	virtual void				ClearDialogs( bool forceClear = false ) = 0;
+	virtual void				ClearAllDialogHack() = 0;
+
+	virtual bool				HasDialogMsg( gameDialogMessages_t msg, bool* isNowActive ) = 0;
+	virtual bool				HasAnyActiveDialog() const = 0;
+	virtual bool				IsDialogPausing() const = 0;
+
+	virtual void				ShowSaveIndicator( bool show ) = 0;
+	virtual bool				HandleDialogEvent( const sysEvent_t* sev ) = 0;
+	virtual bool				IsDialogActive() const = 0;
+
+	virtual idStr				GetDialogMsg( gameDialogMessages_t msg, idStr& outMessage, idStr& outTitle ) = 0;
+
+	virtual bool				IsRendererLoaded() const = 0;
+	virtual bool				IsRendererActive() const = 0;
+	virtual void				ActivateRenderer( bool active ) = 0;
+
+	virtual bool				IsSaveIndicatorActive() const = 0;
+	virtual void				RenderDialog( int timeMicroseconds ) = 0;
+	virtual void				RenderSaveIndicator( int timeMicroseconds ) = 0;
+
+	virtual void				SetRendererGlobalInt( const char* name, int val ) = 0;
+	virtual void				SetRendererGlobalString( const char* name, const char* val ) = 0;
+
+	virtual void				AddRefCallback( idDialogCallback* cb ) = 0;
+	virtual void				ReleaseCallback( idDialogCallback* cb ) = 0;
+	virtual void				InvokeCallback( idDialogCallback* cb ) = 0;
+
+	virtual void				BindDialogToRenderer( const idDialogInfo& info ) = 0;
+
+	virtual void				AddDialogInternal( idDialogInfo& info ) = 0;
+	virtual void				ShowDialog( const idDialogInfo& info ) = 0;
+	virtual void				ShowNextDialog() = 0;
+	virtual void				ActivateDialog( bool activate ) = 0;
+	virtual void				RemoveWaitDialogs() = 0;
+	virtual void				ReleaseCallBacks( int index ) = 0;
+};
+
+extern idGameDialogs*		dialogs;
 
 /*
 ================================================================================================
@@ -222,7 +563,7 @@ class idLeaderboards
 public:
 	virtual						~idLeaderboards() {}
 
-	// creates and stores all the leaderboards inside the internal map ( see Sys_FindLeaderboardDef on retrieving definition )
+	// creates and stores all the leaderboards inside the internal map ( see session->FindLeaderboardDef on retrieving definition )
 	virtual void				Init() = 0;
 
 	// Destroys any leaderboard definitions allocated by Init()
@@ -402,12 +743,18 @@ extern idGameEdit* 				gameEdit;
 
 const int GAME_API_VERSION		= 8;
 
+class idKey;
+class idSession;
+class idImGuiSystem;
+
 typedef struct
 {
 
 	int							version;				// API version
 	idSys* 						sys;					// non-portable system services
-	idCommon* 					common;					// common
+	idKey* 						keys;					// keys system
+	idSession* 					session;				// networking and session services
+	idCommon* 					common;					// common systems
 	idCmdSystem* 				cmdSystem;				// console command system
 	idCVarSystem* 				cvarSystem;				// console variable system
 	idFileSystem* 				fileSystem;				// file system
@@ -417,6 +764,7 @@ typedef struct
 	idUserInterfaceManager* 	uiManager;				// user interface manager
 	idDeclManager* 				declManager;			// declaration manager
 	idCollisionModelManager* 	collisionModelManager;	// collision model manager
+	idImGuiSystem*				imguiSystem;			// imgui overlay manager
 
 } gameImport_t;
 
@@ -426,7 +774,9 @@ typedef struct
 	int							version;				// API version
 	idGame* 					game;					// interface to run the game
 	idGameEdit* 				gameEdit;				// interface for in-game editing
-	idLeaderboards* 			leadBoards;				// interface for leaderboards
+	idLeaderboards* 			leaderBoards;			// interface for leaderboards
+	idGameMainMenu*				mainMenu;				// interface for the main menu
+	idGameDialogs*				dialogs;				// interface for the gui dialogs
 
 } gameExport_t;
 

@@ -247,6 +247,7 @@ const int TITLESAFE_HEIGHT		= TITLESAFE_BOTTOM - TITLESAFE_TOP;
 
 class idRenderWorld;
 
+struct vidMode_t;
 
 class idRenderSystem
 {
@@ -389,6 +390,17 @@ public:
 	virtual int				GetFrameCount() const = 0;
 
 	virtual void			OnFrame() = 0;
+
+	virtual void			AdjustFramerateFromDisplayHz( int displayHz ) = 0;
+
+	// Loads an external image from the filesystem
+	virtual void			LoadImage( const char* cname, byte** pic, int* width, int* height, ID_TIME_T* timestamp, bool makePowerOf2, int* usage ) = 0;
+
+	// Writes bytes to an external image
+	virtual void			WriteTGA( const char* filename, const byte* data, int width, int height, bool flipVertical, const char* basePath = "fs_savepath" ) = 0;
+	virtual void			WriteJPEG( const char* filename, const byte* data, int bytesPerPixel, int width, int height, bool flipVertical, const char* basePath = "fs_savepath" ) = 0;
+	virtual void			WritePNG( const char* filename, const byte* data, int bytesPerPixel, int width, int height, bool flipVertical, const char* basePath = "fs_savepath" ) = 0;
+	virtual void			WriteEXR( const char* filename, const void* rgba16f, int channelsPerPixel, int width, int height, const char* basePath = "fs_savepath" ) = 0;
 };
 
 extern idRenderSystem* 			renderSystem;

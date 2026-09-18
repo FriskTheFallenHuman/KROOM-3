@@ -25,6 +25,7 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
+
 #ifndef __PARALLELJOBLIST_H__
 #define __PARALLELJOBLIST_H__
 
@@ -73,11 +74,6 @@ enum jobListParallelism_t
 
 #define assert_spu_local_store( ptr )
 #define assert_not_spu_local_store( ptr )
-
-// Admer: prevent Visual Studio from incorrectly highlighting AddJob, as the same is defined in winspool.h
-#ifdef AddJob
-	#undef AddJob
-#endif
 
 /*
 ================================================

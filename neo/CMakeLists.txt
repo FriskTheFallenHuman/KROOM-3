@@ -23,6 +23,7 @@ option(REPRODUCIBLE_BUILD "Replace __DATE__ and __TIME__ by hardcoded values for
 option(WINRT "Build for Windows RT" OFF)
 option(WINDOWS10 "Build for Windows 10" ON)
 option(USE_SYSTEM_LIBS "Prefer system-installed libraries over FetchContent" OFF)
+option(BUILD_GAME_DLL "Do not build the engine with the game code embbeded onto the exe" OFF)
 
 include(CPUDefine)
 
@@ -86,8 +87,20 @@ endmacro()
 
 configure_file("${CMAKE_SOURCE_DIR}/config.h.in" "${CMAKE_BINARY_DIR}/config.h")
 
+set(cpu_arch)
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	set(cpu_arch "x86_64")
+elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
+	set(cpu_arch "x86")
+endif()
 if(NOT MSVC)
-	message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
+	set(cpu_arch "${cpu}")
+endif()
+
+if(NOT MSVC)
+	message(STATUS "Building ${CMAKE_BUILD_TYPE} for ${os}-${cpu}")
+else()
+	message(STATUS "Building ${CMAKE_BUILD_TYPE} for ${os}-${cpu_arch} with Visual Studio ${CMAKE_VS_VERSION}")
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCC OR (CMAKE_C_COMPILER_ID MATCHES "Clang" AND NOT CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC"))
@@ -570,9 +583,6 @@ set_source_files_properties(
 
 #always_optimize_sourcefile(sound/stbvorbis_impl.c)
 
-file(GLOB src_swf swf/*.cpp swf/*.h)
-source_group("SWF" FILES ${src_swf})
-
 file(GLOB src_sys sys/*.cpp sys/*.h)
 source_group("Sys" FILES ${src_sys})
 
@@ -595,51 +605,10 @@ set(src_core
 	${src_renderer_dxt}
 	${src_renderer_smaa}
 	${src_sound}
-	${src_swf}
 	${src_sys}
 	${src_sys_sdl}
 	${src_sys_common}
 	${src_ui})
-
-##################### Game-D3XP ###########################
-
-file(GLOB src_d3xp_base d3xp/*.cpp d3xp/*.h d3xp/game.def)
-list(REMOVE_ITEM src_d3xp_base ${CMAKE_SOURCE_DIR}/d3xp/precompiled.cpp ${CMAKE_SOURCE_DIR}/d3xp/EndLevel.cpp ${CMAKE_SOURCE_DIR}/d3xp/EndLevel.h)
-source_group("Game-D3XP" FILES ${src_d3xp_base})
-
-file(GLOB src_d3xp_ai d3xp/ai/*.cpp d3xp/ai/*.h)
-source_group("Game-D3XP\\AI" FILES ${src_d3xp_ai})
-
-file(GLOB src_d3xp_anim d3xp/anim/*.cpp d3xp/anim/*.h)
-source_group("Game-D3XP\\Anim" FILES ${src_d3xp_anim})
-
-file(GLOB src_d3xp_decls d3xp/decls/*.cpp d3xp/decls/*.h)
-source_group("Game-D3XP\\Decls" FILES ${src_d3xp_decls})
-
-file(GLOB src_d3xp_gamesys d3xp/gamesys/*.cpp d3xp/gamesys/*.h)
-list(REMOVE_ITEM src_d3xp_gamesys ${CMAKE_SOURCE_DIR}/d3xp/gamesys/Callbacks.cpp)
-source_group("Game-D3XP\\GameSys" FILES ${src_d3xp_gamesys})
-
-file(GLOB src_d3xp_physics d3xp/physics/*.cpp d3xp/physics/*.h)
-source_group("Game-D3XP\\Physics" FILES ${src_d3xp_physics})
-
-file(GLOB src_d3xp_script d3xp/script/*.cpp d3xp/script/*.h)
-source_group("Game-D3XP\\Script" FILES ${src_d3xp_script})
-
-file(GLOB src_d3xp_menus d3xp/menus/*.cpp d3xp/menus/*.h)
-source_group("Game-D3XP\\Menus" FILES ${src_d3xp_menus})
-
-set(src_d3xp
-	${src_d3xp_base}
-	${src_d3xp_ai}
-	${src_d3xp_anim}
-	${src_d3xp_decls}
-	${src_d3xp_gamesys}
-	${src_d3xp_physics}
-	${src_d3xp_script}
-	${src_d3xp_menus})
-
-list(APPEND src_core ${src_d3xp})
 
 ##################### Compilers ###########################
 
@@ -763,10 +732,14 @@ include_directories(
 	${CMAKE_SOURCE_DIR}/extern/cpptrace/include)
 
 add_subdirectory(idlib)
+add_subdirectory(d3xp)
 add_subdirectory(gamelib)
 add_subdirectory(extern)
 
 add_definitions(-D__DOOM__)
+if(${BUILD_GAME_DLL})
+	add_definitions(-D__DOOM_DLL__)
+endif()
 
 if(MSVC)
 	if(USE_VULKAN)
@@ -802,18 +775,7 @@ if(MSVC)
 else()
 
 	file(GLOB src_sys_posix sys/posix/*.cpp sys/posix/*.h)
-	list(REMOVE_ITEM src_sys_posix
-		${CMAKE_CURRENT_SOURCE_DIR}/sys/posix/linux_main.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/sys/posix/osx_main.cpp)
 	source_group("Sys//Posix" FILES ${src_sys_posix})
-
-	if(UNIX)
-		if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-			list(APPEND src_sys_posix ${CMAKE_CURRENT_SOURCE_DIR}/sys/posix/osx_main.cpp)
-		else()
-			list(APPEND src_sys_posix ${CMAKE_CURRENT_SOURCE_DIR}/sys/posix/linux_main.cpp)
-		endif()
-	endif()
 
 	list(APPEND src_core ${src_sys_posix})
 
@@ -866,7 +828,10 @@ endif()
 add_executable(${CMAKE_PROJECT_NAME} MACOSX_BUNDLE WIN32 ${src_core})
 add_dependencies(${CMAKE_PROJECT_NAME} idLib external ${sys_thirdparty_dependencies})
 
-target_link_libraries(${CMAKE_PROJECT_NAME} idLib gameLib external ${sys_libs} ${sys_thirdparty})
+target_link_libraries(${CMAKE_PROJECT_NAME} idLib $<$<NOT:$<BOOL:${BUILD_GAME_DLL}>>:gameLib> $<$<NOT:$<BOOL:${BUILD_GAME_DLL}>>:game> external ${sys_libs} ${sys_thirdparty})
+if(NOT ${BUILD_GAME_DLL})
+	target_link_libraries(${CMAKE_PROJECT_NAME} "$<LINK_LIBRARY:WHOLE_ARCHIVE,game>")
+endif()
 if(USE_PRECOMPILED_HEADERS)
 	target_precompile_headers(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/idlib/precompiled.h)
 endif()

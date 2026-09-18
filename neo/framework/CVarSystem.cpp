@@ -511,6 +511,11 @@ public:
 	virtual int				GetCVarInteger( const char* name ) const;
 	virtual float			GetCVarFloat( const char* name ) const;
 
+	virtual idDict* 		GetSyncedCvars()
+	{
+		return new idDict;
+	};
+
 	virtual bool			Command( const idCmdArgs& args );
 
 	virtual void			CommandCompletion( void( *callback )( const char* s ) );

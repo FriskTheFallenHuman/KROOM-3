@@ -45,7 +45,7 @@ static bool AAS2PathLogSample( int requiredLevel )
 	}
 	static int interval = -1;
 	static int count = 0;
-	const int nowInterval = Sys_Milliseconds() / 1000;
+	const int nowInterval = sys->GetMilliseconds() / 1000;
 	if( interval != nowInterval )
 	{
 		interval = nowInterval;

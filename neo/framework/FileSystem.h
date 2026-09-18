@@ -162,7 +162,11 @@ public:
 	// Opens a file for writing to a full OS path.
 	virtual idFile* 		OpenExplicitFileWrite( const char* OSPath ) = 0;
 	// opens a zip container
-	virtual idFile_Cached* 		OpenExplicitPakFile( const char* OSPath ) = 0;
+	virtual idFile_Cached* 	OpenExplicitPakFile( const char* OSPath ) = 0;
+	// Opens a file for reading, but allows the file system to return data in chunks through the pipeline interface.
+	// This is used for save games, which can be very large and would cause a stall if read in all at once.
+	virtual bool			OpenPipelineFileForReading( idFile_SaveGamePipelined* pipe, idFile* file ) = 0;
+
 	// Closes a file.
 	virtual void			CloseFile( idFile* f ) = 0;
 	// look for a dynamic module
@@ -218,6 +222,7 @@ public:
 	virtual void			AddParticlePreload( const char* resName ) = 0;
 	virtual void			AddCollisionPreload( const char* resName ) = 0;
 
+	virtual idFile_SaveGamePipelined* GetSaveGamePipelined() = 0;
 };
 
 extern idFileSystem* 		fileSystem;

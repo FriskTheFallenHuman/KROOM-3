@@ -223,6 +223,9 @@ public:
 
 	virtual void					Touch( const idDecl* decl );
 
+	virtual void					SetDictInt( idDict* dict, const char* key, int val );
+	virtual void					SetDictStr( idDict* dict, const char* key, const char* val );
+
 public:
 	static void					MakeNameCanonical( const char* name, char* result, int maxLength );
 	idDeclLocal* 				FindTypeWithoutParsing( declType_t type, const char* name, bool makeDefault = true );
@@ -1766,6 +1769,26 @@ const idSoundShader* idDeclManagerLocal::FindSound( const char* name, bool makeD
 const idSoundShader* idDeclManagerLocal::SoundByIndex( int index, bool forceParse )
 {
 	return static_cast<const idSoundShader*>( DeclByIndex( DECL_SOUND, index, forceParse ) );
+}
+
+/*
+===================
+idDeclManagerLocal::SetDictInt
+===================
+*/
+void idDeclManagerLocal::SetDictInt( idDict* dict, const char* key, int val )
+{
+	dict->SetInt( key, val );
+}
+
+/*
+===================
+idDeclManagerLocal::SetDictStr
+===================
+*/
+void idDeclManagerLocal::SetDictStr( idDict* dict, const char* key, const char* val )
+{
+	dict->Set( key, val );
 }
 
 /*

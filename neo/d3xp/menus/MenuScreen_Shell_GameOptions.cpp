@@ -274,12 +274,6 @@ bool idMenuScreen_Shell_GameOptions::HandleAction( idWidgetAction& action, const
 // SCREEN SETTINGS
 /////////////////////////////////
 
-extern idCVar ui_autoSwitch;
-extern idCVar ui_autoReload;
-extern idCVar aa_targetAimAssistEnable;
-extern idCVar in_alwaysRun;
-extern idCVar g_checkpoints;
-
 /*
 ========================
 idMenuScreen_Shell_GameOptions::idMenuDataSource_AudioSettings::idMenuDataSource_AudioSettings
@@ -300,10 +294,10 @@ void idMenuScreen_Shell_GameOptions::idMenuDataSource_GameSettings::LoadData()
 {
 	fields[ GAME_FIELD_FOV ].SetInteger( g_fov.GetFloat() );
 	fields[ GAME_FIELD_CHECKPOINTS ].SetBool( g_checkpoints.GetBool() );
-	fields[ GAME_FIELD_AUTO_SWITCH ].SetBool( ui_autoSwitch.GetBool() );
-	fields[ GAME_FIELD_AUTO_RELOAD ].SetBool( ui_autoReload.GetBool() );
+	fields[ GAME_FIELD_AUTO_SWITCH ].SetBool( cvarSystem->GetCVarBool( "ui_autoSwitch" ) );
+	fields[ GAME_FIELD_AUTO_RELOAD ].SetBool( cvarSystem->GetCVarBool( "ui_autoReload" ) );
 	fields[ GAME_FIELD_AIM_ASSIST ].SetBool( aa_targetAimAssistEnable.GetBool() );
-	fields[ GAME_FIELD_ALWAYS_SPRINT ].SetBool( in_alwaysRun.GetBool() );
+	fields[ GAME_FIELD_ALWAYS_SPRINT ].SetBool( cvarSystem->GetCVarBool( "in_alwaysRun" ) );
 	originalFields = fields;
 }
 
@@ -321,10 +315,10 @@ void idMenuScreen_Shell_GameOptions::idMenuDataSource_GameSettings::CommitData()
 	}
 
 	g_checkpoints.SetBool( fields[ GAME_FIELD_CHECKPOINTS ].ToBool() );
-	ui_autoSwitch.SetBool( fields[ GAME_FIELD_AUTO_SWITCH ].ToBool() );
-	ui_autoReload.SetBool( fields[ GAME_FIELD_AUTO_RELOAD ].ToBool() );
+	cvarSystem->SetCVarBool( "ui_autoSwitch", fields[ GAME_FIELD_AUTO_SWITCH ].ToBool() );
+	cvarSystem->SetCVarBool( "ui_autoReload", fields[ GAME_FIELD_AUTO_RELOAD ].ToBool() );
 	aa_targetAimAssistEnable.SetBool( fields[ GAME_FIELD_AIM_ASSIST ].ToBool() );
-	in_alwaysRun.SetBool( fields[ GAME_FIELD_ALWAYS_SPRINT ].ToBool() );
+	cvarSystem->SetCVarBool( "in_alwaysRun", fields[ GAME_FIELD_ALWAYS_SPRINT ].ToBool() );
 
 	cvarSystem->SetModifiedFlags( CVAR_ARCHIVE );
 

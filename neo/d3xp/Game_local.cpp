@@ -36,6 +36,8 @@ If you have questions concerning this license or the applicable additional terms
 #ifdef GAME_DLL
 
 	idSys* 						sys = NULL;
+	idKey* 						keys = NULL;
+	idSession* 					session = NULL;
 	idCommon* 					common = NULL;
 	idCmdSystem* 				cmdSystem = NULL;
 	idCVarSystem* 				cvarSystem = NULL;
@@ -46,6 +48,7 @@ If you have questions concerning this license or the applicable additional terms
 	idUserInterfaceManager* 	uiManager = NULL;
 	idDeclManager* 				declManager = NULL;
 	idCollisionModelManager* 	collisionModelManager = NULL;
+	idImGuiSystem*				imguiSystem = NULL;
 	idCVar* 					idCVar::staticVars = NULL;
 
 	idCVar com_forceGenericSIMD( "com_forceGenericSIMD", "0", CVAR_BOOL | CVAR_SYSTEM, "force generic platform independent SIMD" );
@@ -120,6 +123,8 @@ extern "C" gameExport_t* GetGameAPI( gameImport_t* import )
 
 		// set interface pointers used by the game
 		sys							= import->sys;
+		keys						= import->keys;
+		session						= import->session;
 		common						= import->common;
 		cmdSystem					= import->cmdSystem;
 		cvarSystem					= import->cvarSystem;
@@ -130,6 +135,7 @@ extern "C" gameExport_t* GetGameAPI( gameImport_t* import )
 		uiManager					= import->uiManager;
 		declManager					= import->declManager;
 		collisionModelManager		= import->collisionModelManager;
+		imguiSystem					= import->imguiSystem;
 	}
 
 	// set interface pointers used by idLib
@@ -142,6 +148,9 @@ extern "C" gameExport_t* GetGameAPI( gameImport_t* import )
 	gameExport.version = GAME_API_VERSION;
 	gameExport.game = game;
 	gameExport.gameEdit = gameEdit;
+	gameExport.leaderBoards = leaderBoards;
+	gameExport.mainMenu = mainMenu;
+	gameExport.dialogs = dialogs;
 
 	return &gameExport;
 }
@@ -157,6 +166,8 @@ void TestGameAPI()
 	gameExport_t testExport;
 
 	testImport.sys						= ::sys;
+	testImport.keys						= ::keys;
+	testImport.session					= ::session;
 	testImport.common					= ::common;
 	testImport.cmdSystem				= ::cmdSystem;
 	testImport.cvarSystem				= ::cvarSystem;
@@ -167,6 +178,7 @@ void TestGameAPI()
 	testImport.uiManager				= ::uiManager;
 	testImport.declManager				= ::declManager;
 	testImport.collisionModelManager	= ::collisionModelManager;
+	testImport.imguiSystem				= ::imguiSystem;
 
 	testExport = *GetGameAPI( &testImport );
 }
@@ -260,7 +272,6 @@ void idGameLocal::Clear()
 	eventQueue.Init();
 	savedEventQueue.Init();
 
-	shellHandler = NULL;
 	selectedGroup = 0;
 	portalSkyEnt			= NULL;
 	portalSkyActive			= false;
@@ -269,11 +280,6 @@ void idGameLocal::Clear()
 
 	lastCmdRunTimeOnClient.Zero();
 	lastCmdRunTimeOnServer.Zero();
-
-	loadGUI = NULL;
-	nextLoadTip = 0;
-	isHellMap = false;
-	defaultLoadscreen = false;
 }
 
 /*
@@ -302,6 +308,9 @@ void idGameLocal::Init()
 
 	// initialize processor specific SIMD
 	idSIMD::InitProcessor( "game", com_forceGenericSIMD.GetBool() );
+
+	// set the pointer to the language dictionary for localized strings
+	idLocalization::SetDictionaryPtr( common->GetLanguageDictionary() );
 
 #endif
 
@@ -344,7 +353,7 @@ void idGameLocal::Init()
 
 	InitConsoleCommands();
 
-	shellHandler = new( TAG_SWF ) idMenuHandler_Shell();
+	mainMenuLocal.Initialize();
 
 	if( !g_xp_bind_run_once.GetBool() )
 	{
@@ -404,7 +413,7 @@ void idGameLocal::Shutdown()
 
 	Printf( "------------ Game Shutdown -----------\n" );
 
-	Shell_Cleanup();
+	mainMenuLocal.Shutdown();
 
 	mpGame.Shutdown();
 
@@ -475,7 +484,7 @@ void idGameLocal::SaveGame( idFile* f, idFile* strings )
 	idEntity* ent;
 	idEntity* link;
 
-	int startTimeMs = Sys_Milliseconds();
+	int startTimeMs = sys->GetMilliseconds();
 	if( g_recordSaveGameTrace.GetBool() )
 	{
 		bool result = BeginTraceRecording( "e:\\savegame_trace.pix2" );
@@ -678,7 +687,7 @@ void idGameLocal::SaveGame( idFile* f, idFile* strings )
 
 	savegame.Close();
 
-	int endTimeMs = Sys_Milliseconds();
+	int endTimeMs = sys->GetMilliseconds();
 	idLib::Printf( "Save time: %dms\n", ( endTimeMs - startTimeMs ) );
 
 	if( g_recordSaveGameTrace.GetBool() )
@@ -708,13 +717,12 @@ void idGameLocal::GetSaveGameDetails( idSaveGameDetails& gameDetails )
 	int playTime = player ? player->GetPlayedTime() : 0;
 	gameExpansionType_t expansionType = player ? player->GetExpansionType() : GAME_BASE;
 
-	gameDetails.descriptors.Clear();
-	gameDetails.descriptors.SetInt( SAVEGAME_DETAIL_FIELD_EXPANSION, expansionType );
-	gameDetails.descriptors.Set( SAVEGAME_DETAIL_FIELD_MAP, mapPrettyName );
-	gameDetails.descriptors.Set( SAVEGAME_DETAIL_FIELD_MAP_LOCATE, locationStr );
-	gameDetails.descriptors.SetInt( SAVEGAME_DETAIL_FIELD_SAVE_VERSION, SAVEGAME_VERSION );
-	gameDetails.descriptors.SetInt( SAVEGAME_DETAIL_FIELD_DIFFICULTY, g_skill.GetInteger() );
-	gameDetails.descriptors.SetInt( SAVEGAME_DETAIL_FIELD_PLAYTIME, playTime );
+	declManager->SetDictInt( &gameDetails.descriptors, SAVEGAME_DETAIL_FIELD_EXPANSION, expansionType );
+	declManager->SetDictStr( &gameDetails.descriptors, SAVEGAME_DETAIL_FIELD_MAP, mapPrettyName );
+	declManager->SetDictStr( &gameDetails.descriptors, SAVEGAME_DETAIL_FIELD_MAP_LOCATE, locationStr );
+	declManager->SetDictInt( &gameDetails.descriptors, SAVEGAME_DETAIL_FIELD_SAVE_VERSION, SAVEGAME_VERSION );
+	declManager->SetDictInt( &gameDetails.descriptors, SAVEGAME_DETAIL_FIELD_DIFFICULTY, g_skill.GetInteger() );
+	declManager->SetDictInt( &gameDetails.descriptors, SAVEGAME_DETAIL_FIELD_PLAYTIME, playTime );
 
 	// PS3 only strings that use the dict just set
 
@@ -1255,7 +1263,7 @@ void idGameLocal::MapPopulate()
 
 	// Must set GAME_FPS for script after populating, because some maps run their own scripts
 	// when spawning the world, and GAME_FPS will not be found before then.
-	SetScriptFPS( com_engineHz_latched );
+	SetScriptFPS( common->GetEngineHzLatched() );
 }
 
 /*
@@ -1409,8 +1417,8 @@ bool idGameLocal::InitFromSaveGame( const char* mapName, idRenderWorld* renderWo
 	// load the map needed for this savegame
 	LoadMap( mapName, 0 );
 
-	idFile_SaveGamePipelined* pipelineFile = new( TAG_SAVEGAMES ) idFile_SaveGamePipelined();
-	pipelineFile->OpenForReading( saveGameFile );
+	idFile_SaveGamePipelined* pipelineFile = fileSystem->GetSaveGamePipelined();
+	fileSystem->OpenPipelineFileForReading( pipelineFile, saveGameFile );
 	idRestoreGame savegame( pipelineFile, stringTableFile, saveGameVersion );
 
 	// Create the list of all objects in the game
@@ -1425,11 +1433,11 @@ bool idGameLocal::InitFromSaveGame( const char* mapName, idRenderWorld* renderWo
 		savegame.DeleteObjects();
 		program.Restart();
 
-		SetScriptFPS( com_engineHz_latched );
+		SetScriptFPS( common->GetEngineHzLatched() );
 		return false;
 	}
 
-	SetScriptFPS( com_engineHz_latched );
+	SetScriptFPS( common->GetEngineHzLatched() );
 
 	savegame.ReadInt( i );
 	g_skill.SetInteger( i );
@@ -3144,11 +3152,9 @@ void idGameLocal::RunAllUserCmdsForPlayer( idUserCmdMgr& cmdMgr, const int playe
 
 	for( ; numPasses < MaxExtraCommandsPerFrame; numPasses++ )
 	{
-		// Run remote player extra commands
-		extern idCVar net_ucmdRate;
 		// Add some extra time to smooth out network inconsistencies.
 		const int extraFrameMilliseconds = FRAME_TO_MSEC( common->GetGameFrame() + 2 ) - FRAME_TO_MSEC( common->GetGameFrame() );
-		const int millisecondBuffer = MSEC_ALIGN_TO_FRAME( net_ucmdRate.GetInteger() + extraFrameMilliseconds );
+		const int millisecondBuffer = MSEC_ALIGN_TO_FRAME( cvarSystem->GetCVarInteger( "net_ucmdRate" ) + extraFrameMilliseconds );
 
 		const bool hasNextCmd = cmdMgr.HasUserCmdForClientTimeBuffer( playerNumber, millisecondBuffer );
 
@@ -3173,7 +3179,7 @@ void idGameLocal::RunAllUserCmdsForPlayer( idUserCmdMgr& cmdMgr, const int playe
 
 	// Reset the script FPS in case it was changed to accomodate an MP client
 	// running at a different framerate.
-	SetScriptFPS( com_engineHz_latched );
+	SetScriptFPS( common->GetEngineHzLatched() );
 
 //idLib::Printf( "\n" );//!@#
 }
@@ -3705,8 +3711,7 @@ idGameLocal::CheatsOk
 */
 bool idGameLocal::CheatsOk( bool requirePlayer )
 {
-	extern idCVar net_allowCheats;
-	if( common->IsMultiplayer() && !net_allowCheats.GetBool() )
+	if( common->IsMultiplayer() && !cvarSystem->GetCVarBool( "net_allowCheats" ) )
 	{
 		Printf( "Not allowed in multiplayer.\n" );
 		return false;
@@ -5772,530 +5777,7 @@ idGameLocal::InhibitControls
 */
 bool idGameLocal::InhibitControls()
 {
-	return ( Shell_IsActive() || IsPDAOpen() || IsPlayerChatting() || ( common->IsMultiplayer() && mpGame.IsScoreboardActive() ) );
-}
-
-/*
-========================
-idGameLocal::Shell_ClearRepeater
-========================
-*/
-void idGameLocal::Shell_ClearRepeater()
-{
-	if( shellHandler != NULL )
-	{
-		shellHandler->ClearWidgetActionRepeater();
-	}
-}
-
-/*
-========================
-idGameLocal::Shell_Init
-========================
-*/
-void idGameLocal::Shell_Init( const char* filename, idSoundWorld* sw )
-{
-	if( shellHandler != NULL )
-	{
-		shellHandler->Initialize( filename, sw );
-	}
-}
-
-/*
-========================
-idGameLocal::Shell_InitMenu
-========================
-*/
-void idGameLocal::Shell_InitMenu()
-{
-	// note which media we are going to need to load
-	declManager->BeginLevelLoad();
-	renderSystem->BeginLevelLoad();
-	soundSystem->BeginLevelLoad();
-	uiManager->BeginLevelLoad();
-
-	// create main inside an "empty" game level load - so assets get
-	// purged automagically when we transition to a "real" map
-	Shell_CreateMenu( false );
-	Shell_Show( true );
-	Shell_SyncWithSession();
-
-	// load
-	renderSystem->EndLevelLoad();
-	soundSystem->EndLevelLoad();
-	declManager->EndLevelLoad();
-	uiManager->EndLevelLoad( "" );
-}
-
-/*
-========================
-idGameLocal::Shell_Cleanup
-========================
-*/
-void idGameLocal::Shell_Cleanup( bool onlyLoading )
-{
-	if( !onlyLoading )
-	{
-		printf( "delete loadGUI;\n" );
-	}
-	delete loadGUI;
-	loadGUI = NULL;
-
-	if( !onlyLoading )
-	{
-		if( shellHandler != NULL )
-		{
-			printf( "delete shellHandler;\n" );
-			delete shellHandler;
-			shellHandler = NULL;
-		}
-
-		printf( "mpGame.CleanupScoreboard();\n" );
-		mpGame.CleanupScoreboard();
-	}
-}
-
-/*
-===============
-idGameLocal::LoadLoadingGui
-===============
-*/
-void idGameLocal::Shell_LoadingGui( const char* mapName, bool& hellMap )
-{
-	defaultLoadscreen = false;
-	loadGUI = new idSWF( "loading/default", NULL );
-
-	extern idCVar g_demoMode;
-	if( g_demoMode.GetBool() )
-	{
-		hellMap = false;
-		if( loadGUI != NULL )
-		{
-			const idMaterial* defaultMat = declManager->FindMaterial( "guis/assets/loadscreens/default" );
-			renderSystem->LoadLevelImages();
-
-			loadGUI->Activate( true );
-			idSWFSpriteInstance* bgImg = loadGUI->GetRootObject().GetSprite( "bgImage" );
-			if( bgImg != NULL )
-			{
-				bgImg->SetMaterial( defaultMat );
-			}
-		}
-		defaultLoadscreen = true;
-		return;
-	}
-
-	// load / program a gui to stay up on the screen while loading
-	idStrStatic< MAX_OSPATH > stripped = mapName;
-	stripped.StripFileExtension();
-	stripped.StripPath();
-
-	// use default load screen for demo
-	idStrStatic< MAX_OSPATH > matName = "guis/assets/loadscreens/";
-	matName.Append( stripped );
-	const idMaterial* mat = declManager->FindMaterial( matName );
-
-	renderSystem->LoadLevelImages();
-
-	if( mat->GetImageWidth() < 32 )
-	{
-		mat = declManager->FindMaterial( "guis/assets/loadscreens/default" );
-		renderSystem->LoadLevelImages();
-	}
-
-	loadTipList.SetNum( loadTipList.Max() );
-	for( int i = 0; i < loadTipList.Max(); ++i )
-	{
-		loadTipList[i] = i;
-	}
-
-	if( loadGUI != NULL )
-	{
-		loadGUI->Activate( true );
-		nextLoadTip = Sys_Milliseconds() + LOAD_TIP_CHANGE_INTERVAL;
-
-		idSWFSpriteInstance* bgImg = loadGUI->GetRootObject().GetSprite( "bgImage" );
-		if( bgImg != NULL )
-		{
-			bgImg->SetMaterial( mat );
-		}
-
-		idSWFSpriteInstance* overlay = loadGUI->GetRootObject().GetSprite( "overlay" );
-
-		const idDeclEntityDef* mapDef = static_cast<const idDeclEntityDef*>( declManager->FindType( DECL_MAPDEF, mapName, false ) );
-		if( mapDef != NULL )
-		{
-			isHellMap = mapDef->dict.GetBool( "hellMap", false );
-
-			if( isHellMap && overlay != NULL )
-			{
-				overlay->SetVisible( false );
-			}
-
-			idStr desc;
-			idStr subTitle;
-			idStr displayName;
-			idSWFTextInstance* txtVal = NULL;
-
-			txtVal = loadGUI->GetRootObject().GetNestedText( "txtRegLoad" );
-			displayName = idLocalization::GetString( mapDef->dict.GetString( "name", mapName ) );
-
-			if( txtVal != NULL )
-			{
-				txtVal->SetText( "#str_00408" );
-				txtVal->SetStrokeInfo( true, 2.0f, 1.0f );
-			}
-
-			const idMatchParameters& matchParameters = session->GetActingGameStateLobbyBase().GetMatchParms();
-			if( matchParameters.gameMode == GAME_MODE_SINGLEPLAYER )
-			{
-				desc = idLocalization::GetString( mapDef->dict.GetString( "desc", "" ) );
-				subTitle = idLocalization::GetString( mapDef->dict.GetString( "subTitle", "" ) );
-			}
-			else
-			{
-				const idStrList& modes = common->GetModeDisplayList();
-				subTitle = modes[ idMath::ClampInt( 0, modes.Num() - 1, matchParameters.gameMode ) ];
-
-				const char* modeDescs[] = { "#str_swf_deathmatch_desc", "#str_swf_tourney_desc", "#str_swf_team_deathmatch_desc", "#str_swf_lastman_desc", "#str_swf_ctf_desc" };
-				desc = idLocalization::GetString( modeDescs[matchParameters.gameMode] );
-			}
-
-			if( !isHellMap )
-			{
-				txtVal = loadGUI->GetRootObject().GetNestedText( "txtName" );
-			}
-			else
-			{
-				txtVal = loadGUI->GetRootObject().GetNestedText( "txtHellName" );
-			}
-			if( txtVal != NULL )
-			{
-				txtVal->SetText( displayName );
-				txtVal->SetStrokeInfo( true, 2.0f, 1.0f );
-			}
-
-			txtVal = loadGUI->GetRootObject().GetNestedText( "txtSub" );
-			if( txtVal != NULL && !isHellMap )
-			{
-				txtVal->SetText( subTitle );
-				txtVal->SetStrokeInfo( true, 1.75f, 0.75f );
-			}
-
-			txtVal = loadGUI->GetRootObject().GetNestedText( "txtDesc" );
-			if( txtVal != NULL )
-			{
-				if( isHellMap )
-				{
-					txtVal->SetText( va( "\n%s", desc.c_str() ) );
-				}
-				else
-				{
-					txtVal->SetText( desc );
-				}
-				txtVal->SetStrokeInfo( true, 1.75f, 0.75f );
-			}
-		}
-	}
-}
-
-/*
-========================
-idGameLocal::Shell_IsActive
-========================
-*/
-bool idGameLocal::Shell_IsLoadingActive() const
-{
-	if( loadGUI != NULL )
-	{
-		return loadGUI->IsActive();
-	}
-	return false;
-}
-
-/*
-========================
-idGameLocal::Shell_Render
-========================
-*/
-void idGameLocal::Shell_RenderLoadingShell()
-{
-	if( loadGUI != NULL )
-	{
-		loadGUI->Render( renderSystem, Sys_Milliseconds() );
-	}
-}
-
-
-/*
-========================
-idGameLocal::Shell_CreateMenu
-========================
-*/
-void idGameLocal::Shell_CreateMenu( bool inGame )
-{
-	Shell_ResetMenu();
-
-	if( shellHandler != NULL )
-	{
-		if( !inGame )
-		{
-			shellHandler->SetInGame( false );
-			Shell_Init( "shell", common->MenuSW() );
-		}
-		else
-		{
-			shellHandler->SetInGame( true );
-			if( common->IsMultiplayer() )
-			{
-				Shell_Init( "pause", common->SW() );
-			}
-			else
-			{
-				Shell_Init( "pause", common->MenuSW() );
-			}
-		}
-	}
-}
-
-/*
-========================
-idGameLocal::Shell_ClosePause
-========================
-*/
-void idGameLocal::Shell_ClosePause()
-{
-	if( shellHandler != NULL )
-	{
-
-		if( !common->IsMultiplayer() && GetLocalPlayer() && GetLocalPlayer()->health <= 0 )
-		{
-			return;
-		}
-
-		if( shellHandler->GetGameComplete() )
-		{
-			return;
-		}
-
-		shellHandler->SetNextScreen( SHELL_AREA_INVALID, MENU_TRANSITION_SIMPLE );
-	}
-}
-
-/*
-========================
-idGameLocal::Shell_Show
-========================
-*/
-void idGameLocal::Shell_Show( bool show )
-{
-	if( shellHandler != NULL )
-	{
-		shellHandler->ActivateMenu( show );
-	}
-}
-
-/*
-========================
-idGameLocal::Shell_IsActive
-========================
-*/
-bool idGameLocal::Shell_IsActive() const
-{
-	if( shellHandler != NULL )
-	{
-		return shellHandler->IsActive();
-	}
-	return false;
-}
-
-/*
-========================
-idGameLocal::Shell_HandleGuiEvent
-========================
-*/
-bool idGameLocal::Shell_HandleGuiEvent( const sysEvent_t* sev )
-{
-	if( shellHandler != NULL )
-	{
-		return shellHandler->HandleGuiEvent( sev );
-	}
-	return false;
-}
-
-/*
-========================
-idGameLocal::Shell_Render
-========================
-*/
-void idGameLocal::Shell_Render()
-{
-	if( shellHandler != NULL )
-	{
-		shellHandler->Update();
-	}
-}
-
-/*
-========================
-idGameLocal::Shell_ResetMenu
-========================
-*/
-void idGameLocal::Shell_ResetMenu()
-{
-	if( shellHandler != NULL )
-	{
-		delete shellHandler;
-		shellHandler = new( TAG_SWF ) idMenuHandler_Shell();
-	}
-}
-
-/*
-=================
-idGameLocal::Shell_SyncWithSession
-=================
-*/
-void idGameLocal::Shell_SyncWithSession()
-{
-	// Update the Loading tip
-	const int time = Sys_Milliseconds();
-	if( time >= nextLoadTip && loadGUI != NULL && loadTipList.Num() > 0 && !defaultLoadscreen )
-	{
-		nextLoadTip = time + LOAD_TIP_CHANGE_INTERVAL;
-		const int rnd = time % loadTipList.Num();
-		idStrStatic<20> tipId;
-		tipId.Format( "#str_loadtip_%d", loadTipList[ rnd ] );
-		loadTipList.RemoveIndex( rnd );
-
-		idSWFTextInstance* txtVal = loadGUI->GetRootObject().GetNestedText( "txtDesc" );
-		if( txtVal != NULL )
-		{
-			if( isHellMap )
-			{
-				txtVal->SetText( va( "\n%s", idLocalization::GetString( tipId ) ) );
-			}
-			else
-			{
-				txtVal->SetText( idLocalization::GetString( tipId ) );
-			}
-			txtVal->SetStrokeInfo( true, 1.75f, 0.75f );
-		}
-
-		common->UpdateScreen( false );
-	}
-
-	// Don't if we dont have a shell
-	if( shellHandler == NULL )
-	{
-		return;
-	}
-
-	// Synch with idSession
-	switch( session->GetState() )
-	{
-		case idSession::INGAME:
-			shellHandler->SetShellState( SHELL_STATE_PAUSED );
-			break;
-		case idSession::IDLE:
-			shellHandler->SetShellState( SHELL_STATE_IDLE );
-			break;
-		case idSession::PARTY_LOBBY:
-			shellHandler->SetShellState( SHELL_STATE_PARTY_LOBBY );
-			break;
-		case idSession::GAME_LOBBY:
-			shellHandler->SetShellState( SHELL_STATE_GAME_LOBBY );
-			break;
-		case idSession::SEARCHING:
-			shellHandler->SetShellState( SHELL_STATE_SEARCHING );
-			break;
-		case idSession::LOADING:
-			shellHandler->SetShellState( SHELL_STATE_LOADING );
-			break;
-		case idSession::CONNECTING:
-			shellHandler->SetShellState( SHELL_STATE_CONNECTING );
-			break;
-		case idSession::BUSY:
-			shellHandler->SetShellState( SHELL_STATE_BUSY );
-			break;
-	}
-}
-
-void idGameLocal::Shell_SetGameComplete()
-{
-	if( shellHandler != NULL )
-	{
-		shellHandler->SetGameComplete();
-	}
-}
-
-bool idGameLocal::Shell_IsShowingIntro()
-{
-	if( !shellHandler )
-	{
-		return false;
-	}
-	return shellHandler->IsShowingIntro();
-}
-
-bool idGameLocal::Shell_IsGameComplete()
-{
-	if( !shellHandler )
-	{
-		return false;
-	}
-	return shellHandler->GetGameComplete();
-}
-
-/*
-========================
-idGameLocal::Shell_SetState_GameLobby
-========================
-*/
-void idGameLocal::Shell_UpdateSavedGames()
-{
-	if( shellHandler != NULL )
-	{
-		shellHandler->UpdateSavedGames();
-	}
-}
-
-/*
-========================
-idGameLocal::Shell_SetCanContinue
-========================
-*/
-void idGameLocal::Shell_SetCanContinue( bool valid )
-{
-	if( shellHandler != NULL )
-	{
-		shellHandler->SetCanContinue( valid );
-	}
-}
-
-/*
-========================
-idGameLocal::Shell_SetState_GameLobby
-========================
-*/
-void idGameLocal::Shell_UpdateClientCountdown( int countdown )
-{
-	if( shellHandler != NULL )
-	{
-		shellHandler->SetTimeRemaining( countdown );
-	}
-}
-
-/*
-========================
-idGameLocal::Shell_SetState_GameLobby
-========================
-*/
-void idGameLocal::Shell_UpdateLeaderboard( const idLeaderboardCallback* callback )
-{
-	if( shellHandler != NULL )
-	{
-		shellHandler->UpdateLeaderboard( callback );
-	}
+	return ( mainMenuLocal.IsActive() || IsPDAOpen() || IsPlayerChatting() || ( common->IsMultiplayer() && mpGame.IsScoreboardActive() ) );
 }
 
 /*
@@ -6358,28 +5840,33 @@ void idGameLocal::DemoWriteGameInfo()
 {
 	if( common->WriteDemo() != NULL )
 	{
-		common->WriteDemo()->WriteInt( DS_GAME );
-		common->WriteDemo()->WriteInt( GCMD_GAMETIME );
+		common->WriteDemoInt( DS_GAME );
+		common->WriteDemoInt( GCMD_GAMETIME );
 
-		common->WriteDemo()->WriteInt( previousTime );
-		common->WriteDemo()->WriteInt( time );
-		common->WriteDemo()->WriteInt( framenum );
+		common->WriteDemoInt( previousTime );
+		common->WriteDemoInt( time );
+		common->WriteDemoInt( framenum );
 
-		common->WriteDemo()->WriteInt( fast.previousTime );
-		common->WriteDemo()->WriteInt( fast.time );
-		common->WriteDemo()->WriteInt( fast.realClientTime );
+		common->WriteDemoInt( fast.previousTime );
+		common->WriteDemoInt( fast.time );
+		common->WriteDemoInt( fast.realClientTime );
 
-		common->WriteDemo()->WriteInt( slow.previousTime );
-		common->WriteDemo()->WriteInt( slow.time );
-		common->WriteDemo()->WriteInt( slow.realClientTime );
+		common->WriteDemoInt( slow.previousTime );
+		common->WriteDemoInt( slow.time );
+		common->WriteDemoInt( slow.realClientTime );
 	}
 }
 
+/*
+===============
+idGameLocal::ProcessDemoCommand
+===============
+*/
 bool idGameLocal::ProcessDemoCommand( idDemoFile* readDemo )
 {
 	gameDemoCommand_t cmd = GCMD_UNKNOWN;
 
-	if( !readDemo->ReadInt( ( int& )cmd ) )
+	if( !common->ReadDemoInt( ( int& )cmd ) )
 	{
 		return false;
 	}
@@ -6388,17 +5875,17 @@ bool idGameLocal::ProcessDemoCommand( idDemoFile* readDemo )
 	{
 		case GCMD_GAMETIME:
 		{
-			readDemo->ReadInt( previousTime );
-			readDemo->ReadInt( time );
-			readDemo->ReadInt( framenum );
+			common->ReadDemoInt( previousTime );
+			common->ReadDemoInt( time );
+			common->ReadDemoInt( framenum );
 
-			readDemo->ReadInt( fast.previousTime );
-			readDemo->ReadInt( fast.time );
-			readDemo->ReadInt( fast.realClientTime );
+			common->ReadDemoInt( fast.previousTime );
+			common->ReadDemoInt( fast.time );
+			common->ReadDemoInt( fast.realClientTime );
 
-			readDemo->ReadInt( slow.previousTime );
-			readDemo->ReadInt( slow.time );
-			readDemo->ReadInt( slow.realClientTime );
+			common->ReadDemoInt( slow.previousTime );
+			common->ReadDemoInt( slow.time );
+			common->ReadDemoInt( slow.realClientTime );
 			break;
 		}
 		default:

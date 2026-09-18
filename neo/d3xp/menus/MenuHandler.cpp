@@ -30,8 +30,6 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 #include "../Game_local.h"
 
-extern idCVar in_useJoystick;
-
 /*
 ================================================
 idMenuHandler::~idMenuHandler
@@ -123,7 +121,7 @@ idMenuHandler::GetPlatform
 int idMenuHandler::GetPlatform( bool realPlatform )
 {
 
-	if( platform == 2 && in_useJoystick.GetBool() && !realPlatform )
+	if( platform == 2 && cvarSystem->GetCVarBool( "in_useJoystick" ) && !realPlatform )
 	{
 		return 0;
 	}
@@ -306,7 +304,7 @@ void idMenuHandler::Update()
 
 	if( gui != NULL && gui->IsActive() )
 	{
-		gui->Render( renderSystem, Sys_Milliseconds() );
+		gui->Render( renderSystem, sys->GetMilliseconds() );
 	}
 }
 
@@ -488,7 +486,7 @@ void idMenuHandler::PumpWidgetActionRepeater()
 		return;
 	}
 
-	if( actionRepeater.nextRepeatTime > Sys_Milliseconds() )
+	if( actionRepeater.nextRepeatTime > sys->GetMilliseconds() )
 	{
 		return;
 	}
@@ -496,11 +494,11 @@ void idMenuHandler::PumpWidgetActionRepeater()
 	// need to hold down longer on the first iteration before we continue to scroll
 	if( actionRepeater.numRepetitions == 0 )
 	{
-		actionRepeater.nextRepeatTime = Sys_Milliseconds() + 400;
+		actionRepeater.nextRepeatTime = sys->GetMilliseconds() + 400;
 	}
 	else
 	{
-		actionRepeater.nextRepeatTime = Sys_Milliseconds() + actionRepeater.repeatDelay;
+		actionRepeater.nextRepeatTime = sys->GetMilliseconds() + actionRepeater.repeatDelay;
 	}
 
 	if( verify( actionRepeater.widget != NULL ) )

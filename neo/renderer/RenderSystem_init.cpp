@@ -2516,7 +2516,7 @@ idFont* idRenderSystemLocal::RegisterFont( const char* fontName )
 			return fonts[i];
 		}
 	}
-	idFont* newFont = new( TAG_FONT ) idFont( baseFontName );
+	idFont* newFont = new( TAG_FONT ) idFontLocal( baseFontName );
 	fonts.Append( newFont );
 	return newFont;
 }
@@ -2690,4 +2690,14 @@ void idRenderSystemLocal::CalcFov( float base_fov, float& fov_x, float& fov_y, c
 		x = ratio_x / idMath::Tan( fov_x / 360.0f * idMath::PI );
 		fov_y = idMath::ATan( ratio_y, x ) * 360.0f / idMath::PI;
 	}
+}
+
+/*
+===============
+idRenderSystemLocal::AdjustFramerateFromDisplayHz
+===============
+*/
+void idRenderSystemLocal::AdjustFramerateFromDisplayHz( int displayHz )
+{
+	R_AdjustFramerateFromDisplayHz( displayHz );
 }

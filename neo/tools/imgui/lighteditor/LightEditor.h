@@ -165,9 +165,9 @@ public:
 	{
 		return IsShown();
 	}
-	ImGuiWindowFlags GetExtraWindowFlags() const override
+	idImGuiWindowFlags GetExtraWindowFlags() const override
 	{
-		return ImGuiWindowFlags_NoCollapse;
+		return FLAGS_NOCOLLAPSE;
 	}
 
 	void DrawContents( bool& showTool ) override;

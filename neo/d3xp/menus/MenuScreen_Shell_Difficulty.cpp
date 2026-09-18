@@ -30,10 +30,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "../Game_local.h"
 
 const static int NUM_SETTING_OPTIONS = 8;
-extern idCVar g_nightmare;
-extern idCVar g_roeNightmare;
-extern idCVar g_leNightmare;
-extern idCVar g_skill;
+
 /*
 ========================
 idMenuScreen_Shell_Difficulty::Initialize

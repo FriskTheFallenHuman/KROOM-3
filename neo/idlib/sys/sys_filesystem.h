@@ -61,4 +61,14 @@ int				Sys_ListFiles( const char* directory, const char* extension, idList<class
 bool			Sys_GetPath( sysPath_t type, idStr& path );
 const char* 	Sys_CWD();
 
+// RB begin
+#if defined(_WIN32)
+	typedef HANDLE idFileHandle;
+#else
+	typedef FILE* idFileHandle;
+#endif
+// RB end
+
+ID_TIME_T		Sys_FileTimeStamp( const char* path );
+
 #endif /* !__SYS_FILESYSTEM_H__ */

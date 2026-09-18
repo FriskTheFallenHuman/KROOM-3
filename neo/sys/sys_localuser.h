@@ -137,46 +137,46 @@ public:
 	{
 		return GetProfileMgr().GetProfile();
 	}
-	const idPlayerProfile* 		GetProfile() const
+	virtual const idPlayerProfile* 		GetProfile() const
 	{
 		return const_cast< idLocalUser* >( this )->GetProfile();
 	}
 
-	idProfileMgr& 				GetProfileMgr()
+	virtual idProfileMgr& 		GetProfileMgr()
 	{
 		return profileMgr;
 	}
 
 	// Helper state to determine if the user is joining a party lobby or not
-	void						SetJoiningLobby( int lobbyType, bool value )
+	virtual void				SetJoiningLobby( int lobbyType, bool value )
 	{
 		joiningLobby[lobbyType] = value;
 	}
-	bool						IsJoiningLobby( int lobbyType ) const
+	virtual bool				IsJoiningLobby( int lobbyType ) const
 	{
 		return joiningLobby[lobbyType];
 	}
 
-	bool						CanPlayOnline() const
+	virtual bool				CanPlayOnline() const
 	{
 		return ( GetOnlineCaps() & CAP_CAN_PLAY_ONLINE ) > 0;
 	}
 
-	localUserHandle_t			GetLocalUserHandle() const
+	virtual localUserHandle_t	GetLocalUserHandle() const
 	{
 		return localUserHandle;
 	}
-	void						SetLocalUserHandle( localUserHandle_t newHandle )
+	virtual void				SetLocalUserHandle( localUserHandle_t newHandle )
 	{
 		localUserHandle = newHandle;
 	}
 
 	// Creates a new profile if one not already there
-	void						LoadProfileSettings();
-	void						SaveProfileSettings();
+	virtual void				LoadProfileSettings();
+	virtual void				SaveProfileSettings();
 
 	// Will attempt to sync the achievement bits between the server and the localUser when the achievement system is ready
-	void						RequestSyncAchievements()
+	virtual void				RequestSyncAchievements()
 	{
 		syncAchievementsRequested = true;
 	}

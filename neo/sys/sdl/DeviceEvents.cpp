@@ -523,9 +523,13 @@ sysEvent_t Sys_GetEvent()
 				continue; // just handle next event
 
 			case SDL_MOUSEMOTION:
+			{
 				// DG: return event with absolute mouse-coordinates when in menu
 				// to fix cursor problems in windowed mode
-				if( game && ( game->Shell_IsActive() || imguiSystem->GetEditor()->IsMouseRelease() ) )
+				const bool isShellActive = ( ( game || mainMenu || imguiSystem ) && ( mainMenu->IsActive() || game->IsPDAOpen() || imguiSystem->GetEditor()->IsMouseRelease() ) );
+				const bool isConsoleActive = console->Active();
+
+				if( isShellActive || isConsoleActive )
 				{
 					res.evType = SE_MOUSE_ABSOLUTE;
 					res.evValue = ev.motion.x;
@@ -543,6 +547,7 @@ sysEvent_t Sys_GetEvent()
 				mouse_polls.Append( mouse_poll_t( M_DELTAY, ev.motion.yrel ) );
 
 				return res;
+			}
 
 			case SDL_FINGERDOWN:
 			case SDL_FINGERUP:
@@ -703,6 +708,8 @@ sysEvent_t Sys_GetEvent()
 				continue;
 
 			case SDL_QUIT:
+				soundSystem->SetMute( true );
+				common->SetQuitRequested( true );
 				PushConsoleEvent( "quit" );
 				res = no_more_events; // don't handle next event, just quit.
 				return res;

@@ -29,7 +29,8 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 // This is the default language dict that the entire system uses, but you can instantiate your own idLangDict classes to manipulate a language dictionary in a tool
-idLangDict	idLocalization::languageDict;
+idLangDict  idLocalization::languageDict;
+idLangDict* idLocalization::dictionaryPtr = &idLocalization::languageDict;
 
 idCVar lang_maskLocalizedStrings( "lang_maskLocalizedStrings", "0", CVAR_BOOL, "Masks all localized strings to help debugging.  When set will replace strings with an equal length of W's and ending in an X.  Note: The masking occurs at string table load time." );
 
@@ -60,7 +61,7 @@ idLocalization::GetString
 */
 const char* idLocalization::GetString( const char* inString )
 {
-	return languageDict.GetString( inString );
+	return dictionaryPtr->GetString( inString );
 }
 
 /*
@@ -70,7 +71,7 @@ idLocalization::FindString
 */
 const char* idLocalization::FindString( const char* inString )
 {
-	return languageDict.FindString( inString );
+	return dictionaryPtr->FindString( inString );
 }
 
 /*
@@ -602,7 +603,7 @@ idLangDict::AddString
 */
 const char* idLangDict::AddString( const char* val )
 {
-	int i = Sys_Milliseconds();
+	int i = sys->GetMilliseconds();
 	idStr key;
 	sprintf( key, "#str_%06d", ( i++ % 1000000 ) );
 	while( FindStringIndex( key ) > 0 )
@@ -684,7 +685,7 @@ void idStrId::Set( const char* key )
 	}
 	else
 	{
-		index = idLocalization::languageDict.FindStringIndex( key );
+		index = idLocalization::dictionaryPtr->FindStringIndex( key );
 		if( index < 0 )
 		{
 			// don't allow setting of string ID's to an unknown ID... this should only be allowed from
@@ -702,9 +703,9 @@ idStrId::GetKey
 */
 const char* idStrId::GetKey() const
 {
-	if( index >= 0 && index < idLocalization::languageDict.keyVals.Num() )
+	if( index >= 0 && index < idLocalization::dictionaryPtr->keyVals.Num() )
 	{
-		return idLocalization::languageDict.keyVals[index].key;
+		return idLocalization::dictionaryPtr->keyVals[index].key;
 	}
 	return "";
 }
@@ -716,6 +717,6 @@ idStrId::GetLocalizedString
 */
 const char* idStrId::GetLocalizedString() const
 {
-	return idLocalization::languageDict.GetLocalizedString( *this );
+	return idLocalization::dictionaryPtr->GetLocalizedString( *this );
 }
 
