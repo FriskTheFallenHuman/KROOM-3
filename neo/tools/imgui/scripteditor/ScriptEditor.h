@@ -92,9 +92,9 @@ public:
 	{
 		return false;
 	}
-	ImGuiWindowFlags GetExtraWindowFlags() const override
+	idImGuiWindowFlags GetExtraWindowFlags() const override
 	{
-		return ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_MenuBar;
+		return FLAGS_ALWAYSAUTORESIZE | FLAGS_MENUBAR;
 	}
 
 	void DrawContents( bool& showTool ) override;

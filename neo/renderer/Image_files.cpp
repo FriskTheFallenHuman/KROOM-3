@@ -761,3 +761,53 @@ bool R_LoadCubeImages( const char* imgName, cubeFiles_t extensions, byte* pics[6
 	}
 	return true;
 }
+
+/*
+================
+idRenderSystemLocal::LoadImage
+================
+*/
+void idRenderSystemLocal::LoadImage( const char* cname, byte** pic, int* width, int* height, ID_TIME_T* timestamp, bool makePowerOf2, int* usage )
+{
+	R_LoadImage( cname, pic, width, height, timestamp, makePowerOf2, ( textureUsage_t* )usage );
+}
+
+/*
+================
+idRenderSystemLocal::WriteTGA
+================
+*/
+void idRenderSystemLocal::WriteTGA( const char* filename, const byte* data, int width, int height, bool flipVertical, const char* basePath )
+{
+	R_WriteTGA( filename, data, width, height, flipVertical, basePath );
+}
+
+/*
+================
+idRenderSystemLocal::WriteJPEG
+================
+*/
+void idRenderSystemLocal::WriteJPEG( const char* filename, const byte* data, int bytesPerPixel, int width, int height, bool flipVertical, const char* basePath )
+{
+	R_WriteJPEG( filename, data, bytesPerPixel, width, height, flipVertical, basePath );
+}
+
+/*
+================
+idRenderSystemLocal::WritePNG
+================
+*/
+void idRenderSystemLocal::WritePNG( const char* filename, const byte* data, int bytesPerPixel, int width, int height, bool flipVertical, const char* basePath )
+{
+	R_WritePNG( filename, data, bytesPerPixel, width, height, flipVertical, basePath );
+}
+
+/*
+================
+idRenderSystemLocal::WriteEXR
+================
+*/
+void idRenderSystemLocal::WriteEXR( const char* filename, const void* rgba16f, int channelsPerPixel, int width, int height, const char* basePath )
+{
+	R_WriteEXR( filename, rgba16f, channelsPerPixel, width, height, basePath );
+}

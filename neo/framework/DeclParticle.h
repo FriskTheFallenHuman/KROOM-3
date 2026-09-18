@@ -120,9 +120,9 @@ public:
 	~idParticleStage() {}
 
 	void					Default();
-	int						NumQuadsPerParticle() const;	// includes trails and cross faded animations
+	virtual int				NumQuadsPerParticle() const;	// includes trails and cross faded animations
 	// returns the number of verts created, which will range from 0 to 4*NumQuadsPerParticle()
-	int						CreateParticle( particleGen_t* g, idDrawVert* verts ) const;
+	virtual int				CreateParticle( particleGen_t* g, idDrawVert* verts ) const;
 
 	void					ParticleOrigin( particleGen_t* g, idVec3& origin ) const;
 	int						ParticleVerts( particleGen_t* g, const idVec3 origin, idDrawVert* verts ) const;

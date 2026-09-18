@@ -25,6 +25,7 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
+
 #ifndef __FONT_H__
 #define __FONT_H__
 
@@ -40,72 +41,20 @@ struct scaledGlyphInfo_t
 class idFont
 {
 public:
-	idFont( const char* n );
-	~idFont();
+	virtual			~idFont() {}
 
-	void Touch();
 
-	const char* GetName() const
-	{
-		return name;
-	}
+	virtual void	Touch() = 0;
+	virtual const	char* GetName() const = 0;
+	virtual idFont* GetAlias() = 0;
 
-	float GetLineHeight( float scale ) const;
-	float GetAscender( float scale ) const;
-	float GetMaxCharWidth( float scale ) const;
+	virtual float	GetLineHeight( float scale ) const = 0;
+	virtual float	GetAscender( float scale ) const = 0;
+	virtual float	GetMaxCharWidth( float scale ) const = 0;
 
-	float GetGlyphWidth( float scale, uint32 idx ) const;
-	void GetScaledGlyph( float scale, uint32 idx, scaledGlyphInfo_t& glyphInfo ) const;
+	virtual float	GetGlyphWidth( float scale, uint32 idx ) const = 0;
+	virtual void	GetScaledGlyph( float scale, uint32 idx, scaledGlyphInfo_t& glyphInfo ) const = 0;
 
-private:
-	static idFont* RemapFont( const char* baseName );
-
-	int	GetGlyphIndex( uint32 idx ) const;
-
-	bool LoadFont();
-
-	struct glyphInfo_t
-	{
-		byte	width;	// width of glyph in pixels
-		byte	height;	// height of glyph in pixels
-		signed char	top;	// distance in pixels from the base line to the top of the glyph
-		signed char	left;	// distance in pixels from the pen to the left edge of the glyph
-		byte	xSkip;	// x adjustment after rendering this glyph
-		uint16	s;		// x offset in image where glyph starts (in pixels)
-		uint16	t;		// y offset in image where glyph starts (in pixels)
-	};
-	struct fontInfo_t
-	{
-		struct oldInfo_t
-		{
-			float maxWidth;
-			float maxHeight;
-		} oldInfo[3];
-
-		short		ascender;
-		short		descender;
-
-		short		numGlyphs;
-		glyphInfo_t* glyphData;
-
-		// This is a sorted array of all characters in the font
-		// This maps directly to glyphData, so if charIndex[0] is 42 then glyphData[0] is character 42
-		uint32* 	charIndex;
-
-		// As an optimization, provide a direct mapping for the ascii character set
-		char		ascii[128];
-
-		const idMaterial* 	material;
-	};
-
-	// base name of the font (minus "fonts/" and ".dat")
-	idStr			name;
-
-	// Fonts can be aliases to other fonts
-	idFont* alias;
-
-	// If the font is NOT an alias, this is where the font data is located
-	fontInfo_t* fontInfo;
 };
 
-#endif
+#endif /* !__FONT_H__ */

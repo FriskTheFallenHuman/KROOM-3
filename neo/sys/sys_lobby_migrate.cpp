@@ -419,9 +419,9 @@ void idLobby::ResetAllMigrationState()
 
 	migrateMsgFlags		= 0;
 
-	common->Dialog().ClearDialog( GDM_MIGRATING );
-	common->Dialog().ClearDialog( GDM_MIGRATING_WAITING );
-	common->Dialog().ClearDialog( GDM_MIGRATING_RELAUNCHING );
+	dialogs->ClearDialog( GDM_MIGRATING );
+	dialogs->ClearDialog( GDM_MIGRATING_WAITING );
+	dialogs->ClearDialog( GDM_MIGRATING_RELAUNCHING );
 }
 
 /*

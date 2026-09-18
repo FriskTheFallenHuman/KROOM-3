@@ -43,10 +43,10 @@ If you have questions concerning this license or the applicable additional terms
 // luckily, these time measurements are only used for computing thread-private deltas
 // and they are only used for diagnostics, so they can be a bit inexact...
 #if 1
-	#define JobTimer_Clock uint64( Sys_GetClockTicks() )
-	#define JobTimer_Frequency uint64( Sys_ClockTicksPerSecond() )
+	#define JobTimer_Clock uint64( sys->GetClockTicks() )
+	#define JobTimer_Frequency uint64( sys->ClockTicksPerSecond() )
 #else
-	#define JobTimer_Clock Sys_GetTimeMicroseconds()
+	#define JobTimer_Clock sys->GetTimeMicroseconds()
 	#define JobTimer_Frequency 1000000ull
 #endif
 
@@ -1266,8 +1266,7 @@ idParallelJobManagerLocal
 ================================================================================================
 */
 
-extern void Sys_CPUCount( int& logicalNum, int& coreNum, int& packageNum );
-
+extern void Sys_CPUCount( int& numLogicalCPUCores, int& numPhysicalCPUCores, int& numCPUPackages );
 
 // WINDOWS LOGICAL PROCESSOR LIMITS:
 //

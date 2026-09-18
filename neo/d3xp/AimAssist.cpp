@@ -37,30 +37,6 @@ Contains the AimAssist implementation.
 ================================================================================================
 */
 
-idCVar aa_targetAimAssistEnable(	"aa_targetAimAssistEnable",						"0",		CVAR_BOOL | CVAR_ARCHIVE,	"Enables/Disables the entire Aim Assist system" );
-
-idCVar aa_targetAdhesionEnable(	"aa_targetAdhesionEnable",						"1",		CVAR_BOOL,	"Enables Target Adhesion" );
-idCVar aa_targetFrictionEnable(	"aa_targetFrictionEnable",						"1",		CVAR_BOOL,	"Enables Target Friction" );
-
-// Selection
-idCVar aa_targetMaxDistance(	"aa_targetMaxDistance",							"3000",		CVAR_FLOAT, "The Maximum Distance away for a target to be considered for adhesion, friction and target lock-to" );
-idCVar aa_targetSelectionRadius(	"aa_targetSelectionRadius",						"128.0",	CVAR_FLOAT, "Radius used to select targets for auto aiming" );
-
-// Adhesion
-idCVar aa_targetAdhesionRadius(	"aa_targetAdhesionRadius",						"96.0",		CVAR_FLOAT, "Radius used to apply adhesion amount" );
-idCVar aa_targetAdhesionYawSpeedMax(	"aa_targetAdhesionYawSpeedMax",					"0.6",		CVAR_FLOAT, "Max Yaw Adhesion Speed" );
-idCVar aa_targetAdhesionPitchSpeedMax(	"aa_targetAdhesionPitchSpeedMax",				"0.6",		CVAR_FLOAT, "Max Pitch Adhesion Speed" );
-idCVar aa_targetAdhesionContributionPctMax(	"aa_targetAdhesionContributionPctMax",			"0.25",		CVAR_FLOAT, "Max Adhesion Contribution Percentage - Range 0.0 - 1.0" );
-idCVar aa_targetAdhesionPlayerSpeedThreshold(	"aa_targetAdhesionPlayerSpeedThreshold",		"10.0",		CVAR_FLOAT, "Speed Threshold that determines how fast the player needs to move before adhesion is allowed to kick in" );
-
-// Friction
-idCVar aa_targetFrictionMaxDistance(	"aa_targetFrictionMaxDistance",					"1024.0",	CVAR_FLOAT, "Minimum Distance Friction takes effect" );
-idCVar aa_targetFrictionOptimalDistance(	"aa_targetFrictionOptimalDistance",				"768.0",	CVAR_FLOAT, "Optimal Distance for Friction to take an effect" );
-idCVar aa_targetFrictionRadius(	"aa_targetFrictionRadius",						"96.0",		CVAR_FLOAT, "Friction Collision Sphere Radius" );
-idCVar aa_targetFrictionOptimalRadius(	"aa_targetFrictionOptimalRadius",				"192.0",	CVAR_FLOAT, "Friction Collision Sphere Radius when at Optimal Distance" );
-idCVar aa_targetFrictionMultiplierMin(	"aa_targetFrictionMultiplierMin",				"1.0",		CVAR_FLOAT, "Minimum Friction Scalar" );
-idCVar aa_targetFrictionMultiplierMax(	"aa_targetFrictionMultiplierMax",				"0.4",		CVAR_FLOAT, "Maximum Friction Scalar" );
-
 /*
 ========================
 idAimAssist::Init

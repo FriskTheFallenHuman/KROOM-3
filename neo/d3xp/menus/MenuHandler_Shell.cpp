@@ -44,11 +44,11 @@ void idMenuHandler_Shell::Update()
 //#if defined ( ID_360 )
 //	if ( deviceRequestedSignal.Wait( 0 ) ) {
 //		// This clears the delete save dialog to catch the case of a delete confirmation for an old device after we've changed the device.
-//		common->Dialog().ClearDialog( GDM_DELETE_SAVE );
-//		common->Dialog().ClearDialog( GDM_DELETE_CORRUPT_SAVEGAME );
-//		common->Dialog().ClearDialog( GDM_RESTORE_CORRUPT_SAVEGAME );
-//		common->Dialog().ClearDialog( GDM_LOAD_DAMAGED_FILE );
-//		common->Dialog().ClearDialog( GDM_OVERWRITE_SAVE );
+//		dialogs->ClearDialog( GDM_DELETE_SAVE );
+//		dialogs->ClearDialog( GDM_DELETE_CORRUPT_SAVEGAME );
+//		dialogs->ClearDialog( GDM_RESTORE_CORRUPT_SAVEGAME );
+//		dialogs->ClearDialog( GDM_LOAD_DAMAGED_FILE );
+//		dialogs->ClearDialog( GDM_OVERWRITE_SAVE );
 //
 //	}
 //#endif
@@ -58,7 +58,7 @@ void idMenuHandler_Shell::Update()
 		return;
 	}
 
-	if( ( IsPacifierVisible() || common->Dialog().IsDialogActive() ) && actionRepeater.isActive )
+	if( ( IsPacifierVisible() || dialogs->IsDialogActive() ) && actionRepeater.isActive )
 	{
 		ClearWidgetActionRepeater();
 	}
@@ -200,7 +200,7 @@ void idMenuHandler_Shell::Update()
 
 	if( cmdBar != NULL && cmdBar->GetSprite() )
 	{
-		if( common->Dialog().IsDialogActive() )
+		if( dialogs->IsDialogActive() )
 		{
 			cmdBar->GetSprite()->SetVisible( false );
 		}
@@ -243,9 +243,9 @@ void idMenuHandler_Shell::Update()
 			idMatchParameters matchParameters = session->GetActivePlatformLobbyBase().GetMatchParms();
 			if( !MatchTypeIsPrivate( matchParameters.matchFlags ) )
 			{
-				if( Sys_Milliseconds() >= nextPeerUpdateMs )
+				if( sys->GetMilliseconds() >= nextPeerUpdateMs )
 				{
-					nextPeerUpdateMs = Sys_Milliseconds() + PEER_UPDATE_INTERVAL;
+					nextPeerUpdateMs = sys->GetMilliseconds() + PEER_UPDATE_INTERVAL;
 					byte buffer[ 128 ];
 					idBitMsg msg;
 					msg.InitWrite( buffer, sizeof( buffer ) );
@@ -264,7 +264,7 @@ void idMenuHandler_Shell::Update()
 
 	if( introGui != NULL && introGui->IsActive() )
 	{
-		introGui->Render( renderSystem, Sys_Milliseconds() );
+		introGui->Render( renderSystem, sys->GetMilliseconds() );
 	}
 
 	if( continueWaitForEnumerate )
@@ -272,7 +272,7 @@ void idMenuHandler_Shell::Update()
 		if( !session->GetSaveGameManager().IsWorking() )
 		{
 			continueWaitForEnumerate = false;
-			common->Dialog().ClearDialog( GDM_REFRESHING );
+			dialogs->ClearDialog( GDM_REFRESHING );
 			idMenuScreen_Shell_Singleplayer* screen = dynamic_cast< idMenuScreen_Shell_Singleplayer* >( menuScreens[ SHELL_AREA_CAMPAIGN ] );
 			if( screen != NULL )
 			{
@@ -318,10 +318,10 @@ bool idMenuHandler_Shell::HandleGuiEvent( const sysEvent_t* sev )
 
 	if( inGame && sev->evType == SE_KEY && sev->evValue2 == 1 && sev->evValue >= K_F1 && sev->evValue <= K_F12 )
 	{
-		const char* binding = idKeyInput::GetBinding( sev->evValue );
+		const char* binding = common->GetBinding( sev->evValue );
 		if( idStr::Icmp( binding, "screenshot" ) == 0 || idStr::Icmp( binding, "loadgame quick" ) == 0 )
 		{
-			idKeyInput::ExecKeyBinding( sev->evValue );
+			common->ExecKeyBinding( sev->evValue );
 			return true;
 		}
 	}
@@ -352,10 +352,10 @@ bool idMenuHandler_Shell::HandleGuiEvent( const sysEvent_t* sev )
 			else
 			{
 
-				if( idStr::Icmp( idKeyInput::GetBinding( sev->evValue ), "" ) == 0 )  	// no existing binding found
+				if( idStr::Icmp( common->GetBinding( sev->evValue ), "" ) == 0 )  	// no existing binding found
 				{
 
-					idKeyInput::SetBinding( sev->evValue, waitBind );
+					common->SetBinding( sev->evValue, waitBind );
 
 					idMenuScreen_Shell_Bindings* bindScreen = dynamic_cast< idMenuScreen_Shell_Bindings* >( menuScreens[ SHELL_AREA_KEYBOARD ] );
 					if( bindScreen != NULL )
@@ -372,11 +372,11 @@ bool idMenuHandler_Shell::HandleGuiEvent( const sysEvent_t* sev )
 				else  	// binding found prompt to change
 				{
 
-					const char* curBind = idKeyInput::GetBinding( sev->evValue );
+					const char* curBind = common->GetBinding( sev->evValue );
 
 					if( idStr::Icmp( waitBind, curBind ) == 0 )
 					{
-						idKeyInput::SetBinding( sev->evValue, "" );
+						common->SetBinding( sev->evValue, "" );
 						idMenuScreen_Shell_Bindings* bindScreen = dynamic_cast< idMenuScreen_Shell_Bindings* >( menuScreens[ SHELL_AREA_KEYBOARD ] );
 						if( bindScreen != NULL )
 						{
@@ -393,10 +393,10 @@ bool idMenuHandler_Shell::HandleGuiEvent( const sysEvent_t* sev )
 						idMenuScreen_Shell_Bindings* bindScreen = dynamic_cast< idMenuScreen_Shell_Bindings* >( menuScreens[ SHELL_AREA_KEYBOARD ] );
 						if( bindScreen != NULL )
 						{
-							class idSWFScriptFunction_RebindKey : public idSWFScriptFunction_RefCounted
+							class idDialogRebindKeyCallback : public idDialogCallback
 							{
 							public:
-								idSWFScriptFunction_RebindKey( idMenuScreen_Shell_Bindings* _menu, gameDialogMessages_t _msg, bool _accept, idMenuHandler_Shell* _mgr, int _key, const char* _bind )
+								idDialogRebindKeyCallback( idMenuScreen_Shell_Bindings* _menu, gameDialogMessages_t _msg, bool _accept, idMenuHandler_Shell* _mgr, int _key, const char* _bind )
 								{
 									menu = _menu;
 									msg = _msg;
@@ -405,19 +405,18 @@ bool idMenuHandler_Shell::HandleGuiEvent( const sysEvent_t* sev )
 									key = _key;
 									bind = _bind;
 								}
-								idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
+								void Call() override
 								{
-									common->Dialog().ClearDialog( msg );
+									dialogs->ClearDialog( msg );
 									mgr->ClearWaitForBinding();
 									menu->ToggleWait( false );
 									if( accept )
 									{
-										idKeyInput::SetBinding( key, bind );
+										common->SetBinding( key, bind );
 										menu->SetBindingChanged( true );
 										menu->UpdateBindingDisplay();
 										menu->Update();
 									}
-									return idSWFScriptVar();
 								}
 							private:
 								idMenuScreen_Shell_Bindings* menu;
@@ -428,7 +427,7 @@ bool idMenuHandler_Shell::HandleGuiEvent( const sysEvent_t* sev )
 								const char* bind;
 							};
 
-							common->Dialog().AddDialog( GDM_BINDING_ALREDY_SET, DIALOG_ACCEPT_CANCEL, new idSWFScriptFunction_RebindKey( bindScreen, GDM_BINDING_ALREDY_SET, true, this, sev->evValue, waitBind ), new idSWFScriptFunction_RebindKey( bindScreen, GDM_BINDING_ALREDY_SET, false, this, sev->evValue, waitBind ), false );
+							ADD_DIALOG( GDM_BINDING_ALREDY_SET, DIALOG_ACCEPT_CANCEL, new idDialogRebindKeyCallback( bindScreen, GDM_BINDING_ALREDY_SET, true, this, sev->evValue, waitBind ), new idDialogRebindKeyCallback( bindScreen, GDM_BINDING_ALREDY_SET, false, this, sev->evValue, waitBind ), false );
 						}
 
 					}
@@ -627,7 +626,7 @@ void idMenuHandler_Shell::Initialize( const char* swfFile, idSoundWorld* sw )
 	public:
 		idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
 		{
-			gameLocal.Shell_Show( false );
+			mainMenuLocal.Show( false );
 			return idSWFScriptVar();
 		}
 	};
@@ -717,7 +716,7 @@ void idMenuHandler_Shell::ActivateMenu( bool show )
 								const shaderStage_t* stage = mat->GetStage( i );
 								if( stage != NULL && stage->texture.cinematic )
 								{
-									stage->texture.cinematic->ResetTime( Sys_Milliseconds() );
+									stage->texture.cinematic->ResetTime( sys->GetMilliseconds() );
 								}
 							}
 						}
@@ -748,7 +747,7 @@ void idMenuHandler_Shell::ActivateMenu( bool show )
 		largeFrameShowing = false;
 		bgShowing = true;
 
-		common->Dialog().ClearDialog( GDM_LEAVE_LOBBY_RET_NEW_PARTY );
+		dialogs->ClearDialog( GDM_LEAVE_LOBBY_RET_NEW_PARTY );
 	}
 }
 
@@ -909,37 +908,37 @@ idMenuHandler_Shell::HandleExitGameBtn
 */
 void idMenuHandler_Shell::HandleExitGameBtn()
 {
-	class idSWFScriptFunction_QuitDialog : public idSWFScriptFunction_RefCounted
+	class idDialogQuitDialogCallback : public idDialogCallback
 	{
 	public:
-		idSWFScriptFunction_QuitDialog( gameDialogMessages_t _msg, int _accept )
+		idDialogQuitDialogCallback( gameDialogMessages_t _msg, int _accept )
 		{
 			msg = _msg;
 			accept = _accept;
 		}
-		idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
+
+		void Call() override
 		{
-			common->Dialog().ClearDialog( msg );
+			dialogs->ClearDialog( msg );
 			if( accept == 1 )
 			{
 				common->Quit();
 			}
-			return idSWFScriptVar();
 		}
 	private:
 		gameDialogMessages_t msg;
 		int accept;
 	};
 
-	idStaticList< idSWFScriptFunction*, 4 > callbacks;
+	idStaticList< idDialogCallback*, 4 > callbacks;
 	idStaticList< idStrId, 4 > optionText;
-	callbacks.Append( new( TAG_SWF ) idSWFScriptFunction_QuitDialog( GDM_QUIT_GAME, 1 ) );
-	callbacks.Append( new( TAG_SWF ) idSWFScriptFunction_QuitDialog( GDM_QUIT_GAME, 0 ) );
-	callbacks.Append( new( TAG_SWF ) idSWFScriptFunction_QuitDialog( GDM_QUIT_GAME, -1 ) );
+	callbacks.Append( new( TAG_SWF ) idDialogQuitDialogCallback( GDM_QUIT_GAME, 1 ) );
+	callbacks.Append( new( TAG_SWF ) idDialogQuitDialogCallback( GDM_QUIT_GAME, 0 ) );
+	callbacks.Append( new( TAG_SWF ) idDialogQuitDialogCallback( GDM_QUIT_GAME, -1 ) );
 	optionText.Append( idStrId( "#STR_SWF_ACCEPT" ) );
 	optionText.Append( idStrId( "#STR_SWF_CANCEL" ) );
 
-	common->Dialog().AddDynamicDialog( GDM_QUIT_GAME, callbacks, optionText, true, "" );
+	ADD_DYNAMIC_DIALOG( GDM_QUIT_GAME, callbacks, optionText, true, "" );
 }
 
 /*
@@ -1226,7 +1225,7 @@ void idMenuHandler_Shell::UpdateBGState()
 
 	if( smallFrameShowing )
 	{
-		if( nextScreen != SHELL_AREA_PLAYSTATION && nextScreen != SHELL_AREA_SETTINGS && nextScreen != SHELL_AREA_CAMPAIGN && nextScreen != SHELL_AREA_DEV )
+		if( nextScreen != SHELL_AREA_SETTINGS && nextScreen != SHELL_AREA_CAMPAIGN && nextScreen != SHELL_AREA_DEV )
 		{
 			if( nextScreen != SHELL_AREA_RESOLUTION && nextScreen != SHELL_AREA_GAMEPAD && nextScreen != SHELL_AREA_DIFFICULTY && nextScreen != SHELL_AREA_SYSTEM_OPTIONS && nextScreen != SHELL_AREA_GRAPHICS_OPTIONS && nextScreen != SHELL_AREA_GAME_OPTIONS && nextScreen != SHELL_AREA_NEW_GAME &&
 					nextScreen != SHELL_AREA_CONTROLS )
@@ -1237,7 +1236,7 @@ void idMenuHandler_Shell::UpdateBGState()
 	}
 	else
 	{
-		if( nextScreen == SHELL_AREA_RESOLUTION || nextScreen == SHELL_AREA_GAMEPAD || nextScreen == SHELL_AREA_PLAYSTATION || nextScreen == SHELL_AREA_SETTINGS || nextScreen == SHELL_AREA_CAMPAIGN || nextScreen == SHELL_AREA_CONTROLS || nextScreen == SHELL_AREA_DEV || nextScreen == SHELL_AREA_DIFFICULTY )
+		if( nextScreen == SHELL_AREA_RESOLUTION || nextScreen == SHELL_AREA_GAMEPAD || nextScreen == SHELL_AREA_SETTINGS || nextScreen == SHELL_AREA_CAMPAIGN || nextScreen == SHELL_AREA_CONTROLS || nextScreen == SHELL_AREA_DEV || nextScreen == SHELL_AREA_DIFFICULTY )
 		{
 			ShowSmallFrame( true );
 		}
@@ -1398,14 +1397,14 @@ void checkInput( void* data )
 		{
 			break;
 		}
-		Sys_GenerateEvents();
+		sys->GenerateEvents();
 
 		// queue system events ready for polling
-		Sys_GetEvent();
+		sys->GetEvent();
 
 		bool escapeEvent = false;
 		// allow to skip video by pressing anything
-		int numKeyEvents = Sys_PollKeyboardInputEvents();
+		int numKeyEvents = sys->PollKeyboardInputEvents();
 		if( numKeyEvents > 0 )
 		{
 			for( int i = 0; i < numKeyEvents; i++ )
@@ -1413,7 +1412,7 @@ void checkInput( void* data )
 				int key;
 				bool state;
 
-				if( Sys_ReturnKeyboardInputEvent( i, key, state ) )
+				if( sys->ReturnKeyboardInputEvent( i, key, state ) )
 				{
 					if( key == K_ESCAPE && state == true )
 					{
@@ -1423,11 +1422,11 @@ void checkInput( void* data )
 				}
 			}
 
-			Sys_EndKeyboardInputEvents();
+			sys->EndKeyboardInputEvents();
 		}
 
 		int	mouseEvents[MAX_MOUSE_EVENTS][2];
-		int numMouseEvents = Sys_PollMouseInputEvents( mouseEvents );
+		int numMouseEvents = sys->PollMouseInputEvents( mouseEvents );
 		if( numMouseEvents > 0 )
 		{
 			for( int i = 0; i < numMouseEvents; i++ )
@@ -1458,7 +1457,7 @@ void checkInput( void* data )
 			break;
 		}
 
-		Sys_Sleep( 10 );
+		sys->SysSleep( 10 );
 	}
 }
 
@@ -1471,7 +1470,7 @@ idMenuHandler_Shell::ShowIntroVideo
 void idMenuHandler_Shell::ShowDoomIntro()
 {
 	skipIntro = false;
-	Sys_ClearEvents();
+	sys->ClearEvents();
 	Sys_CreateThread( ( xthread_t )checkInput, NULL, THREAD_HIGHEST, "SkipIntro", CORE_ANY );
 
 	StopSound();
@@ -1492,7 +1491,7 @@ void idMenuHandler_Shell::ShowDoomIntro()
 				const shaderStage_t* stage = mat->GetStage( i );
 				if( stage != NULL && stage->texture.cinematic )
 				{
-					stage->texture.cinematic->ResetTime( Sys_Milliseconds() );
+					stage->texture.cinematic->ResetTime( sys->GetMilliseconds() );
 				}
 			}
 		}
@@ -1679,7 +1678,7 @@ idMenuHandler_Shell::ShowROEIntro
 void idMenuHandler_Shell::ShowROEIntro()
 {
 	skipIntro = false;
-	Sys_ClearEvents();
+	sys->ClearEvents();
 	Sys_CreateThread( ( xthread_t )checkInput, NULL, THREAD_HIGHEST, "SkipIntro", CORE_ANY );
 
 	StopSound();
@@ -1700,7 +1699,7 @@ void idMenuHandler_Shell::ShowROEIntro()
 				const shaderStage_t* stage = mat->GetStage( i );
 				if( stage != NULL && stage->texture.cinematic )
 				{
-					stage->texture.cinematic->ResetTime( Sys_Milliseconds() );
+					stage->texture.cinematic->ResetTime( sys->GetMilliseconds() );
 				}
 			}
 		}
@@ -1805,11 +1804,11 @@ void idMenuHandler_Shell::ShowROEIntro()
 											{
 												if( startFade == 0 )
 												{
-													startFade = Sys_Milliseconds();
+													startFade = sys->GetMilliseconds();
 												}
 												else
 												{
-													if( Sys_Milliseconds() - startFade >= 3000 )
+													if( sys->GetMilliseconds() - startFade >= 3000 )
 													{
 														nextInfo->SetVisible( false );
 														thisObject->GetSprite()->SetVisible( false );
@@ -1833,7 +1832,7 @@ void idMenuHandler_Shell::ShowROEIntro()
 													}
 													else
 													{
-														float alpha = 1.0f - ( ( float )( Sys_Milliseconds() - startFade ) / 3000.0f );
+														float alpha = 1.0f - ( ( float )( sys->GetMilliseconds() - startFade ) / 3000.0f );
 														nextInfo->SetAlpha( alpha );
 														thisObject->GetSprite()->SetAlpha( alpha );
 													}
@@ -1883,7 +1882,7 @@ void idMenuHandler_Shell::ShowLEIntro()
 {
 	skipIntro = false;
 
-	Sys_ClearEvents();
+	sys->ClearEvents();
 	Sys_CreateThread( ( xthread_t )checkInput, NULL, THREAD_HIGHEST, "SkipIntro", CORE_ANY );
 
 	StopSound();
@@ -1965,11 +1964,11 @@ void idMenuHandler_Shell::ShowLEIntro()
 						{
 							if( startFade == 0 )
 							{
-								startFade = Sys_Milliseconds();
+								startFade = sys->GetMilliseconds();
 							}
 							else
 							{
-								float alpha = 1.0f - ( ( float )( Sys_Milliseconds() - startFade ) / 3000.0f );
+								float alpha = 1.0f - ( ( float )( sys->GetMilliseconds() - startFade ) / 3000.0f );
 								if( alpha <= 0.0f )
 								{
 									thisObject->GetSprite()->SetVisible( false );

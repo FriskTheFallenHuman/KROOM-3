@@ -253,8 +253,6 @@ void idMenuScreen_Shell_Bindings::HideScreen( const mainMenuTransition_t transit
 	idMenuScreen::HideScreen( transitionType );
 }
 
-extern idCVar in_useJoystick;
-
 /*
 ========================
 idMenuScreen_Shell_Bindings::UpdateBindingDisplay
@@ -273,11 +271,11 @@ void idMenuScreen_Shell_Bindings::UpdateBindingDisplay()
 
 		if( ( idStr::Icmp( keyboardBinds[i].bind, "" ) != 0 ) )
 		{
-			keyBindings_t bind = idKeyInput::KeyBindingsFromBinding( keyboardBinds[i].bind, false, true );
+			keyBindings_t bind = common->KeyBindingsFromBinding( keyboardBinds[i].bind, false, true );
 
 			idStr bindings;
 
-			if( !bind.gamepad.IsEmpty() && in_useJoystick.GetBool() )
+			if( !bind.gamepad.IsEmpty() && cvarSystem->GetCVarBool( "in_useJoystick" ) )
 			{
 				idStrList joyBinds;
 				int start = 0;
@@ -438,7 +436,7 @@ void idMenuScreen_Shell_Bindings::SetBinding( int keyNum )
 {
 
 	int listIndex = options->GetViewIndex();
-	idKeyInput::SetBinding( keyNum, keyboardBinds[ listIndex ].bind );
+	common->SetBinding( keyNum, keyboardBinds[ listIndex ].bind );
 	UpdateBindingDisplay();
 	ToggleWait( false );
 	Update();
@@ -454,18 +452,18 @@ void idMenuScreen_Shell_Bindings::HandleRestoreDefaults()
 {
 
 
-	class idSWFScriptFunction_Restore : public idSWFScriptFunction_RefCounted
+	class idDialogRestoreCallback : public idDialogCallback
 	{
 	public:
-		idSWFScriptFunction_Restore( gameDialogMessages_t _msg, bool _accept, idMenuScreen_Shell_Bindings* _menu )
+		idDialogRestoreCallback( gameDialogMessages_t _msg, bool _accept, idMenuScreen_Shell_Bindings* _menu )
 		{
 			msg = _msg;
 			accept = _accept;
 			menu = _menu;
 		}
-		idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
+		void Call() override
 		{
-			common->Dialog().ClearDialog( msg );
+			dialogs->ClearDialog( msg );
 			if( accept )
 			{
 				idLocalUser* user = session->GetSignInManager().GetMasterLocalUser();
@@ -483,7 +481,6 @@ void idMenuScreen_Shell_Bindings::HandleRestoreDefaults()
 					}
 				}
 			}
-			return idSWFScriptVar();
 		}
 	private:
 		gameDialogMessages_t msg;
@@ -491,7 +488,7 @@ void idMenuScreen_Shell_Bindings::HandleRestoreDefaults()
 		idMenuScreen_Shell_Bindings* menu;
 	};
 
-	common->Dialog().AddDialog( GDM_BINDINGS_RESTORE, DIALOG_ACCEPT_CANCEL, new idSWFScriptFunction_Restore( GDM_BINDINGS_RESTORE, true, this ), new idSWFScriptFunction_Restore( GDM_BINDINGS_RESTORE, false, this ), false );
+	ADD_DIALOG( GDM_BINDINGS_RESTORE, DIALOG_ACCEPT_CANCEL, new idDialogRestoreCallback( GDM_BINDINGS_RESTORE, true, this ), new idDialogRestoreCallback( GDM_BINDINGS_RESTORE, false, this ), false );
 
 }
 

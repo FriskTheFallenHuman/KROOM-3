@@ -177,7 +177,17 @@ public:
 	{
 		return com_shuttingDown;
 	}
+	virtual idLangDict* 		GetLanguageDictionary()
+	{
+		return &idLocalization::languageDict;
+	}
 
+	virtual const char* 		KeyNumToString( keyNum_t keyNum );
+	virtual void				ClearStates();
+	virtual void				SetBinding( int keynum, const char* binding );
+	virtual const char* 		GetBinding( int keyNum );
+	virtual bool				ExecKeyBinding( int keyNum );
+	virtual keyBindings_t		KeyBindingsFromBinding( const char* bind, bool firstOnly = false, bool localized = false );
 	virtual const char* 		KeysFromBinding( const char* bind );
 	virtual const char* 		BindingFromKey( const char* key );
 
@@ -214,6 +224,9 @@ public:
 		return writeDemo;
 	}
 
+	virtual void				WriteDemoInt( int value );
+	virtual int					ReadDemoInt( int& var );
+
 	virtual idGame* 			Game()
 	{
 		return game;
@@ -234,10 +247,6 @@ public:
 	{
 		return session;
 	}
-	virtual idCommonDialog& 	Dialog()
-	{
-		return commonDialog;
-	}
 
 	virtual void				OnSaveCompleted( idSaveLoadParms& parms );
 	virtual void				OnLoadCompleted( idSaveLoadParms& parms );
@@ -254,11 +263,11 @@ public:
 	}
 
 	virtual void				InitializeMPMapsModes();
-	virtual const idStrList& 			GetModeList() const
+	virtual const idStrList&	GetModeList() const
 	{
 		return mpGameModes;
 	}
-	virtual const idStrList& 			GetModeDisplayList() const
+	virtual const idStrList&	GetModeDisplayList() const
 	{
 		return mpDisplayGameModes;
 	}
@@ -272,6 +281,24 @@ public:
 	virtual void				QueueShowShell()
 	{
 		showShellRequested = true;
+	}
+
+	virtual idUserCmdMgr& GetUCmdMgr()
+	{
+		return userCmdMgr;
+	}
+
+	virtual float				GetEngineHzLatched()
+	{
+		return com_engineHz_latched;
+	}
+	virtual int64				GetEngineHzNumerator()
+	{
+		return com_engineHz_numerator;
+	}
+	virtual int64				GetEngineHzDenominator()
+	{
+		return com_engineHz_denominator;
 	}
 
 public:
@@ -430,11 +457,6 @@ public:	// These are public because they are called directly by static functions
 	void	LocalizeMapData( const char* fileName, idLangDict& langDict );
 	void	LocalizeSpecificMapData( const char* fileName, idLangDict& langDict, const idLangDict& replaceArgs );
 
-	idUserCmdMgr& GetUCmdMgr()
-	{
-		return userCmdMgr;
-	}
-
 private:
 	bool						com_fullyInitialized;
 	bool						com_refreshOnPrint;		// update the screen every print for dmap
@@ -451,19 +473,17 @@ private:
 
 	// Thread-safe queue for messages printed from non-main threads.
 	// Messages are queued and flushed from the main thread in Frame().
-	idSysMutex			threadedPrintQueueMutex;
-	idList<idStr>			threadedPrintQueue;
+	idSysMutex					threadedPrintQueueMutex;
+	idList<idStr>				threadedPrintQueue;
 	// queued warnings produced by non-main threads (moved into warningList by PrintWarnings)
-	idStrList				threadedWarningList;
-	void				FlushThreadedPrintQueue();
+	idStrList					threadedWarningList;
+	void						FlushThreadedPrintQueue();
 
 	idStr						warningCaption;
 	idStrList					warningList;
 	idStrList					errorList;
 
-	int							gameDLL;
-
-	idCommonDialog				commonDialog;
+	uintptr_t					gameDLL;
 
 	idFile_SaveGame 			saveFile;
 	idFile_SaveGame 			stringsFile;
@@ -651,7 +671,7 @@ private:
 	void	DumpWarnings();
 	void	LoadGameDLL();
 	void	UnloadGameDLL();
-	void	RenderBink( const char* path );
+	void	RenderVideo( const char* path );
 	void	RenderSplash( bool photsensitivity = false );
 	void	FilterLangList( idStrList* list, idStr lang, bool strict = false );
 	void	CheckStartupStorageRequirements();

@@ -170,13 +170,13 @@ idCVar g_dragShowSelection(			"g_dragShowSelection",		"0",			CVAR_GAME | CVAR_BO
 idCVar g_dropItemRotation(			"g_dropItemRotation",		"",				CVAR_GAME, "" );
 
 // Note: These cvars do not necessarily need to be in the shipping game.
-idCVar g_flagAttachJoint( "g_flagAttachJoint", "Chest", CVAR_GAME | CVAR_CHEAT, "player joint to attach CTF flag to" );
-idCVar g_flagAttachOffsetX( "g_flagAttachOffsetX", "8", CVAR_GAME | CVAR_CHEAT, "X offset of CTF flag when carried" );
-idCVar g_flagAttachOffsetY( "g_flagAttachOffsetY", "4", CVAR_GAME | CVAR_CHEAT, "Y offset of CTF flag when carried" );
-idCVar g_flagAttachOffsetZ( "g_flagAttachOffsetZ", "-12", CVAR_GAME | CVAR_CHEAT, "Z offset of CTF flag when carried" );
-idCVar g_flagAttachAngleX( "g_flagAttachAngleX", "90", CVAR_GAME | CVAR_CHEAT, "X angle of CTF flag when carried" );
-idCVar g_flagAttachAngleY( "g_flagAttachAngleY", "25", CVAR_GAME | CVAR_CHEAT, "Y angle of CTF flag when carried" );
-idCVar g_flagAttachAngleZ( "g_flagAttachAngleZ", "-90", CVAR_GAME | CVAR_CHEAT, "Z angle of CTF flag when carried" );
+idCVar g_flagAttachJoint(			"g_flagAttachJoint",		"Chest",		CVAR_GAME | CVAR_CHEAT, "player joint to attach CTF flag to" );
+idCVar g_flagAttachOffsetX(			"g_flagAttachOffsetX",		"8",			CVAR_GAME | CVAR_CHEAT, "X offset of CTF flag when carried" );
+idCVar g_flagAttachOffsetY(			"g_flagAttachOffsetY",		"4",			CVAR_GAME | CVAR_CHEAT, "Y offset of CTF flag when carried" );
+idCVar g_flagAttachOffsetZ(			"g_flagAttachOffsetZ",		"-12",			CVAR_GAME | CVAR_CHEAT, "Z offset of CTF flag when carried" );
+idCVar g_flagAttachAngleX(			"g_flagAttachAngleX",		"90",			CVAR_GAME | CVAR_CHEAT, "X angle of CTF flag when carried" );
+idCVar g_flagAttachAngleY(			"g_flagAttachAngleY",		"25",			CVAR_GAME | CVAR_CHEAT, "Y angle of CTF flag when carried" );
+idCVar g_flagAttachAngleZ(			"g_flagAttachAngleZ",		"-90",			CVAR_GAME | CVAR_CHEAT, "Z angle of CTF flag when carried" );
 
 
 idCVar g_vehicleDebug(				"g_vehicleDebug",			"0",			CVAR_GAME | CVAR_BOOL, "" );
@@ -305,8 +305,6 @@ idCVar g_countDown(					"g_countDown",				"15",			CVAR_GAME | CVAR_INTEGER | CVA
 idCVar g_gameReviewPause(			"g_gameReviewPause",		"10",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_INTEGER | CVAR_ARCHIVE, "scores review time in seconds (at end game)", 2, 3600 );
 idCVar g_CTFArrows(					"g_CTFArrows",				"1",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_BOOL, "draw arrows over teammates in CTF" );
 
-idCVar net_clientPredictGUI(		"net_clientPredictGUI",		"1",			CVAR_GAME | CVAR_BOOL, "test guis in networking without prediction" );
-
 idCVar g_grabberHoldSeconds(		"g_grabberHoldSeconds",		"3",			CVAR_GAME | CVAR_FLOAT | CVAR_CHEAT, "number of seconds to hold object" );
 idCVar g_grabberEnableShake(		"g_grabberEnableShake",		"1",			CVAR_GAME | CVAR_BOOL | CVAR_CHEAT, "enable the grabber shake" );
 idCVar g_grabberRandomMotion(		"g_grabberRandomMotion",	"1",			CVAR_GAME | CVAR_BOOL | CVAR_CHEAT, "enable random motion on the grabbed object" );
@@ -314,3 +312,31 @@ idCVar g_grabberHardStop(			"g_grabberHardStop",		"1",			CVAR_GAME | CVAR_BOOL |
 idCVar g_grabberDamping(			"g_grabberDamping",			"0.5",			CVAR_GAME | CVAR_FLOAT | CVAR_CHEAT, "damping of grabber" );
 
 idCVar g_xp_bind_run_once(          "g_xp_bind_run_once",		"0",			CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "Rebind all controls once for D3XP." );
+
+idCVar g_checkpoints(				"g_checkpoints",			"1",			CVAR_BOOL | CVAR_ARCHIVE, "Enable/Disable checkpoints" );
+
+idCVar g_demoMode(					"g_demoMode",				"0",			CVAR_INTEGER, "this is a demo" );
+
+idCVar aa_targetAimAssistEnable(	"aa_targetAimAssistEnable",	"0",			CVAR_BOOL | CVAR_ARCHIVE,	"Enables/Disables the entire Aim Assist system" );
+
+idCVar aa_targetAdhesionEnable(		"aa_targetAdhesionEnable",	"1",			CVAR_BOOL,	"Enables Target Adhesion" );
+idCVar aa_targetFrictionEnable(		"aa_targetFrictionEnable",	"1",			CVAR_BOOL,	"Enables Target Friction" );
+
+// Selection
+idCVar aa_targetMaxDistance(		"aa_targetMaxDistance",		"3000",			CVAR_FLOAT, "The Maximum Distance away for a target to be considered for adhesion, friction and target lock-to" );
+idCVar aa_targetSelectionRadius(	"aa_targetSelectionRadius",	"128.0",		CVAR_FLOAT, "Radius used to select targets for auto aiming" );
+
+// Adhesion
+idCVar aa_targetAdhesionRadius(					"aa_targetAdhesionRadius",						"96.0",		CVAR_FLOAT, "Radius used to apply adhesion amount" );
+idCVar aa_targetAdhesionYawSpeedMax(			"aa_targetAdhesionYawSpeedMax",					"0.6",		CVAR_FLOAT, "Max Yaw Adhesion Speed" );
+idCVar aa_targetAdhesionPitchSpeedMax(			"aa_targetAdhesionPitchSpeedMax",				"0.6",		CVAR_FLOAT, "Max Pitch Adhesion Speed" );
+idCVar aa_targetAdhesionContributionPctMax(		"aa_targetAdhesionContributionPctMax",			"0.25",		CVAR_FLOAT, "Max Adhesion Contribution Percentage - Range 0.0 - 1.0" );
+idCVar aa_targetAdhesionPlayerSpeedThreshold(	"aa_targetAdhesionPlayerSpeedThreshold",		"10.0",		CVAR_FLOAT, "Speed Threshold that determines how fast the player needs to move before adhesion is allowed to kick in" );
+
+// Friction
+idCVar aa_targetFrictionMaxDistance(		"aa_targetFrictionMaxDistance",					"1024.0",	CVAR_FLOAT, "Minimum Distance Friction takes effect" );
+idCVar aa_targetFrictionOptimalDistance(	"aa_targetFrictionOptimalDistance",				"768.0",	CVAR_FLOAT, "Optimal Distance for Friction to take an effect" );
+idCVar aa_targetFrictionRadius(				"aa_targetFrictionRadius",						"96.0",		CVAR_FLOAT, "Friction Collision Sphere Radius" );
+idCVar aa_targetFrictionOptimalRadius(		"aa_targetFrictionOptimalRadius",				"192.0",	CVAR_FLOAT, "Friction Collision Sphere Radius when at Optimal Distance" );
+idCVar aa_targetFrictionMultiplierMin(		"aa_targetFrictionMultiplierMin",				"1.0",		CVAR_FLOAT, "Minimum Friction Scalar" );
+idCVar aa_targetFrictionMultiplierMax(		"aa_targetFrictionMultiplierMax",				"0.4",		CVAR_FLOAT, "Maximum Friction Scalar" );

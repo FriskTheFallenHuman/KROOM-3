@@ -2320,7 +2320,7 @@ void idMultiplayerGame::AddChatLine( const char* fmt, ... )
 		chatHistorySize++;
 	}
 	chatDataUpdated = true;
-	lastChatLineTime = Sys_Milliseconds();
+	lastChatLineTime = sys->GetMilliseconds();
 }
 
 /*
@@ -2334,7 +2334,7 @@ void idMultiplayerGame::DrawChat( idPlayer* player )
 
 	if( player )
 	{
-		if( Sys_Milliseconds() - lastChatLineTime > CHAT_FADE_TIME )
+		if( sys->GetMilliseconds() - lastChatLineTime > CHAT_FADE_TIME )
 		{
 			if( chatHistorySize > 0 )
 			{
@@ -2348,7 +2348,7 @@ void idMultiplayerGame::DrawChat( idPlayer* player )
 				}
 				chatDataUpdated = true;
 			}
-			lastChatLineTime = Sys_Milliseconds();
+			lastChatLineTime = sys->GetMilliseconds();
 		}
 		if( chatDataUpdated )
 		{

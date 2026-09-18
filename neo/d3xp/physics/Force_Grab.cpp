@@ -182,11 +182,11 @@ void idForce_Grab::Evaluate( int time )
 
 	if( adjustedLinearDamping < 0.0f )
 	{
-		adjustedLinearDamping = idMath::Pow( damping, 60.0f / com_engineHz_latched );
+		adjustedLinearDamping = idMath::Pow( damping, 60.0f / common->GetEngineHzLatched() );
 	}
 	if( adjustedAngularDamping < 0.0f )
 	{
-		adjustedAngularDamping = idMath::Pow( 0.99999f, 60.0f / com_engineHz_latched );
+		adjustedAngularDamping = idMath::Pow( 0.99999f, 60.0f / common->GetEngineHzLatched() );
 	}
 
 	if( distanceToGoal < 196.f )

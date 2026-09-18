@@ -389,13 +389,6 @@ bool idMenuScreen_Shell_Gamepad::HandleAction( idWidgetAction& action, const idW
 // SCREEN SETTINGS
 /////////////////////////////////
 
-extern idCVar in_invertLook;
-extern idCVar in_joystickRumble;
-extern idCVar joy_pitchSpeed;
-extern idCVar joy_yawSpeed;
-extern idCVar joy_gammaLook;
-extern idCVar joy_mergedThreshold;
-
 /*
 ========================
 idMenuScreen_Shell_Gamepad::idMenuDataSource_AudioSettings::idMenuDataSource_AudioSettings
@@ -416,13 +409,13 @@ void idMenuScreen_Shell_Gamepad::idMenuDataSource_GamepadSettings::LoadData()
 {
 	idPlayerProfile* profile = session->GetProfileFromMasterLocalUser();
 
-	fields[ GAMEPAD_FIELD_INVERT ].SetBool( in_invertLook.GetBool() );
+	fields[ GAMEPAD_FIELD_INVERT ].SetBool( cvarSystem->GetCVarBool( "in_invertLook" ) );
 	fields[ GAMEPAD_FIELD_LEFTY ].SetBool( profile ? profile->GetLeftyFlip() : false );
-	fields[ GAMEPAD_FIELD_VIBRATE ].SetBool( in_joystickRumble.GetBool() );
-	fields[ GAMEPAD_FIELD_HOR_SENS ].SetFloat( 100.0f * ( ( joy_yawSpeed.GetFloat() - 100.0f ) / 300.0f ) );
-	fields[ GAMEPAD_FIELD_VERT_SENS ].SetFloat( 100.0f * ( ( joy_pitchSpeed.GetFloat() - 60.0f ) / 200.0f ) );
-	fields[ GAMEPAD_FIELD_ACCELERATION ].SetBool( joy_gammaLook.GetBool() );
-	fields[ GAMEPAD_FIELD_THRESHOLD ].SetBool( joy_mergedThreshold.GetBool() );
+	fields[ GAMEPAD_FIELD_VIBRATE ].SetBool( cvarSystem->GetCVarBool( "in_joystickRumble" ) );
+	fields[ GAMEPAD_FIELD_HOR_SENS ].SetFloat( 100.0f * ( ( cvarSystem->GetCVarFloat( "joy_yawSpeed" ) - 100.0f ) / 300.0f ) );
+	fields[ GAMEPAD_FIELD_VERT_SENS ].SetFloat( 100.0f * ( ( cvarSystem->GetCVarFloat( "joy_pitchSpeed" ) - 60.0f ) / 200.0f ) );
+	fields[ GAMEPAD_FIELD_ACCELERATION ].SetBool( cvarSystem->GetCVarBool( "joy_gammaLook" ) );
+	fields[ GAMEPAD_FIELD_THRESHOLD ].SetBool( cvarSystem->GetCVarBool( "joy_mergedThreshold" ) );
 
 	originalFields = fields;
 }
@@ -435,12 +428,12 @@ idMenuScreen_Shell_Gamepad::idMenuDataSource_AudioSettings::CommitData
 void idMenuScreen_Shell_Gamepad::idMenuDataSource_GamepadSettings::CommitData()
 {
 
-	in_invertLook.SetBool( fields[ GAMEPAD_FIELD_INVERT ].ToBool() );
-	in_joystickRumble.SetBool( fields[ GAMEPAD_FIELD_VIBRATE ].ToBool() );
-	joy_yawSpeed.SetFloat( ( ( fields[ GAMEPAD_FIELD_HOR_SENS ].ToFloat() / 100.0f ) * 300.0f ) + 100.0f );
-	joy_pitchSpeed.SetFloat( ( ( fields[ GAMEPAD_FIELD_VERT_SENS ].ToFloat() / 100.0f ) * 200.0f ) + 60.0f );
-	joy_gammaLook.SetBool( fields[ GAMEPAD_FIELD_ACCELERATION ].ToBool() );
-	joy_mergedThreshold.SetBool( fields[ GAMEPAD_FIELD_THRESHOLD ].ToBool() );
+	cvarSystem->SetCVarBool( "in_invertLook", fields[ GAMEPAD_FIELD_INVERT ].ToBool() );
+	cvarSystem->SetCVarBool( "in_joystickRumble", fields[ GAMEPAD_FIELD_VIBRATE ].ToBool() );
+	cvarSystem->SetCVarFloat( "joy_yawSpeed", ( ( fields[ GAMEPAD_FIELD_HOR_SENS ].ToFloat() / 100.0f ) * 300.0f ) + 100.0f );
+	cvarSystem->SetCVarFloat( "joy_pitchSpeed", ( ( fields[ GAMEPAD_FIELD_VERT_SENS ].ToFloat() / 100.0f ) * 200.0f ) + 60.0f );
+	cvarSystem->SetCVarBool( "joy_gammaLook", fields[ GAMEPAD_FIELD_ACCELERATION ].ToBool() );
+	cvarSystem->SetCVarBool( "joy_mergedThreshold", fields[ GAMEPAD_FIELD_THRESHOLD ].ToBool() );
 
 	idPlayerProfile* profile = session->GetProfileFromMasterLocalUser();
 	if( profile != NULL )

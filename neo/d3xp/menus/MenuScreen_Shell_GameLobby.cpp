@@ -344,9 +344,9 @@ void idMenuScreen_Shell_GameLobby::ShowScreen( const mainMenuTransition_t transi
 			options->SetListData( menuOptions );
 		}
 
-		longCountdown = Sys_Milliseconds() + WAIT_START_TIME_LONG;
+		longCountdown = sys->GetMilliseconds() + WAIT_START_TIME_LONG;
 		longCountRemaining = longCountdown;
-		shortCountdown = Sys_Milliseconds() + WAIT_START_TIME_SHORT;
+		shortCountdown = sys->GetMilliseconds() + WAIT_START_TIME_SHORT;
 	}
 
 	idSWFScriptObject& root = GetSWFObject()->GetRootObject();
@@ -436,26 +436,23 @@ bool idMenuScreen_Shell_GameLobby::HandleAction( idWidgetAction& action, const i
 		}
 		case WIDGET_ACTION_GO_BACK:
 		{
-			class idSWFScriptFunction_Accept : public idSWFScriptFunction_RefCounted
+			class idDialogAcceptCallback : public idDialogCallback
 			{
 			public:
-				idSWFScriptFunction_Accept() { }
-				idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
+				idDialogAcceptCallback() { }
+				void Call() override
 				{
-					common->Dialog().ClearDialog( GDM_LEAVE_LOBBY_RET_NEW_PARTY );
+					dialogs->ClearDialog( GDM_LEAVE_LOBBY_RET_NEW_PARTY );
 					session->Cancel();
-
-					return idSWFScriptVar();
 				}
 			};
-			class idSWFScriptFunction_Cancel : public idSWFScriptFunction_RefCounted
+			class idDialogCancelCallback : public idDialogCallback
 			{
 			public:
-				idSWFScriptFunction_Cancel() { }
-				idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
+				idDialogCancelCallback() { }
+				void Call() override
 				{
-					common->Dialog().ClearDialog( GDM_LEAVE_LOBBY_RET_NEW_PARTY );
-					return idSWFScriptVar();
+					dialogs->ClearDialog( GDM_LEAVE_LOBBY_RET_NEW_PARTY );
 				}
 			};
 
@@ -463,7 +460,7 @@ bool idMenuScreen_Shell_GameLobby::HandleAction( idWidgetAction& action, const i
 
 			if( activeLobby.GetNumActiveLobbyUsers() > 1 )
 			{
-				common->Dialog().AddDialog( GDM_LEAVE_LOBBY_RET_NEW_PARTY, DIALOG_ACCEPT_CANCEL, new( TAG_SWF ) idSWFScriptFunction_Accept(), new( TAG_SWF ) idSWFScriptFunction_Cancel(), false );
+				ADD_DIALOG( GDM_LEAVE_LOBBY_RET_NEW_PARTY, DIALOG_ACCEPT_CANCEL, new( TAG_SWF ) idDialogAcceptCallback(), new( TAG_SWF ) idDialogCancelCallback(), false );
 			}
 			else
 			{
@@ -553,7 +550,7 @@ bool idMenuScreen_Shell_GameLobby::HandleAction( idWidgetAction& action, const i
 				{
 					if( session->GetActivePlatformLobbyBase().IsLobbyFull() )
 					{
-						common->Dialog().AddDialog( GDM_CANNOT_INVITE_LOBBY_FULL, DIALOG_CONTINUE, NULL, NULL, true, __FUNCTION__, __LINE__, false );
+						dialogs->AddDialog( GDM_CANNOT_INVITE_LOBBY_FULL, DIALOG_CONTINUE, NULL, NULL, true, __FUNCTION__, __LINE__, false );
 						return true;
 					}
 
@@ -645,8 +642,8 @@ void idMenuScreen_Shell_GameLobby::UpdateLobby()
 			{
 				if( session->GetActivePlatformLobbyBase().IsLobbyFull() )
 				{
-					longCountdown = Sys_Milliseconds() + longCountRemaining;
-					int timeRemaining = shortCountdown - Sys_Milliseconds();
+					longCountdown = sys->GetMilliseconds() + longCountRemaining;
+					int timeRemaining = shortCountdown - sys->GetMilliseconds();
 					if( timeRemaining < 0 )
 					{
 						timeRemaining = 0;
@@ -656,10 +653,10 @@ void idMenuScreen_Shell_GameLobby::UpdateLobby()
 				}
 				else if( session->GetActivePlatformLobbyBase().GetNumLobbyUsers() > 1 )
 				{
-					int timeRemaining = longCountdown - Sys_Milliseconds();
+					int timeRemaining = longCountdown - sys->GetMilliseconds();
 					if( timeRemaining > WAIT_START_TIME_SHORT )
 					{
-						shortCountdown = Sys_Milliseconds() + WAIT_START_TIME_SHORT;
+						shortCountdown = sys->GetMilliseconds() + WAIT_START_TIME_SHORT;
 					}
 					else
 					{
@@ -676,9 +673,9 @@ void idMenuScreen_Shell_GameLobby::UpdateLobby()
 				else
 				{
 					ms = 0;
-					longCountdown = Sys_Milliseconds() + WAIT_START_TIME_LONG;
+					longCountdown = sys->GetMilliseconds() + WAIT_START_TIME_LONG;
 					longCountRemaining = longCountdown;
-					shortCountdown = Sys_Milliseconds() + WAIT_START_TIME_SHORT;
+					shortCountdown = sys->GetMilliseconds() + WAIT_START_TIME_SHORT;
 					handler->SetTimeRemaining( longCountRemaining );
 				}
 			}

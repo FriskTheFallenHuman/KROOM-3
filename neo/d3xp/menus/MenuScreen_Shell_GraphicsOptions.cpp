@@ -274,17 +274,17 @@ void idMenuScreen_Shell_GraphicsOptions::HideScreen( const mainMenuTransition_t 
 {
 	if( renderData.IsRestartRequired() )
 	{
-		class idSWFScriptFunction_Restart : public idSWFScriptFunction_RefCounted
+		class idDialogRestartCallback : public idDialogCallback
 		{
 		public:
-			idSWFScriptFunction_Restart( gameDialogMessages_t _msg, bool _restart )
+			idDialogRestartCallback( gameDialogMessages_t _msg, bool _restart )
 			{
 				msg = _msg;
 				restart = _restart;
 			}
-			idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
+			void Call() override
 			{
-				common->Dialog().ClearDialog( msg );
+				dialogs->ClearDialog( msg );
 				if( restart )
 				{
 					idStr cmdLine = sys->GetCmdLine();
@@ -298,19 +298,18 @@ void idMenuScreen_Shell_GraphicsOptions::HideScreen( const mainMenuTransition_t 
 					}
 					sys->ReLaunch( ( void* )cmdLine.c_str() );
 				}
-				return idSWFScriptVar();
 			}
 		private:
 			gameDialogMessages_t msg;
 			bool restart;
 		};
-		idStaticList<idSWFScriptFunction*, 4> callbacks;
+		idStaticList<idDialogCallback*, 4> callbacks;
 		idStaticList<idStrId, 4> optionText;
-		callbacks.Append( new idSWFScriptFunction_Restart( GDM_GAME_RESTART_REQUIRED, false ) );
-		callbacks.Append( new idSWFScriptFunction_Restart( GDM_GAME_RESTART_REQUIRED, true ) );
+		callbacks.Append( new idDialogRestartCallback( GDM_GAME_RESTART_REQUIRED, false ) );
+		callbacks.Append( new idDialogRestartCallback( GDM_GAME_RESTART_REQUIRED, true ) );
 		optionText.Append( idStrId( "#str_00100113" ) ); // Continue
 		optionText.Append( idStrId( "#str_02487" ) ); // Restart Now
-		common->Dialog().AddDynamicDialog( GDM_GAME_RESTART_REQUIRED, callbacks, optionText, true, idStr() );
+		ADD_DYNAMIC_DIALOG( GDM_GAME_RESTART_REQUIRED, callbacks, optionText, true, idStr() );
 	}
 
 	if( renderData.IsDataChanged() )
@@ -396,22 +395,6 @@ bool idMenuScreen_Shell_GraphicsOptions::HandleAction( idWidgetAction& action, c
 // SCREEN SETTINGS
 /////////////////////////////////
 
-extern idCVar r_shadowMapLodScale;
-extern idCVar r_useHDR;
-extern idCVar r_hdrAutoExposure;
-extern idCVar r_antiAliasing;
-extern idCVar r_motionBlur;
-extern idCVar r_useFilmicPostProcessing;
-extern idCVar r_exposure; // RB: use this to control HDR exposure or brightness in LDR mode
-extern idCVar r_lodBias;
-extern idCVar r_useSSGI;
-extern idCVar r_useHalfLambertLighting;
-extern idCVar r_shadowMapLodScale;
-extern idCVar r_usePBR;
-extern idCVar r_useLightGrid;
-extern idCVar r_useMaskedOcclusionCulling;
-extern idCVar r_tonemapPreset;
-
 /*
 ========================
 idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_GraphicsSettings::idMenuDataSource_GraphicsSettings
@@ -430,22 +413,22 @@ idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_GraphicsSettings::LoadData
 */
 void idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_GraphicsSettings::LoadData()
 {
-	fields[ GRAPHICS_FIELD_ANTIALIASING ].SetInteger( r_antiAliasing.GetInteger() );
-	fields[ GRAPHICS_FIELD_BRIGHTNESS ].SetFloat( r_exposure.GetFloat() );
-	fields[ GRAPHICS_FIELD_SSAO ].SetBool( r_useSSAO.GetBool() );
-	fields[ GRAPHICS_FIELD_POSTFX ].SetBool( r_useFilmicPostProcessing.GetBool() );
-	fields[ GRAPHICS_FIELD_AMBIENT_BRIGHTNESS ].SetFloat( r_forceAmbient.GetFloat() );
-	fields[ GRAPHICS_FIELD_LODBIAS ].SetFloat( r_lodBias.GetFloat() );
-	fields[ GRAPHICS_FIELD_MOTIONBLUR ].SetInteger( r_motionBlur.GetInteger() );
-	fields[ GRAPHICS_FIELD_HDR ].SetBool( r_useHDR.GetBool() );
-	fields[ GRAPHICS_FIELD_HDR_AUTOEXPOSURE ].SetBool( r_hdrAutoExposure.GetBool() );
-	fields[ GRAPHICS_FIELD_SHADOWMAP_LOD ].SetFloat( r_shadowMapLodScale.GetFloat() );
-	fields[ GRAPHICS_FIELD_SSGI ].SetBool( r_useSSGI.GetBool() );
-	fields[ GRAPHICS_FIELD_HALF_LIGHT ].SetBool( r_useHalfLambertLighting.GetBool() );
-	fields[ GRAPHICS_FIELD_PBR ].SetBool( r_usePBR.GetBool() );
-	fields[ GRAPHICS_FIELD_LIGHTGRID ].SetBool( r_useLightGrid.GetBool() );
-	fields[ GRAPHICS_FIELD_MOC ].SetBool( r_useMaskedOcclusionCulling.GetBool() );
-	fields[ GRAPHICS_FIELD_TONEMAP_PRESETS ].SetInteger( r_tonemapPreset.GetInteger() );
+	fields[ GRAPHICS_FIELD_ANTIALIASING ].SetInteger( cvarSystem->GetCVarInteger( "r_antiAliasing" ) );
+	fields[ GRAPHICS_FIELD_BRIGHTNESS ].SetFloat( cvarSystem->GetCVarFloat( "r_exposure" ) );
+	fields[ GRAPHICS_FIELD_SSAO ].SetBool( cvarSystem->GetCVarBool( "r_useSSAO" ) );
+	fields[ GRAPHICS_FIELD_POSTFX ].SetBool( cvarSystem->GetCVarBool( "r_useFilmicPostProcessing" ) );
+	fields[ GRAPHICS_FIELD_AMBIENT_BRIGHTNESS ].SetFloat( cvarSystem->GetCVarFloat( "r_forceAmbient" ) );
+	fields[ GRAPHICS_FIELD_LODBIAS ].SetFloat( cvarSystem->GetCVarFloat( "r_lodBias" ) );
+	fields[ GRAPHICS_FIELD_MOTIONBLUR ].SetInteger( cvarSystem->GetCVarInteger( "r_motionBlur" ) );
+	fields[ GRAPHICS_FIELD_HDR ].SetBool( cvarSystem->GetCVarBool( "r_useHDR" ) );
+	fields[ GRAPHICS_FIELD_HDR_AUTOEXPOSURE ].SetBool( cvarSystem->GetCVarBool( "r_hdrAutoExposure" ) );
+	fields[ GRAPHICS_FIELD_SHADOWMAP_LOD ].SetFloat( cvarSystem->GetCVarFloat( "r_shadowMapLodScale" ) );
+	fields[ GRAPHICS_FIELD_SSGI ].SetBool( cvarSystem->GetCVarBool( "r_useSSGI" ) );
+	fields[ GRAPHICS_FIELD_HALF_LIGHT ].SetBool( cvarSystem->GetCVarBool( "r_useHalfLambertLighting" ) );
+	fields[ GRAPHICS_FIELD_PBR ].SetBool( cvarSystem->GetCVarBool( "r_usePBR" ) );
+	fields[ GRAPHICS_FIELD_LIGHTGRID ].SetBool( cvarSystem->GetCVarBool( "r_useLightGrid" ) );
+	fields[ GRAPHICS_FIELD_MOC ].SetBool( cvarSystem->GetCVarBool( "r_useMaskedOcclusionCulling" ) );
+	fields[ GRAPHICS_FIELD_TONEMAP_PRESETS ].SetInteger( cvarSystem->GetCVarInteger( "r_tonemapPreset" ) );
 
 	originalFields = fields;
 }
@@ -472,22 +455,22 @@ idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_GraphicsSettings::CommitDat
 */
 void idMenuScreen_Shell_GraphicsOptions::idMenuDataSource_GraphicsSettings::CommitData()
 {
-	r_antiAliasing.SetInteger( fields[ GRAPHICS_FIELD_ANTIALIASING ].ToInteger() );
-	r_exposure.SetFloat( fields[ GRAPHICS_FIELD_BRIGHTNESS ].ToFloat() );
-	r_useSSAO.SetBool( fields[ GRAPHICS_FIELD_SSAO ].ToBool() );
-	r_useFilmicPostProcessing.SetBool( fields[ GRAPHICS_FIELD_POSTFX ].ToBool() );
-	r_forceAmbient.SetFloat( fields[ GRAPHICS_FIELD_AMBIENT_BRIGHTNESS ].ToFloat() );
-	r_lodBias.SetFloat( fields[ GRAPHICS_FIELD_LODBIAS ].ToFloat() );
-	r_motionBlur.SetInteger( fields[ GRAPHICS_FIELD_MOTIONBLUR ].ToInteger() );
-	r_useHDR.SetBool( fields[ GRAPHICS_FIELD_HDR ].ToBool() );
-	r_hdrAutoExposure.SetBool( fields[ GRAPHICS_FIELD_HDR_AUTOEXPOSURE ].ToBool() );
-	r_shadowMapLodScale.SetFloat( fields[ GRAPHICS_FIELD_SHADOWMAP_LOD ].ToFloat() );
-	r_useSSGI.SetBool( fields[ GRAPHICS_FIELD_SSGI ].ToBool() );
-	r_useHalfLambertLighting.SetBool( fields[ GRAPHICS_FIELD_HALF_LIGHT ].ToBool() );
-	r_usePBR.SetBool( fields[ GRAPHICS_FIELD_PBR ].ToBool() );
-	r_useLightGrid.SetBool( fields[ GRAPHICS_FIELD_LIGHTGRID ].ToBool() );
-	r_useMaskedOcclusionCulling.SetBool( fields[ GRAPHICS_FIELD_MOC ].ToBool() );
-	r_tonemapPreset.SetInteger( fields[ GRAPHICS_FIELD_TONEMAP_PRESETS ].ToInteger() );
+	cvarSystem->SetCVarInteger( "r_antiAliasing", fields[ GRAPHICS_FIELD_ANTIALIASING ].ToInteger() );
+	cvarSystem->SetCVarFloat( "r_exposure", fields[ GRAPHICS_FIELD_BRIGHTNESS ].ToFloat() );
+	cvarSystem->SetCVarBool( "r_useSSAO", fields[ GRAPHICS_FIELD_SSAO ].ToBool() );
+	cvarSystem->SetCVarBool( "r_useFilmicPostProcessing", fields[ GRAPHICS_FIELD_POSTFX ].ToBool() );
+	cvarSystem->SetCVarFloat( "r_forceAmbient", fields[ GRAPHICS_FIELD_AMBIENT_BRIGHTNESS ].ToFloat() );
+	cvarSystem->SetCVarFloat( "r_lodBias", fields[ GRAPHICS_FIELD_LODBIAS ].ToFloat() );
+	cvarSystem->SetCVarInteger( "r_motionBlur", fields[ GRAPHICS_FIELD_MOTIONBLUR ].ToInteger() );
+	cvarSystem->SetCVarBool( "r_useHDR", fields[ GRAPHICS_FIELD_HDR ].ToBool() );
+	cvarSystem->SetCVarBool( "r_hdrAutoExposure", fields[ GRAPHICS_FIELD_HDR_AUTOEXPOSURE ].ToBool() );
+	cvarSystem->SetCVarFloat( "r_shadowMapLodScale", fields[ GRAPHICS_FIELD_SHADOWMAP_LOD ].ToFloat() );
+	cvarSystem->SetCVarBool( "r_useSSGI", fields[ GRAPHICS_FIELD_SSGI ].ToBool() );
+	cvarSystem->SetCVarBool( "r_useHalfLambertLighting", fields[ GRAPHICS_FIELD_HALF_LIGHT ].ToBool() );
+	cvarSystem->SetCVarBool( "r_usePBR", fields[ GRAPHICS_FIELD_PBR ].ToBool() );
+	cvarSystem->SetCVarBool( "r_useLightGrid", fields[ GRAPHICS_FIELD_LIGHTGRID ].ToBool() );
+	cvarSystem->SetCVarBool( "r_useMaskedOcclusionCulling", fields[ GRAPHICS_FIELD_MOC ].ToBool() );
+	cvarSystem->SetCVarInteger( "r_tonemapPreset", fields[ GRAPHICS_FIELD_TONEMAP_PRESETS ].ToInteger() );
 
 	cvarSystem->SetModifiedFlags( CVAR_ARCHIVE );
 

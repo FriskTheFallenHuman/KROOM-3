@@ -238,7 +238,7 @@ void idMenuScreen_Shell_ControllerLayout::UpdateBindingInfo()
 
 		if( txtVal != NULL )
 		{
-			const char* binding = idKeyInput::GetBinding( keyNum );
+			const char* binding = common->GetBinding( keyNum );
 			if( binding == NULL || binding[0] == 0 )
 			{
 				txtVal->SetText( "" );

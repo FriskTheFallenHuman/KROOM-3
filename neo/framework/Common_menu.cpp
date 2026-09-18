@@ -145,7 +145,7 @@ idCommonLocal::StartMainMenu
 */
 void idCommonLocal::StartMenu( bool playIntro )
 {
-	if( game && game->Shell_IsActive() )
+	if( mainMenu && mainMenu->IsActive() )
 	{
 		return;
 	}
@@ -156,10 +156,10 @@ void idCommonLocal::StartMenu( bool playIntro )
 		UnloadMap();
 	}
 
-	if( game )
+	if( mainMenu )
 	{
-		game->Shell_Show( true );
-		game->Shell_SyncWithSession();
+		mainMenu->Show( true );
+		mainMenu->SyncWithSession();
 	}
 
 	console->Close();
@@ -181,9 +181,9 @@ bool idCommonLocal::MenuEvent( const sysEvent_t* event )
 		return true;
 	}
 
-	if( game && game->Shell_IsActive() )
+	if( mainMenu && mainMenu->IsActive() )
 	{
-		return game->Shell_HandleGuiEvent( event );
+		return mainMenu->HandleGuiEvent( event );
 	}
 
 	if( game )

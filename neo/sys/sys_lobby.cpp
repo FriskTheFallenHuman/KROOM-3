@@ -776,9 +776,9 @@ void idLobby::State_Idle()
 	if( lobbyBackend != NULL && lobbyBackend->GetState() == idLobbyBackend::STATE_FAILED )
 	{
 		HandleConnectionAttemptFailed();
-		common->Dialog().ClearDialog( GDM_MIGRATING );
-		common->Dialog().ClearDialog( GDM_MIGRATING_WAITING );
-		common->Dialog().ClearDialog( GDM_MIGRATING_RELAUNCHING );
+		dialogs->ClearDialog( GDM_MIGRATING );
+		dialogs->ClearDialog( GDM_MIGRATING_WAITING );
+		dialogs->ClearDialog( GDM_MIGRATING_RELAUNCHING );
 		return;
 	}
 
@@ -787,9 +787,9 @@ void idLobby::State_Idle()
 		// This can happen with 'leaveGame' or 'disconnect' since those paths don't go through endMatch
 		// This seems like an ok catch all place but there may be a better way to handle this
 		ResetAllMigrationState();
-		common->Dialog().ClearDialog( GDM_MIGRATING );
-		common->Dialog().ClearDialog( GDM_MIGRATING_WAITING );
-		common->Dialog().ClearDialog( GDM_MIGRATING_RELAUNCHING );
+		dialogs->ClearDialog( GDM_MIGRATING );
+		dialogs->ClearDialog( GDM_MIGRATING_WAITING );
+		dialogs->ClearDialog( GDM_MIGRATING_RELAUNCHING );
 	}
 }
 
@@ -1757,7 +1757,7 @@ bool idLobby::ConnectToNextSearchResult()
 	ConnectTo( connectInfo, true );		// Pass in true for invite, since searches are for matchmaking, and we should always be able to connect to those types of matches
 
 	// Clear the "Lobby was Full" dialog in case it's up, since we are going to try to connect to a different lobby now
-	common->Dialog().ClearDialog( GDM_LOBBY_FULL );
+	dialogs->ClearDialog( GDM_LOBBY_FULL );
 
 	return true;	// Notify caller we are attempting to connect
 }
@@ -2833,7 +2833,7 @@ void idLobby::HandleReliableMsg( int p, idBitMsg& msg, const lobbyAddress_t& rem
 	else if( reliableType == RELIABLE_KICK_PLAYER )
 	{
 		VERIFY_FROM_HOST( p, lobbyType, RELIABLE_KICK_PLAYER );
-		common->Dialog().AddDialog( GDM_KICKED, DIALOG_ACCEPT, NULL, NULL, false );
+		dialogs->AddDialog( GDM_KICKED, DIALOG_ACCEPT, NULL, NULL, false );
 		if( sessionCB->GetPartyLobby().IsHost() )
 		{
 			session->SetSessionOption( idSession::OPTION_LEAVE_WITH_PARTY );

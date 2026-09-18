@@ -47,7 +47,11 @@ public:
 	virtual void			DebugPrintf( VERIFY_FORMAT_STRING const char* fmt, ... );
 	virtual void			DebugVPrintf( const char* fmt, va_list arg );
 
+	virtual void			SysSleep( int msec );
+
 	virtual unsigned int	GetMilliseconds();
+	virtual	uint64			GetMicroseconds();
+
 	virtual double			GetClockTicks();
 	virtual double			ClockTicksPerSecond();
 	virtual int				GetProcessorId();
@@ -61,6 +65,14 @@ public:
 	virtual void			DLL_Unload( int dllHandle );
 	virtual void			DLL_GetFileName( const char* baseName, char* dllName, int maxLength );
 
+	virtual int				PollKeyboardInputEvents();
+	virtual int				ReturnKeyboardInputEvent( const int n, int& ch, bool& state );
+	virtual void			EndKeyboardInputEvents();
+	virtual int				PollMouseInputEvents( int mouseEvents[MAX_MOUSE_EVENTS][2] );
+
+	virtual void			GenerateEvents();
+	virtual sysEvent_t		GetEvent();
+	virtual void			ClearEvents();
 	virtual sysEvent_t		GenerateMouseButtonEvent( int button, bool down );
 	virtual sysEvent_t		GenerateMouseMoveEvent( int deltax, int deltay );
 
@@ -71,6 +83,9 @@ public:
 	virtual bool			Exec( const char* appPath, const char* workingPath, const char* args,
 								  execProcessWorkFunction_t workFn, execOutputFunction_t outputFn,
 								  const int waitMS, unsigned int& exitCode );
+
+	virtual const char*		TimeStampToStr( ID_TIME_T timeStamp );
+	virtual const char*		SecToStr( int sec );
 };
 
 extern char	sys_cmdline[MAX_STRING_CHARS];

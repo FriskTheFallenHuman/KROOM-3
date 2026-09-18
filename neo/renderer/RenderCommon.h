@@ -36,7 +36,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "GLState.h"
 #include "ScreenRect.h"
 #include "Image.h"
-#include "Font.h"
+#include "Font_Local.h"
 #include "Framebuffer.h"
 
 
@@ -873,6 +873,14 @@ public:
 	virtual void			UnCrop();
 	virtual bool			UploadImage( const char* imageName, const byte* data, int width, int height );
 	virtual void			CalcFov( float base_fov, float& fov_x, float& fov_y, const int width = SCREEN_WIDTH, const int height = SCREEN_HEIGHT, const float correctYAspect = 0.f ) const;
+
+	virtual void			AdjustFramerateFromDisplayHz( int displayHz );
+
+	virtual void			LoadImage( const char* cname, byte** pic, int* width, int* height, ID_TIME_T* timestamp, bool makePowerOf2, int* usage );
+	virtual void			WriteTGA( const char* filename, const byte* data, int width, int height, bool flipVertical, const char* basePath = "fs_savepath" );
+	virtual void			WriteJPEG( const char* filename, const byte* data, int bytesPerPixel, int width, int height, bool flipVertical, const char* basePath = "fs_savepath" );
+	virtual void			WritePNG( const char* filename, const byte* data, int bytesPerPixel, int width, int height, bool flipVertical, const char* basePath = "fs_savepath" );
+	virtual void			WriteEXR( const char* filename, const void* rgba16f, int channelsPerPixel, int width, int height, const char* basePath = "fs_savepath" );
 
 	void					PrintPerformanceCounters();
 

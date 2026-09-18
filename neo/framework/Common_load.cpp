@@ -41,8 +41,6 @@ idCVar com_disableAllSaves( "com_disableAllSaves", "0", CVAR_SYSTEM | CVAR_BOOL,
 
 extern idCVar sys_lang;
 
-extern idCVar g_demoMode;
-
 // This is for the dirty hack to get a dialog to show up before we capture the screen for autorender.
 const int NumScreenUpdatesToShowDialog = 25;
 
@@ -252,7 +250,7 @@ void idCommonLocal::ExecuteMapChange()
 	}
 
 	// Clear all dialogs before beginning the load
-	common->Dialog().ClearDialogs( true );
+	dialogs->ClearDialogs( true );
 
 	// Remember the current load ID.
 	// This is so we can tell if we had a new loadmap request from within an existing loadmap call
@@ -341,10 +339,10 @@ void idCommonLocal::ExecuteMapChange()
 
 	// load / program a gui to stay up on the screen while loading
 	// set the loading gui that we will wipe to
-	if( game != NULL )
+	if( mainMenu != NULL )
 	{
 		bool hellMap = false;
-		game->Shell_LoadingGui( currentMapName, hellMap );
+		mainMenu->LoadingGui( currentMapName, hellMap );
 	}
 
 	// Stop rendering the wipe
@@ -422,7 +420,10 @@ void idCommonLocal::ExecuteMapChange()
 		game->InitFromNewMap( fullMapName, renderWorld, soundWorld, matchParameters.gameMode, Sys_Milliseconds(), com_editors );
 	}
 
-	game->Shell_CreateMenu( true );
+	if( mainMenu )
+	{
+		mainMenu->CreateMenu( true );
+	}
 
 	// Reset some values important to multiplayer
 	ResetNetworkingState();
@@ -518,9 +519,9 @@ void idCommonLocal::ExecuteMapChange()
 	Sys_SetPhysicalWorkMemory( -1, -1 );
 
 	// at this point we should be done with the loading gui so we kill it
-	if( game != NULL )
+	if( mainMenu != NULL )
 	{
-		game->Shell_Cleanup( true );
+		mainMenu->Cleanup( true );
 	}
 
 
@@ -826,9 +827,9 @@ bool idCommonLocal::SaveGame( const char* saveName )
 		return false;
 	}
 
-	if( game->Shell_IsGameComplete() )
+	if( mainMenu->IsGameComplete() )
 	{
-		common->Printf( "Can't save on game complete\n" );
+		common->Printf( "Can't save on game completion\n" );
 		return false;
 	}
 
@@ -841,7 +842,7 @@ bool idCommonLocal::SaveGame( const char* saveName )
 		soundSystem->Render();
 	}
 
-	Dialog().ShowSaveIndicator( autosave );
+	dialogs->ShowSaveIndicator( autosave );
 	if( insideExecuteMapChange )
 	{
 		UpdateLevelLoadPacifier();
@@ -889,6 +890,8 @@ bool idCommonLocal::SaveGame( const char* saveName )
 	pipelineFile->Finish();
 
 	idSaveGameDetails gameDetails;
+	gameDetails.descriptors.Clear();
+
 	game->GetSaveGameDetails( gameDetails );
 
 	gameDetails.descriptors.Set( SAVEGAME_DETAIL_FIELD_LANGUAGE, sys_lang.GetString() );
@@ -942,19 +945,36 @@ bool idCommonLocal::LoadGame( const char* saveName )
 		{
 			if( sgdl[i].GetLanguage() != sys_lang.GetString() )
 			{
-				idStaticList< idSWFScriptFunction*, 4 > callbacks;
+				idStaticList< idDialogCallback*, 4 > callbacks;
 				idStaticList< idStrId, 4 > optionText;
 				optionText.Append( idStrId( "#str_swf_continue" ) );
 				idStrStatic<256> langName = "#str_lang_" + sgdl[i].GetLanguage();
 				idStrStatic<256> msg;
 				msg.Format( idLocalization::GetString( "#str_dlg_wrong_language" ), idLocalization::GetString( langName ) );
-				Dialog().AddDynamicDialog( GDM_SAVEGAME_WRONG_LANGUAGE, callbacks, optionText, true, msg, false, true );
+				ADD_DYNAMIC_DIALOG( GDM_SAVEGAME_WRONG_LANGUAGE, callbacks, optionText, true, msg, false, true );
 				if( wipeForced )
 				{
 					ClearWipe();
 				}
 				return false;
 			}
+
+			/*
+			if( sgdl[i].GetArchiteture() != CPUSTRING )
+			{
+				idStaticList< idDialogCallback*, 4 > callbacks;
+				idStaticList< idStrId, 4 > optionText;
+				optionText.Append( idStrId( "#str_swf_continue" ) );
+				idStrStatic<256> msg;
+				msg.Format( "This save file was created in %s build and cannot be loaded in this build", sgdl[i].GetArchiteture().c_str() );
+				ADD_DYNAMIC_DIALOG( GDM_SAVEGAME_WRONG_LANGUAGE, callbacks, optionText, true, msg, false, true );
+				if( wipeForced )
+				{
+					ClearWipe();
+				}
+				return false;
+			}
+			*/
 			found = true;
 			break;
 		}
@@ -1013,7 +1033,7 @@ HandleCommonErrors
 */
 bool HandleCommonErrors( const idSaveLoadParms& parms )
 {
-	common->Dialog().ShowSaveIndicator( false );
+	dialogs->ShowSaveIndicator( false );
 
 	if( parms.GetError() == SAVEGAME_E_NONE )
 	{
@@ -1023,7 +1043,7 @@ bool HandleCommonErrors( const idSaveLoadParms& parms )
 	if( parms.GetError() & SAVEGAME_E_CORRUPTED )
 	{
 		// This one might need to be handled by the game
-		common->Dialog().AddDialog( GDM_CORRUPT_CONTINUE, DIALOG_CONTINUE, NULL, NULL, false );
+		dialogs->AddDialog( GDM_CORRUPT_CONTINUE, DIALOG_CONTINUE, NULL, NULL, false );
 
 		// Find the game in the enumerated details, mark as corrupt so the menus can show as corrupt
 		saveGameDetailsList_t& list = session->GetSaveGameManager().GetEnumeratedSavegamesNonConst();
@@ -1043,7 +1063,7 @@ bool HandleCommonErrors( const idSaveLoadParms& parms )
 	}
 	else if( parms.GetError() & SAVEGAME_E_UNABLE_TO_SELECT_STORAGE_DEVICE && saveGame_enable.GetBool() )
 	{
-		common->Dialog().AddDialog( GDM_UNABLE_TO_USE_SELECTED_STORAGE_DEVICE, DIALOG_CONTINUE, NULL, NULL, false );
+		dialogs->AddDialog( GDM_UNABLE_TO_USE_SELECTED_STORAGE_DEVICE, DIALOG_CONTINUE, NULL, NULL, false );
 		return true;
 	}
 	else if( parms.GetError() & SAVEGAME_E_INVALID_FILENAME )
@@ -1053,17 +1073,17 @@ bool HandleCommonErrors( const idSaveLoadParms& parms )
 	}
 	else if( parms.GetError() & SAVEGAME_E_DLC_NOT_FOUND )
 	{
-		common->Dialog().AddDialog( GDM_DLC_ERROR_MISSING_GENERIC, DIALOG_CONTINUE, NULL, NULL, false );
+		dialogs->AddDialog( GDM_DLC_ERROR_MISSING_GENERIC, DIALOG_CONTINUE, NULL, NULL, false );
 		return true;
 	}
 	else if( parms.GetError() & SAVEGAME_E_DISC_SWAP )
 	{
-		common->Dialog().AddDialog( GDM_DISC_SWAP, DIALOG_CONTINUE, NULL, NULL, false );
+		dialogs->AddDialog( GDM_DISC_SWAP, DIALOG_CONTINUE, NULL, NULL, false );
 		return true;
 	}
 	else if( parms.GetError() & SAVEGAME_E_INCOMPATIBLE_NEWER_VERSION )
 	{
-		common->Dialog().AddDialog( GDM_INCOMPATIBLE_NEWER_SAVE, DIALOG_CONTINUE, NULL, NULL, false );
+		dialogs->AddDialog( GDM_INCOMPATIBLE_NEWER_SAVE, DIALOG_CONTINUE, NULL, NULL, false );
 		return true;
 	}
 
@@ -1083,12 +1103,15 @@ void idCommonLocal::OnSaveCompleted( idSaveLoadParms& parms )
 
 	if( parms.GetError() == SAVEGAME_E_NONE )
 	{
-		game->Shell_UpdateSavedGames();
+		if( mainMenu )
+		{
+			mainMenu->UpdateSavedGames();
+		}
 	}
 
 	if( !HandleCommonErrors( parms ) )
 	{
-		common->Dialog().AddDialog( GDM_ERROR_SAVING_SAVEGAME, DIALOG_CONTINUE, NULL, NULL, false );
+		dialogs->AddDialog( GDM_ERROR_SAVING_SAVEGAME, DIALOG_CONTINUE, NULL, NULL, false );
 	}
 }
 
@@ -1101,7 +1124,7 @@ void idCommonLocal::OnLoadCompleted( idSaveLoadParms& parms )
 {
 	if( !HandleCommonErrors( parms ) )
 	{
-		common->Dialog().AddDialog( GDM_ERROR_LOADING_SAVEGAME, DIALOG_CONTINUE, NULL, NULL, false );
+		dialogs->AddDialog( GDM_ERROR_LOADING_SAVEGAME, DIALOG_CONTINUE, NULL, NULL, false );
 	}
 }
 
@@ -1185,7 +1208,10 @@ void idCommonLocal::OnEnumerationCompleted( idSaveLoadParms& parms )
 {
 	if( parms.GetError() == SAVEGAME_E_NONE )
 	{
-		game->Shell_UpdateSavedGames();
+		if( mainMenu )
+		{
+			mainMenu->UpdateSavedGames();
+		}
 	}
 }
 
@@ -1198,7 +1224,10 @@ void idCommonLocal::OnDeleteCompleted( idSaveLoadParms& parms )
 {
 	if( parms.GetError() == SAVEGAME_E_NONE )
 	{
-		game->Shell_UpdateSavedGames();
+		if( mainMenu )
+		{
+			mainMenu->UpdateSavedGames();
+		}
 	}
 }
 
@@ -1248,10 +1277,7 @@ Common_RestartMap_f
 */
 CONSOLE_COMMAND_SHIP( restartMap, "restarts the current map", NULL )
 {
-	if( g_demoMode.GetBool() )
-	{
-		cmdSystem->AppendCommandText( va( "devmap %s %d\n", commonLocal.GetCurrentMapName(), 0 ) );
-	}
+	cmdSystem->AppendCommandText( va( "map %s %d\n", commonLocal.GetCurrentMapName(), 0 ) );
 }
 
 /*

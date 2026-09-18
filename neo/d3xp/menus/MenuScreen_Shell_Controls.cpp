@@ -343,10 +343,6 @@ bool idMenuScreen_Shell_Controls::HandleAction( idWidgetAction& action, const id
 // SCREEN SETTINGS
 /////////////////////////////////
 
-extern idCVar in_mouseInvertLook;
-extern idCVar in_mouseSpeed;
-extern idCVar in_useJoystick;
-
 /*
 ========================
 idMenuScreen_Shell_Controls::idMenuDataSource_AudioSettings::idMenuDataSource_AudioSettings
@@ -365,10 +361,10 @@ idMenuScreen_Shell_Controls::idMenuDataSource_AudioSettings::LoadData
 */
 void idMenuScreen_Shell_Controls::idMenuDataSource_ControlSettings::LoadData()
 {
-	fields[ CONTROLS_FIELD_INVERT_MOUSE ].SetBool( in_mouseInvertLook.GetBool() );
-	float mouseSpeed = ( ( in_mouseSpeed.GetFloat() - 0.25f ) / ( 4.0f - 0.25 ) ) * 100.0f;
+	fields[ CONTROLS_FIELD_INVERT_MOUSE ].SetBool( cvarSystem->GetCVarBool( "in_mouseInvertLook" ) );
+	float mouseSpeed = ( ( cvarSystem->GetCVarFloat( "in_mouseSpeed" ) - 0.25f ) / ( 4.0f - 0.25 ) ) * 100.0f;
 	fields[ CONTROLS_FIELD_MOUSE_SENS ].SetFloat( mouseSpeed );
-	fields[ CONTROLS_FIELD_GAMEPAD_ENABLED ].SetBool( in_useJoystick.GetBool() );
+	fields[ CONTROLS_FIELD_GAMEPAD_ENABLED ].SetBool( cvarSystem->GetCVarBool( "in_useJoystick" ) );
 
 	originalFields = fields;
 }
@@ -381,10 +377,10 @@ idMenuScreen_Shell_Controls::idMenuDataSource_AudioSettings::CommitData
 void idMenuScreen_Shell_Controls::idMenuDataSource_ControlSettings::CommitData()
 {
 
-	in_mouseInvertLook.SetBool( fields[ CONTROLS_FIELD_INVERT_MOUSE ].ToBool() );
+	cvarSystem->SetCVarBool( "in_mouseInvertLook", fields[ CONTROLS_FIELD_INVERT_MOUSE ].ToBool() );
 	float mouseSpeed = 0.25f + ( ( 4.0f - 0.25 ) * ( fields[ CONTROLS_FIELD_MOUSE_SENS ].ToFloat() / 100.0f ) );
-	in_mouseSpeed.SetFloat( mouseSpeed );
-	in_useJoystick.SetBool( fields[ CONTROLS_FIELD_GAMEPAD_ENABLED ].ToBool() );
+	cvarSystem->SetCVarFloat( "in_mouseSpeed", mouseSpeed );
+	cvarSystem->SetCVarBool( "in_useJoystick", fields[ CONTROLS_FIELD_GAMEPAD_ENABLED ].ToBool() );
 
 	cvarSystem->SetModifiedFlags( CVAR_ARCHIVE );
 

@@ -179,7 +179,7 @@ void idMenuScreen_Shell_Leaderboards::Initialize( idMenuHandler* data )
 			if( maps[ mapIndex ].supportedModes & BIT( modeIndex ) )
 			{
 				int boardID = leaderBoards->GetID( mapIndex, modeIndex );
-				const leaderboardDefinition_t* lbDef = Sys_FindLeaderboardDef( boardID );
+				const leaderboardDefinition_t* lbDef = session->LeaderboardFindDef( boardID );
 				if( lbDef != NULL )
 				{
 					doomLeaderboard_t lb = doomLeaderboard_t( lbDef, lbDef->boardName );
@@ -821,7 +821,7 @@ public:
 
 	void Call()
 	{
-		gameLocal.Shell_UpdateLeaderboard( this );
+		mainMenuLocal.UpdateLeaderboard( this );
 	}
 
 	LBCallback* Clone() const
@@ -1118,7 +1118,7 @@ void idLBCache::Update( const idLeaderboardCallback* callback )
 				if ( shell != NULL ) {
 					shell->SetNextScreen( SHELL_AREA_ROOT, MENU_TRANSITION_SIMPLE );
 				}*/
-				common->Dialog().AddDialog( GDM_CONNECTION_LOST, DIALOG_ACCEPT, NULL, NULL, true, "", 0, true );
+				dialogs->AddDialog( GDM_CONNECTION_LOST, DIALOG_ACCEPT, NULL, NULL, true, "", 0, true );
 				break;
 			default:
 				break;
@@ -1166,7 +1166,7 @@ void idLBCache::Update( const idLeaderboardCallback* callback )
 	// Find a a row block to store these new rows
 	idLBRowBlock* rowBlock	= FindFreeRowBlock();
 
-	rowBlock->lastTime		= Sys_Milliseconds();			// Freshen row
+	rowBlock->lastTime		= sys->GetMilliseconds();			// Freshen row
 	rowBlock->startIndex	= callback->GetStartIndex();
 	rowBlock->rows			= callback->GetRows();
 }
@@ -1195,7 +1195,7 @@ const idLeaderboardCallback::row_t* idLBCache::GetLeaderboardRow( int row )
 		int lastIndex = startIndex + rowBlocks[i].rows.Num() - 1;
 		if( row >= startIndex && row <= lastIndex )
 		{
-			rowBlocks[i].lastTime = Sys_Milliseconds();		// Freshen row
+			rowBlocks[i].lastTime = sys->GetMilliseconds();		// Freshen row
 			return &rowBlocks[i].rows[row - startIndex];
 		}
 	}

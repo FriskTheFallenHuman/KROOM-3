@@ -279,21 +279,20 @@ void idMenuScreen_Shell_Singleplayer::ContinueGame()
 	{
 		if( sortedSaves[0].damaged )
 		{
-			class idSWFScriptFunction_ContinueDamaged : public idSWFScriptFunction_RefCounted
+			class idDialogContinueDamagedCallback : public idDialogCallback
 			{
 			public:
-				idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
+				void Call() override
 				{
-					common->Dialog().ClearDialog( GDM_CORRUPT_CONTINUE );
-					return idSWFScriptVar();
+					dialogs->ClearDialog( GDM_CORRUPT_CONTINUE );
 				}
 			};
 
-			idStaticList< idSWFScriptFunction*, 4 > callbacks;
-			callbacks.Append( new( TAG_SWF ) idSWFScriptFunction_ContinueDamaged() );
+			idStaticList< idDialogCallback*, 4 > callbacks;
+			callbacks.Append( new( TAG_SWF ) idDialogContinueDamagedCallback() );
 			idStaticList< idStrId, 4 > optionText;
 			optionText.Append( idStrId( "#str_04339" ) );	// OK
-			common->Dialog().AddDynamicDialog( GDM_CORRUPT_CONTINUE, callbacks, optionText, false, "" );
+			ADD_DYNAMIC_DIALOG( GDM_CORRUPT_CONTINUE, callbacks, optionText, false, "" );
 		}
 		else
 		{
@@ -356,28 +355,27 @@ bool idMenuScreen_Shell_Singleplayer::HandleAction( idWidgetAction& action, cons
 				}
 				else if( selectionIndex == 1 )
 				{
-					class idSWFScriptFunction_NewGame : public idSWFScriptFunction_RefCounted
+					class idDialogNewGameCallback : public idDialogCallback
 					{
 					public:
-						idSWFScriptFunction_NewGame( idMenuHandler* _menuData, bool _accept )
+						idDialogNewGameCallback( idMenuHandler* _menuData, bool _accept )
 						{
 							menuData = _menuData;
 							accept = _accept;
 						}
-						idSWFScriptVar Call( idSWFScriptObject* thisObject, const idSWFParmList& parms )
+						void Call() override
 						{
-							common->Dialog().ClearDialog( GDM_DELETE_AUTOSAVE );
+							dialogs->ClearDialog( GDM_DELETE_AUTOSAVE );
 							if( accept )
 							{
 								menuData->SetNextScreen( SHELL_AREA_NEW_GAME, MENU_TRANSITION_SIMPLE );
 							}
-							return idSWFScriptVar();
 						}
 					private:
 						idMenuHandler* menuData;
 						bool accept;
 					};
-					common->Dialog().AddDialog( GDM_DELETE_AUTOSAVE, DIALOG_ACCEPT_CANCEL, new idSWFScriptFunction_NewGame( menuData, true ), new idSWFScriptFunction_NewGame( menuData, false ), true );
+					ADD_DIALOG( GDM_DELETE_AUTOSAVE, DIALOG_ACCEPT_CANCEL, new idDialogNewGameCallback( menuData, true ), new idDialogNewGameCallback( menuData, false ), true );
 				}
 				else if( selectionIndex == 2 )
 				{

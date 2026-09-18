@@ -40,6 +40,86 @@ idCVar imgui_showDemoWindow( "imgui_showDemoWindow", "0", CVAR_GUI | CVAR_BOOL, 
 /*
 ===============================================================================
 
+	Map engine side FLAGS_* bit values (idImGuiWindowFlags) onto
+	ImGui's ImGuiWindowFlags_* bit values.
+
+===============================================================================
+*/
+struct idImGuiWindowFlagRemap
+{
+	idImGuiWindowFlags	ourFlag;
+	ImGuiWindowFlags_	imguiFlag;
+};
+
+static const idImGuiWindowFlagRemap windowFlagRemapTable[] =
+{
+	{ FLAGS_NOTITLEBAR,					ImGuiWindowFlags_NoTitleBar },
+	{ FLAGS_NORESIZE,					ImGuiWindowFlags_NoResize },
+	{ FLAGS_NOMOVE,						ImGuiWindowFlags_NoMove },
+	{ FLAGS_NOSCROLLBAR,				ImGuiWindowFlags_NoScrollbar },
+	{ FLAGS_NOSCROLLWITHMOUSE,			ImGuiWindowFlags_NoScrollWithMouse },
+	{ FLAGS_NOCOLLAPSE,					ImGuiWindowFlags_NoCollapse },
+	{ FLAGS_ALWAYSAUTORESIZE,			ImGuiWindowFlags_AlwaysAutoResize },
+	{ FLAGS_NOBACKGROUND,				ImGuiWindowFlags_NoBackground },
+	{ FLAGS_NOSAVEDSETTINGS,			ImGuiWindowFlags_NoSavedSettings },
+	{ FLAGS_NOMOUSEINPUTS,				ImGuiWindowFlags_NoMouseInputs },
+	{ FLAGS_MENUBAR,					ImGuiWindowFlags_MenuBar },
+	{ FLAGS_HORIZONTALSCROLLBAR,		ImGuiWindowFlags_HorizontalScrollbar },
+	{ FLAGS_NOFOCUSONAPPEARING,			ImGuiWindowFlags_NoFocusOnAppearing },
+	{ FLAGS_NOBRINGTOFRONTONFOCUS,		ImGuiWindowFlags_NoBringToFrontOnFocus },
+	{ FLAGS_ALWAYSVERTICALSCROLLBAR,	ImGuiWindowFlags_AlwaysVerticalScrollbar },
+	{ FLAGS_ALWAYSHORIZONTALSCROLLBAR,	ImGuiWindowFlags_AlwaysHorizontalScrollbar },
+	{ FLAGS_NONAVINPUTS,				ImGuiWindowFlags_NoNavInputs },
+	{ FLAGS_NONAVFOCUS,					ImGuiWindowFlags_NoNavFocus },
+	{ FLAGS_UNSAVEDDOCUMENT,			ImGuiWindowFlags_UnsavedDocument },
+	{ FLAGS_NODOCKING,					ImGuiWindowFlags_NoDocking },
+};
+
+static ImGuiWindowFlags RemapWindowFlags( idImGuiWindowFlags flags )
+{
+	ImGuiWindowFlags result = ImGuiWindowFlags_None;
+
+	for( const idImGuiWindowFlagRemap& entry : windowFlagRemapTable )
+	{
+		if( flags & entry.ourFlag )
+		{
+			result |= entry.imguiFlag;
+		}
+	}
+
+	return result;
+}
+
+/*
+===============================================================================
+
+	idImGuiWindow
+
+===============================================================================
+*/
+
+void idImGuiWindow::Draw()
+{
+	bool showTool = IsShown();
+
+	const ImGuiWindowFlags imguiFlags = RemapWindowFlags( GetBaseWindowFlags() );
+
+	if( ImGui::Begin( GetDisplayTitle(), &showTool, imguiFlags ) )
+	{
+		DrawContents( showTool );
+	}
+	ImGui::End();
+
+	if( IsShown() && !showTool )
+	{
+		ShowIt( false );
+		OnClosed();
+	}
+}
+
+/*
+===============================================================================
+
 	idImGuiSystemLocal - the ImGui hooks to integrate it into the engine
 
 ===============================================================================

@@ -150,6 +150,16 @@ void idSysLocal::DebugVPrintf( const char* fmt, va_list arg )
 
 /*
 ==================
+idSysLocal::SysSleep
+==================
+*/
+void idSysLocal::SysSleep( int msec )
+{
+	Sys_Sleep( msec );
+}
+
+/*
+==================
 idSysLocal::GetClockTicks
 ==================
 */
@@ -176,6 +186,16 @@ idSysLocal::GetMilliseconds
 unsigned int idSysLocal::GetMilliseconds()
 {
 	return Sys_Milliseconds();
+}
+
+/*
+==================
+idSysLocal::GetMilliseconds
+==================
+*/
+uint64 idSysLocal::GetMicroseconds()
+{
+	return Sys_Microseconds();
 }
 
 /*
@@ -256,6 +276,76 @@ idSysLocal::DLL_GetFileName
 void idSysLocal::DLL_GetFileName( const char* baseName, char* dllName, int maxLength )
 {
 	idStr::snPrintf( dllName, maxLength, "%s" CPUSTRING ".dll", baseName );
+}
+
+/*
+==================
+idSysLocal::PollKeyboardInputEvents
+==================
+*/
+int idSysLocal::PollKeyboardInputEvents()
+{
+	return Sys_PollKeyboardInputEvents();
+}
+
+/*
+==================
+idSysLocal::ReturnKeyboardInputEvent
+==================
+*/
+int idSysLocal::ReturnKeyboardInputEvent( const int n, int& ch, bool& state )
+{
+	return Sys_ReturnKeyboardInputEvent( n, ch, state );
+}
+
+/*
+==================
+idSysLocal::EndKeyboardInputEvents
+==================
+*/
+void idSysLocal::EndKeyboardInputEvents()
+{
+	Sys_EndKeyboardInputEvents();
+}
+
+/*
+==================
+idSysLocal::PollMouseInputEvents
+==================
+*/
+int idSysLocal::PollMouseInputEvents( int mouseEvents[MAX_MOUSE_EVENTS][2] )
+{
+	return Sys_PollMouseInputEvents( mouseEvents );
+}
+
+/*
+==================
+idSysLocal::GenerateEvents
+==================
+*/
+void idSysLocal::GenerateEvents()
+{
+	Sys_GenerateEvents();
+}
+
+/*
+==================
+idSysLocal::GetEvent
+==================
+*/
+sysEvent_t idSysLocal::GetEvent()
+{
+	return Sys_GetEvent();
+}
+
+/*
+==================
+idSysLocal::GenerateMouseButtonEvent
+==================
+*/
+void idSysLocal::ClearEvents()
+{
+	Sys_ClearEvents();
 }
 
 /*
@@ -544,6 +634,26 @@ bool idSysLocal::Exec( const char* appPath, const char* workingPath, const char*
 
 	exitCode = static_cast<unsigned int>( status );
 	return true;
+}
+
+/*
+========================
+idSysLocal::TimeStampToStr
+========================
+*/
+const char* idSysLocal::TimeStampToStr( ID_TIME_T timeStamp )
+{
+	return Sys_TimeStampToStr( timeStamp );
+}
+
+/*
+========================
+idSysLocal::SecToStr
+========================
+*/
+const char* idSysLocal::SecToStr( int sec )
+{
+	return Sys_SecToStr( sec );
 }
 
 /*

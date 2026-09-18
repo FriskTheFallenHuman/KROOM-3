@@ -68,7 +68,7 @@ void idMenuWidget_Shell_SaveInfo::Update()
 	{
 		const idSaveGameDetails& details = sortedSaves[ loadIndex ];
 
-		info.Append( Sys_TimeStampToStr( details.date ) );
+		info.Append( sys->TimeStampToStr( details.date ) );
 		info.Append( "\n" );
 
 		// PS3 only strings that use the dict just set
@@ -107,7 +107,7 @@ void idMenuWidget_Shell_SaveInfo::Update()
 		}
 
 		idStr summary;
-		summary.Format( idLocalization::GetString( "#str_swf_save_info_format" ), difficultyStr, Sys_SecToStr( details.GetPlaytime() ), expansionStr );
+		summary.Format( idLocalization::GetString( "#str_swf_save_info_format" ), difficultyStr, sys->SecToStr( details.GetPlaytime() ), expansionStr );
 
 		info.Append( summary );
 

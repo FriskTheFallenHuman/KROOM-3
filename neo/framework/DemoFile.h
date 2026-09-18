@@ -39,15 +39,6 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
-typedef enum
-{
-	DS_FINISHED,
-	DS_RENDER,
-	DS_SOUND,
-	DS_GAME,
-	DS_VERSION
-} demoSystem_t;
-
 class idDemoFile : public idFile
 {
 public:

@@ -30,7 +30,6 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "Game_local.h"
-#include "../framework/Common_local.h"
 #include "PredictedValue_impl.h"
 
 idCVar flashlight_batteryDrainTimeMS( "flashlight_batteryDrainTimeMS", "30000", CVAR_INTEGER, "amount of time (in MS) it takes for full battery to drain (-1 == no battery drain)" );
@@ -3635,7 +3634,7 @@ void idPlayer::DrawHUD( idMenuHandler_HUD* _hudManager )
 {
 	SCOPED_PROFILE_EVENT( "idPlayer::DrawHUD" );
 
-	if( !weapon.GetEntity() || influenceActive != INFLUENCE_NONE || privateCameraView || gameLocal.GetCamera() || !g_showHud.GetBool() || gameLocal.Shell_IsGameComplete() )
+	if( !weapon.GetEntity() || influenceActive != INFLUENCE_NONE || privateCameraView || gameLocal.GetCamera() || !g_showHud.GetBool() || mainMenuLocal.IsGameComplete() )
 	{
 		return;
 	}
@@ -3651,7 +3650,7 @@ void idPlayer::DrawHUD( idMenuHandler_HUD* _hudManager )
 
 	if( localPlayer != NULL && localPlayer->mpMessages != NULL )
 	{
-		localPlayer->mpMessages->Render( renderSystem, Sys_Milliseconds() );
+		localPlayer->mpMessages->Render( renderSystem, sys->GetMilliseconds() );
 	}
 
 
@@ -6313,7 +6312,7 @@ void idPlayer::PlayVideoDisk( const idDeclVideo* decl )
 			const shaderStage_t* stage = pdaVideoMat->GetStage( i );
 			if( stage != NULL && stage->texture.cinematic )
 			{
-				stage->texture.cinematic->ResetTime( Sys_Milliseconds() );
+				stage->texture.cinematic->ResetTime( sys->GetMilliseconds() );
 			}
 		}
 		if( decl->GetWave() != NULL )
@@ -8738,7 +8737,7 @@ bool idPlayer::AllowClientAuthPhysics()
 {
 	// note respawn count > 1: respawn should be called twice - once for initial spawn and once for actual respawn by game mode
 	// TODO: I don't think doom 3 will need to care about the respawn count.
-	return ( usercmd.serverGameMilliseconds > serverOverridePositionTime && commonLocal.GetUCmdMgr().HasUserCmdForPlayer( entityNumber ) );
+	return ( usercmd.serverGameMilliseconds > serverOverridePositionTime && common->GetUCmdMgr().HasUserCmdForPlayer( entityNumber ) );
 }
 
 /*
@@ -13030,7 +13029,7 @@ float idPlayer::idCrouchRate::GetValue()
 	if( baseRate != pm_crouchrate.GetFloat() )
 	{
 		baseRate = pm_crouchrate.GetFloat();
-		adjustedRate = idMath::Pow( baseRate, 60.0f / com_engineHz_latched );
+		adjustedRate = idMath::Pow( baseRate, 60.0f / common->GetEngineHzLatched() );
 	}
 	return adjustedRate;
 }

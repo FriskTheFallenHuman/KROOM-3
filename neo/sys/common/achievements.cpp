@@ -31,7 +31,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "achievements.h"
 #include "../sys_session_local.h"
 
-extern idCVar achievements_Verbose;
+idCVar achievements_Verbose( "achievements_Verbose", "1", CVAR_BOOL, "debug spam" );
 
 #define STEAM_ACHIEVEMENT_PREFIX		"ach_"
 

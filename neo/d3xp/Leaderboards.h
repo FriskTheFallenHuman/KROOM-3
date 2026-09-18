@@ -65,7 +65,7 @@ class idLeaderboardsLocal : public idLeaderboards
 public:
 	idLeaderboardsLocal();
 
-	// creates and stores all the leaderboards inside the internal map ( see Sys_FindLeaderboardDef on retrieving definition )
+	// creates and stores all the leaderboards inside the internal map ( see session->LeaderboardFindDef on retrieving definition )
 	virtual void			Init();
 
 	// Destroys any leaderboard definitions allocated by Init()

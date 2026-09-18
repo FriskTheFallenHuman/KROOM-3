@@ -25,8 +25,10 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
+
 #include "precompiled.h"
 #pragma hdrstop
+
 #include "PlayerProfile.h"
 
 // After releasing a version to the market, here are limitations for compatibility:
@@ -42,8 +44,16 @@ const int8		PROFILE_VER_MINOR			= 0;	// Within each major version, minor version
 
 class idPlayerProfileLocal : public idPlayerProfile
 {
+public:
+	idPlayerProfileLocal(); // don't instantiate. we static_cast the child all over the place
+public:
+	virtual void	SetDefaults();
+	virtual bool	GetAchievement( const int id ) const;
+	virtual void	SetLeftyFlip( bool lf );
+	virtual void	SetConfig( int config, bool save );
+	virtual void	RestoreDefault();
 };
-idPlayerProfileLocal playerProfiles[MAX_INPUT_DEVICES];
+static idPlayerProfile* playerProfiles[MAX_INPUT_DEVICES] = { NULL };
 
 /*
 ========================
@@ -62,17 +72,20 @@ idPlayerProfile * CreatePlayerProfile
 */
 idPlayerProfile* idPlayerProfile::CreatePlayerProfile( int deviceIndex )
 {
-	playerProfiles[deviceIndex].SetDefaults();
-	playerProfiles[deviceIndex].deviceNum = deviceIndex;
-	return &playerProfiles[deviceIndex];
+	if( playerProfiles[deviceIndex] == NULL )
+	{
+		playerProfiles[deviceIndex] = new idPlayerProfileLocal();
+		playerProfiles[deviceIndex]->SetDeviceNumForProfile( deviceIndex );
+	}
+	return playerProfiles[deviceIndex];
 }
 
 /*
 ========================
-idPlayerProfile::idPlayerProfile
+idPlayerProfileLocal::idPlayerProfileLocal
 ========================
 */
-idPlayerProfile::idPlayerProfile()
+idPlayerProfileLocal::idPlayerProfileLocal()
 {
 	SetDefaults();
 
@@ -86,10 +99,10 @@ idPlayerProfile::idPlayerProfile()
 
 /*
 ========================
-idPlayerProfile::SetDefaults
+idPlayerProfileLocal::SetDefaults
 ========================
 */
-void idPlayerProfile::SetDefaults()
+void idPlayerProfileLocal::SetDefaults()
 {
 	achievementBits = 0;
 	achievementBits2	= 0;
@@ -360,10 +373,10 @@ void idPlayerProfile::ClearAchievement( const int id )
 
 /*
 ========================
-idPlayerProfile::GetAchievement
+idPlayerProfileLocal::GetAchievement
 ========================
 */
-bool idPlayerProfile::GetAchievement( const int id ) const
+bool idPlayerProfileLocal::GetAchievement( const int id ) const
 {
 	if( id >= idAchievementSystem::MAX_ACHIEVEMENTS )
 	{
@@ -383,10 +396,10 @@ bool idPlayerProfile::GetAchievement( const int id ) const
 
 /*
 ========================
-idPlayerProfile::SetConfig
+idPlayerProfileLocal::SetConfig
 ========================
 */
-void idPlayerProfile::SetConfig( int config, bool save )
+void idPlayerProfileLocal::SetConfig( int config, bool save )
 {
 	configSet = config;
 	ExecConfig( save );
@@ -394,20 +407,20 @@ void idPlayerProfile::SetConfig( int config, bool save )
 
 /*
 ========================
-idPlayerProfile::SetConfig
+idPlayerProfileLocal::SetConfig
 ========================
 */
-void idPlayerProfile::RestoreDefault()
+void idPlayerProfileLocal::RestoreDefault()
 {
 	ExecConfig( true, true );
 }
 
 /*
 ========================
-idPlayerProfile::SetLeftyFlip
+idPlayerProfileLocal::SetLeftyFlip
 ========================
 */
-void idPlayerProfile::SetLeftyFlip( bool lf )
+void idPlayerProfileLocal::SetLeftyFlip( bool lf )
 {
 	leftyFlip = lf;
 	ExecConfig( true );

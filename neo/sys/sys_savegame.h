@@ -143,18 +143,27 @@ idSaveGameDetails
 class idSaveGameDetails
 {
 public:
-	idSaveGameDetails();
+	idSaveGameDetails()
+	{
+		Clear();
+	}
 	~idSaveGameDetails()
 	{
 		Clear();
 	}
 
-	void	Clear();
-	bool	operator==( const idSaveGameDetails& other ) const
+	virtual void	Clear()
+	{
+		descriptors.Clear();
+		damaged = false;
+		date = 0;
+		slotName[0] = NULL;
+	}
+	virtual bool	operator==( const idSaveGameDetails& other ) const
 	{
 		return ( idStr::Icmp( slotName, other.slotName ) == 0 );
 	}
-	idSaveGameDetails& 	operator=( const idSaveGameDetails& other )
+	virtual idSaveGameDetails& 	operator=( const idSaveGameDetails& other )
 	{
 		descriptors.Clear();
 		descriptors = other.descriptors;
@@ -164,36 +173,36 @@ public:
 		return *this;
 	}
 	// for std::sort, sort newer (larger date) towards start of list
-	bool	operator<( const idSaveGameDetails& other ) const
+	virtual bool	operator<( const idSaveGameDetails& other )
 	{
 		return date > other.date;
 	}
 
-	idStr	GetMapName() const
+	virtual idStr	GetMapName() const
 	{
 		return descriptors.GetString( SAVEGAME_DETAIL_FIELD_MAP, "" );
 	}
-	idStr	GetLocation() const
+	virtual idStr	GetLocation() const
 	{
 		return descriptors.GetString( SAVEGAME_DETAIL_FIELD_MAP_LOCATE, "" );
 	}
-	idStr	GetLanguage() const
+	virtual idStr	GetLanguage() const
 	{
 		return descriptors.GetString( SAVEGAME_DETAIL_FIELD_LANGUAGE, "" );
 	}
-	int		GetPlaytime() const
+	virtual int		GetPlaytime() const
 	{
 		return descriptors.GetInt( SAVEGAME_DETAIL_FIELD_PLAYTIME, 0 );
 	}
-	int		GetExpansion() const
+	virtual int		GetExpansion() const
 	{
 		return descriptors.GetInt( SAVEGAME_DETAIL_FIELD_EXPANSION, 0 );
 	}
-	int		GetDifficulty() const
+	virtual int		GetDifficulty() const
 	{
 		return descriptors.GetInt( SAVEGAME_DETAIL_FIELD_DIFFICULTY, -1 );
 	}
-	int		GetSaveVersion() const
+	virtual int		GetSaveVersion() const
 	{
 		return descriptors.GetInt( SAVEGAME_DETAIL_FIELD_SAVE_VERSION, 0 );
 	}
@@ -487,65 +496,65 @@ public:
 	~idSaveGameManager();
 
 	// Called within main game thread
-	void					Pump();
+	virtual void			Pump();
 
 	// Has the storage device been selected yet?  This is only an issue on the 360, and primarily for development purposes
-	bool					IsStorageAvailable() const
+	virtual bool			IsStorageAvailable() const
 	{
 		return storageAvailable;
 	}
-	void					SetStorageAvailable( const bool available )
+	virtual void			SetStorageAvailable( const bool available )
 	{
 		storageAvailable = available;
 	}
 
 	// Check to see if a processor is set within the manager
-	bool					IsWorking() const;
+	virtual bool			IsWorking() const;
 
 	// Assign a processor to the manager.  The processor should belong in game-side code
 	// This queues up processors and executes them serially
 	// Returns whether or not the processor is immediately executed
-	saveGameHandle_t		ExecuteProcessor( idSaveGameProcessor* processor );
+	virtual saveGameHandle_t	ExecuteProcessor( idSaveGameProcessor* processor );
 
 	// Synchronous version, CompletedCallback is NOT called.
-	saveGameHandle_t		ExecuteProcessorAndWait( idSaveGameProcessor* processor );
+	virtual saveGameHandle_t	ExecuteProcessorAndWait( idSaveGameProcessor* processor );
 
 	// Lets the currently processing queue finish, but clears the processor queue
-	void					Clear();
+	virtual void			Clear();
 
-	void					WaitForAllProcessors( bool overrideSimpleProcessorCheck = false );
+	virtual void			WaitForAllProcessors( bool overrideSimpleProcessorCheck = false );
 
-	const bool				IsCancelled() const
+	virtual const bool		IsCancelled() const
 	{
 		return cancel;
 	}
-	void					CancelAllProcessors( const bool forceCancelInFlightProcessor );
+	virtual void			CancelAllProcessors( const bool forceCancelInFlightProcessor );
 
-	void					CancelToTerminate();
+	virtual void			CancelToTerminate();
 
-	idSaveGameThread& 		GetSaveGameThread()
+	virtual idSaveGameThread& 		GetSaveGameThread()
 	{
 		return saveThread;
 	}
 
-	bool					IsSaveGameCompletedFromHandle( const saveGameHandle_t& handle ) const
+	virtual bool			IsSaveGameCompletedFromHandle( const saveGameHandle_t& handle ) const
 	{
 		return handle <= lastExecutedProcessorHandle || handle == 0;    // last case should never be reached since it would be also be true in first case, this is just to show intent
 	}
-	void					Set360RetrySaveAfterDeviceSelected( const char* folder, const int64 bytes );
-	bool					DeviceSelectorWaitingOnSaveRetry();
-	void					ShowRetySaveDialog( const char* folder, const int64 bytes );
-	void					ShowRetySaveDialog();
-	void					ClearRetryInfo();
-	void					RetrySave();
+	virtual void			Set360RetrySaveAfterDeviceSelected( const char* folder, const int64 bytes );
+	virtual bool			DeviceSelectorWaitingOnSaveRetry();
+	virtual void			ShowRetySaveDialog( const char* folder, const int64 bytes );
+	virtual void			ShowRetySaveDialog();
+	virtual void			ClearRetryInfo();
+	virtual void			RetrySave();
 	// This will cause the processor to cancel execution, the completion callback will be called
-	void					CancelWithHandle( const saveGameHandle_t& handle );
+	virtual void			CancelWithHandle( const saveGameHandle_t& handle );
 
-	const saveGameDetailsList_t& GetEnumeratedSavegames() const
+	virtual const saveGameDetailsList_t& GetEnumeratedSavegames() const
 	{
 		return enumeratedSaveGames;
 	}
-	saveGameDetailsList_t& GetEnumeratedSavegamesNonConst()
+	virtual saveGameDetailsList_t& GetEnumeratedSavegamesNonConst()
 	{
 		return enumeratedSaveGames;
 	}

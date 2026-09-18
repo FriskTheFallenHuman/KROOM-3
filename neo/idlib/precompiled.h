@@ -121,11 +121,6 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 #include "ui/ListGUI.h"
 #include "ui/UserInterface.h"
 
-// RB: required for SWF extensions
-//#include "rapidjson/document.h"
-
-#include "swf/SWF.h"
-
 // collision detection system
 #include "cm/CollisionModel.h"
 
@@ -155,6 +150,9 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 // tools
 #include "tools/edit_public.h"
 
+// imgui
+#include "framework/ImGuiSystem.h"
+
 // Compilers for map, model, video etc. processing.
 #include "tools/compilers/compiler_public.h"
 
@@ -169,7 +167,6 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 	#else
 
 		#include "framework/ImGuiSystemUtils.h"
-		#include "framework/ImGuiSystem.h"
 		#include "tools/imgui/ImGuiTools.h"
 
 		// framework
@@ -180,7 +177,6 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 		#include "framework/DebugGraph.h"
 		#include "framework/Console.h"
 		#include "framework/DemoFile.h"
-		#include "framework/Common_dialog.h"
 
 	#endif /* !GAME_DLL */
 
