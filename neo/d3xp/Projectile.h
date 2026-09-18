@@ -135,7 +135,7 @@ protected:
 	int						thrust_end;
 	float					damagePower;
 
-	renderLight_t			renderLight;
+	idRenderLight			renderLight;
 	qhandle_t				lightDefHandle;				// handle to renderer light def
 	idVec3					lightOffset;
 	int						lightStartTime;

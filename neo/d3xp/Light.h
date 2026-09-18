@@ -156,7 +156,7 @@ public:
 	virtual bool	ClientReceiveEvent( int event, int time, const idBitMsg& msg );
 
 private:
-	renderLight_t	renderLight;				// light presented to the renderer
+	idRenderLight	renderLight;				// game-facing render object
 	idVec3			localLightOrigin;			// light origin relative to the physics origin
 	idMat3			localLightAxis;				// light axis relative to physics axis
 	qhandle_t		lightDefHandle;				// handle to renderer light def

@@ -90,7 +90,6 @@ struct performanceCounters_t
 {
 	int		c_box_cull_in;
 	int		c_box_cull_out;
-	int		c_createInteractions;	// number of calls to idInteraction::CreateInteraction
 	int		c_createShadowVolumes;
 	int		c_generateMd5;
 	int		c_entityDefCallbacks;
@@ -105,7 +104,12 @@ struct performanceCounters_t
 	int		c_deformedIndexes;	// idMD5Mesh::GenerateSurface
 	int		c_tangentIndexes;	// R_DeriveTangents()
 	int		c_entityUpdates;
+	int		c_entityCommitRequests;
+	int		c_entityCommits;
 	int		c_lightUpdates;
+	int		c_lightCommitRequests;
+	int		c_lightCommits;
+	int		c_lightReferenceCommits;
 	int		c_envprobeUpdates;
 	int		c_entityReferences;
 	int		c_lightReferences;

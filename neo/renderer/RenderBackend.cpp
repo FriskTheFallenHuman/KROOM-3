@@ -1675,7 +1675,7 @@ idRenderBackend::RenderInteractions
 With added sorting and trivial path work.
 =============
 */
-void idRenderBackend::RenderInteractions( const drawSurf_t* surfList, const viewLight_t* vLight, int depthFunc, bool performStencilTest, bool useLightDepthBounds )
+void idRenderBackend::RenderInteractions( const drawSurf_t* surfList, const viewLight_t* vLight, int depthFunc, bool useShadowMap, bool useLightDepthBounds )
 {
 	if( surfList == NULL )
 	{
@@ -1693,28 +1693,7 @@ void idRenderBackend::RenderInteractions( const drawSurf_t* surfList, const view
 		currentScissor = vLight->scissorRect;
 	}
 
-	// perform setup here that will be constant for all interactions
-	if( performStencilTest )
-	{
-		GL_State(
-			GLS_SRCBLEND_ONE |
-			GLS_DSTBLEND_ONE |
-			GLS_DEPTHMASK |
-			depthFunc |
-			GLS_STENCIL_FUNC_EQUAL |
-			GLS_STENCIL_MAKE_REF( STENCIL_SHADOW_TEST_VALUE ) |
-			GLS_STENCIL_MAKE_MASK( STENCIL_SHADOW_MASK_VALUE ) );
-
-	}
-	else
-	{
-		GL_State(
-			GLS_SRCBLEND_ONE |
-			GLS_DSTBLEND_ONE |
-			GLS_DEPTHMASK |
-			depthFunc |
-			GLS_STENCIL_FUNC_ALWAYS );
-	}
+	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | depthFunc | GLS_STENCIL_FUNC_ALWAYS );
 
 	// some rare lights have multiple animating stages, loop over them outside the surface list
 	const idMaterial* lightShader = vLight->lightShader;
@@ -3402,7 +3381,7 @@ void idRenderBackend::DrawInteractions( const viewDef_t* _viewDef )
 		renderLog.CloseBlock();
 	}
 
-	// disable stencil shadow test
+	// restore the default state after additive shadow-mapped interactions
 	GL_State( GLS_DEFAULT );
 
 	// unbind texture units

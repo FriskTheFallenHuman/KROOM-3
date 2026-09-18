@@ -92,11 +92,6 @@ void R_FreeEntityDefDerivedData( idRenderEntityLocal* def, bool keepDecals, bool
 		}
 	}
 
-	// free all the interactions
-	while( def->firstInteraction != NULL )
-	{
-		def->firstInteraction->UnlinkAndFree();
-	}
 	def->dynamicModelFrameCount = 0;
 
 	// clear the dynamic model if present
@@ -345,6 +340,32 @@ static float R_ComputeParallelLightProjectionMatrix( idRenderLightLocal* light, 
 
 /*
 =================
+R_ResolveLightResources
+=================
+*/
+void R_ResolveLightResources( const renderLight_t& parms, const idMaterial*& lightShader, idImage*& falloffImage )
+{
+	lightShader = parms.shader;
+	if( lightShader == NULL )
+	{
+		lightShader = parms.pointLight ? tr.defaultPointLight : tr.defaultProjectedLight;
+	}
+
+	// Explicitly parse/touch the selected material here so every material query
+	// performed after the commit boundary is read-only.
+	declManager->Touch( static_cast< const idDecl*>( lightShader ) );
+	falloffImage = lightShader->LightFalloffImage();
+	if( falloffImage == NULL )
+	{
+		// Touch and resolve fallback resources while declaration loading is legal.
+		const idMaterial* defaultShader = parms.pointLight ? tr.defaultPointLight : tr.defaultProjectedLight;
+		declManager->Touch( static_cast< const idDecl*>( defaultShader ) );
+		falloffImage = defaultShader->LightFalloffImage();
+	}
+}
+
+/*
+=================
 R_DeriveLightData
 
 Fills everything in based on light->parms
@@ -352,53 +373,9 @@ Fills everything in based on light->parms
 */
 void R_DeriveLightData( idRenderLightLocal* light )
 {
-
-	// decide which light shader we are going to use
-	if( light->parms.shader != NULL )
-	{
-		light->lightShader = light->parms.shader;
-	}
-	else if( light->lightShader == NULL )
-	{
-		if( light->parms.pointLight )
-		{
-			light->lightShader = tr.defaultPointLight;
-		}
-		else
-		{
-			light->lightShader = tr.defaultProjectedLight;
-		}
-	}
-
-	// get the falloff image
-	light->falloffImage = light->lightShader->LightFalloffImage();
-
-	if( light->falloffImage == NULL )
-	{
-		// use the falloff from the default shader of the correct type
-		const idMaterial* defaultShader;
-
-		if( light->parms.pointLight )
-		{
-			defaultShader = tr.defaultPointLight;
-
-			// Touch the default shader. to make sure it's decl has been parsed ( it might have been purged ).
-			declManager->Touch( static_cast< const idDecl*>( defaultShader ) );
-
-			light->falloffImage = defaultShader->LightFalloffImage();
-
-		}
-		else
-		{
-			// projected lights by default don't diminish with distance
-			defaultShader = tr.defaultProjectedLight;
-
-			// Touch the light shader. to make sure it's decl has been parsed ( it might have been purged ).
-			declManager->Touch( static_cast< const idDecl*>( defaultShader ) );
-
-			light->falloffImage = defaultShader->LightFalloffImage();
-		}
-	}
+	// Shader and image resources were resolved by UpdateLightDef. From this
+	// point onward derivation is renderer-only and must not load declarations.
+	assert( light->lightShader != NULL );
 
 	// ------------------------------------
 	// compute the light projection matrix
@@ -505,12 +482,6 @@ void R_FreeLightDefDerivedData( idRenderLightLocal* ldef )
 	for( doublePortal_t* dp = ldef->foggedPortals; dp != NULL; dp = dp->nextFoggedPortal )
 	{
 		dp->fogLight = NULL;
-	}
-
-	// free all the interactions
-	while( ldef->firstInteraction != NULL )
-	{
-		ldef->firstInteraction->UnlinkAndFree();
 	}
 
 	// free all the references to the light
@@ -1002,10 +973,13 @@ void R_ReCreateWorldReferences()
 			{
 				continue;
 			}
-			renderLight_t parms = light->parms;
 
-			light->world->FreeLightDef( i );
-			rw->UpdateLightDef( i, &parms );
+			// R_FreeDerivedData() already removed the old references. Rebuild the
+			// derived committed state in place so an object-backed light keeps its
+			// producer/committed identity across reloadModels and RegenerateWorld.
+			R_CreateLightRefs( light );
+			light->needsReferences = false;
+			tr.pc.c_lightReferenceCommits++;
 		}
 
 		// RB begin
@@ -1058,9 +1032,20 @@ void R_ModulateLights_f( const idCmdArgs& args )
 		if( light != NULL )
 		{
 			count++;
+			renderLight_t* producer = light->owner != NULL
+									  ? static_cast< renderLight_t* >( light->owner )
+									  : &light->gameParms;
 			for( int j = 0; j < 3; j++ )
 			{
-				light->parms.shaderParms[j] *= modulate[j];
+				producer->shaderParms[j] *= modulate[j];
+			}
+			if( light->owner != NULL )
+			{
+				light->owner->CommitThisFrame();
+			}
+			else
+			{
+				tr.primaryWorld->UpdateLightDef( i, producer );
 			}
 		}
 	}

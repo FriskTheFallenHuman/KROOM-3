@@ -78,16 +78,18 @@ void idRenderSystemLocal::PrintPerformanceCounters()
 
 	if( r_showAddModel.GetBool() )
 	{
-		common->Printf( "callback:%i createInteractions:%i createShadowVolumes:%i\n",
-						pc.c_entityDefCallbacks, pc.c_createInteractions, pc.c_createShadowVolumes );
+		common->Printf( "callback:%i createShadowVolumes:%i\n",
+						pc.c_entityDefCallbacks, pc.c_createShadowVolumes );
 		common->Printf( "viewEntities:%i  shadowEntities:%i  viewLights:%i\n", pc.c_visibleViewEntities,
 						pc.c_shadowViewEntities, pc.c_viewLights );
 	}
 	if( r_showUpdates.GetBool() )
 	{
-		common->Printf( "entityUpdates:%i  entityRefs:%i  lightUpdates:%i  lightRefs:%i\n",
-						pc.c_entityUpdates, pc.c_entityReferences,
-						pc.c_lightUpdates, pc.c_lightReferences );
+		common->Printf( "entityUpdates:%i  entityCommitReqs:%i  entityCommits:%i  entityRefs:%i  lightUpdates:%i  lightCommitReqs:%i  lightCommits:%i  lightRefCommits:%i  lightRefs:%i\n",
+						tr.pc.c_entityUpdates, tr.pc.c_entityCommitRequests,
+						tr.pc.c_entityCommits, tr.pc.c_entityReferences,
+						tr.pc.c_lightUpdates, tr.pc.c_lightCommitRequests, tr.pc.c_lightCommits,
+						tr.pc.c_lightReferenceCommits, tr.pc.c_lightReferences );
 	}
 	if( r_showMemory.GetBool() )
 	{

@@ -314,8 +314,6 @@ void idCommonLocal::StartPlayingRenderDemo( idStr demoName )
 
 	Game()->StartDemoPlayback( renderWorld );
 
-	renderWorld->GenerateAllInteractions();
-
 	soundSystem->SetPlayingSoundWorld( soundWorld );
 
 	timeDemoStartTime = Sys_Milliseconds();

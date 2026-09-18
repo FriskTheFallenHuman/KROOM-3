@@ -489,11 +489,6 @@ void idCommonLocal::ExecuteMapChange()
 		SaveGame( "autosave" );
 	}
 
-	common->Printf( "----- Generating Interactions -----\n" );
-
-	// let the renderSystem generate interactions now that everything is spawned
-	renderWorld->GenerateAllInteractions();
-
 	{
 		int vertexMemUsedKB = vertexCache.staticData.vertexMemUsed.GetValue() / 1024;
 		int indexMemUsedKB = vertexCache.staticData.indexMemUsed.GetValue() / 1024;

@@ -90,7 +90,6 @@ SURFACES
 
 #include "ModelDecal.h"
 #include "ModelOverlay.h"
-#include "Interaction.h"
 
 // RB begin
 #define MOC_MULTITHREADED 0
@@ -102,6 +101,10 @@ class MaskedOcclusionCulling;
 // RB end
 
 class idRenderWorldLocal;
+class idRenderEntityCommitted;
+typedef idRenderEntityCommitted idRenderEntityLocal;
+class idRenderLightLocal;
+class RenderEnvprobeLocal;
 struct viewEntity_t;
 struct viewLight_t;
 struct viewEnvprobe_t;
@@ -146,62 +149,12 @@ struct areaReference_t
 	struct portalArea_s*		area;				// so owners can find all the areas they are in
 };
 
-
-// idRenderLight should become the new public interface replacing the qhandle_t to light defs in the idRenderWorld interface
-class idRenderLight
+// Immutable-for-the-frame renderer state. A game-facing idRenderLight points
+// at this separately allocated state after registration with a render world.
+class idRenderLightCommitted
 {
 public:
-	virtual					~idRenderLight() {}
-
-	virtual void			FreeRenderLight() = 0;
-	virtual void			UpdateRenderLight( const renderLight_t* re, bool forceUpdate = false ) = 0;
-	virtual void			GetRenderLight( renderLight_t* re ) = 0;
-	virtual void			ForceUpdate() = 0;
-	virtual int				GetIndex() = 0;
-};
-
-// RB : RennderEnvprobe should become the new public interface replacing the qhandle_t to envprobe defs in the idRenderWorld interface
-class RenderEnvprobe
-{
-public:
-	virtual					~RenderEnvprobe() {}
-
-	virtual void			FreeRenderEnvprobe() = 0;
-	virtual void			UpdateRenderEnvprobe( const renderEnvironmentProbe_t* ep, bool forceUpdate = false ) = 0;
-	virtual void			GetRenderEnvprobe( renderEnvironmentProbe_t* ep ) = 0;
-	virtual void			ForceUpdate() = 0;
-	virtual int				GetIndex() = 0;
-};
-// RB end
-
-// idRenderEntity should become the new public interface replacing the qhandle_t to entity defs in the idRenderWorld interface
-class idRenderEntity
-{
-public:
-	virtual					~idRenderEntity() {}
-
-	virtual void			FreeRenderEntity() = 0;
-	virtual void			UpdateRenderEntity( const renderEntity_t* re, bool forceUpdate = false ) = 0;
-	virtual void			GetRenderEntity( renderEntity_t* re ) = 0;
-	virtual void			ForceUpdate() = 0;
-	virtual int				GetIndex() = 0;
-
-	// overlays are extra polygons that deform with animating models for blood and damage marks
-	virtual void			ProjectOverlay( const idPlane localTextureAxis[2], const idMaterial* material ) = 0;
-	virtual void			RemoveDecals() = 0;
-};
-
-
-class idRenderLightLocal : public idRenderLight
-{
-public:
-	idRenderLightLocal();
-
-	virtual void			FreeRenderLight();
-	virtual void			UpdateRenderLight( const renderLight_t* re, bool forceUpdate = false );
-	virtual void			GetRenderLight( renderLight_t* re );
-	virtual void			ForceUpdate();
-	virtual int				GetIndex();
+	idRenderLightCommitted();
 
 	bool					LightCastsShadows() const
 	{
@@ -239,14 +192,89 @@ public:
 	viewLight_t* 			viewLight;
 
 	areaReference_t* 		references;				// each area the light is present in will have a lightRef
-	idInteraction* 			firstInteraction;		// doubly linked list
-	idInteraction* 			lastInteraction;
+	bool					needsReferences;		// committed shape changed; rebuild during post-commit
 
 	struct doublePortal_s* 	foggedPortals;
 };
 
+class idRenderLightLocal : public idRenderLightCommitted
+{
 
-// RB begin
+public:
+	idRenderLightLocal();
+
+	renderLight_t			gameParms;				// mutable producer-side specification
+	idRenderLight* 			owner;					// game-facing producer object
+	const idMaterial* 		stagedLightShader;		// resolved while decl loading is allowed
+	idImage* 				stagedFalloffImage;
+	bool					needsCommit;
+	bool					needsPostCommit;
+};
+
+class idRenderEntityCommitted
+{
+public:
+	idRenderEntityCommitted();
+
+	bool					IsDirectlyVisible() const;
+	void					ReadFromDemoFile( class idDemoFile* f );
+	void					WriteToDemoFile( class idDemoFile* f ) const;
+
+	renderEntity_t			parms;
+	idRenderEntity* 		owner;					// game-facing producer object
+
+	float					modelMatrix[16];		// this is just a rearrangement of parms.axis and parms.origin
+	idRenderMatrix			modelRenderMatrix;
+	idRenderMatrix			inverseBaseModelProject;// transforms the unit cube to exactly cover the model in world space
+
+	idRenderWorldLocal* 	world;
+	int						index;					// in world entityDefs
+
+	int						lastModifiedFrameNum;	// to determine if it is constantly changing,
+	// and should go in the dynamic frame memory, or kept
+	// in the cached memory
+	bool					archived;				// for demo writing
+
+	idRenderModel* 			dynamicModel;			// if parms.model->IsDynamicModel(), this is the generated data
+	int						dynamicModelFrameCount;	// continuously animating dynamic models will recreate
+	// dynamicModel if this doesn't == tr.viewCount
+	idRenderModel* 			cachedDynamicModel;
+
+
+	// the local bounds used to place entityRefs, either from parms for dynamic entities, or a model bounds
+	idBounds				localReferenceBounds;
+
+	// axis aligned bounding box in world space, derived from refernceBounds and
+	// modelMatrix in R_CreateEntityRefs()
+	idBounds				globalReferenceBounds;
+
+	// a viewEntity_t is created whenever a idRenderEntityLocal is considered for inclusion
+	// in a given view, even if it turns out to not be visible
+	int						viewCount;				// if tr.viewCount == viewCount, viewEntity is valid,
+	// but the entity may still be off screen
+	viewEntity_t* 			viewEntity;				// in frame temporary memory
+
+	idRenderModelDecal* 	decals;					// decals that have been projected on this model
+	idRenderModelOverlay* 	overlays;				// blood overlays on animated models
+
+	areaReference_t* 		entityRefs;				// chain of all references
+
+	bool					needsPortalSky;
+};
+
+// RB : RennderEnvprobe should become the new public interface replacing the qhandle_t to envprobe defs in the idRenderWorld interface
+class RenderEnvprobe
+{
+public:
+	virtual					~RenderEnvprobe() {}
+
+	virtual void			FreeRenderEnvprobe() = 0;
+	virtual void			UpdateRenderEnvprobe( const renderEnvironmentProbe_t* ep, bool forceUpdate = false ) = 0;
+	virtual void			GetRenderEnvprobe( renderEnvironmentProbe_t* ep ) = 0;
+	virtual void			ForceUpdate() = 0;
+	virtual int				GetIndex() = 0;
+};
+
 class RenderEnvprobeLocal : public RenderEnvprobe
 {
 public:
@@ -288,67 +316,6 @@ public:
 	viewEnvprobe_t* 			viewEnvprobe;
 };
 // RB end
-
-class idRenderEntityLocal : public idRenderEntity
-{
-public:
-	idRenderEntityLocal();
-
-	virtual void			FreeRenderEntity();
-	virtual void			UpdateRenderEntity( const renderEntity_t* re, bool forceUpdate = false );
-	virtual void			GetRenderEntity( renderEntity_t* re );
-	virtual void			ForceUpdate();
-	virtual int				GetIndex();
-
-	// overlays are extra polygons that deform with animating models for blood and damage marks
-	virtual void			ProjectOverlay( const idPlane localTextureAxis[2], const idMaterial* material );
-	virtual void			RemoveDecals();
-
-	bool					IsDirectlyVisible() const;
-	void					ReadFromDemoFile( class idDemoFile* f );
-	void					WriteToDemoFile( class idDemoFile* f ) const;
-	renderEntity_t			parms;
-
-	float					modelMatrix[16];		// this is just a rearrangement of parms.axis and parms.origin
-	idRenderMatrix			modelRenderMatrix;
-	idRenderMatrix			inverseBaseModelProject;// transforms the unit cube to exactly cover the model in world space
-
-	idRenderWorldLocal* 	world;
-	int						index;					// in world entityDefs
-
-	int						lastModifiedFrameNum;	// to determine if it is constantly changing,
-	// and should go in the dynamic frame memory, or kept
-	// in the cached memory
-	bool					archived;				// for demo writing
-
-	idRenderModel* 			dynamicModel;			// if parms.model->IsDynamicModel(), this is the generated data
-	int						dynamicModelFrameCount;	// continuously animating dynamic models will recreate
-	// dynamicModel if this doesn't == tr.viewCount
-	idRenderModel* 			cachedDynamicModel;
-
-
-	// the local bounds used to place entityRefs, either from parms for dynamic entities, or a model bounds
-	idBounds				localReferenceBounds;
-
-	// axis aligned bounding box in world space, derived from refernceBounds and
-	// modelMatrix in R_CreateEntityRefs()
-	idBounds				globalReferenceBounds;
-
-	// a viewEntity_t is created whenever a idRenderEntityLocal is considered for inclusion
-	// in a given view, even if it turns out to not be visible
-	int						viewCount;				// if tr.viewCount == viewCount, viewEntity is valid,
-	// but the entity may still be off screen
-	viewEntity_t* 			viewEntity;				// in frame temporary memory
-
-	idRenderModelDecal* 	decals;					// decals that have been projected on this model
-	idRenderModelOverlay* 	overlays;				// blood overlays on animated models
-
-	areaReference_t* 		entityRefs;				// chain of all references
-	idInteraction* 			firstInteraction;		// doubly linked list
-	idInteraction* 			lastInteraction;
-
-	bool					needsPortalSky;
-};
 
 struct shadowOnlyEntity_t
 {
@@ -1282,6 +1249,7 @@ void R_FreeEnvprobeDefDerivedData( RenderEnvprobeLocal* probe );
 
 // RB end
 void R_CreateLightRefs( idRenderLightLocal* light );
+void R_ResolveLightResources( const renderLight_t& parms, const idMaterial*& lightShader, idImage*& falloffImage );
 void R_DeriveLightData( idRenderLightLocal* light );
 void R_FreeLightDefDerivedData( idRenderLightLocal* light );
 
