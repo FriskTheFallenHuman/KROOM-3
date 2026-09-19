@@ -1003,7 +1003,7 @@ void idRenderWorldLocal::WriteFreeOverlay( idDemoFile* f, qhandle_t handle )
 
 
 // RB begin
-void	idRenderWorldLocal::WriteFreeEnvprobe( qhandle_t handle )
+void	idRenderWorldLocal::WriteFreeEnvironmentProbe( qhandle_t handle )
 {
 
 	// only the main renderWorld writes stuff to demos, not the wipes or

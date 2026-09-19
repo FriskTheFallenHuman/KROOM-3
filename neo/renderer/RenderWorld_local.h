@@ -178,10 +178,11 @@ public:
 	virtual qhandle_t		AddRenderLight( idRenderLight* light );
 
 	// RB: environment probes for IBL
-	virtual	qhandle_t		AddEnvprobeDef( const renderEnvironmentProbe_t* ep );
-	virtual	void			UpdateEnvprobeDef( qhandle_t envprobeHandle, const renderEnvironmentProbe_t* ep );
-	virtual	void			FreeEnvprobeDef( qhandle_t envprobeHandle );
-	virtual const renderEnvironmentProbe_t* GetRenderEnvprobe( qhandle_t envprobeHandle ) const;
+	virtual	qhandle_t		AddEnvironmentProbeDef( const renderEnvironmentProbe_t* ep );
+	virtual	void			UpdateEnvironmentProbeDef( qhandle_t envprobeHandle, const renderEnvironmentProbe_t* ep );
+	virtual	void			FreeEnvironmentProbeDef( qhandle_t envprobeHandle );
+	virtual const renderEnvironmentProbe_t* GetRenderEnvironmentProbe( qhandle_t envprobeHandle ) const;
+	virtual qhandle_t		AddRenderEnvironmentProbe( idRenderEnvironmentProbe* envprobe );
 	// RB end
 
 	virtual bool			CheckAreaForPortalSky( int areaNum );
@@ -246,7 +247,7 @@ public:
 
 	idList<idRenderEntityLocal*, TAG_ENTITY>		entityDefs;
 	idList<idRenderLightLocal*, TAG_LIGHT>			lightDefs;
-	idList<RenderEnvprobeLocal*, TAG_ENVPROBE>		envprobeDefs; // RB
+	idList<idRenderEnvironmentProbeLocal*, TAG_ENVPROBE>		envprobeDefs; // RB
 
 	idBlockAlloc<areaReference_t, 1024> areaReferenceAllocator;
 
@@ -301,8 +302,8 @@ public:
 	void					AddAreaViewLights( int areaNum, const portalStack_t* ps );
 
 	// RB begin
-	bool					CullEnvprobeByPortals( const RenderEnvprobeLocal* probe, const portalStack_t* ps );
-	void					AddAreaViewEnvprobes( int areaNum, const portalStack_t* ps );
+	bool					CullEnvironmentProbeByPortals( const idRenderEnvironmentProbeLocal* probe, const portalStack_t* ps );
+	void					AddAreaViewEnvironmentProbe( int areaNum, const portalStack_t* ps );
 	// RB end
 
 	void					AddAreaToView( int areaNum, const portalStack_t* ps );
@@ -342,15 +343,15 @@ public:
 	void					WriteFreeOverlay( idDemoFile* f, qhandle_t handle );
 	void					WriteFreeLight( qhandle_t handle );
 	void					WriteFreeEntity( qhandle_t handle );
-	void					WriteFreeEnvprobe( qhandle_t handle ); // RB
+	void					WriteFreeEnvironmentProbe( qhandle_t handle ); // RB
 	void					WriteRenderDecal( idDemoFile* f, qhandle_t handle );
 	void					WriteRenderOverlay( idDemoFile* f, qhandle_t handle );
 	void					WriteRenderLight( idDemoFile* f, qhandle_t handle, const renderLight_t* light );
 	void					WriteRenderEntity( idDemoFile* f, idRenderEntityLocal* entity );
-	void					WriteRenderEnvprobe( qhandle_t handle, const renderEnvironmentProbe_t* probe ); // RB
+	void					WriteRenderEnvironmentProbe( qhandle_t handle, const renderEnvironmentProbe_t* probe ); // RB
 	void					ReadRenderEntity();
 	void					ReadRenderLight();
-	void					ReadRenderEnvprobe(); // RB
+	void					ReadRenderEnvironmentProbe(); // RB
 
 
 	//--------------------------
@@ -358,12 +359,16 @@ public:
 
 	void					AddEntityRefToArea( idRenderEntityLocal* def, portalArea_t* area );
 	void					AddLightRefToArea( idRenderLightLocal* light, portalArea_t* area );
-	void					AddEnvprobeRefToArea( RenderEnvprobeLocal* probe, portalArea_t* area ); // RB
+	void					AddEnvprobeRefToArea( idRenderEnvironmentProbeLocal* probe, portalArea_t* area ); // RB
 
 	void					CommitRenderEntities();
 	void					CommitLightDef( idRenderLightLocal* light );
 	void					PostCommitLightDef( idRenderLightLocal* light );
 	void					CommitLightDefs();
+
+	void					CommitEnvironmentProbeDef( idRenderEnvironmentProbeLocal* probe );
+	void					PostCommitEnvironmentProbeDef( idRenderEnvironmentProbeLocal* probe );
+	void					CommitEnvironmentProbeDefs();
 
 	void					RecurseProcBSP_r( modelTrace_t* results, int parentNodeNum, int nodeNum, float p1f, float p2f, const idVec3& p1, const idVec3& p2 ) const;
 	void					BoundsInAreas_r( int nodeNum, const idBounds& bounds, int* areas, int* numAreas, int maxAreas ) const;
@@ -372,7 +377,7 @@ public:
 
 	void					PushFrustumIntoTree_r( idRenderEntityLocal* def, idRenderLightLocal* light, const frustumCorners_t& corners, int nodeNum );
 	void					PushFrustumIntoTree( idRenderEntityLocal* def, idRenderLightLocal* light, const idRenderMatrix& frustumTransform, const idBounds& frustumBounds );
-	void					PushEnvprobeIntoTree_r( RenderEnvprobeLocal* probe, int nodeNum ); // RB
+	void					PushEnvironmentProbeIntoTree_r( idRenderEnvironmentProbeLocal* probe, int nodeNum ); // RB
 
 	idRenderModelDecal* 	AllocDecal( qhandle_t newEntityHandle, int startTime );
 	idRenderModelOverlay* 	AllocOverlay( qhandle_t newEntityHandle, int startTime );

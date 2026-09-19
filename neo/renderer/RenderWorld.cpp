@@ -769,7 +769,7 @@ const renderLight_t* idRenderWorldLocal::GetRenderLight( qhandle_t lightHandle )
 
 
 // RB begin
-qhandle_t idRenderWorldLocal::AddEnvprobeDef( const renderEnvironmentProbe_t* ep )
+qhandle_t idRenderWorldLocal::AddEnvironmentProbeDef( const renderEnvironmentProbe_t* ep )
 {
 	// try and reuse a free spot
 	int envprobeHandle = envprobeDefs.FindNull();
@@ -785,14 +785,45 @@ qhandle_t idRenderWorldLocal::AddEnvprobeDef( const renderEnvironmentProbe_t* ep
 		//}
 	}
 
-	UpdateEnvprobeDef( envprobeHandle, ep );
+	UpdateEnvironmentProbeDef( envprobeHandle, ep );
 
 	return envprobeHandle;
 }
 
 /*
+==================
+AddRenderEnvironmentProbe
+==================
+*/
+qhandle_t idRenderWorldLocal::AddRenderEnvironmentProbe( idRenderEnvironmentProbe* envprobe )
+{
+	if( envprobe == NULL )
+	{
+		return -1;
+	}
+	if( envprobe->world != NULL )
+	{
+		if( envprobe->world != this )
+		{
+			common->Error( "idRenderWorld::AddRenderEnvironmentProbe: object already belongs to another world" );
+		}
+		envprobe->CommitThisFrame();
+		return envprobe->index;
+	}
+
+	const qhandle_t handle = AddEnvironmentProbeDef( envprobe );
+	idRenderEnvironmentProbeLocal* committed = envprobeDefs[handle];
+	committed->owner = envprobe;
+	envprobe->world = this;
+	envprobe->index = handle;
+	envprobe->committed = static_cast< idRenderEnvironmentProbeCommitted* >( committed );
+	envprobe->needsCommit = false;
+	return handle;
+}
+
+/*
 =================
-UpdateEnvprobeDef
+UpdateEnvironmentProbeDef
 
 The generation of all the derived interaction data will
 usually be deferred until it is visible in a scene
@@ -800,45 +831,29 @@ usually be deferred until it is visible in a scene
 Does not write to the demo file, which will only be done for visible lights
 =================
 */
-void idRenderWorldLocal::UpdateEnvprobeDef( qhandle_t envprobeHandle, const renderEnvironmentProbe_t* ep )
+void idRenderWorldLocal::UpdateEnvironmentProbeDef( qhandle_t envprobeHandle, const renderEnvironmentProbe_t* ep )
 {
 	if( r_skipUpdates.GetBool() )
 	{
 		return;
 	}
 
-	tr.pc.c_envprobeUpdates++;
+	tr.pc.c_environmentprobeUpdates++;
 
 	// create new slots if needed
 	if( envprobeHandle < 0 || envprobeHandle > LUDICROUS_INDEX )
 	{
-		common->Error( "idRenderWorld::UpdateEnvprobeDef: index = %i", envprobeHandle );
+		common->Error( "idRenderWorld::UpdateEnvironmentProbeDef: index = %i", envprobeHandle );
 	}
 	while( envprobeHandle >= envprobeDefs.Num() )
 	{
 		envprobeDefs.Append( NULL );
 	}
 
-	bool justUpdate = false;
-	RenderEnvprobeLocal* probe = envprobeDefs[envprobeHandle];
-	if( probe )
+	idRenderEnvironmentProbeLocal* probe = envprobeDefs[envprobeHandle];
+	if( probe == NULL )
 	{
-		// if the shape of the envprobe stays the same, we don't need to dump
-		// any of our derived data, because shader parms are calculated every frame
-		if( ep->origin == probe->parms.origin )
-		{
-			justUpdate = true;
-		}
-		else
-		{
-			probe->envprobeHasMoved = true;
-			R_FreeEnvprobeDefDerivedData( probe );
-		}
-	}
-	else
-	{
-		// create a new one
-		probe = new( TAG_RENDER_LIGHT ) RenderEnvprobeLocal;
+		probe = new( TAG_RENDER_LIGHT ) idRenderEnvironmentProbeLocal;
 		envprobeDefs[envprobeHandle] = probe;
 
 		probe->world = this;
@@ -846,74 +861,181 @@ void idRenderWorldLocal::UpdateEnvprobeDef( qhandle_t envprobeHandle, const rend
 		probe->viewCount = 0;
 	}
 
-	probe->parms = *ep;
+	// Stage producer-side state. Renderer-visible data is updated only by
+	// CommitEnvironmentProbeDefs(), immediately before the world is rendered.
+	probe->gameParms = *ep;
+
+	// Cubemap images must be resolved on the update side. The commit phase
+	// can run after game-thread declaration/image loading is disabled.
+	R_ResolveEnvironmentProbeResources( probe->gameParms, this, probe->stagedIrradianceImage, probe->stagedRadianceImage );
+	probe->needsCommit = true;
 	probe->lastModifiedFrameNum = tr.frameCount;
+
 	if( common->WriteDemo() && probe->archived )
 	{
-		WriteFreeEnvprobe( envprobeHandle );
+		WriteFreeEnvironmentProbe( envprobeHandle );
 		probe->archived = false;
-	}
-
-	if( !justUpdate )
-	{
-		R_CreateEnvprobeRefs( probe );
 	}
 }
 
 /*
 ====================
-FreeEnvprobeDef
+CommitEnvironmentProbeDef
+====================
+*/
+void idRenderWorldLocal::CommitEnvironmentProbeDef( idRenderEnvironmentProbeLocal* probe )
+{
+	if( probe == NULL || !probe->needsCommit )
+	{
+		return;
+	}
+
+	renderEnvironmentProbe_t staged = probe->gameParms;
+	const bool hasCommittedState = probe->irradianceImage != NULL;
+	bool shapeUnchanged = false;
+	if( hasCommittedState )
+	{
+		shapeUnchanged = staged.origin == probe->parms.origin &&
+						 probe->stagedIrradianceImage == probe->irradianceImage &&
+						 probe->stagedRadianceImage == probe->radianceImage;
+		if( !shapeUnchanged )
+		{
+			probe->envprobeHasMoved = true;
+		}
+	}
+
+	probe->parms = staged;
+	probe->irradianceImage = probe->stagedIrradianceImage;
+	probe->radianceImage = probe->stagedRadianceImage;
+	probe->needsReferences = !shapeUnchanged;
+	probe->needsCommit = false;
+	probe->needsPostCommit = true;
+}
+
+
+/*
+====================
+PostCommitEnvironmentProbeDef
+====================
+*/
+void idRenderWorldLocal::PostCommitEnvironmentProbeDef( idRenderEnvironmentProbeLocal* probe )
+{
+	if( probe == NULL || !probe->needsPostCommit )
+	{
+		return;
+	}
+
+	if( probe->needsReferences )
+	{
+		R_FreeEnvironmentProbeDefDerivedData( probe );
+		R_CreateEnvironmentProbeRefs( probe );
+		probe->needsReferences = false;
+		tr.pc.c_environmentprobeReferenceCommits++;
+	}
+
+	probe->needsPostCommit = false;
+	tr.pc.c_environmentprobeCommits++;
+}
+
+
+/*
+====================
+CommitEnvironmentProbeDefs
+====================
+*/
+void idRenderWorldLocal::CommitEnvironmentProbeDefs()
+{
+	// Transfer queued game-facing envprobe state into the staging slots. Leave it
+	// pending while updates are frozen so it can be consumed on a later frame.
+	if( !r_skipUpdates.GetBool() )
+	{
+		for( int i = 0; i < envprobeDefs.Num(); ++i )
+		{
+			idRenderEnvironmentProbeLocal* probe = envprobeDefs[i];
+			if( probe == NULL || probe->owner == NULL || !probe->owner->needsCommit )
+			{
+				continue;
+			}
+			UpdateEnvironmentProbeDef( i, probe->owner );
+			probe->owner->needsCommit = false;
+		}
+	}
+
+	// Match the idTech 5 flow: publish all producer state first, then let the
+	// committed-world pass rebuild derived data and spatial references.
+	for( int i = 0; i < envprobeDefs.Num(); ++i )
+	{
+		CommitEnvironmentProbeDef( envprobeDefs[i] );
+	}
+	for( int i = 0; i < envprobeDefs.Num(); ++i )
+	{
+		PostCommitEnvironmentProbeDef( envprobeDefs[i] );
+	}
+}
+
+/*
+====================
+FreeEnvironmentProbeDef
 
 Frees all references and lit surfaces from the light, and
 NULL's out it's entry in the world list
 ====================
 */
-void idRenderWorldLocal::FreeEnvprobeDef( qhandle_t envprobeHandle )
+void idRenderWorldLocal::FreeEnvironmentProbeDef( qhandle_t envprobeHandle )
 {
-	RenderEnvprobeLocal*	probe;
+	idRenderEnvironmentProbeLocal*	probe;
 
 	if( envprobeHandle < 0 || envprobeHandle >= envprobeDefs.Num() )
 	{
-		common->Printf( "idRenderWorld::FreeEnvprobeDef: invalid handle %i [0, %i]\n", envprobeHandle, envprobeDefs.Num() );
+		common->Printf( "idRenderWorld::FreeEnvironmentProbeDef: invalid handle %i [0, %i]\n", envprobeHandle, envprobeDefs.Num() );
 		return;
 	}
 
 	probe = envprobeDefs[envprobeHandle];
 	if( !probe )
 	{
-		common->Printf( "idRenderWorld::FreeEnvprobeDef: handle %i is NULL\n", envprobeHandle );
+		common->Printf( "idRenderWorld::FreeEnvironmentProbeDef: handle %i is NULL\n", envprobeHandle );
 		return;
 	}
 
-	R_FreeEnvprobeDefDerivedData( probe );
+	R_FreeEnvironmentProbeDefDerivedData( probe );
+
+	if( probe->owner != NULL )
+	{
+		probe->owner->world = NULL;
+		probe->owner->index = -1;
+		probe->owner->committed = NULL;
+		probe->owner->needsCommit = false;
+		probe->owner = NULL;
+	}
 
 	if( common->WriteDemo() && probe->archived )
 	{
-		WriteFreeEnvprobe( envprobeHandle );
+		WriteFreeEnvironmentProbe( envprobeHandle );
 	}
 
 	delete probe;
 	envprobeDefs[envprobeHandle] = NULL;
 }
 
-const renderEnvironmentProbe_t* idRenderWorldLocal::GetRenderEnvprobe( qhandle_t envprobeHandle ) const
+const renderEnvironmentProbe_t* idRenderWorldLocal::GetRenderEnvironmentProbe( qhandle_t envprobeHandle ) const
 {
-	RenderEnvprobeLocal* def;
+	idRenderEnvironmentProbeLocal* def;
 
 	if( envprobeHandle < 0 || envprobeHandle >= envprobeDefs.Num() )
 	{
-		common->Printf( "idRenderWorld::GetRenderEnvprobe: handle %i > %i\n", envprobeHandle, envprobeDefs.Num() );
+		common->Printf( "idRenderWorld::GetRenderEnvironmentProbe: handle %i > %i\n", envprobeHandle, envprobeDefs.Num() );
 		return NULL;
 	}
 
 	def = envprobeDefs[envprobeHandle];
 	if( !def )
 	{
-		common->Printf( "idRenderWorld::GetRenderEnvprobe: handle %i is NULL\n", envprobeHandle );
+		common->Printf( "idRenderWorld::GetRenderEnvironmentProbe: handle %i is NULL\n", envprobeHandle );
 		return NULL;
 	}
 
-	return &def->parms;
+	return def->owner != NULL ? static_cast< const renderEnvironmentProbe_t* >( def->owner ) : &def->gameParms;
 }
 // RB end
 
@@ -1208,6 +1330,7 @@ void idRenderWorldLocal::RenderScene( const renderView_t* renderView )
 
 	CommitRenderEntities();
 	CommitLightDefs();
+	CommitEnvironmentProbeDefs();
 
 	renderView_t copy = *renderView;
 
@@ -2065,7 +2188,7 @@ void idRenderWorldLocal::AddLightRefToArea( idRenderLightLocal* light, portalAre
 }
 
 // RB begin
-void idRenderWorldLocal::AddEnvprobeRefToArea( RenderEnvprobeLocal* probe, portalArea_t* area )
+void idRenderWorldLocal::AddEnvprobeRefToArea( idRenderEnvironmentProbeLocal* probe, portalArea_t* area )
 {
 	areaReference_t*	lref;
 
@@ -2192,7 +2315,7 @@ void idRenderWorldLocal::PushFrustumIntoTree( idRenderEntityLocal* def, idRender
 
 
 // RB begin
-void idRenderWorldLocal::PushEnvprobeIntoTree_r( RenderEnvprobeLocal* probe, int nodeNum )
+void idRenderWorldLocal::PushEnvironmentProbeIntoTree_r( idRenderEnvironmentProbeLocal* probe, int nodeNum )
 {
 	if( nodeNum < 0 )
 	{
@@ -2236,7 +2359,7 @@ void idRenderWorldLocal::PushEnvprobeIntoTree_r( RenderEnvprobeLocal* probe, int
 		nodeNum = node->children[0];
 		if( nodeNum != 0 )  	// 0 = solid
 		{
-			PushEnvprobeIntoTree_r( probe, nodeNum );
+			PushEnvironmentProbeIntoTree_r( probe, nodeNum );
 		}
 	}
 
@@ -2245,7 +2368,7 @@ void idRenderWorldLocal::PushEnvprobeIntoTree_r( RenderEnvprobeLocal* probe, int
 		nodeNum = node->children[1];
 		if( nodeNum != 0 )  	// 0 = solid
 		{
-			PushEnvprobeIntoTree_r( probe, nodeNum );
+			PushEnvironmentProbeIntoTree_r( probe, nodeNum );
 		}
 	}
 }

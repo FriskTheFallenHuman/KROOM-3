@@ -104,10 +104,10 @@ class idRenderWorldLocal;
 class idRenderEntityCommitted;
 typedef idRenderEntityCommitted idRenderEntityLocal;
 class idRenderLightLocal;
-class RenderEnvprobeLocal;
+class idRenderEnvironmentProbeLocal;
 struct viewEntity_t;
 struct viewLight_t;
-struct viewEnvprobe_t;
+struct viewEnvironmentProbe_t;
 
 // drawSurf_t structures command the back end to render surfaces
 // a given srfTriangles_t may be used with multiple viewEntity_t,
@@ -144,7 +144,7 @@ struct areaReference_t
 
 	idRenderEntityLocal* 	entity;					// only one of entity / light / envprobe will be non-NULL
 	idRenderLightLocal* 	light;					// only one of entity / light / envprobe will be non-NULL
-	RenderEnvprobeLocal*	envprobe;				// only one of entity / light / envprobe will be non-NULL
+	idRenderEnvironmentProbeLocal*	envprobe;				// only one of entity / light / envprobe will be non-NULL
 
 	struct portalArea_s*		area;				// so owners can find all the areas they are in
 };
@@ -262,34 +262,17 @@ public:
 	bool					needsPortalSky;
 };
 
-// RB : RennderEnvprobe should become the new public interface replacing the qhandle_t to envprobe defs in the idRenderWorld interface
-class RenderEnvprobe
+// Immutable-for-the-frame renderer state. A game-facing idRenderEnvironmentProbe points
+// at this separately allocated state after registration with a render world.
+class idRenderEnvironmentProbeCommitted
 {
 public:
-	virtual					~RenderEnvprobe() {}
-
-	virtual void			FreeRenderEnvprobe() = 0;
-	virtual void			UpdateRenderEnvprobe( const renderEnvironmentProbe_t* ep, bool forceUpdate = false ) = 0;
-	virtual void			GetRenderEnvprobe( renderEnvironmentProbe_t* ep ) = 0;
-	virtual void			ForceUpdate() = 0;
-	virtual int				GetIndex() = 0;
-};
-
-class RenderEnvprobeLocal : public RenderEnvprobe
-{
-public:
-	RenderEnvprobeLocal();
-
-	virtual void			FreeRenderEnvprobe() override;
-	virtual void			UpdateRenderEnvprobe( const renderEnvironmentProbe_t* ep, bool forceUpdate = false ) override;
-	virtual void			GetRenderEnvprobe( renderEnvironmentProbe_t* ep ) override;
-	virtual void			ForceUpdate() override;
-	virtual int				GetIndex() override;
+	idRenderEnvironmentProbeCommitted();
 
 	renderEnvironmentProbe_t	parms;					// specification
 
-	bool						envprobeHasMoved;		// the light has changed its position since it was
-	// first added, so the prelight model is not valid
+	bool						envprobeHasMoved;		// the envprobe has changed its position since it was
+	// first added, so cached derived data is not valid
 	idRenderWorldLocal* 		world;
 	int							index;					// in world envprobeDefs
 
@@ -306,16 +289,29 @@ public:
 
 	idBounds					globalProbeBounds;
 
-	areaReference_t* 			references;				// each area the light is present in will have a lightRef
+	areaReference_t* 			references;				// each area the envprobe is present in will have a probeRef
+	bool						needsReferences;		// committed shape changed; rebuild during post-commit
 
 	idImage* 					irradianceImage;		// cubemap image used for diffuse IBL by backend
 	idImage* 					radianceImage;			// cubemap image used for specular IBL by backend
 
 	// temporary helpers
 	int							viewCount;				// if == tr.viewCount, the envprobe is on the viewDef->viewEnvprobes list
-	viewEnvprobe_t* 			viewEnvprobe;
+	viewEnvironmentProbe_t* 	viewEnvprobe;
 };
-// RB end
+
+class idRenderEnvironmentProbeLocal : public idRenderEnvironmentProbeCommitted
+{
+public:
+	idRenderEnvironmentProbeLocal();
+
+	renderEnvironmentProbe_t	gameParms;				// mutable producer-side specification
+	idRenderEnvironmentProbe* 	owner;					// game-facing producer object
+	idImage* 					stagedIrradianceImage;
+	idImage* 					stagedRadianceImage;
+	bool						needsCommit;
+	bool						needsPostCommit;
+};
 
 struct shadowOnlyEntity_t
 {
@@ -416,17 +412,17 @@ struct viewEntity_t
 };
 
 // RB: viewEnvprobes are allocated on the frame temporary stack memory
-// a viewEnvprobe contains everything that the back end needs out of an RenderEnvprobeLocal,
+// a viewEnvprobe contains everything that the back end needs out of an idRenderEnvironmentProbeLocal,
 // which the front end may be modifying simultaniously if running in SMP mode.
 
 // this structure will be especially helpful when we switch RBDOOM-3-BFG to forward cluster shading
 // because then we can evaluate all viewEnvprobes properly in each pixel shader along with all other lighting information
-struct viewEnvprobe_t
+struct viewEnvironmentProbe_t
 {
-	viewEnvprobe_t* 		next;
+	viewEnvironmentProbe_t* 		next;
 
 	// back end should NOT reference the lightDef, because it can change when running SMP
-	RenderEnvprobeLocal* 	envprobeDef;
+	idRenderEnvironmentProbeLocal* 	envprobeDef;
 
 	// for scissor clipping, local inside renderView viewport
 	// scissorRect.Empty() is true if the viewEntity_t was never actually
@@ -462,7 +458,23 @@ struct calcEnvprobeParms_t
 
 	// output
 	halfFloat_t*					outBuffer;				// HDR R11G11B11F packed octahedron atlas
-	int								time;					// execution time in milliseconds
+	int								time;					// execution time in milliseconds, 0 if not individually measured
+};
+
+// one mip level of a specular/radiance convolution, dispatched as its own parallel job so a
+// single probe's radiance bake can spread across all available cores instead of running as one
+// job (all mips) pinned to a single thread.
+struct calcEnvironmentProbeMipParms_t
+{
+	// input, shared read-only with sibling mip jobs for the same probe
+	byte*							radiance[6];			// HDR RGB16F standard OpenGL cubemap sides
+	halfFloat_t*					outBuffer;				// shared output atlas; each mip job writes its own disjoint rect
+	int								outWidth;
+	int								outHeight;
+
+	int								mip;
+	int								numOctahedronMips;
+	int								maxSamples;				// sample count for the highest-roughness (last) mip
 };
 
 
@@ -597,7 +609,7 @@ struct viewDef_t
 	bool* 				connectedAreas;
 
 	// RB: collect environment probes like lights
-	viewEnvprobe_t*		viewEnvprobes;
+	viewEnvironmentProbe_t*		viewEnvprobes;
 
 	// RB: nearest probe for now
 	idBounds			globalProbeBounds;
@@ -1102,7 +1114,7 @@ extern idCVar r_testGammaBias;				// draw a grid pattern to test gamma levels
 
 extern idCVar r_singleLight;				// suppress all but one light
 extern idCVar r_singleEntity;				// suppress all but one entity
-extern idCVar r_singleEnvprobe;				// suppress all but one envprobe
+extern idCVar r_singleProbe;				// suppress all but one envprobe
 extern idCVar r_singleArea;					// only draw the portal area the view is actually in
 extern idCVar r_singleSurface;				// suppress all but one surface on each entity
 
@@ -1166,7 +1178,7 @@ extern idCVar r_useHierarchicalDepthBuffer;
 
 extern idCVar r_usePBR;
 extern idCVar r_pbrDebug;
-extern idCVar r_showViewEnvprobes;
+extern idCVar r_showProbes;
 extern idCVar r_showLightGrid;				// show Quake 3 style light grid points
 
 extern idCVar r_useLightGrid;
@@ -1244,10 +1256,12 @@ void R_RenderLightFrustum( const renderLight_t& renderLight, idPlane lightFrustu
 
 srfTriangles_t* R_PolytopeSurface( int numPlanes, const idPlane* planes, idWinding** windings );
 
-void R_CreateEnvprobeRefs( RenderEnvprobeLocal* probe );
-void R_FreeEnvprobeDefDerivedData( RenderEnvprobeLocal* probe );
-
+// RB begin
+void R_CreateEnvironmentProbeRefs( idRenderEnvironmentProbeLocal* probe );
+void R_ResolveEnvironmentProbeResources( const renderEnvironmentProbe_t& parms, idRenderWorldLocal* world, idImage*& irradianceImage, idImage*& radianceImage );
+void R_FreeEnvironmentProbeDefDerivedData( idRenderEnvironmentProbeLocal* probe );
 // RB end
+
 void R_CreateLightRefs( idRenderLightLocal* light );
 void R_ResolveLightResources( const renderLight_t& parms, const idMaterial*& lightShader, idImage*& falloffImage );
 void R_DeriveLightData( idRenderLightLocal* light );

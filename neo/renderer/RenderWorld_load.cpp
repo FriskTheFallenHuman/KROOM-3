@@ -705,10 +705,10 @@ void idRenderWorldLocal::FreeDefs()
 	// RB: free all envprobeDefs
 	for( int i = 0; i < envprobeDefs.Num(); i++ )
 	{
-		RenderEnvprobeLocal* ep = envprobeDefs[i];
+		idRenderEnvironmentProbeLocal* ep = envprobeDefs[i];
 		if( ep != NULL && ep->world == this )
 		{
-			FreeEnvprobeDef( i );
+			FreeEnvironmentProbeDef( i );
 			envprobeDefs[i] = NULL;
 		}
 	}

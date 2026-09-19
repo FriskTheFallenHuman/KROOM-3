@@ -170,9 +170,12 @@ idCVar r_screenFraction( "r_screenFraction", "100", CVAR_RENDERER | CVAR_INTEGER
 idCVar r_usePortals( "r_usePortals", "1", CVAR_RENDERER | CVAR_BOOL, " 1 = use portals to perform area culling, otherwise draw everything" );
 idCVar r_singleLight( "r_singleLight", "-1", CVAR_RENDERER | CVAR_INTEGER, "suppress all but one light" );
 idCVar r_singleEntity( "r_singleEntity", "-1", CVAR_RENDERER | CVAR_INTEGER, "suppress all but one entity" );
-idCVar r_singleEnvprobe( "r_singleEnvprobe", "-1", CVAR_RENDERER | CVAR_INTEGER, "suppress all but one environment probe" );
 idCVar r_singleSurface( "r_singleSurface", "-1", CVAR_RENDERER | CVAR_INTEGER, "suppress all but one surface on each entity" );
 idCVar r_singleArea( "r_singleArea", "0", CVAR_RENDERER | CVAR_BOOL, "only draw the portal area the view is actually in" );
+// RB begin
+idCVar r_singleProbe( "r_singleProbe", "-1", CVAR_RENDERER | CVAR_INTEGER, "suppress all but one environment probe" );
+// RB end
+
 idCVar r_orderIndexes( "r_orderIndexes", "1", CVAR_RENDERER | CVAR_BOOL, "perform index reorganization to optimize vertex use" );
 idCVar r_lightAllBackFaces( "r_lightAllBackFaces", "0", CVAR_RENDERER | CVAR_BOOL, "light all the back faces, even when they would be shadowed" );
 
@@ -207,6 +210,8 @@ idCVar r_showDominantTri( "r_showDominantTri", "0", CVAR_RENDERER | CVAR_BOOL, "
 idCVar r_showTextureVectors( "r_showTextureVectors", "0", CVAR_RENDERER | CVAR_FLOAT, " if > 0 draw each triangles texture (tangent) vectors" );
 idCVar r_showOverDraw( "r_showOverDraw", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = geometry overdraw, 2 = light interaction overdraw, 3 = geometry and light interaction overdraw" );
 // RB begin
+idCVar r_showProbes( "r_showProbes", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = displays the bounding boxes of all view environment probes, 2 = show irradiance" );
+idCVar r_showLightGrid( "r_showLightGrid", "0", CVAR_RENDERER | CVAR_INTEGER, "show Quake 3 style light grid points" );
 idCVar r_showShadowMaps( "r_showShadowMaps", "0", CVAR_RENDERER | CVAR_BOOL, "" );
 idCVar r_showShadowMapLODs( "r_showShadowMapLODs", "0", CVAR_RENDERER | CVAR_INTEGER, "" );
 // RB end
@@ -288,13 +293,8 @@ idCVar r_useHierarchicalDepthBuffer( "r_useHierarchicalDepthBuffer", "1", CVAR_R
 // RB: Begin
 idCVar r_usePBR( "r_usePBR", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "use PBR and Image Based Lighting instead of old Quake 4 style ambient lighting, requires reloadShaders" );
 idCVar r_pbrDebug( "r_pbrDebug", "0", CVAR_RENDERER | CVAR_INTEGER, "show which materials have PBR support (green = PBR, red = oldschool D3)" );
-idCVar r_showViewEnvprobes( "r_showViewEnvprobes", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = displays the bounding boxes of all view environment probes, 2 = show irradiance" );
-idCVar r_showLightGrid( "r_showLightGrid", "0", CVAR_RENDERER | CVAR_INTEGER, "show Quake 3 style light grid points" );
-
 idCVar r_useLightGrid( "r_useLightGrid", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "use Quake 3 style light grid" );
-
 idCVar r_exposure( "r_exposure", "0.5", CVAR_ARCHIVE | CVAR_RENDERER | CVAR_FLOAT, "HDR exposure or LDR brightness [0.0 .. 1.0]", 0.0f, 1.0f );
-
 idCVar r_useMaskedOcclusionCulling( "r_useMaskedOcclusionCulling", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "SIMD optimized software culling by Intel" );
 // RB end
 

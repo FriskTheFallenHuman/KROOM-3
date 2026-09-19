@@ -549,7 +549,7 @@ bool R_GenerateSurfaceSubview( const drawSurf_t* drawSurf )
 R_EnvironmentProbeRender
 =================
 */
-static void R_EnvironmentProbeRender( const RenderEnvprobeLocal* )
+static void R_EnvironmentProbeRender( const idRenderEnvironmentProbeLocal* )
 {
 #if 0
 	// remote views can be reused in a single frame
@@ -646,7 +646,7 @@ bool R_GenerateSubViews( const drawSurf_t* const drawSurfs[], const int numDrawS
 		// go through each visible probe
 		int numViewProbes = 0;
 
-		for( viewEnvprobe_t* vProbe = tr.viewDef->viewEnvprobes; vProbe != NULL; vProbe = vProbe->next )
+		for( viewEnvironmentProbe_t* vProbe = tr.viewDef->viewEnvprobes; vProbe != NULL; vProbe = vProbe->next )
 		{
 			numViewProbes++;
 

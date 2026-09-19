@@ -385,7 +385,44 @@ idRenderLightLocal::idRenderLightLocal() : idRenderLightCommitted()
 
 //======================================================================
 
-RenderEnvprobeLocal::RenderEnvprobeLocal()
+idRenderEnvironmentProbe::idRenderEnvironmentProbe()
+{
+	memset( static_cast< renderEnvironmentProbe_t* >( this ), 0, sizeof( renderEnvironmentProbe_t ) );
+	world = NULL;
+	index = -1;
+	committed = NULL;
+}
+
+idRenderEnvironmentProbe::~idRenderEnvironmentProbe()
+{
+	FreeRenderEnvprobe();
+}
+
+void idRenderEnvironmentProbe::CommitThisFrame( bool forceUpdate )
+{
+	if( world != NULL && index >= 0 )
+	{
+		tr.pc.c_environmentprobeCommitRequests++;
+		needsCommit = true;
+	}
+}
+
+void idRenderEnvironmentProbe::FreeRenderEnvprobe()
+{
+	if( world != NULL && index >= 0 )
+	{
+		world->FreeEnvironmentProbeDef( index );
+	}
+}
+
+void idRenderEnvironmentProbe::ForceUpdate()
+{
+	CommitThisFrame( true );
+}
+
+//======================================================================
+
+idRenderEnvironmentProbeCommitted::idRenderEnvironmentProbeCommitted()
 {
 	memset( &parms, 0, sizeof( parms ) );
 
@@ -396,23 +433,25 @@ RenderEnvprobeLocal::RenderEnvprobeLocal()
 	lastModifiedFrameNum	= 0;
 	archived				= false;
 
+	inverseBaseProbeProject.Zero();
+	globalProbeBounds.Clear();
+
 	references				= NULL;
+	needsReferences			= false;
+
+	irradianceImage			= NULL;
+	radianceImage			= NULL;
+
+	viewCount				= 0;
+	viewEnvprobe			= NULL;
 }
 
-
-void RenderEnvprobeLocal::FreeRenderEnvprobe()
+idRenderEnvironmentProbeLocal::idRenderEnvironmentProbeLocal() : idRenderEnvironmentProbeCommitted()
 {
-}
-void RenderEnvprobeLocal::UpdateRenderEnvprobe( const renderEnvironmentProbe_t* ep, bool forceUpdate )
-{
-}
-void RenderEnvprobeLocal::GetRenderEnvprobe( renderEnvironmentProbe_t* ep )
-{
-}
-void RenderEnvprobeLocal::ForceUpdate()
-{
-}
-int RenderEnvprobeLocal::GetIndex()
-{
-	return index;
+	memset( &gameParms, 0, sizeof( gameParms ) );
+	owner					= NULL;
+	stagedIrradianceImage	= NULL;
+	stagedRadianceImage		= NULL;
+	needsCommit				= false;
+	needsPostCommit			= false;
 }
