@@ -91,10 +91,10 @@ void	DebuggerServerCheckBreakpoint( idInterpreter* interpreter, idProgram* progr
 	void	DebuggerClientInit( const char* cmdline );
 
 	//Material Editor
-	//void	MaterialEditorInit();
-	//void	MaterialEditorRun();
-	//void	MaterialEditorShutdown();
-	//void	MaterialEditorPrintConsole( const char* msg );
+	void	MaterialEditorInit();
+	bool	MaterialEditorRun();
+	void	MaterialEditorShutdown();
+	void	MaterialEditorPrintConsole( const char* msg );
 #endif
 
 #endif /* !__EDIT_PUBLIC_H__ */

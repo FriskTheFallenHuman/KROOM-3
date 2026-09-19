@@ -33,6 +33,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "Common_local.h"
 #include "../renderer/Image.h"
+#include "../renderer/RenderContext.h"
 
 /*
 
@@ -598,6 +599,16 @@ void idCommonLocal::Frame()
 		// This may block if the GPU isn't finished renderng the previous frame.
 		frameTiming.startSyncTime = Sys_Microseconds();
 		const emptyCommand_t* renderCommands = NULL;
+
+		if( IsToolActive() )
+		{
+			rRenderContext.MakeCurrent();
+
+			if( com_editors & EDITOR_MATERIAL )
+			{
+				MaterialEditorRun();
+			}
+		}
 
 		// foresthale 2014-05-12: also check com_editors as many of them are not particularly thread-safe (editLights for example)
 		if( com_smp.GetInteger() > 0 && com_editors == 0 )
