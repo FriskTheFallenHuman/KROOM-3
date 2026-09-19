@@ -181,6 +181,13 @@ void idCommonLocal::VPrintf( const char* fmt, va_list args )
 	// worker-thread early out so renderer and streaming jobs are visible.
 	console->Print( msg );
 
+#if defined(ID_ALLOW_TOOLS)
+	if( com_editors & EDITOR_MATERIAL )
+	{
+		MaterialEditorPrintConsole( msg );
+	}
+#endif
+
 	if( !idLib::IsMainThread() )
 	{
 		// Still send to debugger/terminal for immediate visibility

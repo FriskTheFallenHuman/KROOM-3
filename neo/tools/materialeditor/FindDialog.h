@@ -26,41 +26,48 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#ifndef __RENDERCONTEXT_H__
-#define __RENDERCONTEXT_H__
+#ifndef __FINDDIALOG_H__
+#define __FINDDIALOG_H__
 
-// DG: SDL.h somehow needs the following functions, so #undef those silly
-//     "don't use" #defines from Str.h
-#undef strncmp
-#undef strcasecmp
-#undef vsnprintf
-// DG end
+#include <wx/wx.h>
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_timer.h>
+#include "MaterialEditor.h"
+#include "../common/registryoptions.h"
 
-/*
-================================================================================================
+class MEMainFrame;
 
-idRenderContext
-
-================================================================================================
+/**
+* Dialog that provides an input box and several checkboxes to define
+* the parameters of a search. These parameters include: text string, search
+* scope and search only name flag.
 */
-class idRenderContext
+class FindDialog : public wxDialog
 {
 public:
-#if !defined( USE_VULKAN )
-	void			InitContext( SDL_Window* window, SDL_GLContext context );
-#endif
-	void			MakeCurrent();
-	void			Disable();
+	explicit FindDialog( MEMainFrame* pParent );
+	virtual ~FindDialog();
+
 private:
-#if !defined( USE_VULKAN )
-	SDL_Window*		oldWindow;
-	SDL_GLContext	oldContext;
-#endif
+	enum
+	{
+		ID_CloseButton = wxID_HIGHEST + 500
+	};
+
+	void			OnFindNext( wxCommandEvent& event );
+	void			OnClose( wxCommandEvent& event );
+	void			OnCloseEvent( wxCloseEvent& event );
+
+	void			LoadFindSettings();
+	void			SaveFindSettings();
+
+	MEMainFrame*        m_parent;
+	MaterialSearchData_t searchData;
+	rvRegistryOptions   registry;
+
+	wxTextCtrl*     m_textCtrl;
+	wxCheckBox*     m_nameOnlyCheck;
+	wxRadioButton*  m_searchFileRadio;
+	wxRadioButton*  m_searchAllRadio;
 };
 
-extern idRenderContext rRenderContext;
-
-#endif	// !__RENDERCONTEXT_H__
+#endif /* !__FINDDIALOG_H__ */

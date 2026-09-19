@@ -26,41 +26,42 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#ifndef __RENDERCONTEXT_H__
-#define __RENDERCONTEXT_H__
+#include "precompiled.h"
+#pragma hdrstop
 
-// DG: SDL.h somehow needs the following functions, so #undef those silly
-//     "don't use" #defines from Str.h
-#undef strncmp
-#undef strcasecmp
-#undef vsnprintf
-// DG end
+#include "../RenderCommon.h"
+#include "../RenderContext.h"
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_timer.h>
+
+idRenderContext rRenderContext;
 
 /*
-================================================================================================
-
-idRenderContext
-
-================================================================================================
+==================
+idRenderContext::InitContext
+==================
 */
-class idRenderContext
+void idRenderContext::InitContext( SDL_Window* window, SDL_GLContext context )
 {
-public:
-#if !defined( USE_VULKAN )
-	void			InitContext( SDL_Window* window, SDL_GLContext context );
-#endif
-	void			MakeCurrent();
-	void			Disable();
-private:
-#if !defined( USE_VULKAN )
-	SDL_Window*		oldWindow;
-	SDL_GLContext	oldContext;
-#endif
-};
+	oldWindow = window;
+	oldContext = context;
+}
 
-extern idRenderContext rRenderContext;
+/*
+==================
+idRenderContext::MakeCurrent
+==================
+*/
+void idRenderContext::MakeCurrent()
+{
+	SDL_GL_MakeCurrent( oldWindow, oldContext );
+}
 
-#endif	// !__RENDERCONTEXT_H__
+/*
+==================
+idRenderContext::Disable
+==================
+*/
+void idRenderContext::Disable()
+{
+	SDL_GL_MakeCurrent( NULL, NULL );
+}

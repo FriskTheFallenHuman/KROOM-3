@@ -260,6 +260,20 @@ static void Com_ScriptDebugger_f( const idCmdArgs& args )
 
 	}
 }
+
+/*
+=============
+Com_MaterialEditor_f
+=============
+*/
+static void Com_MaterialEditor_f( const idCmdArgs& args )
+{
+	// Turn off sounds
+	soundSystem->SetMute( true );
+
+	MaterialEditorInit();
+}
+
 #endif
 
 /*
@@ -282,7 +296,7 @@ void idCommonLocal::InitCommands()
 	cmdSystem->AddCommand( "debugger", Com_ScriptDebugger_f, CMD_FL_TOOL, "launches the Script Debugger" );
 
 	//BSM Nerve: Add support for the material editor
-	//cmdSystem->AddCommand( "materialEditor", Com_MaterialEditor_f, CMD_FL_TOOL, "launches the Material Editor" );
+	cmdSystem->AddCommand( "materialEditor", Com_MaterialEditor_f, CMD_FL_TOOL, "launches the Material Editor" );
 #endif
 
 	cmdSystem->AddCommand( "editLights", Com_EditLights_f, CMD_FL_TOOL, "launches the in-game Light Editor" );

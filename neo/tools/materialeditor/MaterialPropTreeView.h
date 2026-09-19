@@ -26,41 +26,57 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#ifndef __RENDERCONTEXT_H__
-#define __RENDERCONTEXT_H__
+#ifndef __MATERIALPROPTREEVIEW_H__
+#define __MATERIALPROPTREEVIEW_H__
 
-// DG: SDL.h somehow needs the following functions, so #undef those silly
-//     "don't use" #defines from Str.h
-#undef strncmp
-#undef strcasecmp
-#undef vsnprintf
-// DG end
+#include <wx/wx.h>
+#include <wx/propgrid/propgrid.h>
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_timer.h>
+#include <map>
+#include <string>
 
-/*
-================================================================================================
+#include "MaterialEditor.h"
+#include "MaterialView.h"
+#include "MaterialDocManager.h"
+#include "MaterialDef.h"
+#include "../common/RegistryOptions.h"
 
-idRenderContext
-
-================================================================================================
+/**
+* View that displays material and stage properties and allows the user to edit the properties.
 */
-class idRenderContext
+class MaterialPropTreeView : public wxPanel, public MaterialView
 {
+
 public:
-#if !defined( USE_VULKAN )
-	void			InitContext( SDL_Window* window, SDL_GLContext context );
-#endif
-	void			MakeCurrent();
-	void			Disable();
+	explicit			MaterialPropTreeView( wxWindow* parent );
+	virtual				~MaterialPropTreeView();
+
+	void				SetPropertyListType( int listType, int stageNum = -1 );
+
+	void				LoadSettings();
+	void				SaveSettings();
+
+	void				SetColumn( int width );
+	int					GetColumn() const;
+
+	// MaterialView interface.
+	virtual void		MV_OnMaterialChange( MaterialDoc* pMaterial ) override;
+
+protected:
+	void				OnPropertyGridChanged( wxPropertyGridEvent& event );
+	void				OnPropertyGridItemCollapsed( wxPropertyGridEvent& event );
+	void				OnPropertyGridItemExpanded( wxPropertyGridEvent& event );
+
+	void				RefreshProperties();
+
 private:
-#if !defined( USE_VULKAN )
-	SDL_Window*		oldWindow;
-	SDL_GLContext	oldContext;
-#endif
+	wxPropertyGrid*		m_grid;
+	MaterialDefList*	currentPropDefs;
+	int					currentListType;
+	int					currentStage;
+	bool				internalChange;
+	rvRegistryOptions	registry;
+	std::map<std::string, wxPGProperty*> m_propertyMap;
 };
 
-extern idRenderContext rRenderContext;
-
-#endif	// !__RENDERCONTEXT_H__
+#endif /* !__MATERIALPROPTREEVIEW_H__ */

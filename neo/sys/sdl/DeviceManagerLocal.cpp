@@ -62,6 +62,7 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 
 #include "../renderer/RenderCommon.h"
+#include "../renderer/RenderContext.h"
 #include "DeviceSDL.h"
 #include "DeviceManagerLocal.h"
 
@@ -627,6 +628,8 @@ bool idDeviceManagerSDL::Init( vidParms_t parms )
 	// DG end
 
 	SaveGamma();
+
+	rRenderContext.InitContext( sdl.window, sdl.context );
 
 	return true;
 }
