@@ -230,6 +230,7 @@ class idRenderWorld;
 class idRenderWorldLocal;
 class idRenderEntityCommitted;
 class idRenderLightCommitted;
+class idRenderEnvironmentProbeCommitted;
 
 // Game-facing render objects. Their public payload intentionally remains
 // layout-compatible with the BFG parameter structs while ownership and commit
@@ -287,6 +288,34 @@ private:
 	idRenderLightCommitted* committed;
 	bool					needsCommit;
 };
+
+// RB: environment probes for IBL
+class idRenderEnvironmentProbe : public renderEnvironmentProbe_t
+{
+public:
+	idRenderEnvironmentProbe();
+	~idRenderEnvironmentProbe();
+
+	void				CommitThisFrame( bool forceUpdate = false );
+	void				FreeRenderEnvprobe();
+	void				ForceUpdate();
+	int					GetIndex() const
+	{
+		return index;
+	}
+	bool				IsRegistered() const
+	{
+		return world != NULL && index >= 0;
+	}
+
+private:
+	friend class idRenderWorldLocal;
+	idRenderWorld* 			world;
+	int					index;
+	idRenderEnvironmentProbeCommitted* committed;
+	bool					needsCommit;
+};
+// RB end
 
 typedef struct renderView_s
 {
@@ -414,7 +443,7 @@ public:
 	// Now we'll have a hook to reset the list from here.
 	virtual void			ResetLocalRenderModels() = 0;
 
-	//-------------- Entity and Light Defs -----------------
+	//-------------- Entity / Light and Environment Probes Defs -----------------
 
 	// entityDefs and lightDefs are added to a given world to determine
 	// what will be drawn for a rendered scene.  Most update work is defered
@@ -433,10 +462,11 @@ public:
 	virtual qhandle_t		AddRenderLight( idRenderLight* light ) = 0;
 
 	// RB: environment probes for IBL
-	virtual	qhandle_t		AddEnvprobeDef( const renderEnvironmentProbe_t* ep ) = 0;
-	virtual	void			UpdateEnvprobeDef( qhandle_t envprobeHandle, const renderEnvironmentProbe_t* ep ) = 0;
-	virtual	void			FreeEnvprobeDef( qhandle_t envprobeHandle ) = 0;
-	virtual const renderEnvironmentProbe_t* GetRenderEnvprobe( qhandle_t envprobeHandle ) const = 0;
+	virtual	qhandle_t		AddEnvironmentProbeDef( const renderEnvironmentProbe_t* ep ) = 0;
+	virtual	void			UpdateEnvironmentProbeDef( qhandle_t envprobeHandle, const renderEnvironmentProbe_t* ep ) = 0;
+	virtual	void			FreeEnvironmentProbeDef( qhandle_t envprobeHandle ) = 0;
+	virtual const renderEnvironmentProbe_t* GetRenderEnvironmentProbe( qhandle_t envprobeHandle ) const = 0;
+	virtual qhandle_t		AddRenderEnvironmentProbe( idRenderEnvironmentProbe* envprobe ) = 0;
 	// RB end
 
 	// returns true if this area model needs portal sky to draw

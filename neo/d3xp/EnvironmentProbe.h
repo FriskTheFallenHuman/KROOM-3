@@ -53,7 +53,7 @@ public:
 
 	virtual void	UpdateChangeableSpawnArgs( const idDict* source );
 	virtual void	Think();
-	virtual void	FreeEnvprobeDef();
+	virtual void	FreeEnvironmentProbeDef();
 	void			Present();
 
 	void			SaveState( idDict* args );
@@ -70,7 +70,7 @@ public:
 	virtual void	ReadFromSnapshot( const idBitMsg& msg );
 
 private:
-	renderEnvironmentProbe_t	renderEnvprobe;		// envprobe presented to the renderer
+	idRenderEnvironmentProbe	renderEnvprobe;		// game-facing render object
 	idVec3			localEnvprobeOrigin;			// light origin relative to the physics origin
 	idMat3			localEnvprobeAxis;				// light axis relative to physics axis
 	qhandle_t		envprobeDefHandle;				// handle to renderer light def

@@ -110,7 +110,10 @@ struct performanceCounters_t
 	int		c_lightCommitRequests;
 	int		c_lightCommits;
 	int		c_lightReferenceCommits;
-	int		c_envprobeUpdates;
+	int		c_environmentprobeUpdates;
+	int		c_environmentprobeCommitRequests;
+	int		c_environmentprobeCommits;
+	int		c_environmentprobeReferenceCommits;
 	int		c_entityReferences;
 	int		c_lightReferences;
 	int		c_guiSurfs;

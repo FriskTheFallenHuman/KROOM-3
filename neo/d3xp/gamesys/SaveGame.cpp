@@ -732,7 +732,7 @@ void idSaveGame::WriteRenderLight( const renderLight_t& renderLight )
 }
 
 // RB begin
-void idSaveGame::WriteRenderEnvprobe( const renderEnvironmentProbe_t& renderEnvprobe )
+void idSaveGame::WriteRenderEnvironmentProbe( const renderEnvironmentProbe_t& renderEnvprobe )
 {
 	WriteVec3( renderEnvprobe.origin );
 }
@@ -1633,7 +1633,7 @@ void idRestoreGame::ReadRenderLight( renderLight_t& renderLight )
 }
 
 // RB begin
-void idRestoreGame::ReadRenderEnvprobe( renderEnvironmentProbe_t& renderEnvprobe )
+void idRestoreGame::ReadRenderEnvironmentProbe( renderEnvironmentProbe_t& renderEnvprobe )
 {
 	ReadVec3( renderEnvprobe.origin );
 }

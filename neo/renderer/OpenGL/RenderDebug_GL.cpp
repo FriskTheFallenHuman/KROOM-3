@@ -1536,7 +1536,7 @@ RB_ShowViewEnvprobes
 Visualize all environment probes used in the current scene
 ==============
 */
-class idSort_DebugCompareViewEnvprobe : public idSort_Quick< RenderEnvprobeLocal*, idSort_DebugCompareViewEnvprobe >
+class idSort_DebugCompareViewEnvprobe : public idSort_Quick< idRenderEnvironmentProbeLocal*, idSort_DebugCompareViewEnvprobe >
 {
 	idVec3	viewOrigin;
 
@@ -1546,7 +1546,7 @@ public:
 		viewOrigin = origin;
 	}
 
-	int Compare( RenderEnvprobeLocal* const& a, RenderEnvprobeLocal* const& b ) const
+	int Compare( idRenderEnvironmentProbeLocal* const& a, idRenderEnvironmentProbeLocal* const& b ) const
 	{
 		float adist = ( viewOrigin - a->parms.origin ).LengthSqr();
 		float bdist = ( viewOrigin - b->parms.origin ).LengthSqr();
@@ -1567,7 +1567,7 @@ public:
 
 void idRenderBackend::DBG_ShowViewEnvprobes()
 {
-	if( !r_showViewEnvprobes.GetInteger() )
+	if( !r_showProbes.GetInteger() )
 	{
 		return;
 	}
@@ -1575,7 +1575,7 @@ void idRenderBackend::DBG_ShowViewEnvprobes()
 	GL_State( GLS_DEFAULT | GLS_CULL_TWOSIDED );
 
 	int count = 0;
-	for( viewEnvprobe_t* vProbe = viewDef->viewEnvprobes; vProbe != NULL; vProbe = vProbe->next )
+	for( viewEnvironmentProbe_t* vProbe = viewDef->viewEnvprobes; vProbe != NULL; vProbe = vProbe->next )
 	{
 		count++;
 
@@ -1619,7 +1619,7 @@ void idRenderBackend::DBG_ShowViewEnvprobes()
 		idVec4 textureSize;
 
 		GL_SelectTexture( 0 );
-		if( r_showViewEnvprobes.GetInteger() >= 2 )
+		if( r_showProbes.GetInteger() >= 2 )
 		{
 			vProbe->irradianceImage->Bind();
 
@@ -1640,7 +1640,7 @@ void idRenderBackend::DBG_ShowViewEnvprobes()
 
 		// non-hidden lines
 #if 0
-		if( r_showViewEnvprobes.GetInteger() >= 3 )
+		if( r_showProbes.GetInteger() >= 3 )
 		{
 			renderProgManager.BindShader_Color();
 
@@ -1655,20 +1655,20 @@ void idRenderBackend::DBG_ShowViewEnvprobes()
 #endif
 	}
 
-	if( tr.primaryWorld && r_showViewEnvprobes.GetInteger() == 3 )
+	if( tr.primaryWorld && r_showProbes.GetInteger() == 3 )
 	{
 		/*
-		idList<viewEnvprobe_t*, TAG_RENDER_ENVPROBE> viewEnvprobes;
-		for( viewEnvprobe_t* vProbe = viewDef->viewEnvprobes; vProbe != NULL; vProbe = vProbe->next )
+		idList<viewEnvironmentProbe_t*, TAG_RENDER_ENVPROBE> viewEnvprobes;
+		for( viewEnvironmentProbe_t* vProbe = viewDef->viewEnvprobes; vProbe != NULL; vProbe = vProbe->next )
 		{
 			viewEnvprobes.AddUnique( vProbe );
 		}
 		*/
 
-		idList<RenderEnvprobeLocal*, TAG_RENDER_ENVPROBE> viewEnvprobes;
+		idList<idRenderEnvironmentProbeLocal*, TAG_RENDER_ENVPROBE> viewEnvprobes;
 		for( int i = 0; i < tr.primaryWorld->envprobeDefs.Num(); i++ )
 		{
-			RenderEnvprobeLocal* vProbe = tr.primaryWorld->envprobeDefs[i];
+			idRenderEnvironmentProbeLocal* vProbe = tr.primaryWorld->envprobeDefs[i];
 			if( vProbe )
 			{
 				// check for being closed off behind a door
@@ -1709,7 +1709,7 @@ void idRenderBackend::DBG_ShowViewEnvprobes()
 
 		for( int i = 0; i < viewEnvprobes.Num() && i < 3; i++ )
 		{
-			RenderEnvprobeLocal* vProbe = viewEnvprobes[i];
+			idRenderEnvironmentProbeLocal* vProbe = viewEnvprobes[i];
 
 			verts[i] = vProbe->parms.origin;
 		}
@@ -1746,7 +1746,7 @@ void idRenderBackend::DBG_ShowViewEnvprobes()
 
 		for( int i = 0; i < viewEnvprobes.Num() && i < 3; i++ )
 		{
-			RenderEnvprobeLocal* vProbe = viewEnvprobes[i];
+			idRenderEnvironmentProbeLocal* vProbe = viewEnvprobes[i];
 
 			verts[i] = vProbe->parms.origin;
 

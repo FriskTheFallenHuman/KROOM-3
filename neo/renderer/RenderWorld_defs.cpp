@@ -718,12 +718,52 @@ ENVPROBE DEFS
 =================================================================================
 */
 
-void R_DeriveEnvprobeData( RenderEnvprobeLocal* probe )
+/*
+=================
+R_ResolveEnvironmentProbeResources
+=================
+*/
+void R_ResolveEnvironmentProbeResources( const renderEnvironmentProbe_t& parms, idRenderWorldLocal* world, idImage*& irradianceImage, idImage*& radianceImage )
 {
-	idStr basename = probe->world->mapName;
+	idStr basename = world->mapName;
 	basename.StripFileExtension();
 
+	// determine the areaNum for the envprobe origin, purely to key the cached
+	// cubemap filenames the same way R_DeriveEnvironmentProbeData keys its own lookup
+	int areaNum = world->PointInArea( parms.origin );
+
+	// the probe index and entity name are bad indicators to cache the light data
+	// use the snapped world position instead
+	idVec3 point = parms.origin;
+	point.SnapInt();
+
 	idStr fullname;
+
+	// load preconvolved cubemaps as mipmap chain packed octahedrons
+	fullname.Format( "env/%s/area%i_envprobe_%i_%i_%i_amb", basename.c_str(), areaNum, int( point.x ), int( point.y ), int( point.z ) );
+	fullname.ReplaceChar( '-', '_' );
+
+	irradianceImage = globalImages->ImageFromFile( fullname, TF_LINEAR, TR_CLAMP, TD_R11G11B10F, CF_2D_PACKED_MIPCHAIN );
+
+	fullname.Format( "env/%s/area%i_envprobe_%i_%i_%i_spec", basename.c_str(), areaNum, int( point.x ), int( point.y ), int( point.z ) );
+	fullname.ReplaceChar( '-', '_' );
+
+	radianceImage = globalImages->ImageFromFile( fullname, TF_DEFAULT, TR_CLAMP, TD_R11G11B10F, CF_2D_PACKED_MIPCHAIN );
+}
+
+/*
+=================
+R_DeriveEnvironmentProbeData
+
+Fills everything in based on probe->parms
+=================
+*/
+void R_DeriveEnvironmentProbeData( idRenderEnvironmentProbeLocal* probe )
+{
+	// Images were resolved by UpdateEnvironmentProbeDef. From this point onward
+	// derivation is renderer-only and must not touch the image manager.
+	assert( probe->irradianceImage != NULL );
+	assert( probe->radianceImage != NULL );
 
 	// determine the areaNum for the envprobe origin, which may let us
 	// cull the envprobe if it is behind a closed door
@@ -738,22 +778,6 @@ void R_DeriveEnvprobeData( RenderEnvprobeLocal* probe )
 	{
 		probe->globalProbeBounds.Clear();
 	}
-
-	// the probe index and entity name are bad indicators to cache the light data
-	// use the snapped world position instead
-	idVec3 point = probe->parms.origin;
-	point.SnapInt();
-
-	// load preconvolved cubemaps as mipmap chain packed octahedrons
-	fullname.Format( "env/%s/area%i_envprobe_%i_%i_%i_amb", basename.c_str(), areaNum, int( point.x ), int( point.y ), int( point.z ) );
-	fullname.ReplaceChar( '-', '_' );
-
-	probe->irradianceImage = globalImages->ImageFromFile( fullname, TF_LINEAR, TR_CLAMP, TD_R11G11B10F, CF_2D_PACKED_MIPCHAIN );
-
-	fullname.Format( "env/%s/area%i_envprobe_%i_%i_%i_spec", basename.c_str(), areaNum, int( point.x ), int( point.y ), int( point.z ) );
-	fullname.ReplaceChar( '-', '_' );
-
-	probe->radianceImage = globalImages->ImageFromFile( fullname, TF_DEFAULT, TR_CLAMP, TD_R11G11B10F, CF_2D_PACKED_MIPCHAIN );
 
 	// ------------------------------------
 	// compute the probe projection matrix
@@ -812,10 +836,10 @@ void R_DeriveEnvprobeData( RenderEnvprobeLocal* probe )
 	//idRenderMatrix::ProjectedBounds( probe->globalProbeBounds, probe->inverseBaseProbeProject, bounds_unitCube, false );
 }
 
-void R_CreateEnvprobeRefs( RenderEnvprobeLocal* probe )
+void R_CreateEnvironmentProbeRefs( idRenderEnvironmentProbeLocal* probe )
 {
 	// derive envprobe data
-	R_DeriveEnvprobeData( probe );
+	R_DeriveEnvironmentProbeData( probe );
 
 	// determine the areaNum for the envprobe origin, which may let us
 	// cull the envprobe if it is behind a closed door
@@ -826,10 +850,10 @@ void R_CreateEnvprobeRefs( RenderEnvprobeLocal* probe )
 	tr.viewCount++;
 
 	// push the probe down the BSP tree into areas
-	probe->world->PushEnvprobeIntoTree_r( probe, 0 );
+	probe->world->PushEnvironmentProbeIntoTree_r( probe, 0 );
 }
 
-void R_FreeEnvprobeDefDerivedData( RenderEnvprobeLocal* probe )
+void R_FreeEnvironmentProbeDefDerivedData( idRenderEnvironmentProbeLocal* probe )
 {
 	// free all the references to the envprobe
 	areaReference_t* nextRef = NULL;
@@ -891,12 +915,12 @@ void R_FreeDerivedData()
 		// RB begin
 		for( int i = 0; i < rw->envprobeDefs.Num(); i++ )
 		{
-			RenderEnvprobeLocal* probe = rw->envprobeDefs[i];
+			idRenderEnvironmentProbeLocal* probe = rw->envprobeDefs[i];
 			if( probe == NULL )
 			{
 				continue;
 			}
-			R_FreeEnvprobeDefDerivedData( probe );
+			R_FreeEnvironmentProbeDefDerivedData( probe );
 		}
 		// RB end
 	}
@@ -985,15 +1009,18 @@ void R_ReCreateWorldReferences()
 		// RB begin
 		for( int i = 0; i < rw->envprobeDefs.Num(); i++ )
 		{
-			RenderEnvprobeLocal* probe = rw->envprobeDefs[i];
+			idRenderEnvironmentProbeLocal* probe = rw->envprobeDefs[i];
 			if( probe == NULL )
 			{
 				continue;
 			}
-			renderEnvironmentProbe_t parms = probe->parms;
 
-			probe->world->FreeLightDef( i );
-			rw->UpdateEnvprobeDef( i, &parms );
+			// R_FreeDerivedData() already removed the old references. Rebuild the
+			// derived committed state in place so an object-backed envprobe keeps its
+			// producer/committed identity across reloadModels and RegenerateWorld.
+			R_CreateEnvironmentProbeRefs( probe );
+			probe->needsReferences = false;
+			tr.pc.c_environmentprobeReferenceCommits++;
 		}
 		// RB end
 	}

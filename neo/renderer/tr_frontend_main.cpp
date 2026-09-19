@@ -455,17 +455,17 @@ static void R_SetupSplitFrustums( viewDef_t* viewDef )
 	}
 }
 
-class idSort_CompareEnvprobe : public idSort_Quick< RenderEnvprobeLocal*, idSort_CompareEnvprobe >
+class idSort_CompareEnvironmentProbe : public idSort_Quick< idRenderEnvironmentProbeLocal*, idSort_CompareEnvironmentProbe >
 {
 	idVec3	viewOrigin;
 
 public:
-	idSort_CompareEnvprobe( const idVec3& origin )
+	idSort_CompareEnvironmentProbe( const idVec3& origin )
 	{
 		viewOrigin = origin;
 	}
 
-	int Compare( RenderEnvprobeLocal* const& a, RenderEnvprobeLocal* const& b ) const
+	int Compare( idRenderEnvironmentProbeLocal* const& a, idRenderEnvironmentProbeLocal* const& b ) const
 	{
 		float adist = ( viewOrigin - a->parms.origin ).LengthSqr();
 		float bdist = ( viewOrigin - b->parms.origin ).LengthSqr();
@@ -502,10 +502,10 @@ static void R_FindClosestEnvironmentProbes()
 		return;
 	}
 
-	idList<RenderEnvprobeLocal*, TAG_RENDER_ENVPROBE> viewEnvprobes;
+	idList<idRenderEnvironmentProbeLocal*, TAG_RENDER_ENVPROBE> viewEnvprobes;
 	for( int i = 0; i < tr.primaryWorld->envprobeDefs.Num(); i++ )
 	{
-		RenderEnvprobeLocal* vProbe = tr.primaryWorld->envprobeDefs[i];
+		idRenderEnvironmentProbeLocal* vProbe = tr.primaryWorld->envprobeDefs[i];
 		if( vProbe )
 		{
 			// check for being closed off behind a door
@@ -527,9 +527,9 @@ static void R_FindClosestEnvironmentProbes()
 
 	// sort by distance
 	// RB: each Doom 3 level has ~50 - 150 probes so this should be ok for each frame
-	viewEnvprobes.SortWithTemplate( idSort_CompareEnvprobe( testOrigin ) );
+	viewEnvprobes.SortWithTemplate( idSort_CompareEnvironmentProbe( testOrigin ) );
 
-	RenderEnvprobeLocal* nearest = viewEnvprobes[0];
+	idRenderEnvironmentProbeLocal* nearest = viewEnvprobes[0];
 	tr.viewDef->globalProbeBounds = nearest->globalProbeBounds;
 
 	if( nearest->irradianceImage->IsLoaded() && !nearest->irradianceImage->IsDefaulted() )
@@ -553,7 +553,7 @@ static void R_FindClosestEnvironmentProbes()
 	bool triChanged = false;
 	for( int i = 0; i < viewEnvprobes.Num() && i < 3; i++ )
 	{
-		RenderEnvprobeLocal* vProbe = viewEnvprobes[i];
+		idRenderEnvironmentProbeLocal* vProbe = viewEnvprobes[i];
 
 		verts[i] = vProbe->parms.origin;
 		triIndexes[i] = vProbe->index;

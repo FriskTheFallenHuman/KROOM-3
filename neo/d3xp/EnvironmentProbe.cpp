@@ -74,7 +74,7 @@ idEnvProbes::idEnvProbes
 */
 idEnvProbes::idEnvProbes()
 {
-	memset( &renderEnvprobe, 0, sizeof( renderEnvprobe ) );
+	memset( static_cast< renderEnvironmentProbe_t* >( &renderEnvprobe ), 0, sizeof( renderEnvironmentProbe_t ) );
 	localEnvprobeOrigin	= vec3_zero;
 	localEnvprobeAxis	= mat3_identity;
 	envprobeDefHandle	= -1;
@@ -89,7 +89,7 @@ idEnvProbes::~idEnvProbes()
 {
 	if( envprobeDefHandle != -1 )
 	{
-		gameRenderWorld->FreeEnvprobeDef( envprobeDefHandle );
+		renderEnvprobe.FreeRenderEnvprobe();
 	}
 }
 
@@ -102,7 +102,7 @@ archives object for save game file
 */
 void idEnvProbes::Save( idSaveGame* savefile ) const
 {
-	savefile->WriteRenderEnvprobe( renderEnvprobe );
+	savefile->WriteRenderEnvironmentProbe( renderEnvprobe );
 
 	savefile->WriteVec3( localEnvprobeOrigin );
 	savefile->WriteMat3( localEnvprobeAxis );
@@ -117,7 +117,7 @@ unarchives object from save game file
 */
 void idEnvProbes::Restore( idRestoreGame* savefile )
 {
-	savefile->ReadRenderEnvprobe( renderEnvprobe );
+	savefile->ReadRenderEnvironmentProbe( renderEnvprobe );
 
 	savefile->ReadVec3( localEnvprobeOrigin );
 	savefile->ReadMat3( localEnvprobeAxis );
@@ -159,11 +159,11 @@ void idEnvProbes::PresentEnvprobeDefChange()
 	// let the renderer apply it to the world
 	if( ( envprobeDefHandle != -1 ) )
 	{
-		gameRenderWorld->UpdateEnvprobeDef( envprobeDefHandle, &renderEnvprobe );
+		renderEnvprobe.CommitThisFrame();
 	}
 	else
 	{
-		envprobeDefHandle = gameRenderWorld->AddEnvprobeDef( &renderEnvprobe );
+		envprobeDefHandle = gameRenderWorld->AddRenderEnvironmentProbe( &renderEnvprobe );
 	}
 }
 
@@ -203,14 +203,14 @@ void idEnvProbes::Think()
 
 /*
 ================
-idEnvProbes::FreeEnvprobeDef
+idEnvProbes::FreeEnvironmentProbeDef
 ================
 */
-void idEnvProbes::FreeEnvprobeDef()
+void idEnvProbes::FreeEnvironmentProbeDef()
 {
 	if( envprobeDefHandle != -1 )
 	{
-		gameRenderWorld->FreeEnvprobeDef( envprobeDefHandle );
+		renderEnvprobe.FreeRenderEnvprobe();
 		envprobeDefHandle = -1;
 	}
 }

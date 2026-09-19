@@ -417,7 +417,7 @@ void idRenderWorldLocal::AddAreaToView( int areaNum, const portalStack_t* ps )
 	// add the models and lights, using more precise culling to the planes
 	AddAreaViewEntities( areaNum, ps );
 	AddAreaViewLights( areaNum, ps );
-	AddAreaViewEnvprobes( areaNum, ps ); // RB
+	AddAreaViewEnvironmentProbe( areaNum, ps ); // RB
 }
 
 /*

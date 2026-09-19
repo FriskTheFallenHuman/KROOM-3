@@ -39,13 +39,13 @@ If you have questions concerning this license or the applicable additional terms
 
 /*
 =============
-R_SetEnvprobeDefViewEnvprobe
+R_SetEnvironmentProbeDefView
 
-If the envprobeDef is not already on the viewEnvprobe list, create
-a viewEnvprobe and add it to the list with an empty scissor rect.
+If the envprobeDef is not already on the view probe list, create
+a view probe and add it to the list with an empty scissor rect.
 =============
 */
-viewEnvprobe_t* R_SetEnvprobeDefViewEnvprobe( RenderEnvprobeLocal* probe )
+viewEnvironmentProbe_t* R_SetEnvironmentProbeDefView( idRenderEnvironmentProbeLocal* probe )
 {
 	if( probe->viewCount == tr.viewCount )
 	{
@@ -55,7 +55,7 @@ viewEnvprobe_t* R_SetEnvprobeDefViewEnvprobe( RenderEnvprobeLocal* probe )
 	probe->viewCount = tr.viewCount;
 
 	// add to the view light chain
-	viewEnvprobe_t* vProbe = ( viewEnvprobe_t* )R_ClearedFrameAlloc( sizeof( *vProbe ), FRAME_ALLOC_VIEW_LIGHT );
+	viewEnvironmentProbe_t* vProbe = ( viewEnvironmentProbe_t* )R_ClearedFrameAlloc( sizeof( *vProbe ), FRAME_ALLOC_VIEW_LIGHT );
 	vProbe->envprobeDef = probe;
 
 	// the scissorRect will be expanded as the envprobe bounds is accepted into visible portal chains
@@ -98,12 +98,12 @@ viewEnvprobe_t* R_SetEnvprobeDefViewEnvprobe( RenderEnvprobeLocal* probe )
 
 /*
 ================
-CullEnvprobeByPortals
+CullEnvironmentProbeByPortals
 
-Return true if the light frustum does not intersect the current portal chain.
+Return true if the env prove frustum does not intersect the current portal chain.
 ================
 */
-bool idRenderWorldLocal::CullEnvprobeByPortals( const RenderEnvprobeLocal* probe, const portalStack_t* ps )
+bool idRenderWorldLocal::CullEnvironmentProbeByPortals( const idRenderEnvironmentProbeLocal* probe, const portalStack_t* ps )
 {
 	if( r_useLightPortalCulling.GetInteger() == 1 )
 	{
@@ -124,45 +124,27 @@ bool idRenderWorldLocal::CullEnvprobeByPortals( const RenderEnvprobeLocal* probe
 
 /*
 ===================
-AddAreaViewEnvprobes
+AddAreaViewEnvironmentProbe
 
-This is the only point where lights get added to the viewLights list.
-Any lights that are visible through the current portalStack will have their scissor rect updated.
+This is the only point where environment probes get added to the view probes list.
+Any environment probe that are visible through the current portalStack will have their scissor rect updated.
 ===================
 */
-void idRenderWorldLocal::AddAreaViewEnvprobes( int areaNum, const portalStack_t* ps )
+void idRenderWorldLocal::AddAreaViewEnvironmentProbe( int areaNum, const portalStack_t* ps )
 {
 	portalArea_t* area = &portalAreas[ areaNum ];
 
 	for( areaReference_t* lref = area->envprobeRefs.areaNext; lref != &area->envprobeRefs; lref = lref->areaNext )
 	{
-		RenderEnvprobeLocal* probe = lref->envprobe;
+		idRenderEnvironmentProbeLocal* probe = lref->envprobe;
 
 		// debug tool to allow viewing of only one light at a time
-		if( r_singleEnvprobe.GetInteger() >= 0 && r_singleEnvprobe.GetInteger() != probe->index )
+		if( r_singleProbe.GetInteger() >= 0 && r_singleProbe.GetInteger() != probe->index )
 		{
 			continue;
 		}
 
-#if 0
-		// check for being closed off behind a door
-		// a light that doesn't cast shadows will still light even if it is behind a door
-		if( r_useLightAreaCulling.GetBool() //&& !envprobe->LightCastsShadows()
-				&& probe->areaNum != -1 && !tr.viewDef->connectedAreas[ probe->areaNum ] )
-		{
-			continue;
-		}
-
-		// cull frustum
-		if( CullEnvprobeByPortals( probe, ps ) )
-		{
-			// we are culled out through this portal chain, but it might
-			// still be visible through others
-			continue;
-		}
-#endif
-
-		viewEnvprobe_t* vProbe = R_SetEnvprobeDefViewEnvprobe( probe );
+		viewEnvironmentProbe_t* vProbe = R_SetEnvironmentProbeDefView( probe );
 
 		// expand the scissor rect
 		vProbe->scissorRect.Union( ps->rect );
@@ -252,6 +234,11 @@ void R_SampleCubeMapHDR( const idVec3& dir, int size, byte* buffers[6], float re
 	r11g11b10f_to_float3( tmp.i, result );
 }
 
+/*
+==================
+R_SampleCubeMapHDR16F
+==================
+*/
 void R_SampleCubeMapHDR16F( const idVec3& dir, int size, halfFloat_t* buffers[6], float result[3], float& u, float& v )
 {
 	float	adir[3];
@@ -319,20 +306,23 @@ void R_SampleCubeMapHDR16F( const idVec3& dir, int size, halfFloat_t* buffers[6]
 	result[2] = F16toF32( buffers[axis][( y * size + x ) * 3 + 2] );
 }
 
+/*
+==================
+RadicalInverse_VdC
+
+http://holger.dammertz.org/stuff/notes_HammersleyOnHemisphere.html
+
+To implement the Hammersley point set we only need an efficent way to implement the Van der Corput radical inverse phi2(i).
+Since it is in base 2 we can use some basic bit operations to achieve this.
+The brilliant book Hacker's Delight [warren01] provides us a a simple way to reverse the bits in a given 32bit integer. Using this, the following code then implements phi2(i)
 
 
+RB: radical inverse implementation from the Mitsuba PBR system
 
-// http://holger.dammertz.org/stuff/notes_HammersleyOnHemisphere.html
-
-// To implement the Hammersley point set we only need an efficent way to implement the Van der Corput radical inverse phi2(i).
-// Since it is in base 2 we can use some basic bit operations to achieve this.
-// The brilliant book Hacker's Delight [warren01] provides us a a simple way to reverse the bits in a given 32bit integer. Using this, the following code then implements phi2(i)
-
-
-// RB: radical inverse implementation from the Mitsuba PBR system
-
-// Van der Corput radical inverse in base 2 with single precision
-inline float RadicalInverse_VdC( uint32_t n, uint32_t scramble = 0U )
+Van der Corput radical inverse in base 2 with single precision
+==================
+*/
+ID_INLINE float RadicalInverse_VdC( uint32_t n, uint32_t scramble = 0U )
 {
 	/* Efficiently reverse the bits in 'n' using binary operations */
 #if (defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 2))) || defined(__clang__)
@@ -351,12 +341,23 @@ inline float RadicalInverse_VdC( uint32_t n, uint32_t scramble = 0U )
 	return ( float ) n / ( float )( 1U << 24 );
 }
 
-// The ith point xi is then computed by
-inline idVec2 Hammersley2D( uint i, uint N )
+/*
+==================
+Hammersley2D
+
+The ith point xi is then computed by
+==================
+*/
+ID_INLINE idVec2 Hammersley2D( uint i, uint N )
 {
 	return idVec2( float( i ) / float( N ), RadicalInverse_VdC( i ) );
 }
 
+/*
+==================
+ImportanceSampleGGX
+==================
+*/
 idVec3 ImportanceSampleGGX( const idVec2& Xi, const idVec3& N, float roughness )
 {
 	float a = roughness * roughness;
@@ -383,6 +384,11 @@ idVec3 ImportanceSampleGGX( const idVec2& Xi, const idVec3& N, float roughness )
 	return sampleVec;
 }
 
+/*
+==================
+Geometry_SchlickGGX
+==================
+*/
 float Geometry_SchlickGGX( float NdotV, float roughness )
 {
 	// note that we use a different k for IBL
@@ -395,6 +401,11 @@ float Geometry_SchlickGGX( float NdotV, float roughness )
 	return nom / denom;
 }
 
+/*
+==================
+Geometry_Smith
+==================
+*/
 float Geometry_Smith( idVec3 N, idVec3 V, idVec3 L, float roughness )
 {
 	float NdotV = Max( ( N * V ), 0.0f );
@@ -406,6 +417,11 @@ float Geometry_Smith( idVec3 N, idVec3 V, idVec3 L, float roughness )
 	return ggx1 * ggx2;
 }
 
+/*
+==================
+IntegrateBRDF
+==================
+*/
 idVec2 IntegrateBRDF( float NdotV, float roughness, int sampleCount )
 {
 	idVec3 V;
@@ -449,22 +465,15 @@ idVec2 IntegrateBRDF( float NdotV, float roughness, int sampleCount )
 }
 
 
-// Compute normalized oct coord, mapping top left of top left pixel to (-1,-1)
+/*
+==================
+IntegrateBRDF
+
+Compute normalized oct coord, mapping top left of top left pixel to (-1,-1)
+==================
+*/
 idVec2 NormalizedOctCoord( int x, int y, const int probeWithBorderSide )
 {
-#if 0
-	// 1 pixel border
-	const int margin = 1;
-
-	int probeSideLength = Max( 2, probeWithBorderSide - ( margin * 2 ) );
-
-	idVec2 octFragCoord;
-	octFragCoord.x = idMath::ClampInt( 0, probeSideLength - 1, x - margin );
-	octFragCoord.y = idMath::ClampInt( 0, probeSideLength - 1, y - margin );
-
-	return ( idVec2( octFragCoord ) ) * ( 2.0f / float( probeSideLength ) ) - idVec2( 1.0f, 1.0f );
-#else
-
 	const int margin = 2;
 
 	// RB: FIXME - margin * 2 is wrong but looks better
@@ -475,11 +484,14 @@ idVec2 NormalizedOctCoord( int x, int y, const int probeWithBorderSide )
 
 	// Add back the half pixel to get pixel center normalized coordinates
 	return ( idVec2( octFragCoord ) + idVec2( 0.5f, 0.5f ) ) * ( 2.0f / float( probeSideLength ) ) - idVec2( 1.0f, 1.0f );
-
-#endif
 }
 
-static inline idVec2 NormalizedOctCoordNoBorder( int x, int y, const int probeWithBorderSide )
+/*
+==================
+NormalizedOctCoordNoBorder
+==================
+*/
+static ID_INLINE idVec2 NormalizedOctCoordNoBorder( int x, int y, const int probeWithBorderSide )
 {
 	int probeSideLength = probeWithBorderSide;
 
@@ -490,47 +502,26 @@ static inline idVec2 NormalizedOctCoordNoBorder( int x, int y, const int probeWi
 }
 
 /*
-static inline float LatLongTexelArea( const idVec2i& pos, const idVec2i& imageSize )
-{
-	idVec2 uv0;
-	uv0.x = pos.x / imageSize.x;
-	uv0.y = pos.y / imageSize.y;
+==================
+AreaElement
 
-	idVec2 uv1;
-	uv1.x = ( pos.x + 1 ) / imageSize.x;
-	uv1.y = ( pos.y + 1 ) / imageSize.y;
-
-	float theta0 = idMath::PI * ( uv0.x * 2.0f - 1.0f );
-	float theta1 = idMath::PI * ( uv1.x * 2.0f - 1.0f );
-
-	float phi0 = idMath::PI * ( uv0.y - 0.5f );
-	float phi1 = idMath::PI * ( uv1.y - 0.5f );
-
-	return abs( theta1 - theta0 ) * abs( sin( phi1 ) - sin( phi0 ) );
-}
-
-
-static inline idVec2 CartesianToLatLongTexcoord( const idVec3& p )
-{
-	// http://gl.ict.usc.edu/Data/HighResProbes
-
-	float u = ( 1.0f + idMath::ATan( p.x, -p.z ) / idMath::PI );
-	float v = idMath::ACos( p.y ) / idMath::PI;
-
-	return idVec2( u * 0.5f, v );
-}
+http://www.mpia-hd.mpg.de/~mathar/public/mathar20051002.pdf
+http://www.rorydriscoll.com/2012/01/15/cubemap-texel-solid-angle/
+==================
 */
-
-
-/// http://www.mpia-hd.mpg.de/~mathar/public/mathar20051002.pdf
-/// http://www.rorydriscoll.com/2012/01/15/cubemap-texel-solid-angle/
-static inline float AreaElement( float _x, float _y )
+static ID_INLINE float AreaElement( float _x, float _y )
 {
 	return atan2f( _x * _y, sqrtf( _x * _x + _y * _y + 1.0f ) );
 }
 
-/// u and v should be center adressing and in [-1.0 + invSize.. 1.0 - invSize] range.
-static inline float CubemapTexelSolidAngle( float u, float v, float _invFaceSize )
+/*
+==================
+AreaElement
+
+u and v should be center adressing and in [-1.0 + invSize.. 1.0 - invSize] range.
+==================
+*/
+static ID_INLINE float CubemapTexelSolidAngle( float u, float v, float _invFaceSize )
 {
 	// Specify texel area.
 	const float x0 = u - _invFaceSize;
@@ -539,16 +530,16 @@ static inline float CubemapTexelSolidAngle( float u, float v, float _invFaceSize
 	const float y1 = v + _invFaceSize;
 
 	// Compute solid angle of texel area.
-	const float solidAngle = AreaElement( x1, y1 )
-							 - AreaElement( x0, y1 )
-							 - AreaElement( x1, y0 )
-							 + AreaElement( x0, y0 )
-							 ;
-
+	const float solidAngle = AreaElement( x1, y1 ) - AreaElement( x0, y1 ) - AreaElement( x1, y0 ) + AreaElement( x0, y0 ) ;
 	return solidAngle;
 }
 
-static inline idVec3 MapXYSToDirection( uint64 x, uint64 y, uint64 s, uint64 width, uint64 height )
+/*
+==================
+MapXYSToDirection
+==================
+*/
+static ID_INLINE idVec3 MapXYSToDirection( uint64 x, uint64 y, uint64 s, uint64 width, uint64 height )
 {
 	float u = ( ( x + 0.5f ) / float( width ) ) * 2.0f - 1.0f;
 	float v = ( ( y + 0.5f ) / float( height ) ) * 2.0f - 1.0f;
@@ -584,6 +575,11 @@ static inline idVec3 MapXYSToDirection( uint64 x, uint64 y, uint64 s, uint64 wid
 	return dir;
 }
 
+/*
+==================
+CalculateIrradianceJob
+==================
+*/
 void CalculateIrradianceJob( calcEnvprobeParms_t* parms )
 {
 	halfFloat_t*		buffers[6];
@@ -696,7 +692,6 @@ void CalculateIrradianceJob( calcEnvprobeParms_t* parms )
 
 				idVec3 outColor( 0, 0, 0 );
 
-#if 1
 				// generate ambient colors by evaluating the L4 Spherical Harmonics
 				SphericalHarmonicsT<float, 4> shDirection = shEvaluate<4>( dir );
 
@@ -705,26 +700,6 @@ void CalculateIrradianceJob( calcEnvprobeParms_t* parms )
 				outColor[0] = Max( 0.0f, sampleIrradianceSh.x );
 				outColor[1] = Max( 0.0f, sampleIrradianceSh.y );
 				outColor[2] = Max( 0.0f, sampleIrradianceSh.z );
-#else
-				// generate ambient colors using Monte Carlo method
-				for( int s = 0; s < parms->samples; s++ )
-				{
-					idVec2 Xi = Hammersley2D( s, parms->samples );
-					idVec3 H = ImportanceSampleGGX( Xi, dir, 0.95f );
-
-					float u, v;
-					idVec3 radiance;
-					R_SampleCubeMapHDR( H, parms->outHeight, buffers, &radiance[0], u, v );
-
-					outColor[0] += radiance[0];
-					outColor[1] += radiance[1];
-					outColor[2] += radiance[2];
-				}
-
-				outColor[0] /= parms->samples;
-				outColor[1] /= parms->samples;
-				outColor[2] /= parms->samples;
-#endif
 
 				//outColor = dir * 0.5 + idVec3( 0.5f, 0.5f, 0.5f );
 
@@ -745,124 +720,136 @@ void CalculateIrradianceJob( calcEnvprobeParms_t* parms )
 	parms->time = end - start;
 }
 
-void CalculateRadianceJob( calcEnvprobeParms_t* parms )
+
+/*
+==================
+R_GetEnvironmentProbeSpecularSampleCount
+
+mip 0 is roughness == 0, where ImportanceSampleGGX collapses to H == N for every
+sample regardless of Xi (a == roughness * roughness == 0 forces cosTheta == 1 for any
+Xi.y). The previous flat 1000-sample loop was therefore computing the exact same value
+1000 times over for that mip; one sample reproduces it exactly. Higher mips still have a
+real GGX lobe to integrate, but a mip with a narrower lobe (lower roughness) converges
+with far fewer samples than the widest, highest-roughness mip actually needs, so taper
+linearly between a small minimum and the caller-provided maximum.
+==================
+*/
+static int R_GetEnvironmentProbeSpecularSampleCount( int mip, int numOctahedronMips, int maxSamples )
+{
+	if( mip <= 0 )
+	{
+		return 1;
+	}
+
+	const int minSamples = 32;
+	if( numOctahedronMips <= 1 )
+	{
+		return maxSamples;
+	}
+
+	const float roughness = ( float )mip / ( float )( numOctahedronMips - 1 );
+	const float samplesf = ( float )minSamples + ( ( float )maxSamples - ( float )minSamples ) * roughness;
+
+	return idMath::Ftoi( samplesf + 0.5f );
+}
+
+/*
+==================
+CalculateRadianceMipJob
+==================
+*/
+static void CalculateRadianceMipJob( calcEnvironmentProbeMipParms_t* parms )
 {
 	halfFloat_t*		buffers[6];
-
-	int	start = Sys_Milliseconds();
 
 	for( int i = 0; i < 6; i++ )
 	{
 		buffers[ i ] = ( halfFloat_t* ) parms->radiance[ i ];
 	}
 
-	const float invDstSize = 1.0f / float( parms->outHeight );
+	const int mip = parms->mip;
+	const int numOctahedronMips = parms->numOctahedronMips;
 
-	const int numMips = idMath::BitsForInteger( parms->outHeight );
-	const int numOctahedronMips = numMips - 3; // the last 3 mips are too low quality for filtering
+	const float roughness = ( numOctahedronMips > 1 ) ? ( float )mip / ( float )( numOctahedronMips - 1 ) : 0.0f;
+	const int samples = R_GetEnvironmentProbeSpecularSampleCount( mip, numOctahedronMips, parms->maxSamples );
 
-	CommandlineProgressBar progressBar( R_CalculateUsedAtlasPixels( parms->outHeight ), parms->printWidth, parms->printHeight );
-	if( parms->printProgress )
+	idVec4 dstRect = R_CalculateMipRect( parms->outHeight, mip );
+
+	for( int x = dstRect.x; x < ( dstRect.x + dstRect.z ); x++ )
 	{
-		progressBar.Start();
-	}
-
-	// reset output image to black
-	for( int x = 0; x < parms->outWidth; x++ )
-	{
-		for( int y = 0; y < parms->outHeight; y++ )
+		for( int y = dstRect.y; y < ( dstRect.y + dstRect.w ); y++ )
 		{
-			parms->outBuffer[( y * parms->outWidth + x ) * 3 + 0] = F32toF16( 0 );
-			parms->outBuffer[( y * parms->outWidth + x ) * 3 + 1] = F32toF16( 0 );
-			parms->outBuffer[( y * parms->outWidth + x ) * 3 + 2] = F32toF16( 0 );
-		}
-	}
-
-	for( int mip = 0; mip < numOctahedronMips; mip++ )
-	{
-		float roughness = ( float )mip / ( float )( numOctahedronMips - 1 );
-
-		idVec4 dstRect = R_CalculateMipRect( parms->outHeight, mip );
-
-		for( int x = dstRect.x; x < ( dstRect.x + dstRect.z ); x++ )
-		{
-			for( int y = dstRect.y; y < ( dstRect.y + dstRect.w ); y++ )
+			idVec2 octCoord;
+			if( mip > 0 )
 			{
-				idVec2 octCoord;
-				if( mip > 0 )
+				// move back to [0, 1] coords
+				octCoord = NormalizedOctCoordNoBorder( x - dstRect.x, y - dstRect.y, dstRect.z );
+			}
+			else
+			{
+				octCoord = NormalizedOctCoordNoBorder( x, y, dstRect.z );
+			}
+
+			// convert UV coord to 3D direction
+			idVec3 N;
+
+			N.FromOctahedral( octCoord );
+
+			idVec3 outColor( 0, 0, 0 );
+
+			// RB: Split Sum approximation explanation
+
+			// Epic Games makes a further approximation by assuming the view direction
+			// (and thus the specular reflection direction) to be equal to the output sample direction ωo.
+			// This translates itself to the following code:
+			const idVec3 R = N;
+			const idVec3 V = R;
+
+			float totalWeight = 0.0f;
+
+			for( int s = 0; s < samples; s++ )
+			{
+				idVec2 Xi = Hammersley2D( s, samples );
+				idVec3 H = ImportanceSampleGGX( Xi, N, roughness );
+				idVec3 L = ( 2.0 * ( H * ( V * H ) ) - V );
+
+				float NdotL = Max( ( N * L ), 0.0f );
+				if( NdotL > 0.0 )
 				{
-					// move back to [0, 1] coords
-					octCoord = NormalizedOctCoordNoBorder( x - dstRect.x, y - dstRect.y, dstRect.z );
-				}
-				else
-				{
-					octCoord = NormalizedOctCoordNoBorder( x, y, dstRect.z );
-				}
+					float sample[3];
+					float u, v;
 
-				// convert UV coord to 3D direction
-				idVec3 N;
+					R_SampleCubeMapHDR16F( H, ENVPROBE_CAPTURE_SIZE, buffers, sample, u, v );
 
-				N.FromOctahedral( octCoord );
+					outColor[0] += sample[0] * NdotL;
+					outColor[1] += sample[1] * NdotL;
+					outColor[2] += sample[2] * NdotL;
 
-				idVec3 outColor( 0, 0, 0 );
-
-				// RB: Split Sum approximation explanation
-
-				// Epic Games makes a further approximation by assuming the view direction
-				// (and thus the specular reflection direction) to be equal to the output sample direction ωo.
-				// This translates itself to the following code:
-				const idVec3 R = N;
-				const idVec3 V = R;
-
-				float totalWeight = 0.0f;
-
-				for( int s = 0; s < parms->samples; s++ )
-				{
-					idVec2 Xi = Hammersley2D( s, parms->samples );
-					idVec3 H = ImportanceSampleGGX( Xi, N, roughness );
-					idVec3 L = ( 2.0 * ( H * ( V * H ) ) - V );
-
-					float NdotL = Max( ( N * L ), 0.0f );
-					if( NdotL > 0.0 )
-					{
-						float sample[3];
-						float u, v;
-
-						R_SampleCubeMapHDR16F( H, ENVPROBE_CAPTURE_SIZE, buffers, sample, u, v );
-
-						outColor[0] += sample[0] * NdotL;
-						outColor[1] += sample[1] * NdotL;
-						outColor[2] += sample[2] * NdotL;
-
-						totalWeight += NdotL;
-					}
-				}
-
-				outColor[0] /= totalWeight;
-				outColor[1] /= totalWeight;
-				outColor[2] /= totalWeight;
-
-				parms->outBuffer[( y * parms->outWidth + x ) * 3 + 0] = F32toF16( outColor[0] );
-				parms->outBuffer[( y * parms->outWidth + x ) * 3 + 1] = F32toF16( outColor[1] );
-				parms->outBuffer[( y * parms->outWidth + x ) * 3 + 2] = F32toF16( outColor[2] );
-
-				if( parms->printProgress )
-				{
-					progressBar.Increment( true );
+					totalWeight += NdotL;
 				}
 			}
+
+			outColor[0] /= totalWeight;
+			outColor[1] /= totalWeight;
+			outColor[2] /= totalWeight;
+
+			parms->outBuffer[( y * parms->outWidth + x ) * 3 + 0] = F32toF16( outColor[0] );
+			parms->outBuffer[( y * parms->outWidth + x ) * 3 + 1] = F32toF16( outColor[1] );
+			parms->outBuffer[( y * parms->outWidth + x ) * 3 + 2] = F32toF16( outColor[2] );
 		}
 	}
 
-	int	end = Sys_Milliseconds();
-
-	parms->time = end - start;
+	delete parms;
 }
 
 REGISTER_PARALLEL_JOB( CalculateIrradianceJob, "CalculateIrradianceJob" );
-REGISTER_PARALLEL_JOB( CalculateRadianceJob, "CalculateRadianceJob" );
+REGISTER_PARALLEL_JOB( CalculateRadianceMipJob, "CalculateRadianceMipJob" );
 
-
+/*
+==================
+R_MakeAmbientMap
+==================
+*/
 void R_MakeAmbientMap( const char* baseName, byte* buffers[6], const char* suffix, int outSize, bool specular, bool useThreads )
 {
 	idStr		fullname;
@@ -891,25 +878,68 @@ void R_MakeAmbientMap( const char* baseName, byte* buffers[6], const char* suffi
 	jobParms->outWidth = int( outSize * 1.5f );
 	jobParms->outHeight = outSize;
 	jobParms->outBuffer = ( halfFloat_t* )R_StaticAlloc( idMath::Ceil( outSize * outSize * 3 * sizeof( halfFloat_t ) * 1.5f ), TAG_IMAGE );
+	jobParms->time = 0;
 
 	tr.envprobeJobs.Append( jobParms );
 
-	if( useThreads )
+	if( specular )
 	{
-		if( specular )
+		// split the convolution into one job per mip level so a single probe's
+		// radiance bake can spread across all available cores, instead of the whole
+		// map (all mips) running as one job pinned to a single thread.
+		const int numOctahedronMips = idMath::BitsForInteger( jobParms->outHeight ) - 3; // the last 3 mips are too low quality for filtering
+
+		// mip jobs each write only their own rect; corner texels past the last used
+		// mip are never touched by any of them, so clear the whole buffer up front,
+		// once, before any mip job starts writing into it.
+		for( int x = 0; x < jobParms->outWidth; x++ )
 		{
-			tr.envprobeJobList->AddJob( ( jobRun_t )CalculateRadianceJob, jobParms );
+			for( int y = 0; y < jobParms->outHeight; y++ )
+			{
+				jobParms->outBuffer[( y * jobParms->outWidth + x ) * 3 + 0] = F32toF16( 0 );
+				jobParms->outBuffer[( y * jobParms->outWidth + x ) * 3 + 1] = F32toF16( 0 );
+				jobParms->outBuffer[( y * jobParms->outWidth + x ) * 3 + 2] = F32toF16( 0 );
+			}
 		}
-		else
+
+		int start = Sys_Milliseconds();
+
+		for( int mip = 0; mip < numOctahedronMips; mip++ )
 		{
-			tr.envprobeJobList->AddJob( ( jobRun_t )CalculateIrradianceJob, jobParms );
+			calcEnvironmentProbeMipParms_t* mipParms = new calcEnvironmentProbeMipParms_t;
+
+			for( int i = 0; i < 6; i++ )
+			{
+				mipParms->radiance[i] = jobParms->radiance[i];
+			}
+			mipParms->outBuffer = jobParms->outBuffer;
+			mipParms->outWidth = jobParms->outWidth;
+			mipParms->outHeight = jobParms->outHeight;
+			mipParms->mip = mip;
+			mipParms->numOctahedronMips = numOctahedronMips;
+			mipParms->maxSamples = jobParms->samples;
+
+			if( useThreads )
+			{
+				tr.envprobeJobList->AddJob( ( jobRun_t )CalculateRadianceMipJob, mipParms );
+			}
+			else
+			{
+				CalculateRadianceMipJob( mipParms );
+			}
+		}
+
+		if( !useThreads )
+		{
+			int end = Sys_Milliseconds();
+			jobParms->time = end - start;
 		}
 	}
 	else
 	{
-		if( specular )
+		if( useThreads )
 		{
-			CalculateRadianceJob( jobParms );
+			tr.envprobeJobList->AddJob( ( jobRun_t )CalculateIrradianceJob, jobParms );
 		}
 		else
 		{
@@ -1021,7 +1051,7 @@ CONSOLE_COMMAND( bakeEnvironmentProbes, "Bake environment probes", NULL )
 
 	for( int i = 0; i < tr.primaryWorld->envprobeDefs.Num(); i++ )
 	{
-		RenderEnvprobeLocal* def = tr.primaryWorld->envprobeDefs[i];
+		idRenderEnvironmentProbeLocal* def = tr.primaryWorld->envprobeDefs[i];
 		if( def == NULL )
 		{
 			continue;
@@ -1051,7 +1081,7 @@ CONSOLE_COMMAND( bakeEnvironmentProbes, "Bake environment probes", NULL )
 
 	for( int i = 0; i < tr.primaryWorld->envprobeDefs.Num(); i++ )
 	{
-		RenderEnvprobeLocal* def = tr.primaryWorld->envprobeDefs[i];
+		idRenderEnvironmentProbeLocal* def = tr.primaryWorld->envprobeDefs[i];
 		if( def == NULL )
 		{
 			continue;
@@ -1167,7 +1197,14 @@ CONSOLE_COMMAND( bakeEnvironmentProbes, "Bake environment probes", NULL )
 
 		R_WriteEXR( job->filename, ( byte* )job->outBuffer, 3, job->outWidth, job->outHeight, "fs_basepath" );
 
-		common->Printf( "%s convolved in %5.1f seconds\n\n", job->filename.c_str(), job->time * 0.001f );
+		if( job->time > 0 )
+		{
+			common->Printf( "%s convolved in %5.1f seconds\n\n", job->filename.c_str(), job->time * 0.001f );
+		}
+		else
+		{
+			common->Printf( "%s convolved\n\n", job->filename.c_str() );
+		}
 
 		if( job->freeRadiance > 0 )
 		{
@@ -1197,7 +1234,7 @@ CONSOLE_COMMAND( bakeEnvironmentProbes, "Bake environment probes", NULL )
 	//--------------------------------------------
 	for( int i = 0; i < tr.primaryWorld->envprobeDefs.Num(); i++ )
 	{
-		RenderEnvprobeLocal* def = tr.primaryWorld->envprobeDefs[i];
+		idRenderEnvironmentProbeLocal* def = tr.primaryWorld->envprobeDefs[i];
 		if( def == NULL )
 		{
 			continue;
