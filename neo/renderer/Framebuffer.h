@@ -64,9 +64,6 @@ public:
 	static bool				IsDefaultFramebufferActive();
 	static Framebuffer*		GetActiveFramebuffer();
 
-	void					AddColorBuffer( int format, int index, int multiSamples = 0 );
-	void					AddDepthBuffer( int format, int multiSamples = 0 );
-
 	void					AttachImage2D( int target, const idImage* image, int index, int mipmapLod = 0 );
 	void					AttachImage3D( const idImage* image );
 	void					AttachImageDepth( int target, const idImage* image );
@@ -89,11 +86,6 @@ public:
 		return height;
 	}
 
-	bool					IsMultiSampled() const
-	{
-		return msaaSamples;
-	}
-
 	void					Resize( int width_, int height_ )
 	{
 		width = width_;
@@ -106,19 +98,8 @@ private:
 	// FBO object
 	uint32_t				frameBuffer;
 
-	uint32_t				colorBuffers[16];
-	int						colorFormat;
-
-	uint32_t				depthBuffer;
-	int						depthFormat;
-
-	uint32_t				stencilBuffer;
-	int						stencilFormat;
-
 	int						width;
 	int						height;
-
-	bool					msaaSamples;
 
 	static idList<Framebuffer*>	framebuffers;
 };
