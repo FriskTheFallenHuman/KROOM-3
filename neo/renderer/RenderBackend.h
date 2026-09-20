@@ -343,7 +343,7 @@ private:
 	void				GL_Clear( bool color, bool depth, bool stencil, byte stencilValue, float r, float g, float b, float a, bool clearHDR = true );
 
 	void				GL_DepthBoundsTest( const float zmin, const float zmax );
-	void				GL_PolygonOffset( float scale, float bias );
+	void				GL_PolygonOffset( float scale, float bias, float clamp = 0.0f );
 
 	void				GL_Scissor( int x /* left*/, int y /* bottom */, int w, int h );
 	void				GL_Viewport( int x /* left */, int y /* bottom */, int w, int h );
@@ -475,6 +475,7 @@ private:
 
 	float				polyOfsScale;
 	float				polyOfsBias;
+	float				polyOfsClamp;
 
 public:
 	int					GetCurrentTextureUnit() const

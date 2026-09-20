@@ -195,6 +195,7 @@ struct glconfig_t
 	bool				glslAvailable;
 	bool				uniformBufferAvailable;
 	bool				depthBoundsTestAvailable;
+	bool				polygonOffsetClampAvailable;
 	bool				syncAvailable;
 	bool				timerQueryAvailable;
 	bool				occlusionQueryAvailable;

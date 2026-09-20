@@ -245,6 +245,7 @@ idCVar r_shadowMapLodScale( "r_shadowMapLodScale", "0.4", CVAR_ARCHIVE | CVAR_RE
 idCVar r_shadowMapLodBias( "r_shadowMapLodBias", "2", CVAR_RENDERER | CVAR_INTEGER, "" );
 idCVar r_shadowMapPolygonFactor( "r_shadowMapPolygonFactor", "2", CVAR_RENDERER | CVAR_FLOAT, "polygonOffset factor for drawing shadow buffer" );
 idCVar r_shadowMapPolygonOffset( "r_shadowMapPolygonOffset", "3000", CVAR_RENDERER | CVAR_FLOAT, "polygonOffset units for drawing shadow buffer" );
+idCVar r_shadowMapPolygonClamp( "r_shadowMapPolygonClamp", "3000", CVAR_RENDERER | CVAR_FLOAT, "maximum absolute polygon offset for drawing shadow buffer" );
 idCVar r_shadowMapOccluderFacing( "r_shadowMapOccluderFacing", "2", CVAR_RENDERER | CVAR_INTEGER, "0 = front faces, 1 = back faces, 2 = twosided" );
 idCVar r_shadowMapRegularDepthBiasScale( "r_shadowMapRegularDepthBiasScale", "0.999999", CVAR_RENDERER | CVAR_FLOAT, "shadowmap bias to fight shadow acne for point and spot lights" );
 idCVar r_shadowMapSunDepthBiasScale( "r_shadowMapSunDepthBiasScale", "0.999991", CVAR_RENDERER | CVAR_FLOAT, "shadowmap bias to fight shadow acne for cascaded shadow mapping with parallel lights" );

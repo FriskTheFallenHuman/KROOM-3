@@ -332,6 +332,9 @@ static void R_CheckPortableExtensions()
 	// GL_EXT_depth_bounds_test
 	glConfig.depthBoundsTestAvailable = GLEW_EXT_depth_bounds_test != 0;
 
+	// GL_ARB_polygon_offset_clamp / GL_EXT_polygon_offset_clamp
+	glConfig.polygonOffsetClampAvailable = GLEW_ARB_polygon_offset_clamp != 0 || GLEW_EXT_polygon_offset_clamp != 0;
+
 	// GL_ARB_sync
 	glConfig.syncAvailable = GLEW_ARB_sync &&
 							 // as of 5/24/2012 (driver version 15.26.12.64.2761) sync objects
@@ -891,6 +894,7 @@ void idRenderBackend::GL_SetDefaultState()
 	vertexLayout = LAYOUT_UNKNOWN;
 	polyOfsScale = 0.0f;
 	polyOfsBias = 0.0f;
+	polyOfsClamp = 0.0f;
 	glStateBits = 0;
 
 	hdrAverageLuminance = 0;
@@ -1155,7 +1159,21 @@ void idRenderBackend::GL_State( uint64 stateBits, bool forceGlState )
 	{
 		if( stateBits & GLS_POLYGON_OFFSET )
 		{
-			glPolygonOffset( polyOfsScale, polyOfsBias );
+			if( glConfig.polygonOffsetClampAvailable && polyOfsClamp > 0.0f )
+			{
+				if( GLEW_ARB_polygon_offset_clamp != 0 )
+				{
+					glPolygonOffsetClamp( polyOfsScale, polyOfsBias, polyOfsClamp );
+				}
+				else
+				{
+					glPolygonOffsetClampEXT( polyOfsScale, polyOfsBias, polyOfsClamp );
+				}
+			}
+			else
+			{
+				glPolygonOffset( polyOfsScale, polyOfsBias );
+			}
 			glEnable( GL_POLYGON_OFFSET_FILL );
 			glEnable( GL_POLYGON_OFFSET_LINE );
 		}
@@ -1358,14 +1376,29 @@ void idRenderBackend::GL_Viewport( int x /* left */, int y /* bottom */, int w, 
 idRenderBackend::GL_PolygonOffset
 ====================
 */
-void idRenderBackend::GL_PolygonOffset( float scale, float bias )
+void idRenderBackend::GL_PolygonOffset( float scale, float bias, float clamp )
 {
 	polyOfsScale = scale;
 	polyOfsBias = bias;
+	polyOfsClamp = clamp;
 
 	if( glStateBits & GLS_POLYGON_OFFSET )
 	{
-		glPolygonOffset( scale, bias );
+		if( glConfig.polygonOffsetClampAvailable && clamp > 0.0f )
+		{
+			if( GLEW_ARB_polygon_offset_clamp != 0 )
+			{
+				glPolygonOffsetClamp( scale, bias, clamp );
+			}
+			else
+			{
+				glPolygonOffsetClampEXT( scale, bias, clamp );
+			}
+		}
+		else
+		{
+			glPolygonOffset( scale, bias );
+		}
 	}
 }
 
