@@ -46,10 +46,6 @@ const byte LGRID_VERSION = 3;
 static const byte BLGRID_VERSION = 4;
 static const unsigned int BLGRID_MAGIC = ( 'P' << 24 ) | ( 'R' << 16 ) | ( 'O' << 8 ) | BLGRID_VERSION;
 
-
-static const int MAX_LIGHTGRID_ATLAS_SIZE	= 2048;
-static const int MAX_AREA_LIGHTGRID_POINTS	= ( MAX_LIGHTGRID_ATLAS_SIZE / LIGHTGRID_IRRADIANCE_SIZE ) * ( MAX_LIGHTGRID_ATLAS_SIZE / LIGHTGRID_IRRADIANCE_SIZE );
-
 static idVec3 defaultLightGridSize = idVec3( 64, 64, 128 );
 
 LightGrid::LightGrid()
@@ -915,8 +911,8 @@ void CalculateLightGridPointJob( calcLightGridPointParms_t* parms )
 		buffers[ i ] = ( halfFloat_t* ) parms->radiance[ i ];
 	}
 
-	const float invDstSize = 1.0f / float( ENVPROBE_CAPTURE_SIZE );
-	const idVec2i sourceImageSize( ENVPROBE_CAPTURE_SIZE, ENVPROBE_CAPTURE_SIZE );
+	const float invDstSize = 1.0f / float( parms->captureSize );
+	const idVec2i sourceImageSize( parms->captureSize, parms->captureSize );
 
 	// build L4 Spherical Harmonics from source image
 	SphericalHarmonicsT<idVec3, 4> shRadiance;
@@ -939,7 +935,7 @@ void CalculateLightGridPointJob( calcLightGridPointParms_t* parms )
 
 				float u, v;
 				idVec3 radiance;
-				R_SampleCubeMapHDR16F( dir, ENVPROBE_CAPTURE_SIZE, buffers, &radiance[0], u, v );
+				R_SampleCubeMapHDR16F( dir, parms->captureSize, buffers, &radiance[0], u, v );
 
 				//radiance = dir * 0.5 + idVec3( 0.5f, 0.5f, 0.5f );
 
@@ -1126,7 +1122,7 @@ CONSOLE_COMMAND( bakeLightGrids, "Bake irradiance/vis light grid data", NULL )
 	baseName = tr.primaryWorld->mapName;
 	baseName.StripFileExtension();
 
-	captureSize = ENVPROBE_CAPTURE_SIZE;
+	captureSize = LIGHTGRID_CAPTURE_SIZE;
 	blends = 1;
 
 	idLib::Printf( "Using limit = %i\n", limit );
@@ -1246,6 +1242,7 @@ CONSOLE_COMMAND( bakeLightGrids, "Bake irradiance/vis light grid data", NULL )
 						}
 
 						calcLightGridPointParms_t* jobParms = new calcLightGridPointParms_t;
+						jobParms->captureSize = captureSize;
 						jobParms->gridCoord[0] = i;
 						jobParms->gridCoord[1] = j;
 						jobParms->gridCoord[2] = k;
@@ -1303,7 +1300,7 @@ CONSOLE_COMMAND( bakeLightGrids, "Bake irradiance/vis light grid data", NULL )
 
 							globalFramebuffers.envprobeFBO->Bind();
 
-							glPixelStorei( GL_PACK_ROW_LENGTH, ENVPROBE_CAPTURE_SIZE );
+							glPixelStorei( GL_PACK_ROW_LENGTH, captureSize );
 							glReadPixels( 0, 0, captureSize, captureSize, GL_RGB, GL_HALF_FLOAT, float16FRGB );
 
 							R_VerticalFlipRGB16F( float16FRGB, captureSize, captureSize );
@@ -1363,7 +1360,7 @@ CONSOLE_COMMAND( bakeLightGrids, "Bake irradiance/vis light grid data", NULL )
 
 				if( useThreads )
 				{
-					tr.envprobeJobList->AddJob( ( jobRun_t )CalculateLightGridPointJob, jobParms );
+					tr.lightGridJobList->AddJob( ( jobRun_t )CalculateLightGridPointJob, jobParms );
 				}
 				else
 				{
@@ -1378,9 +1375,9 @@ CONSOLE_COMMAND( bakeLightGrids, "Bake irradiance/vis light grid data", NULL )
 				common->UpdateScreen( false );
 				common->UpdateScreen( false );
 
-				//tr.envprobeJobList->Submit();
-				tr.envprobeJobList->Submit( NULL, numThreads );
-				tr.envprobeJobList->Wait();
+				//tr.lightGridJobList->Submit();
+				tr.lightGridJobList->Submit( NULL, numThreads );
+				tr.lightGridJobList->Wait();
 			}
 
 			int atlasWidth = area->lightGrid.lightGridBounds[0] * area->lightGrid.lightGridBounds[2] * LIGHTGRID_IRRADIANCE_SIZE;

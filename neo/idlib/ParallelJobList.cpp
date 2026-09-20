@@ -354,11 +354,7 @@ ID_INLINE void idParallelJobList_Threads::AddJob( jobRun_t function, void* data 
 	assert( done );
 	if( int( maxJobs ) == jobList.Num() )
 	{
-		static int runOnce = []()
-		{
-			idLib::Warning( "idParallelJobList_Threads overflow\n" );
-			return 0;
-		}( );
+		idLib::Warning( "idParallelJobList_Threads overflow: list id %d is full at maxJobs = %d, dropping job\n", int( listId ), int( maxJobs ) );
 		return;
 	}
 	// make sure there isn't already a job with the same function and data in the list
@@ -782,7 +778,7 @@ int idParallelJobList_Threads::RunJobsInternal( unsigned int threadNum, threadJo
 			deferredThreadStats.threadExecTime[threadNum] += jobEnd - jobStart;
 
 #ifndef _DEBUG
-			if( jobs_longJobMicroSec.GetInteger() > 0 && GetId() != JOBLIST_UTILITY )
+			if( jobs_longJobMicroSec.GetInteger() > 0 && GetId() != JOBLIST_UTILITY && GetId() != JOBLIST_UTILITY_LIGHTGRID )
 			{
 				uint64 durationUs = TimerClockToMicrosec( jobEnd - jobStart );
 				if( durationUs > jobs_longJobMicroSec.GetInteger() )
