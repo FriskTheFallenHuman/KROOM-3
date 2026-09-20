@@ -216,11 +216,8 @@ void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight )
 
 	if( r_useHDR.GetBool() && globalFramebuffers.hdrFBO->IsBound() )
 	{
-
-		//if( backEnd.glState.currentFramebuffer != NULL && backEnd.glState.currentFramebuffer->IsMultiSampled() )
-
 #if defined(USE_HDR_MSAA)
-		if( globalFramebuffers.hdrFBO->IsMultiSampled() )
+		if( glConfig.multisamples )
 		{
 			glBindFramebuffer( GL_READ_FRAMEBUFFER, globalFramebuffers.hdrFBO->GetFramebuffer() );
 			glBindFramebuffer( GL_DRAW_FRAMEBUFFER, globalFramebuffers.hdrNonMSAAFBO->GetFramebuffer() );

@@ -49,19 +49,8 @@ Framebuffer::Framebuffer( const char* name, int w, int h )
 
 	frameBuffer = 0;
 
-	memset( colorBuffers, 0, sizeof( colorBuffers ) );
-	colorFormat = 0;
-
-	depthBuffer = 0;
-	depthFormat = 0;
-
-	stencilBuffer = 0;
-	stencilFormat = 0;
-
 	width = w;
 	height = h;
-
-	msaaSamples = false;
 
 	glGenFramebuffers( 1, &frameBuffer );
 
@@ -104,18 +93,12 @@ void Framebuffer::Init()
 #if defined(USE_HDR_MSAA)
 	if( glConfig.multisamples )
 	{
-		globalFramebuffers.hdrFBO->AddColorBuffer( GL_RGBA16F, 0, glConfig.multisamples );
-		globalFramebuffers.hdrFBO->AddDepthBuffer( GL_DEPTH24_STENCIL8, glConfig.multisamples );
-
 		globalFramebuffers.hdrFBO->AttachImage2D( GL_TEXTURE_2D_MULTISAMPLE, globalImages->currentRenderHDRImage, 0 );
 		globalFramebuffers.hdrFBO->AttachImageDepth( GL_TEXTURE_2D_MULTISAMPLE, globalImages->currentDepthImage );
 	}
 	else
 #endif
 	{
-		globalFramebuffers.hdrFBO->AddColorBuffer( GL_RGBA16F, 0 );
-		globalFramebuffers.hdrFBO->AddDepthBuffer( GL_DEPTH24_STENCIL8 );
-
 		globalFramebuffers.hdrFBO->AttachImage2D( GL_TEXTURE_2D, globalImages->currentRenderHDRImage, 0 );
 		globalFramebuffers.hdrFBO->AttachImageDepth( GL_TEXTURE_2D, globalImages->currentDepthImage );
 	}
@@ -127,7 +110,6 @@ void Framebuffer::Init()
 	globalFramebuffers.hdrNonMSAAFBO = new Framebuffer( "_hdrNoMSAA", screenWidth, screenHeight );
 	globalFramebuffers.hdrNonMSAAFBO->Bind();
 
-	globalFramebuffers.hdrNonMSAAFBO->AddColorBuffer( GL_RGBA16F, 0 );
 	globalFramebuffers.hdrNonMSAAFBO->AttachImage2D( GL_TEXTURE_2D, globalImages->currentRenderHDRImageNoMSAA, 0 );
 
 	globalFramebuffers.hdrNonMSAAFBO->Check();
@@ -138,9 +120,6 @@ void Framebuffer::Init()
 	globalFramebuffers.envprobeFBO = new Framebuffer( "_envprobeRender", ENVPROBE_CAPTURE_SIZE, ENVPROBE_CAPTURE_SIZE );
 	globalFramebuffers.envprobeFBO->Bind();
 
-	globalFramebuffers.envprobeFBO->AddColorBuffer( GL_RGBA16F, 0 );
-	globalFramebuffers.envprobeFBO->AddDepthBuffer( GL_DEPTH24_STENCIL8 );
-
 	globalFramebuffers.envprobeFBO->AttachImage2D( GL_TEXTURE_2D, globalImages->envprobeHDRImage, 0 );
 	globalFramebuffers.envprobeFBO->AttachImageDepth( GL_TEXTURE_2D, globalImages->envprobeDepthImage );
 
@@ -150,7 +129,6 @@ void Framebuffer::Init()
 
 	globalFramebuffers.hdr64FBO = new Framebuffer( "_hdr64", 64, 64 );
 	globalFramebuffers.hdr64FBO->Bind();
-	globalFramebuffers.hdr64FBO->AddColorBuffer( GL_RGBA16F, 0 );
 	globalFramebuffers.hdr64FBO->AttachImage2D( GL_TEXTURE_2D, globalImages->currentRenderHDRImage64, 0 );
 
 	globalFramebuffers.hdr64FBO->Check();
@@ -162,7 +140,6 @@ void Framebuffer::Init()
 	{
 		globalFramebuffers.bloomRenderFBO[i] = new Framebuffer( va( "_bloomRender%i", i ), screenWidth, screenHeight );
 		globalFramebuffers.bloomRenderFBO[i]->Bind();
-		globalFramebuffers.bloomRenderFBO[i]->AddColorBuffer( GL_RGBA8, 0 );
 		globalFramebuffers.bloomRenderFBO[i]->AttachImage2D( GL_TEXTURE_2D, globalImages->bloomRenderImage[i], 0 );
 		globalFramebuffers.bloomRenderFBO[i]->Check();
 	}
@@ -173,7 +150,6 @@ void Framebuffer::Init()
 	{
 		globalFramebuffers.ambientOcclusionFBO[i] = new Framebuffer( va( "_aoRender%i", i ), screenWidth, screenHeight );
 		globalFramebuffers.ambientOcclusionFBO[i]->Bind();
-		globalFramebuffers.ambientOcclusionFBO[i]->AddColorBuffer( GL_RGBA8, 0 );
 		globalFramebuffers.ambientOcclusionFBO[i]->AttachImage2D( GL_TEXTURE_2D, globalImages->ambientOcclusionImage[i], 0 );
 		globalFramebuffers.ambientOcclusionFBO[i]->Check();
 	}
@@ -184,7 +160,6 @@ void Framebuffer::Init()
 	{
 		globalFramebuffers.csDepthFBO[i] = new Framebuffer( va( "_csz%i", i ), screenWidth / ( 1 << i ), screenHeight / ( 1 << i ) );
 		globalFramebuffers.csDepthFBO[i]->Bind();
-		globalFramebuffers.csDepthFBO[i]->AddColorBuffer( GL_R32F, 0 );
 		globalFramebuffers.csDepthFBO[i]->AttachImage2D( GL_TEXTURE_2D, globalImages->hierarchicalZbufferImage, 0, i );
 		globalFramebuffers.csDepthFBO[i]->Check();
 	}
@@ -193,9 +168,6 @@ void Framebuffer::Init()
 
 	globalFramebuffers.geometryBufferFBO = new Framebuffer( "_gbuffer", screenWidth, screenHeight );
 	globalFramebuffers.geometryBufferFBO->Bind();
-
-	globalFramebuffers.geometryBufferFBO->AddColorBuffer( GL_RGBA16F, 0 );
-	globalFramebuffers.geometryBufferFBO->AddDepthBuffer( GL_DEPTH24_STENCIL8 );
 
 	// it is ideal to share the depth buffer between the HDR main context and the geometry render target
 	globalFramebuffers.geometryBufferFBO->AttachImage2D( GL_TEXTURE_2D, globalImages->currentNormalsImage, 0 );
@@ -207,13 +179,11 @@ void Framebuffer::Init()
 
 	globalFramebuffers.smaaEdgesFBO = new Framebuffer( "_smaaEdges", screenWidth, screenHeight );
 	globalFramebuffers.smaaEdgesFBO->Bind();
-	globalFramebuffers.smaaEdgesFBO->AddColorBuffer( GL_RGBA8, 0 );
 	globalFramebuffers.smaaEdgesFBO->AttachImage2D( GL_TEXTURE_2D, globalImages->smaaEdgesImage, 0 );
 	globalFramebuffers.smaaEdgesFBO->Check();
 
 	globalFramebuffers.smaaBlendFBO = new Framebuffer( "_smaaBlend", screenWidth, screenHeight );
 	globalFramebuffers.smaaBlendFBO->Bind();
-	globalFramebuffers.smaaBlendFBO->AddColorBuffer( GL_RGBA8, 0 );
 	globalFramebuffers.smaaBlendFBO->AttachImage2D( GL_TEXTURE_2D, globalImages->smaaBlendImage, 0 );
 	globalFramebuffers.smaaBlendFBO->Check();
 
@@ -391,74 +361,6 @@ bool Framebuffer::IsDefaultFramebufferActive()
 Framebuffer* Framebuffer::GetActiveFramebuffer()
 {
 	return backEnd.currentFramebuffer;
-}
-
-void Framebuffer::AddColorBuffer( int format, int index, int multiSamples )
-{
-	if( index < 0 || index >= glConfig.maxColorAttachments )
-	{
-		common->Warning( "Framebuffer::AddColorBuffer( %s ): bad index = %i", fboName.c_str(), index );
-		return;
-	}
-
-	colorFormat = format;
-
-	bool notCreatedYet = colorBuffers[index] == 0;
-	if( notCreatedYet )
-	{
-		glGenRenderbuffers( 1, &colorBuffers[index] );
-	}
-
-	glBindRenderbuffer( GL_RENDERBUFFER, colorBuffers[index] );
-
-	if( multiSamples > 0 )
-	{
-		glRenderbufferStorageMultisample( GL_RENDERBUFFER, multiSamples, format, width, height );
-
-		msaaSamples = true;
-	}
-	else
-	{
-		glRenderbufferStorage( GL_RENDERBUFFER, format, width, height );
-	}
-
-	if( notCreatedYet )
-	{
-		glFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_RENDERBUFFER, colorBuffers[index] );
-	}
-
-	GL_CheckErrors();
-}
-
-void Framebuffer::AddDepthBuffer( int format, int multiSamples )
-{
-	depthFormat = format;
-
-	bool notCreatedYet = depthBuffer == 0;
-	if( notCreatedYet )
-	{
-		glGenRenderbuffers( 1, &depthBuffer );
-	}
-
-	glBindRenderbuffer( GL_RENDERBUFFER, depthBuffer );
-
-	if( multiSamples > 0 )
-	{
-		glRenderbufferStorageMultisample( GL_RENDERBUFFER, multiSamples, format, width, height );
-
-		msaaSamples = true;
-	}
-	else
-	{
-		glRenderbufferStorage( GL_RENDERBUFFER, format, width, height );
-	}
-
-	if( notCreatedYet )
-	{
-		glFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer );
-	}
-
-	GL_CheckErrors();
 }
 
 void Framebuffer::AttachImage2D( int target, const idImage* image, int index, int mipmapLod )
