@@ -482,11 +482,14 @@ struct calcEnvironmentProbeMipParms_t
 
 static const int LIGHTGRID_IRRADIANCE_BORDER_SIZE = 2;	// one pixel border all around the octahedron so 2 on each side
 static const int LIGHTGRID_IRRADIANCE_SIZE = 14 + LIGHTGRID_IRRADIANCE_BORDER_SIZE;
+static const int MAX_LIGHTGRID_ATLAS_SIZE = 2048;
+static const int MAX_AREA_LIGHTGRID_POINTS = ( MAX_LIGHTGRID_ATLAS_SIZE / LIGHTGRID_IRRADIANCE_SIZE ) * ( MAX_LIGHTGRID_ATLAS_SIZE / LIGHTGRID_IRRADIANCE_SIZE );
 
 struct calcLightGridPointParms_t
 {
 	// input
 	byte*							radiance[6];			// HDR RGB16F standard OpenGL cubemap sides
+	int								captureSize;			// resolution of each radiance[] face; see LIGHTGRID_CAPTURE_SIZE
 	int								gridCoord[3];
 
 	int								outWidth;				// LIGHTGRID_IRRADIANCE_SIZE
@@ -958,6 +961,7 @@ public:
 
 	// RB irradiance and GGX background jobs
 	idParallelJobList* 					envprobeJobList;
+	idParallelJobList* 					lightGridJobList;
 	idList<calcEnvprobeParms_t*>		envprobeJobs;
 	idList<calcLightGridPointParms_t*>	lightGridJobs;
 

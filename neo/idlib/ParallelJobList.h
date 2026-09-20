@@ -46,6 +46,7 @@ enum jobListId_t
 	JOBLIST_RENDERER_FRONTEND	= 0,
 	JOBLIST_RENDERER_BACKEND	= 1,
 	JOBLIST_UTILITY				= 9,			// won't print over-time warnings
+	JOBLIST_UTILITY_LIGHTGRID		= 10,			// RB: dedicated list for light grid point jobs, sized for MAX_AREA_LIGHTGRID_POINTS so dense areas don't silently drop jobs sharing JOBLIST_UTILITY's smaller capacity
 
 	MAX_JOBLISTS				= 32			// the editor may cause quite a few to be allocated
 };

@@ -1836,6 +1836,7 @@ void idRenderSystemLocal::Clear()
 
 	// RB
 	envprobeJobList = NULL;
+	lightGridJobList = NULL;
 	envprobeJobs.Clear();
 	lightGridJobs.Clear();
 
@@ -2343,6 +2344,7 @@ void idRenderSystemLocal::Init()
 
 	frontEndJobList = parallelJobManager->AllocJobList( JOBLIST_RENDERER_FRONTEND, JOBLIST_PRIORITY_MEDIUM, 2048, 0, NULL );
 	envprobeJobList = parallelJobManager->AllocJobList( JOBLIST_UTILITY, JOBLIST_PRIORITY_MEDIUM, 2048, 0, NULL ); // RB
+	lightGridJobList = parallelJobManager->AllocJobList( JOBLIST_UTILITY_LIGHTGRID, JOBLIST_PRIORITY_MEDIUM, MAX_AREA_LIGHTGRID_POINTS + 1024, 0, NULL );
 
 	bInitialized = true;
 
@@ -2424,6 +2426,7 @@ void idRenderSystemLocal::Shutdown()
 	delete guiModel;
 
 	parallelJobManager->FreeJobList( envprobeJobList );
+	parallelJobManager->FreeJobList( lightGridJobList );	// RB
 	parallelJobManager->FreeJobList( frontEndJobList );
 
 	Clear();
