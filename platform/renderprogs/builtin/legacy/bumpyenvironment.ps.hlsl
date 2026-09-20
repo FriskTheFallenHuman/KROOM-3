@@ -67,6 +67,7 @@ void main( PS_IN fragment, out PS_OUT result )
 	globalNormal.x = dot3( localNormal, fragment.texcoord2 );
 	globalNormal.y = dot3( localNormal, fragment.texcoord3 );
 	globalNormal.z = dot3( localNormal, fragment.texcoord4 );
+	globalNormal = normalize( globalNormal );
 
 	float3 globalEye = normalize( fragment.texcoord1 );
 
