@@ -205,12 +205,13 @@ float4 LinearRGBToSRGB( float4 c )
 #endif
 }
 
-/** Efficient GPU implementation of the octahedral unit vector encoding from
+/*
+	Efficient GPU implementation of the octahedral unit vector encoding from
 
-    Cigolle, Donow, Evangelakos, Mara, McGuire, Meyer,
-    A Survey of Efficient Representations for Independent Unit Vectors, Journal of Computer Graphics Techniques (JCGT), vol. 3, no. 2, 1-30, 2014
+	Cigolle, Donow, Evangelakos, Mara, McGuire, Meyer,
+	A Survey of Efficient Representations for Independent Unit Vectors, Journal of Computer Graphics Techniques (JCGT), vol. 3, no. 2, 1-30, 2014
 
-    Available online http://jcgt.org/published/0003/02/01/
+	Available online http://jcgt.org/published/0003/02/01/
 */
 
 float signNotZeroFloat( float k )
@@ -238,7 +239,7 @@ float2 octEncode( float3 v )
 
 
 /** Returns a unit vector. Argument o is an octahedral vector packed via octEncode,
-    on the [-1, +1] square*/
+	on the [-1, +1] square*/
 float3 octDecode( float2 o )
 {
 	float3 v = float3( o.x, o.y, 1.0 - abs( o.x ) - abs( o.y ) );
@@ -259,21 +260,12 @@ static const half4 matrixRGB1toCoCg1YY = half4( -0.25,  0.5, -0.25, 0.50196078 )
 static const half4 matrixRGB1toCoCg1YZ = half4( 0.0,   0.0,  0.0,  1.0 );			// 1.0
 static const half4 matrixRGB1toCoCg1YW = half4( 0.25,  0.5,  0.25, 0.0 );			// Y
 
-static const half4 matrixCoCg1YtoRGB1X = half4( 1.0, -1.0,  0.0,        1.0 );
-static const half4 matrixCoCg1YtoRGB1Y = half4( 0.0,  1.0, -0.50196078, 1.0 );  // -0.5 * 256.0 / 255.0
-static const half4 matrixCoCg1YtoRGB1Z = half4( -1.0, -1.0,  1.00392156, 1.0 ); // +1.0 * 256.0 / 255.0
-
 static half3 ConvertYCoCgToRGB( half4 YCoCg )
 {
-	half3 rgbColor;
+	half scale = 1.0 / ( ( YCoCg.z * 31.875 ) + 1.0 );	// z = scale - 1, stored in steps of 8
+	YCoCg.xy = ( YCoCg.xy - 0.50196078 ) * scale + 0.50196078;
 
-	YCoCg.z = ( YCoCg.z * 31.875 ) + 1.0;			//z = z * 255.0/8.0 + 1.0
-	YCoCg.z = 1.0 / YCoCg.z;
-	YCoCg.xy *= YCoCg.z;
-	rgbColor.x = dot4( YCoCg, matrixCoCg1YtoRGB1X );
-	rgbColor.y = dot4( YCoCg, matrixCoCg1YtoRGB1Y );
-	rgbColor.z = dot4( YCoCg, matrixCoCg1YtoRGB1Z );
-	return rgbColor;
+	return half3( YCoCg.x - YCoCg.y + YCoCg.w, YCoCg.y + YCoCg.w - 0.50196078, -YCoCg.x - YCoCg.y + YCoCg.w + 1.0 );
 }
 
 static float2 CenterScale( float2 inTC, float2 centerScale )
