@@ -194,11 +194,11 @@ void MEMainFrame::BuildMenuBar()
 	wxMenu* fileMenu = new wxMenu();
 	fileMenu->Append( ID_ME_FILE_OPEN, "&Open Material File...\tCtrl-O" );
 	fileMenu->Append( ID_ME_FILE_SHOW_ALL_MATERIALS, "Show &All Materials" );
-	fileMenu->AppendSeparator();						
+	fileMenu->AppendSeparator();
 	fileMenu->Append( ID_ME_FILE_SAVEMATERIAL, "Save &Material" );
 	fileMenu->Append( ID_ME_FILE_SAVEFILE, "Save &File\tCtrl-S" );
 	fileMenu->Append( ID_ME_FILE_SAVE, "&Save All" );
-	fileMenu->AppendSeparator();						
+	fileMenu->AppendSeparator();
 	fileMenu->Append( ID_ME_FILE_EXIT, "E&xit" );
 
 	wxMenu* editMenu = new wxMenu();

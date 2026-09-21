@@ -761,16 +761,27 @@ void idRenderBackend::PrepareStageTexturing( const shaderStage_t* pStage,  const
 	}
 	else if( pStage->texture.texgen == TG_DIFFUSE_CUBE )
 	{
-
-		// As far as I can tell, this is never used
-		idLib::Warning( "Using Diffuse Cube! Please contact Brian!" );
-
+		renderProgManager.BindShader_DiffuseCube();
 	}
 	else if( pStage->texture.texgen == TG_GLASSWARP )
 	{
+		renderProgManager.BindShader_GlassWarp();
 
-		// As far as I can tell, this is never used
-		idLib::Warning( "Using GlassWarp! Please contact Brian!" );
+		GL_SelectTexture( 2 );
+		globalImages->scratchImage->Bind();
+
+		GL_SelectTexture( 1 );
+		globalImages->scratchImage2->Bind();
+
+		GL_SelectTexture( 0 );
+		if( pStage->texture.image != NULL )
+		{
+			pStage->texture.image->Bind();
+		}
+		else
+		{
+			globalImages->defaultImage->Bind();
+		}
 	}
 
 	SetVertexParm( RENDERPARM_TEXGEN_0_ENABLED, useTexGenParm );
@@ -802,6 +813,11 @@ void idRenderBackend::FinishStageTexturing( const shaderStage_t* pStage, const d
 		{
 			// per-pixel reflection mapping without bump mapping
 		}
+		renderProgManager.Unbind();
+	}
+	else if( pStage->texture.texgen == TG_DIFFUSE_CUBE || pStage->texture.texgen == TG_GLASSWARP )
+	{
+		GL_SelectTexture( 0 );
 		renderProgManager.Unbind();
 	}
 }
@@ -3712,7 +3728,7 @@ int idRenderBackend::DrawShaderPasses( const drawSurf_t* const* const drawSurfs,
 					}
 				}
 			}
-			else if( ( pStage->texture.texgen == TG_SCREEN ) || ( pStage->texture.texgen == TG_SCREEN2 ) )
+			else if( pStage->texture.texgen == TG_SCREEN )
 			{
 				renderProgManager.BindShader_TextureTexGenVertexColor();
 			}
