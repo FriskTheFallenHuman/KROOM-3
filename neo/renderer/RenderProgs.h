@@ -538,6 +538,11 @@ public:
 		BindShader_Builtin( BUILTIN_FOG_SKINNED );
 	}
 
+	void	BindShader_DiffuseCube()
+	{
+		BindShader_Builtin( BUILTIN_DIFFUSE_CUBE );
+	}
+
 	void	BindShader_SkyBox()
 	{
 		BindShader_Builtin( BUILTIN_SKYBOX );
@@ -546,6 +551,11 @@ public:
 	void	BindShader_WobbleSky()
 	{
 		BindShader_Builtin( BUILTIN_WOBBLESKY );
+	}
+
+	void	BindShader_GlassWarp()
+	{
+		BindShader_Builtin( BUILTIN_GLASSWARP );
 	}
 
 	void	BindShader_PostProcess()
@@ -783,8 +793,10 @@ private:
 		BUILTIN_BLENDLIGHT,
 		BUILTIN_FOG,
 		BUILTIN_FOG_SKINNED,
+		BUILTIN_DIFFUSE_CUBE,
 		BUILTIN_SKYBOX,
 		BUILTIN_WOBBLESKY,
+		BUILTIN_GLASSWARP,
 		BUILTIN_POSTPROCESS,
 		// RB begin
 		BUILTIN_SCREEN,
