@@ -46,7 +46,7 @@ If you have questions concerning this license or the applicable additional terms
 #include <SDL2/SDL.h>
 
 static rvDebuggerServer*		gDebuggerServer			= NULL;
-static SDL_Thread*				gDebuggerServerThread   = NULL;
+static uintptr_t				gDebuggerServerThread	= 0;
 static bool						gDebuggerServerQuit     = false;
 
 /*
@@ -56,14 +56,14 @@ DebuggerServerThread
 Thread proc for the debugger server
 ================
 */
-static int SDLCALL DebuggerServerThread( void* param )
+static unsigned int DebuggerServerThread( void* param )
 {
 	assert( gDebuggerServer );
 
 	while( !gDebuggerServerQuit )
 	{
 		gDebuggerServer->ProcessMessages();
-		SDL_Delay( 1 );
+		Sys_Sleep( 1 );
 	}
 
 	return 0;
@@ -102,7 +102,7 @@ bool DebuggerServerInit()
 	}
 
 	// Start the debugger server thread
-	gDebuggerServerThread = SDL_CreateThread( DebuggerServerThread, "DebuggerServer", NULL );
+	gDebuggerServerThread = Sys_CreateThread( DebuggerServerThread, NULL, THREAD_NORMAL, "DebuggerServer", CORE_ANY );
 
 	return true;
 }
@@ -116,14 +116,14 @@ Shuts down the debugger server
 */
 void DebuggerServerShutdown()
 {
-	if( gDebuggerServerThread != NULL )
+	if( gDebuggerServerThread != 0 )
 	{
 		// Signal the debugger server to quit
 		gDebuggerServerQuit = true;
 
 		// Wait for the thread to finish
-		SDL_WaitThread( gDebuggerServerThread, NULL );
-		gDebuggerServerThread = NULL;
+		Sys_DestroyThread( gDebuggerServerThread );
+		gDebuggerServerThread = 0;
 
 		// Shutdown the server now
 		gDebuggerServer->Shutdown();
