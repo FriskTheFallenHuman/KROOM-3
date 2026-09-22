@@ -511,8 +511,6 @@ void idCommonLocal::ExecuteMapChange()
 	// remove any prints from the notify lines
 	console->ClearNotifyLines();
 
-	Sys_SetPhysicalWorkMemory( -1, -1 );
-
 	// at this point we should be done with the loading gui so we kill it
 	if( mainMenu != NULL )
 	{
