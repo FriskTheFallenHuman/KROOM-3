@@ -39,15 +39,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "../d3xp/Game.h"
 
-// DG: SDL.h somehow needs the following functions, so #undef those silly
-//     "don't use" #defines from Str.h
-#undef strncmp
-#undef strcasecmp
-#undef vsnprintf
-// DG end
-
-#include <SDL2/SDL.h>
-
 class idInterpreter;
 class idProgram;
 
@@ -100,11 +91,9 @@ private:
 	netadr_t						mClientAdr;
 	idUDP							mPort;
 	idList<rvDebuggerBreakpoint*>	mBreakpoints;
-	SDL_mutex*						mCriticalSection;
+	mutexHandle_t					mCriticalSection;
 
-
-	SDL_cond*						mGameThreadBreakCond;
-	SDL_mutex*						mGameThreadBreakLock;
+	signalHandle_t					mGameThreadBreakSignal;
 	bool							mBreak;
 
 	bool							mBreakNext;
