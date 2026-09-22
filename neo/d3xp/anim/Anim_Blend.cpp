@@ -3127,7 +3127,7 @@ bool idDeclModelDef::ParseAnim( idLexer& src, int numDefaultAnims )
 		}
 
 		// lookup the animation
-		md5anim = animationLib.GetAnim( token );
+		md5anim = animationLibLocal.GetAnim( token );
 		if( !md5anim )
 		{
 			src.Warning( "Couldn't load anim '%s'", token.c_str() );

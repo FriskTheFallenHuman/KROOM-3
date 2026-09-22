@@ -1366,7 +1366,7 @@ idGameEditLocal::ANIM_GetAnim
 */
 const idMD5Anim* idGameEditLocal::ANIM_GetAnim( const char* fileName )
 {
-	return animationLib.GetAnim( fileName );
+	return animationLibLocal.GetAnim( fileName );
 }
 
 /*
@@ -1535,7 +1535,7 @@ idRenderModel* idGameEditLocal::ANIM_CreateMeshForAnim( idRenderModel* model, co
 			animname = args->GetString( va( "anim %s", animname ) );
 		}
 
-		md5anim = animationLib.GetAnim( animname );
+		md5anim = animationLibLocal.GetAnim( animname );
 		offset.Zero();
 	}
 

@@ -60,9 +60,6 @@ idSoundWorld* 				gameSoundWorld = NULL;		// all audio goes to this world
 
 static gameExport_t			gameExport;
 
-// global animation lib
-idAnimManager				animationLib;
-
 // the rest of the engine will only reference the "game" variable, while all local aspects stay hidden
 idGameLocal					gameLocal;
 idGame* 					game = &gameLocal;	// statically pointed at an idGameLocal
@@ -151,6 +148,7 @@ extern "C" gameExport_t* GetGameAPI( gameImport_t* import )
 	gameExport.leaderBoards = leaderBoards;
 	gameExport.mainMenu = mainMenu;
 	gameExport.dialogs = dialogs;
+	gameExport.animationLib = animationLib;
 
 	return &gameExport;
 }
@@ -453,7 +451,7 @@ void idGameLocal::Shutdown()
 	Clear();
 
 	// shut down the animation manager
-	animationLib.Shutdown();
+	animationLibLocal.Shutdown();
 
 	Printf( "--------------------------------------\n" );
 
@@ -1382,7 +1380,7 @@ void idGameLocal::InitFromNewMap( const char* mapName, idRenderWorld* renderWorl
 	SyncPlayersWithLobbyUsers( true );
 
 	// free up any unused animations
-	animationLib.FlushUnusedAnims();
+	animationLibLocal.FlushUnusedAnims();
 
 	gamestate = GAMESTATE_ACTIVE;
 
@@ -1653,7 +1651,7 @@ bool idGameLocal::InitFromSaveGame( const char* mapName, idRenderWorld* renderWo
 	mpGame.Precache();
 
 	// free up any unused animations
-	animationLib.FlushUnusedAnims();
+	animationLibLocal.FlushUnusedAnims();
 
 	gamestate = GAMESTATE_ACTIVE;
 
@@ -1897,7 +1895,7 @@ idGameLocal::Preload
 */
 void idGameLocal::Preload( const idPreloadManifest& manifest )
 {
-	animationLib.Preload( manifest );
+	animationLibLocal.Preload( manifest );
 }
 
 /*

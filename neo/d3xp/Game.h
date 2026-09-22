@@ -733,6 +733,30 @@ public:
 
 extern idGameEdit* 				gameEdit;
 
+/*
+==============================================================================================
+
+	Public game interface with methods for model animations.
+
+==============================================================================================
+*/
+
+class idAnimManager
+{
+public:
+	virtual						~idAnimManager() {}
+
+	virtual void				Shutdown( void ) = 0;
+	virtual idMD5Anim* 			GetAnim( const char* name ) = 0;
+	virtual void				ReloadAnims( void ) = 0;
+	virtual void				ListAnims( void ) const = 0;
+	virtual int					JointIndex( const char* name ) = 0;
+	virtual const char* 		JointName( int index ) const = 0;
+	virtual void				ClearAnimsInUse( void ) = 0;
+	virtual void				FlushUnusedAnims( void ) = 0;
+};
+
+extern idAnimManager* 			animationLib;
 
 /*
 ===============================================================================
@@ -778,6 +802,7 @@ typedef struct
 	idLeaderboards* 			leaderBoards;			// interface for leaderboards
 	idGameMainMenu*				mainMenu;				// interface for the main menu
 	idGameDialogs*				dialogs;				// interface for the gui dialogs
+	idAnimManager* 				animationLib;			// interface for animating models
 
 } gameExport_t;
 

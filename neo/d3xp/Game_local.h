@@ -745,7 +745,7 @@ extern idGameMainMenuLocal	mainMenuLocal;
 #include "Game_dialogs.h"
 extern idGameDialogsLocal	dialogsLocal;
 
-extern idAnimManager		animationLib;
+extern idAnimManagerLocal	animationLibLocal;
 
 //============================================================================
 

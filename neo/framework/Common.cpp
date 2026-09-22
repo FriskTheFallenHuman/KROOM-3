@@ -89,6 +89,7 @@ int64 com_engineHz_denominator = 100LL * 60LL;
 	idLeaderboards*	leaderBoards = NULL;
 	idGameDialogs*	dialogs = NULL;
 	idGameMainMenu*	mainMenu = NULL;
+	idAnimManager*	animationLib = NULL;
 #endif
 
 idCommonLocal	commonLocal;
@@ -1152,6 +1153,7 @@ void idCommonLocal::LoadGameDLL()
 	leaderBoards						= gameExport.leaderBoards;
 	mainMenu							= gameExport.mainMenu;
 	dialogs								= gameExport.dialogs;
+	animationLib						= gameExport.animationLib;
 
 #endif
 
