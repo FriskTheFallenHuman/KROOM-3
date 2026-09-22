@@ -488,6 +488,48 @@ void idGameEditLocal::MapSave( const char* path ) const
 
 /*
 ================
+idGameEditLocal::MapSaveToExtraEnts
+================
+*/
+void idGameEditLocal::MapSaveToExtraEnts( const idDict* dict ) const
+{
+	if( dict == NULL )
+	{
+		return;
+	}
+
+	idMapFile* baseMap = gameLocal.GetLevelMap();
+	if( baseMap == NULL )
+	{
+		return;
+	}
+
+	const char* entityName = dict->GetString( "name" );
+	if( entityName == NULL || entityName[0] == '\0' )
+	{
+		gameLocal.Warning( "MapSaveToExtraEnts: dict has no \"name\"" );
+		return;
+	}
+
+	const idStr extrasName = idStr( baseMap->GetName() ) + "_extra_ents";
+
+	idMapFile extraMap;
+	extraMap.Parse( extrasName, true, false );
+
+	idMapEntity* mapEnt = extraMap.FindEntity( entityName );
+	if( mapEnt == NULL )
+	{
+		mapEnt = new( TAG_SYSTEM ) idMapEntity();
+		extraMap.AddEntity( mapEnt );
+	}
+
+	mapEnt->epairs.Copy( *dict );
+
+	extraMap.Write( extrasName, ".map", true );
+}
+
+/*
+================
 idGameEditLocal::MapSetEntityKeyVal
 ================
 */

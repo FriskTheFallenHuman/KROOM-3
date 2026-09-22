@@ -80,6 +80,7 @@ private:
 
 	void ApplyChanges();
 	void SaveChanges();
+	void SaveToExtraEnts();
 	void CancelChanges();
 	void PlayShader( const char* shader ) const;
 	void DrawGizmo( bool& changed );
