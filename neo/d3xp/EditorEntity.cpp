@@ -779,7 +779,7 @@ void idEditEntities::DisplayEntities()
 			billboard.origin = ent->GetPhysics()->GetOrigin() + idVec3( 0, 0, 12 );
 			billboard.axis = mat3_identity;
 
-			const idDict* entityDef = gameEdit->FindEntityDefDict( ent->spawnArgs.GetString( "classname" ), false );
+			const idDict* entityDef = gameEditLocal.FindEntityDefDict( ent->spawnArgs.GetString( "classname" ), false );
 			const char* editorMaterialName = entityDef != NULL ? entityDef->GetString( "editor_icon" ) : "";
 			if( editorMaterialName[0] == '\0' && entityDef != NULL )
 			{
