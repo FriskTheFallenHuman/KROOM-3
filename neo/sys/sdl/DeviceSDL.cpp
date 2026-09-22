@@ -580,8 +580,6 @@ int main( int argc, char* argv[] )
 {
 #ifdef _WIN32
 	::SetCursor( NULL );
-
-	Sys_SetPhysicalWorkMemory( 192 << 20, 1024 << 20 );
 #endif
 
 	// combine the args into a windows-style command line
