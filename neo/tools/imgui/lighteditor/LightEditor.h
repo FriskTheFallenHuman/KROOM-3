@@ -114,6 +114,7 @@ private:
 	bool				boundSizingSnap = false;
 
 	bool				shortcutSaveMapEnabled;
+	bool				shortcutSaveExtraEntsEnabled;
 	bool				shortcutDuplicateLightEnabled;
 
 	void				LoadLightStyles();
@@ -129,6 +130,7 @@ private:
 
 	void				TempApplyChanges();
 	void				SaveChanges( bool saveMap );
+	void				SaveToExtraEnts();
 	void				CancelChanges();
 
 	void				DuplicateLight();

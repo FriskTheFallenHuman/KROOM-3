@@ -221,6 +221,26 @@ void SoundEditor::SaveChanges()
 	}
 }
 
+void SoundEditor::SaveToExtraEnts()
+{
+	if( entityName[0] == '\0' )
+	{
+		entityName = gameEdit->GetUniqueEntityName( "light" );
+	}
+
+	idDict d;
+	current.ToDict( &d );
+
+	d.DeleteEmptyKeys();
+
+	d.Set( "name", entityName.c_str() );
+	d.Set( "classname", "light" );
+
+	gameEdit->MapSaveToExtraEnts( &d );
+
+	original = current;
+}
+
 void SoundEditor::CancelChanges()
 {
 	current = original;
@@ -373,6 +393,12 @@ void SoundEditor::DrawContents( bool& showTool )
 	if( ImGui::Button( "Save to .map" ) )
 	{
 		SaveChanges();
+		showTool = false;
+	}
+	ImGui::SameLine();
+	if( ImGui::Button( "Save to _extra_ents.map" ) )
+	{
+		SaveToExtraEnts();
 		showTool = false;
 	}
 	ImGui::SameLine();

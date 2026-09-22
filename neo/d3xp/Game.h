@@ -720,6 +720,7 @@ public:
 	// In game map editing support.
 	virtual const idDict* 		MapGetEntityDict( const char* name ) const = 0;
 	virtual void				MapSave( const char* path = NULL ) const = 0;
+	virtual void				MapSaveToExtraEnts( const idDict* dict ) const = 0;
 	virtual void				MapSetEntityKeyVal( const char* name, const char* key, const char* val ) const  = 0;
 	virtual void				MapCopyDictToEntity( const char* name, const idDict* dict ) const = 0;
 	virtual void				MapCopyDictToEntityAtOrigin( const idVec3& org, const idDict* dict ) const = 0;

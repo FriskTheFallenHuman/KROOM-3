@@ -396,6 +396,7 @@ void LightEditor::Reset()
 	boundSizingSnap = false;
 
 	shortcutSaveMapEnabled = true;
+	shortcutSaveExtraEntsEnabled = true;
 	shortcutDuplicateLightEnabled = true;
 }
 
@@ -649,6 +650,26 @@ void LightEditor::SaveChanges( bool saveMap )
 	}
 }
 
+void LightEditor::SaveToExtraEnts()
+{
+	if( entityName[0] == '\0' )
+	{
+		entityName = gameEdit->GetUniqueEntityName( "light" );
+	}
+
+	idDict d;
+	cur.ToDict( &d );
+
+	d.DeleteEmptyKeys();
+
+	d.Set( "name", entityName.c_str() );
+	d.Set( "classname", "light" );
+
+	gameEdit->MapSaveToExtraEnts( &d );
+
+	original = cur;
+}
+
 void LightEditor::CancelChanges()
 {
 	if( lightEntity != NULL )
@@ -712,10 +733,18 @@ void LightEditor::DrawContents( bool& showTool )
 	// TODO use view direction like just global values
 	if( io.KeyCtrl )
 	{
-		if( ImGui::IsKeyDown( ImGuiKey_S ) && shortcutSaveMapEnabled )
+		if( ImGui::IsKeyDown( ImGuiKey_S ) )
 		{
-			SaveChanges( true );
-			shortcutSaveMapEnabled = false;
+			if( io.KeyShift && shortcutSaveExtraEntsEnabled )
+			{
+				SaveToExtraEnts();
+				shortcutSaveExtraEntsEnabled = false;
+			}
+			else if( !io.KeyShift && shortcutSaveMapEnabled )
+			{
+				SaveChanges( true );
+				shortcutSaveMapEnabled = false;
+			}
 		}
 		else if( ImGui::IsKeyDown( ImGuiKey_D ) && shortcutDuplicateLightEnabled )
 		{
@@ -764,9 +793,10 @@ void LightEditor::DrawContents( bool& showTool )
 	}
 
 	// reenable commands if keys were released
-	if( ( !io.KeyCtrl || !ImGui::IsKeyDown( ImGuiKey_S ) ) && !shortcutSaveMapEnabled )
+	if( ( !io.KeyCtrl || !ImGui::IsKeyDown( ImGuiKey_S ) ) )
 	{
 		shortcutSaveMapEnabled = true;
+		shortcutSaveExtraEntsEnabled = true;
 	}
 
 	if( ( !io.KeyCtrl || !ImGui::IsKeyDown( ImGuiKey_D ) ) && !shortcutDuplicateLightEnabled )
@@ -872,18 +902,17 @@ void LightEditor::DrawContents( bool& showTool )
 
 	ImGui::SeparatorText( "Transform" );
 
-	if( ImGui::IsKeyDown( ImGuiKey_G ) )
+	if( !ImGuizmo::IsUsing() && ImGui::IsKeyPressed( ImGuiKey_G ) )
 	{
 		mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
 	}
 
-	if( ImGui::IsKeyDown( ImGuiKey_R ) )
+	if( !ImGuizmo::IsUsing() && ImGui::IsKeyPressed( ImGuiKey_R ) )
 	{
 		mCurrentGizmoOperation = ImGuizmo::ROTATE;
 	}
 
-	//if( ImGui::IsKeyPressed( ImGuiKey_S ) )
-	if( ImGui::IsKeyDown( ImGuiKey_S ) )
+	if( !ImGuizmo::IsUsing() && ImGui::IsKeyPressed( ImGuiKey_S ) )
 	{
 		mCurrentGizmoOperation = ImGuizmo::SCALE;
 	}
@@ -1029,10 +1058,14 @@ void LightEditor::DrawContents( bool& showTool )
 		{
 			if( ImGui::BeginMenu( "File" ) )
 			{
-				//ShowExampleMenuFile();
 				if( ImGui::MenuItem( "Save Map", "Ctrl+S" ) )
 				{
 					SaveChanges( true );
+				}
+
+				if( ImGui::MenuItem( "Save Map Has _extra_ents", "Ctrl+Shift+S" ) )
+				{
+					SaveToExtraEnts();
 				}
 
 				ImGui::Separator();
