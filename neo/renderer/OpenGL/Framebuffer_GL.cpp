@@ -144,14 +144,17 @@ void Framebuffer::Init()
 		globalFramebuffers.bloomRenderFBO[i]->Check();
 	}
 
-	// AMBIENT OCCLUSION
-
-	for( int i = 0; i < MAX_SSAO_BUFFERS; i++ )
+	if( r_ssaoFiltering.GetBool() || r_ssgiFiltering.GetBool() )
 	{
-		globalFramebuffers.ambientOcclusionFBO[i] = new Framebuffer( va( "_aoRender%i", i ), screenWidth, screenHeight );
-		globalFramebuffers.ambientOcclusionFBO[i]->Bind();
-		globalFramebuffers.ambientOcclusionFBO[i]->AttachImage2D( GL_TEXTURE_2D, globalImages->ambientOcclusionImage[i], 0 );
-		globalFramebuffers.ambientOcclusionFBO[i]->Check();
+		// AMBIENT OCCLUSION
+
+		for( int i = 0; i < MAX_SSAO_BUFFERS; i++ )
+		{
+			globalFramebuffers.ambientOcclusionFBO[i] = new Framebuffer( va( "_aoRender%i", i ), screenWidth, screenHeight );
+			globalFramebuffers.ambientOcclusionFBO[i]->Bind();
+			globalFramebuffers.ambientOcclusionFBO[i]->AttachImage2D( GL_TEXTURE_2D, globalImages->ambientOcclusionImage[i], 0 );
+			globalFramebuffers.ambientOcclusionFBO[i]->Check();
+		}
 	}
 
 	// HIERARCHICAL Z BUFFER
@@ -257,16 +260,21 @@ void Framebuffer::CheckFramebuffers()
 
 		// AMBIENT OCCLUSION
 
-		for( int i = 0; i < MAX_SSAO_BUFFERS; i++ )
+		if( r_ssaoFiltering.GetBool() || r_ssgiFiltering.GetBool() )
 		{
-			globalImages->ambientOcclusionImage[i]->Resize( screenWidth, screenHeight );
+			// AMBIENT OCCLUSION
 
-			globalFramebuffers.ambientOcclusionFBO[i]->width = screenWidth;
-			globalFramebuffers.ambientOcclusionFBO[i]->height = screenHeight;
+			for( int i = 0; i < MAX_SSAO_BUFFERS; i++ )
+			{
+				globalImages->ambientOcclusionImage[i]->Resize( screenWidth, screenHeight );
 
-			globalFramebuffers.ambientOcclusionFBO[i]->Bind();
-			globalFramebuffers.ambientOcclusionFBO[i]->AttachImage2D( GL_TEXTURE_2D, globalImages->ambientOcclusionImage[i], 0 );
-			globalFramebuffers.ambientOcclusionFBO[i]->Check();
+				globalFramebuffers.ambientOcclusionFBO[i]->width = screenWidth;
+				globalFramebuffers.ambientOcclusionFBO[i]->height = screenHeight;
+
+				globalFramebuffers.ambientOcclusionFBO[i]->Bind();
+				globalFramebuffers.ambientOcclusionFBO[i]->AttachImage2D( GL_TEXTURE_2D, globalImages->ambientOcclusionImage[i], 0 );
+				globalFramebuffers.ambientOcclusionFBO[i]->Check();
+			}
 		}
 
 		// HIERARCHICAL Z BUFFER
