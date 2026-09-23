@@ -39,6 +39,19 @@ If you have questions concerning this license or the applicable additional terms
 
 ***********************************************************************/
 
+// DG: added constructor to make sure all members are initialized
+idRenderModelMD3::idRenderModelMD3() : index( -1 ), dataSize( 0 ), md3( NULL ), numLods( 0 )
+{
+}
+
+// DG: added destructor to clean up the md3 which used to leak
+idRenderModelMD3::~idRenderModelMD3()
+{
+	srfTriangles_t tri;
+	memset( &tri, 0, sizeof( tri ) );
+	Mem_Free( md3 );
+}
+
 #define	LL(x) x=LittleLong(x)
 
 /*
@@ -57,7 +70,7 @@ void idRenderModelMD3::InitFromFile( const char* fileName )
 	md3St_t*				st;
 	md3XyzNormal_t*		xyz;
 	md3Tag_t*			tag;
-	void*				buffer;
+	void*				buffer = NULL;
 	int					version;
 	int					size;
 
@@ -65,8 +78,15 @@ void idRenderModelMD3::InitFromFile( const char* fileName )
 	name = fileName;
 
 	size = fileSystem->ReadFile( fileName, &buffer, NULL );
-	if( !size || size < 0 )
+	// DG: without the int cast, an unsigned comparison is made which fails for size = -1
+	if( size <= ( int )sizeof( md3Header_t ) )
 	{
+		if( buffer != NULL )
+		{
+			fileSystem->FreeFile( buffer );
+		}
+		// DG: must make it a default model so failure can be detected elsewhere
+		MakeDefaultModel();
 		return;
 	}
 
@@ -78,6 +98,7 @@ void idRenderModelMD3::InitFromFile( const char* fileName )
 		fileSystem->FreeFile( buffer );
 		common->Warning( "InitFromFile: %s has wrong version (%i should be %i)",
 						 fileName, version, MD3_VERSION );
+		MakeDefaultModel();
 		return;
 	}
 
@@ -101,6 +122,7 @@ void idRenderModelMD3::InitFromFile( const char* fileName )
 	{
 		common->Warning( "InitFromFile: %s has no frames", fileName );
 		fileSystem->FreeFile( buffer );
+		MakeDefaultModel();
 		return;
 	}
 
@@ -180,10 +202,10 @@ void idRenderModelMD3::InitFromFile( const char* fileName )
 		shader = ( md3Shader_t* )( ( byte* )surf + surf->ofsShaders );
 		for( j = 0 ; j < surf->numShaders ; j++, shader++ )
 		{
-			const idMaterial* sh;
-
-			sh = declManager->FindMaterial( shader->name );
-			shader->shader = sh;
+			const idMaterial* sh = declManager->FindMaterial( shader->name );
+			// DG: md3Shader_t must use an index to the material instead of a pointer,
+			//     otherwise the sizes are wrong on 64bit and we get data corruption
+			shader->shaderIndex = ( sh != NULL ) ? shaders.AddUnique( sh ) : -1;
 		}
 
 		// swap all the triangles
@@ -300,12 +322,18 @@ idRenderModel* idRenderModelMD3::InstantiateDynamicModel( const struct renderEnt
 {
 	int				i, j;
 	float			backlerp;
-	int* 			triangles;
-	int				indexes;
+	float* 			texCoords;
 	int				numVerts;
 	md3Surface_t* 	surface;
 	int				frame, oldframe;
 	idRenderModelStatic*	staticModel;
+
+	int numFrames = md3->numFrames;
+
+	// TODO: these need set by an entity
+	frame = idMath::ClampInt( 0, numFrames - 1, ent->shaderParms[SHADERPARM_MD3_FRAME] );	// probably want to keep frames < 1000 or so
+	oldframe = idMath::ClampInt( 0, numFrames - 1, ent->shaderParms[SHADERPARM_MD3_LASTFRAME] );
+	backlerp = ent->shaderParms[SHADERPARM_MD3_BACKLERP];
 
 	if( cachedModel )
 	{
@@ -314,14 +342,10 @@ idRenderModel* idRenderModelMD3::InstantiateDynamicModel( const struct renderEnt
 	}
 
 	staticModel = new( TAG_MODEL ) idRenderModelStatic;
+	staticModel->InitEmpty( "_MD3_Snapshot_" );
 	staticModel->bounds.Clear();
 
 	surface = ( md3Surface_t* )( ( byte* )md3 + md3->ofsSurfaces );
-
-	// TODO: these need set by an entity
-	frame = ent->shaderParms[SHADERPARM_MD3_FRAME];			// probably want to keep frames < 1000 or so
-	oldframe = ent->shaderParms[SHADERPARM_MD3_LASTFRAME];
-	backlerp = ent->shaderParms[SHADERPARM_MD3_BACKLERP];
 
 	for( i = 0; i < md3->numSurfaces; i++ )
 	{
@@ -336,28 +360,26 @@ idRenderModel* idRenderModelMD3::InstantiateDynamicModel( const struct renderEnt
 		surf.geometry = tri;
 
 		md3Shader_t* shaders = ( md3Shader_t* )( ( byte* )surface + surface->ofsShaders );
-		surf.shader = shaders->shader;
+		// FIXME: theoretically there can be multiple shaders?
+		// DG: turned md3Shader_t::shader (pointer) into an int (index)
+		int shaderIdx = shaders->shaderIndex;
+		surf.shader = ( shaderIdx >= 0 ) ? this->shaders[shaderIdx] : NULL;
 
 		LerpMeshVertexes( tri, surface, backlerp, frame, oldframe );
 
-		triangles = ( int* )( ( byte* )surface + surface->ofsTriangles );
-		indexes = surface->numTriangles * 3;
-		for( j = 0 ; j < indexes ; j++ )
-		{
-			tri->indexes[j] = triangles[j];
-		}
-		tri->numIndexes += indexes;
-
-		const idVec2* texCoords = ( idVec2* )( ( byte* )surface + surface->ofsSt );
+		texCoords = ( float* )( ( byte* )surface + surface->ofsSt );
 
 		numVerts = surface->numVerts;
 		for( j = 0; j < numVerts; j++ )
 		{
-			tri->verts[j].SetTexCoord( texCoords[j] );
+			idDrawVert* stri = &tri->verts[j];
+			stri->st[0] = texCoords[j * 2 + 0];
+			stri->st[1] = texCoords[j * 2 + 1];
 		}
 
 		R_BoundTriSurf( tri );
 
+		surf.id = staticModel->NumSurfaces(); // DG: make sure to initialize id; FIXME: or just set id to 0?
 		staticModel->AddSurface( surf );
 		staticModel->bounds.AddPoint( surf.geometry->bounds[0] );
 		staticModel->bounds.AddPoint( surf.geometry->bounds[1] );
@@ -390,6 +412,8 @@ idBounds idRenderModelMD3::Bounds( const struct renderEntity_s* ent ) const
 	}
 
 	md3Frame_t*	frame = ( md3Frame_t* )( ( byte* )md3 + md3->ofsFrames );
+	int frameNum = Max( 0, Min( md3->numFrames - 1, ( int )ent->shaderParms[SHADERPARM_MD3_FRAME] ) );
+	frame += frameNum; // DG: use bounds of current frame
 
 	ret.AddPoint( frame->bounds[0] );
 	ret.AddPoint( frame->bounds[1] );
