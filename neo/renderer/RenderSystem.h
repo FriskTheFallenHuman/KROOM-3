@@ -230,6 +230,8 @@ struct glconfig_t
 	GLuint				global_vao;
 #endif
 	// RB end
+
+	bool				forceShaderGeneration;
 };
 
 

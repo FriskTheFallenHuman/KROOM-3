@@ -514,6 +514,8 @@ void idRenderBackend::Init()
 	// input and sound systems need to be tied to the new window
 	Sys_InitInput();
 
+	glConfig.forceShaderGeneration = false;
+
 	// get our config strings
 	glConfig.vendor_string = ( const char* )glGetString( GL_VENDOR );
 	glConfig.renderer_string = ( const char* )glGetString( GL_RENDERER );
@@ -1607,12 +1609,14 @@ void idRenderBackend::CheckCVars()
 			r_useHalfLambertLighting.IsModified() ||
 			r_pbrDebug.IsModified() )
 	{
-		bool needShaderReload = false;
+		glConfig.forceShaderGeneration = true;
 
-		needShaderReload |= r_useHDR.IsModified();
-		needShaderReload |= r_pbrDebug.IsModified();
-		needShaderReload |= r_useHalfLambertLighting.IsModified();
-		needShaderReload |= r_usePBR.IsModified();
+		//bool needShaderReload = false;
+
+		//needShaderReload |= r_useHDR.IsModified();
+		//needShaderReload |= r_pbrDebug.IsModified();
+		//needShaderReload |= r_useHalfLambertLighting.IsModified();
+		//needShaderReload |= r_usePBR.IsModified();
 
 		r_usePBR.ClearModified();
 		r_useHDR.ClearModified();
@@ -1621,6 +1625,8 @@ void idRenderBackend::CheckCVars()
 
 		renderProgManager.KillAllShaders();
 		renderProgManager.LoadAllShaders();
+
+		glConfig.forceShaderGeneration = false;
 	}
 }
 
