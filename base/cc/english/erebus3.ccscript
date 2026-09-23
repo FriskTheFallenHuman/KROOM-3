@@ -1,0 +1,149 @@
+/*
+English subtitles mod for Doom 3 bfg edition by Y-Dr. Now
+CC Script Format:
+{
+	name: name of the sound shader or the video file or sound file
+	color: rgba array for coloring the text (max 255)
+	priority: priority of the caption
+	caption: timestamp in milliseconds and text reference
+}
+*/
+{
+	name e3_mcneil_startpt2
+	color [220, 100, 25, 255]
+	priority 0
+	caption 0 "#cc_erebus3_00000000001"
+}
+
+{
+	name e3_mcneil_startpt2
+	color [220, 100, 25, 255]
+	priority 0
+	caption 3000 "#cc_erebus3_00000000002"
+}
+
+{
+	name e3_mcneil_startpt2
+	color [220, 100, 25, 255]
+	priority 0
+	caption 12000 "#cc_erebus3_00000000003"
+}
+
+{
+	name e3_mcneil_startpt2
+	color [220, 100, 25, 255]
+	priority 0
+	caption 16000 "#cc_erebus3_00000000020"
+}
+
+{
+	name e3_mcneil_startpt2
+	color [220, 100, 25, 255]
+	priority 0
+	caption 21000 "#cc_erebus3_00000000004"
+}
+
+{
+	name audiolog_erebus3_kharkov_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_erebus3_00000000005"
+}
+
+{
+	name audiolog_erebus3_kharkov_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 4000 "#cc_erebus3_00000000006"
+}
+
+{
+	name audiolog_erebus3_kharkov_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 9000 "#cc_erebus3_00000000021"
+}
+
+{
+	name audiolog_erebus3_kharkov_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 15000 "#cc_erebus3_00000000007"
+}
+
+{
+	name e3_computer_contaminents
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_erebus3_00000000008"
+}
+
+{
+	name e3_computer_filtration
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_erebus3_00000000019"
+
+
+{
+	name e3_computer_commence
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_erebus3_00000000009"
+}
+
+{
+	name e3_computer_complete
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_erebus3_00000000010"
+}
+
+{
+	name e3_computer_greatday
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_erebus3_00000000011"
+}
+
+{
+	name e3_mcneil_startpt1
+	color [220, 100, 25, 255]
+	priority 0
+	caption 0 "#cc_erebus3_00000000012"
+}
+
+{
+	name e3_transform_triggered1
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_erebus3_00000000013"
+}
+
+{
+	name e3_transform_idle1
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_erebus3_00000000014"
+}
+
+{
+	name e3_transform_triggered2
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_erebus3_00000000015"
+}
+
+{
+	name e3_transform_transform1
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_erebus3_00000000016"
+}
+
+{
+	name e3_transform_death
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_erebus3_00000000017"
+}

@@ -1,0 +1,584 @@
+/*
+English subtitles mod for Doom 3 bfg edition by Y-Dr. Now
+CC Script Format:
+{
+	name: name of the sound shader or the video file or sound file
+	color: rgba array for coloring the text (max 255)
+	priority: priority of the caption
+	caption: timestamp in milliseconds and text reference
+}
+*/
+{
+	name sound/VO/video/epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_videos_00000000001"
+}
+
+{
+	name sound/VO/video/epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 8000 "#cc_videos_00000000002"
+}
+
+{
+	name sound/VO/video/epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 19000 "#cc_videos_00000000003"
+}
+
+{
+	name sound/VO/video/epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 26900 "#cc_videos_00000000256"
+}
+
+{
+	name sound/VO/video/epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 30000 "#cc_videos_00000000004"
+}
+
+{
+	name sound/VO/video/epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 40500 "#cc_videos_00000000257"
+}
+
+{
+	name sound/VO/video/epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 43000 "#cc_videos_00000000005"
+}
+
+{
+	name sound/VO/video/epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 52000 "#cc_videos_00000000258"
+}
+
+{
+	name sound/VO/video/epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 55000 "#cc_videos_00000000006"
+}
+
+{
+	name sound/VO/video/epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 62000 "#cc_videos_00000000259"
+}
+
+{
+	name sound/VO/video/epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 69000 "#cc_videos_00000000007"
+}
+
+{
+	name sound/VO/video/epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 79000 "#cc_videos_00000000008"
+}
+
+{
+	name sound/VO/video/epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 84000 "#cc_videos_00000000009"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_videos_00000000001"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 8000 "#cc_videos_00000000002"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 19000 "#cc_videos_00000000003"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 26900 "#cc_videos_00000000256"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 30000 "#cc_videos_00000000004"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 40500 "#cc_videos_00000000257"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 43000 "#cc_videos_00000000005"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 52000 "#cc_videos_00000000258"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 55000 "#cc_videos_00000000006"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 62000 "#cc_videos_00000000259"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 69000 "#cc_videos_00000000007"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 79000 "#cc_videos_00000000008"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 84000 "#cc_videos_00000000009"
+}
+
+{
+	name video_hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_alphalabs1_00000000010"
+}
+
+{
+	name video_hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12000 "#cc_alphalabs1_00000000011"
+}
+
+{
+	name video_hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 21000 "#cc_alphalabs1_00000000012"
+}
+
+{
+	name video_hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 30000 "#cc_alphalabs1_00000000013"
+}
+
+{
+	name video_hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 40000 "#cc_alphalabs1_00000000014"
+}
+
+{
+	name video_hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 46000 "#cc_alphalabs1_00000000034"
+}
+
+{
+	name video_hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 50000 "#cc_alphalabs1_00000000015"
+}
+
+{
+	name video_hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 60000 "#cc_alphalabs1_00000000016"
+}
+
+{
+	name video_hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 65500 "#cc_alphalabs1_00000000035"
+}
+
+{
+	name video_hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 70000 "#cc_alphalabs1_00000000017"
+}
+
+{
+	name video_hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 75000 "#cc_alphalabs1_00000000036"
+}
+
+{
+	name video_hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 82000 "#cc_alphalabs1_00000000018"
+}
+
+{
+	name al1_com04
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs1_00000000021"
+}
+
+{
+	name sound/VO/alpha_labs1/comp_epd_active
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs1_00000000022"
+}
+
+{
+	name sound/VO/alpha_labs1/comp_gas_leak_stop
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs1_00000000023"
+}
+
+{
+	name alphalabs1_labcoat_primary
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs1_00000000024"
+}
+
+{
+	name alphalabs1_labcoat_secondary
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs1_00000000025"
+}
+
+{
+	name alphalabs1_labcoat_secondary2
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs1_00000000026"
+}
+
+{
+	name alphalabs1_labcoat_trigger
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs1_00000000027"
+}
+
+{
+	name alphalabs1_labcoat_trigger
+	color [200, 200, 200, 255]
+	priority 0
+	caption 7000 "#cc_alphalabs1_00000000037"
+}
+
+{
+	name alphalabs1_labcoat_trigger2
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs1_00000000028"
+}
+
+{
+	name alpha1_sarge_radio1
+	color [160, 255, 160, 255]
+	priority 0
+	caption 0 "#cc_alphalabs1_00000000029"
+}
+
+{
+	name alpha1_sarge_radio1
+	color [160, 255, 160, 255]
+	priority 0
+	caption 7500 "#cc_alphalabs1_00000000038"
+}
+
+{
+	name audiolog_alphalabs1_berger_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000024"
+}
+
+{
+	name audiolog_alphalabs1_berger_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 5000 "#cc_pda_00000000025"
+}
+
+{
+	name audiolog_alphalabs1_berger_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 14000 "#cc_pda_00000000026"
+}
+
+{
+	name audiolog_alphalabs1_berger_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 23000 "#cc_pda_00000000427"
+}
+
+{
+	name audiolog_alphalabs1_berger_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 26800 "#cc_pda_00000000399"
+}
+
+{
+	name audiolog_alphalabs1_berger_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 33000 "#cc_pda_00000000027"
+}
+
+{
+	name audiolog_alphalabs1_berger_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 40000 "#cc_pda_00000000428"
+}
+
+{
+	name audiolog_alphalabs1_berger_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 45000 "#cc_pda_00000000400"
+}
+
+{
+	name audiolog_alphalabs1_berger_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 51000 "#cc_pda_00000000028"
+}
+
+{
+	name audiolog_alphalabs1_berger_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 61000 "#cc_pda_00000000429"
+}
+
+
+{
+	name audiolog_alphalabs1_smith_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000018"
+}
+
+{
+	name audiolog_alphalabs1_smith_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 5000 "#cc_pda_00000000019"
+}
+
+{
+	name audiolog_alphalabs1_smith_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12000 "#cc_pda_00000000020"
+}
+
+{
+	name audiolog_alphalabs1_smith_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 17500 "#cc_pda_00000000424"
+}
+
+{
+	name audiolog_alphalabs1_smith_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 23000 "#cc_pda_00000000021"
+}
+
+{
+	name audiolog_alphalabs1_smith_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 30500 "#cc_pda_00000000425"
+}
+
+{
+	name audiolog_alphalabs1_smith_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 36500 "#cc_pda_00000000398"
+}
+
+{
+	name audiolog_alphalabs1_smith_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 41500 "#cc_pda_00000000022"
+}
+
+{
+	name audiolog_alphalabs1_smith_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 46000 "#cc_pda_00000000401"
+}
+
+{
+	name audiolog_alphalabs1_smith_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 50000 "#cc_pda_00000000426"
+}
+
+{
+	name audiolog_alphalabs1_smith_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 54000 "#cc_pda_00000000023"
+}
+
+{
+	name sound/VO/video/hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_alphalabs1_00000000010"
+}
+
+{
+	name sound/VO/video/hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12000 "#cc_alphalabs1_00000000011"
+}
+
+{
+	name sound/VO/video/hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 21000 "#cc_alphalabs1_00000000012"
+}
+
+{
+	name sound/VO/video/hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 30000 "#cc_alphalabs1_00000000013"
+}
+
+{
+	name sound/VO/video/hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 40000 "#cc_alphalabs1_00000000014"
+}
+
+{
+	name sound/VO/video/hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 46000 "#cc_alphalabs1_00000000034"
+}
+
+{
+	name sound/VO/video/hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 50000 "#cc_alphalabs1_00000000015"
+}
+
+{
+	name sound/VO/video/hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 60000 "#cc_alphalabs1_00000000016"
+}
+
+{
+	name sound/VO/video/hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 65500 "#cc_alphalabs1_00000000035"
+}
+
+{
+	name sound/VO/video/hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 70000 "#cc_alphalabs1_00000000017"
+}
+
+{
+	name sound/VO/video/hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 75000 "#cc_alphalabs1_00000000036"
+}
+
+{
+	name sound/VO/video/hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 82000 "#cc_alphalabs1_00000000018"
+}

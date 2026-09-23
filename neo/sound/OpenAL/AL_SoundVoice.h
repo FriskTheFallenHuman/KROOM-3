@@ -4,6 +4,7 @@
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
 Copyright (C) 2013 Robert Beckebans
+Copyright (C) 2021 George Kalmpokis
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -29,14 +30,14 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __AL_SOUNDVOICE_H__
 #define __AL_SOUNDVOICE_H__
 
-static const int MAX_QUEUED_BUFFERS = 3;
+class idSoundVoice_Base;
 
 /*
 ================================================
 idSoundVoice_OpenAL
 ================================================
 */
-class idSoundVoice_OpenAL : public idSoundVoice_Base
+class idSoundVoice_OpenAL : public idSoundVoice
 {
 public:
 	idSoundVoice_OpenAL();
@@ -63,7 +64,8 @@ public:
 		alSourcef( openalSource, AL_PITCH, p );
 	}
 
-	void					Create( const idSoundSample* leadinSample, const idSoundSample* loopingSample );
+	// GK: Get the sound channel in order to filter which sound will use the Room's reverb and which the default
+	void					Create( const idSoundSample* leadinSample, const idSoundSample* loopingSample, const int channel );
 
 	// Start playing at a particular point in the buffer.  Does an Update() too
 	void					Start( int offsetMS, int ssFlags );
@@ -84,15 +86,18 @@ public:
 	float					GetAmplitude();
 
 	// returns true if we can re-use this voice
-	bool					CompatibleFormat( idSoundSample_OpenAL* s );
-
-	uint32					GetSampleRate() const
-	{
-		return sampleRate;
-	}
+	bool					CompatibleFormat( idSoundSample* s );
 
 	// callback function
-	void					OnBufferStart( idSoundSample_OpenAL* sample, int bufferNumber );
+	void					OnBufferStart( idSoundSample* sample, int bufferNumber );
+
+	// GK: It might come handy in the future
+	int						GetChannel()
+	{
+		return channel;
+	}
+
+	int						GetPlayingTimestamp();
 
 private:
 	friend class idSoundHardware_OpenAL;
@@ -115,34 +120,11 @@ private:
 	// Adjust the voice frequency based on the new sample rate for the buffer
 	void					SetSampleRate( uint32 newSampleRate, uint32 operationSet );
 
-	//IXAudio2SourceVoice* 	pSourceVoice;
 	bool					triggered;
 	ALuint					openalSource;
 	ALuint					openalStreamingOffset;
 	ALuint					openalStreamingBuffer[3];
 	ALuint					lastopenalStreamingBuffer[3];
-
-	idSoundSample_OpenAL*	leadinSample;
-	idSoundSample_OpenAL*	loopingSample;
-
-	// These are the fields from the sample format that matter to us for voice reuse
-	uint16					formatTag;
-	uint16					numChannels;
-
-	uint32					sourceVoiceRate;
-	uint32					sampleRate;
-
-	bool					hasVUMeter;
-	bool					paused;
 };
 
-/*
-================================================
-idSoundVoice
-================================================
-*/
-class idSoundVoice : public idSoundVoice_OpenAL
-{
-};
-
-#endif
+#endif /* !__AL_SOUNDVOICE_H__ */

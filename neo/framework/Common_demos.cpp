@@ -308,7 +308,7 @@ void idCommonLocal::StartPlayingRenderDemo( idStr demoName )
 	AdvanceRenderDemo( true );              // SRS - Call AdvanceRenderDemo() once to load map and initial assets (like level load)
 
 	renderSystem->EndLevelLoad();           // SRS - Define static data for use by RB_StencilShadowPass if stencil shadows enabled
-	soundSystem->EndLevelLoad();
+	soundSystem->EndLevelLoad( "" );
 	declManager->EndLevelLoad();
 	uiManager->EndLevelLoad( "" );          // SRS - FIXME: No gui assets are currently saved/reloaded in demo file, fix later?
 

@@ -46,6 +46,10 @@ idCVar s_playCinematicAudio( "s_playCinematicAudio", "1", CVAR_BOOL, "Play audio
 
 idCVar preLoad_Samples( "preLoad_Samples", "1", CVAR_SYSTEM | CVAR_BOOL, "preload samples during beginlevelload" );
 
+extern idCVar s_device;
+extern idCVar com_pause;
+extern idCVar sys_lang;
+
 idSoundSystemLocal soundSystemLocal;
 idSoundSystem* soundSystem = &soundSystemLocal;
 
@@ -90,7 +94,6 @@ void RestartSound_f( const idCmdArgs& args )
 /*
 ========================
 ListSamples_f
-
 ========================
 */
 void ListSamples_f( const idCmdArgs& args )
@@ -123,19 +126,60 @@ void idSoundSystemLocal::Restart()
 			idSoundEmitterLocal* emitter = sw->emitters[e];
 			for( int c = 0; c < emitter->channels.Num(); c++ )
 			{
-				emitter->channels[c]->Mute();
+				if( emitter->channels[c]->CanMute() )
+				{
+					emitter->channels[c]->Mute();
+				}
+				else if( emitter->channels[c]->hardwareVoice != NULL )
+				{
+					emitter->channels[c]->hardwareVoice->Pause();
+				}
 			}
 		}
 	}
-	// Shutdown sound hardware
-	hardware.Shutdown();
-	// Reinitialize sound hardware
-	if( !s_noSound.GetBool() )
+
+	if( alcIsExtensionPresent( ( ALCdevice* )this->GetAudioDevice(), "ALC_SOFT_reopen_device" ) )
 	{
-		hardware.Init();
+		( ( idSoundHardware_OpenAL* )hardware )->RestartHardware();
 	}
 
 	InitStreamBuffers();
+}
+
+/*
+========================
+DefaultDeviceChangeThread
+========================
+*/
+void DefaultDeviceChangeThread( void* data )
+{
+
+	static uint64 nextCheck = 0;
+	const uint64 waitTime = 5000;
+
+	while( 1 )
+	{
+		if( soundSystemLocal.systemClosing )
+		{
+			break;
+		}
+
+		int	now = Sys_Milliseconds();
+		if( now >= nextCheck )
+		{
+			const ALCchar* defaultDevice =  alcGetString( NULL, ALC_ALL_DEVICES_SPECIFIER );
+			const ALCchar* selectedDevice = alcGetString( ( ALCdevice* )data, ALC_ALL_DEVICES_SPECIFIER );
+
+			if( idStr::Icmp( defaultDevice, selectedDevice ) )
+			{
+				idScopedCriticalSection cs( soundSystemLocal.mutex );
+				soundSystemLocal.SetNeedsRestart();
+			}
+			nextCheck = now + waitTime;
+		}
+		Sys_Sleep( 4 );
+	}
+
 }
 
 /*
@@ -153,9 +197,10 @@ void idSoundSystemLocal::Init()
 	soundTime = Sys_Milliseconds();
 	random.SetSeed( soundTime );
 
+	hardware = new( TAG_AUDIO ) idSoundHardware_OpenAL;
 	if( !s_noSound.GetBool() )
 	{
-		hardware.Init();
+		hardware->Init();
 	}
 
 	InitStreamBuffers();
@@ -163,6 +208,16 @@ void idSoundSystemLocal::Init()
 	cmdSystem->AddCommand( "testSound", TestSound_f, 0, "tests a sound", idCmdSystem::ArgCompletion_SoundName );
 	cmdSystem->AddCommand( "s_restart", RestartSound_f, 0, "restart sound system" );
 	cmdSystem->AddCommand( "listSamples", ListSamples_f, 0, "lists all loaded sound samples" );
+
+	if( !initOnce && s_device.GetInteger() < 0 )
+	{
+		idLib::Printf( "Creating Default Device Detection Thread\n" );
+
+		threadHandle = Sys_CreateThread( ( xthread_t )DefaultDeviceChangeThread, this->GetAudioDevice(), THREAD_LOWEST, "AudioList", CORE_ANY );
+
+		initOnce = true;
+		systemClosing = false;
+	}
 
 	idLib::Printf( "sound system initialized.\n" );
 	idLib::Printf( "--------------------------------------\n" );
@@ -220,10 +275,15 @@ idSoundSystemLocal::Shutdown
 */
 void idSoundSystemLocal::Shutdown()
 {
-	hardware.Shutdown();
+	systemClosing = true;
+	Sys_DestroyThread( threadHandle );
+	EFXDatabase.Clear();	// EAX or not, the list needs to be cleared
+	ccdecl.Clear();
+	efxloaded = false;
 	FreeStreamBuffers();
 	samples.DeleteContents( true );
 	sampleHash.Free();
+	hardware->Shutdown();
 }
 
 /*
@@ -331,8 +391,9 @@ void idSoundSystemLocal::Render()
 {
 	if( needsRestart )
 	{
-		needsRestart = false;
+		idScopedCriticalSection cs( mutex );
 		Restart();
+		needsRestart = false; // GK: That way OpenAL can properly keep all it's existing audio buffer data
 	}
 
 	SCOPED_PROFILE_EVENT( "SoundSystem::Render" );
@@ -344,7 +405,7 @@ void idSoundSystemLocal::Render()
 
 	if( !s_noSound.GetBool() )
 	{
-		hardware.Update();
+		hardware->Update();
 	}
 
 	// The sound system doesn't use game time or anything like that because the sounds are decoded in real time.
@@ -382,7 +443,10 @@ void idSoundSystemLocal::StopAllSounds()
 
 	if( !s_noSound.GetBool() )
 	{
-		hardware.Update();
+		if( hardware != NULL )
+		{
+			hardware->Update();
+		}
 	}
 }
 
@@ -393,7 +457,7 @@ idSoundSystemLocal::GetAudioDevice
 */
 void* idSoundSystemLocal::GetAudioDevice() const
 {
-	return ( void* )hardware.GetAudioDevice();
+	return ( void* )( ( idSoundHardware_OpenAL* )hardware )->GetOpenALDevice();
 }
 
 /*
@@ -411,9 +475,9 @@ int idSoundSystemLocal::SoundTime() const
 idSoundSystemLocal::AllocateVoice
 ========================
 */
-idSoundVoice* idSoundSystemLocal::AllocateVoice( const idSoundSample* leadinSample, const idSoundSample* loopingSample )
+idSoundVoice* idSoundSystemLocal::AllocateVoice( const idSoundSample* leadinSample, const idSoundSample* loopingSample, const int channel )
 {
-	return hardware.AllocateVoice( leadinSample, loopingSample );
+	return hardware->AllocateVoice( leadinSample, loopingSample, channel );
 }
 
 /*
@@ -423,7 +487,7 @@ idSoundSystemLocal::FreeVoice
 */
 void idSoundSystemLocal::FreeVoice( idSoundVoice* voice )
 {
-	hardware.FreeVoice( voice );
+	hardware->FreeVoice( voice );
 }
 
 /*
@@ -446,7 +510,8 @@ idSoundSample* idSoundSystemLocal::LoadSample( const char* name )
 			return samples[i];
 		}
 	}
-	idSoundSample* sample = new( TAG_AUDIO ) idSoundSample;
+
+	idSoundSample* sample = new( TAG_AUDIO ) idSoundSample_OpenAL;
 	sample->SetName( canonical );
 	sampleHash.Add( hashKey, samples.Append( sample ) );
 	if( !insideLevelLoad )
@@ -491,11 +556,18 @@ void idSoundSystemLocal::StopVoicesWithSample( const idSoundSample* const sample
 			{
 				continue;
 			}
-			for( int i = 0; i < emitter->channels.Num(); i++ )
+			if( emitter->channels.Num() <= emitter->channels.Max() )
 			{
-				if( emitter->channels[i]->leadinSample == sample || emitter->channels[i]->loopingSample == sample )
+				for( int i = 0; i < emitter->channels.Num(); i++ )
 				{
-					emitter->channels[i]->Mute();
+					if( emitter->channels[i] == NULL )
+					{
+						continue;
+					}
+					if( emitter->channels[i]->leadinSample == sample || emitter->channels[i]->loopingSample == sample )
+					{
+						emitter->channels[i]->Mute();
+					}
 				}
 			}
 		}
@@ -525,7 +597,7 @@ cinData_t idSoundSystemLocal::ImageForTime( const int milliseconds, const bool w
 idSoundSystemLocal::BeginLevelLoad
 ========================
 */
-void idSoundSystemLocal::BeginLevelLoad()
+void idSoundSystemLocal::BeginLevelLoad( const char* mapstring )
 {
 	insideLevelLoad = true;
 	for( int i = 0; i < samples.Num(); i++ )
@@ -537,6 +609,36 @@ void idSoundSystemLocal::BeginLevelLoad()
 		samples[i]->FreeData();
 		samples[i]->ResetLevelLoadReferenced();
 	}
+
+	// GK: Like the OG Doom 3 make sure there are no efx data remained
+	if( efxloaded )
+	{
+		EFXDatabase.UnloadFile();
+		efxloaded = false;
+		hardware->ShutdownReverbSystem();
+	}
+	if( ccloaded )
+	{
+		ccdecl.Clear();
+		ccloaded = false;
+	}
+
+	// GK: Moved this here since some audio entries are loaded and setup during the level load and not while the level is playing
+	idStr ccname( "cc/" );
+	idStr ccmapname( mapstring );
+	idStr ccgenericname( "generic" );
+	idStr ccFileExtension( ".ccscript" );
+
+	ccgenericname.SetFileExtension( ccFileExtension );
+	ccmapname.SetFileExtension( ccFileExtension );
+	ccmapname.StripPath();
+	ccname += sys_lang.GetString();
+	ccname += "/";
+	ccname += ccgenericname;
+	ccloaded = ccdecl.LoadFile( ccname );
+	ccname = ccname.SubStr( 0, ccname.Last( '/' ) ) + "/" + ccmapname;
+	bool ccmaploaded = ccdecl.LoadFile( ccname );
+	ccloaded = ccloaded || ccmaploaded;
 }
 
 
@@ -553,6 +655,10 @@ void idSoundSystemLocal::Preload( idPreloadManifest& manifest )
 
 	int	start = Sys_Milliseconds();
 	int numLoaded = 0;
+	if( !preLoad_Samples.GetBool() )
+	{
+		return;
+	}
 
 	idList< preloadSort_t > preloadSort;
 	preloadSort.Resize( manifest.NumResources() );
@@ -607,7 +713,7 @@ void idSoundSystemLocal::Preload( idPreloadManifest& manifest )
 idSoundSystemLocal::EndLevelLoad
 ========================
 */
-void idSoundSystemLocal::EndLevelLoad()
+void idSoundSystemLocal::EndLevelLoad( const char* mapstring )
 {
 
 	insideLevelLoad = false;
@@ -662,6 +768,28 @@ void idSoundSystemLocal::EndLevelLoad()
 
 		samples[ preloadSort[ i ].idx ]->LoadResource();
 	}
+
+	// GK: Just like the OG Doom 3
+	idStr efxname( "efxs/" );
+	idStr mapname( mapstring );
+
+	mapname.SetFileExtension( ".efx" );
+	mapname.StripPath();
+	efxname += mapname;
+
+	efxloaded = EFXDatabase.LoadFile( efxname );
+	if( efxloaded )
+	{
+		common->Printf( "sound: found %s\n", efxname.c_str() );
+	}
+	else
+	{
+		common->Printf( "sound: missing %s\n", efxname.c_str() );
+		hardware->ShutdownReverbSystem();
+	}
+
+
+
 	int	end = Sys_Milliseconds();
 
 	common->Printf( S_COLOR_GRAY "%5i " S_COLOR_WHITE "sounds loaded in" S_COLOR_GRAY " %5.1f" S_COLOR_WHITE " seconds\n", loadCount, ( end - start ) * 0.001 );
@@ -677,4 +805,26 @@ idSoundSystemLocal::FreeVoice
 */
 void idSoundSystemLocal::PrintMemInfo( MemInfo_t* mi )
 {
+}
+
+/*
+========================
+idSoundSystemLocal::SupportsReverbs
+========================
+*/
+bool idSoundSystemLocal::SupportsReverbs()
+{
+	return fileSystem->IsFolder( "efxs" ) == 1;
+}
+
+/*
+========================
+idSoundSystemLocal::HasSubtitles
+========================
+*/
+bool idSoundSystemLocal::HasSubtitles()
+{
+	idStr folderPath = idStr( "cc/" );
+	folderPath += sys_lang.GetString();
+	return fileSystem->IsFolder( folderPath );
 }

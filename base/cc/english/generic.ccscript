@@ -1,0 +1,6524 @@
+﻿/*
+English subtitles mod for Doom 3 bfg edition by Y-Dr. Now
+CC Script Format:
+{
+	name: name of the sound shader or the video file or sound file
+	color: rgba array for coloring the text (max 255)
+	priority: priority of the caption
+	caption: timestamp in milliseconds and text reference
+}
+*/
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_videos_00000000001"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 8000 "#cc_videos_00000000002"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 19000 "#cc_videos_00000000003"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 26900 "#cc_videos_00000000256"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 30000 "#cc_videos_00000000004"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 40500 "#cc_videos_00000000257"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 43000 "#cc_videos_00000000005"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 52000 "#cc_videos_00000000258"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 55000 "#cc_videos_00000000006"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 62000 "#cc_videos_00000000259"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 69000 "#cc_videos_00000000007"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 79000 "#cc_videos_00000000008"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 84000 "#cc_videos_00000000009"
+}
+
+{
+	name video_alphalabs_intro
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_videos_00000000026"
+}
+
+{
+	name video_alphalabs_intro
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12500 "#cc_videos_00000000268"
+}
+
+{
+	name video_alphalabs_intro
+	color [200, 200, 200, 255]
+	priority 1
+	caption 21000 "#cc_videos_00000000027"
+}
+
+{
+	name video_alphalabs_intro
+	color [200, 200, 200, 255]
+	priority 1
+	caption 29600 "#cc_videos_00000000250"
+}
+
+{
+	name video_alphalabs_intro
+	color [200, 200, 200, 255]
+	priority 1
+	caption 38000 "#cc_videos_00000000028"
+}
+
+{
+	name video_alphalabs_intro
+	color [200, 200, 200, 255]
+	priority 1
+	caption 45500 "#cc_videos_00000000269"
+}
+
+{
+	name video_alphalabs_intro
+	color [200, 200, 200, 255]
+	priority 1
+	caption 50000 "#cc_videos_00000000029"
+}
+
+{
+	name video_alphalabs_intro
+	color [200, 200, 200, 255]
+	priority 1
+	caption 60000 "#cc_videos_00000000030"
+}
+
+{
+	name audiolog_admin_banks_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000001"
+}
+
+{
+	name audiolog_admin_banks_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_pda_00000000002"
+}
+
+{
+	name audiolog_admin_banks_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 13000 "#cc_pda_00000000003"
+}
+
+{
+	name audiolog_admin_banks_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 21000 "#cc_pda_00000000418"
+}
+
+{
+	name audiolog_admin_banks_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 24000 "#cc_pda_00000000004"
+}
+
+{
+	name audiolog_admin_banks_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 31000 "#cc_pda_00000000005"
+}
+
+{
+	name audiolog_admin_banks_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 40500 "#cc_pda_00000000419"
+}
+
+{
+	name audiolog_admin_banks_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 45000 "#cc_pda_00000000006"
+}
+
+{
+	name audiolog_admin_banks_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000007"
+}
+
+{
+	name audiolog_admin_banks_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_pda_00000000008"
+}
+
+{
+	name audiolog_admin_banks_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 15000 "#cc_pda_00000000009"
+}
+
+{
+	name audiolog_admin_banks_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 22000 "#cc_pda_00000000010"
+}
+
+{
+	name audiolog_admin_banks_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 29000 "#cc_pda_00000000420"
+}
+
+{
+	name audiolog_admin_banks_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 35000 "#cc_pda_00000000011"
+}
+
+{
+	name audiolog_admin_simons_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000012"
+}
+
+{
+	name audiolog_admin_simons_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 3000 "#cc_pda_00000000013"
+}
+
+{
+	name audiolog_admin_simons_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 7000 "#cc_pda_00000000421"
+}
+
+{
+	name audiolog_admin_simons_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12000 "#cc_pda_00000000397"
+}
+
+{
+	name audiolog_admin_simons_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 17000 "#cc_pda_00000000014"
+}
+
+{
+	name audiolog_admin_simons_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 21000 "#cc_pda_00000000422"
+}
+
+{
+	name audiolog_admin_simons_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 28000 "#cc_pda_00000000015"
+}
+
+{
+	name audiolog_admin_simons_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 34000 "#cc_pda_00000000423"
+}
+{
+	name audiolog_admin_simons_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 40000 "#cc_pda_00000000016"
+}
+
+{
+	name audiolog_admin_simons_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 45000 "#cc_pda_00000000017"
+}
+
+{
+	name sound/VO/video/epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_videos_00000000001"
+}
+
+{
+	name sound/VO/video/epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 8000 "#cc_videos_00000000002"
+}
+
+{
+	name sound/VO/video/epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 19000 "#cc_videos_00000000003"
+}
+
+{
+	name sound/VO/video/epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 26900 "#cc_videos_00000000256"
+}
+
+{
+	name sound/VO/video/epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 30000 "#cc_videos_00000000004"
+}
+
+{
+	name sound/VO/video/epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 40500 "#cc_videos_00000000257"
+}
+
+{
+	name sound/VO/video/epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 43000 "#cc_videos_00000000005"
+}
+
+{
+	name sound/VO/video/epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 52000 "#cc_videos_00000000258"
+}
+
+{
+	name sound/VO/video/epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 55000 "#cc_videos_00000000006"
+}
+
+{
+	name sound/VO/video/epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 62000 "#cc_videos_00000000259"
+}
+
+{
+	name sound/VO/video/epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 69000 "#cc_videos_00000000007"
+}
+
+{
+	name sound/VO/video/epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 79000 "#cc_videos_00000000008"
+}
+
+{
+	name sound/VO/video/epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 84000 "#cc_videos_00000000009"
+}
+
+{
+	name video_hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_alphalabs1_00000000010"
+}
+
+{
+	name video_hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12000 "#cc_alphalabs1_00000000011"
+}
+
+{
+	name video_hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 21000 "#cc_alphalabs1_00000000012"
+}
+
+{
+	name video_hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 30000 "#cc_alphalabs1_00000000013"
+}
+
+{
+	name video_hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 40000 "#cc_alphalabs1_00000000014"
+}
+
+{
+	name video_hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 46000 "#cc_alphalabs1_00000000034"
+}
+
+{
+	name video_hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 50000 "#cc_alphalabs1_00000000015"
+}
+
+{
+	name video_hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 60000 "#cc_alphalabs1_00000000016"
+}
+
+{
+	name video_hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 65500 "#cc_alphalabs1_00000000035"
+}
+
+{
+	name video_hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 70000 "#cc_alphalabs1_00000000017"
+}
+
+{
+	name video_hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 75000 "#cc_alphalabs1_00000000036"
+}
+
+{
+	name video_hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 82000 "#cc_alphalabs1_00000000018"
+}
+
+{
+	name audiolog_alphalabs1_berger_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000024"
+}
+
+{
+	name audiolog_alphalabs1_berger_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 5000 "#cc_pda_00000000025"
+}
+
+{
+	name audiolog_alphalabs1_berger_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 14000 "#cc_pda_00000000026"
+}
+
+{
+	name audiolog_alphalabs1_berger_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 23000 "#cc_pda_00000000427"
+}
+
+{
+	name audiolog_alphalabs1_berger_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 26800 "#cc_pda_00000000399"
+}
+
+{
+	name audiolog_alphalabs1_berger_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 33000 "#cc_pda_00000000027"
+}
+
+{
+	name audiolog_alphalabs1_berger_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 40000 "#cc_pda_00000000428"
+}
+
+{
+	name audiolog_alphalabs1_berger_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 45000 "#cc_pda_00000000400"
+}
+
+{
+	name audiolog_alphalabs1_berger_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 51000 "#cc_pda_00000000028"
+}
+
+{
+	name audiolog_alphalabs1_berger_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 61000 "#cc_pda_00000000429"
+}
+
+
+{
+	name audiolog_alphalabs1_smith_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000018"
+}
+
+{
+	name audiolog_alphalabs1_smith_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 5000 "#cc_pda_00000000019"
+}
+
+{
+	name audiolog_alphalabs1_smith_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12000 "#cc_pda_00000000020"
+}
+
+{
+	name audiolog_alphalabs1_smith_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 17500 "#cc_pda_00000000424"
+}
+
+{
+	name audiolog_alphalabs1_smith_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 23500 "#cc_pda_00000000021"
+}
+
+{
+	name audiolog_alphalabs1_smith_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 30500 "#cc_pda_00000000425"
+}
+
+{
+	name audiolog_alphalabs1_smith_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 36500 "#cc_pda_00000000398"
+}
+
+{
+	name audiolog_alphalabs1_smith_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 41500 "#cc_pda_00000000022"
+}
+
+{
+	name audiolog_alphalabs1_smith_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 46000 "#cc_pda_00000000401"
+}
+
+{
+	name audiolog_alphalabs1_smith_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 50000 "#cc_pda_00000000426"
+}
+
+{
+	name audiolog_alphalabs1_smith_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 54000 "#cc_pda_00000000023"
+}
+
+{
+	name sound/VO/video/hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_alphalabs1_00000000010"
+}
+
+{
+	name sound/VO/video/hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12000 "#cc_alphalabs1_00000000011"
+}
+
+{
+	name sound/VO/video/hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 21000 "#cc_alphalabs1_00000000012"
+}
+
+{
+	name sound/VO/video/hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 30000 "#cc_alphalabs1_00000000013"
+}
+
+{
+	name sound/VO/video/hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 40000 "#cc_alphalabs1_00000000014"
+}
+
+{
+	name sound/VO/video/hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 46000 "#cc_alphalabs1_00000000034"
+}
+
+{
+	name sound/VO/video/hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 50000 "#cc_alphalabs1_00000000015"
+}
+
+{
+	name sound/VO/video/hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 60000 "#cc_alphalabs1_00000000016"
+}
+
+{
+	name sound/VO/video/hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 65500 "#cc_alphalabs1_00000000035"
+}
+
+{
+	name sound/VO/video/hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 70000 "#cc_alphalabs1_00000000017"
+}
+
+{
+	name sound/VO/video/hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 75000 "#cc_alphalabs1_00000000036"
+}
+
+{
+	name sound/VO/video/hydrocon
+	color [200, 200, 200, 255]
+	priority 1
+	caption 82000 "#cc_alphalabs1_00000000018"
+}
+
+{
+	name sound/VO/video/mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_videos_00000000019"
+}
+
+{
+	name sound/VO/video/mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12500 "#cc_videos_00000000263"
+}
+
+{
+	name sound/VO/video/mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 16000 "#cc_videos_00000000020"
+}
+
+{
+	name sound/VO/video/mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 23500 "#cc_videos_00000000264"
+}
+
+{
+	name sound/VO/video/mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 30000 "#cc_videos_00000000021"
+}
+
+{
+	name sound/VO/video/mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 36000 "#cc_videos_00000000265"
+}
+
+{
+	name sound/VO/video/mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 42000 "#cc_videos_00000000251"
+}
+
+{
+	name sound/VO/video/mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 47500 "#cc_videos_00000000266"
+}
+
+{
+	name sound/VO/video/mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 53000 "#cc_videos_00000000022"
+}
+
+{
+	name sound/VO/video/mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 60000 "#cc_videos_00000000023"
+}
+
+{
+	name sound/VO/video/mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 69500 "#cc_videos_00000000267"
+}
+
+{
+	name sound/VO/video/mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 73000 "#cc_videos_00000000024"
+}
+
+
+{
+	name sound/VO/video/mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 82000 "#cc_videos_00000000025"
+}
+
+{
+	name audiolog_alphalabs2_connors_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000029"
+}
+
+
+{
+	name audiolog_alphalabs2_connors_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 5000 "#cc_pda_00000000430"
+}
+
+{
+	name audiolog_alphalabs2_connors_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 10000 "#cc_pda_00000000030"
+}
+
+{
+	name audiolog_alphalabs2_connors_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 15000 "#cc_pda_00000000402"
+}
+
+{
+	name audiolog_alphalabs2_connors_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 19500 "#cc_pda_00000000431"
+}
+
+{
+	name audiolog_alphalabs2_connors_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 23000 "#cc_pda_00000000031"
+}
+
+{
+	name audiolog_alphalabs2_connors_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 31000 "#cc_pda_00000000032"
+}
+
+{
+	name audiolog_alphalabs2_connors_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 39000 "#cc_pda_00000000033"
+}
+
+{
+	name audiolog_alphalabs2_chin_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000034"
+}
+
+{
+	name audiolog_alphalabs2_chin_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_pda_00000000035"
+}
+
+{
+	name audiolog_alphalabs2_chin_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 13000 "#cc_pda_00000000432"
+}
+
+{
+	name audiolog_alphalabs2_chin_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 19000 "#cc_pda_00000000036"
+}
+
+{
+	name audiolog_alphalabs2_chin_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 25500 "#cc_pda_00000000433"
+}
+
+{
+	name audiolog_alphalabs2_chin_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 30000 "#cc_pda_00000000037"
+}
+
+{
+	name audiolog_alphalabs2_chin_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 33500 "#cc_pda_00000000434"
+}
+
+{
+	name audiolog_alphalabs2_chin_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 42000 "#cc_pda_00000000038"
+}
+
+{
+	name audiolog_alphalabs2_chin_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 50000 "#cc_pda_00000000403"
+}
+
+{
+	name video_mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_videos_00000000019"
+}
+
+{
+	name video_mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12500 "#cc_videos_00000000263"
+}
+
+{
+	name video_mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 16000 "#cc_videos_00000000020"
+}
+
+{
+	name video_mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 23500 "#cc_videos_00000000264"
+}
+
+{
+	name video_mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 30000 "#cc_videos_00000000021"
+}
+
+{
+	name video_mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 36000 "#cc_videos_00000000265"
+}
+
+{
+	name video_mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 42000 "#cc_videos_00000000251"
+}
+
+{
+	name video_mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 47500 "#cc_videos_00000000266"
+}
+
+{
+	name video_mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 53000 "#cc_videos_00000000022"
+}
+
+{
+	name video_mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 60000 "#cc_videos_00000000023"
+}
+
+{
+	name video_mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 69500 "#cc_videos_00000000267"
+}
+
+{
+	name video_mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 73000 "#cc_videos_00000000024"
+}
+
+
+{
+	name video_mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 82000 "#cc_videos_00000000025"
+}
+
+{
+	name audiolog_alphalabs3_lamia_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000055"
+}
+
+{
+	name audiolog_alphalabs3_lamia_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_pda_00000000056"
+}
+
+{
+	name audiolog_alphalabs3_lamia_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12000 "#cc_pda_00000000057"
+}
+
+{
+	name audiolog_alphalabs3_lamia_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 19000 "#cc_pda_00000000058"
+}
+{
+	name audiolog_alphalabs3_lamia_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 23500 "#cc_pda_00000000439"
+}
+
+{
+	name audiolog_alphalabs3_lamia_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 31000 "#cc_pda_00000000059"
+}
+
+{
+	name audiolog_alphalabs3_lamia_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 40000 "#cc_pda_00000000060"
+}
+
+{
+	name audiolog_alphalabs3_lamia_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 49000 "#cc_pda_00000000440"
+}
+
+{
+	name audiolog_alphalabs3_nelson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000039"
+}
+
+{
+	name audiolog_alphalabs3_nelson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_pda_00000000040"
+}
+
+{
+	name audiolog_alphalabs3_nelson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12000 "#cc_pda_00000000041"
+}
+
+{
+	name audiolog_alphalabs3_nelson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 21000 "#cc_pda_00000000042"
+}
+
+{
+	name audiolog_alphalabs3_nelson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 28000 "#cc_pda_00000000435"
+}
+
+{
+	name audiolog_alphalabs3_nelson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 33000 "#cc_pda_00000000043"
+}
+
+{
+	name audiolog_alphalabs3_nelson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 40000 "#cc_pda_00000000044"
+}
+
+{
+	name audiolog_alphalabs3_nelson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 46000 "#cc_pda_00000000436"
+}
+
+{
+	name audiolog_alphalabs3_nelson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 52000 "#cc_pda_00000000045"
+}
+
+{
+	name audiolog_alphalabs3_nelson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 59000 "#cc_pda_00000000046"
+}
+
+{
+	name audiolog_alphalabs3_nelson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 68000 "#cc_pda_00000000437"
+}
+
+{
+	name audiolog_alphalabs3_abrams_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000047"
+}
+
+{
+	name audiolog_alphalabs3_abrams_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 8000 "#cc_pda_00000000048"
+}
+
+{
+	name audiolog_alphalabs3_abrams_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 14000 "#cc_pda_00000000049"
+}
+
+{
+	name audiolog_alphalabs3_abrams_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 21000 "#cc_pda_00000000050"
+}
+
+{
+	name audiolog_alphalabs3_abrams_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 27000 "#cc_pda_00000000051"
+}
+
+{
+	name audiolog_alphalabs3_abrams_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 36000 "#cc_pda_00000000052"
+}
+
+{
+	name audiolog_alphalabs3_abrams_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 45000 "#cc_pda_00000000053"
+}
+
+{
+	name audiolog_alphalabs3_abrams_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 54000 "#cc_pda_00000000054"
+}
+
+{
+	name audiolog_alphalabs3_abrams_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 63000 "#cc_pda_00000000438"
+}
+
+{
+	name video_chaingun
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_videos_00000000052"
+}
+
+{
+	name video_chaingun
+	color [200, 200, 200, 255]
+	priority 0
+	caption 8000 "#cc_videos_00000000278"
+}
+
+{
+	name video_chaingun
+	color [200, 200, 200, 255]
+	priority 0
+	caption 14000 "#cc_videos_00000000053"
+}
+
+{
+	name video_chaingun
+	color [200, 200, 200, 255]
+	priority 0
+	caption 20500 "#cc_videos_00000000279"
+}
+
+{
+	name video_chaingun
+	color [200, 200, 200, 255]
+	priority 0
+	caption 29000 "#cc_videos_00000000054"
+}
+
+{
+	name video_chaingun
+	color [200, 200, 200, 255]
+	priority 0
+	caption 37000 "#cc_videos_00000000055"
+}
+
+{
+	name video_chaingun
+	color [200, 200, 200, 255]
+	priority 0
+	caption 44000 "#cc_videos_00000000056"
+}
+
+{
+	name audiolog_caverns1_cody_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000061"
+}
+
+{
+	name audiolog_caverns1_cody_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12000 "#cc_pda_00000000062"
+}
+
+{
+	name audiolog_caverns1_cody_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 20500 "#cc_pda_00000000441"
+}
+
+{
+	name audiolog_caverns1_cody_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 26000 "#cc_pda_00000000063"
+}
+
+{
+	name audiolog_caverns1_cody_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 35800 "#cc_pda_00000000442"
+}
+
+{
+	name audiolog_caverns1_cody_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 39000 "#cc_pda_00000000417"
+}
+
+{
+	name audiolog_caverns1_cody_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 44000 "#cc_pda_00000000064"
+}
+
+{
+	name audiolog_caverns1_cody_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 52000 "#cc_pda_00000000443"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_videos_00000000031"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 4500 "#cc_videos_00000000270"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 10000 "#cc_videos_00000000032"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 15000 "#cc_videos_00000000271"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 22500 "#cc_videos_00000000253"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 27000 "#cc_videos_00000000033"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 33900 "#cc_videos_00000000254"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 42000 "#cc_videos_00000000034"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 50000 "#cc_videos_00000000035"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 57500 "#cc_videos_00000000272"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 64000 "#cc_videos_00000000036"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 71000 "#cc_videos_00000000037"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 79000 "#cc_videos_00000000255"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 85000 "#cc_videos_00000000038"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 91500 "#cc_videos_00000000273"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 99000 "#cc_videos_00000000039"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 108000 "#cc_videos_00000000274"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 113000 "#cc_videos_00000000040"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 121000 "#cc_videos_00000000041"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 127000 "#cc_videos_00000000275"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 132000 "#cc_videos_00000000042"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_hellhole_00000000001"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 4200 "#cc_hellhole_00000000039"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 10000 "#cc_hellhole_00000000002"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 16000 "#cc_hellhole_00000000003"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 23000 "#cc_hellhole_00000000004"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 31000 "#cc_hellhole_00000000005"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 37000 "#cc_hellhole_00000000040"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 42000 "#cc_hellhole_00000000006"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 50000 "#cc_hellhole_00000000007"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 57000 "#cc_hellhole_00000000008"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 64500 "#cc_hellhole_00000000041"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 68000 "#cc_hellhole_00000000009"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 77000 "#cc_hellhole_00000000010"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 83000 "#cc_hellhole_00000000011"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 90000 "#cc_hellhole_00000000012"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 98000 "#cc_hellhole_00000000013"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 102000 "#cc_hellhole_00000000014"
+}
+
+{
+	name audiolog_comm1_blake_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000065"
+}
+
+{
+	name audiolog_comm1_blake_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 5000 "#cc_pda_00000000066"
+}
+
+{
+	name audiolog_comm1_blake_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12000 "#cc_pda_00000000067"
+}
+
+{
+	name audiolog_comm1_blake_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 20500 "#cc_pda_00000000444"
+}
+
+{
+	name audiolog_comm1_blake_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 25000 "#cc_pda_00000000068"
+}
+
+{
+	name audiolog_comm1_blake_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 32200 "#cc_pda_00000000445"
+}
+
+{
+	name audiolog_comm1_blake_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 35000 "#cc_pda_00000000410"
+}
+
+{
+	name audiolog_comm1_blake_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 42000 "#cc_pda_00000000069"
+}
+
+{
+	name audiolog_comm1_wolfe_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000070"
+}
+
+{
+	name audiolog_comm1_wolfe_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 7000 "#cc_pda_00000000071"
+}
+
+{
+	name audiolog_comm1_wolfe_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 15500 "#cc_pda_00000000446"
+}
+
+{
+	name audiolog_comm1_wolfe_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 23000 "#cc_pda_00000000072"
+}
+
+{
+	name audiolog_commoutside_ridge_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000073"
+}
+
+{
+	name audiolog_commoutside_ridge_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 4000 "#cc_pda_00000000074"
+}
+
+{
+	name audiolog_commoutside_ridge_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 9500 "#cc_pda_00000000448"
+}
+
+{
+	name audiolog_commoutside_ridge_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 15000 "#cc_pda_00000000075"
+}
+
+{
+	name audiolog_commoutside_ridge_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 22000 "#cc_pda_00000000411"
+}
+
+{
+	name audiolog_commoutside_ridge_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 27000 "#cc_pda_00000000076"
+}
+
+{
+	name audiolog_commoutside_ridge_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 33000 "#cc_pda_00000000412"
+}
+
+{
+	name audiolog_commoutside_ridge_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 38000 "#cc_pda_00000000449"
+}
+
+{
+	name audiolog_commoutside_holiday_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000077"
+}
+
+{
+	name audiolog_commoutside_holiday_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_pda_00000000078"
+}
+
+{
+	name audiolog_commoutside_holiday_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 11000 "#cc_pda_00000000450"
+}
+
+{
+	name audiolog_commoutside_holiday_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 16000 "#cc_pda_00000000079"
+}
+
+{
+	name audiolog_cpu_bates_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000080"
+}
+
+{
+	name audiolog_cpu_bates_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_pda_00000000081"
+}
+
+{
+	name audiolog_cpu_bates_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 11000 "#cc_pda_00000000451"
+}
+
+{
+	name audiolog_cpu_bates_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 15000 "#cc_pda_00000000082"
+}
+
+{
+	name audiolog_cpu_bates_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 21800 "#cc_pda_00000000452"
+}
+
+{
+	name audiolog_cpu_bates_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 27000 "#cc_pda_00000000083"
+}
+
+{
+	name audiolog_cpu_bates_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 32000 "#cc_pda_00000000453"
+}
+
+{
+	name audiolog_cpu_haskell_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000084"
+}
+
+{
+	name audiolog_cpu_haskell_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_pda_00000000085"
+}
+
+{
+	name audiolog_cpu_haskell_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12000 "#cc_pda_00000000454"
+}
+
+{
+	name audiolog_cpu_haskell_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 20000 "#cc_pda_00000000086"
+}
+
+{
+	name audiolog_cpu_haskell_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 28000 "#cc_pda_00000000087"
+}
+
+{
+	name audiolog_cpu_haskell_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 33800 "#cc_pda_00000000455"
+}
+
+{
+	name audiolog_cpu_bates_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000088"
+}
+
+{
+	name audiolog_cpu_bates_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_pda_00000000089"
+}
+
+{
+	name audiolog_cpu_bates_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 15000 "#cc_pda_00000000456"
+}
+
+{
+	name audiolog_cpu_bates_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 21000 "#cc_pda_00000000090"
+}
+
+{
+	name audiolog_cpu_bates_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 27800 "#cc_pda_00000000457"
+}
+
+{
+	name audiolog_cpu_bates_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 32000 "#cc_pda_00000000091"
+}
+
+{
+	name audiolog_cpu_bates_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 39000 "#cc_pda_00000000458"
+}
+
+{
+	name video_bfg
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_cpuboss_00000000001"
+}
+
+{
+	name video_bfg
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12000 "#cc_cpuboss_00000000002"
+}
+
+{
+	name video_bfg
+	color [200, 200, 200, 255]
+	priority 1
+	caption 20000 "#cc_cpuboss_00000000003"
+}
+
+{
+	name video_bfg
+	color [200, 200, 200, 255]
+	priority 1
+	caption 27000 "#cc_cpuboss_00000000004"
+}
+
+{
+	name video_bfg
+	color [200, 200, 200, 255]
+	priority 1
+	caption 36200 "#cc_cpuboss_00000000031"
+}
+
+
+{
+	name video_bfg
+	color [200, 200, 200, 255]
+	priority 1
+	caption 39000 "#cc_cpuboss_00000000005"
+}
+
+{
+	name video_bfg
+	color [200, 200, 200, 255]
+	priority 1
+	caption 48000 "#cc_cpuboss_00000000006"
+}
+
+{
+	name video_bfg
+	color [200, 200, 200, 255]
+	priority 1
+	caption 56000 "#cc_cpuboss_00000000007"
+}
+
+{
+	name video_bfg
+	color [200, 200, 200, 255]
+	priority 1
+	caption 60000 "#cc_cpuboss_00000000032"
+}
+
+{
+	name video_bfg
+	color [200, 200, 200, 255]
+	priority 1
+	caption 67500 "#cc_cpuboss_00000000008"
+}
+
+{
+	name video_bfg
+	color [200, 200, 200, 255]
+	priority 1
+	caption 74000 "#cc_cpuboss_00000000009"
+}
+
+{
+	name audiolog_delta1_price_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_delta1_00000000004"
+}
+
+{
+	name audiolog_delta1_price_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 7000 "#cc_delta1_00000000005"
+}
+
+{
+	name audiolog_delta1_price_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12000 "#cc_delta1_00000000006"
+}
+
+{
+	name audiolog_delta1_price_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 20000 "#cc_delta1_00000000007"
+}
+
+{
+	name audiolog_delta1_price_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 25000 "#cc_delta1_00000000008"
+}
+
+{
+	name audiolog_delta1_price_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 31500 "#cc_delta1_00000000038"
+}
+
+{
+	name audiolog_delta1_price_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 38000 "#cc_delta1_00000000009"
+}
+
+{
+	name audiolog_delta1_price_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_delta1_00000000010"
+}
+
+{
+	name audiolog_delta1_price_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 8000 "#cc_delta1_00000000011"
+}
+
+{
+	name audiolog_delta1_price_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 14000 "#cc_delta1_00000000012"
+}
+
+{
+	name audiolog_delta1_price_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 19000 "#cc_delta1_00000000013"
+}
+
+{
+	name audiolog_delta1_price_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 26000 "#cc_delta1_00000000014"
+}
+
+{
+	name audiolog_delta1_price_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 32000 "#cc_delta1_00000000015"
+}
+
+{
+	name audiolog_delta1_price_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 38000 "#cc_delta1_00000000016"
+}
+
+{
+	name audiolog_delta1_price_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 46000 "#cc_delta1_00000000017"
+}
+
+{
+	name audiolog_delta2a_raleigh_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_delta2a_00000000034"
+}
+
+{
+	name audiolog_delta2a_raleigh_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_delta2a_00000000035"
+}
+
+{
+	name audiolog_delta2a_raleigh_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 14500 "#cc_delta2a_00000000113"
+}
+
+{
+	name audiolog_delta2a_raleigh_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 18000 "#cc_delta2a_00000000036"
+}
+
+{
+	name audiolog_delta2a_raleigh_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 29000 "#cc_delta2a_00000000114"
+}
+
+{
+	name audiolog_delta2a_raleigh_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 31000 "#cc_delta2a_00000000037"
+}
+
+{
+	name audiolog_delta2a_raleigh_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 39000 "#cc_delta2a_00000000038"
+}
+
+{
+	name audiolog_delta2a_raleigh_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 42000 "#cc_delta2a_00000000039"
+}
+
+{
+	name audiolog_delta2a_raleigh_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 50000 "#cc_delta2a_00000000040"
+}
+
+{
+	name audiolog_delta2a_raleigh_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 58000 "#cc_delta2a_00000000041"
+}
+
+{
+	name audiolog_delta2a_raleigh_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 64000 "#cc_delta2a_00000000042"
+}
+
+{
+	name audiolog_delta2a_raleigh_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 71000 "#cc_delta2a_00000000043"
+}
+
+{
+	name audiolog_delta2a_raleigh_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 80000 "#cc_delta2a_00000000044"
+}
+
+{
+	name audiolog_delta2a_raleigh_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_delta2a_00000000045"
+}
+
+{
+	name audiolog_delta2a_raleigh_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 7000 "#cc_delta2a_00000000046"
+}
+
+{
+	name audiolog_delta2a_raleigh_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 19000 "#cc_delta2a_00000000047"
+}
+
+{
+	name audiolog_delta2a_raleigh_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 24000 "#cc_delta2a_00000000048"
+}
+
+{
+	name audiolog_delta2a_raleigh_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 28000 "#cc_delta2a_00000000049"
+}
+
+{
+	name audiolog_delta2a_raleigh_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 33000 "#cc_delta2a_00000000050"
+}
+
+{
+	name audiolog_delta2a_raleigh_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 42000 "#cc_delta2a_00000000051"
+}
+
+{
+	name audiolog_delta2a_raleigh_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 52000 "#cc_delta2a_00000000052"
+}
+
+{
+	name audiolog_delta2a_wilson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_delta2a_00000000053"
+}
+
+{
+	name audiolog_delta2a_wilson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 7000 "#cc_delta2a_00000000054"
+}
+
+{
+	name audiolog_delta2a_wilson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12000 "#cc_delta2a_00000000055"
+}
+
+{
+	name audiolog_delta2a_wilson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 18000 "#cc_delta2a_00000000056"
+}
+
+{
+	name audiolog_delta2a_wilson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 26000 "#cc_delta2a_00000000057"
+}
+
+{
+	name audiolog_delta2a_wilson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 35000 "#cc_delta2a_00000000058"
+}
+
+{
+	name audiolog_delta2a_wilson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 40000 "#cc_delta2a_00000000059"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_delta2a_00000000060"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_delta2a_00000000061"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 14000 "#cc_delta2a_00000000115"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 19000 "#cc_delta2a_00000000062"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 22000 "#cc_delta2a_00000000116"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 30000 "#cc_delta2a_00000000063"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 38000 "#cc_delta2a_00000000117"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 41000 "#cc_delta2a_00000000064"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 47000 "#cc_delta2a_00000000065"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 57000 "#cc_delta2a_00000000066"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 63000 "#cc_delta2a_00000000067"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 69000 "#cc_delta2a_00000000068"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 74000 "#cc_delta2a_00000000069"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 84000 "#cc_delta2a_00000000070"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 92000 "#cc_delta2a_00000000071"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 100000 "#cc_delta2a_00000000072"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 106000 "#cc_delta2a_00000000073"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 110500 "#cc_delta2a_00000000118"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 117000 "#cc_delta2a_00000000074"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 126000 "#cc_delta2a_00000000075"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 130000 "#cc_delta2a_00000000076"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 138000 "#cc_delta2a_00000000077"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 147200 "#cc_delta2a_00000000119"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 152000 "#cc_delta2a_00000000078"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 156000 "#cc_delta2a_00000000079"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 162000 "#cc_delta2a_00000000080"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 174000 "#cc_delta2a_00000000081"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 182000 "#cc_delta2a_00000000082"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 190000 "#cc_delta2a_00000000083"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 197000 "#cc_delta2a_00000000084"
+}
+
+{
+	name video_ian_report
+	color [200, 200, 200, 255]
+	priority 1
+	caption 205000 "#cc_delta2a_00000000085"
+}
+
+{
+	name audiolog_delta2a_cinders_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000132"
+}
+
+{
+	name audiolog_delta2a_cinders_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 5000 "#cc_pda_00000000462"
+}
+
+{
+	name audiolog_delta2a_cinders_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 10000 "#cc_pda_00000000133"
+}
+
+{
+	name audiolog_delta2a_cinders_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 19500 "#cc_pda_00000000413"
+}
+
+{
+	name audiolog_delta2a_cinders_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 24500 "#cc_pda_00000000463"
+}
+
+{
+	name audiolog_delta2a_cinders_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 28000 "#cc_pda_00000000134"
+}
+
+{
+	name audiolog_delta2a_cinders_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 34000 "#cc_pda_00000000464"
+}
+
+{
+	name audiolog_delta2a_cinders_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 45000 "#cc_pda_00000000135"
+}
+
+{
+	name audiolog_delta2a_cinders_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 51000 "#cc_pda_00000000465"
+}
+
+{
+	name audiolog_delta2a_cinders_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 57000 "#cc_pda_00000000136"
+}
+
+{
+	name audiolog_delta2a_cinders_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 63000 "#cc_pda_00000000551"
+}
+
+{
+	name sound/VO/video/video_demon_museum
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_delta2b_00000000007"
+}
+
+{
+	name sound/VO/video/video_demon_museum
+	color [200, 200, 200, 255]
+	priority 1
+	caption 3000 "#cc_delta2b_00000000008"
+}
+
+{
+	name sound/VO/video/video_demon_museum
+	color [200, 200, 200, 255]
+	priority 1
+	caption 8000 "#cc_delta2b_00000000056"
+}
+
+{
+	name sound/VO/video/video_demon_museum
+	color [200, 200, 200, 255]
+	priority 1
+	caption 13000 "#cc_delta2b_00000000009"
+}
+
+{
+	name sound/VO/video/video_demon_museum
+	color [200, 200, 200, 255]
+	priority 1
+	caption 22000 "#cc_delta2b_00000000010"
+}
+
+{
+	name sound/VO/video/video_demon_museum
+	color [200, 200, 200, 255]
+	priority 1
+	caption 29000 "#cc_delta2b_00000000011"
+}
+
+{
+	name sound/VO/video/video_demon_museum
+	color [200, 200, 200, 255]
+	priority 1
+	caption 39500 "#cc_delta2b_00000000012"
+}
+
+{
+	name sound/VO/video/video_demon_museum
+	color [200, 200, 200, 255]
+	priority 1
+	caption 43000 "#cc_delta2b_00000000013"
+}
+
+{
+	name sound/VO/video/video_demon_museum
+	color [200, 200, 200, 255]
+	priority 1
+	caption 49000 "#cc_delta2b_00000000057"
+}
+
+{
+	name sound/VO/video/video_demon_museum
+	color [200, 200, 200, 255]
+	priority 1
+	caption 54000 "#cc_delta2b_00000000014"
+}
+
+{
+	name sound/VO/video/video_demon_museum
+	color [200, 200, 200, 255]
+	priority 1
+	caption 58000 "#cc_delta2b_00000000058"
+}
+
+{
+	name video_demon_museum
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_delta2b_00000000007"
+}
+
+{
+	name video_demon_museum
+	color [200, 200, 200, 255]
+	priority 1
+	caption 3000 "#cc_delta2b_00000000008"
+}
+
+{
+	name video_demon_museum
+	color [200, 200, 200, 255]
+	priority 1
+	caption 8000 "#cc_delta2b_00000000056"
+}
+
+{
+	name video_demon_museum
+	color [200, 200, 200, 255]
+	priority 1
+	caption 13000 "#cc_delta2b_00000000009"
+}
+
+{
+	name video_demon_museum
+	color [200, 200, 200, 255]
+	priority 1
+	caption 22000 "#cc_delta2b_00000000010"
+}
+
+{
+	name video_demon_museum
+	color [200, 200, 200, 255]
+	priority 1
+	caption 29000 "#cc_delta2b_00000000011"
+}
+
+{
+	name video_demon_museum
+	color [200, 200, 200, 255]
+	priority 1
+	caption 39500 "#cc_delta2b_00000000012"
+}
+
+{
+	name video_demon_museum
+	color [200, 200, 200, 255]
+	priority 1
+	caption 43000 "#cc_delta2b_00000000013"
+}
+
+{
+	name video_demon_museum
+	color [200, 200, 200, 255]
+	priority 1
+	caption 49000 "#cc_delta2b_00000000057"
+}
+
+{
+	name video_demon_museum
+	color [200, 200, 200, 255]
+	priority 1
+	caption 54000 "#cc_delta2b_00000000014"
+}
+
+{
+	name video_demon_museum
+	color [200, 200, 200, 255]
+	priority 1
+	caption 58000 "#cc_delta2b_00000000058"
+}
+
+{
+	name sound/VO/video/video_soulcube
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_delta2b_00000000015"
+}
+
+{
+	name sound/VO/video/video_soulcube
+	color [200, 200, 200, 255]
+	priority 1
+	caption 5000 "#cc_delta2b_00000000016"
+}
+
+{
+	name sound/VO/video/video_soulcube
+	color [200, 200, 200, 255]
+	priority 1
+	caption 15000 "#cc_delta2b_00000000017"
+}
+
+{
+	name sound/VO/video/video_soulcube
+	color [200, 200, 200, 255]
+	priority 1
+	caption 22500 "#cc_delta2b_00000000059"
+}
+
+{
+	name sound/VO/video/video_soulcube
+	color [200, 200, 200, 255]
+	priority 1
+	caption 27000 "#cc_delta2b_00000000018"
+}
+
+{
+	name sound/VO/video/video_soulcube
+	color [200, 200, 200, 255]
+	priority 1
+	caption 32000 "#cc_delta2b_00000000060"
+}
+
+{
+	name sound/VO/video/video_soulcube
+	color [200, 200, 200, 255]
+	priority 1
+	caption 40000 "#cc_delta2b_00000000019"
+}
+
+{
+	name sound/VO/video/video_soulcube
+	color [200, 200, 200, 255]
+	priority 1
+	caption 43000 "#cc_delta2b_00000000061"
+}
+
+{
+	name sound/VO/video/video_soulcube
+	color [200, 200, 200, 255]
+	priority 1
+	caption 50000 "#cc_delta2b_00000000020"
+}
+
+{
+	name sound/VO/video/video_soulcube
+	color [200, 200, 200, 255]
+	priority 1
+	caption 56800 "#cc_delta2b_00000000062"
+}
+
+{
+	name sound/VO/video/video_soulcube
+	color [200, 200, 200, 255]
+	priority 1
+	caption 62000 "#cc_delta2b_00000000021"
+}
+
+{
+	name sound/VO/video/video_soulcube
+	color [200, 200, 200, 255]
+	priority 1
+	caption 66000 "#cc_delta2b_00000000022"
+}
+
+{
+	name sound/VO/video/video_soulcube
+	color [200, 200, 200, 255]
+	priority 1
+	caption 75000 "#cc_delta2b_00000000023"
+}
+
+{
+	name video_soulcube
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_delta2b_00000000015"
+}
+
+{
+	name video_soulcube
+	color [200, 200, 200, 255]
+	priority 1
+	caption 5000 "#cc_delta2b_00000000016"
+}
+
+{
+	name video_soulcube
+	color [200, 200, 200, 255]
+	priority 1
+	caption 15000 "#cc_delta2b_00000000017"
+}
+
+{
+	name video_soulcube
+	color [200, 200, 200, 255]
+	priority 1
+	caption 22500 "#cc_delta2b_00000000059"
+}
+
+{
+	name video_soulcube
+	color [200, 200, 200, 255]
+	priority 1
+	caption 27000 "#cc_delta2b_00000000018"
+}
+
+{
+	name video_soulcube
+	color [200, 200, 200, 255]
+	priority 1
+	caption 32000 "#cc_delta2b_00000000060"
+}
+
+{
+	name video_soulcube
+	color [200, 200, 200, 255]
+	priority 1
+	caption 40000 "#cc_delta2b_00000000019"
+}
+
+{
+	name video_soulcube
+	color [200, 200, 200, 255]
+	priority 1
+	caption 43000 "#cc_delta2b_00000000061"
+}
+
+{
+	name video_soulcube
+	color [200, 200, 200, 255]
+	priority 1
+	caption 50000 "#cc_delta2b_00000000020"
+}
+
+{
+	name video_soulcube
+	color [200, 200, 200, 255]
+	priority 1
+	caption 56800 "#cc_delta2b_00000000062"
+}
+
+{
+	name video_soulcube
+	color [200, 200, 200, 255]
+	priority 1
+	caption 62000 "#cc_delta2b_00000000021"
+}
+
+{
+	name video_soulcube
+	color [200, 200, 200, 255]
+	priority 1
+	caption 66000 "#cc_delta2b_00000000022"
+}
+
+{
+	name video_soulcube
+	color [200, 200, 200, 255]
+	priority 1
+	caption 75000 "#cc_delta2b_00000000023"
+}
+
+{
+	name audiolog_delta2b_bullman_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_delta2b_00000000024"
+}
+
+{
+	name audiolog_delta2b_bullman_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_delta2b_00000000025"
+}
+
+{
+	name audiolog_delta2b_bullman_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12500 "#cc_delta2b_00000000063"
+}
+
+{
+	name audiolog_delta2b_bullman_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 18000 "#cc_delta2b_00000000026"
+}
+
+{
+	name audiolog_delta2b_bullman_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 26000 "#cc_delta2b_00000000027"
+}
+
+{
+	name audiolog_delta2b_bullman_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 32000 "#cc_delta2b_00000000053"
+}
+
+{
+	name audiolog_delta2b_bullman_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 37500 "#cc_delta2b_00000000064"
+}
+
+{
+	name audiolog_delta2b_bullman_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 41000 "#cc_delta2b_00000000028"
+}
+
+{
+	name audiolog_delta2b_bullman_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 45000 "#cc_delta2b_00000000029"
+}
+
+{
+	name audiolog_delta2b_bullman_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 54000 "#cc_delta2b_00000000054"
+}
+
+{
+	name audiolog_delta2b_bullman_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 59000 "#cc_delta2b_00000000030"
+}
+
+{
+	name audiolog_delta2b_bullman_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 65000 "#cc_delta2b_00000000031"
+}
+
+{
+	name audiolog_delta2b_bullman_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 69500 "#cc_delta2b_00000000065"
+}
+
+{
+	name audiolog_delta2b_bullman_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 74000 "#cc_delta2b_00000000032"
+}
+
+{
+	name audiolog_delta2b_bullman_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 79000 "#cc_delta2b_00000000066"
+}
+
+{
+	name audiolog_delta2b_bullman_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 84000 "#cc_delta2b_00000000033"
+}
+
+{
+	name audiolog_delta2b_bullman_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 90000 "#cc_delta2b_00000000067"
+}
+
+{
+	name audiolog_delta3_cerano_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_delta3_00000000001"
+}
+
+{
+	name audiolog_delta3_cerano_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 7000 "#cc_delta3_00000000002"
+}
+
+{
+	name audiolog_delta3_cerano_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 13000 "#cc_delta3_00000000003"
+}
+
+{
+	name audiolog_delta3_cerano_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 20000 "#cc_delta3_00000000004"
+}
+
+{
+	name audiolog_delta3_cerano_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 25000 "#cc_delta3_00000000005"
+}
+
+{
+	name audiolog_delta3_cerano_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 31000 "#cc_delta3_00000000006"
+}
+
+{
+	name audiolog_delta3_cerano_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 37000 "#cc_delta3_00000000007"
+}
+
+{
+	name audiolog_delta3_cerano_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 40000 "#cc_delta3_00000000008"
+}
+
+{
+	name audiolog_delta3_cerano_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 44000 "#cc_delta3_00000000009"
+}
+
+{
+	name audiolog_delta3_cerano_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 52000 "#cc_delta3_00000000010"
+}
+
+{
+	name audiolog_delta3_lee_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_delta3_00000000011"
+}
+
+{
+	name audiolog_delta3_lee_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 7000 "#cc_delta3_00000000012"
+}
+
+{
+	name audiolog_delta3_lee_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 11000 "#cc_delta3_00000000053"
+}
+
+{
+	name audiolog_delta3_lee_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 17000 "#cc_delta3_00000000013"
+}
+
+{
+	name audiolog_delta3_lee_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 25000 "#cc_delta3_00000000014"
+}
+
+{
+	name audiolog_delta3_lee_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 38000 "#cc_delta3_00000000015"
+}
+
+{
+	name audiolog_delta3_lee_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 46000 "#cc_delta3_00000000016"
+}
+
+{
+	name audiolog_delta3_lee_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 54000 "#cc_delta3_00000000017"
+}
+
+{
+	name audiolog_delta3_lee_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 59000 "#cc_delta3_00000000054"
+}
+
+{
+	name audiolog_delta3_lee_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_delta3_00000000018"
+}
+
+{
+	name audiolog_delta3_lee_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_delta3_00000000019"
+}
+
+{
+	name audiolog_delta3_lee_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 11000 "#cc_delta3_00000000020"
+}
+
+{
+	name audiolog_delta3_lee_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 18000 "#cc_delta3_00000000021"
+}
+
+{
+	name audiolog_delta3_lee_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 21000 "#cc_delta3_00000000022"
+}
+
+{
+	name audiolog_delta3_lee_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 25000 "#cc_delta3_00000000023"
+}
+
+{
+	name audiolog_delta3_lee_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 27000 "#cc_delta3_00000000024"
+}
+
+{
+	name audiolog_delta3_lee_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 32000 "#cc_delta3_00000000025"
+}
+
+{
+	name audiolog_delta3_lee_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 36000 "#cc_delta3_00000000026"
+}
+
+{
+	name audiolog_delta3_lee_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 41000 "#cc_delta3_00000000027"
+}
+
+{
+	name audiolog_delta3_lee_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 49000 "#cc_delta3_00000000028"
+}
+
+{
+	name audiolog_delta3_shultz_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000172"
+}
+
+{
+	name audiolog_delta3_shultz_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 5000 "#cc_pda_00000000173"
+}
+
+{
+	name audiolog_delta3_shultz_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 13000 "#cc_pda_00000000174"
+}
+
+{
+	name audiolog_delta3_shultz_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 18500 "#cc_pda_00000000414"
+}
+
+{
+	name audiolog_delta3_shultz_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 26000 "#cc_pda_00000000175"
+}
+
+{
+	name audiolog_delta3_shultz_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 32500 "#cc_pda_00000000415"
+}
+
+{
+	name audiolog_delta3_shultz_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 36000 "#cc_pda_00000000474"
+}
+
+{
+	name audiolog_delta3_shultz_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 40000 "#cc_pda_00000000176"
+}
+
+{
+	name audiolog_delta3_shultz_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 48000 "#cc_pda_00000000177"
+}
+
+{
+	name audiolog_delta3_shultz_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 52000 "#cc_pda_00000000416"
+}
+
+{
+	name audiolog_delta3_shultz_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 56000 "#cc_pda_00000000475"
+}
+
+{
+	name audiolog_delta3_shultz_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 61000 "#cc_pda_00000000178"
+}
+
+{
+	name audiolog_delta5_swann_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000179"
+}
+
+{
+	name audiolog_delta5_swann_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 5000 "#cc_pda_00000000180"
+}
+
+{
+	name audiolog_delta5_swann_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 11000 "#cc_pda_00000000181"
+}
+
+{
+	name audiolog_delta5_swann_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 19000 "#cc_pda_00000000182"
+}
+
+{
+	name audiolog_delta5_swann_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 25500 "#cc_pda_00000000476"
+}
+
+{
+	name audiolog_delta5_swann_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000183"
+}
+
+{
+	name audiolog_delta5_swann_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 5000 "#cc_pda_00000000184"
+}
+
+{
+	name audiolog_delta5_swann_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 13000 "#cc_pda_00000000185"
+}
+
+{
+	name audiolog_delta5_swann_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 20500 "#cc_pda_00000000477"
+}
+
+{
+	name audiolog_delta5_swann_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 24000 "#cc_pda_00000000186"
+}
+
+{
+	name audiolog_delta5_swann_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 31000 "#cc_pda_00000000478"
+}
+
+{
+	name audiolog_enpro_raad_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000187"
+}
+
+{
+	name audiolog_enpro_raad_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 8000 "#cc_pda_00000000188"
+}
+
+{
+	name audiolog_enpro_raad_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 13200 "#cc_pda_00000000479"
+}
+
+{
+	name audiolog_enpro_raad_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 19000 "#cc_pda_00000000189"
+}
+
+{
+	name audiolog_enpro_raad_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 24000 "#cc_pda_00000000404"
+}
+
+{
+	name audiolog_enpro_raad_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 29500 "#cc_pda_00000000480"
+}
+
+{
+	name audiolog_enpro_raad_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 33000 "#cc_pda_00000000190"
+}
+
+{
+	name audiolog_enpro_raad_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000191"
+}
+
+{
+	name audiolog_enpro_raad_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 3000 "#cc_pda_00000000481"
+}
+
+{
+	name audiolog_enpro_raad_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 9000 "#cc_pda_00000000192"
+}
+
+{
+	name audiolog_enpro_raad_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 15000 "#cc_pda_00000000482"
+}
+
+{
+	name audiolog_enpro_raad_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 22000 "#cc_pda_00000000193"
+}
+
+{
+	name audiolog_enpro_raad_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 26000 "#cc_pda_00000000483"
+}
+
+{
+	name audiolog_enpro_raad_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 33000 "#cc_pda_00000000194"
+}
+
+{
+	name audiolog_enpro_raad_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 39200 "#cc_pda_00000000405"
+}
+
+{
+	name audiolog_enpro_raad_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 45000 "#cc_pda_00000000195"
+}
+
+{
+	name audiolog_enpro_raad_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 48800 "#cc_pda_00000000484"
+}
+
+{
+	name audiolog_enpro_hammer_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000196"
+}
+
+{
+	name audiolog_enpro_hammer_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 2500 "#cc_pda_00000000485"
+}
+
+{
+	name audiolog_enpro_hammer_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 10500 "#cc_pda_00000000197"
+}
+
+{
+	name audiolog_enpro_hammer_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 19200 "#cc_pda_00000000406"
+}
+
+{
+	name audiolog_enpro_hammer_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 28000 "#cc_pda_00000000198"
+}
+
+{
+	name audiolog_enpro_hammer_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 34000 "#cc_pda_00000000486"
+}
+
+{
+	name audiolog_enpro_hammer_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 42000 "#cc_pda_00000000407"
+}
+
+{
+	name audiolog_enpro_hammer_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 46000 "#cc_pda_00000000199"
+}
+
+{
+	name audiolog_enpro_hammer_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 55000 "#cc_pda_00000000200"
+}
+
+{
+	name audiolog_enpro_chasar_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000201"
+}
+
+{
+	name audiolog_enpro_chasar_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_pda_00000000202"
+}
+
+{
+	name audiolog_enpro_chasar_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 13000 "#cc_pda_00000000408"
+}
+
+{
+	name audiolog_enpro_chasar_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 21000 "#cc_pda_00000000203"
+}
+
+{
+	name audiolog_enpro_chasar_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 29700 "#cc_pda_00000000409"
+}
+
+{
+	name audiolog_enpro_chasar_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 37000 "#cc_pda_00000000204"
+}
+
+{
+	name video_generator
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_videos_00000000199"
+}
+
+{
+	name video_generator
+	color [200, 200, 200, 255]
+	priority 1
+	caption 8200 "#cc_videos_00000000200"
+}
+
+{
+	name video_generator
+	color [200, 200, 200, 255]
+	priority 1
+	caption 16500 "#cc_videos_00000000201"
+}
+
+{
+	name video_generator
+	color [200, 200, 200, 255]
+	priority 1
+	caption 23000 "#cc_videos_00000000314"
+}
+
+{
+	name video_generator
+	color [200, 200, 200, 255]
+	priority 1
+	caption 30000 "#cc_videos_00000000202"
+}
+
+{
+	name video_generator
+	color [200, 200, 200, 255]
+	priority 1
+	caption 39000 "#cc_videos_00000000203"
+}
+
+{
+	name video_generator
+	color [200, 200, 200, 255]
+	priority 1
+	caption 44500 "#cc_videos_00000000204"
+}
+
+{
+	name video_deployment
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_videos_00000000213"
+}
+
+{
+	name video_deployment
+	color [200, 200, 200, 255]
+	priority 1
+	caption 3000 "#cc_videos_00000000214"
+}
+
+{
+	name video_deployment
+	color [200, 200, 200, 255]
+	priority 1
+	caption 8000 "#cc_videos_00000000317"
+}
+
+{
+	name video_deployment
+	color [200, 200, 200, 255]
+	priority 1
+	caption 14500 "#cc_videos_00000000215"
+}
+
+{
+	name video_deployment
+	color [200, 200, 200, 255]
+	priority 1
+	caption 20000 "#cc_videos_00000000318"
+}
+
+{
+	name video_deployment
+	color [200, 200, 200, 255]
+	priority 1
+	caption 29800 "#cc_videos_00000000216"
+}
+
+{
+	name video_deployment
+	color [200, 200, 200, 255]
+	priority 1
+	caption 36000 "#cc_videos_00000000319"
+}
+
+{
+	name video_deployment
+	color [200, 200, 200, 255]
+	priority 1
+	caption 44000 "#cc_videos_00000000217"
+}
+
+{
+	name video_deployment
+	color [200, 200, 200, 255]
+	priority 1
+	caption 50800 "#cc_videos_00000000320"
+}
+
+{
+	name video_deployment
+	color [200, 200, 200, 255]
+	priority 1
+	caption 56000 "#cc_videos_00000000218"
+}
+
+{
+	name video_deployment
+	color [200, 200, 200, 255]
+	priority 1
+	caption 59800 "#cc_videos_00000000321"
+}
+
+{
+	name video_deployment
+	color [200, 200, 200, 255]
+	priority 1
+	caption 69000 "#cc_videos_00000000219"
+}
+
+{
+	name audiolog_erebus2_tanner_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_erebus2_00000000003"
+}
+
+{
+	name audiolog_erebus2_tanner_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 7000 "#cc_erebus2_00000000018"
+}
+
+{
+	name audiolog_erebus2_tanner_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 13800 "#cc_erebus2_00000000004"
+}
+
+{
+	name audiolog_erebus2_tanner_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 22500 "#cc_erebus2_00000000005"
+}
+
+{
+	name audiolog_erebus2_tanner_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 33720 "#cc_erebus2_00000000006"
+}
+
+{
+	name audiolog_erebus2_tanner_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 41810 "#cc_erebus2_00000000007"
+}
+
+{
+	name audiolog_erebus2_tanner_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 52640 "#cc_erebus2_00000000008"
+}
+
+{
+	name video_grabber
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_videos_00000000205"
+}
+
+{
+	name video_grabber
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_videos_00000000206"
+}
+
+{
+	name video_grabber
+	color [200, 200, 200, 255]
+	priority 1
+	caption 13500 "#cc_videos_00000000207"
+}
+
+{
+	name video_grabber
+	color [200, 200, 200, 255]
+	priority 1
+	caption 20000 "#cc_videos_00000000208"
+}
+
+{
+	name video_grabber
+	color [200, 200, 200, 255]
+	priority 1
+	caption 24000 "#cc_videos_00000000315"
+}
+
+{
+	name video_grabber
+	color [200, 200, 200, 255]
+	priority 1
+	caption 31000 "#cc_videos_00000000209"
+}
+
+{
+	name video_grabber
+	color [200, 200, 200, 255]
+	priority 1
+	caption 37000 "#cc_videos_00000000316"
+}
+
+{
+	name video_grabber
+	color [200, 200, 200, 255]
+	priority 1
+	caption 42000 "#cc_videos_00000000210"
+}
+
+{
+	name video_grabber
+	color [200, 200, 200, 255]
+	priority 1
+	caption 50500 "#cc_videos_00000000211"
+}
+
+{
+	name video_grabber
+	color [200, 200, 200, 255]
+	priority 1
+	caption 54800 "#cc_videos_00000000212"
+}
+
+{
+	name audiolog_erebus3_kharkov_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_erebus3_00000000005"
+}
+
+{
+	name audiolog_erebus3_kharkov_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 4000 "#cc_erebus3_00000000006"
+}
+
+{
+	name audiolog_erebus3_kharkov_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 9000 "#cc_erebus3_00000000021"
+}
+
+{
+	name audiolog_erebus3_kharkov_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 15000 "#cc_erebus3_00000000007"
+}
+
+{
+	name audiolog_hell_garlick_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000205"
+}
+
+{
+	name audiolog_hell_garlick_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_pda_00000000206"
+}
+
+{
+	name audiolog_hell_garlick_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12000 "#cc_pda_00000000207"
+}
+
+{
+	name audiolog_hell_garlick_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 17000 "#cc_pda_00000000487"
+}
+
+{
+	name audiolog_hell_garlick_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 23000 "#cc_pda_00000000208"
+}
+
+{
+	name audiolog_hell_garlick_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 32500 "#cc_pda_00000000488"
+}
+
+{
+	name audiolog_hell_garlick_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 38000 "#cc_pda_00000000209"
+}
+
+{
+	name audiolog_hell_garlick_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 47000 "#cc_pda_00000000210"
+}
+
+{
+	name audiolog_hell_garlick_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 55000 "#cc_pda_00000000489"
+}
+
+{
+	name audiolog_hell_garlick_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000211"
+}
+
+{
+	name audiolog_hell_garlick_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_pda_00000000212"
+}
+
+{
+	name audiolog_hell_garlick_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12000 "#cc_pda_00000000213"
+}
+
+{
+	name audiolog_hell_garlick_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 16000 "#cc_pda_00000000214"
+}
+
+{
+	name audiolog_hell_garlick_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 27000 "#cc_pda_00000000215"
+}
+
+{
+	name audiolog_hell_garlick_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 35000 "#cc_pda_00000000216"
+}
+
+{
+	name audiolog_hell_garlick_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 48000 "#cc_pda_00000000217"
+}
+
+{
+	name audiolog_hell_garlick_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 59000 "#cc_pda_00000000218"
+}
+
+{
+	name audiolog_hell_garlick_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 75000 "#cc_pda_00000000219"
+}
+
+{
+	name audiolog_rhodes_enpro1_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000315"
+}
+
+{
+	name audiolog_rhodes_enpro1_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_pda_00000000316"
+}
+
+{
+	name audiolog_rhodes_enpro1_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 10000 "#cc_pda_00000000519"
+}
+
+{
+	name audiolog_rhodes_enpro1_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 16800 "#cc_pda_00000000317"
+}
+
+{
+	name audiolog_rhodes_enpro1_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 24000 "#cc_pda_00000000520"
+}
+
+{
+	name audiolog_rhodes_enpro1_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 27500 "#cc_pda_00000000318"
+}
+
+{
+	name audiolog_rhodes_enpro1_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 33500 "#cc_pda_00000000521"
+}
+
+{
+	name audiolog_rhodes_enpro1_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 39000 "#cc_pda_00000000319"
+}
+
+{
+	name audiolog_rhodes_enpro1_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 46500 "#cc_pda_00000000523"
+}
+
+{
+	name audiolog_rhodes_enpro1_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 50000 "#cc_pda_00000000320"
+}
+
+{
+	name audiolog_rhodes_enpro1_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 58500 "#cc_pda_00000000522"
+}
+
+{
+	name audiolog_rhodes_enpro1_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000321"
+}
+
+{
+	name audiolog_rhodes_enpro1_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 8500 "#cc_pda_00000000322"
+}
+
+{
+	name audiolog_rhodes_enpro1_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 15500 "#cc_pda_00000000524"
+}
+
+{
+	name audiolog_rhodes_enpro1_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 24500 "#cc_pda_00000000323"
+}
+
+{
+	name audiolog_rhodes_enpro1_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 26800 "#cc_pda_00000000525"
+}
+
+
+{
+	name audiolog_rhodes_enpro1_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 36500 "#cc_pda_00000000324"
+}
+
+{
+	name audiolog_rhodes_enpro1_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 47000 "#cc_pda_00000000325"
+}
+
+{
+	name audiolog_rhodes_enpro1_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 56000 "#cc_pda_00000000526"
+}
+
+{
+	name audiolog_rhodes_enpro1_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 62000 "#cc_pda_00000000326"
+}
+
+{
+	name audiolog_rhodes_enpro1_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 73500 "#cc_pda_00000000527"
+}
+
+{
+	name audiolog_rhodes_enpro1_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 78000 "#cc_pda_00000000327"
+}
+
+{
+	name audiolog_rhodes_enpro1_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 88000 "#cc_pda_00000000528"
+}
+
+{
+	name audiolog_vargas_enpro2_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000328"
+}
+
+{
+	name audiolog_vargas_enpro2_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 9930 "#cc_pda_00000000329"
+}
+
+{
+	name audiolog_vargas_enpro2_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 18000 "#cc_pda_00000000330"
+}
+
+{
+	name audiolog_vargas_enpro2_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 25800 "#cc_pda_00000000331"
+}
+
+{
+	name audiolog_vargas_enpro2_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 31000 "#cc_pda_00000000529"
+}
+
+{
+	name audiolog_vargas_enpro2_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 36500 "#cc_pda_00000000332"
+}
+
+{
+	name audiolog_vargas_enpro2_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 44800 "#cc_pda_00000000530"
+}
+
+{
+	name audiolog_vargas_enpro2_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 49000 "#cc_pda_00000000333"
+}
+
+{
+	name audiolog_vargas_enpro2_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 56000 "#cc_pda_00000000334"
+}
+
+{
+	name audiolog_vargas_enpro2_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 64000 "#cc_pda_00000000531"
+}
+
+{
+	name audiolog_adil_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000335"
+}
+
+{
+	name audiolog_adil_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 9800 "#cc_pda_00000000336"
+}
+
+{
+	name audiolog_adil_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 16000 "#cc_pda_00000000337"
+}
+
+{
+	name audiolog_adil_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 23500 "#cc_pda_00000000338"
+}
+
+{
+	name audiolog_adil_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 32800 "#cc_pda_00000000339"
+}
+
+{
+	name audiolog_adil_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 40600 "#cc_pda_00000000340"
+}
+
+{
+	name audiolog_adil_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 51000 "#cc_pda_00000000341"
+}
+
+{
+	name audiolog_adil_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 63500 "#cc_pda_00000000342"
+}
+
+{
+	name audiolog_adil_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 71000 "#cc_pda_00000000532"
+}
+
+{
+	name audiolog_adil_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 81000 "#cc_pda_00000000343"
+}
+
+{
+	name audiolog_adil_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 89500 "#cc_pda_00000000533"
+}
+
+{
+	name audiolog_adil_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 93500 "#cc_pda_00000000344"
+}
+
+{
+	name audiolog_adil_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 101000 "#cc_pda_00000000552"
+}
+
+{
+	name audiolog_adil_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 109500 "#cc_pda_00000000345"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000346"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_pda_00000000347"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 15200 "#cc_pda_00000000348"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 23000 "#cc_pda_00000000535"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 28500 "#cc_pda_00000000349"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 35800 "#cc_pda_00000000350"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 47000 "#cc_pda_00000000351"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 55500 "#cc_pda_00000000352"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 65000 "#cc_pda_00000000536"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 71000 "#cc_pda_00000000353"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 76000 "#cc_pda_00000000537"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 85000 "#cc_pda_00000000354"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 91000 "#cc_pda_00000000538"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 95800 "#cc_pda_00000000355"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 103000 "#cc_pda_00000000356"
+}
+
+{
+	name audiolog_lebedev_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000357"
+}
+
+{
+	name audiolog_lebedev_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 9000 "#cc_pda_00000000358"
+}
+
+{
+	name audiolog_lebedev_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 14000 "#cc_pda_00000000539"
+}
+
+{
+	name audiolog_lebedev_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 21800 "#cc_pda_00000000359"
+}
+
+{
+	name audiolog_lebedev_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 27000 "#cc_pda_00000000540"
+}
+
+{
+	name audiolog_lebedev_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 34800 "#cc_pda_00000000360"
+}
+
+{
+	name audiolog_lebedev_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 45500 "#cc_pda_00000000541"
+}
+
+{
+	name audiolog_lebedev_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 48000 "#cc_pda_00000000361"
+}
+
+{
+	name audiolog_lebedev_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 58500 "#cc_pda_00000000362"
+}
+
+{
+	name audiolog_lebedev_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 66000 "#cc_pda_00000000363"
+}
+
+{
+	name audiolog_lebedev_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 74000 "#cc_pda_00000000364"
+}
+
+{
+	name audiolog_lebedev_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 82000 "#cc_pda_00000000542"
+}
+
+{
+	name audiolog_lebedev_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 87000 "#cc_pda_00000000365"
+}
+
+{
+	name audiolog_lebedev_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 95500 "#cc_pda_00000000366"
+}
+
+{
+	name audiolog_folsom_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000367"
+}
+
+{
+	name audiolog_folsom_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 5800 "#cc_pda_00000000368"
+}
+
+{
+	name audiolog_folsom_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 15000 "#cc_pda_00000000369"
+}
+
+{
+	name audiolog_folsom_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 22500 "#cc_pda_00000000370"
+}
+
+{
+	name audiolog_folsom_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 29000 "#cc_pda_00000000371"
+}
+
+{
+	name audiolog_folsom_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 38000 "#cc_pda_00000000372"
+}
+
+{
+	name audiolog_folsom_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 43500 "#cc_pda_00000000543"
+}
+
+{
+	name audiolog_folsom_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 50000 "#cc_pda_00000000373"
+}
+
+{
+	name audiolog_folsom_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 56000 "#cc_pda_00000000544"
+}
+
+{
+	name audiolog_folsom_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 61000 "#cc_pda_00000000374"
+}
+
+{
+	name audiolog_folsom_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 67000 "#cc_pda_00000000375"
+}
+
+{
+	name audiolog_folsom_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 75000 "#cc_pda_00000000545"
+}
+
+{
+	name audiolog_folsom_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 81000 "#cc_pda_00000000376"
+}
+
+{
+	name audiolog_folsom_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 88000 "#cc_pda_00000000546"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000377"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 4800 "#cc_pda_00000000378"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 11800 "#cc_pda_00000000379"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 17500 "#cc_pda_00000000380"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 22500 "#cc_pda_00000000547"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 28500 "#cc_pda_00000000381"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 33500 "#cc_pda_00000000382"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 41000 "#cc_pda_00000000383"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 48700 "#cc_pda_00000000384"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 53500 "#cc_pda_00000000385"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 61000 "#cc_pda_00000000386"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 65500 "#cc_pda_00000000548"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 71500 "#cc_pda_00000000387"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 77000 "#cc_pda_00000000388"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 83000 "#cc_pda_00000000389"
+}
+
+{
+	name audiolog_tooley_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000390"
+}
+
+{
+	name audiolog_tooley_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6900 "#cc_pda_00000000391"
+}
+
+{
+	name audiolog_tooley_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 15300 "#cc_pda_00000000549"
+}
+
+{
+	name audiolog_tooley_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 19500 "#cc_pda_00000000392"
+}
+
+{
+	name audiolog_tooley_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 28500 "#cc_pda_00000000550"
+}
+
+{
+	name audiolog_tooley_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 30570 "#cc_pda_00000000393"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 0 "#cc_videos_00000000220"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 6000 "#cc_videos_00000000221"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 11500 "#cc_videos_00000000322"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 20000 "#cc_videos_00000000222"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 24500 "#cc_videos_00000000223"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 33500 "#cc_videos_00000000323"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 38000 "#cc_videos_00000000224"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 42000 "#cc_videos_00000000324"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 51000 "#cc_videos_00000000225"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 60000 "#cc_videos_00000000226"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 67000 "#cc_videos_00000000227"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 73500 "#cc_videos_00000000228"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 81500 "#cc_videos_00000000229"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 88500 "#cc_videos_00000000230"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 95000 "#cc_videos_00000000231"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 102000 "#cc_videos_00000000325"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 107000 "#cc_videos_00000000232"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 112000 "#cc_videos_00000000233"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 119000 "#cc_videos_00000000234"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 125500 "#cc_videos_00000000235"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 130500 "#cc_videos_00000000326"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 137000 "#cc_videos_00000000236"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 145000 "#cc_videos_00000000237"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 151500 "#cc_videos_00000000238"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 159000 "#cc_videos_00000000239"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 169000 "#cc_videos_00000000240"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 175500 "#cc_videos_00000000327"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 181500 "#cc_videos_00000000241"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 189000 "#cc_videos_00000000328"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 193500 "#cc_videos_00000000242"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 197000 "#cc_videos_00000000332"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 204000 "#cc_videos_00000000243"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 216000 "#cc_videos_00000000244"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 230000 "#cc_videos_00000000329"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 235000 "#cc_videos_00000000245"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 244000 "#cc_videos_00000000246"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 253000 "#cc_videos_00000000247"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 259000 "#cc_videos_00000000330"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 264000 "#cc_videos_00000000248"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 270500 "#cc_videos_00000000249"
+}
+
+{
+	name video_uacwelcome
+	color [200, 200, 200, 255]
+	priority 2
+	caption 0 "#cc_mars_city1_00000000007"
+}
+
+{
+	name video_uacwelcome
+	color [200, 200, 200, 255]
+	priority 2
+	caption 3000 "#cc_mars_city1_00000000008"
+}
+
+{
+	name video_uacwelcome
+	color [200, 200, 200, 255]
+	priority 2
+	caption 6000 "#cc_mars_city1_00000000009"
+}
+
+{
+	name video_uacwelcome
+	color [200, 200, 200, 255]
+	priority 2
+	caption 14000 "#cc_mars_city1_00000000010"
+}
+
+{
+	name video_uacwelcome
+	color [200, 200, 200, 255]
+	priority 2
+	caption 19000 "#cc_mars_city1_00000000011"
+}
+
+{
+	name video_uacwelcome
+	color [200, 200, 200, 255]
+	priority 2
+	caption 24000 "#cc_mars_city1_00000000012"
+}
+
+{
+	name video_uacwelcome
+	color [200, 200, 200, 255]
+	priority 2
+	caption 28000 "#cc_mars_city1_00000000013"
+}
+
+{
+	name video_uacwelcome
+	color [200, 200, 200, 255]
+	priority 2
+	caption 32000 "#cc_mars_city1_00000000014"
+}
+
+{
+	name video_uacwelcome
+	color [200, 200, 200, 255]
+	priority 2
+	caption 39000 "#cc_mars_city1_00000000015"
+}
+
+{
+	name video_uacwelcome
+	color [200, 200, 200, 255]
+	priority 2
+	caption 43000 "#cc_mars_city1_00000000016"
+}
+
+{
+	name video_uacwelcome
+	color [200, 200, 200, 255]
+	priority 2
+	caption 50000 "#cc_mars_city1_00000000017"
+}
+
+{
+	name video_uacwelcome
+	color [200, 200, 200, 255]
+	priority 2
+	caption 56000 "#cc_mars_city1_00000000018"
+}
+
+{
+	name video_uacwelcome
+	color [200, 200, 200, 255]
+	priority 2
+	caption 60000 "#cc_mars_city1_00000000203"
+}
+
+{
+	name video_uacwelcome
+	color [200, 200, 200, 255]
+	priority 2
+	caption 66000 "#cc_mars_city1_00000000019"
+}
+
+{
+	name video_uacwelcome
+	color [200, 200, 200, 255]
+	priority 2
+	caption 70000 "#cc_mars_city1_00000000020"
+}
+
+{
+	name video_uacwelcome
+	color [200, 200, 200, 255]
+	priority 2
+	caption 75000 "#cc_mars_city1_00000000021"
+}
+
+{
+	name video_marine_sops
+	color [200, 200, 200, 255]
+	priority 2
+	caption 0 "#cc_mars_city1_00000000022"
+}
+
+{
+	name video_marine_sops
+	color [200, 200, 200, 255]
+	priority 2
+	caption 7000 "#cc_mars_city1_00000000023"
+}
+
+{
+	name video_marine_sops
+	color [200, 200, 200, 255]
+	priority 2
+	caption 14000 "#cc_mars_city1_00000000024"
+}
+
+{
+	name video_marine_sops
+	color [200, 200, 200, 255]
+	priority 2
+	caption 23000 "#cc_mars_city1_00000000025"
+}
+
+{
+	name video_marine_sops
+	color [200, 200, 200, 255]
+	priority 2
+	caption 27500 "#cc_mars_city1_00000000214"
+}
+
+{
+	name video_marine_sops
+	color [200, 200, 200, 255]
+	priority 2
+	caption 33000 "#cc_mars_city1_00000000026"
+}
+
+{
+	name video_marine_sops
+	color [200, 200, 200, 255]
+	priority 2
+	caption 43000 "#cc_mars_city1_00000000027"
+}
+
+{
+	name video_marine_sops
+	color [200, 200, 200, 255]
+	priority 2
+	caption 47500 "#cc_mars_city1_00000000204"
+}
+
+{
+	name video_marine_sops
+	color [200, 200, 200, 255]
+	priority 2
+	caption 57000 "#cc_mars_city1_00000000028"
+}
+
+{
+	name video_marine_sops
+	color [200, 200, 200, 255]
+	priority 2
+	caption 62000 "#cc_mars_city1_00000000205"
+}
+
+{
+	name video_marine_sops
+	color [200, 200, 200, 255]
+	priority 2
+	caption 70000 "#cc_mars_city1_00000000029"
+}
+
+{
+	name audiolog_mc1_berneche
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_mars_city1_00000000030"
+}
+
+{
+	name audiolog_mc1_berneche
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_mars_city1_00000000031"
+}
+
+{
+	name audiolog_mc1_berneche
+	color [200, 200, 200, 255]
+	priority 1
+	caption 14000 "#cc_mars_city1_00000000032"
+}
+
+{
+	name audiolog_mc1_berneche
+	color [200, 200, 200, 255]
+	priority 1
+	caption 23000 "#cc_mars_city1_00000000033"
+}
+
+{
+	name audiolog_mc1_berneche
+	color [200, 200, 200, 255]
+	priority 1
+	caption 28000 "#cc_mars_city1_00000000034"
+}
+
+{
+	name audiolog_mc1_berneche
+	color [200, 200, 200, 255]
+	priority 1
+	caption 34000 "#cc_mars_city1_00000000035"
+}
+
+{
+	name audiolog_mc1_berneche
+	color [200, 200, 200, 255]
+	priority 1
+	caption 38000 "#cc_mars_city1_00000000036"
+}
+
+{
+	name audiolog_mc1_berneche
+	color [200, 200, 200, 255]
+	priority 1
+	caption 45000 "#cc_mars_city1_00000000037"
+}
+
+{
+	name audiolog_mc1_berneche
+	color [200, 200, 200, 255]
+	priority 1
+	caption 53000 "#cc_mars_city1_00000000038"
+}
+
+{
+	name video_plasmagun
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_videos_00000000331"
+}
+
+{
+	name video_plasmagun
+	color [200, 200, 200, 255]
+	priority 1
+	caption 4000 "#cc_videos_00000000145"
+}
+
+{
+	name video_plasmagun
+	color [200, 200, 200, 255]
+	priority 1
+	caption 13000 "#cc_videos_00000000146"
+}
+
+{
+	name video_plasmagun
+	color [200, 200, 200, 255]
+	priority 1
+	caption 17000 "#cc_videos_00000000298"
+}
+
+{
+	name video_plasmagun
+	color [200, 200, 200, 255]
+	priority 1
+	caption 24000 "#cc_videos_00000000147"
+}
+
+{
+	name video_plasmagun
+	color [200, 200, 200, 255]
+	priority 1
+	caption 30000 "#cc_videos_00000000299"
+}
+
+{
+	name video_plasmagun
+	color [200, 200, 200, 255]
+	priority 1
+	caption 35000 "#cc_videos_00000000148"
+}
+
+{
+	name video_plasmagun
+	color [200, 200, 200, 255]
+	priority 1
+	caption 42000 "#cc_videos_00000000149"
+}
+
+{
+	name audiolog_marscity2_caseon_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000220"
+}
+
+{
+	name audiolog_marscity2_caseon_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 4000 "#cc_pda_00000000221"
+}
+
+{
+	name audiolog_marscity2_caseon_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 13000 "#cc_pda_00000000222"
+}
+
+{
+	name audiolog_marscity2_caseon_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 20000 "#cc_pda_00000000490"
+}
+
+{
+	name audiolog_marscity2_caseon_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 28000 "#cc_pda_00000000223"
+}
+
+{
+	name audiolog_marscity2_caseon_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 37000 "#cc_pda_00000000491"
+}
+
+{
+	name audiolog_marscity2_caseon_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 40000 "#cc_pda_00000000224"
+}
+
+{
+	name audiolog_marscity2_caseon_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000225"
+}
+
+{
+	name audiolog_marscity2_caseon_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 9000 "#cc_pda_00000000226"
+}
+
+{
+	name audiolog_marscity2_caseon_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 15000 "#cc_pda_00000000227"
+}
+
+{
+	name audiolog_marscity2_caseon_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 23000 "#cc_pda_00000000492"
+}
+
+{
+	name audiolog_marscity2_caseon_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 29000 "#cc_pda_00000000228"
+}
+
+{
+	name audiolog_marscity2_caseon_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 38000 "#cc_pda_00000000395"
+}
+
+{
+	name audiolog_marscity2_caseon_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 47000 "#cc_pda_00000000229"
+}
+
+{
+	name audiolog_marscity2_caseon_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 56000 "#cc_pda_00000000396"
+}
+
+{
+	name audiolog_marscity2_tyson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000234"
+}
+
+{
+	name audiolog_marscity2_tyson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 4500 "#cc_pda_00000000496"
+}
+
+{
+	name audiolog_marscity2_tyson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 10000 "#cc_pda_00000000235"
+}
+
+{
+	name audiolog_marscity2_tyson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 17000 "#cc_pda_00000000497"
+}
+
+{
+	name audiolog_marscity2_tyson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 20000 "#cc_pda_00000000236"
+}
+
+{
+	name audiolog_marscity2_tyson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 25000 "#cc_pda_00000000237"
+}
+
+{
+	name audiolog_marscity2_tyson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 31500 "#cc_pda_00000000498"
+}
+
+{
+	name audiolog_marscity2_tyson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 38000 "#cc_pda_00000000238"
+}
+
+{
+	name audiolog_marscity2_tyson_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000230"
+}
+
+{
+	name audiolog_marscity2_tyson_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_pda_00000000231"
+}
+
+{
+	name audiolog_marscity2_tyson_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 13200 "#cc_pda_00000000493"
+}
+
+{
+	name audiolog_marscity2_tyson_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 18000 "#cc_pda_00000000232"
+}
+
+{
+	name audiolog_marscity2_tyson_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 23500 "#cc_pda_00000000494"
+}
+
+{
+	name audiolog_marscity2_tyson_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 27000 "#cc_pda_00000000233"
+}
+
+{
+	name audiolog_marscity2_tyson_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 34500 "#cc_pda_00000000495"
+}
+
+{
+	name audiolog_marscity2_stanton_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000239"
+}
+
+{
+	name audiolog_marscity2_stanton_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 4000 "#cc_pda_00000000240"
+}
+
+{
+	name audiolog_marscity2_stanton_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 9000 "#cc_pda_00000000499"
+}
+
+{
+	name audiolog_marscity2_stanton_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 14000 "#cc_pda_00000000241"
+}
+
+{
+	name audiolog_marscity2_stanton_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 17500 "#cc_pda_00000000500"
+}
+
+{
+	name audiolog_marscity2_stanton_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 24000 "#cc_pda_00000000242"
+}
+
+{
+	name audiolog_marscity2_stanton_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 32000 "#cc_pda_00000000501"
+}
+
+{
+	name audiolog_marscity2_stanton_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 39000 "#cc_pda_00000000243"
+}
+
+{
+	name audiolog_marscity2_stanton_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 47200 "#cc_pda_00000000502"
+}
+
+{
+	name audiolog_marscity2_stanton_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 50000 "#cc_pda_00000000244"
+}
+
+{
+	name audiolog_marscity2_stanton_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 56000 "#cc_pda_00000000245"
+}
+
+{
+	name audiolog_mcunderground_baston_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000265"
+}
+
+
+{
+	name audiolog_mcunderground_baston_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_pda_00000000266"
+}
+
+{
+	name audiolog_mcunderground_baston_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12000 "#cc_pda_00000000505"
+}
+
+{
+	name audiolog_mcunderground_baston_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 16000 "#cc_pda_00000000302"
+}
+
+{
+	name audiolog_mcunderground_baston_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 23000 "#cc_pda_00000000267"
+}
+
+{
+	name audiolog_mcunderground_baston_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 30000 "#cc_pda_00000000506"
+}
+
+{
+	name audiolog_mcunderground_baston_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 32500 "#cc_pda_00000000303"
+}
+
+{
+	name audiolog_mcunderground_baston_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 38000 "#cc_pda_00000000268"
+}
+
+{
+	name audiolog_mcunderground_baston_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 45000 "#cc_pda_00000000304"
+}
+
+{
+	name audiolog_mcunderground_delahue_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000255"
+}
+
+{
+	name audiolog_mcunderground_delahue_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 7000 "#cc_pda_00000000256"
+}
+
+{
+	name audiolog_mcunderground_delahue_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 13000 "#cc_pda_00000000503"
+}
+
+{
+	name audiolog_mcunderground_delahue_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 17000 "#cc_pda_00000000257"
+}
+
+{
+	name audiolog_mcunderground_delahue_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 22000 "#cc_pda_00000000553"
+}
+
+{
+	name audiolog_mcunderground_delahue_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 26000 "#cc_pda_00000000258"
+}
+
+{
+	name audiolog_mcunderground_delahue_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 32000 "#cc_pda_00000000504"
+}
+
+{
+	name audiolog_mcunderground_delahue_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 36200 "#cc_pda_00000000394"
+}
+
+{
+	name audiolog_mcunderground_delahue_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 42000 "#cc_pda_00000000259"
+}
+
+{
+	name audiolog_mcunderground_delahue_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000260"
+}
+
+{
+	name audiolog_mcunderground_delahue_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 7000 "#cc_pda_00000000261"
+}
+
+{
+	name audiolog_mcunderground_delahue_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 14000 "#cc_pda_00000000262"
+}
+
+{
+	name audiolog_mcunderground_delahue_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 21000 "#cc_pda_00000000263"
+}
+
+{
+	name audiolog_mcunderground_delahue_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 29000 "#cc_pda_00000000264"
+}
+
+{
+	name audiolog_monorail_harding_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_monorail_00000000001"
+}
+
+{
+	name audiolog_monorail_harding_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 5500 "#cc_monorail_00000000002"
+}
+
+{
+	name audiolog_monorail_harding_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12500 "#cc_monorail_00000000003"
+}
+
+{
+	name audiolog_monorail_harding_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 19000 "#cc_monorail_00000000048"
+}
+
+{
+	name audiolog_monorail_harding_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 26000 "#cc_monorail_00000000004"
+}
+
+{
+	name audiolog_monorail_harding_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 31500 "#cc_monorail_00000000049"
+}
+
+{
+	name audiolog_monorail_harding_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 36000 "#cc_monorail_00000000005"
+}
+
+{
+	name audiolog_monorail_harding_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 42000 "#cc_monorail_00000000006"
+}
+
+{
+	name audiolog_monorail_harding_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 46000 "#cc_monorail_00000000007"
+}
+
+{
+	name audiolog_monorail_harding_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 52000 "#cc_monorail_00000000008"
+}
+
+{
+	name audiolog_monorail_harding_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 59000 "#cc_monorail_00000000009"
+}
+
+{
+	name audiolog_monorail_harding_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 65000 "#cc_monorail_00000000050"
+}
+
+{
+	name audiolog_monorail_hollies_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_monorail_00000000017"
+}
+
+{
+	name audiolog_monorail_hollies_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_monorail_00000000018"
+}
+
+{
+	name audiolog_monorail_hollies_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12200 "#cc_monorail_00000000052"
+}
+
+{
+	name audiolog_monorail_hollies_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 19000 "#cc_monorail_00000000019"
+}
+
+{
+	name audiolog_monorail_hollies_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 26000 "#cc_monorail_00000000020"
+}
+
+{
+	name audiolog_monorail_hollies_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 31500 "#cc_monorail_00000000053"
+}
+
+{
+	name audiolog_phobos1_fresko_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_phobos1_00000000004"
+}
+
+{
+	name audiolog_phobos1_fresko_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_phobos1_00000000005"
+}
+
+{
+	name audiolog_phobos1_fresko_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 13000 "#cc_phobos1_00000000013"
+}
+
+{
+	name audiolog_phobos1_fresko_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 17500 "#cc_phobos1_00000000006"
+}
+
+{
+	name audiolog_phobos1_fresko_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 25500 "#cc_phobos1_00000000007"
+}
+
+{
+	name audiolog_phobos1_fresko_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 34000 "#cc_phobos1_00000000008"
+}
+
+{
+	name audiolog_phobos1_fresko_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 37000 "#cc_phobos1_00000000014"
+}
+
+{
+	name audiolog_phobos1_fresko_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 44500 "#cc_phobos1_00000000009"
+}
+
+{
+	name audiolog_phobos2_killian_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_phobos2_00000000001"
+}
+
+{
+	name audiolog_phobos2_killian_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_phobos2_00000000002"
+}
+
+{
+	name audiolog_phobos2_killian_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 14000 "#cc_phobos2_00000000003"
+}
+
+{
+	name audiolog_phobos2_killian_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 21000 "#cc_phobos2_00000000004"
+}
+
+{
+	name audiolog_phobos4_jolson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_phobos4_00000000001"
+}
+
+{
+	name audiolog_phobos4_jolson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 3800 "#cc_phobos4_00000000002"
+}
+
+{
+	name audiolog_phobos4_jolson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 9000 "#cc_phobos4_00000000015"
+}
+
+{
+	name audiolog_phobos4_jolson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 13500 "#cc_phobos4_00000000003"
+}
+
+{
+	name audiolog_phobos4_jolson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 20000 "#cc_phobos4_00000000016"
+}
+
+{
+	name audiolog_phobos4_jolson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 24500 "#cc_phobos4_00000000004"
+}
+
+{
+	name audiolog_phobos4_jolson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 33000 "#cc_phobos4_00000000017"
+}
+
+{
+	name audiolog_phobos4_jolson_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 36000 "#cc_phobos4_00000000005"
+}
+
+{
+	name audiolog_recycling1_sadowayj_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_recycling1_00000000004"
+}
+
+{
+	name audiolog_recycling1_sadowayj_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 9000 "#cc_recycling1_00000000005"
+}
+
+{
+	name audiolog_recycling1_sadowayj_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 18000 "#cc_recycling1_00000000006"
+}
+
+{
+	name audiolog_recycling1_sadowayj_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 24000 "#cc_recycling1_00000000007"
+}
+
+{
+	name audiolog_recycling1_sadowayj_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 33000 "#cc_recycling1_00000000008"
+}
+
+{
+	name audiolog_recycling1_sadowayj_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 43600 "#cc_recycling1_00000000029"
+}
+
+{
+	name audiolog_recycling1_sadowayj_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 51000 "#cc_recycling1_00000000009"
+}
+
+{
+	name video_recycling
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_recycling1_00000000010"
+}
+
+{
+	name video_recycling
+	color [200, 200, 200, 255]
+	priority 1
+	caption 9000 "#cc_recycling1_00000000011"
+}
+
+{
+	name video_recycling
+	color [200, 200, 200, 255]
+	priority 1
+	caption 15000 "#cc_recycling1_00000000012"
+}
+
+{
+	name video_recycling
+	color [200, 200, 200, 255]
+	priority 1
+	caption 21000 "#cc_recycling1_00000000013"
+}
+
+{
+	name video_recycling
+	color [200, 200, 200, 255]
+	priority 1
+	caption 26000 "#cc_recycling1_00000000014"
+}
+
+{
+	name video_recycling
+	color [200, 200, 200, 255]
+	priority 1
+	caption 29000 "#cc_recycling1_00000000031"
+}
+
+{
+	name video_recycling
+	color [200, 200, 200, 255]
+	priority 1
+	caption 36000 "#cc_recycling1_00000000015"
+}
+
+{
+	name video_recycling
+	color [200, 200, 200, 255]
+	priority 1
+	caption 42000 "#cc_recycling1_00000000016"
+}
+
+{
+	name video_recycling
+	color [200, 200, 200, 255]
+	priority 1
+	caption 50000 "#cc_recycling1_00000000017"
+}
+
+{
+	name video_recycling
+	color [200, 200, 200, 255]
+	priority 1
+	caption 55000 "#cc_recycling1_00000000018"
+}
+
+{
+	name video_recycling
+	color [200, 200, 200, 255]
+	priority 1
+	caption 63000 "#cc_recycling1_00000000019"
+}
+
+{
+	name video_recycling
+	color [200, 200, 200, 255]
+	priority 1
+	caption 67000 "#cc_recycling1_00000000032"
+}
+
+{
+	name video_recycling
+	color [200, 200, 200, 255]
+	priority 1
+	caption 73000 "#cc_recycling1_00000000020"
+}
+
+{
+	name video_recycling
+	color [200, 200, 200, 255]
+	priority 1
+	caption 77000 "#cc_recycling1_00000000021"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_site3_00000000005"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 4200 "#cc_hellhole_00000000039"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 10000 "#cc_hellhole_00000000002"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 16000 "#cc_hellhole_00000000003"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 23000 "#cc_hellhole_00000000004"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 31000 "#cc_hellhole_00000000005"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 37000 "#cc_hellhole_00000000040"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 42000 "#cc_hellhole_00000000006"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 50000 "#cc_hellhole_00000000007"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 57000 "#cc_hellhole_00000000008"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 64500 "#cc_hellhole_00000000041"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 68000 "#cc_hellhole_00000000009"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 77000 "#cc_hellhole_00000000010"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 83000 "#cc_hellhole_00000000011"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 90000 "#cc_hellhole_00000000012"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 98000 "#cc_hellhole_00000000013"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 102000 "#cc_hellhole_00000000014"
+}
+
+{
+	name audiolog_site3_rogers_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000288"
+}
+
+{
+	name audiolog_site3_rogers_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 5000 "#cc_pda_00000000289"
+}
+
+{
+	name audiolog_site3_rogers_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 11000 "#cc_pda_00000000290"
+}
+
+{
+	name audiolog_site3_rogers_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 21000 "#cc_pda_00000000291"
+}
+
+{
+	name audiolog_site3_rogers_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 30000 "#cc_pda_00000000292"
+}
+
+{
+	name audiolog_site3_rogers_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 39000 "#cc_pda_00000000293"
+}
+
+{
+	name audiolog_site3_rogers_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 48000 "#cc_pda_00000000513"
+}
+
+{
+	name audiolog_site3_rogers_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 55000 "#cc_pda_00000000294"
+}
+
+{
+	name audiolog_site3_davis_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000295"
+}
+
+{
+	name audiolog_site3_davis_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_pda_00000000296"
+}
+
+{
+	name audiolog_site3_davis_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12800 "#cc_pda_00000000514"
+}
+
+{
+	name audiolog_site3_davis_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 18000 "#cc_pda_00000000297"
+}
+
+{
+	name audiolog_site3_davis_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 25000 "#cc_pda_00000000298"
+}
+
+{
+	name audiolog_site3_davis_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 32000 "#cc_pda_00000000515"
+}
+
+{
+	name audiolog_site3_davis_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 35000 "#cc_pda_00000000299"
+}
+
+{
+	name audiolog_site3_davis_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 39200 "#cc_pda_00000000516"
+}
+
+{
+	name audiolog_site3_davis_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 46000 "#cc_pda_00000000300"
+}
+
+{
+	name audiolog_site3_davis_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 49200 "#cc_pda_00000000517"
+}
+
+{
+	name audiolog_site3_davis_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 56000 "#cc_pda_00000000301"
+}
+
+{
+	name audiolog_site3_davis_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 63000 "#cc_pda_00000000518"
+}

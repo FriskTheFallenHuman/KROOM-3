@@ -1,0 +1,373 @@
+/*
+English subtitles mod for Doom 3 bfg edition by Y-Dr. Now
+CC Script Format:
+{
+	name: name of the sound shader or the video file or sound file
+	color: rgba array for coloring the text (max 255)
+	priority: priority of the caption
+	caption: timestamp in milliseconds and text reference
+}
+*/
+{
+	name sound/vo/exis/computer_exis_01
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_exis1_00000000001"
+}
+
+{
+	name sound/vo/exis/computer_exis_02
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_exis1_00000000002"
+}
+
+{
+	name vo/exis/meyers_exis_anim_01
+	color [102, 178, 255, 255]
+	priority 0
+	caption 0 "#cc_exis1_00000000003"
+}
+
+{
+	name vo/exis/meyers_exis_anim_01
+	color [102, 178, 255, 255]
+	priority 0
+	caption 9500 "#cc_exis1_00000000004"
+}
+
+{
+	name vo/exis/meyers_exis_anim_01
+	color [102, 178, 255, 255]
+	priority 0
+	caption 15000 "#cc_exis1_00000000008"
+}
+
+{
+	name vo/exis/meyers_exis_anim_01
+	color [102, 178, 255, 255]
+	priority 0
+	caption 19500 "#cc_exis1_00000000005"
+}
+
+{
+	name vo/exis/meyers_exis_anim_01
+	color [102, 178, 255, 255]
+	priority 0
+	caption 25000 "#cc_exis1_00000000009"
+}
+
+{
+	name vo/exis/meyers_exis_anim_01
+	color [102, 178, 255, 255]
+	priority 0
+	caption 30200 "#cc_exis1_00000000006"
+}
+
+{
+	name vo/exis/meyers_exis_anim_01
+	color [102, 178, 255, 255]
+	priority 0
+	caption 35820 "#cc_exis1_00000000007"
+}
+
+{
+	name audiolog_adil_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000335"
+}
+
+{
+	name audiolog_adil_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 9800 "#cc_pda_00000000336"
+}
+
+{
+	name audiolog_adil_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 16000 "#cc_pda_00000000337"
+}
+
+{
+	name audiolog_adil_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 23500 "#cc_pda_00000000338"
+}
+
+{
+	name audiolog_adil_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 32800 "#cc_pda_00000000339"
+}
+
+{
+	name audiolog_adil_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 40600 "#cc_pda_00000000340"
+}
+
+{
+	name audiolog_adil_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 51000 "#cc_pda_00000000341"
+}
+
+{
+	name audiolog_adil_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 63500 "#cc_pda_00000000342"
+}
+
+{
+	name audiolog_adil_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 71000 "#cc_pda_00000000532"
+}
+
+{
+	name audiolog_adil_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 81000 "#cc_pda_00000000343"
+}
+
+{
+	name audiolog_adil_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 89500 "#cc_pda_00000000533"
+}
+
+{
+	name audiolog_adil_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 93500 "#cc_pda_00000000344"
+}
+
+{
+	name audiolog_adil_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 101000 "#cc_pda_00000000552"
+}
+
+{
+	name audiolog_adil_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 109500 "#cc_pda_00000000345"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000346"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_pda_00000000347"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 15200 "#cc_pda_00000000348"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 23000 "#cc_pda_00000000535"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 28500 "#cc_pda_00000000349"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 35800 "#cc_pda_00000000350"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 47000 "#cc_pda_00000000351"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 55500 "#cc_pda_00000000352"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 65000 "#cc_pda_00000000536"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 71000 "#cc_pda_00000000353"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 76000 "#cc_pda_00000000537"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 85000 "#cc_pda_00000000354"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 91000 "#cc_pda_00000000538"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 95800 "#cc_pda_00000000355"
+}
+
+{
+	name audiolog_adil_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 103000 "#cc_pda_00000000356"
+}
+
+{
+	name audiolog_lebedev_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000357"
+}
+
+{
+	name audiolog_lebedev_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 9000 "#cc_pda_00000000358"
+}
+
+{
+	name audiolog_lebedev_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 14000 "#cc_pda_00000000539"
+}
+
+{
+	name audiolog_lebedev_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 21800 "#cc_pda_00000000359"
+}
+
+{
+	name audiolog_lebedev_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 27000 "#cc_pda_00000000540"
+}
+
+{
+	name audiolog_lebedev_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 34800 "#cc_pda_00000000360"
+}
+
+{
+	name audiolog_lebedev_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 45500 "#cc_pda_00000000541"
+}
+
+{
+	name audiolog_lebedev_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 48000 "#cc_pda_00000000361"
+}
+
+{
+	name audiolog_lebedev_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 58500 "#cc_pda_00000000362"
+}
+
+{
+	name audiolog_lebedev_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 66000 "#cc_pda_00000000363"
+}
+
+{
+	name audiolog_lebedev_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 74000 "#cc_pda_00000000364"
+}
+
+{
+	name audiolog_lebedev_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 82000 "#cc_pda_00000000542"
+}
+
+{
+	name audiolog_lebedev_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 87000 "#cc_pda_00000000365"
+}
+
+{
+	name audiolog_lebedev_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 95500 "#cc_pda_00000000366"
+}

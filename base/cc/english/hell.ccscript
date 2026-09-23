@@ -1,0 +1,44 @@
+﻿/*
+English subtitles mod for Doom 3 bfg edition by Y-Dr. Now
+CC Script Format:
+{
+	name: name of the sound shader or the video file or sound file
+	color: rgba array for coloring the text (max 255)
+	priority: priority of the caption
+	caption: timestamp in milliseconds and text reference
+}
+*/
+{
+	name xp_maledict_whatdid
+	color [255, 160, 160, 255]
+	priority 0
+	caption 0 "#cc_hell_00000000001"
+}
+
+{
+	name xp_maledict_mortal2
+	color [255, 160, 160, 255]
+	priority 0
+	caption 0 "#cc_hell_00000000002"
+}
+
+{
+	name xp_maledict_iwantit
+	color [255, 160, 160, 255]
+	priority 0
+	caption 0 "#cc_hell_00000000003"
+}
+
+{
+	name hell_mcneil_end
+	color [220, 100, 25, 255]
+	priority 0
+	caption 0 "#cc_hell_00000000004"
+}
+
+{
+	name hd_bet_returnwhatisours
+	color [255, 160, 160, 255]
+	priority 0
+	caption 0 "#cc_erebus1_00000000025"
+}

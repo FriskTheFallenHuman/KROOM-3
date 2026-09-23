@@ -118,7 +118,7 @@ void idGameMainMenuLocal::InitMenu()
 
 	// load
 	renderSystem->EndLevelLoad();
-	soundSystem->EndLevelLoad();
+	soundSystem->EndLevelLoad( "" );
 	declManager->EndLevelLoad();
 	uiManager->EndLevelLoad( "" );
 }

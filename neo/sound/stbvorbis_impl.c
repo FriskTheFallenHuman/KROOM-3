@@ -44,3 +44,16 @@ If you have questions concerning this license or the applicable additional terms
 #pragma warning(push, 0)
 #include "stb/stb_vorbis.h"
 #pragma warning(pop)
+
+#define DR_MP3_NO_STDIO
+#define DR_MP3_IMPLEMENTATION
+#pragma warning(push, 0)
+#include "drlibs/dr_mp3.h"
+#pragma warning(pop)
+
+#define DR_FLAC_NO_STDIO
+#define DR_FLAC_NO_OGG // We already handle this
+#define DR_FLAC_IMPLEMENTATION
+#pragma warning(push, 0)
+#include "drlibs/dr_flac.h"
+#pragma warning(pop)

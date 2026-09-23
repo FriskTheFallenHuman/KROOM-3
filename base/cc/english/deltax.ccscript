@@ -1,0 +1,44 @@
+/*
+English subtitles mod for Doom 3 bfg edition by Y-Dr. Now
+CC Script Format:
+{
+	name: name of the sound shader or the video file or sound file
+	color: rgba array for coloring the text (max 255)
+	priority: priority of the caption
+	caption: timestamp in milliseconds and text reference
+}
+*/
+{
+	name dx_betruger_taunt1
+	color [255, 160, 160, 255]
+	priority 0
+	caption 0 "#cc_erebus2_00000000015"
+}
+
+{
+	name sound/xian/creepy/betruger_laughs/laugh_04
+	color [255, 160, 160, 255]
+	priority 0
+	caption 8000 "#cc_delta1_00000000023"
+}
+
+{
+	name sound/vo/delta3/delta3_comp_primaryfail
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_delta3_00000000030"
+}
+
+{
+	name sound/vo/delta3/delta3_comp_systemshutdown
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_delta3_00000000031"
+}
+
+{
+	name sound/vo/delta3/delta3_comp_backuponline
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_delta3_00000000051"
+}

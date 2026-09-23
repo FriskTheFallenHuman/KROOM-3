@@ -1,0 +1,16 @@
+﻿/*
+English subtitles mod for Doom 3 bfg edition by Y-Dr. Now
+CC Script Format:
+{
+	name: name of the sound shader or the video file or sound file
+	color: rgba array for coloring the text (max 255)
+	priority: priority of the caption
+	caption: timestamp in milliseconds and text reference
+}
+*/
+{
+	name rchat_meyers_exis_lab_03
+	color [102, 178, 255, 255]
+	priority 0
+	caption 0 "#cc_le_hell_00000000001"
+}

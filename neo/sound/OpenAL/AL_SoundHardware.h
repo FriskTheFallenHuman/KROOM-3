@@ -4,6 +4,8 @@
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
 Copyright (C) 2013 Robert Beckebans
+Copyright (c) 2010 by Chris Robinson <chris.kcat@gmail.com> (OpenAL Info Utility)
+Copyright (C) 2021 George Kalmpokis
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -26,6 +28,7 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
+
 #ifndef __AL_SOUNDHARDWARE_H__
 #define __AL_SOUNDHARDWARE_H__
 
@@ -33,29 +36,29 @@ class idSoundSample_OpenAL;
 class idSoundVoice_OpenAL;
 class idSoundHardware_OpenAL;
 
-
-
 /*
 ================================================
 idSoundHardware_OpenAL
 ================================================
 */
 
-class idSoundHardware_OpenAL
+class idSoundHardware_OpenAL : public idSoundHardware
 {
 public:
 	idSoundHardware_OpenAL();
 
 	void			Init();
 	void			Shutdown();
+	void			ShutdownReverbSystem();
 
 	void 			Update();
+	void			UpdateEAXEffect( idSoundEffect* effect );
 
-	idSoundVoice* 	AllocateVoice( const idSoundSample* leadinSample, const idSoundSample* loopingSample );
+	idSoundVoice* 	AllocateVoice( const idSoundSample* leadinSample, const idSoundSample* loopingSample, const int channel ); // GK: Get the sound channel in order to filter which sound will use the Room's reverb and which the default
 	void			FreeVoice( idSoundVoice* voice );
 
 	// listDevices needs this
-	ALCdevice* 		GetAudioDevice() const
+	ALCdevice* 		GetOpenALDevice() const
 	{
 		return openalDevice;
 	};
@@ -69,49 +72,37 @@ public:
 		return freeVoices.Num();
 	}
 
+	bool			IsReverbSupported()
+	{
+		return hasEFX;
+	}
+
 	// OpenAL info
 	static void		PrintDeviceList( const char* list );
 	static void		PrintALCInfo( ALCdevice* device );
 	static void		PrintALInfo();
+	static void		parseDeviceName( const ALCchar* wcDevice, char* mbDevice );
+	void			RestartHardware();
+	ALuint slot;
+	ALuint voiceslot;
+	ALuint voicefilter;
+
 
 protected:
 	friend class idSoundSample_OpenAL;
 	friend class idSoundVoice_OpenAL;
 
 private:
-	/*
-	IXAudio2* pXAudio2;
-	IXAudio2MasteringVoice* pMasterVoice;
-	IXAudio2SubmixVoice* pSubmixVoice;
-
-	idSoundEngineCallback	soundEngineCallback;
-	*/
-
 	ALCdevice*			openalDevice;
 	ALCcontext*			openalContext;
-
-	int					lastResetTime;
-
-	//int				outputChannels;
-	//int				channelMask;
-
-	//idDebugGraph* 	vuMeterRMS;
-	//idDebugGraph* 	vuMeterPeak;
-	//int				vuMeterPeakTimes[ 8 ];
 
 	// Can't stop and start a voice on the same frame, so we have to double this to handle the worst case scenario of stopping all voices and starting a full new set
 	idStaticList<idSoundVoice_OpenAL, MAX_HARDWARE_VOICES * 2 > voices;
 	idStaticList<idSoundVoice_OpenAL*, MAX_HARDWARE_VOICES * 2 > zombieVoices;
 	idStaticList<idSoundVoice_OpenAL*, MAX_HARDWARE_VOICES * 2 > freeVoices;
+	bool				hasEFX;
+	ALuint				EAX;
+	void SetEFX( EFXEAXREVERBPROPERTIES* rev );
 };
 
-/*
-================================================
-idSoundHardware
-================================================
-*/
-class idSoundHardware : public idSoundHardware_OpenAL
-{
-};
-
-#endif
+#endif /* !__AL_SOUNDHARDWARE_H__ */

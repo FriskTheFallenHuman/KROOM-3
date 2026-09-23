@@ -1,0 +1,478 @@
+/*
+English subtitles mod for Doom 3 bfg edition by Y-Dr. Now
+CC Script Format:
+{
+	name: name of the sound shader or the video file or sound file
+	color: rgba array for coloring the text (max 255)
+	priority: priority of the caption
+	caption: timestamp in milliseconds and text reference
+}
+*/
+{
+	name site3_sci_trigger
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_site3_00000000001"
+}
+
+{
+	name site3_sci_trigger
+	color [200, 200, 200, 255]
+	priority 0
+	caption 8000 "#cc_site3_00000000002"
+}
+
+{
+	name site3_sci_trigger
+	color [200, 200, 200, 255]
+	priority 0
+	caption 16000 "#cc_site3_00000000003"
+}
+
+{
+	name site3_sci_trigger
+	color [200, 200, 200, 255]
+	priority 0
+	caption 25000 "#cc_site3_00000000004"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_site3_00000000005"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 4200 "#cc_hellhole_00000000039"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 10000 "#cc_hellhole_00000000002"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 16000 "#cc_hellhole_00000000003"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 23000 "#cc_hellhole_00000000004"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 31000 "#cc_hellhole_00000000005"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 37000 "#cc_hellhole_00000000040"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 42000 "#cc_hellhole_00000000006"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 50000 "#cc_hellhole_00000000007"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 57000 "#cc_hellhole_00000000008"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 64500 "#cc_hellhole_00000000041"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 68000 "#cc_hellhole_00000000009"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 77000 "#cc_hellhole_00000000010"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 83000 "#cc_hellhole_00000000011"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 90000 "#cc_hellhole_00000000012"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 98000 "#cc_hellhole_00000000013"
+}
+
+{
+	name sound/vo/video/video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 102000 "#cc_hellhole_00000000014"
+}
+
+{
+	name site3_sci_primary
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_site3_00000000016"
+}
+
+{
+	name site3_sci_secondary1
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_site3_00000000017"
+}
+
+{
+	name site3_sci_secondary2
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_site3_00000000018"
+}
+
+{
+	name sound/VO/site3/comp_caverns_unlocked
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_site3_00000000019"
+}
+
+{
+	name sound/VO/site3/comp_returning_to_station
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_site3_00000000020"
+}
+
+{
+	name audiolog_site3_rogers_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000288"
+}
+
+{
+	name audiolog_site3_rogers_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 5000 "#cc_pda_00000000289"
+}
+
+{
+	name audiolog_site3_rogers_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 11000 "#cc_pda_00000000290"
+}
+
+{
+	name audiolog_site3_rogers_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 21000 "#cc_pda_00000000291"
+}
+
+{
+	name audiolog_site3_rogers_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 30000 "#cc_pda_00000000292"
+}
+
+{
+	name audiolog_site3_rogers_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 39000 "#cc_pda_00000000293"
+}
+
+{
+	name audiolog_site3_rogers_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 48000 "#cc_pda_00000000513"
+}
+
+{
+	name audiolog_site3_rogers_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 55000 "#cc_pda_00000000294"
+}
+
+{
+	name audiolog_site3_davis_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000295"
+}
+
+{
+	name audiolog_site3_davis_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_pda_00000000296"
+}
+
+{
+	name audiolog_site3_davis_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12800 "#cc_pda_00000000514"
+}
+
+{
+	name audiolog_site3_davis_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 18000 "#cc_pda_00000000297"
+}
+
+{
+	name audiolog_site3_davis_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 25000 "#cc_pda_00000000298"
+}
+
+{
+	name audiolog_site3_davis_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 32000 "#cc_pda_00000000515"
+}
+
+{
+	name audiolog_site3_davis_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 35000 "#cc_pda_00000000299"
+}
+
+{
+	name audiolog_site3_davis_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 39200 "#cc_pda_00000000516"
+}
+
+{
+	name audiolog_site3_davis_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 46000 "#cc_pda_00000000300"
+}
+
+{
+	name audiolog_site3_davis_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 49200 "#cc_pda_00000000517"
+}
+
+{
+	name audiolog_site3_davis_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 56000 "#cc_pda_00000000301"
+}
+
+{
+	name audiolog_site3_davis_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 63000 "#cc_pda_00000000518"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_videos_00000000031"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 4500 "#cc_videos_00000000270"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 10000 "#cc_videos_00000000032"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 15000 "#cc_videos_00000000271"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 22500 "#cc_videos_00000000253"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 27000 "#cc_videos_00000000033"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 33900 "#cc_videos_00000000254"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 42000 "#cc_videos_00000000034"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 50000 "#cc_videos_00000000035"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 57500 "#cc_videos_00000000272"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 64000 "#cc_videos_00000000036"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 71000 "#cc_videos_00000000037"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 79000 "#cc_videos_00000000255"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 85000 "#cc_videos_00000000038"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 91500 "#cc_videos_00000000273"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 99000 "#cc_videos_00000000039"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 108000 "#cc_videos_00000000274"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 113000 "#cc_videos_00000000040"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 121000 "#cc_videos_00000000041"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 127000 "#cc_videos_00000000275"
+}
+
+{
+	name video_ancient_civ
+	color [200, 200, 200, 255]
+	priority 1
+	caption 132000 "#cc_videos_00000000042"
+}

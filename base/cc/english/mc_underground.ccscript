@@ -1,0 +1,836 @@
+/*
+English subtitles mod for Doom 3 bfg edition by Y-Dr. Now
+CC Script Format:
+{
+	name: name of the sound shader or the video file or sound file
+	color: rgba array for coloring the text (max 255)
+	priority: priority of the caption
+	caption: timestamp in milliseconds and text reference
+}
+*/
+{
+	name brooks01welcome
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000001"
+}
+
+{
+	name brooks02imgonnaneed
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000002"
+}
+
+{
+	name brooks03grabyourgear
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000003"
+}
+
+{
+	name brooks04letmeradiotest
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000004"
+}
+
+{
+	name brooks05radiocheck
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000005"
+}
+
+{
+	name brooks06mission
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000006"
+}
+
+{
+	name brooks06mission
+	color [200, 200, 200, 255]
+	priority 0
+	caption 6000 "#cc_mc_underground_00000000088"
+}
+
+{
+	name brooks07allset
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000007"
+}
+
+{
+	name brooks08dontshootcivilians
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000008"
+}
+
+{
+	name brooks09re_secureyourgear
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000009"
+}
+
+{
+	name brooks13re_storagecabinet
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000010"
+}
+
+{
+	name brooks14readyforcombat
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000011"
+}
+
+{
+	name brooks_cowerdontfire
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000012"
+}
+
+{
+	name brooks18re_moveout
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000013"
+}
+
+{
+	name brooks_cowerwatch
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000014"
+}
+
+{
+	name daniel_mcu_primary
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000015"
+}
+
+{
+	name daniel_mcu_secondary1
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000016"
+}
+
+{
+	name daniel_mcu_secondary2
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000017"
+}
+
+{
+	name daniel_mcu_donttouchthat
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000018"
+}
+
+{
+	name charles_mcu_hey
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000019"
+}
+
+{
+	name charles_mcu_notsure
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000020"
+}
+
+{
+	name charles_mcu_primary
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000021"
+}
+
+{
+	name charles_mcu_secondary1
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000022"
+}
+
+{
+	name charles_mcu_secondary2
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000023"
+}
+
+{
+	name ross_mcu_listenscotty
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000024"
+}
+
+{
+	name scotty_mcu_youcrawl
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000025"
+}
+
+{
+	name ross_mcu_because
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000026"
+}
+
+{
+	name ross_mcu_justfinish
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000027"
+}
+
+{
+	name ross_mcu_primary
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000028"
+}
+
+{
+	name ross_mcu_secondary1
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000029"
+}
+
+{
+	name ross_mcu_secondary2
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000030"
+}
+
+{
+	name scotty_mcu_rossshot1
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000031"
+}
+
+{
+	name scotty_mcu_rossshot2
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000032"
+}
+
+{
+	name scotty_mcu_die
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000033"
+}
+
+{
+	name todd_mcu_talk1
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000034"
+}
+
+{
+	name eric_mcu_worktalk1
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000035"
+}
+
+{
+	name todd_mcu_talk2
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000036"
+}
+
+{
+	name eric_mcu_worktalk2
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000037"
+}
+
+{
+	name todd_mcu_talk3
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000038"
+}
+
+{
+	name ian_mcu_trigger
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000039"
+}
+
+{
+	name ian_mcu_trigger
+	color [200, 200, 200, 255]
+	priority 0
+	caption 4500 "#cc_mc_underground_00000000102"
+}
+
+{
+	name ian_mcu_primary
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000040"
+}
+
+{
+	name ian_mcu_secondary
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000041"
+}
+
+{
+	name mark_mcu_triggered
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000042"
+}
+
+{
+	name mark_mcu_triggered
+	color [200, 200, 200, 255]
+	priority 0
+	caption 6300 "#cc_mc_underground_00000000103"
+}
+
+{
+	name mark_mcu_primary
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000043"
+}
+
+{
+	name mark_mcu_secondary1
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000044"
+}
+
+{
+	name mc_under_sarge_radio13
+	color [160, 255, 160, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000045"
+}
+
+{
+	name sound/vo/mc_underground/invasion/science_team_chatter
+	color [200, 200, 200, 255]
+	priority 2
+	caption 0 "#cc_mc_underground_00000000046"
+}
+
+{
+	name rchat_7
+	color [200, 200, 200, 255]
+	priority 2
+	caption 0 "#cc_mc_underground_00000000047"
+}
+
+{
+	name mc_under_sarge_radio1
+	color [160, 255, 160, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000049"
+}
+
+{
+	name mc_under_sarge_radio4
+	color [160, 255, 160, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000051"
+}
+
+{
+	name rchat_1
+	color [200, 200, 200, 255]
+	priority 2
+	caption 0 "#cc_mc_underground_00000000052"
+}
+
+{
+	name mc_under_sarge_radio5
+	color [160, 255, 160, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000053"
+}
+
+{
+	name sit_rep_marine_01
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000054"
+}
+
+{
+	name sit_rep_marine_02
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000055"
+}
+
+{
+	name sit_rep_marine_03
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000056"
+}
+
+{
+	name sit_rep_marine_03
+	color [200, 200, 200, 255]
+	priority 0
+	caption 3000 "#cc_mc_underground_00000000105"
+}
+
+{
+	name sit_rep_marine_04
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000057"
+}
+
+{
+	name rchat_9
+	color [200, 200, 200, 255]
+	priority 2
+	caption 0 "#cc_mc_underground_00000000058"
+}
+
+{
+	name rchat_10
+	color [200, 200, 200, 255]
+	priority 2
+	caption 0 "#cc_mc_underground_00000000059"
+}
+
+{
+	name rchat_11
+	color [200, 200, 200, 255]
+	priority 2
+	caption 0 "#cc_mc_underground_00000000060"
+}
+
+{
+	name rchat_12
+	color [200, 200, 200, 255]
+	priority 2
+	caption 0 "#cc_mc_underground_00000000061"
+}
+
+{
+	name sound/vo/mc_underground/comp_bridge_7_seconds
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000062"
+}
+
+{
+	name sound/vo/mc_underground/i_dont_want_to_die
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000063"
+}
+
+{
+	name rchat_14
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_mc_underground_00000000064"
+}
+
+{
+	name mc_under_sarge_radio7
+	color [160, 255, 160, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000065"
+}
+
+{
+	name rchat_15
+	color [200, 200, 200, 255]
+	priority 2
+	caption 0 "#cc_mc_underground_00000000066"
+}
+
+{
+	name rchat_2
+	color [200, 200, 200, 255]
+	priority 2
+	caption 0 "#cc_mc_underground_00000000067"
+}
+
+{
+	name rchat_3
+	color [200, 200, 200, 255]
+	priority 2
+	caption 0 "#cc_mc_underground_00000000068"
+}
+
+{
+	name rchat_8
+	color [200, 200, 200, 255]
+	priority 2
+	caption 0 "#cc_mc_underground_00000000069"
+}
+
+{
+	name eric_mcu_zombieattack
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000070"
+}
+
+{
+	name eric_mcu_thankyou
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000071"
+}
+
+{
+	name eric_mcu_die
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000072"
+}
+
+{
+	name rchat_4
+	color [200, 200, 200, 255]
+	priority 2
+	caption 0 "#cc_mc_underground_00000000074"
+}
+
+{
+	name rchat_5
+	color [200, 200, 200, 255]
+	priority 2
+	caption 0 "#cc_mc_underground_00000000075"
+}
+
+{
+	name rchat_6
+	color [200, 200, 200, 255]
+	priority 2
+	caption 0 "#cc_mc_underground_00000000076"
+}
+
+{
+	name mc_under_sarge_radio10
+	color [160, 255, 160, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000077"
+}
+
+{
+	name mc_under_sarge_radio10
+	color [160, 255, 160, 255]
+	priority 0
+	caption 4900 "#cc_mc_underground_00000000106"
+}
+
+{
+	name mc_under_sarge_radio10
+	color [160, 255, 160, 255]
+	priority 0
+	caption 10000 "#cc_mc_underground_00000000101"
+}
+
+{
+	name marine_exit_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_mc_underground_00000000078"
+}
+
+{
+	name marine_exit_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_mc_underground_00000000079"
+}
+
+{
+	name mc_under_sarge_radio8
+	color [160, 255, 160, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000080"
+}
+
+{
+	name mc_under_sarge_radio14
+	color [160, 255, 160, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000081"
+}
+
+{
+	name scinuts1a
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000082"
+}
+
+{
+	name scinuts2a
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000083"
+}
+
+{
+	name scinuts3a
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000084"
+}
+
+{
+	name scinuts4a
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000085"
+}
+
+{
+	name scinuts5a
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000086"
+}
+
+{
+	name mc_under_sarge_radio1
+	color [160, 255, 160, 255]
+	priority 0
+	caption 0 "#cc_mc_underground_00000000087"
+}
+
+{
+	name audiolog_mcunderground_baston_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000265"
+}
+
+
+{
+	name audiolog_mcunderground_baston_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_pda_00000000266"
+}
+
+{
+	name audiolog_mcunderground_baston_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12000 "#cc_pda_00000000505"
+}
+
+{
+	name audiolog_mcunderground_baston_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 16000 "#cc_pda_00000000302"
+}
+
+{
+	name audiolog_mcunderground_baston_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 23000 "#cc_pda_00000000267"
+}
+
+{
+	name audiolog_mcunderground_baston_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 30000 "#cc_pda_00000000506"
+}
+
+{
+	name audiolog_mcunderground_baston_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 32500 "#cc_pda_00000000303"
+}
+
+{
+	name audiolog_mcunderground_baston_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 38000 "#cc_pda_00000000268"
+}
+
+{
+	name audiolog_mcunderground_baston_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 45000 "#cc_pda_00000000304"
+}
+
+{
+	name jonathan_lord_help_us
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_mc_underground_00000000095"
+}
+
+{
+	name sound/cinematics/mc_underground/invasion_sequence
+	color [200, 200, 200, 255]
+	priority 2
+	caption 0 "#cc_mc_underground_00000000096"
+}
+
+{
+	name sound/cinematics/mc_underground/invasion_sequence
+	color [200, 200, 200, 255]
+	priority 2
+	caption 5000 "#cc_mc_underground_00000000097"
+}
+
+{
+	name sound/cinematics/mc_underground/invasion_sequence
+	color [200, 200, 200, 255]
+	priority 2
+	caption 7900 "#cc_mc_underground_00000000098"
+}
+
+{
+	name sound/cinematics/mc_underground/invasion_sequence
+	color [200, 200, 200, 255]
+	priority 2
+	caption 13000 "#cc_mc_underground_00000000099"
+}
+
+{
+	name audiolog_mcunderground_delahue_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000255"
+}
+
+{
+	name audiolog_mcunderground_delahue_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 7000 "#cc_pda_00000000256"
+}
+
+{
+	name audiolog_mcunderground_delahue_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 13000 "#cc_pda_00000000503"
+}
+
+{
+	name audiolog_mcunderground_delahue_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 17000 "#cc_pda_00000000257"
+}
+
+{
+	name audiolog_mcunderground_delahue_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 22000 "#cc_pda_00000000553"
+}
+
+{
+	name audiolog_mcunderground_delahue_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 26000 "#cc_pda_00000000258"
+}
+
+{
+	name audiolog_mcunderground_delahue_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 32000 "#cc_pda_00000000504"
+}
+
+{
+	name audiolog_mcunderground_delahue_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 36200 "#cc_pda_00000000394"
+}
+
+{
+	name audiolog_mcunderground_delahue_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 42000 "#cc_pda_00000000259"
+}
+
+{
+	name audiolog_mcunderground_delahue_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000260"
+}
+
+{
+	name audiolog_mcunderground_delahue_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 7000 "#cc_pda_00000000261"
+}
+
+{
+	name audiolog_mcunderground_delahue_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 14000 "#cc_pda_00000000262"
+}
+
+{
+	name audiolog_mcunderground_delahue_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 21000 "#cc_pda_00000000263"
+}
+
+{
+	name audiolog_mcunderground_delahue_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 29000 "#cc_pda_00000000264"
+}

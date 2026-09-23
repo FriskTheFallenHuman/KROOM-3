@@ -3,7 +3,7 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
-Copyright (C) 2012 Daniel Gibson
+Copyright (C) 2021 George Kalmpokis
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -27,117 +27,39 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
+#ifndef __SOUNDSAMPLE_H__
+#define __SOUNDSAMPLE_H__
+
 /*
- * DG: a stub to get d3 bfg to compile without XAudio2, because that doesn't work with MinGW
- * or on non-Windows platforms.
- *
- * Please note that many methods are *not* virtual, so just inheriting from the stubs for the
- * actual implementations may *not* work!
- * (Making them virtual should be evaluated for performance-loss though, it would make the code
- *  cleaner and may be feasible)
- */
-
-#ifndef SOUNDSTUB_H_
-#define SOUNDSTUB_H_
-
-#include "idlib/precompiled.h" // TIME_T
-#include "../WaveFile.h"
-
-class idSoundVoice : public idSoundVoice_Base
-{
-public:
-	void					Create( const idSoundSample* leadinSample, const idSoundSample* loopingSample ) {}
-
-	// Start playing at a particular point in the buffer.  Does an Update() too
-	void					Start( int offsetMS, int ssFlags ) {}
-
-	// Stop playing.
-	void					Stop() {}
-
-	// Stop consuming buffers
-	void					Pause() {}
-	// Start consuming buffers again
-	void					UnPause() {}
-
-	// Sends new position/volume/pitch information to the hardware
-	bool					Update()
-	{
-		return false;
-	}
-
-	// returns the RMS levels of the most recently processed block of audio, SSF_FLICKER must have been passed to Start
-	float					GetAmplitude()
-	{
-		return 0.0f;
-	}
-
-	// returns true if we can re-use this voice
-	bool					CompatibleFormat( idSoundSample* s )
-	{
-		return false;
-	}
-
-	uint32					GetSampleRate() const
-	{
-		return 0;
-	}
-
-	// callback function
-	void					OnBufferStart( idSoundSample* sample, int bufferNumber ) {}
-};
-
-class idSoundHardware
-{
-public:
-	idSoundHardware() {}
-
-	void			Init() {}
-	void			Shutdown() {}
-
-	void 			Update() {}
-
-	// FIXME: this is a bad name when having multiple sound backends... and maybe it's not even needed
-	void* 		GetIXAudio2() const // NOTE: originally this returned IXAudio2*, but that was casted to void later anyway
-	{
-		return NULL;
-	}
-
-	idSoundVoice* 	AllocateVoice( const idSoundSample* leadinSample, const idSoundSample* loopingSample )
-	{
-		return NULL;
-	}
-
-	void			FreeVoice( idSoundVoice* voice ) {}
-
-	int				GetNumZombieVoices() const
-	{
-		return 0;
-	}
-
-	int				GetNumFreeVoices() const
-	{
-		return 0;
-	}
-
-};
-
-// ok, this one isn't really a stub, because it seems to be XAudio-independent,
-// I just copied the class from idSoundSample_XAudio2 and renamed it
+================================================
+idSoundSample
+================================================
+*/
 class idSoundSample
 {
 public:
-	idSoundSample();
+	struct sampleBuffer_t
+	{
+		void* buffer;
+		int bufferSize;
+		int numSamples;
+	};
 
-	~idSoundSample(); // destructor should be public so lists of  soundsamples can be destroyed etc
+	virtual ~idSoundSample()
+	{
+
+	}
+
+	bool useavi = false; // GK:Keep track on whenever we are about to load non wav audio files
 
 	// Loads and initializes the resource based on the name.
-	virtual void	 LoadResource();
+	virtual void	 LoadResource() = 0;
 
 	void			SetName( const char* n )
 	{
 		name = n;
 	}
-	const char* 	GetName() const
+	const char* GetName() const
 	{
 		return name;
 	}
@@ -146,11 +68,12 @@ public:
 		return timestamp;
 	}
 
+
 	// turns it into a beep
-	void			MakeDefault();
+	virtual void			MakeDefault( bool noDefault = false ) = 0;
 
 	// frees all data
-	void			FreeData();
+	virtual void			FreeData() = 0;
 
 	int				LengthInMsec() const
 	{
@@ -180,6 +103,17 @@ public:
 
 	bool			IsDefault() const
 	{
+		// HACK
+		if( idStr::Icmpn( GetName(), "_default", 8 ) == 0 )
+		{
+			return false;
+		}
+
+		if( idStr::Icmpn( GetName(), "_emptyname", 10 ) == 0 )
+		{
+			return false;
+		}
+
 		return timestamp == FILE_NOT_FOUND_TIMESTAMP;
 	}
 	bool			IsLoaded() const
@@ -218,27 +152,35 @@ public:
 		lastPlayedTime = t;
 	}
 
-	float			GetAmplitude( int timeMS ) const;
-
-protected:
-
-	/*
-		friend class idSoundHardware_XAudio2;
-		friend class idSoundVoice_XAudio2;
-	*/
-
-	bool			LoadWav( const idStr& name );
-	bool			LoadAmplitude( const idStr& name );
-	void			WriteAllSamples( const idStr& sampleName );
-	bool			LoadGeneratedSample( const idStr& name );
-	void			WriteGeneratedSample( idFile* fileOut );
-
-	struct sampleBuffer_t
+	idWaveFile::waveFmt_t GetFormat() const
 	{
-		void* buffer;
-		int bufferSize;
-		int numSamples;
-	};
+		return format;
+	}
+
+	idList<sampleBuffer_t, TAG_AUDIO> GetBuffers()
+	{
+		return buffers;
+	}
+
+	int GetPlayLength()
+	{
+		return playLength;
+	}
+
+
+	virtual float			GetAmplitude( int timeMS ) const = 0;
+protected:
+	friend class idSoundHardware;
+	friend class idSoundVoice;
+
+	virtual bool			LoadWav( const idStr& name ) = 0;
+	virtual bool			LoadAll( const idStr& name ) = 0;
+	virtual bool			LoadAmplitude( const idStr& name ) = 0;
+	virtual void			WriteAllSamples( const idStr& sampleName ) = 0;
+	virtual bool			LoadGeneratedSample( const idStr& name ) = 0;
+	virtual void			WriteGeneratedSample( idFile* fileOut ) = 0;
+
+
 
 	idStr			name;
 
@@ -262,4 +204,4 @@ protected:
 	idList<byte, TAG_AMPLITUDE> amplitude;
 };
 
-#endif /* SOUNDSTUB_H_ */
+#endif /* !__SOUNDSAMPLE_H__ */

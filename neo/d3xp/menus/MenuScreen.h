@@ -1571,6 +1571,11 @@ public:
 		cursorGrabber( 0 ),
 		cursorNone( 0 ),
 		showSoulCubeInfoOnLoad( false ),
+		subtitles( NULL ),
+		subtitlesText( NULL ),
+		subtitlePriority( -1 ),
+		inCinematic( false ),
+		subtitleShaderName( "Dummy" ),
 		updateOnRestore( false )
 	{
 	}
@@ -1597,7 +1602,6 @@ public:
 	void					UpdateCommunication( bool show, idPlayer* player );
 	void					UpdateOxygen( bool show, int val = 0 );
 	void					UpdateEnviro( bool show, int bar, int val );
-
 	void					SetupObjective( const idStr& title, const idStr& desc, const idMaterial* screenshot );
 	void					SetupObjectiveComplete( const idStr& title );
 	idStr					GetObjectiveCompleteTitle()
@@ -1617,6 +1621,7 @@ public:
 	void					CombatCursorFlash();
 	void					UpdateSoulCube( bool ready );
 	void					ShowRespawnMessage( bool show );
+	const char*				GetlocationName();
 	void					SetShowSoulCubeOnLoad( bool show )
 	{
 		showSoulCubeInfoOnLoad = show;
@@ -1640,6 +1645,10 @@ public:
 	void					ShowNewItem( const char* name, const char* icon );
 	void					UpdateFlashlight( idPlayer* player );
 	void					UpdateChattingHud( idPlayer* player );
+	void					setCaption( idStr caption, idVec4 color, int priority, idStr shaderName );
+	bool					hasCaption();
+	void					clearCaption( idStr shaderName );
+	void					setCinematic( bool value );
 
 private:
 
@@ -1677,7 +1686,7 @@ private:
 	idSWFSpriteInstance* 	bsInfo;
 	idSWFSpriteInstance* 	soulcubeInfo;
 	idSWFSpriteInstance* 	newItem;
-	idSWFSpriteInstance*		respawnMessage;
+	idSWFSpriteInstance*	respawnMessage;
 	idSWFSpriteInstance* 	flashlight;
 	idSWFSpriteInstance* 	mpChatObject;
 	idSWFSpriteInstance* 	mpConnection;
@@ -1716,6 +1725,13 @@ private:
 
 	bool					showSoulCubeInfoOnLoad;
 	bool					updateOnRestore;
+
+	idSWFSpriteInstance*	subtitles;
+	idSWFTextInstance*		subtitlesText;
+	int						subtitlePriority;
+	idStr					subtitleShaderName;
+
+	bool					inCinematic;
 };
 
 //*

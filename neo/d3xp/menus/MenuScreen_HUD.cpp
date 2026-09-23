@@ -76,6 +76,17 @@ void idMenuScreen_HUD::ShowScreen( const mainMenuTransition_t transitionType )
 	security = root.GetNestedSprite( "_center", "security" );
 	securityText = root.GetNestedText( "_center", "security", "info", "txtVal" );
 
+	// Subtitles Update
+	if( gameLocal.gameType == GAME_SP )
+	{
+		subtitles = root.GetNestedSprite( "_center", "respawnMessage" );
+		subtitlesText = root.GetNestedText( "_center", "respawnMessage", "info", "txtMessage" );
+		subtitles->SetYPos( subtitles->GetYPos() + 300.0f );
+		subtitles->SetXPos( subtitles->GetXPos() - 100.0f );
+		subtitlesText->editText->bounds.br.y = 100.0f;
+		subtitlesText->editText->bounds.br.x = 600.0f;
+	}
+
 	// PDA Download
 	newPDADownload = root.GetNestedSprite( "_center", "pdaDownload" );
 	newPDAName = root.GetNestedText( "_center", "pdaDownload", "info", "txtName" );
@@ -249,7 +260,7 @@ idMenuScreen_HUD::UpdateHealth
 void idMenuScreen_HUD::UpdateHealthArmor( idPlayer* player )
 {
 
-	if( !playerInfo || !player )
+	if( !playerInfo || !player || game->CheckInCinematic() || this->inCinematic )
 	{
 		return;
 	}
@@ -347,7 +358,7 @@ idMenuScreen_HUD::UpdateStamina
 void idMenuScreen_HUD::UpdateStamina( idPlayer* player )
 {
 
-	if( !stamina || !player )
+	if( !stamina || !player || game->CheckInCinematic() || this->inCinematic )
 	{
 		return;
 	}
@@ -385,7 +396,7 @@ idMenuScreen_HUD::UpdateLocation
 void idMenuScreen_HUD::UpdateWeaponInfo( idPlayer* player )
 {
 
-	if( !player || !ammoInfo )
+	if( !player || !ammoInfo || game->CheckInCinematic() || this->inCinematic )
 	{
 		return;
 	}
@@ -579,7 +590,7 @@ idMenuScreen_HUD::GiveWeapon
 void idMenuScreen_HUD::GiveWeapon( idPlayer* player, int weaponIndex )
 {
 
-	if( common->IsMultiplayer() )
+	if( common->IsMultiplayer() || game->CheckInCinematic() || this->inCinematic )
 	{
 		return;
 	}
@@ -625,7 +636,7 @@ idMenuScreen_HUD::UpdateWeaponStates
 void idMenuScreen_HUD::UpdatePickupInfo( int index, const idStr& name )
 {
 
-	if( !pickupInfo )
+	if( !pickupInfo || game->CheckInCinematic() || this->inCinematic )
 	{
 		return;
 	}
@@ -647,7 +658,7 @@ idMenuScreen_HUD::IsPickupListReady
 bool idMenuScreen_HUD::IsPickupListReady()
 {
 
-	if( !pickupInfo )
+	if( !pickupInfo || game->CheckInCinematic() || this->inCinematic )
 	{
 		return false;
 	}
@@ -668,7 +679,7 @@ idMenuScreen_HUD::UpdateWeaponStates
 void idMenuScreen_HUD::ShowPickups()
 {
 
-	if( !pickupInfo )
+	if( !pickupInfo || game->CheckInCinematic() || this->inCinematic )
 	{
 		return;
 	}
@@ -768,7 +779,7 @@ idMenuScreen_HUD::UpdateCursorState
 void idMenuScreen_HUD::UpdateCursorState()
 {
 
-	if( !cursorTalking && !cursorInCombat && !cursorGrabber && !cursorItem )
+	if( ( !cursorTalking && !cursorInCombat && !cursorGrabber && !cursorItem ) || ( game->CheckInCinematic() || this->inCinematic ) )
 	{
 
 		cursorNone = true;
@@ -1003,7 +1014,7 @@ idMenuScreen_HUD::UpdateSoulCube
 void idMenuScreen_HUD::UpdateSoulCube( bool ready )
 {
 
-	if( !soulcubeInfo )
+	if( !soulcubeInfo || game->CheckInCinematic() || this->inCinematic )
 	{
 		return;
 	}
@@ -1064,7 +1075,7 @@ idMenuScreen_HUD::UpdateWeaponStates
 void idMenuScreen_HUD::UpdateWeaponStates( idPlayer* player, bool weaponChanged )
 {
 
-	if( !weaponPills )
+	if( !weaponPills || game->CheckInCinematic() || this->inCinematic )
 	{
 		return;
 	}
@@ -1325,7 +1336,7 @@ idMenuScreen_HUD::UpdateLocation
 void idMenuScreen_HUD::UpdateLocation( idPlayer* player )
 {
 
-	if( !locationName || !player )
+	if( !locationName || !player || game->CheckInCinematic() || this->inCinematic )
 	{
 		return;
 	}
@@ -1360,8 +1371,7 @@ idMenuScreen_HUD::ShowTip
 */
 void idMenuScreen_HUD::ShowTip( const char* title, const char* tip )
 {
-
-	if( !tipInfo )
+	if( !tipInfo || game->CheckInCinematic() )
 	{
 		return;
 	}
@@ -1411,7 +1421,7 @@ idMenuScreen_HUD::HideTip
 void idMenuScreen_HUD::HideTip()
 {
 
-	if( !tipInfo )
+	if( !tipInfo || game->CheckInCinematic() )
 	{
 		return;
 	}
@@ -1540,7 +1550,7 @@ idMenuScreen_HUD::UpdatedSecurity
 void  idMenuScreen_HUD::ToggleNewVideo( bool show )
 {
 
-	if( !newVideo )
+	if( !newVideo || game->CheckInCinematic() || this->inCinematic )
 	{
 		return;
 	}
@@ -1565,7 +1575,7 @@ idMenuScreen_HUD::UpdatedSecurity
 void  idMenuScreen_HUD::ToggleNewPDA( bool show )
 {
 
-	if( !newPDA )
+	if( !newPDA || game->CheckInCinematic() || this->inCinematic )
 	{
 		return;
 	}
@@ -1590,7 +1600,7 @@ idMenuScreen_HUD::UpdatedSecurity
 void  idMenuScreen_HUD::UpdateAudioLog( bool show )
 {
 
-	if( !audioLog )
+	if( !audioLog || game->CheckInCinematic() || this->inCinematic )
 	{
 		return;
 	}
@@ -1654,7 +1664,7 @@ idMenuScreen_HUD::UpdatedSecurity
 void  idMenuScreen_HUD::UpdateCommunication( bool show, idPlayer* player )
 {
 
-	if( !communication || !player )
+	if( !communication || !player || game->CheckInCinematic() )
 	{
 		return;
 	}
@@ -1743,7 +1753,7 @@ idMenuScreen_HUD::UpdateOxygen
 void  idMenuScreen_HUD::UpdateOxygen( bool show, int val )
 {
 
-	if( !oxygen )
+	if( !oxygen || game->CheckInCinematic() )
 	{
 		return;
 	}
@@ -1810,7 +1820,7 @@ idMenuScreen_HUD::UpdateEnviro
 void idMenuScreen_HUD::UpdateEnviro( bool show, int bar, int val )
 {
 	// code below is from idMenuScreen_HUD::UpdateOxygen (with changes)
-	if( !oxygen )
+	if( !oxygen || game->CheckInCinematic() )
 	{
 		return;
 	}
@@ -2342,7 +2352,7 @@ idMenuScreen_HUD::UpdateFlashlight
 void idMenuScreen_HUD::UpdateFlashlight( idPlayer* player )
 {
 
-	if( !player || !flashlight )
+	if( !player || !flashlight || game->CheckInCinematic() || this->inCinematic )
 	{
 		return;
 	}
@@ -2501,5 +2511,201 @@ void idMenuScreen_HUD::UpdateChattingHud( idPlayer* player )
 				}
 			}
 		}
+	}
+}
+
+const char*	 idMenuScreen_HUD::GetlocationName()
+{
+	if( locationName == nullptr )
+	{
+		return NULL;
+	}
+	return locationName->text.c_str();
+}
+
+void idMenuScreen_HUD::setCaption( idStr caption, idVec4 color, int priority, idStr shaderName )
+{
+	if( subtitles != NULL )
+	{
+		if( !subtitles->IsVisible() )
+		{
+			subtitles->SetVisible( true );
+			subtitles->PlayFrame( "rollOn" );
+		}
+		else
+		{
+			if( cvarSystem->GetCVarBool( "cc_debugCaptions" ) )
+			{
+				common->Printf( "\nNew Caption priority: %d, Old Caption Priority: %d\n", priority, subtitlePriority );
+			}
+			if( priority > subtitlePriority )
+			{
+				return;
+			}
+		}
+		subtitlesText->SetText( caption );
+		swfColorRGBA_t textColor;
+		textColor.r = color.x;
+		textColor.g = color.y;
+		textColor.b = color.z;
+		textColor.a = color.w;
+		subtitlesText->color = textColor;
+		subtitlePriority = priority;
+		subtitleShaderName = shaderName;
+
+	}
+}
+
+bool idMenuScreen_HUD::hasCaption()
+{
+	return subtitles->IsVisible();
+}
+
+void idMenuScreen_HUD::clearCaption( idStr shaderName )
+{
+	bool mustClear = subtitles != NULL && !shaderName.Icmp( this->subtitleShaderName );
+	if( mustClear )
+	{
+		subtitles->PlayFrame( "rollOff" );
+		subtitlesText->SetText( "" );
+		subtitlePriority = 1000;
+	}
+}
+
+void idMenuScreen_HUD::setCinematic( bool value )
+{
+	if( this->inCinematic == value )
+	{
+		return;
+	}
+
+	this->inCinematic = value;
+	if( stamina != NULL )
+	{
+		stamina->GetSprite()->SetVisible( !value );
+	}
+	if( playerInfo != NULL )
+	{
+		playerInfo->GetSprite()->SetVisible( !value );
+	}
+	if( tipInfo != NULL )
+	{
+		tipInfo->GetSprite()->SetVisible( !value );
+	}
+	if( security != NULL )
+	{
+		security->SetVisible( !value );
+	}
+	if( locationName != NULL )
+	{
+		locationName->SetText( "" );
+	}
+	if( securityText != NULL )
+	{
+		securityText->SetText( "" );
+	}
+	if( newPDADownload != NULL )
+	{
+		newPDADownload->SetVisible( !value );
+	}
+	if( newPDAName != NULL )
+	{
+		newPDAName->SetText( "" );
+	}
+	if( newPDAHeading != NULL )
+	{
+		newPDAHeading->SetText( "" );
+	}
+	if( newPDA != NULL )
+	{
+		newPDA->SetVisible( !value );
+	}
+	if( newVideoDownload != NULL )
+	{
+		newVideoDownload->SetVisible( !value );
+	}
+	if( newVideo != NULL )
+	{
+		newVideo->SetVisible( !value );
+	}
+	if( audioLog != NULL )
+	{
+		audioLog->SetVisible( false );
+	}
+	if( communication != NULL )
+	{
+		communication->SetVisible( false );
+	}
+	if( oxygen->IsVisible() == true )
+	{
+		oxygen->SetVisible( false );
+	}
+	if( flashlight != NULL )
+	{
+		flashlight->SetVisible( !value );
+	}
+	if( objective != NULL )
+	{
+		objective->SetVisible( !value );
+	}
+	if( objectiveComplete != NULL )
+	{
+		objectiveComplete->SetVisible( !value );
+	}
+	if( ammoInfo != NULL )
+	{
+		ammoInfo->SetVisible( !value );
+	}
+	if( bsInfo != NULL )
+	{
+		bsInfo->SetVisible( !value );
+	}
+	if( soulcubeInfo != NULL )
+	{
+		soulcubeInfo->SetVisible( !value );
+	}
+	if( weaponImg != NULL )
+	{
+		weaponImg->SetVisible( !value );
+	}
+	if( newWeapon != NULL )
+	{
+		newWeapon->SetVisible( !value );
+	}
+	if( pickupInfo != NULL )
+	{
+		pickupInfo->SetVisible( !value );
+	}
+	if( newItem != NULL )
+	{
+		newItem->SetVisible( !value );
+	}
+	if( combatCursor != NULL )
+	{
+		combatCursor->SetVisible( !value );
+	}
+	if( talkCursor != NULL )
+	{
+		talkCursor->SetVisible( !value );
+	}
+	if( grabberCursor != NULL )
+	{
+		grabberCursor->SetVisible( !value );
+	}
+	if( weaponPills != NULL )
+	{
+		weaponPills->GetSprite()->SetVisible( !value );
+		if( gameLocal.GetLocalPlayer()->inventory.weapons == 1 )
+		{
+			weaponPills->GetSprite()->SetVisible( false );
+		}
+	}
+	if( weaponName != NULL )
+	{
+		weaponName->GetSprite()->SetVisible( !value );
+	}
+	if( newVideoHeading != NULL && value )
+	{
+		newVideoHeading->SetText( "" );
 	}
 }

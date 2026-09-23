@@ -1,0 +1,206 @@
+/*
+English subtitles mod for Doom 3 bfg edition by Y-Dr. Now
+CC Script Format:
+{
+	name: name of the sound shader or the video file or sound file
+	color: rgba array for coloring the text (max 255)
+	priority: priority of the caption
+	caption: timestamp in milliseconds and text reference
+}
+*/
+{
+	name audiolog_phobos2_killian_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_phobos2_00000000001"
+}
+
+{
+	name audiolog_phobos2_killian_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_phobos2_00000000002"
+}
+
+{
+	name audiolog_phobos2_killian_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 14000 "#cc_phobos2_00000000003"
+}
+
+{
+	name audiolog_phobos2_killian_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 21000 "#cc_phobos2_00000000004"
+}
+
+{
+	name p2_mcneil_pumpingfull
+	color [220, 100, 25, 255]
+	priority 0
+	caption 0 "#cc_phobos2_00000000005"
+}
+
+{
+	name p2_mcneil_auxpowerpt1
+	color [220, 100, 25, 255]
+	priority 0
+	caption 0 "#cc_phobos2_00000000006"
+}
+
+{
+	name p2_mcneil_auxpowerpt2
+	color [220, 100, 25, 255]
+	priority 0
+	caption 0 "#cc_phobos2_00000000007"
+}
+
+{
+	name p2_mcneil_meeting2
+	color [220, 100, 25, 255]
+	priority 0
+	caption 0 "#cc_phobos2_00000000008"
+}
+
+{
+	name p2_mcneil_meeting2
+	color [220, 100, 25, 255]
+	priority 0
+	caption 4000 "#cc_phobos2_00000000021"
+}
+
+{
+	name p2_mcneil_meeting3
+	color [220, 100, 25, 255]
+	priority 0
+	caption 0 "#cc_phobos2_00000000009"
+}
+
+{
+	name p2_mcneil_speech_01
+	color [220, 100, 25, 255]
+	priority 0
+	caption 0 "#cc_phobos2_00000000010"
+}
+
+{
+	name p2_mcneil_speech_02a
+	color [220, 100, 25, 255]
+	priority 0
+	caption 0 "#cc_phobos2_00000000011"
+}
+
+{
+	name p2_mcneil_speech_02a
+	color [220, 100, 25, 255]
+	priority 0
+	caption 3000 "#cc_phobos2_00000000012"
+}
+
+{
+	name p2_mcneil_speech_03
+	color [220, 100, 25, 255]
+	priority 0
+	caption 0 "#cc_phobos2_00000000012"
+}
+
+{
+	name p2_mcneil_speech_04
+	color [220, 100, 25, 255]
+	priority 0
+	caption 0 "#cc_phobos2_00000000013"
+}
+
+{
+	name p2_mcneil_speech_05
+	color [220, 100, 25, 255]
+	priority 0
+	caption 0 "#cc_phobos2_00000000014"
+}
+
+{
+	name p2_mcneil_speech_06
+	color [220, 100, 25, 255]
+	priority 0
+	caption 0 "#cc_phobos2_00000000015"
+}
+
+{
+	name p2_mcneil_speech_07
+	color [220, 100, 25, 255]
+	priority 0
+	caption 0 "#cc_phobos2_00000000016"
+}
+
+{
+	name p2_core4_failure
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_phobos2_00000000017"
+}
+
+{
+	name p2_core1_failure
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_phobos2_00000000018"
+}
+
+{
+	name p2_core2_failure
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_phobos2_00000000019"
+}
+
+{
+	name p2_core3_failure
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_phobos2_00000000020"
+}
+
+{
+	name sound/vo/recycling1/com_pump_shut_down
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_recycling1_00000000026"
+}
+
+{
+	name sound/vo/recycling1/comp070
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_recycling1_00000000028"
+}
+
+{
+	name sound/vo/enpro/comp_service_bridge
+	color [155, 155, 155, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000012"
+}
+
+{
+	name sound/vo/recycling2/cv_acessgranted
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_recycling2_00000000021"
+}
+
+{
+	name sound/vo/monorail/comp_turrets
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_monorail_00000000044"
+}
+
+{
+	name sound/vo/monorail/comp_turrets_shutdown
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_monorail_00000000045"
+}
+

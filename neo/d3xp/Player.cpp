@@ -3634,7 +3634,7 @@ void idPlayer::DrawHUD( idMenuHandler_HUD* _hudManager )
 {
 	SCOPED_PROFILE_EVENT( "idPlayer::DrawHUD" );
 
-	if( !weapon.GetEntity() || influenceActive != INFLUENCE_NONE || privateCameraView || gameLocal.GetCamera() || !g_showHud.GetBool() || mainMenuLocal.IsGameComplete() )
+	if( !weapon.GetEntity() || influenceActive != INFLUENCE_NONE || privateCameraView || !g_showHud.GetBool() || mainMenuLocal.IsGameComplete() )
 	{
 		return;
 	}
@@ -3733,6 +3733,8 @@ void idPlayer::EnterCinematic()
 
 	if( hudManager )
 	{
+		DrawHUD( hudManager );
+		hud->setCinematic( true );
 		hudManager->SetRadioMessage( false );
 	}
 	physicsObj.SetLinearVelocity( vec3_origin );
@@ -3782,6 +3784,8 @@ void idPlayer::ExitCinematic()
 	{
 		Show();
 	}
+
+	hud->setCinematic( false );
 
 	if( weaponEnabled && weapon.GetEntity() )
 	{

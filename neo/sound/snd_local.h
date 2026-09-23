@@ -33,6 +33,8 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "WaveFile.h"
 #include "OggFile.h"
+#include "MP3File.h"
+#include "FlacFile.h"
 
 // Maximum number of voices we can have allocated
 #define MAX_HARDWARE_VOICES 48
@@ -93,7 +95,14 @@ typedef enum
 	SCMD_CACHESOUNDSHADER,
 } soundDemoCommand_t;
 
+#include "SoundVoiceBase.h"
 #include "SoundVoice.h"
+#include "SoundSample.h"
+#include "SoundHardware.h"
+#include "CinematicAudio.h"
+
+#include "snd_efxfile.h"
+#include "CCScriptDecl.h"
 
 //#define AL_ALEXT_PROTOTYPES
 
@@ -110,6 +119,9 @@ typedef enum
 #include "OpenAL/AL_SoundSample.h"
 #include "OpenAL/AL_SoundVoice.h"
 #include "OpenAL/AL_SoundHardware.h"
+#include "OpenAL/AL_EAX.h" // GK: Keep the Effect function definitions in separate files for better portability
+
+extern ALuint clslot;
 
 ID_INLINE_EXTERN ALenum CheckALErrors_( const char* filename, int line )
 {
@@ -146,6 +158,7 @@ struct listener_t
 	idVec3	pos;		// position in meters
 	int		id;			// the entity number, used to detect when a sound is local
 	int		area;		// area number the listener is in
+	idStr	name;		// GK: The name of the area the player is in
 };
 
 class idSoundFade
@@ -209,6 +222,14 @@ public:
 	// and reallocated when it comes back in range
 	idSoundVoice* 			hardwareVoice;
 
+	// GK: has caption
+	bool					hasCaption;
+	bool					hasMultipleCaptions;
+	idStr					shaderName;
+	int						subStartTime;
+	bool					hasCheckedForCaption;
+	void					ClearCaption();
+
 	// only allocated by the soundWorld block allocator
 	idSoundChannel();
 	~idSoundChannel();
@@ -252,7 +273,10 @@ public:
 	virtual float			CurrentShakeAmplitude();
 
 	// where is the camera
-	virtual void			PlaceListener( const idVec3& origin, const idMat3& axis, const int listenerId );
+	virtual void			PlaceListener( const idVec3& origin, const idMat3& axis, const int listenerId, const char* locationName );
+
+	// Clears any active EAX Effect.
+	virtual void			ClearEAX();
 
 	virtual void			WriteSoundShaderLoad( const idSoundShader* snd );
 
@@ -317,6 +341,7 @@ public:
 	float				shakeAmp;			// last calculated shake amplitude
 
 	listener_t			listener;
+	int					EAXarea;
 	idList<idSoundEmitterLocal*, TAG_AUDIO>	emitters;
 
 	idSoundEmitter* 	localSound;			// for PlayShaderDirectly()
@@ -463,19 +488,25 @@ public:
 	virtual void			InitStreamBuffers();
 	virtual void			FreeStreamBuffers();
 
-	virtual void*			GetAudioDevice() const;
+	virtual void*			GetAudioDevice() const; // FIXME: stupid name; get rid of this? not sure if it's really needed..
 
 	// for the sound level meter window
 	virtual cinData_t		ImageForTime( const int milliseconds, const bool waveform );
 
 	// Free all sounds loaded during the last map load
-	virtual	void			BeginLevelLoad();
+	virtual	void			BeginLevelLoad( const char* mapstring );
 
 	// We might want to defer the loading of new sounds to this point
-	virtual	void			EndLevelLoad();
+	virtual	void			EndLevelLoad( const char* mapstring );
 
 	// prints memory info
 	virtual void			PrintMemInfo( MemInfo_t* mi );
+
+	// do we support reverb?
+	virtual bool			SupportsReverbs();
+
+	// is this sound currently playing, has any CC attach to it?
+	virtual bool			HasSubtitles();
 
 	//-------------------------
 
@@ -493,7 +524,7 @@ public:
 	int						SoundTime() const;
 
 	// may return NULL if there are no more voices left
-	idSoundVoice* 			AllocateVoice( const idSoundSample* leadinSample, const idSoundSample* loopingSample );
+	idSoundVoice* 			AllocateVoice( const idSoundSample* leadinSample, const idSoundSample* loopingSample, const int channel );
 	void					FreeVoice( idSoundVoice* );
 
 	idSoundSample* 			LoadSample( const char* name );
@@ -508,12 +539,8 @@ public:
 			bufferNumber( 0 )
 		{ }
 
-		idSoundVoice_OpenAL* 	voice;
-		idSoundSample_OpenAL*	sample;
-
-		// from stub or something..
-		//idSoundVoice* 	voice;
-		//idSoundSample* sample;
+		idSoundVoice* 	voice;
+		idSoundSample* sample;
 
 		int bufferNumber;
 	};
@@ -521,6 +548,10 @@ public:
 	// Get a stream buffer from the free pool, returns NULL if none are available
 	bufferContext_t* 			ObtainStreamBufferContext();
 	void						ReleaseStreamBufferContext( bufferContext_t* p );
+	idEFXFile					EFXDatabase;
+	bool						efxloaded;
+	CCScriptDecl				ccdecl;
+	bool						ccloaded;
 
 	idSysMutex					streamBufferMutex;
 	idStaticList< bufferContext_t*, MAX_SOUND_BUFFERS > freeStreamBufferContexts;
@@ -533,7 +564,7 @@ public:
 	idList<idSoundSample*, TAG_AUDIO>		samples;
 	idHashIndex					sampleHash;
 
-	idSoundHardware				hardware;
+	idSoundHardware*			hardware;
 
 	idRandom2					random;
 
@@ -544,6 +575,10 @@ public:
 
 	bool						insideLevelLoad;
 
+	bool						systemClosing;
+
+	idSysMutex					mutex;
+
 	//-------------------------
 
 	idSoundSystemLocal() :
@@ -551,8 +586,13 @@ public:
 		soundTime( 0 ),
 		muted( false ),
 		musicMuted( false ),
-		needsRestart( false )
+		needsRestart( false ),
+		initOnce( false )
 	{}
+
+private:
+	bool initOnce;
+	uintptr_t threadHandle;
 };
 
 extern	idSoundSystemLocal	soundSystemLocal;

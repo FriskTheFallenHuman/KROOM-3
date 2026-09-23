@@ -43,7 +43,11 @@ idCVar s_unpauseFadeInTime( "s_unpauseFadeInTime", "250", CVAR_INTEGER, "When un
 idCVar s_doorDistanceAdd( "s_doorDistanceAdd", "150", CVAR_FLOAT, "reduce sound volume with this distance when going through a door" );
 idCVar s_drawSounds( "s_drawSounds", "0", CVAR_INTEGER, "", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2> );
 idCVar s_showVoices( "s_showVoices", "0", CVAR_BOOL, "show active voices" );
+idCVar s_useEAX( "s_useEAX", "1", CVAR_ARCHIVE | CVAR_BOOL, "Set if you want to use EAX audio (efx files required)" );
+idCVar s_useCC( "s_useCC", "1", CVAR_ARCHIVE | CVAR_BOOL, "Set if you want to use Subtitles (ccsript files are required)" );
 idCVar s_volume_dB( "s_volume_dB", "0", CVAR_ARCHIVE | CVAR_FLOAT, "volume in dB" );
+
+extern idCVar s_noSound;
 
 extern void WriteDeclCache( idDemoFile* f, int demoCategory, int demoCode, declType_t  declType );
 
@@ -66,7 +70,7 @@ idSoundWorldLocal::idSoundWorldLocal()
 	listener.pos.Zero();
 	listener.id = -1;
 	listener.area = 0;
-
+	EAXarea = -1;
 	shakeAmp = 0.0f;
 	currentCushionDB = DB_SILENCE;
 
@@ -165,7 +169,7 @@ float idSoundWorldLocal::CurrentShakeAmplitude()
 idSoundWorldLocal::PlaceListener
 ========================
 */
-void idSoundWorldLocal::PlaceListener( const idVec3& origin, const idMat3& axis, const int id )
+void idSoundWorldLocal::PlaceListener( const idVec3& origin, const idMat3& axis, const int id, const char* locationName )
 {
 	if( writeDemo )
 	{
@@ -184,6 +188,7 @@ void idSoundWorldLocal::PlaceListener( const idVec3& origin, const idMat3& axis,
 	listener.axis = axis;
 	listener.pos = origin;
 	listener.id = id;
+	listener.name = locationName;
 
 	if( renderWorld )
 	{
@@ -193,6 +198,16 @@ void idSoundWorldLocal::PlaceListener( const idVec3& origin, const idMat3& axis,
 	{
 		listener.area = 0;
 	}
+}
+
+/*
+========================
+idSoundWorldLocal::ClearEAX
+========================
+*/
+void idSoundWorldLocal::ClearEAX()
+{
+	EAXarea = -1;
 }
 
 /*
@@ -288,6 +303,7 @@ static float AdjustForCushionChannels( const idStaticList< idActiveChannel, MAX_
 		if( targetCushionDB < DB_SILENCE )
 		{
 			targetCushionDB = DB_SILENCE;
+			activeEmitterChannels[uncushionedChannels].channel->ClearCaption();
 		}
 		else if( targetCushionDB > s_cushionFadeLimit.GetFloat() )
 		{
@@ -331,6 +347,47 @@ idSoundWorldLocal::Update
 */
 void idSoundWorldLocal::Update()
 {
+	if( s_noSound.GetBool() )
+	{
+		return;
+	}
+
+	// GK: Check here if the player has change environment and re-set the effect slot
+	if( soundSystemLocal.efxloaded )
+	{
+		int EnvironmentID = -1;
+		idSoundEffect* effect = NULL;
+		if( EAXarea != listener.area )
+		{
+			idStr defaultStr( "default" );
+			idStr listenerAreaStr( listener.area );
+			soundSystemLocal.EFXDatabase.FindEffect( listenerAreaStr, &effect, &EnvironmentID );
+			if( !effect )
+			{
+				soundSystemLocal.EFXDatabase.FindEffect( listener.name, &effect, &EnvironmentID );
+			}
+			if( !effect )
+			{
+				soundSystemLocal.EFXDatabase.FindEffect( defaultStr, &effect, &EnvironmentID );
+			}
+		}
+		else
+		{
+			EnvironmentID = listener.id;
+		}
+
+		// only update if change in settings
+		if( listener.id != EnvironmentID )
+		{
+			soundSystemLocal.hardware->UpdateEAXEffect( effect );
+			if( soundSystemLocal.hardware->IsReverbSupported() )
+			{
+				EAXarea = listener.area;
+			}
+			listener.id = EnvironmentID;
+		}
+	}
+
 	// ------------------
 	// Update emitters
 	//
@@ -385,9 +442,7 @@ void idSoundWorldLocal::Update()
 			const bool canMute = channel->CanMute();
 			if( canMute && channel->volumeDB <= DB_SILENCE )
 			{
-				//TODO: Channel mutting over OpenAL
-				//channel->Mute();
-				//continue;
+				channel->ClearCaption();
 			}
 
 			// Calculate the sort key.
@@ -464,7 +519,7 @@ void idSoundWorldLocal::Update()
 	if( showVoices )
 	{
 		showVoiceTable.Format( "currentCushionDB: %5.1f  freeVoices: %i zombieVoices: %i buffers:%i/%i\n", currentCushionDB,
-							   soundSystemLocal.hardware.GetNumFreeVoices(), soundSystemLocal.hardware.GetNumZombieVoices(),
+							   soundSystemLocal.hardware->GetNumFreeVoices(), soundSystemLocal.hardware->GetNumZombieVoices(),
 							   soundSystemLocal.activeStreamBufferContexts.Num(), soundSystemLocal.freeStreamBufferContexts.Num() );
 	}
 	for( int i = 0; i < activeEmitterChannels.Num(); i++ )
@@ -552,7 +607,7 @@ void idSoundWorldLocal::Update()
 				idSoundChannel* chan = emitter->channels[k];
 				float	min = chan->parms.minDistance;
 				float	max = chan->parms.maxDistance;
-				const char* defaulted = chan->leadinSample->IsDefault() ? " *DEFAULTED*" : "";
+				const char* defaulted = chan->leadinSample->IsDefault() && !chan->leadinSample->useavi ? " *DEFAULTED*" : "";
 				idStr text;
 				text.Format( "%s (%i %i/%i)%s", chan->soundShader->GetName(), idMath::Ftoi( emitter->spatializedDistance ), idMath::Ftoi( min ), idMath::Ftoi( max ), defaulted );
 				renderWorld->DrawText( text, textPos, 0.1f, idVec4( 1, 0, 0, 1 ), listener.axis, 1, lifetime );
@@ -659,6 +714,8 @@ void idSoundWorldLocal::Skip( int time )
 {
 	accumulatedPauseTime -= time;
 	pauseFade.SetVolume( DB_SILENCE );
+
+	// GK: Even through it does it's job, inactive channels are not affected resulting into some audio leaking into gameplay
 	pauseFade.Fade( 0.0f, s_unpauseFadeInTime.GetInteger(), GetSoundTime() );
 }
 
@@ -941,7 +998,7 @@ void idSoundWorldLocal::ProcessDemoCommand( idDemoFile* readDemo )
 			readDemo->ReadMat3( axis );
 			readDemo->ReadInt( listenerId );
 
-			PlaceListener( origin, axis, listenerId );
+			PlaceListener( origin, axis, listenerId, "Undefined" );
 		};
 		break;
 		case SCMD_ALLOC_EMITTER:
@@ -1116,6 +1173,10 @@ void idSoundWorldLocal::WriteToSaveGame( idFile* savefile )
 			savefile->WriteInt( channel->endTime );
 			savefile->WriteInt( channel->logicalChannel );
 			savefile->WriteBool( channel->allowSlow );
+			savefile->WriteBool( channel->hasCaption );
+			savefile->WriteBool( channel->hasMultipleCaptions );
+			savefile->WriteBool( channel->hasCheckedForCaption );
+			savefile->WriteInt( channel->subStartTime );
 			helper::WriteShaderParms( savefile, channel->parms );
 			helper::WriteSoundFade( savefile, channel->volumeFade );
 			savefile->WriteString( channel->soundShader->GetName() );
@@ -1216,6 +1277,10 @@ void idSoundWorldLocal::ReadFromSaveGame( idFile* savefile )
 			savefile->ReadInt( channel->endTime );
 			savefile->ReadInt( channel->logicalChannel );
 			savefile->ReadBool( channel->allowSlow );
+			savefile->ReadBool( channel->hasCaption );
+			savefile->ReadBool( channel->hasMultipleCaptions );
+			savefile->ReadBool( channel->hasCheckedForCaption );
+			savefile->ReadInt( channel->subStartTime );
 			helper::ReadShaderParms( savefile, channel->parms );
 			helper::ReadSoundFade( savefile, channel->volumeFade, timeDelta );
 			savefile->ReadString( shaderName );
