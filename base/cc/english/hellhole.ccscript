@@ -1,0 +1,297 @@
+/*
+English subtitles mod for Doom 3 bfg edition by Y-Dr. Now
+CC Script Format:
+{
+	name: name of the sound shader or the video file or sound file
+	color: rgba array for coloring the text (max 255)
+	priority: priority of the caption
+	caption: timestamp in milliseconds and text reference
+}
+*/
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_hellhole_00000000001"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 4200 "#cc_hellhole_00000000039"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 10000 "#cc_hellhole_00000000002"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 16000 "#cc_hellhole_00000000003"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 23000 "#cc_hellhole_00000000004"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 31000 "#cc_hellhole_00000000005"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 37000 "#cc_hellhole_00000000040"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 42000 "#cc_hellhole_00000000006"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 50000 "#cc_hellhole_00000000007"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 57000 "#cc_hellhole_00000000008"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 64500 "#cc_hellhole_00000000041"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 68000 "#cc_hellhole_00000000009"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 77000 "#cc_hellhole_00000000010"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 83000 "#cc_hellhole_00000000011"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 90000 "#cc_hellhole_00000000012"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 98000 "#cc_hellhole_00000000013"
+}
+
+{
+	name video_tablets
+	color [200, 200, 200, 255]
+	priority 1
+	caption 102000 "#cc_hellhole_00000000014"
+}
+
+{
+	name end_edit
+	color [200, 200, 200, 255]
+	priority 0
+	caption 1000 "#cc_hellhole_00000000015"
+}
+
+{
+	name end_edit
+	color [200, 200, 200, 255]
+	priority 0
+	caption 6000 "#cc_hellhole_00000000016"
+}
+
+{
+	name end_edit
+	color [200, 200, 200, 255]
+	priority 0
+	caption 7000 "#cc_hellhole_00000000017"
+}
+
+{
+	name end_edit
+	color [200, 200, 200, 255]
+	priority 0
+	caption 9000 "#cc_hellhole_00000000018"
+}
+
+{
+	name end_edit
+	color [200, 200, 200, 255]
+	priority 0
+	caption 11000 "#cc_hellhole_00000000019"
+}
+
+{
+	name end_edit
+	color [200, 200, 200, 255]
+	priority 0
+	caption 14000 "#cc_hellhole_00000000020"
+}
+
+{
+	name end_edit
+	color [200, 200, 200, 255]
+	priority 0
+	caption 17000 "#cc_hellhole_00000000021"
+}
+
+{
+	name end_edit
+	color [200, 200, 200, 255]
+	priority 0
+	caption 18000 "#cc_hellhole_00000000022"
+}
+
+{
+	name end_edit
+	color [200, 200, 200, 255]
+	priority 0
+	caption 21000 "#cc_hellhole_00000000023"
+}
+
+{
+	name end_edit
+	color [200, 200, 200, 255]
+	priority 0
+	caption 22000 "#cc_hellhole_00000000024"
+}
+
+{
+	name end_edit
+	color [200, 200, 200, 255]
+	priority 0
+	caption 24000 "#cc_hellhole_00000000025"
+}
+
+{
+	name hh_sfx_betrugerhead
+	color [200, 200, 200, 255]
+	priority 0
+	caption 1000 "#cc_hellhole_00000000026"
+}
+
+{
+	name hh_sfx_betrugerhead
+	color [200, 200, 200, 255]
+	priority 0
+	caption 9000 "#cc_hellhole_00000000027"
+}
+
+{
+	name hh_sfx_betrugerhead
+	color [200, 200, 200, 255]
+	priority 0
+	caption 13000 "#cc_hellhole_00000000028"
+}
+
+{
+	name hh_sfx_betrugerhead
+	color [200, 200, 200, 255]
+	priority 0
+	caption 19000 "#cc_hellhole_00000000029"
+}
+
+{
+	name sound/VO/hellhole/bet_destroy_him
+	color [255, 160, 160, 255]
+	priority 0
+	caption 0 "#cc_hellhole_00000000030"
+}
+
+{
+	name sound/vo/hellhole/bet_so_you_made_it
+	color [255, 160, 160, 255]
+	priority 0
+	caption 0 "#cc_hellhole_00000000031"
+}
+
+{
+	name sound/vo/hellhole/bet_witness
+	color [255, 160, 160, 255]
+	priority 0
+	caption 0 "#cc_hellhole_00000000032"
+}
+
+{
+	name end_radio1
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_hellhole_00000000033"
+}
+
+{
+	name end_radio16
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_hellhole_00000000034"
+}
+
+{
+	name end_radio17
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_hellhole_00000000035"
+}
+
+{
+	name hh_music_betrugerhead
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_hellhole_00000000036"
+}
+
+{
+	name hh_sfx_dragonscream
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_hellhole_00000000037"
+}
+
+{
+	name hh_music_credits
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_hellhole_00000000038"
+}
+

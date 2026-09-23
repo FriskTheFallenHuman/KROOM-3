@@ -1,0 +1,184 @@
+/*
+English subtitles mod for Doom 3 bfg edition by Y-Dr. Now
+CC Script Format:
+{
+	name: name of the sound shader or the video file or sound file
+	color: rgba array for coloring the text (max 255)
+	priority: priority of the caption
+	caption: timestamp in milliseconds and text reference
+}
+*/
+{
+	name delta5_swann_trigger
+	color [170, 170, 255, 255]
+	priority 0
+	caption 0 "#cc_delta5_00000000001"
+}
+
+{
+	name delta5_swann_trigger
+	color [170, 170, 255, 255]
+	priority 0
+	caption 8000 "#cc_delta5_00000000002"
+}
+
+{
+	name delta5_swann_trigger
+	color [170, 170, 255, 255]
+	priority 0
+	caption 16000 "#cc_delta5_00000000003"
+}
+
+{
+	name delta5_swann_trigger
+	color [170, 170, 255, 255]
+	priority 0
+	caption 26000 "#cc_delta5_00000000004"
+}
+
+{
+	name delta5_swann_trigger
+	color [170, 170, 255, 255]
+	priority 0
+	caption 34000 "#cc_delta5_00000000005"
+}
+
+{
+	name delta5_swann_trigger
+	color [170, 170, 255, 255]
+	priority 0
+	caption 43000 "#cc_delta5_00000000006"
+}
+
+{
+	name sound/VO/delta5/delta5_bet_sufferingpain
+	color [255, 160, 160, 255]
+	priority 0
+	caption 0 "#cc_delta5_00000000007"
+}
+
+{
+	name sound/VO/delta5/delta5_bet_toolate
+	color [255, 160, 160, 255]
+	priority 0
+	caption 0 "#cc_delta5_00000000008"
+}
+
+{
+	name sound/VO/delta5/delta5_bet_toolate
+	color [255, 160, 160, 255]
+	priority 0
+	caption 8500 "#cc_delta5_00000000013"
+}
+
+{
+	name sound/VO/delta5/delta5_bet_toolate
+	color [255, 160, 160, 255]
+	priority 0
+	caption 14000 "#cc_delta5_00000000014"
+}
+
+{
+	name sound/VO/delta5/delta5_female_helpme
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_delta5_00000000009"
+}
+
+{
+	name delta5_swann_primary
+	color [170, 170, 255, 255]
+	priority 0
+	caption 0 "#cc_delta5_00000000010"
+}
+
+{
+	name delta5_swann_secondary1
+	color [170, 170, 255, 255]
+	priority 0
+	caption 0 "#cc_delta5_00000000011"
+}
+
+{
+	name delta5_swann_secondary2
+	color [170, 170, 255, 255]
+	priority 0
+	caption 0 "#cc_delta5_00000000012"
+}
+
+{
+	name audiolog_delta5_swann_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000179"
+}
+
+{
+	name audiolog_delta5_swann_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 5000 "#cc_pda_00000000180"
+}
+
+{
+	name audiolog_delta5_swann_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 11000 "#cc_pda_00000000181"
+}
+
+{
+	name audiolog_delta5_swann_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 19000 "#cc_pda_00000000182"
+}
+
+{
+	name audiolog_delta5_swann_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 25500 "#cc_pda_00000000476"
+}
+
+{
+	name audiolog_delta5_swann_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000183"
+}
+
+{
+	name audiolog_delta5_swann_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 5000 "#cc_pda_00000000184"
+}
+
+{
+	name audiolog_delta5_swann_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 13000 "#cc_pda_00000000185"
+}
+
+{
+	name audiolog_delta5_swann_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 20500 "#cc_pda_00000000477"
+}
+
+{
+	name audiolog_delta5_swann_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 24000 "#cc_pda_00000000186"
+}
+
+{
+	name audiolog_delta5_swann_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 31000 "#cc_pda_00000000478"
+}

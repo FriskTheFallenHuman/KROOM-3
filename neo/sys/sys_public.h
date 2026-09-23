@@ -546,6 +546,9 @@ bool			Sys_IsWindowVisible();
 const char* 	Sys_TimeStampToStr( ID_TIME_T timeStamp );
 const char* 	Sys_SecToStr( int sec );
 
+int				Sys_Wcstrtombstr( char* Dest, const wchar_t* Source, size_t size );
+int				Sys_Mbstrtowcstr( wchar_t* Dest, const char* string, size_t size );
+
 // Execute the specified process and wait until it's done, calling workFn every waitMS milliseconds.
 // If showOutput == true, std IO from the executed process will be output to the console.
 // Note that the return value is not an indication of the exit code of the process, but is false

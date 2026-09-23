@@ -1,0 +1,288 @@
+/*
+English subtitles mod for Doom 3 bfg edition by Y-Dr. Now
+CC Script Format:
+{
+	name: name of the sound shader or the video file or sound file
+	color: rgba array for coloring the text (max 255)
+	priority: priority of the caption
+	caption: timestamp in milliseconds and text reference
+}
+*/
+{
+	name comm_sarge_complete_1
+	color [160, 255, 160, 255]
+	priority 0
+	caption 0 "#cc_comm1_00000000001"
+}
+
+{
+	name comm_sarge_complete_1
+	color [160, 255, 160, 255]
+	priority 0
+	caption 7000 "#cc_comm1_00000000002"
+}
+
+{
+	name comm_sarge_complete_1
+	color [160, 255, 160, 255]
+	priority 0
+	caption 13000 "#cc_comm1_00000000003"
+}
+
+{
+	name comm_sarge_radio1
+	color [160, 255, 160, 255]
+	priority 0
+	caption 0 "#cc_comm1_00000000004"
+}
+
+{
+	name comm_sarge_radio1
+	color [160, 255, 160, 255]
+	priority 0
+	caption 6000 "#cc_comm1_00000000005"
+}
+
+{
+	name sound/VO/comm/comp06
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_comm1_00000000006"
+}
+
+{
+	name sound/VO/comm/comp_transmission_terminated
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_comm1_00000000007"
+}
+
+{
+	name sound/VO/comm/comp09
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_comm1_00000000008"
+}
+
+{
+	name sound/VO/comm/comp10
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_comm1_00000000009"
+}
+
+{
+	name sound/VO/comm/comp11
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_comm1_00000000010"
+}
+
+{
+	name sound/VO/comm/comp12
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_comm1_00000000011"
+}
+
+{
+	name sound/VO/comm/comp52
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_comm1_00000000012"
+}
+
+{
+	name sound/VO/comm/comp53
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_comm1_00000000013"
+}
+
+{
+	name sound/VO/comm/comp68
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_comm1_00000000014"
+}
+
+{
+	name sound/VO/comm/comp69
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_comm1_00000000015"
+}
+
+{
+	name comm_sarge_radio10
+	color [160, 255, 160, 255]
+	priority 0
+	caption 0 "#cc_comm1_00000000016"
+}
+
+{
+	name comm_sarge_radio14
+	color [160, 255, 160, 255]
+	priority 0
+	caption 0 "#cc_comm1_00000000017"
+}
+
+{
+	name comm_sarge_radio16
+	color [160, 255, 160, 255]
+	priority 0
+	caption 0 "#cc_comm1_00000000018"
+}
+
+{
+	name comm_sarge_radio17
+	color [160, 255, 160, 255]
+	priority 0
+	caption 0 "#cc_comm1_00000000019"
+}
+
+{
+	name sound/VO/comm/sarge_radio18
+	color [160, 255, 160, 255]
+	priority 0
+	caption 0 "#cc_comm1_00000000020"
+}
+{
+	name sound/VO/comm/sarge_radio18
+	color [160, 255, 160, 255]
+	priority 0
+	caption 4500 "#cc_comm1_00000000025"
+}
+
+{
+	name sound/VO/comm/swann_overhear1
+	color [170, 170, 255, 255]
+	priority 0
+	caption 0 "#cc_comm1_00000000021"
+}
+
+{
+	name sound/vo/comm/swann_vidphone1
+	color [170, 170, 255, 255]
+	priority 0
+	caption 0 "#cc_comm1_00000000022"
+}
+
+{
+	name sound/vo/comm/swann_vidphone1
+	color [170, 170, 255, 255]
+	priority 0
+	caption 8200 "#cc_comm1_00000000026"
+}
+
+{
+	name sound/vo/comm/swann_vidphone2
+	color [170, 170, 255, 255]
+	priority 0
+	caption 0 "#cc_comm1_00000000023"
+}
+
+{
+	name sound/vo/comm/swann_vidphone2
+	color [170, 170, 255, 255]
+	priority 0
+	caption 7000 "#cc_comm1_00000000027"
+}
+
+{
+	name sound/vo/comm/swann_vidphone3
+	color [170, 170, 255, 255]
+	priority 0
+	caption 0 "#cc_comm1_00000000024"
+}
+
+{
+	name sound/vo/comm/swann_vidphone3
+	color [170, 170, 255, 255]
+	priority 0
+	caption 7500 "#cc_comm1_00000000028"
+}
+
+{
+	name audiolog_comm1_blake_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000065"
+}
+
+{
+	name audiolog_comm1_blake_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 5000 "#cc_pda_00000000066"
+}
+
+{
+	name audiolog_comm1_blake_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12000 "#cc_pda_00000000067"
+}
+
+{
+	name audiolog_comm1_blake_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 20500 "#cc_pda_00000000444"
+}
+
+{
+	name audiolog_comm1_blake_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 25000 "#cc_pda_00000000068"
+}
+
+{
+	name audiolog_comm1_blake_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 32200 "#cc_pda_00000000445"
+}
+
+{
+	name audiolog_comm1_blake_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 35000 "#cc_pda_00000000410"
+}
+
+{
+	name audiolog_comm1_blake_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 42000 "#cc_pda_00000000069"
+}
+
+{
+	name audiolog_comm1_wolfe_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000070"
+}
+
+{
+	name audiolog_comm1_wolfe_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 7000 "#cc_pda_00000000071"
+}
+
+{
+	name audiolog_comm1_wolfe_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 15500 "#cc_pda_00000000446"
+}
+
+{
+	name audiolog_comm1_wolfe_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 23000 "#cc_pda_00000000072"
+}

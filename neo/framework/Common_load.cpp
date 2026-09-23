@@ -329,7 +329,7 @@ void idCommonLocal::ExecuteMapChange()
 	// note which media we are going to need to load
 	sm = Sys_Milliseconds();
 	renderSystem->BeginLevelLoad();
-	soundSystem->BeginLevelLoad();
+	soundSystem->BeginLevelLoad( currentMapName );
 	declManager->BeginLevelLoad();
 	uiManager->BeginLevelLoad();
 	ms = Sys_Milliseconds() - sm;
@@ -463,7 +463,7 @@ void idCommonLocal::ExecuteMapChange()
 	}
 
 	renderSystem->EndLevelLoad();
-	soundSystem->EndLevelLoad();
+	soundSystem->EndLevelLoad( currentMapName );
 	declManager->EndLevelLoad();
 	uiManager->EndLevelLoad( currentMapName );
 	fileSystem->EndLevelLoad();

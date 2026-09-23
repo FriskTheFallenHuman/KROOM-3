@@ -1,0 +1,345 @@
+/*
+English subtitles mod for Doom 3 bfg edition by Y-Dr. Now
+CC Script Format:
+{
+	name: name of the sound shader or the video file or sound file
+	color: rgba array for coloring the text (max 255)
+	priority: priority of the caption
+	caption: timestamp in milliseconds and text reference
+}
+*/
+{
+	name audiolog_monorail_harding_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_monorail_00000000001"
+}
+
+{
+	name audiolog_monorail_harding_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 5500 "#cc_monorail_00000000002"
+}
+
+{
+	name audiolog_monorail_harding_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12500 "#cc_monorail_00000000003"
+}
+
+{
+	name audiolog_monorail_harding_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 19000 "#cc_monorail_00000000048"
+}
+
+{
+	name audiolog_monorail_harding_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 26000 "#cc_monorail_00000000004"
+}
+
+{
+	name audiolog_monorail_harding_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 31500 "#cc_monorail_00000000049"
+}
+
+{
+	name audiolog_monorail_harding_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 36000 "#cc_monorail_00000000005"
+}
+
+{
+	name audiolog_monorail_harding_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 42000 "#cc_monorail_00000000006"
+}
+
+{
+	name audiolog_monorail_harding_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 46000 "#cc_monorail_00000000007"
+}
+
+{
+	name audiolog_monorail_harding_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 52000 "#cc_monorail_00000000008"
+}
+
+{
+	name audiolog_monorail_harding_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 59000 "#cc_monorail_00000000009"
+}
+
+{
+	name audiolog_monorail_harding_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 65000 "#cc_monorail_00000000050"
+}
+
+{
+	name monorail_suitguy_trigger
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_monorail_00000000010"
+}
+
+{
+	name monorail_suitguy_trigger
+	color [200, 200, 200, 255]
+	priority 0
+	caption 7000 "#cc_monorail_00000000051"
+}
+
+{
+	name monorail_suitguy_trigger
+	color [200, 200, 200, 255]
+	priority 0
+	caption 9000 "#cc_monorail_00000000011"
+}
+
+{
+	name monorail_suitguy_trigger
+	color [200, 200, 200, 255]
+	priority 0
+	caption 16000 "#cc_monorail_00000000012"
+}
+
+{
+	name monorail_computer_02
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_monorail_00000000013"
+}
+
+{
+	name monorail_computer_02
+	color [200, 200, 200, 255]
+	priority 0
+	caption 6000 "#cc_monorail_00000000014"
+}
+
+{
+	name monorail_computer_04
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_monorail_00000000015"
+}
+
+{
+	name monorail_computer_04
+	color [200, 200, 200, 255]
+	priority 0
+	caption 5000 "#cc_monorail_00000000016"
+}
+
+{
+	name audiolog_monorail_hollies_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_monorail_00000000017"
+}
+
+{
+	name audiolog_monorail_hollies_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_monorail_00000000018"
+}
+
+{
+	name audiolog_monorail_hollies_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12200 "#cc_monorail_00000000052"
+}
+
+{
+	name audiolog_monorail_hollies_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 19000 "#cc_monorail_00000000019"
+}
+
+{
+	name audiolog_monorail_hollies_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 26000 "#cc_monorail_00000000020"
+}
+
+{
+	name audiolog_monorail_hollies_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 31500 "#cc_monorail_00000000053"
+}
+
+{
+	name monorail_betruger_one
+	color [255, 160, 160, 255]
+	priority 0
+	caption 0 "#cc_monorail_00000000021"
+}
+
+{
+	name monorail_betruger_two
+	color [255, 160, 160, 255]
+	priority 0
+	caption 0 "#cc_monorail_00000000022"
+}
+
+{
+	name monorail_betruger_three
+	color [255, 160, 160, 255]
+	priority 0
+	caption 0 "#cc_monorail_00000000023"
+}
+
+{
+	name monorail_computer_01
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_monorail_00000000024"
+}
+
+{
+	name monorail_suitguy_surprise
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_monorail_00000000025"
+}
+
+{
+	name monorail_suitguy_primary
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_monorail_00000000030"
+}
+
+{
+	name monorail_suitguy_secondary1
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_monorail_00000000031"
+}
+
+{
+	name monorail_suitguy_secondary2
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_monorail_00000000032"
+}
+
+{
+	name monorail_computer_03
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_monorail_00000000034"
+}
+
+{
+	name sound/VO/monorail/bet_mrail_oppose_me
+	color [255, 160, 160, 255]
+	priority 0
+	caption 0 "#cc_monorail_00000000035"
+}
+
+{
+	name monorail_computer_07
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_monorail_00000000036"
+}
+
+{
+	name monorail_computer_06
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_monorail_00000000037"
+}
+
+{
+	name monorail_computer_05
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_monorail_00000000038"
+}
+
+{
+	name monorail_evil_chant
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_monorail_00000000039"
+}
+
+{
+	name monorail_crash
+	color [200, 200, 200, 255]
+	priority 0
+	caption 3 "#cc_monorail_00000000040"
+}
+
+{
+	name monorail_computer_08
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_monorail_00000000041"
+}
+
+{
+	name sound/VO/recycling2/bet_destroy_him
+	color [255, 160, 160, 255]
+	priority 0
+	caption 0 "#cc_monorail_00000000042"
+}
+
+{
+	name sound/VO/recycling2/bert_laugh06
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_monorail_00000000043"
+}
+
+{
+	name monorail_computer_turrets_on
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_monorail_00000000044"
+}
+
+{
+	name monorail_computer_turrets_off
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_monorail_00000000045"
+}
+
+{
+	name sound/vo/monorail/female_help_me
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_monorail_00000000046"
+}
+
+{
+	name sound/vo/monorail/female_lord_delivery
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_monorail_00000000047"
+}

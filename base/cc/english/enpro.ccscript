@@ -1,0 +1,520 @@
+/*
+English subtitles mod for Doom 3 bfg edition by Y-Dr. Now
+CC Script Format:
+{
+	name: name of the sound shader or the video file or sound file
+	color: rgba array for coloring the text (max 255)
+	priority: priority of the caption
+	caption: timestamp in milliseconds and text reference
+}
+*/
+{
+	name enpro_no_sir
+	color [150, 255, 150, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000001"
+}
+
+{
+	name sound/vo/enpro/comp_rod_offline
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000002"
+}
+
+{
+	name sound/vo/enpro/comp_evaucate
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000003"
+}
+
+{
+	name sound/vo/enpro/comp_reactor_core
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000004"
+}
+
+{
+	name sound/vo/enpro/comp_235
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000005"
+}
+
+{
+	name sound/vo/enpro/comp_585
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000006"
+}
+
+{
+	name sound/vo/enpro/comp_900
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000007"
+}
+
+{
+	name sound/vo/enpro/comp_core_temp
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000008"
+}
+
+{
+	name sound/vo/enpro/comp_haz_dor_closed
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000009"
+}
+
+{
+	name sound/vo/enpro/comp_haz_dor_open
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000010"
+}
+
+{
+	name sound/vo/enpro/comp_rod_online
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000011"
+}
+
+{
+	name sound/vo/enpro/comp_service_bridge
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000012"
+}
+
+{
+	name sound/vo/enpro/comp_unsafe_levels
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000013"
+}
+
+{
+	name enpro_help_me
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000014"
+}
+
+{
+	name enpro_move_in
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000015"
+}
+
+{
+	name enpro_hallway_clear
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000016"
+}
+
+{
+	name enpro_johnny
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000017"
+}
+
+{
+	name enpro_what_the_hell
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000018"
+}
+
+{
+	name enpro_swinging_left
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000019"
+}
+
+{
+	name enpro_im_down
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000020"
+}
+
+{
+	name enpro_give_status
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000021"
+}
+
+{
+	name enpro_quiet
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000022"
+}
+
+{
+	name enpro_watch_yourself
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000023"
+}
+
+{
+	name enpro_fire_fire
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000024"
+}
+
+{
+	name enpro_moving_right
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000025"
+}
+
+{
+	name enpro_son_of_a
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000026"
+}
+
+{
+	name enpro_nothing_here
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000027"
+}
+
+{
+	name enpro_moving_in
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000028"
+}
+
+{
+	name enpro_pain
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000029"
+}
+
+{
+	name enpro_wounded_marine1
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000030"
+}
+
+{
+	name enpro_wounded_marine2
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000031"
+}
+
+{
+	name enpro_wounded_marine3
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000032"
+}
+
+{
+	name enpro_sarge_radio1
+	color [160, 255, 160, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000033"
+}
+
+{
+	name enpro_sarge_radio1
+	color [160, 255, 160, 255]
+	priority 0
+	caption 7000 "#cc_enpro_00000000038"
+}
+
+{
+	name enpro_sarge_radio1
+	color [160, 255, 160, 255]
+	priority 0
+	caption 12500 "#cc_enpro_00000000039"
+}
+
+{
+	name sound/VO/enpro/sarge_radio2
+	color [160, 255, 160, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000034"
+}
+
+{
+	name enpro_do_u_see
+	color [160, 255, 160, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000035"
+}
+
+{
+	name enpro_ok_lets_get_to
+	color [160, 255, 160, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000036"
+}
+
+{
+	name enpro_yes_sir
+	color [160, 255, 160, 255]
+	priority 0
+	caption 0 "#cc_mars_city1_00000000072"
+}
+
+{
+	name enpro_man_down
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000037"
+}
+
+{
+	name sound/VO/alpha_labs1/comp_gas_leak_stop
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs1_00000000023"
+}
+
+{
+	name audiolog_enpro_raad_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000187"
+}
+
+{
+	name audiolog_enpro_raad_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 8000 "#cc_pda_00000000188"
+}
+
+{
+	name audiolog_enpro_raad_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 13200 "#cc_pda_00000000479"
+}
+
+{
+	name audiolog_enpro_raad_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 19000 "#cc_pda_00000000189"
+}
+
+{
+	name audiolog_enpro_raad_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 24000 "#cc_pda_00000000404"
+}
+
+{
+	name audiolog_enpro_raad_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 29500 "#cc_pda_00000000480"
+}
+
+{
+	name audiolog_enpro_raad_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 33000 "#cc_pda_00000000190"
+}
+
+{
+	name audiolog_enpro_raad_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000191"
+}
+
+{
+	name audiolog_enpro_raad_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 3000 "#cc_pda_00000000481"
+}
+
+{
+	name audiolog_enpro_raad_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 9000 "#cc_pda_00000000192"
+}
+
+{
+	name audiolog_enpro_raad_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 15000 "#cc_pda_00000000482"
+}
+
+{
+	name audiolog_enpro_raad_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 22000 "#cc_pda_00000000193"
+}
+
+{
+	name audiolog_enpro_raad_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 26000 "#cc_pda_00000000483"
+}
+
+{
+	name audiolog_enpro_raad_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 33000 "#cc_pda_00000000194"
+}
+
+{
+	name audiolog_enpro_raad_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 39200 "#cc_pda_00000000405"
+}
+
+{
+	name audiolog_enpro_raad_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 45000 "#cc_pda_00000000195"
+}
+
+{
+	name audiolog_enpro_raad_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 48800 "#cc_pda_00000000484"
+}
+
+{
+	name audiolog_enpro_hammer_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000196"
+}
+
+{
+	name audiolog_enpro_hammer_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 2500 "#cc_pda_00000000485"
+}
+
+{
+	name audiolog_enpro_hammer_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 10500 "#cc_pda_00000000197"
+}
+
+{
+	name audiolog_enpro_hammer_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 19200 "#cc_pda_00000000406"
+}
+
+{
+	name audiolog_enpro_hammer_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 28000 "#cc_pda_00000000198"
+}
+
+{
+	name audiolog_enpro_hammer_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 34000 "#cc_pda_00000000486"
+}
+
+{
+	name audiolog_enpro_hammer_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 42000 "#cc_pda_00000000407"
+}
+
+{
+	name audiolog_enpro_hammer_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 46000 "#cc_pda_00000000199"
+}
+
+{
+	name audiolog_enpro_hammer_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 55000 "#cc_pda_00000000200"
+}
+
+{
+	name audiolog_enpro_chasar_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000201"
+}
+
+{
+	name audiolog_enpro_chasar_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_pda_00000000202"
+}
+
+{
+	name audiolog_enpro_chasar_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 13000 "#cc_pda_00000000408"
+}
+
+{
+	name audiolog_enpro_chasar_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 21000 "#cc_pda_00000000203"
+}
+
+{
+	name audiolog_enpro_chasar_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 29700 "#cc_pda_00000000409"
+}
+
+{
+	name audiolog_enpro_chasar_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 37000 "#cc_pda_00000000204"
+}

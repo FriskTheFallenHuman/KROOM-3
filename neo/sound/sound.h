@@ -139,6 +139,7 @@ private:
 static const int SCHANNEL_ANY = 0;	// used in queries and commands to effect every channel at once, in
 // startSound to have it not override any other channel
 static const int SCHANNEL_ONE = 1;	// any following integer can be used as a channel number
+static const int SCHANNEL_UI = 15;	// GK: Used on UI elements in order to avoid sharing volume with the in game environment
 typedef int s_channelType;	// the game uses its own series of enums, and we don't want to require casts
 
 
@@ -210,7 +211,10 @@ public:
 
 	// where is the camera/microphone
 	// listenerId allows listener-private and antiPrivate sounds to be filtered
-	virtual void			PlaceListener( const idVec3& origin, const idMat3& axis, const int listenerId ) = 0;
+	virtual void			PlaceListener( const idVec3& origin, const idMat3& axis, const int listenerId, const char* locationName ) = 0;
+
+	// clears any EAX effect active.
+	virtual void			ClearEAX() = 0;
 
 	// fade all sounds in the world with a given shader soundClass
 	// to is in Db, over is in seconds
@@ -320,21 +324,27 @@ public:
 	virtual void			FreeStreamBuffers() = 0;
 
 	// video playback needs to get this
-	virtual void*			GetAudioDevice() const = 0;
+	virtual void* 			GetAudioDevice() const = 0; // FIXME: stupid name if we have other backends
 
 	// for the sound level meter window
 	virtual cinData_t		ImageForTime( const int milliseconds, const bool waveform ) = 0;
 
 	// Free all sounds loaded during the last map load
-	virtual	void			BeginLevelLoad() = 0;
+	virtual	void			BeginLevelLoad( const char* mapstring = "" ) = 0;
 
 	// Load all sounds marked as used this level
-	virtual	void			EndLevelLoad() = 0;
+	virtual	void			EndLevelLoad( const char* mapstring ) = 0;
 
 	virtual void			Preload( idPreloadManifest& preload ) = 0;
 
 	// prints memory info
 	virtual void			PrintMemInfo( MemInfo_t* mi ) = 0;
+
+	// do we support reverb?
+	virtual bool			SupportsReverbs() = 0;
+
+	// is this sound currently playing, has any CC attach to it?
+	virtual bool			HasSubtitles() = 0;
 };
 
 extern idSoundSystem*	soundSystem;

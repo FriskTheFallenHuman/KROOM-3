@@ -5895,3 +5895,29 @@ bool idGameLocal::ProcessDemoCommand( idDemoFile* readDemo )
 
 	return true;
 }
+
+/*
+===============
+idGameLocal::ClearCaptions
+===============
+*/
+void idGameLocal::ClearCaptions( idStr shaderName )
+{
+	if( GetLocalPlayer() != NULL )
+	{
+		GetLocalPlayer()->hud->clearCaption( shaderName );
+	}
+}
+
+/*
+===============
+idGameLocal::SetCaption
+===============
+*/
+void idGameLocal::SetCaption( idStr caption, idVec4 color, int priority, idStr shaderName )
+{
+	if( GetLocalPlayer() != NULL )
+	{
+		GetLocalPlayer()->hud->setCaption( caption, color, priority, shaderName );
+	}
+}

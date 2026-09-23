@@ -74,6 +74,7 @@ idSoundShader::~idSoundShader
 */
 idSoundShader::~idSoundShader()
 {
+	FreeData();
 }
 
 /*
@@ -93,6 +94,7 @@ idSoundShader::idSoundShader::FreeData
 */
 void idSoundShader::FreeData()
 {
+	entries.Clear();
 }
 
 /*
@@ -458,7 +460,7 @@ bool idSoundShader::HasDefaultSound() const
 {
 	for( int i = 0; i < entries.Num(); i++ )
 	{
-		if( entries[i] && entries[i]->IsDefault() )
+		if( entries[i] && entries[i]->IsDefault() && !entries[i]->useavi )
 		{
 			return true;
 		}
@@ -475,7 +477,7 @@ bool idSoundShader::HasUnloadedSounds() const
 {
 	for( int i = 0; i < entries.Num(); ++i )
 	{
-		if( entries[i] && !entries[i]->IsLoaded() )
+		if( entries[i] && !entries[i]->IsLoaded() && !entries[i]->useavi )
 		{
 			return true;
 		}

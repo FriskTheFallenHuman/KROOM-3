@@ -1,0 +1,52 @@
+/*
+English subtitles mod for Doom 3 bfg edition by Y-Dr. Now
+CC Script Format:
+{
+	name: name of the sound shader or the video file or sound file
+	color: rgba array for coloring the text (max 255)
+	priority: priority of the caption
+	caption: timestamp in milliseconds and text reference
+}
+*/
+{
+	name bottech_alive
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_erebus6_00000000001"
+}
+
+{
+	name bottech_remember
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_erebus6_00000000002"
+}
+
+{
+	name bottech_primary
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_erebus6_00000000003"
+}
+
+{
+	name bottech_secondary1
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_erebus6_00000000004"
+}
+
+{
+	name bottech_secondary2
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_erebus6_00000000005"
+}
+
+{
+	name bottech_trigger
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_erebus6_00000000006"
+}
+

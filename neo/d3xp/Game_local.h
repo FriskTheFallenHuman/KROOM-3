@@ -464,6 +464,9 @@ public:
 	virtual void			StartDemoPlayback( idRenderWorld* renderworld );
 	virtual bool			ProcessDemoCommand( idDemoFile* readDemo );
 
+	virtual void			ClearCaptions( idStr shaderName );
+	virtual void			SetCaption( idStr caption, idVec4 color, int priority, idStr shaderName );
+
 	// ---------------------- Public idGameLocal Interface -------------------
 
 	void					Printf( VERIFY_FORMAT_STRING const char* fmt, ... ) const;

@@ -1,0 +1,23 @@
+/*
+English subtitles mod for Doom 3 bfg edition by Y-Dr. Now
+CC Script Format:
+{
+	name: name of the sound shader or the video file or sound file
+	color: rgba array for coloring the text (max 255)
+	priority: priority of the caption
+	caption: timestamp in milliseconds and text reference
+}
+*/
+{
+	name sound/vo/delta5/delta5_female_helpme
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_delta5_00000000009"
+}
+
+{
+	name rchat_meyers_underground2_01
+	color [102, 178, 255, 255]
+	priority 0
+	caption 0 "#cc_le_underground2_00000000001"
+}

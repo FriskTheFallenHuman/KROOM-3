@@ -1,0 +1,220 @@
+/*
+English subtitles mod for Doom 3 bfg edition by Y-Dr. Now
+CC Script Format:
+{
+	name: name of the sound shader or the video file or sound file
+	color: rgba array for coloring the text (max 255)
+	priority: priority of the caption
+	caption: timestamp in milliseconds and text reference
+}
+*/
+{
+	name recycling_video_betruger1
+	color [255, 160, 160, 255]
+	priority 0
+	caption 0 "#cc_recycling2_00000000001"
+}
+
+{
+	name recycling_video_betruger1
+	color [255, 160, 160, 255]
+	priority 0
+	caption 3000 "#cc_recycling2_00000000002"
+}
+
+{
+	name recycling_video_betruger1
+	color [255, 160, 160, 255]
+	priority 0
+	caption 10000 "#cc_recycling2_00000000003"
+}
+
+{
+	name recycling_video_betruger1
+	color [255, 160, 160, 255]
+	priority 0
+	caption 16000 "#cc_recycling2_00000000004"
+}
+
+{
+	name recycling_video_betruger1
+	color [255, 160, 160, 255]
+	priority 0
+	caption 20000 "#cc_recycling2_00000000005"
+}
+
+{
+	name recycling_video_betruger1
+	color [255, 160, 160, 255]
+	priority 0
+	caption 31000 "#cc_recycling2_00000000006"
+}
+
+{
+	name recycling_video_betruger1
+	color [255, 160, 160, 255]
+	priority 0
+	caption 38000 "#cc_recycling2_00000000007"
+}
+
+{
+	name recycling_video_betruger2
+	color [255, 160, 160, 255]
+	priority 0
+	caption 0 "#cc_recycling2_00000000008"
+}
+
+{
+	name recycling_video_betruger2
+	color [255, 160, 160, 255]
+	priority 0
+	caption 3000 "#cc_recycling2_00000000009"
+}
+
+{
+	name recycling_video_betruger2
+	color [255, 160, 160, 255]
+	priority 0
+	caption 10000 "#cc_recycling2_00000000010"
+}
+
+{
+	name recycling_video_betruger2
+	color [255, 160, 160, 255]
+	priority 0
+	caption 16000 "#cc_recycling2_00000000011"
+}
+
+{
+	name recycling_video_betruger2
+	color [255, 160, 160, 255]
+	priority 0
+	caption 23000 "#cc_recycling2_00000000012"
+}
+
+{
+	name recycling_video_betruger2
+	color [255, 160, 160, 255]
+	priority 0
+	caption 31000 "#cc_recycling2_00000000013"
+}
+
+{
+	name sound/vo/recycling2/bert_laugh06
+	color [255, 160, 160, 255]
+	priority 0
+	caption 0 "#cc_recycling2_00000000014"
+}
+
+{
+	name sound/vo/recycling2/cv_pumpinit
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_recycling2_00000000015"
+}
+
+{
+	name sound/vo/recycling2/cv_airfilt_offline
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_recycling2_00000000016"
+}
+
+{
+	name sound/vo/recycling2/bet_nothing_left_for_you
+	color [255, 160, 160, 255]
+	priority 0
+	caption 0 "#cc_recycling2_00000000017"
+}
+
+{
+	name sound/vo/recycling2/cv_hazdoor
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_recycling2_00000000018"
+}
+
+{
+	name sound/vo/recycling2/bet_you_will_never_escape
+	color [255, 160, 160, 255]
+	priority 0
+	caption 0 "#cc_recycling2_00000000019"
+}
+
+{
+	name sound/vo/recycling2/cv_warnyellow
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_recycling2_00000000020"
+}
+
+{
+	name sound/vo/recycling2/cv_acessgranted
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_recycling2_00000000021"
+}
+
+{
+	name sound/vo/recycling2/bet_destroy_him
+	color [255, 160, 160, 255]
+	priority 0
+	caption 0 "#cc_recycling2_00000000022"
+}
+
+{
+	name sound/vo/recycling2/cv_warnorange
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_recycling2_00000000023"
+}
+
+{
+	name sound/ed/mancubus/chatter2
+	color [200, 200, 200, 255]
+	priority 0
+	caption 1 "#cc_recycling2_00000000024"
+}
+
+{
+	name monster_boss_cyberdemon_sight1
+	color [200, 200, 200, 255]
+	priority 0
+	caption 1 "#cc_recycling2_00000000025"
+}
+
+{
+	name sound/VO/recycling2/bet_death_will_not
+	color [255, 160, 160, 255]
+	priority 0
+	caption 0 "#cc_recycling2_00000000026"
+}
+
+{
+	name sound/vo/recycling2/cv_warnred
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_recycling2_00000000027"
+}
+
+{
+	name sound/vo/recycling2/cv_airscrub1
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_recycling2_00000000028"
+}
+
+{
+	name sound/vo/recycling2/cv_airscrub2
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_recycling2_00000000029"
+}
+
+{
+	name sound/vo/recycling2/cv_airfilt_online
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_recycling2_00000000030"
+}
+

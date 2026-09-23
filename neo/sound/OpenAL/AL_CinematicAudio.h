@@ -1,26 +1,35 @@
-/**
-* Copyright (C) 2021 George Kalmpokis
-*
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* this software and associated documentation files (the "Software"), to deal in
-* the Software without restriction, including without limitation the rights to
-* use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-* of the Software, and to permit persons to whom the Software is furnished to
-* do so, subject to the following conditions:
-*
-* The above copyright notice and this permission notice shall be included in
-* all copies or substantial portions of the Software. As clarification, there
-* is no requirement that the copyright notice and permission be included in
-* binary distributions of the Software.
-*
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-* SOFTWARE.
+/*
+===========================================================================
+
+Doom 3 BFG Edition GPL Source Code
+Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2021 George Kalmpokis
+
+This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
+
+Doom 3 BFG Edition Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 BFG Edition Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 BFG Edition Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 BFG Edition Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 BFG Edition Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
 */
+
+#ifndef __AL_CINEMATICAUDIO_H__
+#define __AL_CINEMATICAUDIO_H__
+
 #include <precompiled.h>
 #include "../CinematicAudio.h"
 // SRS - Added check on OSX for OpenAL Soft headers vs macOS SDK headers
@@ -29,8 +38,6 @@
 #else
 	#include <AL/al.h>
 #endif
-#ifndef __CINEMATIC_AUDIO_AL_H__
-#define __CINEMATIC_AUDIO_AL_H__
 
 #include <queue>
 #define MIN_BUFFERS 4					// SRS - Minimum buffers to fill before triggering playback
@@ -54,7 +61,7 @@ private:
 	bool		trigger;
 
 	//GK: Unlike XAudio2 which can accept buffer until the end of this world.
-	//	  OpenAL can accept buffers only as long as there are freely available buffers.
+	//	  OpenAL can accept buffers as long as there are freely available buffers.
 	//	  So, what happens if there are no freely available buffers but we still geting audio frames ? Loss of data.
 	//	  That why now I am using two queues in order to store the frames (and their sizes) and when we have available buffers,
 	//	  then start popping those frames instead of the current, so we don't lose any audio frames and the sound doesn't crack anymore.
@@ -63,4 +70,4 @@ private:
 	std::queue<ALuint>		bufids;		// SRS - Added queue of free alBuffer ids to handle variable rate codecs
 };
 
-#endif
+#endif /* !__AL_CINEMATICAUDIO_H__ */

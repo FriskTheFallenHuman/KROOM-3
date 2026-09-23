@@ -1,0 +1,184 @@
+/*
+English subtitles mod for Doom 3 bfg edition by Y-Dr. Now
+CC Script Format:
+{
+	name: name of the sound shader or the video file or sound file
+	color: rgba array for coloring the text (max 255)
+	priority: priority of the caption
+	caption: timestamp in milliseconds and text reference
+}
+*/
+{
+	name vo/enpro2/computer_enpro2_01
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro2_00000000001"
+}
+
+{
+	name vo/enpro2/computer_enpro2_02
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro2_00000000002"
+}
+
+{
+	name vo/enpro2/computer_enpro2_04
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro2_00000000003"
+}
+
+{
+	name vo/enpro2/computer_enpro2_05
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_enpro2_00000000004"
+}
+
+{
+	name rchat_meyers_enpro2_01
+	color [102, 178, 255, 255]
+	priority 0
+	caption 0 "#cc_enpro2_00000000005"
+}
+
+{
+	name rchat_meyers_enpro2_01
+	color [102, 178, 255, 255]
+	priority 0
+	caption 4800 "#cc_enpro2_00000000010"
+}
+
+{
+	name rchat_meyers_enpro2_01
+	color [102, 178, 255, 255]
+	priority 0
+	caption 12000 "#cc_enpro2_00000000006"
+}
+
+{
+	name rchat_meyers_enpro2_01
+	color [102, 178, 255, 255]
+	priority 0
+	caption 20000 "#cc_enpro2_00000000011"
+}
+
+{
+	name rchat_meyers_enpro2_01
+	color [102, 178, 255, 255]
+	priority 0
+	caption 23500 "#cc_enpro2_00000000007"
+}
+
+{
+	name rchat_meyers_enpro2_01
+	color [102, 178, 255, 255]
+	priority 0
+	caption 32000 "#cc_enpro2_00000000012"
+}
+
+{
+	name rchat_meyers_enpro2_02
+	color [102, 178, 255, 255]
+	priority 0
+	caption 0 "#cc_enpro2_00000000008"
+}
+
+{
+	name rchat_meyers_enpro2_02
+	color [102, 178, 255, 255]
+	priority 0
+	caption 7000 "#cc_enpro2_00000000013"
+}
+
+{
+	name rchat_meyers_enpro2_03
+	color [102, 178, 255, 255]
+	priority 0
+	caption 0 "#cc_enpro2_00000000009"
+}
+
+{
+	name rchat_meyers_enpro2_03
+	color [102, 178, 255, 255]
+	priority 0
+	caption 8000 "#cc_enpro2_00000000014"
+}
+
+{
+	name audiolog_vargas_enpro2_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000328"
+}
+
+{
+	name audiolog_vargas_enpro2_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 9930 "#cc_pda_00000000329"
+}
+
+{
+	name audiolog_vargas_enpro2_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 18000 "#cc_pda_00000000330"
+}
+
+{
+	name audiolog_vargas_enpro2_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 25800 "#cc_pda_00000000331"
+}
+
+{
+	name audiolog_vargas_enpro2_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 31000 "#cc_pda_00000000529"
+}
+
+{
+	name audiolog_vargas_enpro2_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 36500 "#cc_pda_00000000332"
+}
+
+{
+	name audiolog_vargas_enpro2_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 44800 "#cc_pda_00000000530"
+}
+
+{
+	name audiolog_vargas_enpro2_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 49000 "#cc_pda_00000000333"
+}
+
+{
+	name audiolog_vargas_enpro2_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 56000 "#cc_pda_00000000334"
+}
+
+{
+	name audiolog_vargas_enpro2_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 64000 "#cc_pda_00000000531"
+}
+
+{
+	name sound/vo/enpro/comp_service_bridge
+	color [155, 155, 155, 255]
+	priority 0
+	caption 0 "#cc_enpro_00000000012"
+}

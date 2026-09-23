@@ -1,0 +1,226 @@
+/*
+English subtitles mod for Doom 3 bfg edition by Y-Dr. Now
+CC Script Format:
+{
+	name: name of the sound shader or the video file or sound file
+	color: rgba array for coloring the text (max 255)
+	priority: priority of the caption
+	caption: timestamp in milliseconds and text reference
+}
+*/
+{
+	name recycling1_revenant_intro
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_recycling1_00000000001"
+}
+
+{
+	name recycling1_revenant_intro
+	color [200, 200, 200, 255]
+	priority 1
+	caption 2000 "#cc_recycling1_00000000002"
+}
+
+{
+	name recycling1_revenant_intro
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12000 "#cc_recycling1_00000000003"
+}
+
+{
+	name audiolog_recycling1_sadowayj_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_recycling1_00000000004"
+}
+
+{
+	name audiolog_recycling1_sadowayj_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 9000 "#cc_recycling1_00000000005"
+}
+
+{
+	name audiolog_recycling1_sadowayj_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 18000 "#cc_recycling1_00000000006"
+}
+
+{
+	name audiolog_recycling1_sadowayj_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 24000 "#cc_recycling1_00000000007"
+}
+
+{
+	name audiolog_recycling1_sadowayj_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 33000 "#cc_recycling1_00000000008"
+}
+
+{
+	name audiolog_recycling1_sadowayj_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 43600 "#cc_recycling1_00000000029"
+}
+
+{
+	name audiolog_recycling1_sadowayj_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 51000 "#cc_recycling1_00000000009"
+}
+
+{
+	name video_recycling
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_recycling1_00000000010"
+}
+
+{
+	name video_recycling
+	color [200, 200, 200, 255]
+	priority 1
+	caption 9000 "#cc_recycling1_00000000011"
+}
+
+{
+	name video_recycling
+	color [200, 200, 200, 255]
+	priority 1
+	caption 15000 "#cc_recycling1_00000000012"
+}
+
+{
+	name video_recycling
+	color [200, 200, 200, 255]
+	priority 1
+	caption 21000 "#cc_recycling1_00000000013"
+}
+
+{
+	name video_recycling
+	color [200, 200, 200, 255]
+	priority 1
+	caption 26000 "#cc_recycling1_00000000014"
+}
+
+{
+	name video_recycling
+	color [200, 200, 200, 255]
+	priority 1
+	caption 29000 "#cc_recycling1_00000000031"
+}
+
+{
+	name video_recycling
+	color [200, 200, 200, 255]
+	priority 1
+	caption 36000 "#cc_recycling1_00000000015"
+}
+
+{
+	name video_recycling
+	color [200, 200, 200, 255]
+	priority 1
+	caption 42000 "#cc_recycling1_00000000016"
+}
+
+{
+	name video_recycling
+	color [200, 200, 200, 255]
+	priority 1
+	caption 50000 "#cc_recycling1_00000000017"
+}
+
+{
+	name video_recycling
+	color [200, 200, 200, 255]
+	priority 1
+	caption 55000 "#cc_recycling1_00000000018"
+}
+
+{
+	name video_recycling
+	color [200, 200, 200, 255]
+	priority 1
+	caption 63000 "#cc_recycling1_00000000019"
+}
+
+{
+	name video_recycling
+	color [200, 200, 200, 255]
+	priority 1
+	caption 67000 "#cc_recycling1_00000000032"
+}
+
+{
+	name video_recycling
+	color [200, 200, 200, 255]
+	priority 1
+	caption 73000 "#cc_recycling1_00000000020"
+}
+
+{
+	name video_recycling
+	color [200, 200, 200, 255]
+	priority 1
+	caption 77000 "#cc_recycling1_00000000021"
+}
+
+{
+	name sound/xian/creepy/betruger_laughs/laugh_06
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_recycling1_00000000022"
+}
+
+{
+	name sound/LEVELS/recycling1/bet_laugh_with_stress
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_recycling1_00000000023"
+}
+
+{
+	name sound/air_and_vents/decompress
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6 "#cc_recycling1_00000000024"
+}
+
+{
+	name sound/air_and_vents/recompress
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6 "#cc_recycling1_00000000025"
+}
+
+{
+	name sound/vo/recycling1/com_pump_shut_down
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_recycling1_00000000026"
+}
+
+{
+	name sound/vo/recycling1/comp070
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_recycling1_00000000028"
+}
+
+{
+	name sound/vo/recycling1/com_flow_control_fail
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_recycling1_00000000027"
+}

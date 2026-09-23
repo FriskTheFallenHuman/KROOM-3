@@ -1,0 +1,114 @@
+/*
+English subtitles mod for Doom 3 bfg edition by Y-Dr. Now
+CC Script Format:
+{
+	name: name of the sound shader or the video file or sound file
+	color: rgba array for coloring the text (max 255)
+	priority: priority of the caption
+	caption: timestamp in milliseconds and text reference
+}
+*/
+{
+	name commoutside_computer_liftcall
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_commoutside_00000000001"
+}
+
+{
+	name sound/VO/commoutside/comp_maintenance_exit
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_commoutside_00000000002"
+}
+
+{
+	name sound/vo/commoutside/sarge_radio1
+	color [160, 255, 160, 255]
+	priority 0
+	caption 0 "#cc_commoutside_00000000003"
+}
+
+{
+	name audiolog_commoutside_ridge_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000073"
+}
+
+{
+	name audiolog_commoutside_ridge_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 4000 "#cc_pda_00000000074"
+}
+
+{
+	name audiolog_commoutside_ridge_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 9500 "#cc_pda_00000000448"
+}
+
+{
+	name audiolog_commoutside_ridge_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 15000 "#cc_pda_00000000075"
+}
+
+{
+	name audiolog_commoutside_ridge_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 22000 "#cc_pda_00000000411"
+}
+
+{
+	name audiolog_commoutside_ridge_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 27000 "#cc_pda_00000000076"
+}
+
+{
+	name audiolog_commoutside_ridge_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 33000 "#cc_pda_00000000412"
+}
+
+{
+	name audiolog_commoutside_ridge_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 38000 "#cc_pda_00000000449"
+}
+
+{
+	name audiolog_commoutside_holiday_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000077"
+}
+
+{
+	name audiolog_commoutside_holiday_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_pda_00000000078"
+}
+
+{
+	name audiolog_commoutside_holiday_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 11000 "#cc_pda_00000000450"
+}
+
+{
+	name audiolog_commoutside_holiday_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 16000 "#cc_pda_00000000079"
+}

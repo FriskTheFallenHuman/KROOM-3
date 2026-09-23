@@ -1,0 +1,262 @@
+/*
+English subtitles mod for Doom 3 bfg edition by Y-Dr. Now
+CC Script Format:
+{
+	name: name of the sound shader or the video file or sound file
+	color: rgba array for coloring the text (max 255)
+	priority: priority of the caption
+	caption: timestamp in milliseconds and text reference
+}
+*/
+{
+	name sound/VO/delta1/sarge_video1
+	color [160, 255, 160, 255]
+	priority 0
+	caption 0 "#cc_delta1_00000000001"
+}
+
+{
+	name sound/VO/delta1/sarge_video1
+	color [160, 255, 160, 255]
+	priority 0
+	caption 6800 "#cc_delta1_00000000037"
+}
+
+{
+	name sound/VO/delta1/sarge_video1
+	color [160, 255, 160, 255]
+	priority 0
+	caption 9000 "#cc_delta1_00000000002"
+}
+
+{
+	name sound/VO/delta1/sarge_video1
+	color [160, 255, 160, 255]
+	priority 0
+	caption 18000 "#cc_delta1_00000000003"
+}
+
+{
+	name audiolog_delta1_price_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_delta1_00000000004"
+}
+
+{
+	name audiolog_delta1_price_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 7000 "#cc_delta1_00000000005"
+}
+
+{
+	name audiolog_delta1_price_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12000 "#cc_delta1_00000000006"
+}
+
+{
+	name audiolog_delta1_price_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 20000 "#cc_delta1_00000000007"
+}
+
+{
+	name audiolog_delta1_price_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 25000 "#cc_delta1_00000000008"
+}
+
+{
+	name audiolog_delta1_price_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 31500 "#cc_delta1_00000000038"
+}
+
+{
+	name audiolog_delta1_price_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 38000 "#cc_delta1_00000000009"
+}
+
+{
+	name audiolog_delta1_price_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_delta1_00000000010"
+}
+
+{
+	name audiolog_delta1_price_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 8000 "#cc_delta1_00000000011"
+}
+
+{
+	name audiolog_delta1_price_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 14000 "#cc_delta1_00000000012"
+}
+
+{
+	name audiolog_delta1_price_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 19000 "#cc_delta1_00000000013"
+}
+
+{
+	name audiolog_delta1_price_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 26000 "#cc_delta1_00000000014"
+}
+
+{
+	name audiolog_delta1_price_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 32000 "#cc_delta1_00000000015"
+}
+
+{
+	name audiolog_delta1_price_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 38000 "#cc_delta1_00000000016"
+}
+
+{
+	name audiolog_delta1_price_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 46000 "#cc_delta1_00000000017"
+}
+
+{
+	name sound/xian/babies/devilbaby_03
+	color [200, 200, 200, 255]
+	priority 2
+	caption 5 "#cc_delta1_00000000018"
+}
+
+{
+	name sound/ed/imp/breath_test2
+	color [200, 200, 200, 255]
+	priority 3
+	caption 0 "#cc_delta1_00000000019"
+}
+
+{
+	name sound/VO/delta1/operations_suspended
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_delta1_00000000020"
+}
+
+{
+	name sound/VO/delta1/emr_pwr_only
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_delta1_00000000021"
+}
+
+{
+	name sound/xian/creepy/betruger_laughs/laugh_04
+	color [200, 200, 200, 255]
+	priority 2
+	caption 0 "#cc_delta1_00000000023"
+}
+
+{
+	name sound/VO/delta1/fem_help_me
+	color [200, 200, 200, 255]
+	priority 2
+	caption 0 "#cc_delta1_00000000025"
+}
+
+{
+	name sound/VO/delta1/fem_watch_us_o_lord
+	color [200, 200, 200, 255]
+	priority 2
+	caption 0 "#cc_delta1_00000000026"
+}
+
+{
+	name sound/VO/delta1/computer_systemdown
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_delta1_00000000027"
+}
+
+{
+	name sound/vo/delta1/stutter_offline
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_delta1_00000000028"
+}
+
+{
+	name marscity2_comp_vidconnect_req
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_delta1_00000000029"
+}
+
+{
+	name marscity2_comp_vidconnect_est
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_delta1_00000000030"
+}
+
+{
+	name sound/VO/delta1/warning_reactor_offline
+	color [200, 200, 200, 255]
+	priority 2
+	caption 0 "#cc_delta1_00000000031"
+}
+
+{
+	name sound/VO/delta1/follow_procedure_orange
+	color [200, 200, 200, 255]
+	priority 2
+	caption 0 "#cc_delta1_00000000032"
+}
+
+{
+	name sound/xian/creepy/betruger_laughs/laugh_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_delta1_00000000033"
+}
+
+{
+	name sound/VO/delta1/betruger_friendswithmenow
+	color [255, 160, 160, 255]
+	priority 0
+	caption 0 "#cc_delta1_00000000034"
+}
+
+{
+	name sound/xian/creepy/betruger_laughs/laugh_08
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_delta1_00000000035"
+}
+
+{
+	name sound/VO/delta1/comp_online
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_delta1_00000000036"
+}
+

@@ -1,0 +1,463 @@
+/*
+English subtitles mod for Doom 3 bfg edition by Y-Dr. Now
+CC Script Format:
+{
+	name: name of the sound shader or the video file or sound file
+	color: rgba array for coloring the text (max 255)
+	priority: priority of the caption
+	caption: timestamp in milliseconds and text reference
+}
+*/
+{
+	name admin_swann_i_dont_think
+	color [170, 170, 255, 255]
+	priority 0
+	caption 0 "#cc_admin_00000000001"
+}
+
+{
+	name admin_betruger_no_i_understand
+	color [255, 160, 160, 255]
+	priority 0
+	caption 0 "#cc_admin_00000000002"
+}
+
+{
+	name admin_swann_im_telling_you
+	color [170, 170, 255, 255]
+	priority 0
+	caption 0 "#cc_admin_00000000003"
+}
+
+{
+	name admin_betruger_operation_is_that
+	color [255, 160, 160, 255]
+	priority 0
+	caption 0 "#cc_admin_00000000004"
+}
+
+{
+	name admin_swann_the_situation
+	color [170, 170, 255, 255]
+	priority 0
+	caption 0 "#cc_admin_00000000005"
+}
+
+{
+	name admin_betruger_its_not_out_of_control
+	color [255, 160, 160, 255]
+	priority 0
+	caption 0 "#cc_admin_00000000006"
+}
+
+{
+	name admin_swann_yes_bertruger
+	color [170, 170, 255, 255]
+	priority 0
+	caption 0 "#cc_admin_00000000007"
+}
+
+{
+	name admin_swann_i_understand
+	color [170, 170, 255, 255]
+	priority 0
+	caption 0 "#cc_admin_00000000008"
+}
+
+{
+	name admin_campbell_planb
+	color [150, 255, 150, 255]
+	priority 0
+	caption 0 "#cc_admin_00000000009"
+}
+
+{
+	name admin_marine_dont_stop
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_admin_00000000010"
+}
+
+{
+	name admin_marine_there_are
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_admin_00000000011"
+}
+
+{
+	name admin_marine_death
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_admin_00000000012"
+}
+
+{
+	name admin_sarge_radio1
+	color [160, 255, 160, 255]
+	priority 0
+	caption 0 "#cc_admin_00000000013"
+}
+
+{
+	name admin_sarge_radio1
+	color [160, 255, 160, 255]
+	priority 0
+	caption 6000 "#cc_admin_00000000019"
+}
+
+{
+	name admin_swann_it_isnt_working
+	color [170, 170, 255, 255]
+	priority 0
+	caption 0 "#cc_admin_00000000014"
+}
+
+{
+	name admin_swann_it_isnt_working
+	color [170, 170, 255, 255]
+	priority 0
+	caption 6500 "#cc_admin_00000000020"
+}
+
+{
+	name admin_campbell_then_i_suggest
+	color [150, 255, 150, 255]
+	priority 0
+	caption 0 "#cc_admin_00000000015"
+}
+
+{
+	name sound/vo/admin/whisper_save_me
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_admin_00000000016"
+}
+
+{
+	name sound/vo/admin/comp_access_denied
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_admin_00000000017"
+}
+
+{
+	name sound/vo/admin/comp_access_granted
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_admin_00000000018"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_videos_00000000001"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 8000 "#cc_videos_00000000002"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 19000 "#cc_videos_00000000003"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 26900 "#cc_videos_00000000256"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 30000 "#cc_videos_00000000004"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 40500 "#cc_videos_00000000257"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 43000 "#cc_videos_00000000005"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 52000 "#cc_videos_00000000258"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 55000 "#cc_videos_00000000006"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 62000 "#cc_videos_00000000259"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 69000 "#cc_videos_00000000007"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 79000 "#cc_videos_00000000008"
+}
+
+{
+	name video_epd
+	color [200, 200, 200, 255]
+	priority 1
+	caption 84000 "#cc_videos_00000000009"
+}
+
+{
+	name video_alphalabs_intro
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_videos_00000000026"
+}
+
+{
+	name video_alphalabs_intro
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12500 "#cc_videos_00000000268"
+}
+
+{
+	name video_alphalabs_intro
+	color [200, 200, 200, 255]
+	priority 1
+	caption 21000 "#cc_videos_00000000027"
+}
+
+{
+	name video_alphalabs_intro
+	color [200, 200, 200, 255]
+	priority 1
+	caption 29600 "#cc_videos_00000000250"
+}
+
+{
+	name video_alphalabs_intro
+	color [200, 200, 200, 255]
+	priority 1
+	caption 38000 "#cc_videos_00000000028"
+}
+
+{
+	name video_alphalabs_intro
+	color [200, 200, 200, 255]
+	priority 1
+	caption 45500 "#cc_videos_00000000269"
+}
+
+{
+	name video_alphalabs_intro
+	color [200, 200, 200, 255]
+	priority 1
+	caption 50000 "#cc_videos_00000000029"
+}
+
+{
+	name video_alphalabs_intro
+	color [200, 200, 200, 255]
+	priority 1
+	caption 60000 "#cc_videos_00000000030"
+}
+
+{
+	name audiolog_admin_banks_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000001"
+}
+
+{
+	name audiolog_admin_banks_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_pda_00000000002"
+}
+
+{
+	name audiolog_admin_banks_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 13000 "#cc_pda_00000000003"
+}
+
+{
+	name audiolog_admin_banks_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 21000 "#cc_pda_00000000418"
+}
+
+{
+	name audiolog_admin_banks_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 24000 "#cc_pda_00000000004"
+}
+
+{
+	name audiolog_admin_banks_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 31000 "#cc_pda_00000000005"
+}
+
+{
+	name audiolog_admin_banks_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 40500 "#cc_pda_00000000419"
+}
+
+{
+	name audiolog_admin_banks_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 45000 "#cc_pda_00000000006"
+}
+
+{
+	name audiolog_admin_banks_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000007"
+}
+
+{
+	name audiolog_admin_banks_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_pda_00000000008"
+}
+
+{
+	name audiolog_admin_banks_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 15000 "#cc_pda_00000000009"
+}
+
+{
+	name audiolog_admin_banks_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 22000 "#cc_pda_00000000010"
+}
+
+{
+	name audiolog_admin_banks_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 29000 "#cc_pda_00000000420"
+}
+
+{
+	name audiolog_admin_banks_2
+	color [200, 200, 200, 255]
+	priority 1
+	caption 35000 "#cc_pda_00000000011"
+}
+
+{
+	name audiolog_admin_simons_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000012"
+}
+
+{
+	name audiolog_admin_simons_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 3000 "#cc_pda_00000000013"
+}
+
+{
+	name audiolog_admin_simons_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 7000 "#cc_pda_00000000421"
+}
+
+{
+	name audiolog_admin_simons_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12000 "#cc_pda_00000000397"
+}
+
+{
+	name audiolog_admin_simons_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 17000 "#cc_pda_00000000014"
+}
+
+{
+	name audiolog_admin_simons_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 21000 "#cc_pda_00000000422"
+}
+
+{
+	name audiolog_admin_simons_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 28000 "#cc_pda_00000000015"
+}
+
+{
+	name audiolog_admin_simons_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 34000 "#cc_pda_00000000423"
+}
+{
+	name audiolog_admin_simons_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 40000 "#cc_pda_00000000016"
+}
+
+{
+	name audiolog_admin_simons_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 45000 "#cc_pda_00000000017"
+}

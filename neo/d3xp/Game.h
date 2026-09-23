@@ -179,6 +179,10 @@ public:
 	// Demo helper functions
 	virtual void				StartDemoPlayback( idRenderWorld* renderworld ) = 0;
 	virtual bool				ProcessDemoCommand( idDemoFile* readDemo ) = 0;
+
+	// Close Caption
+	virtual void				ClearCaptions( idStr shaderName ) = 0;
+	virtual void				SetCaption( idStr caption, idVec4 color, int priority, idStr shaderName ) = 0;
 };
 
 extern idGame* 					game;

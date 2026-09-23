@@ -1,0 +1,674 @@
+﻿/*
+English subtitles mod for Doom 3 bfg edition by Y-Dr. Now
+CC Script Format:
+{
+	name: name of the sound shader or the video file or sound file
+	color: rgba array for coloring the text (max 255)
+	priority: priority of the caption
+	caption: timestamp in milliseconds and text reference
+}
+*/
+{
+	name rchat_meyers_exis_02
+	color [102, 178, 255, 255]
+	priority 0
+	caption 0 "#cc_exis2_00000000001"
+}
+
+{
+	name rchat_meyers_exis_03
+	color [102, 178, 255, 255]
+	priority 0
+	caption 0 "#cc_exis2_00000000002"
+}
+
+{
+	name rchat_meyers_exis_03
+	color [102, 178, 255, 255]
+	priority 0
+	caption 4800 "#cc_exis2_00000000014"
+}
+
+{
+	name sound/VO/exis/computer_exis_03
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_exis2_00000000003"
+}
+
+{
+	name sound/VO/exis/computer_exis_04
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_exis2_00000000004"
+}
+
+{
+	name sound/VO/exis/computer_exis_05
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_exis2_00000000005"
+}
+
+{
+	name sound/VO/exis/computer_exis_06
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_exis2_00000000006"
+}
+
+{
+	name sound/VO/hell/bet_making_progress_marine
+	color [255, 160, 160, 255]
+	priority 0
+	caption 0 "#cc_delta2a_00000000088"
+}
+
+{
+	name sound/VO/exis/computer_exis_11
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_exis2_00000000007"
+}
+
+{
+	name sound/VO/delta2a/comp_primary_sys_offline
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_delta2a_00000000106"
+}
+
+{
+	name sound/VO/delta2a/voc_overhere
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_delta2a_00000000086"
+}
+
+{
+	name vo/exis/meyers_exis_anim_02
+	color [102, 178, 255, 255]
+	priority 0
+	caption 0 "#cc_exis2_00000000008"
+}
+
+{
+	name vo/exis/meyers_exis_anim_02
+	color [102, 178, 255, 255]
+	priority 0
+	caption 8000 "#cc_exis2_00000000015"
+}
+
+{
+	name vo/exis/meyers_exis_anim_02
+	color [102, 178, 255, 255]
+	priority 0
+	caption 13000 "#cc_exis2_00000000009"
+}
+
+{
+	name vo/exis/meyers_exis_anim_02
+	color [102, 178, 255, 255]
+	priority 0
+	caption 22500 "#cc_exis2_00000000010"
+}
+
+{
+	name vo/exis/meyers_exis_anim_02
+	color [102, 178, 255, 255]
+	priority 0
+	caption 30000 "#cc_exis2_00000000011"
+}
+
+{
+	name vo/exis/meyers_exis_anim_02
+	color [102, 178, 255, 255]
+	priority 0
+	caption 38800 "#cc_exis2_00000000016"
+}
+
+{
+	name vo/exis/meyers_exis_anim_02
+	color [102, 178, 255, 255]
+	priority 0
+	caption 42000 "#cc_exis2_00000000012"
+}
+
+{
+	name vo/exis/meyers_exis_anim_02
+	color [102, 178, 255, 255]
+	priority 0
+	caption 48800 "#cc_exis2_00000000017"
+}
+
+{
+	name vo/exis/meyers_exis_anim_02
+	color [102, 178, 255, 255]
+	priority 0
+	caption 54100 "#cc_exis2_00000000013"
+}
+
+{
+	name vo/exis/meyers_exis_anim_02
+	color [102, 178, 255, 255]
+	priority 0
+	caption 61800 "#cc_exis2_00000000018"
+}
+
+{
+	name audiolog_folsom_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000367"
+}
+
+{
+	name audiolog_folsom_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 5800 "#cc_pda_00000000368"
+}
+
+{
+	name audiolog_folsom_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 15000 "#cc_pda_00000000369"
+}
+
+{
+	name audiolog_folsom_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 22500 "#cc_pda_00000000370"
+}
+
+{
+	name audiolog_folsom_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 29000 "#cc_pda_00000000371"
+}
+
+{
+	name audiolog_folsom_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 38000 "#cc_pda_00000000372"
+}
+
+{
+	name audiolog_folsom_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 43500 "#cc_pda_00000000543"
+}
+
+{
+	name audiolog_folsom_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 50000 "#cc_pda_00000000373"
+}
+
+{
+	name audiolog_folsom_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 56000 "#cc_pda_00000000544"
+}
+
+{
+	name audiolog_folsom_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 61000 "#cc_pda_00000000374"
+}
+
+{
+	name audiolog_folsom_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 67000 "#cc_pda_00000000375"
+}
+
+{
+	name audiolog_folsom_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 75000 "#cc_pda_00000000545"
+}
+
+{
+	name audiolog_folsom_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 81000 "#cc_pda_00000000376"
+}
+
+{
+	name audiolog_folsom_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 88000 "#cc_pda_00000000546"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000377"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 4800 "#cc_pda_00000000378"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 11800 "#cc_pda_00000000379"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 17500 "#cc_pda_00000000380"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 22500 "#cc_pda_00000000547"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 28500 "#cc_pda_00000000381"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 33500 "#cc_pda_00000000382"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 41000 "#cc_pda_00000000383"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 48700 "#cc_pda_00000000384"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 53500 "#cc_pda_00000000385"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 61000 "#cc_pda_00000000386"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 65500 "#cc_pda_00000000548"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 71500 "#cc_pda_00000000387"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 77000 "#cc_pda_00000000388"
+}
+
+{
+	name audiolog_tooley_exis_pda_01
+	color [200, 200, 200, 255]
+	priority 1
+	caption 83000 "#cc_pda_00000000389"
+}
+
+{
+	name audiolog_tooley_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000390"
+}
+
+{
+	name audiolog_tooley_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6900 "#cc_pda_00000000391"
+}
+
+{
+	name audiolog_tooley_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 15300 "#cc_pda_00000000549"
+}
+
+{
+	name audiolog_tooley_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 19500 "#cc_pda_00000000392"
+}
+
+{
+	name audiolog_tooley_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 28500 "#cc_pda_00000000550"
+}
+
+{
+	name audiolog_tooley_exis_pda_02
+	color [200, 200, 200, 255]
+	priority 1
+	caption 30570 "#cc_pda_00000000393"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 0 "#cc_videos_00000000220"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 6000 "#cc_videos_00000000221"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 11500 "#cc_videos_00000000322"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 20000 "#cc_videos_00000000222"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 24500 "#cc_videos_00000000223"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 33500 "#cc_videos_00000000323"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 38000 "#cc_videos_00000000224"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 42000 "#cc_videos_00000000324"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 51000 "#cc_videos_00000000225"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 60000 "#cc_videos_00000000226"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 67000 "#cc_videos_00000000227"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 73500 "#cc_videos_00000000228"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 81500 "#cc_videos_00000000229"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 88500 "#cc_videos_00000000230"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 95000 "#cc_videos_00000000231"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 102000 "#cc_videos_00000000325"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 107000 "#cc_videos_00000000232"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 112000 "#cc_videos_00000000233"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 119000 "#cc_videos_00000000234"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 125500 "#cc_videos_00000000235"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 130500 "#cc_videos_00000000326"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 137000 "#cc_videos_00000000236"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 145000 "#cc_videos_00000000237"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 151500 "#cc_videos_00000000238"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 159000 "#cc_videos_00000000239"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 169000 "#cc_videos_00000000240"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 175500 "#cc_videos_00000000327"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 181500 "#cc_videos_00000000241"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 189000 "#cc_videos_00000000328"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 193500 "#cc_videos_00000000242"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 204000 "#cc_videos_00000000243"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 216000 "#cc_videos_00000000244"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 230000 "#cc_videos_00000000329"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 235000 "#cc_videos_00000000245"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 244000 "#cc_videos_00000000246"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 253000 "#cc_videos_00000000247"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 259000 "#cc_videos_00000000330"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 264000 "#cc_videos_00000000248"
+}
+
+{
+	name video_meyers_report
+	color [102, 178, 255, 255]
+	priority 1
+	caption 270500 "#cc_videos_00000000249"
+}

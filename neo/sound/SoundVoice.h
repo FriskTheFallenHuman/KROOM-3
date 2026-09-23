@@ -3,7 +3,7 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
-Copyright (C) 2013 Robert Beckebans
+Copyright (C) 2021 George Kalmpokis
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -26,111 +26,90 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
-#ifndef __SOUNDVOICE_H__
-#define __SOUNDVOICE_H__
+
+#ifndef __SOUNDVOICEBASE_H__
+#define __SOUNDVOICEBASE_H__
+
+static const int MAX_QUEUED_BUFFERS = 3;
 
 /*
 ================================================
-idSoundVoice_Base
+idSoundVoice
 ================================================
 */
-
-class idSoundVoice_Base
+class idSoundVoice : public idSoundVoice_Base
 {
 public:
-	idSoundVoice_Base();
 
-	static void InitSurround( int outputChannels, int channelMask );
+	idSoundVoice(): leadinSample( NULL ),
+		loopingSample( NULL ),
+		formatTag( 0 ),
+		numChannels( 0 ),
+		sampleRate( 0 ),
+		paused( true ),
+		hasVUMeter( false ),
+		chains( 1 ) {}
 
-	void		CalculateSurround( int srcChannels, float pLevelMatrix[ MAX_CHANNELS_PER_VOICE * MAX_CHANNELS_PER_VOICE ], float scale );
+	virtual void					Create( const idSoundSample* _leadinSample, const idSoundSample* _loopingSample, const int _channel ) {}
 
-	// RB begin
-	virtual void	SetPosition( const idVec3& p )
+	// Start playing at a particular point in the buffer.  Does an Update() too
+	virtual void					Start( int offsetMS, int ssFlags ) {}
+
+	// Stop playing.
+	virtual void					Stop() {}
+
+	// Stop consuming buffers
+	virtual void					Pause() {}
+	// Start consuming buffers again
+	virtual void					UnPause() {}
+
+	// Sends new position/volume/pitch information to the hardware
+	virtual bool					Update()
 	{
-		position = p;
+		return false;
 	}
 
-	virtual void	SetGain( float g )
+	// returns the RMS levels of the most recently processed block of audio, SSF_FLICKER must have been passed to Start
+	virtual float					GetAmplitude()
 	{
-		gain = g;
+		return -1.0f;
 	}
 
-	virtual void	SetPitch( float p )
+	// returns true if we can re-use this voice
+	virtual bool					CompatibleFormat( idSoundSample* s )
 	{
-		pitch = p;
-	}
-	// RB end
-
-	void		SetCenterChannel( float c )
-	{
-		centerChannel = c;
+		return false;
 	}
 
-	void		SetInnerRadius( float r )
+	uint32							GetSampleRate() const
 	{
-		innerRadius = r;
-	}
-	void		SetChannelMask( uint32 mask )
-	{
-		channelMask = mask;
+		return sampleRate;
 	}
 
-	const idSoundSample* GetCurrentSample();
-
-	// Controls the low pass filter, where 0.0f = no filtering, 1.0f = full filter
-	void		SetOcclusion( float f )
+	virtual int						GetPlayingTimestamp()
 	{
-		occlusion = f;
-	}
-
-	float		GetGain()
-	{
-		return gain;
-	}
-	float		GetPitch()
-	{
-		return pitch;
+		return 0;
 	}
 
 protected:
-	idVec3		position;			// Position of the sound relative to listener
-	float		gain;				// Volume (0-1)
-	float		centerChannel;		// Value (0-1) which indicates how much of this voice goes to the center channel
-	float		pitch;				// Pitch multiplier
-	float		innerRadius;		// Anything closer than this is omni
-	float		occlusion;			// How much of this sound is occluded (0-1)
-	uint32		channelMask;		// Set to override the default channel mask
+	friend class idSoundhardware;
+	friend class idSoundSample;
 
-	// These are some setting used to do SSF_DISTANCE_BASED_STERO blending
-	float		innerSampleRangeSqr;
-	float		outerSampleRangeSqr;
+	idSoundSample* leadinSample;
+	idSoundSample* loopingSample;
 
-	idList< idSoundSample*, TAG_AUDIO> samples;
+	// These are the fields from the sample format that matter to us for voice reuse
+	uint16					formatTag;
+	uint16					numChannels;
 
-	// These are constants which are initialized with InitSurround
-	//-------------------------------------------------------------
+	uint32					sourceVoiceRate;
+	uint32					sampleRate;
 
-	static idVec2 speakerPositions[idWaveFile::CHANNEL_INDEX_MAX];
-
-	// This is to figure out which speakers are "next to" this one
-	static int speakerLeft[idWaveFile::CHANNEL_INDEX_MAX];
-	static int speakerRight[idWaveFile::CHANNEL_INDEX_MAX];
-
-	// Number of channels in the output hardware
-	static int dstChannels;
-
-	// Mask indicating which speakers exist in the hardware configuration
-	static int dstMask;
-
-	// dstMap maps a destination channel to a speaker
-	// invMap maps a speaker to a destination channel
-	static int dstCenter;
-	static int dstLFE;
-	static int dstMap[MAX_CHANNELS_PER_VOICE];
-	static int invMap[idWaveFile::CHANNEL_INDEX_MAX];
-
-	// specifies what volume to specify for each channel when a speaker is omni
-	static float omniLevel;
+	bool					hasVUMeter;
+	bool					paused;
+	int						channel;
+	int						chains;
 };
 
-#endif
+#endif /* !__SOUNDVOICEBASE_H__ */
+

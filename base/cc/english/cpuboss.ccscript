@@ -1,0 +1,235 @@
+/*
+English subtitles mod for Doom 3 bfg edition by Y-Dr. Now
+CC Script Format:
+{
+	name: name of the sound shader or the video file or sound file
+	color: rgba array for coloring the text (max 255)
+	priority: priority of the caption
+	caption: timestamp in milliseconds and text reference
+}
+*/
+{
+	name video_bfg
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_cpuboss_00000000001"
+}
+
+{
+	name video_bfg
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12000 "#cc_cpuboss_00000000002"
+}
+
+{
+	name video_bfg
+	color [200, 200, 200, 255]
+	priority 1
+	caption 20000 "#cc_cpuboss_00000000003"
+}
+
+{
+	name video_bfg
+	color [200, 200, 200, 255]
+	priority 1
+	caption 27000 "#cc_cpuboss_00000000004"
+}
+
+{
+	name video_bfg
+	color [200, 200, 200, 255]
+	priority 1
+	caption 36200 "#cc_cpuboss_00000000031"
+}
+
+
+{
+	name video_bfg
+	color [200, 200, 200, 255]
+	priority 1
+	caption 39000 "#cc_cpuboss_00000000005"
+}
+
+{
+	name video_bfg
+	color [200, 200, 200, 255]
+	priority 1
+	caption 48000 "#cc_cpuboss_00000000006"
+}
+
+{
+	name video_bfg
+	color [200, 200, 200, 255]
+	priority 1
+	caption 56000 "#cc_cpuboss_00000000007"
+}
+
+{
+	name video_bfg
+	color [200, 200, 200, 255]
+	priority 1
+	caption 60000 "#cc_cpuboss_00000000032"
+}
+
+{
+	name video_bfg
+	color [200, 200, 200, 255]
+	priority 1
+	caption 67500 "#cc_cpuboss_00000000008"
+}
+
+{
+	name video_bfg
+	color [200, 200, 200, 255]
+	priority 1
+	caption 74000 "#cc_cpuboss_00000000009"
+}
+
+{
+	name cpu_campbell_death
+	color [150, 255, 150, 255]
+	priority 0
+	caption 0 "#cc_cpuboss_00000000010"
+}
+
+{
+	name cpu_campbell_hunt
+	color [150, 255, 150, 255]
+	priority 0
+	caption 0 "#cc_cpuboss_00000000011"
+}
+
+{
+	name sound/VO/cpuboss/comp_security_bridge_in_motion
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_cpuboss_00000000012"
+}
+
+{
+	name sound/VO/cpuboss/comp_security_clearance_accepted
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_cpuboss_00000000013"
+}
+
+{
+	name sound/VO/cpuboss/comp_security_clearance_denied
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_cpuboss_00000000014"
+}
+
+{
+	name sound/VO/cpuboss/comp_select_bridge_destination
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_cpuboss_00000000015"
+}
+
+{
+	name sarge_taunt_1
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_cpuboss_00000000016"
+}
+
+{
+	name sarge_taunt_2
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_cpuboss_00000000017"
+}
+
+{
+	name sarge_taunt_3
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_cpuboss_00000000018"
+}
+
+{
+	name sarge_taunt_4
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_cpuboss_00000000019"
+}
+
+{
+	name sarge_warning_1
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_cpuboss_00000000020"
+}
+
+{
+	name sarge_warning_2
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_cpuboss_00000000021"
+}
+
+{
+	name sarge_warning_3
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_cpuboss_00000000022"
+}
+
+{
+	name sarge_warning_4
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_cpuboss_00000000023"
+}
+
+{
+	name sabaoth_sight
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_cpuboss_00000000024"
+}
+
+{
+	name sarge_taunt_1
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_cpu_00000000007"
+}
+
+{
+	name sarge_taunt_2
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_cpu_00000000008"
+}
+
+{
+	name sarge_taunt_3
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_cpu_00000000009"
+}
+
+{
+	name sarge_taunt_4
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_cpuboss_00000000028"
+}
+
+{
+	name sound/VO/cpuboss/taunt_05
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_cpuboss_00000000029"
+}
+
+{
+	name sound/VO/cpuboss/taunt_06
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_cpuboss_00000000030"
+}
+

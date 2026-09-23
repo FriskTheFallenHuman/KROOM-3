@@ -116,3 +116,49 @@ int64 Sys_GetDriveFreeSpaceInBytes( const char* path )
 		return 1;
 	}
 }
+
+/*
+================
+Sys_Wcstrtombstr
+
+wcstombs is unreliable on Windows so instead it has to be done the Windows way in order to include the Sytem's ANSI code page
+================
+*/
+int Sys_Wcstrtombstr( char* Dest, const wchar_t* Source, size_t size )
+{
+#ifdef WIN32
+	int wstrlen = size;
+	int mbstrlen = WideCharToMultiByte( CP_ACP, NULL, Source, wstrlen, NULL, 0, NULL, 0 );
+	if( WideCharToMultiByte( CP_ACP, NULL, Source, wstrlen, Dest, mbstrlen, NULL, 0 ) > 0 )
+	{
+		Dest[mbstrlen] = '\0';
+		return mbstrlen + 1;
+	}
+	return -1;
+#else
+	return wcstombs( Dest, Source, size );
+#endif
+}
+
+/*
+================
+Sys_Wcstrtombstr
+
+wcstombs is unreliable on Windows so instead it has to be done the Windows way in order to include the Sytem's ANSI code page
+================
+*/
+int Sys_Mbstrtowcstr( wchar_t* Dest, const char* Source, size_t size )
+{
+#ifdef WIN32
+	int strlen = size;
+	int wstrlen = MultiByteToWideChar( CP_ACP, NULL, Source, strlen, NULL, 0 );
+	if( MultiByteToWideChar( CP_ACP, NULL, Source, strlen, Dest, wstrlen ) > 0 )
+	{
+		Dest[wstrlen] = '\0';
+		return wstrlen + 1;
+	}
+	return -1;
+#else
+	return mbstowcs( Dest, Source, size );
+#endif
+}

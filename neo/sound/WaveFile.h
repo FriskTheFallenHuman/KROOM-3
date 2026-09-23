@@ -102,6 +102,7 @@ public:
 		FORMAT_UNKNOWN		= 0x0000,
 		FORMAT_PCM			= 0x0001,
 		FORMAT_ADPCM		= 0x0002,
+		FORMAT_FLOAT		= 0x0003, // GK:Add support for Float point audio samples
 		FORMAT_XMA2			= 0x0166,
 		FORMAT_EXTENSIBLE	= 0xFFFF,
 	};
@@ -135,8 +136,7 @@ public:
 					uint32 data1;
 					uint16 data2;
 					uint16 data3;
-					uint16 data4;
-					byte data5[ 6 ];
+					uint8 data4[ 8 ];
 				} subFormat;				// Format identifier GUID
 			} extensible;
 			// Valid if basic.formatTag == FORMAT_ADPCM

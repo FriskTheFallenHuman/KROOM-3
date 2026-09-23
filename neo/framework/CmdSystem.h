@@ -252,7 +252,7 @@ ID_INLINE void idCmdSystem::ArgCompletion_ModelName( const idCmdArgs& args, void
 
 ID_INLINE void idCmdSystem::ArgCompletion_SoundName( const idCmdArgs& args, void( *callback )( const char* s ) )
 {
-	cmdSystem->ArgCompletion_FolderExtension( args, callback, "sound/", false, ".wav", ".ogg", NULL );
+	cmdSystem->ArgCompletion_FolderExtension( args, callback, "sound/", false, ".wav", ".ogg", ".mp3", ".flac", NULL );
 }
 
 ID_INLINE void idCmdSystem::ArgCompletion_ImageName( const idCmdArgs& args, void( *callback )( const char* s ) )

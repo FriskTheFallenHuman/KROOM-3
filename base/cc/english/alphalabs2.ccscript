@@ -1,0 +1,502 @@
+/*
+English subtitles mod for Doom 3 bfg edition by Y-Dr. Now
+CC Script Format:
+{
+	name: name of the sound shader or the video file or sound file
+	color: rgba array for coloring the text (max 255)
+	priority: priority of the caption
+	caption: timestamp in milliseconds and text reference
+}
+*/
+{
+	name alpha2_mystery_radio_1
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs2_00000000002"
+}
+
+{
+	name alpha2_mystery_radio_1
+	color [200, 200, 200, 255]
+	priority 0
+	caption 7500 "#cc_alphalabs2_00000000027"
+}
+
+{
+	name alpha2_mystery_radio_2
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs2_00000000003"
+}
+
+{
+	name alpha_labs2_scientist_trigger_1
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs2_00000000004"
+}
+
+{
+	name alpha_labs2_scientist_trigger_2
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs2_00000000005"
+}
+
+{
+	name alpha_labs2_scientist_trigger_3
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs2_00000000006"
+}
+
+{
+	name alpha_labs2_scientist_trigger_4
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs2_00000000007"
+}
+
+{
+	name alpha_labs2_scientist_trigger_5
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs2_00000000008"
+}
+
+{
+	name alpha_labs2_scientist_trigger_6
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs2_00000000009"
+}
+
+{
+	name alpha_labs2_scientist_trigger_7
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs2_00000000010"
+}
+
+{
+	name alpha_labs2_scientist_trigger_8
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs2_00000000011"
+}
+
+{
+	name alpha_labs2_scientist_trigger_9
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs2_00000000012"
+}
+
+{
+	name alpha_labs2_scientist_trigger_10
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs2_00000000013"
+}
+
+{
+	name alpha_labs2_scientist_trigger_11
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs2_00000000014"
+}
+
+{
+	name alpha_labs2_scientist_hurry1
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs2_00000000015"
+}
+
+{
+	name alpha_labs2_scientist_hurry2
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs2_00000000016"
+}
+
+{
+	name alpha_labs2_scientist_primary
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs2_00000000017"
+}
+
+{
+	name alpha_labs2_scientist_secondary1
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs2_00000000018"
+}
+
+{
+	name alpha_labs2_scientist_secondary2
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs2_00000000019"
+}
+
+{
+	name alpha_labs2_scientist_attacked1
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs2_00000000020"
+}
+
+{
+	name alpha_labs2_scientist_attacked2
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs2_00000000021"
+}
+
+{
+	name alpha_labs2_scientist_saved1
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs2_00000000022"
+}
+
+{
+	name alpha_labs2_scientist_saved2
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs2_00000000023"
+}
+
+{
+	name sound/vo/alpha_labs2/marines_move_move
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs2_00000000024"
+}
+
+{
+	name sound/vo/alpha_labs2/marines_lets_go
+	color [200, 200, 200, 255]
+	priority 0
+	caption 0 "#cc_alphalabs2_00000000025"
+}
+
+{
+	name alpha2_sarge_radio1
+	color [160, 255, 160, 255]
+	priority 0
+	caption 0 "#cc_alphalabs2_00000000026"
+}
+
+{
+	name alpha2_sarge_radio1
+	color [160, 255, 160, 255]
+	priority 0
+	caption 5500 "#cc_alphalabs2_00000000028"
+}
+
+{
+	name sound/VO/video/mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_videos_00000000019"
+}
+
+{
+	name sound/VO/video/mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12500 "#cc_videos_00000000263"
+}
+
+{
+	name sound/VO/video/mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 16000 "#cc_videos_00000000020"
+}
+
+{
+	name sound/VO/video/mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 23500 "#cc_videos_00000000264"
+}
+
+{
+	name sound/VO/video/mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 30000 "#cc_videos_00000000021"
+}
+
+{
+	name sound/VO/video/mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 36000 "#cc_videos_00000000265"
+}
+
+{
+	name sound/VO/video/mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 42000 "#cc_videos_00000000251"
+}
+
+{
+	name sound/VO/video/mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 47500 "#cc_videos_00000000266"
+}
+
+{
+	name sound/VO/video/mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 53000 "#cc_videos_00000000022"
+}
+
+{
+	name sound/VO/video/mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 60000 "#cc_videos_00000000023"
+}
+
+{
+	name sound/VO/video/mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 69500 "#cc_videos_00000000267"
+}
+
+{
+	name sound/VO/video/mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 73000 "#cc_videos_00000000024"
+}
+
+
+{
+	name sound/VO/video/mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 82000 "#cc_videos_00000000025"
+}
+
+{
+	name audiolog_alphalabs2_connors_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000029"
+}
+
+
+{
+	name audiolog_alphalabs2_connors_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 5000 "#cc_pda_00000000430"
+}
+
+{
+	name audiolog_alphalabs2_connors_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 10000 "#cc_pda_00000000030"
+}
+
+{
+	name audiolog_alphalabs2_connors_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 15000 "#cc_pda_00000000402"
+}
+
+{
+	name audiolog_alphalabs2_connors_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 19500 "#cc_pda_00000000431"
+}
+
+{
+	name audiolog_alphalabs2_connors_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 23000 "#cc_pda_00000000031"
+}
+
+{
+	name audiolog_alphalabs2_connors_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 31000 "#cc_pda_00000000032"
+}
+
+{
+	name audiolog_alphalabs2_connors_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 39000 "#cc_pda_00000000033"
+}
+
+{
+	name audiolog_alphalabs2_chin_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_pda_00000000034"
+}
+
+{
+	name audiolog_alphalabs2_chin_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 6000 "#cc_pda_00000000035"
+}
+
+{
+	name audiolog_alphalabs2_chin_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 13000 "#cc_pda_00000000432"
+}
+
+{
+	name audiolog_alphalabs2_chin_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 19000 "#cc_pda_00000000036"
+}
+
+{
+	name audiolog_alphalabs2_chin_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 25500 "#cc_pda_00000000433"
+}
+
+{
+	name audiolog_alphalabs2_chin_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 30000 "#cc_pda_00000000037"
+}
+
+{
+	name audiolog_alphalabs2_chin_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 33500 "#cc_pda_00000000434"
+}
+
+{
+	name audiolog_alphalabs2_chin_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 42000 "#cc_pda_00000000038"
+}
+
+{
+	name audiolog_alphalabs2_chin_1
+	color [200, 200, 200, 255]
+	priority 1
+	caption 50000 "#cc_pda_00000000403"
+}
+
+{
+	name video_mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 0 "#cc_videos_00000000019"
+}
+
+{
+	name video_mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 12500 "#cc_videos_00000000263"
+}
+
+{
+	name video_mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 16000 "#cc_videos_00000000020"
+}
+
+{
+	name video_mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 23500 "#cc_videos_00000000264"
+}
+
+{
+	name video_mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 30000 "#cc_videos_00000000021"
+}
+
+{
+	name video_mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 36000 "#cc_videos_00000000265"
+}
+
+{
+	name video_mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 42000 "#cc_videos_00000000251"
+}
+
+{
+	name video_mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 47500 "#cc_videos_00000000266"
+}
+
+{
+	name video_mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 53000 "#cc_videos_00000000022"
+}
+
+{
+	name video_mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 60000 "#cc_videos_00000000023"
+}
+
+{
+	name video_mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 69500 "#cc_videos_00000000267"
+}
+
+{
+	name video_mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 73000 "#cc_videos_00000000024"
+}
+
+
+{
+	name video_mfs
+	color [200, 200, 200, 255]
+	priority 1
+	caption 82000 "#cc_videos_00000000025"
+}

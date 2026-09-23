@@ -40,6 +40,7 @@ idCVar s_centerFractionVO( "s_centerFractionVO", "0.75", CVAR_FLOAT, "Portion of
 
 extern idCVar s_playDefaultSound;
 extern idCVar s_noSound;
+extern idCVar s_useCC;
 
 /*
 ================================================================================================
@@ -124,6 +125,19 @@ float idSoundFade::GetVolume( const int soundTime ) const
 
 /*
 ========================
+idSoundChannel::ClearCaption
+========================
+*/
+void idSoundChannel::ClearCaption()
+{
+	if( game != NULL )
+	{
+		game->ClearCaptions( shaderName );
+	}
+}
+
+/*
+========================
 idSoundChannel::idSoundChannel
 ========================
 */
@@ -163,7 +177,7 @@ Never actually mute VO because we can't restart them precisely enough for lip sy
 */
 bool idSoundChannel::CanMute() const
 {
-	return true;
+	return IsLooping() || hardwareVoice == NULL;
 }
 
 /*
@@ -180,6 +194,11 @@ void idSoundChannel::Mute()
 	{
 		soundSystemLocal.FreeVoice( hardwareVoice );
 		hardwareVoice = NULL;
+
+		if( game != NULL )
+		{
+			game->ClearCaptions( soundShader->GetName() );
+		}
 	}
 }
 
@@ -238,7 +257,7 @@ void idSoundChannel::UpdateVolume( int currentTime )
 	}
 
 	// if you don't want to hear all the beeps from missing sounds
-	if( leadinSample->IsDefault() && !s_playDefaultSound.GetBool() )
+	if( leadinSample->IsDefault() && !s_playDefaultSound.GetBool() && !leadinSample->useavi )
 	{
 		return;
 	}
@@ -313,6 +332,89 @@ void idSoundChannel::UpdateVolume( int currentTime )
 		}
 		currentAmplitude = amplitude;
 	}
+
+	if( s_useCC.GetBool() && soundSystemLocal.ccloaded && !hasCheckedForCaption )
+	{
+		hasCheckedForCaption = true;
+
+		idCaption* caption;
+
+		if( cc_debugCaptions.GetBool() )
+		{
+			common->Printf( "Caption Load: Check if sound shader '%s' has captions\n", soundShader->GetName() );
+		}
+		if( soundSystemLocal.ccdecl.HasMultipleCaptions( soundShader->GetName() ) )
+		{
+			hasCaption = true;
+			hasMultipleCaptions = true;
+			shaderName = soundShader->GetName();
+		}
+		else
+		{
+			if( soundSystemLocal.ccdecl.FindCaption( soundShader->GetName(), &caption ) )
+			{
+				hasCaption = true;
+				shaderName = soundShader->GetName();
+
+				if( cc_debugCaptions.GetBool() )
+				{
+					common->Printf( "Caption Details: Name: %s\n", shaderName.c_str() );
+				}
+			}
+		}
+
+		if( cc_debugCaptions.GetBool() && !hasCaption )
+		{
+			common->Printf( "Caption Load: Failed to find captions for '%s'\n", soundShader->GetName() );
+		}
+	}
+
+	if( ( s_useCC.GetBool() && hasCaption ) && ( volumeDB <= DB_SILENCE || hardwareVoice == NULL || idStr::Cmp( shaderName, soundShader->GetName() ) ) )
+	{
+		game->ClearCaptions( shaderName );
+	}
+
+	if( ( s_useCC.GetBool() && hasCaption ) && volumeDB > DB_SILENCE )
+	{
+		if( !idStr::Cmp( shaderName, "" ) )
+		{
+			shaderName = soundShader->GetName();
+		}
+
+		if( hasMultipleCaptions )
+		{
+			idCaption* caption;
+
+			if( hardwareVoice == NULL )
+			{
+				return;
+			}
+
+			int time = hardwareVoice->GetPlayingTimestamp();
+			if( time >= 0 && soundSystemLocal.ccdecl.FindCaptionWithTimeCode( shaderName.c_str(), time, &caption ) )
+			{
+				game->SetCaption( caption->GetCaption(), caption->GetColor(), caption->GetPriority(), shaderName );
+
+				if( cc_debugCaptions.GetBool() )
+				{
+					common->Printf( "Caption Details: Name: %s, Timestamp: %d\n", shaderName.c_str(), time );
+				}
+			}
+		}
+		else
+		{
+			idCaption* caption;
+			if( soundSystemLocal.ccdecl.FindCaption( shaderName.c_str(), &caption ) )
+			{
+				game->SetCaption( caption->GetCaption(), caption->GetColor(), caption->GetPriority(), shaderName );
+
+				if( cc_debugCaptions.GetBool() )
+				{
+					common->Printf( "Caption Details: Name: %s\n", shaderName.c_str() );
+				}
+			}
+		}
+	}
 }
 
 /*
@@ -363,7 +465,7 @@ void idSoundChannel::UpdateHardware( float volumeAdd, int currentTime )
 			return;
 		}
 
-		hardwareVoice = soundSystemLocal.AllocateVoice( leadinSample, loopingSample );
+		hardwareVoice = soundSystemLocal.AllocateVoice( leadinSample, loopingSample, logicalChannel );
 
 		if( hardwareVoice == NULL )
 		{
@@ -372,6 +474,8 @@ void idSoundChannel::UpdateHardware( float volumeAdd, int currentTime )
 
 		issueStart = true;
 		startOffset = currentTime - startTime;
+		subStartTime = currentTime - subStartTime;
+
 	}
 
 	if( omni || global || emitterIsListener )
@@ -442,6 +546,7 @@ idSoundEmitterLocal::~idSoundEmitterLocal
 idSoundEmitterLocal::~idSoundEmitterLocal()
 {
 	assert( channels.Num() == 0 );
+	Free( true );
 }
 
 /*
@@ -486,7 +591,13 @@ void idSoundEmitterLocal::Reset()
 	for( int i = 0; i < channels.Num(); i++ )
 	{
 		soundWorld->FreeSoundChannel( channels[i] );
+
+		if( game != NULL )
+		{
+			game->ClearCaptions( channels[i]->soundShader->GetName() );
+		}
 	}
+
 	channels.Clear();
 	Init( index, soundWorld );
 }
@@ -565,8 +676,15 @@ bool idSoundEmitterLocal::CheckForCompletion( int currentTime )
 
 		if( chan->CheckForCompletion( currentTime ) )
 		{
+			if( chan->hasCaption )
+			{
+				game->ClearCaptions( chan->shaderName );
+				//chan->hasCaption = false;
+			}
+
 			channels.RemoveIndex( i );
 			soundWorld->FreeSoundChannel( chan );
+
 		}
 	}
 	return ( canFree && channels.Num() == 0 );
@@ -597,6 +715,7 @@ void idSoundEmitterLocal::Update( int currentTime )
 
 	if( s_singleEmitter.GetInteger() > 0 && s_singleEmitter.GetInteger() != index )
 	{
+		// GK: In case captions are shown remove them
 		return;
 	}
 	if( soundWorld->listener.area == -1 )
@@ -620,6 +739,11 @@ void idSoundEmitterLocal::Update( int currentTime )
 			{
 				hasGlobalChannel = true;
 				continue;
+			}
+			if( chan->hasCaption )
+			{
+				game->ClearCaptions( chan->shaderName );
+				chan->hasCheckedForCaption = false;
 			}
 			useOcclusion = useOcclusion || ( ( chan->parms.soundShaderFlags & SSF_NO_OCCLUSION ) == 0 );
 			if( maxDistance < channels[i]->parms.maxDistance )
@@ -838,7 +962,7 @@ int idSoundEmitterLocal::StartSound( const idSoundShader* shader, const s_channe
 	}
 
 	// kill any sound that is currently playing on this channel
-	if( channel != SCHANNEL_ANY )
+	if( channel != SCHANNEL_ANY && channel != SCHANNEL_UI )
 	{
 		for( int i = 0; i < channels.Num(); i++ )
 		{
@@ -849,6 +973,9 @@ int idSoundEmitterLocal::StartSound( const idSoundShader* shader, const s_channe
 				{
 					idLib::Printf( S_COLOR_YELLOW "OVERRIDE %s: ", chan->soundShader->GetName() );
 				}
+
+				game->ClearCaptions( chan->soundShader->GetName() );
+
 				channels.RemoveIndex( i );
 				soundWorld->FreeSoundChannel( chan );
 				break;
@@ -939,6 +1066,9 @@ int idSoundEmitterLocal::StartSound( const idSoundShader* shader, const s_channe
 	chan->leadinSample = leadinSample;
 	chan->loopingSample = loopingSample;
 	chan->allowSlow = allowSlow;
+	chan->hasCaption = false;
+	chan->hasMultipleCaptions = false;
+	chan->hasCheckedForCaption = false;
 
 	// return length of sound in milliseconds
 	int length = chan->leadinSample->LengthInMsec();
@@ -953,6 +1083,7 @@ int idSoundEmitterLocal::StartSound( const idSoundShader* shader, const s_channe
 	}
 
 	chan->startTime = currentTime - startOffset;
+	chan->subStartTime = currentTime;
 
 	if( ( chanParms.soundShaderFlags & SSF_LOOPING ) != 0 )
 	{
@@ -1118,7 +1249,7 @@ idSoundEmitterLocal::CurrentlyPlaying
 bool idSoundEmitterLocal::CurrentlyPlaying( const s_channelType channel ) const
 {
 
-	if( channel == SCHANNEL_ANY )
+	if( channel == SCHANNEL_ANY || channel == SCHANNEL_UI )
 	{
 		return ( channels.Num() > 0 );
 	}
