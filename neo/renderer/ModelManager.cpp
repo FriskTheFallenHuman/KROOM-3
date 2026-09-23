@@ -382,6 +382,17 @@ idRenderModel* idRenderModelManagerLocal::GetModel( const char* _modelName, bool
 			if( !model->LoadBinaryModel( file, sourceTimeStamp ) )
 			{
 				model->InitFromFile( canonical );
+				
+				// DG: no idea why this needs special treatment, but otherwise
+				//     idRenderModelMD3::InstantiateDynamicModel() is called all the time
+				if( extension.Icmp( "md3" ) == 0 )
+				{
+					if( model->IsDefaultModel() )
+					{
+						delete model;
+						return NULL;
+					}
+				}
 
 				// RB: default models shouldn't be cached as binary models
 				if( !model->IsDefaultModel() )
