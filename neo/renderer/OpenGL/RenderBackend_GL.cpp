@@ -52,6 +52,7 @@ idCVar r_drawFlickerBox( "r_drawFlickerBox", "0", CVAR_RENDERER | CVAR_BOOL, "vi
 idCVar r_showSwapBuffers( "r_showSwapBuffers", "0", CVAR_BOOL, "Show timings from GL_BlockingSwapBuffers" );
 idCVar r_syncEveryFrame( "r_syncEveryFrame", "1", CVAR_BOOL, "Don't let the GPU buffer execution past swapbuffers" );
 idCVar r_intelWorkaroundsSyncType( "r_intelWorkaroundsSyncType", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_NOCHEAT, "sync strategy involving glFinish and SwapBuffers to use with Intel video cards when r_skipIntelWorkarounds is 0:\n  0 = finish, swap\n  1 = swap, finish\n  2 = swap, small draw, finish\n  3 = finish, swap, finish\n  4 = finish, swap, small draw, finish", 0, 4 );
+idCVar r_showGLExt( "r_showGLExt", "0", CVAR_RENDERER | CVAR_BOOL, "Shows the OpenGL Extensions on the logfile" );
 
 static int		swapIndex;		// 0 or 1 into renderSync
 static GLsync	renderSync[2];
@@ -508,35 +509,36 @@ void idRenderBackend::Init()
 
 	GL_CheckErrors();
 
-	if( glConfig.extensions_string == NULL )
-	{
-		// As of OpenGL 3.2, glGetStringi is required to obtain the available extensions
-		//glGetStringi = ( PFNGLGETSTRINGIPROC )GLimp_ExtensionPointer( "glGetStringi" );
-
-		// Build the extensions string
-		GLint numExtensions;
-		glGetIntegerv( GL_NUM_EXTENSIONS, &numExtensions );
-		extensions_string.Clear();
-		for( int i = 0; i < numExtensions; i++ )
-		{
-			extensions_string.Append( ( const char* )glGetStringi( GL_EXTENSIONS, i ) );
-			// the now deprecated glGetString method usaed to create a single string with each extension separated by a space
-			if( i < numExtensions - 1 )
-			{
-				extensions_string.Append( ' ' );
-			}
-		}
-		glConfig.extensions_string = extensions_string.c_str();
-	}
-
-
 	float glVersion = atof( glConfig.version_string );
 	float glslVersion = atof( glConfig.shading_language_string );
 	idLib::Printf( "OpenGL Version   : %3.1f\n", glVersion );
 	idLib::Printf( "OpenGL Vendor    : %s\n", glConfig.vendor_string );
 	idLib::Printf( "OpenGL Renderer  : %s\n", glConfig.renderer_string );
 	idLib::Printf( "OpenGL GLSL      : %3.1f\n", glslVersion );
-	//idLib::Printf( "OpenGL Extensions: %s\n", glConfig.extensions_string );
+
+	if( r_showGLExt.GetBool() )
+	{
+		idLib::Printf( "OpenGL Extensions: " );
+
+		// GK: The number of extensions is ridiculusly long the idLib::Print can't output all of it
+		// therefor print it one by one.
+
+		// Build the extensions string
+		GLint numExtensions;
+		glGetIntegerv( GL_NUM_EXTENSIONS, &numExtensions );
+
+		for( int i = 0; i < numExtensions; i++ )
+		{
+			idLib::Printf( "%s", ( const char* )glGetStringi( GL_EXTENSIONS, i ) );
+
+			// the now deprecated glGetString method usaed to create a single string with each extension separated by a space
+			if( i < numExtensions - 1 )
+			{
+				idLib::Printf( " " );
+			}
+		}
+		idLib::Printf( "\n" );
+	}
 
 	// OpenGL driver constants
 	GLint temp;
