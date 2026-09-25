@@ -724,7 +724,12 @@ public:
 	// In game map editing support.
 	virtual const idDict* 		MapGetEntityDict( const char* name ) const = 0;
 	virtual void				MapSave( const char* path = NULL ) const = 0;
-	virtual void				MapSaveToExtraEnts( const idDict* dict ) const = 0;
+	virtual bool				MapIsOnDisk() const = 0;
+	virtual void				MapSaveEntitiesToEditFile( const idList<idDict>& states ) const = 0;
+	virtual void				MapRemoveEntityFromEditFile( const char* name ) const = 0;
+	virtual void				MapSaveToEditFile( const idDict* dict, int baseIndex = -1 ) const = 0;
+	virtual void				MapRemoveFromEditFile( int baseIndex ) const = 0;
+	virtual void				MapClearEditFile() const = 0;
 	virtual void				MapSetEntityKeyVal( const char* name, const char* key, const char* val ) const  = 0;
 	virtual void				MapCopyDictToEntity( const char* name, const idDict* dict ) const = 0;
 	virtual void				MapCopyDictToEntityAtOrigin( const idVec3& org, const idDict* dict ) const = 0;

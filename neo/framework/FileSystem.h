@@ -199,6 +199,9 @@ public:
 
 	virtual sysFolder_t		IsFolder( const char* relativePath, const char* basePath = "fs_basepath" ) = 0;
 
+	// Returns true if the file exists directly on disk (not save on either .resource or .pk4)
+	virtual bool			IsFileOnDisk( const char* relativePath ) = 0;
+
 	// resource tracking and related things
 	virtual void			EnableBackgroundCache( bool enable ) = 0;
 	virtual void			BeginLevelLoad( const char* name, char* _blockBuffer, int _blockBufferSize ) = 0;

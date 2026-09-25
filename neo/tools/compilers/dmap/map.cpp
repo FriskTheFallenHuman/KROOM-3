@@ -448,7 +448,7 @@ static void ParsePatch( const idMapPatch* patch, int primitiveNum )
 
 
 // RB begin
-static int ParsePolygonMesh( const MapPolygonMesh* mesh, int primitiveNum, int numPolygons )
+static int ParsePolygonMesh( const idMapPolygonMesh* mesh, int primitiveNum, int numPolygons )
 {
 	primitive_t* prim = ( primitive_t* )Mem_Alloc( sizeof( *prim ), TAG_TOOLS );
 	memset( prim, 0, sizeof( *prim ) );
@@ -459,7 +459,7 @@ static int ParsePolygonMesh( const MapPolygonMesh* mesh, int primitiveNum, int n
 
 	for( int i = 0; i < mesh->GetNumPolygons(); i++ )
 	{
-		const MapPolygon& poly = mesh->GetFace( i );
+		const idMapPolygon& poly = mesh->GetFace( i );
 
 		const idMaterial* mat = declManager->FindMaterial( poly.GetMaterial() );
 
@@ -551,7 +551,7 @@ static bool	ProcessMapEntity( idMapEntity* mapEnt )
 		// RB begin
 		else if( prim->GetType() == idMapPrimitive::TYPE_MESH )
 		{
-			numPolygons += ParsePolygonMesh( static_cast<MapPolygonMesh*>( prim ), entityPrimitive, numPolygons );
+			numPolygons += ParsePolygonMesh( static_cast<idMapPolygonMesh*>( prim ), entityPrimitive, numPolygons );
 		}
 		// RB end
 	}

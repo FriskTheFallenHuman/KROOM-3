@@ -617,6 +617,509 @@ unsigned int idMapBrush::GetGeometryCRC() const
 
 /*
 ================
+idMapPolygonMesh::ConvertFromBrush
+================
+*/
+void idMapPolygonMesh::ConvertFromBrush( const idMapBrush* mapBrush, int entityNum, int primitiveNum )
+{
+	originalType = TYPE_BRUSH;
+
+	// fix degenerate planes
+	idPlane* planes = ( idPlane* ) _alloca16( mapBrush->GetNumSides() * sizeof( planes[0] ) );
+	for( int i = 0; i < mapBrush->GetNumSides(); i++ )
+	{
+		planes[i] = mapBrush->GetSide( i )->GetPlane();
+		planes[i].FixDegeneracies( DEGENERATE_DIST_EPSILON );
+	}
+
+	idList<idFixedWinding> planeWindings;
+	idBounds bounds;
+	bounds.Clear();
+
+	int numVerts = 0;
+	int numIndexes = 0;
+
+	bool badBrush = false;
+
+	for( int i = 0; i < mapBrush->GetNumSides(); i++ )
+	{
+		idMapBrushSide* mapSide = mapBrush->GetSide( i );
+
+		const idMaterial* material = declManager->FindMaterial( mapSide->GetMaterial() );
+		//contents |= ( material->GetContentFlags() & CONTENTS_REMOVE_UTIL );
+		//materials.AddUnique( material );
+
+		// chop base plane by other brush sides
+		idFixedWinding& w = planeWindings.Alloc();
+		w.BaseForPlane( -planes[i] );
+
+		if( !w.GetNumPoints() )
+		{
+			common->Printf( "Entity %i, Brush %i: base winding has no points\n", entityNum, primitiveNum );
+			badBrush = true;
+			break;
+		}
+
+		for( int j = 0; j < mapBrush->GetNumSides() && w.GetNumPoints(); j++ )
+		{
+			if( i == j )
+			{
+				continue;
+			}
+
+			if( !w.ClipInPlace( -planes[j], 0 ) )
+			{
+				// no intersection
+				//badBrush = true;
+				common->Printf( "Entity %i, Brush %i: no intersection with other brush plane\n", entityNum, primitiveNum );
+				//break;
+			}
+		}
+
+		if( w.GetNumPoints() <= 2 )
+		{
+			continue;
+		}
+
+		// only used for debugging
+		for( int j = 0; j < w.GetNumPoints(); j++ )
+		{
+			const idVec3& v = w[j].ToVec3();
+			bounds.AddPoint( v );
+		}
+	}
+
+	if( badBrush )
+	{
+		//common->Error( "" )
+		return;
+	}
+
+	// copy the data from the windings and build polygons
+	for( int i = 0; i < mapBrush->GetNumSides(); i++ )
+	{
+		idMapBrushSide* mapSide = mapBrush->GetSide( i );
+
+		idFixedWinding& w = planeWindings[i];
+		if( !w.GetNumPoints() )
+		{
+			continue;
+		}
+
+		idMapPolygon& polygon = polygons.Alloc();
+		polygon.SetMaterial( mapSide->GetMaterial() );
+
+
+		//for( int j = 0; j < w.GetNumPoints(); j++ )
+
+		// reverse order, so normal does not point inwards
+		for( int j = w.GetNumPoints() - 1; j >= 0; j-- )
+		{
+			polygon.AddIndex( verts.Num() + j );
+		}
+
+		for( int j = 0; j < w.GetNumPoints(); j++ )
+		{
+			idDrawVert& dv = verts.Alloc();
+
+			const idVec3& xyz = w[j].ToVec3();
+
+			dv.xyz = xyz;
+
+			// calculate texture s/t from brush primitive texture matrix
+			idVec4 texVec[2];
+			mapSide->GetTextureVectors( texVec );
+
+			idVec2 st;
+			st.x = ( xyz * texVec[0].ToVec3() ) + texVec[0][3];
+			st.y = ( xyz * texVec[1].ToVec3() ) + texVec[1][3];
+
+			// flip y
+			//st.y = 1.0f - st.y;
+
+			dv.SetTexCoord( st );
+
+			// copy normal
+			dv.SetNormal( mapSide->GetPlane().Normal() );
+
+			//if( dv->GetNormal().Length() < 0.9 || dv->GetNormal().Length() > 1.1 )
+			//{
+			//	common->Error( "Bad normal in TriListForSide" );
+			//}
+		}
+	}
+
+	SetContents();
+}
+
+/*
+================
+idMapPolygonMesh::ConvertFromPatch
+================
+*/
+void idMapPolygonMesh::ConvertFromPatch( const idMapPatch* patch, int entityNum, int primitiveNum )
+{
+	originalType = TYPE_PATCH;
+
+	idSurface_Patch* cp = new idSurface_Patch( *patch );
+
+	if( patch->GetExplicitlySubdivided() )
+	{
+		cp->SubdivideExplicit( patch->GetHorzSubdivisions(), patch->GetVertSubdivisions(), true );
+	}
+	else
+	{
+		cp->Subdivide( DEFAULT_CURVE_MAX_ERROR, DEFAULT_CURVE_MAX_ERROR, DEFAULT_CURVE_MAX_LENGTH, true );
+	}
+
+	for( int i = 0; i < cp->GetNumIndexes(); i += 3 )
+	{
+		verts.Append( ( *cp )[cp->GetIndexes()[i + 1]] );
+		verts.Append( ( *cp )[cp->GetIndexes()[i + 2]] );
+		verts.Append( ( *cp )[cp->GetIndexes()[i + 0]] );
+	}
+
+	for( int i = 0; i < cp->GetNumIndexes(); i += 3 )
+	{
+		idMapPolygon& polygon = polygons.Alloc();
+		polygon.SetMaterial( patch->GetMaterial() );
+
+		polygon.AddIndex( i + 0 );
+		polygon.AddIndex( i + 1 );
+		polygon.AddIndex( i + 2 );
+	}
+
+	delete cp;
+
+	SetContents();
+
+	// RB: patch meshes are not opaque
+	// avoid BSP splits caused by patches
+	opaque = false;
+}
+
+/*
+================
+idMapPolygonMesh::Write
+================
+*/
+bool idMapPolygonMesh::Write( idFile* fp, int primitiveNum, const idVec3& origin ) const
+{
+	fp->WriteFloatString( "// primitive %d\n{\n meshDef\n {\n", primitiveNum );
+	//fp->WriteFloatString( "  \"%s\"\n  ( %d %d 0 0 0 )\n", GetMaterial(), GetWidth(), GetHeight() );
+
+	fp->WriteFloatString( "  ( %d %d 0 0 0 )\n", verts.Num(), polygons.Num() );
+
+	fp->WriteFloatString( "  (\n" );
+	idVec2 st;
+	idVec3 n;
+	for( int i = 0; i < verts.Num(); i++ )
+	{
+		const idDrawVert* v = &verts[ i ];
+		st = v->GetTexCoord();
+		n = v->GetNormalRaw();
+
+		//fp->WriteFloatString( "   ( %f %f %f %f %f %f %f %f )\n", v->xyz[0] + origin[0], v->xyz[1] + origin[1], v->xyz[2] + origin[2], st[0], st[1], n[0], n[1], n[2] );
+		fp->WriteFloatString( "   ( %f %f %f %f %f %f %f %f )\n", v->xyz[0], v->xyz[1], v->xyz[2], st[0], st[1], n[0], n[1], n[2] );
+	}
+	fp->WriteFloatString( "  )\n" );
+
+	fp->WriteFloatString( "  (\n" );
+	for( int i = 0; i < polygons.Num(); i++ )
+	{
+		const idMapPolygon& poly = polygons[ i ];
+
+		fp->WriteFloatString( "   \"%s\" %d = ", poly.GetMaterial(), poly.indexes.Num() );
+
+		for( int j = 0; j < poly.indexes.Num(); j++ )
+		{
+			fp->WriteFloatString( "%d ", poly.indexes[j] );
+		}
+		fp->WriteFloatString( "\n" );
+	}
+	fp->WriteFloatString( "  )\n" );
+
+	fp->WriteFloatString( " }\n}\n" );
+
+	return true;
+}
+
+/*
+================
+idMapPolygonMesh::Parse
+================
+*/
+idMapPolygonMesh* idMapPolygonMesh::Parse( idLexer& src, const idVec3& origin, float version )
+{
+	float		info[7];
+	idToken		token;
+	int			i;
+
+	if( !src.ExpectTokenString( "{" ) )
+	{
+		return NULL;
+	}
+
+	// Parse it
+	if( !src.Parse1DMatrix( 5, info ) )
+	{
+		src.Error( "idMapPolygonMesh::Parse: unable to parse meshDef info" );
+		return NULL;
+	}
+
+	const int numVertices = ( int ) info[0];
+	const int numPolygons = ( int ) info[1];
+
+	idMapPolygonMesh* mesh = new idMapPolygonMesh();
+
+	// parse vertices
+	if( !src.ExpectTokenString( "(" ) )
+	{
+		src.Error( "idMapPolygonMesh::Parse: bad mesh vertex data" );
+		delete mesh;
+		return NULL;
+	}
+
+	for( i = 0; i < numVertices; i++ )
+	{
+		float v[8];
+
+		if( !src.Parse1DMatrix( 8, v ) )
+		{
+			src.Error( "idMapPolygonMesh::Parse: bad vertex column data" );
+			delete mesh;
+			return NULL;
+		}
+
+		// TODO optimize: preallocate vertices
+		//vert = &( ( *patch )[i * patch->GetWidth() + j] );
+
+		idDrawVert vert;
+
+		vert.xyz[0] = v[0];// - origin[0];
+		vert.xyz[1] = v[1];// - origin[1];
+		vert.xyz[2] = v[2];// - origin[2];
+		vert.SetTexCoord( v[3], v[4] );
+
+		idVec3 n( v[5], v[6], v[7] );
+		vert.SetNormal( n );
+
+		mesh->AddVertex( vert );
+	}
+
+	if( !src.ExpectTokenString( ")" ) )
+	{
+		delete mesh;
+		src.Error( "idMapPolygonMesh::Parse: unable to parse vertices" );
+		return NULL;
+	}
+
+	// parse polygons
+	if( !src.ExpectTokenString( "(" ) )
+	{
+		src.Error( "idMapPolygonMesh::Parse: bad mesh polygon data" );
+		delete mesh;
+		return NULL;
+	}
+
+	for( i = 0; i < numPolygons; i++ )
+	{
+		// get material name
+		idMapPolygon& polygon = mesh->polygons.Alloc();
+
+		src.ReadToken( &token );
+		if( token.type == TT_STRING )
+		{
+			polygon.SetMaterial( token );
+		}
+		else
+		{
+			src.Error( "idMapPolygonMesh::Parse: bad mesh polygon data" );
+			delete mesh;
+			return NULL;
+		}
+
+		int numIndexes = src.ParseInt();
+
+		if( !src.ExpectTokenString( "=" ) )
+		{
+			src.Error( "idMapPolygonMesh::Parse: bad mesh polygon data" );
+			delete mesh;
+			return NULL;
+		}
+
+		//idTempArray<int> indexes( numIndexes );
+		for( int j = 0; j < numIndexes; j++ )
+		{
+			//indexes[j] = src.ParseInt();
+
+			int index = src.ParseInt();
+			polygon.AddIndex( index );
+		}
+
+		//polygon->SetIndexes( indexes );
+	}
+
+	if( !src.ExpectTokenString( ")" ) )
+	{
+		delete mesh;
+		src.Error( "idMapPolygonMesh::Parse: unable to parse polygons" );
+		return NULL;
+	}
+
+	if( !src.ExpectTokenString( "}" ) )
+	{
+		delete mesh;
+		src.Error( "idMapPolygonMesh::Parse: unable to parse mesh primitive end" );
+		return NULL;
+	}
+
+	if( !src.ExpectTokenString( "}" ) )
+	{
+		delete mesh;
+		src.Error( "idMapPolygonMesh::Parse: unable to parse mesh primitive end" );
+		return NULL;
+	}
+
+	mesh->SetContents();
+
+	return mesh;
+}
+
+/*
+================
+idMapPolygonMesh::SetContents
+================
+*/
+void idMapPolygonMesh::SetContents()
+{
+	if( polygons.Num() < 1 )
+	{
+		contents = CONTENTS_SOLID;
+		opaque = true;
+
+		return;
+	}
+
+	int			c2;
+
+	idMapPolygon* poly = &polygons[0];
+
+	const idMaterial* mat = declManager->FindMaterial( poly->GetMaterial() );
+	contents = mat->GetContentFlags();
+
+	//b->contentShader = s->material;
+	bool mixed = false;
+
+	// a brush is only opaque if all sides are opaque
+	opaque = true;
+
+	for( int i = 1 ; i < polygons.Num() ; i++ )
+	{
+		poly = &polygons[i];
+
+		const idMaterial* mat2 = declManager->FindMaterial( poly->GetMaterial() );
+
+		c2 = mat2->GetContentFlags();
+		if( c2 != contents )
+		{
+			mixed = true;
+			contents |= c2;
+		}
+
+		if( mat2->Coverage() != MC_OPAQUE )
+		{
+			opaque = false;
+		}
+	}
+}
+
+/*
+================
+idMapPolygonMesh::GetGeometryCRC
+================
+*/
+unsigned int idMapPolygonMesh::GetGeometryCRC() const
+{
+	int i;
+	unsigned int crc;
+
+	crc = 0;
+	for( i = 0; i < verts.Num(); i++ )
+	{
+		crc ^= FloatCRC( verts[i].xyz.x );
+		crc ^= FloatCRC( verts[i].xyz.y );
+		crc ^= FloatCRC( verts[i].xyz.z );
+	}
+
+	for( i = 0; i < polygons.Num(); i++ )
+	{
+		const idMapPolygon& poly = polygons[i];
+
+		crc ^= StringCRC( poly.GetMaterial() );
+	}
+
+	return crc;
+}
+
+/*
+================
+idMapPolygonMesh::IsAreaportal
+================
+*/
+bool idMapPolygonMesh::IsAreaportal() const
+{
+	return ( ( contents & CONTENTS_AREAPORTAL ) != 0 );
+}
+
+/*
+================
+idMapPolygonMesh::GetBounds
+================
+*/
+void idMapPolygonMesh::GetBounds( idBounds& bounds ) const
+{
+	if( !verts.Num() )
+	{
+		bounds.Clear();
+		return;
+	}
+
+
+	bounds[0] = bounds[1] = verts[0].xyz;
+	for( int i = 1; i < verts.Num(); i++ )
+	{
+		const idVec3& p = verts[i].xyz;
+
+		if( p.x < bounds[0].x )
+		{
+			bounds[0].x = p.x;
+		}
+		else if( p.x > bounds[1].x )
+		{
+			bounds[1].x = p.x;
+		}
+		if( p.y < bounds[0].y )
+		{
+			bounds[0].y = p.y;
+		}
+		else if( p.y > bounds[1].y )
+		{
+			bounds[1].y = p.y;
+		}
+		if( p.z < bounds[0].z )
+		{
+			bounds[0].z = p.z;
+		}
+		else if( p.z > bounds[1].z )
+		{
+			bounds[1].z = p.z;
+		}
+	}
+}
+
+/*
+================
 idMapEntity::Parse
 ================
 */
@@ -627,7 +1130,7 @@ idMapEntity* idMapEntity::Parse( idLexer& src, bool worldSpawn, float version )
 	idMapPatch* mapPatch;
 	idMapBrush* mapBrush;
 	// RB begin
-	MapPolygonMesh* mapMesh;
+	idMapPolygonMesh* mapMesh;
 	// RB end
 	bool worldent;
 	idVec3 origin;
@@ -702,7 +1205,7 @@ idMapEntity* idMapEntity::Parse( idLexer& src, bool worldSpawn, float version )
 			// RB: new mesh primitive with ngons
 			else if( token.Icmpn( "mesh", 4 ) == 0 )
 			{
-				mapMesh = MapPolygonMesh::Parse( src, origin, version );
+				mapMesh = idMapPolygonMesh::Parse( src, origin, version );
 				if( !mapMesh )
 				{
 					return NULL;
@@ -792,11 +1295,9 @@ bool idMapEntity::Write( idFile* fp, int entityNum ) const
 			case idMapPrimitive::TYPE_PATCH:
 				static_cast<idMapPatch*>( mapPrim )->Write( fp, i, origin );
 				break;
-			// RB begin
 			case idMapPrimitive::TYPE_MESH:
-				static_cast<MapPolygonMesh*>( mapPrim )->Write( fp, i, origin );
+				static_cast<idMapPolygonMesh*>( mapPrim )->Write( fp, i, origin );
 				break;
-				// RB end
 		}
 	}
 
@@ -839,12 +1340,9 @@ unsigned int idMapEntity::GetGeometryCRC() const
 			case idMapPrimitive::TYPE_PATCH:
 				crc ^= static_cast<idMapPatch*>( mapPrim )->GetGeometryCRC();
 				break;
-
-			// RB begin
 			case idMapPrimitive::TYPE_MESH:
-				crc ^= static_cast<MapPolygonMesh*>( mapPrim )->GetGeometryCRC();
+				crc ^= static_cast<idMapPolygonMesh*>( mapPrim )->GetGeometryCRC();
 				break;
-				// RB end
 		}
 	}
 
@@ -983,53 +1481,19 @@ bool idMapFile::Parse( const char* filename, bool ignoreRegion, bool osPath )
 		}
 	}
 
-	// RB: <name>_extraents.map allows to add and override existing entities
-	idMapFile extrasMap;
+	// Record how many entities came from the base .map, so the .edit writer
+	// can distinguish new ("add") entities from existing ("modify") ones.
+	numBaseEntities = entities.Num();
+
+	// Krispy: <name>.edit allows adding, modifying and removing entities
 	fullName = name;
-	//fullName.StripFileExtension();
-	fullName += "_extra_ents.map";
+	fullName.SetFileExtension( "edit" );
 
-	if( extrasMap.Parse( fullName, ignoreRegion, osPath ) )
+	idFile* editFile = fileSystem->OpenFileRead( fullName );
+	if( editFile != NULL )
 	{
-		for( i = 0; i < extrasMap.entities.Num(); i++ )
-		{
-			idMapEntity* extraEnt = extrasMap.entities[i];
-
-			const idKeyValue* kv = extraEnt->epairs.FindKey( "name" );
-			if( kv && kv->GetValue().Length() )
-			{
-				mapEnt = FindEntity( kv->GetValue().c_str() );
-				if( mapEnt )
-				{
-					// allow override old settings
-					for( int j = 0; j < extraEnt->epairs.GetNumKeyVals(); j++ )
-					{
-						const idKeyValue* pair = extraEnt->epairs.GetKeyVal( j );
-						if( pair && pair->GetValue().Length() )
-						{
-							mapEnt->epairs.Set( pair->GetKey(), pair->GetValue() );
-						}
-					}
-
-					continue;
-				}
-			}
-
-			{
-				mapEnt = new( TAG_SYSTEM ) idMapEntity();
-				entities.Append( mapEnt );
-
-				// don't grab brushes or polys
-				mapEnt->epairs.Copy( extraEnt->epairs );
-			}
-		}
-
-#if 0
-		fullName = name;
-		fullName += "_extra_debug.map";
-
-		Write( fullName, ".map" );
-#endif
+		fileSystem->CloseFile( editFile );
+		ApplyEditFile( fullName, osPath );
 	}
 
 	hasPrimitiveData = true;
@@ -1075,6 +1539,344 @@ bool idMapFile::Write( const char* fileName, const char* ext, bool fromBasePath 
 	}
 
 	idLib::fileSystem->CloseFile( fp );
+
+	return true;
+}
+
+/*
+===============
+idMapFile::ApplyEditFile
+
+Reads a <map>.edit file and applies "add", "modify" and "remove" operations
+to this map's entity list.
+
+Rules:
+  - modify accepts "worldspawn" (=> base index 0) or "entity N".
+  - add refuses "worldspawn" — worldspawn can't be added.
+  - remove refuses both "worldspawn" and "entity 0" — worldspawn can't be
+	removed.
+===============
+*/
+bool idMapFile::ApplyEditFile( const char* filename, bool osPath )
+{
+	idLexer src( LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES );
+	idStr fullName = filename;
+	if( !fullName.CheckExtension( "edit" ) )
+	{
+		fullName.SetFileExtension( "edit" );
+	}
+
+	if( !src.LoadFile( fullName, osPath ) )
+	{
+		// it's okay not to be found.
+		return false;
+	}
+
+	idToken token;
+
+	// map name
+	if( !src.ReadToken( &token ) || token.type != TT_STRING )
+	{
+		src.Error( "%s: expected map name\n", __FUNCTION__ );
+		return false;
+	}
+
+	if( !src.ExpectTokenString( "{" ) )
+	{
+		return false;
+	}
+
+	while( 1 )
+	{
+		if( !src.ReadToken( &token ) )
+		{
+			break;
+		}
+
+		if( token == "}" )
+		{
+			break;
+		}
+
+		if( token.type != TT_STRING )
+		{
+			src.Error( "%s: unexpected token '%s'\n", __FUNCTION__, token.c_str() );
+			return false;
+		}
+
+		// version
+		if( token == "version" )
+		{
+			idToken v;
+			src.ReadToken( &v );
+			continue;
+		}
+
+		// add entities
+		if( token == "add" )
+		{
+			if( !src.ExpectTokenString( "{" ) )
+			{
+				return false;
+			}
+
+			while( 1 )
+			{
+				idToken entTok;
+				if( !src.ReadToken( &entTok ) )
+				{
+					return false;
+				}
+				if( entTok == "}" )
+				{
+					break;
+				}
+
+				// worldspawn can't be added.
+				if( idStr::Icmp( entTok.c_str(), "worldspawn" ) == 0 )
+				{
+					src.Warning( "%s: can't add worldspawn, skipping\n", __FUNCTION__ );
+
+					if( src.PeekTokenString( "{" ) )
+					{
+						src.ExpectTokenString( "{" );
+						src.SkipBracedSection( false );
+					}
+					continue;
+				}
+
+				if( !src.ExpectTokenString( "{" ) )
+				{
+					return false;
+				}
+
+				idMapEntity* mapEnt = new( TAG_SYSTEM ) idMapEntity();
+
+				while( 1 )
+				{
+					idToken k, v;
+					if( !src.ReadToken( &k ) )
+					{
+						delete mapEnt;
+						return false;
+					}
+
+					if( k == "}" )
+					{
+						break;
+					}
+
+					if( k.type != TT_STRING )
+					{
+						src.Error( "%s: expected quoted key\n", __FUNCTION__ );
+						delete mapEnt;
+						return false;
+					}
+
+					if( !src.ReadToken( &v ) || v.type != TT_STRING )
+					{
+						src.Error( "%s: expected quoted value\n", __FUNCTION__ );
+						delete mapEnt;
+						return false;
+					}
+					mapEnt->epairs.Set( k.c_str(), v.c_str() );
+				}
+
+				// refuse to append anything that declares itself as worldspawn.
+				if( idStr::Icmp( mapEnt->epairs.GetString( "classname" ), "worldspawn" ) == 0 )
+				{
+					src.Warning( "%s: entity with classname \"worldspawn\" can't be added, skipping\n", __FUNCTION__ );
+					delete mapEnt;
+					continue;
+				}
+
+				entities.Append( mapEnt );
+			}
+			continue;
+		}
+
+		// modify an existing entity
+		if( token == "modify" )
+		{
+			if( !src.ExpectTokenString( "{" ) )
+			{
+				return false;
+			}
+			while( 1 )
+			{
+				idToken entTok;
+				if( !src.ReadToken( &entTok ) )
+				{
+					return false;
+				}
+				if( entTok == "}" )
+				{
+					break;
+				}
+
+				int entIndex = -1;
+				const bool isWorldspawn = ( idStr::Icmp( entTok.c_str(), "worldspawn" ) == 0 );
+
+				if( isWorldspawn )
+				{
+					entIndex = 0;   // worldspawn is always entity 0
+				}
+				else if( sscanf( entTok.c_str(), "entity %d", &entIndex ) != 1 )
+				{
+					src.Warning( "%s: bad reference '%s', skipping block\n", __FUNCTION__, entTok.c_str() );
+
+					if( src.PeekTokenString( "{" ) )
+					{
+						src.ExpectTokenString( "{" );
+						src.SkipBracedSection( false );
+					}
+					continue;
+				}
+
+				if( !src.ExpectTokenString( "{" ) )
+				{
+					return false;
+				}
+
+				idMapEntity* mapEnt = ( entIndex >= 0 && entIndex < entities.Num() ) ? entities[entIndex] : NULL;
+				if( mapEnt == NULL )
+				{
+					src.Warning( "%s: modify #%d out of range\n", __FUNCTION__, entIndex );
+				}
+
+				while( 1 )
+				{
+					idToken k, v;
+					if( !src.ReadToken( &k ) )
+					{
+						return false;
+					}
+
+					if( k == "}" )
+					{
+						break;
+					}
+
+					if( k.type != TT_STRING )
+					{
+						return false;
+					}
+
+					if( !src.ReadToken( &v ) || v.type != TT_STRING )
+					{
+						return false;
+					}
+
+					// refuse to change the classname of worldspawn.
+					if( mapEnt == entities[0] && idStr::Icmp( k.c_str(), "classname" ) == 0 )
+					{
+						src.Warning( "%s: can't change worldspawn's classname\n", __FUNCTION__ );
+						continue;
+					}
+
+					if( mapEnt != NULL )
+					{
+						// empty value means "delete this key"
+						if( v.Length() > 0 )
+						{
+							mapEnt->epairs.Set( k.c_str(), v.c_str() );
+						}
+						else
+						{
+							mapEnt->epairs.Delete( k.c_str() );
+						}
+					}
+				}
+			}
+			continue;
+		}
+
+		// remove an entity
+		if( token == "remove" )
+		{
+			if( !src.ExpectTokenString( "{" ) )
+			{
+				return false;
+			}
+
+			idList<int> toRemove;
+			while( 1 )
+			{
+				idToken entTok;
+				if( !src.ReadToken( &entTok ) )
+				{
+					return false;
+				}
+				if( entTok == "}" )
+				{
+					break;
+				}
+
+				// worldspawn can't be removed by name.
+				if( idStr::Icmp( entTok.c_str(), "worldspawn" ) == 0 )
+				{
+					src.Warning( "%s: can't remove worldspawn, skipping\n", __FUNCTION__ );
+					continue;
+				}
+
+				int entIndex = -1;
+				if( sscanf( entTok.c_str(), "entity %d", &entIndex ) != 1 )
+				{
+					continue;
+				}
+				// entity 0 is worldspawn refuse it.
+				if( entIndex == 0 )
+				{
+					src.Warning( "%s: entity 0 is worldspawn, can't be removed\n", __FUNCTION__ );
+					continue;
+				}
+				if( entIndex > 0 )
+				{
+					toRemove.Append( entIndex );
+				}
+			}
+
+			// delete from highest index to lowest so earlier removes don't
+			// shift the indices of later removes
+			for( int a = 0; a < toRemove.Num(); ++a )
+			{
+				for( int b = a + 1; b < toRemove.Num(); ++b )
+				{
+					if( toRemove[b] > toRemove[a] )
+					{
+						int tmp = toRemove[a];
+						toRemove[a] = toRemove[b];
+						toRemove[b] = tmp;
+					}
+				}
+			}
+
+			for( int a = 0; a < toRemove.Num(); ++a )
+			{
+				int idx = toRemove[a];
+				if( idx >= 0 && idx < entities.Num() )
+				{
+					// don't delete worldspawn.
+					if( idStr::Icmp( entities[idx]->epairs.GetString( "classname" ), "worldspawn" ) == 0 )
+					{
+						src.Warning( "%s: refusing to remove worldspawn (index %d)\n", __FUNCTION__, idx );
+						continue;
+					}
+					delete entities[idx];
+					entities.RemoveIndex( idx );
+				}
+			}
+			continue;
+		}
+
+		// unknown section — skip it gracefully
+		src.Warning( "%s: unknown section '%s'\n", __FUNCTION__, token.c_str() );
+		if( src.PeekTokenString( "{" ) )
+		{
+			src.ExpectTokenString( "{" );
+			src.SkipBracedSection( false );
+		}
+	}
 
 	return true;
 }
@@ -1224,481 +2026,11 @@ bool idMapFile::NeedsReload()
 	return true;
 }
 
-
-// RB begin
-MapPolygonMesh::MapPolygonMesh()
-{
-	type = TYPE_MESH;
-	originalType = TYPE_MESH;
-	polygons.Resize( 8, 4 );
-
-	contents = CONTENTS_SOLID;
-	opaque = true;
-}
-
-void MapPolygonMesh::ConvertFromBrush( const idMapBrush* mapBrush, int entityNum, int primitiveNum )
-{
-	originalType = TYPE_BRUSH;
-
-	// fix degenerate planes
-	idPlane* planes = ( idPlane* ) _alloca16( mapBrush->GetNumSides() * sizeof( planes[0] ) );
-	for( int i = 0; i < mapBrush->GetNumSides(); i++ )
-	{
-		planes[i] = mapBrush->GetSide( i )->GetPlane();
-		planes[i].FixDegeneracies( DEGENERATE_DIST_EPSILON );
-	}
-
-	idList<idFixedWinding> planeWindings;
-	idBounds bounds;
-	bounds.Clear();
-
-	int numVerts = 0;
-	int numIndexes = 0;
-
-	bool badBrush = false;
-
-	for( int i = 0; i < mapBrush->GetNumSides(); i++ )
-	{
-		idMapBrushSide* mapSide = mapBrush->GetSide( i );
-
-		const idMaterial* material = declManager->FindMaterial( mapSide->GetMaterial() );
-		//contents |= ( material->GetContentFlags() & CONTENTS_REMOVE_UTIL );
-		//materials.AddUnique( material );
-
-		// chop base plane by other brush sides
-		idFixedWinding& w = planeWindings.Alloc();
-		w.BaseForPlane( -planes[i] );
-
-		if( !w.GetNumPoints() )
-		{
-			common->Printf( "Entity %i, Brush %i: base winding has no points\n", entityNum, primitiveNum );
-			badBrush = true;
-			break;
-		}
-
-		for( int j = 0; j < mapBrush->GetNumSides() && w.GetNumPoints(); j++ )
-		{
-			if( i == j )
-			{
-				continue;
-			}
-
-			if( !w.ClipInPlace( -planes[j], 0 ) )
-			{
-				// no intersection
-				//badBrush = true;
-				common->Printf( "Entity %i, Brush %i: no intersection with other brush plane\n", entityNum, primitiveNum );
-				//break;
-			}
-		}
-
-		if( w.GetNumPoints() <= 2 )
-		{
-			continue;
-		}
-
-		// only used for debugging
-		for( int j = 0; j < w.GetNumPoints(); j++ )
-		{
-			const idVec3& v = w[j].ToVec3();
-			bounds.AddPoint( v );
-		}
-	}
-
-	if( badBrush )
-	{
-		//common->Error( "" )
-		return;
-	}
-
-	// copy the data from the windings and build polygons
-	for( int i = 0; i < mapBrush->GetNumSides(); i++ )
-	{
-		idMapBrushSide* mapSide = mapBrush->GetSide( i );
-
-		idFixedWinding& w = planeWindings[i];
-		if( !w.GetNumPoints() )
-		{
-			continue;
-		}
-
-		MapPolygon& polygon = polygons.Alloc();
-		polygon.SetMaterial( mapSide->GetMaterial() );
-
-
-		//for( int j = 0; j < w.GetNumPoints(); j++ )
-
-		// reverse order, so normal does not point inwards
-		for( int j = w.GetNumPoints() - 1; j >= 0; j-- )
-		{
-			polygon.AddIndex( verts.Num() + j );
-		}
-
-		for( int j = 0; j < w.GetNumPoints(); j++ )
-		{
-			idDrawVert& dv = verts.Alloc();
-
-			const idVec3& xyz = w[j].ToVec3();
-
-			dv.xyz = xyz;
-
-			// calculate texture s/t from brush primitive texture matrix
-			idVec4 texVec[2];
-			mapSide->GetTextureVectors( texVec );
-
-			idVec2 st;
-			st.x = ( xyz * texVec[0].ToVec3() ) + texVec[0][3];
-			st.y = ( xyz * texVec[1].ToVec3() ) + texVec[1][3];
-
-			// flip y
-			//st.y = 1.0f - st.y;
-
-			dv.SetTexCoord( st );
-
-			// copy normal
-			dv.SetNormal( mapSide->GetPlane().Normal() );
-
-			//if( dv->GetNormal().Length() < 0.9 || dv->GetNormal().Length() > 1.1 )
-			//{
-			//	common->Error( "Bad normal in TriListForSide" );
-			//}
-		}
-	}
-
-	SetContents();
-}
-
-void MapPolygonMesh::ConvertFromPatch( const idMapPatch* patch, int entityNum, int primitiveNum )
-{
-	originalType = TYPE_PATCH;
-
-	idSurface_Patch* cp = new idSurface_Patch( *patch );
-
-	if( patch->GetExplicitlySubdivided() )
-	{
-		cp->SubdivideExplicit( patch->GetHorzSubdivisions(), patch->GetVertSubdivisions(), true );
-	}
-	else
-	{
-		cp->Subdivide( DEFAULT_CURVE_MAX_ERROR, DEFAULT_CURVE_MAX_ERROR, DEFAULT_CURVE_MAX_LENGTH, true );
-	}
-
-	for( int i = 0; i < cp->GetNumIndexes(); i += 3 )
-	{
-		verts.Append( ( *cp )[cp->GetIndexes()[i + 1]] );
-		verts.Append( ( *cp )[cp->GetIndexes()[i + 2]] );
-		verts.Append( ( *cp )[cp->GetIndexes()[i + 0]] );
-	}
-
-	for( int i = 0; i < cp->GetNumIndexes(); i += 3 )
-	{
-		MapPolygon& polygon = polygons.Alloc();
-		polygon.SetMaterial( patch->GetMaterial() );
-
-		polygon.AddIndex( i + 0 );
-		polygon.AddIndex( i + 1 );
-		polygon.AddIndex( i + 2 );
-	}
-
-	delete cp;
-
-	SetContents();
-
-	// RB: patch meshes are not opaque
-	// avoid BSP splits caused by patches
-	opaque = false;
-}
-
-bool MapPolygonMesh::Write( idFile* fp, int primitiveNum, const idVec3& origin ) const
-{
-	fp->WriteFloatString( "// primitive %d\n{\n meshDef\n {\n", primitiveNum );
-	//fp->WriteFloatString( "  \"%s\"\n  ( %d %d 0 0 0 )\n", GetMaterial(), GetWidth(), GetHeight() );
-
-	fp->WriteFloatString( "  ( %d %d 0 0 0 )\n", verts.Num(), polygons.Num() );
-
-	fp->WriteFloatString( "  (\n" );
-	idVec2 st;
-	idVec3 n;
-	for( int i = 0; i < verts.Num(); i++ )
-	{
-		const idDrawVert* v = &verts[ i ];
-		st = v->GetTexCoord();
-		n = v->GetNormalRaw();
-
-		//fp->WriteFloatString( "   ( %f %f %f %f %f %f %f %f )\n", v->xyz[0] + origin[0], v->xyz[1] + origin[1], v->xyz[2] + origin[2], st[0], st[1], n[0], n[1], n[2] );
-		fp->WriteFloatString( "   ( %f %f %f %f %f %f %f %f )\n", v->xyz[0], v->xyz[1], v->xyz[2], st[0], st[1], n[0], n[1], n[2] );
-	}
-	fp->WriteFloatString( "  )\n" );
-
-	fp->WriteFloatString( "  (\n" );
-	for( int i = 0; i < polygons.Num(); i++ )
-	{
-		const MapPolygon& poly = polygons[ i ];
-
-		fp->WriteFloatString( "   \"%s\" %d = ", poly.GetMaterial(), poly.indexes.Num() );
-
-		for( int j = 0; j < poly.indexes.Num(); j++ )
-		{
-			fp->WriteFloatString( "%d ", poly.indexes[j] );
-		}
-		fp->WriteFloatString( "\n" );
-	}
-	fp->WriteFloatString( "  )\n" );
-
-	fp->WriteFloatString( " }\n}\n" );
-
-	return true;
-}
-
-MapPolygonMesh* MapPolygonMesh::Parse( idLexer& src, const idVec3& origin, float version )
-{
-	float		info[7];
-	idToken		token;
-	int			i;
-
-	if( !src.ExpectTokenString( "{" ) )
-	{
-		return NULL;
-	}
-
-	// Parse it
-	if( !src.Parse1DMatrix( 5, info ) )
-	{
-		src.Error( "MapPolygonMesh::Parse: unable to parse meshDef info" );
-		return NULL;
-	}
-
-	const int numVertices = ( int ) info[0];
-	const int numPolygons = ( int ) info[1];
-
-	MapPolygonMesh* mesh = new MapPolygonMesh();
-
-	// parse vertices
-	if( !src.ExpectTokenString( "(" ) )
-	{
-		src.Error( "MapPolygonMesh::Parse: bad mesh vertex data" );
-		delete mesh;
-		return NULL;
-	}
-
-	for( i = 0; i < numVertices; i++ )
-	{
-		float v[8];
-
-		if( !src.Parse1DMatrix( 8, v ) )
-		{
-			src.Error( "MapPolygonMesh::Parse: bad vertex column data" );
-			delete mesh;
-			return NULL;
-		}
-
-		// TODO optimize: preallocate vertices
-		//vert = &( ( *patch )[i * patch->GetWidth() + j] );
-
-		idDrawVert vert;
-
-		vert.xyz[0] = v[0];// - origin[0];
-		vert.xyz[1] = v[1];// - origin[1];
-		vert.xyz[2] = v[2];// - origin[2];
-		vert.SetTexCoord( v[3], v[4] );
-
-		idVec3 n( v[5], v[6], v[7] );
-		vert.SetNormal( n );
-
-		mesh->AddVertex( vert );
-	}
-
-	if( !src.ExpectTokenString( ")" ) )
-	{
-		delete mesh;
-		src.Error( "MapPolygonMesh::Parse: unable to parse vertices" );
-		return NULL;
-	}
-
-	// parse polygons
-	if( !src.ExpectTokenString( "(" ) )
-	{
-		src.Error( "MapPolygonMesh::Parse: bad mesh polygon data" );
-		delete mesh;
-		return NULL;
-	}
-
-	for( i = 0; i < numPolygons; i++ )
-	{
-		// get material name
-		MapPolygon& polygon = mesh->polygons.Alloc();
-
-		src.ReadToken( &token );
-		if( token.type == TT_STRING )
-		{
-			polygon.SetMaterial( token );;
-		}
-		else
-		{
-			src.Error( "MapPolygonMesh::Parse: bad mesh polygon data" );
-			delete mesh;
-			return NULL;
-		}
-
-		int numIndexes = src.ParseInt();
-
-		if( !src.ExpectTokenString( "=" ) )
-		{
-			src.Error( "MapPolygonMesh::Parse: bad mesh polygon data" );
-			delete mesh;
-			return NULL;
-		}
-
-		//idTempArray<int> indexes( numIndexes );
-		for( int j = 0; j < numIndexes; j++ )
-		{
-			//indexes[j] = src.ParseInt();
-
-			int index = src.ParseInt();
-			polygon.AddIndex( index );
-		}
-
-		//polygon->SetIndexes( indexes );
-	}
-
-	if( !src.ExpectTokenString( ")" ) )
-	{
-		delete mesh;
-		src.Error( "MapPolygonMesh::Parse: unable to parse polygons" );
-		return NULL;
-	}
-
-	if( !src.ExpectTokenString( "}" ) )
-	{
-		delete mesh;
-		src.Error( "MapPolygonMesh::Parse: unable to parse mesh primitive end" );
-		return NULL;
-	}
-
-	if( !src.ExpectTokenString( "}" ) )
-	{
-		delete mesh;
-		src.Error( "MapPolygonMesh::Parse: unable to parse mesh primitive end" );
-		return NULL;
-	}
-
-	mesh->SetContents();
-
-	return mesh;
-}
-
-void MapPolygonMesh::SetContents()
-{
-	if( polygons.Num() < 1 )
-	{
-		contents = CONTENTS_SOLID;
-		opaque = true;
-
-		return;
-	}
-
-	int			c2;
-
-	MapPolygon* poly = &polygons[0];
-
-	const idMaterial* mat = declManager->FindMaterial( poly->GetMaterial() );
-	contents = mat->GetContentFlags();
-
-	//b->contentShader = s->material;
-	bool mixed = false;
-
-	// a brush is only opaque if all sides are opaque
-	opaque = true;
-
-	for( int i = 1 ; i < polygons.Num() ; i++ )
-	{
-		poly = &polygons[i];
-
-		const idMaterial* mat2 = declManager->FindMaterial( poly->GetMaterial() );
-
-		c2 = mat2->GetContentFlags();
-		if( c2 != contents )
-		{
-			mixed = true;
-			contents |= c2;
-		}
-
-		if( mat2->Coverage() != MC_OPAQUE )
-		{
-			opaque = false;
-		}
-	}
-}
-
-unsigned int MapPolygonMesh::GetGeometryCRC() const
-{
-	int i;
-	unsigned int crc;
-
-	crc = 0;
-	for( i = 0; i < verts.Num(); i++ )
-	{
-		crc ^= FloatCRC( verts[i].xyz.x );
-		crc ^= FloatCRC( verts[i].xyz.y );
-		crc ^= FloatCRC( verts[i].xyz.z );
-	}
-
-	for( i = 0; i < polygons.Num(); i++ )
-	{
-		const MapPolygon& poly = polygons[i];
-
-		crc ^= StringCRC( poly.GetMaterial() );
-	}
-
-	return crc;
-}
-
-bool MapPolygonMesh::IsAreaportal() const
-{
-	return ( ( contents & CONTENTS_AREAPORTAL ) != 0 );
-}
-
-void MapPolygonMesh::GetBounds( idBounds& bounds ) const
-{
-	if( !verts.Num() )
-	{
-		bounds.Clear();
-		return;
-	}
-
-
-	bounds[0] = bounds[1] = verts[0].xyz;
-	for( int i = 1; i < verts.Num(); i++ )
-	{
-		const idVec3& p = verts[i].xyz;
-
-		if( p.x < bounds[0].x )
-		{
-			bounds[0].x = p.x;
-		}
-		else if( p.x > bounds[1].x )
-		{
-			bounds[1].x = p.x;
-		}
-		if( p.y < bounds[0].y )
-		{
-			bounds[0].y = p.y;
-		}
-		else if( p.y > bounds[1].y )
-		{
-			bounds[1].y = p.y;
-		}
-		if( p.z < bounds[0].z )
-		{
-			bounds[0].z = p.z;
-		}
-		else if( p.z > bounds[1].z )
-		{
-			bounds[1].z = p.z;
-		}
-	}
-}
-
+/*
+===============
+idMapFile::ConvertToPolygonMeshFormat
+===============
+*/
 bool idMapFile::ConvertToPolygonMeshFormat()
 {
 	int count = GetNumEntities();
@@ -1718,7 +2050,7 @@ bool idMapFile::ConvertToPolygonMeshFormat()
 					mapPrim = ent->GetPrimitive( i );
 					if( mapPrim->GetType() == idMapPrimitive::TYPE_BRUSH )
 					{
-						MapPolygonMesh* meshPrim = new MapPolygonMesh();
+						idMapPolygonMesh* meshPrim = new idMapPolygonMesh();
 						meshPrim->epairs.Copy( mapPrim->epairs );
 
 						meshPrim->ConvertFromBrush( static_cast<idMapBrush*>( mapPrim ), j, i );
@@ -1730,7 +2062,7 @@ bool idMapFile::ConvertToPolygonMeshFormat()
 					}
 					else if( mapPrim->GetType() == idMapPrimitive::TYPE_PATCH )
 					{
-						MapPolygonMesh* meshPrim = new MapPolygonMesh();
+						idMapPolygonMesh* meshPrim = new idMapPolygonMesh();
 						meshPrim->epairs.Copy( mapPrim->epairs );
 
 						meshPrim->ConvertFromPatch( static_cast<idMapPatch*>( mapPrim ), j, i );
@@ -1747,5 +2079,3 @@ bool idMapFile::ConvertToPolygonMeshFormat()
 
 	return true;
 }
-
-// RB end

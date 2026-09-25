@@ -1895,74 +1895,81 @@ Cmd_SaveSelected_f
 */
 static void Cmd_SaveSelected_f( const idCmdArgs& args )
 {
-	int i;
-	idPlayer* player = NULL;
-	idEntity* s = NULL;
-	idMapEntity* mapEnt;
-	idMapFile* mapFile = gameLocal.GetLevelMap();
-	idDict dict;
-	idStr mapName;
-	idStr name;
-
-	player = gameLocal.GetLocalPlayer();
+	idPlayer* player = gameLocal.GetLocalPlayer();
 	if( !player || !gameLocal.CheatsOk() )
 	{
 		return;
 	}
 
-	s = player->dragEntity.GetSelected();
+	idEntity* s = player->dragEntity.GetSelected();
 	if( !s )
 	{
 		gameLocal.Printf( "no entity selected, set g_dragShowSelection 1 to show the current selection\n" );
 		return;
 	}
 
+	idMapFile* mapFile = gameLocal.GetLevelMap();
+	idStr mapName;
 	if( args.Argc() > 1 )
 	{
-		mapName = args.Argv( 1 );
-		mapName = "maps/" + mapName;
+		mapName = "maps/" + idStr( args.Argv( 1 ) );
 	}
 	else
 	{
 		mapName = mapFile->GetName();
 	}
 
-	// find map file entity
-	mapEnt = mapFile->FindEntity( s->name );
-	// create new map file entity if there isn't one for this articulated figure
-	if( !mapEnt )
+	// Ensure the entity has a name
+	if( s->name.IsEmpty() )
 	{
-		mapEnt = new( TAG_SYSTEM ) idMapEntity();
-		mapFile->AddEntity( mapEnt );
-		for( i = 0; i < 9999; i++ )
+		for( int i = 0; i < 9999; i++ )
 		{
-			name = va( "%s_%d", s->GetEntityDefName(), i );
-			if( !gameLocal.FindEntity( name ) )
+			idStr candidate = va( "%s_%d", s->GetEntityDefName(), i );
+			if( !gameLocal.FindEntity( candidate ) )
 			{
+				s->name = candidate;
 				break;
 			}
 		}
-		s->name = name;
-		mapEnt->epairs.Set( "classname", s->GetEntityDefName() );
-		mapEnt->epairs.Set( "name", s->name );
 	}
+
+	idDict state;
+	state.Set( "classname", s->GetEntityDefName() );
+	state.Set( "name", s->name.c_str() );
 
 	if( s->IsType( idMoveable::Type ) )
 	{
 		// save the moveable state
-		mapEnt->epairs.Set( "origin", s->GetPhysics()->GetOrigin().ToString( 8 ) );
-		mapEnt->epairs.Set( "rotation", s->GetPhysics()->GetAxis().ToString( 8 ) );
+		state.Set( "origin", s->GetPhysics()->GetOrigin().ToString( 8 ) );
+		state.Set( "rotation", s->GetPhysics()->GetAxis().ToString( 8 ) );
 	}
 	else if( s->IsType( idAFEntity_Generic::Type ) || s->IsType( idAFEntity_WithAttachedHead::Type ) )
 	{
 		// save the articulated figure state
-		dict.Clear();
-		static_cast<idAFEntity_Base*>( s )->SaveState( dict );
-		mapEnt->epairs.Copy( dict );
+		static_cast<idAFEntity_Base*>( s )->SaveState( state );
 	}
 
-	// write out the map file
-	mapFile->Write( mapName, ".map" );
+	idList<idDict> states;
+	states.Append( state );
+
+	if( gameEdit->MapIsOnDisk() )
+	{
+		idMapEntity* mapEnt = mapFile->FindEntity( s->name );
+		if( !mapEnt )
+		{
+			mapEnt = new( TAG_SYSTEM ) idMapEntity();
+			mapFile->AddEntity( mapEnt );
+		}
+		mapEnt->epairs.Copy( state );
+
+		// write out the map file
+		mapFile->Write( mapName, ".map" );
+	}
+	else
+	{
+		// write out the edit file
+		gameEdit->MapSaveEntitiesToEditFile( states );
+	}
 }
 
 /*
@@ -1993,94 +2000,92 @@ Cmd_SaveMoveables_f
 */
 static void Cmd_SaveMoveables_f( const idCmdArgs& args )
 {
-	int e, i;
-	idMoveable* m = NULL;
-	idMapEntity* mapEnt = NULL;
-	idMapFile* mapFile = gameLocal.GetLevelMap();
-	idStr mapName;
-	idStr name;
-
 	if( !gameLocal.CheatsOk() )
 	{
 		return;
 	}
 
-	for( e = 0; e < MAX_GENTITIES; e++ )
-	{
-		m = static_cast<idMoveable*>( gameLocal.entities[ e ] );
-
-		if( !m || !m->IsType( idMoveable::Type ) )
-		{
-			continue;
-		}
-
-		if( m->IsBound() )
-		{
-			continue;
-		}
-
-		if( !m->IsAtRest() )
-		{
-			break;
-		}
-	}
-
-	if( e < MAX_GENTITIES )
-	{
-		gameLocal.Warning( "map not saved because the moveable entity %s is not at rest", gameLocal.entities[ e ]->name.c_str() );
-		return;
-	}
-
+	idMapFile* mapFile = gameLocal.GetLevelMap();
+	idStr mapName;
 	if( args.Argc() > 1 )
 	{
-		mapName = args.Argv( 1 );
-		mapName = "maps/" + mapName;
+		mapName = "maps/" + idStr( args.Argv( 1 ) );
 	}
 	else
 	{
 		mapName = mapFile->GetName();
 	}
 
-	for( e = 0; e < MAX_GENTITIES; e++ )
+	// First, verify every moveable is at rest.
+	for( int e = 0; e < MAX_GENTITIES; e++ )
 	{
-		m = static_cast<idMoveable*>( gameLocal.entities[ e ] );
+		idMoveable* m = static_cast<idMoveable*>( gameLocal.entities[e] );
+		if( !m || !m->IsType( idMoveable::Type ) || m->IsBound() )
+		{
+			continue;
+		}
+		if( !m->IsAtRest() )
+		{
+			gameLocal.Warning( "map not saved because the moveable entity %s is not at rest", gameLocal.entities[e]->name.c_str() );
+			return;
+		}
+	}
 
-		if( !m || !m->IsType( idMoveable::Type ) )
+	idList<idDict> states;
+
+	for( int e = 0; e < MAX_GENTITIES; e++ )
+	{
+		idMoveable* m = static_cast<idMoveable*>( gameLocal.entities[e] );
+		if( !m || !m->IsType( idMoveable::Type ) || m->IsBound() )
 		{
 			continue;
 		}
 
-		if( m->IsBound() )
+		if( m->name.IsEmpty() )
 		{
-			continue;
-		}
-
-		// find map file entity
-		mapEnt = mapFile->FindEntity( m->name );
-		// create new map file entity if there isn't one for this articulated figure
-		if( !mapEnt )
-		{
-			mapEnt = new( TAG_SYSTEM ) idMapEntity();
-			mapFile->AddEntity( mapEnt );
-			for( i = 0; i < 9999; i++ )
+			for( int i = 0; i < 9999; i++ )
 			{
-				name = va( "%s_%d", m->GetEntityDefName(), i );
-				if( !gameLocal.FindEntity( name ) )
+				idStr candidate = va( "%s_%d", m->GetEntityDefName(), i );
+				if( !gameLocal.FindEntity( candidate ) )
 				{
+					m->name = candidate;
 					break;
 				}
 			}
-			m->name = name;
-			mapEnt->epairs.Set( "classname", m->GetEntityDefName() );
-			mapEnt->epairs.Set( "name", m->name );
 		}
-		// save the moveable state
-		mapEnt->epairs.Set( "origin", m->GetPhysics()->GetOrigin().ToString( 8 ) );
-		mapEnt->epairs.Set( "rotation", m->GetPhysics()->GetAxis().ToString( 8 ) );
+
+		idDict state;
+		state.Set( "classname", m->GetEntityDefName() );
+		state.Set( "name", m->name.c_str() );
+		state.Set( "origin", m->GetPhysics()->GetOrigin().ToString( 8 ) );
+		state.Set( "rotation", m->GetPhysics()->GetAxis().ToString( 8 ) );
+		states.Append( state );
 	}
 
-	// write out the map file
-	mapFile->Write( mapName, ".map" );
+	if( gameEdit->MapIsOnDisk() )
+	{
+		for( int i = 0; i < states.Num(); i++ )
+		{
+			// create new map file entity if there isn't one for this articulated figure
+			idMapEntity* mapEnt = mapFile->FindEntity( states[i].GetString( "name" ) );
+			if( !mapEnt )
+			{
+				mapEnt = new( TAG_SYSTEM ) idMapEntity();
+				mapFile->AddEntity( mapEnt );
+			}
+
+			// save the moveable state
+			mapEnt->epairs.Copy( states[i] );
+		}
+
+		// write out the map file
+		mapFile->Write( mapName, ".map" );
+	}
+	else
+	{
+		// write out the edit file
+		gameEdit->MapSaveEntitiesToEditFile( states );
+	}
 }
 
 /*
@@ -2090,33 +2095,27 @@ Cmd_SaveRagdolls_f
 */
 static void Cmd_SaveRagdolls_f( const idCmdArgs& args )
 {
-	int e, i;
-	idAFEntity_Base* af = NULL;
-	idMapEntity* mapEnt = NULL;
-	idMapFile* mapFile = gameLocal.GetLevelMap();
-	idDict dict;
-	idStr mapName;
-	idStr name;
-
 	if( !gameLocal.CheatsOk() )
 	{
 		return;
 	}
 
+	idMapFile* mapFile = gameLocal.GetLevelMap();
+	idStr mapName;
 	if( args.Argc() > 1 )
 	{
-		mapName = args.Argv( 1 );
-		mapName = "maps/" + mapName;
+		mapName = "maps/" + idStr( args.Argv( 1 ) );
 	}
 	else
 	{
 		mapName = mapFile->GetName();
 	}
 
-	for( e = 0; e < MAX_GENTITIES; e++ )
-	{
-		af = static_cast<idAFEntity_Base*>( gameLocal.entities[ e ] );
+	idList<idDict> states;
 
+	for( int e = 0; e < MAX_GENTITIES; e++ )
+	{
+		idAFEntity_Base* af = static_cast<idAFEntity_Base*>( gameLocal.entities[e] );
 		if( !af )
 		{
 			continue;
@@ -2134,37 +2133,53 @@ static void Cmd_SaveRagdolls_f( const idCmdArgs& args )
 
 		if( !af->IsAtRest() )
 		{
-			gameLocal.Warning( "the articulated figure for entity %s is not at rest", gameLocal.entities[ e ]->name.c_str() );
+			gameLocal.Warning( "the articulated figure for entity %s is not at rest", gameLocal.entities[e]->name.c_str() );
 		}
 
-		dict.Clear();
-		af->SaveState( dict );
+		idDict state;
+		af->SaveState( state );
 
-		// find map file entity
-		mapEnt = mapFile->FindEntity( af->name );
-		// create new map file entity if there isn't one for this articulated figure
-		if( !mapEnt )
+		if( af->name.IsEmpty() )
 		{
-			mapEnt = new( TAG_SYSTEM ) idMapEntity();
-			mapFile->AddEntity( mapEnt );
-			for( i = 0; i < 9999; i++ )
+			for( int i = 0; i < 9999; i++ )
 			{
-				name = va( "%s_%d", af->GetEntityDefName(), i );
-				if( !gameLocal.FindEntity( name ) )
+				idStr candidate = va( "%s_%d", af->GetEntityDefName(), i );
+				if( !gameLocal.FindEntity( candidate ) )
 				{
+					af->name = candidate;
 					break;
 				}
 			}
-			af->name = name;
-			mapEnt->epairs.Set( "classname", af->GetEntityDefName() );
-			mapEnt->epairs.Set( "name", af->name );
 		}
-		// save the articulated figure state
-		mapEnt->epairs.Copy( dict );
+		state.Set( "classname", af->GetEntityDefName() );
+		state.Set( "name", af->name.c_str() );
+		states.Append( state );
 	}
 
-	// write out the map file
-	mapFile->Write( mapName, ".map" );
+	if( gameEdit->MapIsOnDisk() )
+	{
+		for( int i = 0; i < states.Num(); i++ )
+		{
+			// create new map file entity if there isn't one for this articulated figure
+			idMapEntity* mapEnt = mapFile->FindEntity( states[i].GetString( "name" ) );
+			if( !mapEnt )
+			{
+				mapEnt = new( TAG_SYSTEM ) idMapEntity();
+				mapFile->AddEntity( mapEnt );
+			}
+
+			// save the articulated figure state
+			mapEnt->epairs.Copy( states[i] );
+		}
+
+		// write out the map file
+		mapFile->Write( mapName, ".map" );
+	}
+	else
+	{
+		// write out the edit file
+		gameEdit->MapSaveEntitiesToEditFile( states );
+	}
 }
 
 /*
@@ -2226,70 +2241,78 @@ Cmd_SaveLights_f
 */
 static void Cmd_SaveLights_f( const idCmdArgs& args )
 {
-	int e, i;
-	idLight* light = NULL;
-	idMapEntity* mapEnt = NULL;
-	idMapFile* mapFile = gameLocal.GetLevelMap();
-	idDict dict;
-	idStr mapName;
-	idStr name;
-
 	if( !gameLocal.CheatsOk() )
 	{
 		return;
 	}
 
+	idMapFile* mapFile = gameLocal.GetLevelMap();
+	idStr mapName;
 	if( args.Argc() > 1 )
 	{
-		mapName = args.Argv( 1 );
-		mapName = "maps/" + mapName;
+		mapName = "maps/" + idStr( args.Argv( 1 ) );
 	}
 	else
 	{
 		mapName = mapFile->GetName();
 	}
 
-	for( e = 0; e < MAX_GENTITIES; e++ )
-	{
-		light = static_cast<idLight*>( gameLocal.entities[ e ] );
+	idList<idDict> states;
 
+	for( int e = 0; e < MAX_GENTITIES; e++ )
+	{
+		idLight* light = static_cast<idLight*>( gameLocal.entities[e] );
 		if( !light || !light->IsType( idLight::Type ) )
 		{
 			continue;
 		}
 
-		dict.Clear();
-		light->SaveState( &dict );
-
-		// find map file entity
-		mapEnt = mapFile->FindEntity( light->name );
-		// create new map file entity if there isn't one for this light
-		if( !mapEnt )
+		if( light->name.IsEmpty() )
 		{
-			mapEnt = new( TAG_SYSTEM ) idMapEntity();
-			mapFile->AddEntity( mapEnt );
-			for( i = 0; i < 9999; i++ )
+			for( int i = 0; i < 9999; i++ )
 			{
-				name = va( "%s_%d", light->GetEntityDefName(), i );
-				if( !gameLocal.FindEntity( name ) )
+				idStr candidate = va( "%s_%d", light->GetEntityDefName(), i );
+				if( !gameLocal.FindEntity( candidate ) )
 				{
+					light->name = candidate;
 					break;
 				}
 			}
-			light->name = name;
-			mapEnt->epairs.Set( "classname", light->GetEntityDefName() );
-			mapEnt->epairs.Set( "name", light->name );
 		}
-		// save the light state
-		mapEnt->epairs.Copy( dict );
+
+		idDict state;
+		light->SaveState( &state );
+		state.Set( "classname", light->GetEntityDefName() );
+		state.Set( "name", light->name.c_str() );
+		states.Append( state );
 	}
 
-	// write out the map file
-	mapFile->Write( mapName, ".map" );
+	if( gameEdit->MapIsOnDisk() )
+	{
+		for( int i = 0; i < states.Num(); i++ )
+		{
+			// create new map file entity if there isn't one for this light
+			idMapEntity* mapEnt = mapFile->FindEntity( states[i].GetString( "name" ) );
+			if( !mapEnt )
+			{
+				mapEnt = new( TAG_SYSTEM ) idMapEntity();
+				mapFile->AddEntity( mapEnt );
+			}
+
+			// save the light state
+			mapEnt->epairs.Copy( states[i] );
+		}
+
+		// write out the map file
+		mapFile->Write( mapName, ".map" );
+	}
+	else
+	{
+		// write out the edit file
+		gameEdit->MapSaveEntitiesToEditFile( states );
+	}
 }
 
-
-// RB begin
 /*
 ==================
 Cmd_SaveEnvprobes_f
@@ -2297,120 +2320,166 @@ Cmd_SaveEnvprobes_f
 */
 static void Cmd_SaveEnvprobes_f( const idCmdArgs& args )
 {
-	int e;
-	idEnvProbes* envProbe = NULL;
-	idMapEntity* mapEnt = NULL;
-	idMapFile* mapFile = gameLocal.GetLevelMap();
-	idDict dict;
-	idStr mapName;
-	idMapFile mapExportFile;
-	const char* name = NULL;
-
 	if( !gameLocal.CheatsOk() )
 	{
 		return;
 	}
 
+	idMapFile* mapFile = gameLocal.GetLevelMap();
+	if( mapFile == NULL )
+	{
+		return;
+	}
+
+	idStr mapName;
 	if( args.Argc() > 1 )
 	{
-		mapName = args.Argv( 1 );
-		mapName = "maps/" + mapName;
+		mapName = "maps/" + idStr( args.Argv( 1 ) );
 	}
 	else
 	{
 		mapName = mapFile->GetName();
 	}
 
-	mapName += "_extra_ents.map";
+	idList<idDict> states;
 
-	for( e = 0; e < MAX_GENTITIES; e++ )
+	for( int e = 0; e < MAX_GENTITIES; e++ )
 	{
-		envProbe = static_cast<idEnvProbes*>( gameLocal.entities[ e ] );
-
+		idEnvProbes* envProbe = static_cast<idEnvProbes*>( gameLocal.entities[e] );
 		if( !envProbe || !envProbe->IsType( idEnvProbes::Type ) )
 		{
 			continue;
 		}
 
-		dict.Clear();
-		envProbe->SaveState( &dict );
+		if( envProbe->name.IsEmpty() )
+		{
+			for( int i = 0; i < 9999; i++ )
+			{
+				idStr candidate = va( "%s_%d", envProbe->GetEntityDefName(), i );
+				if( !gameLocal.FindEntity( candidate ) )
+				{
+					envProbe->name = candidate;
+					break;
+				}
+			}
+		}
 
-		mapEnt = new( TAG_SYSTEM ) idMapEntity();
-		mapExportFile.AddEntity( mapEnt );
-
-		envProbe->name = name;
-		mapEnt->epairs.Set( "classname", envProbe->GetEntityDefName() );
-		mapEnt->epairs.Set( "name", envProbe->name );
-
-		// save the env probes state
-		mapEnt->epairs.Copy( dict );
+		idDict state;
+		envProbe->SaveState( &state );
+		state.Set( "classname", envProbe->GetEntityDefName() );
+		state.Set( "name", envProbe->name.c_str() );
+		states.Append( state );
 	}
 
-	// write out the map file
-	mapExportFile.Write( mapName, ".map" );
-}
-// RB end
+	if( gameEdit->MapIsOnDisk() )
+	{
+		for( int i = 0; i < states.Num(); i++ )
+		{
+			idMapEntity* mapEnt = mapFile->FindEntity( states[i].GetString( "name" ) );
+			if( !mapEnt )
+			{
+				mapEnt = new( TAG_SYSTEM ) idMapEntity();
+				mapFile->AddEntity( mapEnt );
+			}
 
-/*
-==================
-Cmd_SaveParticles_f
-==================
-*/
+			// save the env probes state
+			mapEnt->epairs.Copy( states[i] );
+		}
+
+		// write out the map file
+		mapFile->Write( mapName, ".map" );
+	}
+	else
+	{
+		// write out the edit file
+		gameEdit->MapSaveEntitiesToEditFile( states );
+	}
+}
+
 static void Cmd_SaveParticles_f( const idCmdArgs& args )
 {
-	int e;
-	idEntity* ent;
-	idMapEntity* mapEnt;
-	idMapFile* mapFile = gameLocal.GetLevelMap();
-	idDict dict;
-	idStr mapName, strModel;
-
 	if( !gameLocal.CheatsOk() )
 	{
 		return;
 	}
 
+	idMapFile* mapFile = gameLocal.GetLevelMap();
+	if( mapFile == NULL )
+	{
+		return;
+	}
+
+	idStr mapName;
 	if( args.Argc() > 1 )
 	{
-		mapName = args.Argv( 1 );
-		mapName = "maps/" + mapName;
+		mapName = "maps/" + idStr( args.Argv( 1 ) );
 	}
 	else
 	{
 		mapName = mapFile->GetName();
 	}
 
-	for( e = 0; e < MAX_GENTITIES; e++ )
+	idList<idDict> states;
+
+	for( int e = 0; e < MAX_GENTITIES; e++ )
 	{
-
-		ent = static_cast<idStaticEntity*>( gameLocal.entities[ e ] );
-
+		idEntity* ent = static_cast<idStaticEntity*>( gameLocal.entities[e] );
 		if( !ent )
 		{
 			continue;
 		}
 
-		strModel = ent->spawnArgs.GetString( "model" );
-		if( strModel.Length() && strModel.Find( ".prt" ) > 0 )
+		idStr strModel = ent->spawnArgs.GetString( "model" );
+		if( strModel.Length() == 0 || strModel.Find( ".prt" ) <= 0 )
 		{
-			dict.Clear();
-			dict.Set( "model", ent->spawnArgs.GetString( "model" ) );
-			dict.SetVector( "origin", ent->GetPhysics()->GetOrigin() );
-
-			// find map file entity
-			mapEnt = mapFile->FindEntity( ent->name );
-			// create new map file entity if there isn't one for this entity
-			if( !mapEnt )
-			{
-				continue;
-			}
-			// save the particle state
-			mapEnt->epairs.Copy( dict );
+			continue;
 		}
+
+		if( ent->name.IsEmpty() )
+		{
+			for( int i = 0; i < 9999; i++ )
+			{
+				idStr candidate = va( "%s_%d", ent->GetEntityDefName(), i );
+				if( !gameLocal.FindEntity( candidate ) )
+				{
+					ent->name = candidate;
+					break;
+				}
+			}
+		}
+
+		idDict state;
+		state.Set( "classname", ent->GetEntityDefName() );
+		state.Set( "name", ent->name.c_str() );
+		state.Set( "model", strModel );
+		state.SetVector( "origin", ent->GetPhysics()->GetOrigin() );
+		states.Append( state );
 	}
 
-	// write out the map file
-	mapFile->Write( mapName, ".map" );
+	if( gameEdit->MapIsOnDisk() )
+	{
+		for( int i = 0; i < states.Num(); i++ )
+		{
+			// create new map file entity if there isn't one for this entity
+			idMapEntity* mapEnt = mapFile->FindEntity( states[i].GetString( "name" ) );
+			if( !mapEnt )
+			{
+				mapEnt = new( TAG_SYSTEM ) idMapEntity();
+				mapFile->AddEntity( mapEnt );
+			}
+
+			// save the particle state
+			mapEnt->epairs.Copy( states[i] );
+		}
+
+		// write out the map file
+		mapFile->Write( mapName, ".map" );
+	}
+	else
+	{
+		// write out the edit file
+		gameEdit->MapSaveEntitiesToEditFile( states );
+	}
 }
 
 

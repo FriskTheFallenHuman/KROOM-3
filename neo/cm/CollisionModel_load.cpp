@@ -2730,19 +2730,19 @@ void idCollisionModelManagerLocal::ClearHash( idBounds& bounds )
 idCollisionModelManagerLocal::HashVec
 
  DG: added "hash" and "althash" arguments - the function used to return "hash",
-     now it returns the number of potential hashes for vertices close to "vec":
+	 now it returns the number of potential hashes for vertices close to "vec":
 If 1 is returned, "hash" is the proper hash for "vec" (and vectors close to it, with coordinates +/- 0.1).
-    - in my tests with compiling game/cavern2.map, this was the case for about 95% of all calls to HashVec()
+	- in my tests with compiling game/cavern2.map, this was the case for about 95% of all calls to HashVec()
 If 2 is returned, "hash" and "althash" are both proper hashes for vectors close to "vec",
-                  "hash" will hold the hash for exactly "vec", "althash" the hash of points close to it
-    - with cavern2.map, this was the case in about 4.8% of the calls to HashVec(), though in
-      most cases the first hashmap lookup (with "hash") was already successful.
+				  "hash" will hold the hash for exactly "vec", "althash" the hash of points close to it
+	- with cavern2.map, this was the case in about 4.8% of the calls to HashVec(), though in
+	  most cases the first hashmap lookup (with "hash") was already successful.
 If 3 is returned, there would be *at least* 4 different potential hashes for vectors close to it.
-                  in that case, "hash" contains the hash for "vec" (exactly vec), but you
-                  can't rely on the hashmap (if you get a match there that's great, if not
-                   you still need to check *all* vertices of the current model)
-    - with cavern2.map, this was the case in about 0.2% of the calls, but for most of them
-      using "hash" with the hashmap still found a vertex, so iterating all vertices was avoided
+				  in that case, "hash" contains the hash for "vec" (exactly vec), but you
+				  can't rely on the hashmap (if you get a match there that's great, if not
+				   you still need to check *all* vertices of the current model)
+	- with cavern2.map, this was the case in about 0.2% of the calls, but for most of them
+	  using "hash" with the hashmap still found a vertex, so iterating all vertices was avoided
 ================
 */
 ID_INLINE int idCollisionModelManagerLocal::HashVec( const idVec3& vec, int& hash, int& althash )
@@ -3249,14 +3249,14 @@ static void CM_EstimateVertsAndEdges( const idMapEntity* mapEnt, int* numVerts, 
 		// RB begin
 		if( mapPrim->GetType() == idMapPrimitive::TYPE_MESH )
 		{
-			const MapPolygonMesh* mesh = static_cast<const MapPolygonMesh*>( mapPrim );
+			const idMapPolygonMesh* mesh = static_cast<const idMapPolygonMesh*>( mapPrim );
 
 			// assume cylinder with a polygon with (numSides - 2) edges ontop and on the bottom
 			*numVerts += mesh->GetNumVertices();
 
 			for( int i = 0; i < mesh->GetNumPolygons(); i++ )
 			{
-				const MapPolygon& poly = mesh->GetFace( i );
+				const idMapPolygon& poly = mesh->GetFace( i );
 
 				*numEdges += ( poly.GetIndexes().Num() - 2 ) * 3;
 			}
@@ -3416,7 +3416,7 @@ void idCollisionModelManagerLocal::ConvertBrush( cm_model_t* model, const idMapB
 }
 
 // RB begin
-void idCollisionModelManagerLocal::ConvertMesh( cm_model_t* model, const MapPolygonMesh* mesh, int primitiveNum )
+void idCollisionModelManagerLocal::ConvertMesh( cm_model_t* model, const idMapPolygonMesh* mesh, int primitiveNum )
 {
 	const idList<idDrawVert>& verts = mesh->GetDrawVerts();
 
@@ -3425,7 +3425,7 @@ void idCollisionModelManagerLocal::ConvertMesh( cm_model_t* model, const MapPoly
 	idFixedWinding w;
 	for( int i = 0; i < mesh->GetNumPolygons(); i++ )
 	{
-		const MapPolygon& poly = mesh->GetFace( i );
+		const idMapPolygon& poly = mesh->GetFace( i );
 
 		const idMaterial* material = declManager->FindMaterial( poly.GetMaterial() );
 
@@ -4279,7 +4279,7 @@ cm_model_t* idCollisionModelManagerLocal::CollisionModelForMapEntity( const idMa
 		{
 			idBounds primBounds;
 
-			static_cast<MapPolygonMesh*>( mapPrim )->GetBounds( primBounds );
+			static_cast<idMapPolygonMesh*>( mapPrim )->GetBounds( primBounds );
 
 			bounds.AddBounds( primBounds );
 
@@ -4337,7 +4337,7 @@ cm_model_t* idCollisionModelManagerLocal::CollisionModelForMapEntity( const idMa
 		// RB: support new map format
 		if( mapPrim->GetType() == idMapPrimitive::TYPE_MESH )
 		{
-			ConvertMesh( model, static_cast<MapPolygonMesh*>( mapPrim ), i );
+			ConvertMesh( model, static_cast<idMapPolygonMesh*>( mapPrim ), i );
 			hasMeshes = true;
 			continue;
 		}

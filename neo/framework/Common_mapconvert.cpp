@@ -63,7 +63,7 @@ public:
 
 	void	ConvertBrushToOBJ( OBJGroup& group, const idMapBrush* mapBrush, int entityNum, int primitiveNum, const idMat4& transform );
 	void	ConvertPatchToOBJ( OBJGroup& group, const idMapPatch* patch, int entityNum, int primitiveNum, const idMat4& transform );
-	void	ConvertMeshToOBJ( OBJGroup& group, const MapPolygonMesh* mesh, int entityNum, int primitiveNum, const idMat4& transform );
+	void	ConvertMeshToOBJ( OBJGroup& group, const idMapPolygonMesh* mesh, int entityNum, int primitiveNum, const idMat4& transform );
 
 	void	Write( const char* relativePath, const char* basePath = "fs_basepath" );
 };
@@ -386,7 +386,7 @@ void OBJExporter::ConvertPatchToOBJ( OBJGroup& group, const idMapPatch* patch, i
 OBJExporter::ConvertMeshToOBJ
 =============
 */
-void OBJExporter::ConvertMeshToOBJ( OBJGroup& group, const MapPolygonMesh* mesh, int entityNum, int primitiveNum, const idMat4& transform )
+void OBJExporter::ConvertMeshToOBJ( OBJGroup& group, const idMapPolygonMesh* mesh, int entityNum, int primitiveNum, const idMat4& transform )
 {
 	OBJExporter::OBJObject& geometry = group.objects.Alloc();
 
@@ -398,7 +398,7 @@ void OBJExporter::ConvertMeshToOBJ( OBJGroup& group, const MapPolygonMesh* mesh,
 
 	for( int i = 0; i < mesh->GetNumPolygons(); i++ )
 	{
-		const MapPolygon& poly = mesh->GetFace( i );
+		const idMapPolygon& poly = mesh->GetFace( i );
 
 		const idMaterial* material = declManager->FindMaterial( poly.GetMaterial() );
 		materials.AddUnique( material );
@@ -530,7 +530,7 @@ CONSOLE_COMMAND( exportMapToOBJ, "Convert .map file to .obj/.mtl ", idCmdSystem:
 
 						if( mapPrim->GetType() == idMapPrimitive::TYPE_MESH )
 						{
-							exporter.ConvertMeshToOBJ( group, static_cast<MapPolygonMesh*>( mapPrim ), j, i, transform );
+							exporter.ConvertMeshToOBJ( group, static_cast<idMapPolygonMesh*>( mapPrim ), j, i, transform );
 							continue;
 						}
 					}

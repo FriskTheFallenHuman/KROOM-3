@@ -71,7 +71,7 @@ typedef struct mapTri_s
 	// RB begin
 	int					polygonId;		// n-gon number from original face used for area portal construction
 
-	const MapPolygonMesh*	originalMapMesh;
+	const idMapPolygonMesh*	originalMapMesh;
 //	idWinding* 			visibleHull;	// also clipped to the solid parts of the world
 
 	// RB end
@@ -274,6 +274,8 @@ typedef struct
 	int			entityNum;
 
 	idList<mapLight_t*>	mapLights;
+
+	idVec3	portal_sky_location;
 
 	bool	verbose;
 

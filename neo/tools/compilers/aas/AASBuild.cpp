@@ -423,7 +423,7 @@ idAASBuild::AddBrushesForMapPolygonMesh
 ============
 */
 
-idBrushList idAASBuild::AddBrushesForMapPolygonMesh( const MapPolygonMesh* mapMesh, const idVec3& origin, const idMat3& axis, int entityNum, int primitiveNum, idBrushList brushList )
+idBrushList idAASBuild::AddBrushesForMapPolygonMesh( const idMapPolygonMesh* mapMesh, const idVec3& origin, const idMat3& axis, int entityNum, int primitiveNum, idBrushList brushList )
 {
 	int contents = 0;
 	int validBrushes = 0;
@@ -437,7 +437,7 @@ idBrushList idAASBuild::AddBrushesForMapPolygonMesh( const MapPolygonMesh* mapMe
 	//per map polygon
 	for( int p = 0 ; p < mapMesh->GetNumPolygons(); p++ )
 	{
-		const MapPolygon& face = mapMesh->GetFace( p );
+		const idMapPolygon& face = mapMesh->GetFace( p );
 
 		mat = declManager->FindMaterial( face.GetMaterial() );
 		contents = ContentsForAAS( mat->GetContentFlags( ) );
@@ -689,7 +689,7 @@ idBrushList idAASBuild::AddBrushesForMapEntity( const idMapEntity* mapEnt, int e
 		//HVG: Map polygon mesh support
 		if( mapPrim->GetType( ) == idMapPrimitive::TYPE_MESH )
 		{
-			brushList = AddBrushesForMapPolygonMesh( static_cast< MapPolygonMesh* >( mapPrim ), origin, axis, entityNum, i, brushList );
+			brushList = AddBrushesForMapPolygonMesh( static_cast< idMapPolygonMesh* >( mapPrim ), origin, axis, entityNum, i, brushList );
 		}
 	}
 

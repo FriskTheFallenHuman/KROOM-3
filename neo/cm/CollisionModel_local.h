@@ -712,7 +712,7 @@ private:			// CollisionMap_load.cpp
 	void			ConvertBrushSides( cm_model_t* model, const idMapBrush* mapBrush, int primitiveNum );
 	void			ConvertBrush( cm_model_t* model, const idMapBrush* mapBrush, int primitiveNum );
 	// RB: support new .map format
-	void			ConvertMesh( cm_model_t* model, const MapPolygonMesh* mesh, int primitiveNum );
+	void			ConvertMesh( cm_model_t* model, const idMapPolygonMesh* mesh, int primitiveNum );
 	// RB end
 	void			PrintModelInfo( const cm_model_t* model );
 	void			AccumulateModelInfo( cm_model_t* model );

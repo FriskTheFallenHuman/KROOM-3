@@ -487,11 +487,586 @@ void idGameEditLocal::MapSave( const char* path ) const
 }
 
 /*
+=============
+idEditEntry
+=============
+*/
+struct idEditEntry
+{
+	int     baseIndex;  // -1 for "add", >= 0 for "modify"
+	idDict  epairs;
+
+	idEditEntry()
+		: baseIndex( -1 )
+	{
+	}
+};
+
+/*
+=============
+idEditFileData
+=============
+*/
+struct idEditFileData
+{
+	idList<idEditEntry> adds;      // baseIndex == -1
+	idList<idEditEntry> modifies;  // baseIndex >= 0
+	idList<int>         removes;
+
+	void Clear()
+	{
+		adds.Clear();
+		modifies.Clear();
+		removes.Clear();
+	}
+
+	void RemoveByName( const char* name )
+	{
+		if( name == NULL || name[0] == '\0' )
+		{
+			return;
+		}
+
+		for( int i = adds.Num() - 1; i >= 0; --i )
+		{
+			if( idStr::Icmp( adds[i].epairs.GetString( "name" ), name ) == 0 )
+			{
+				adds.RemoveIndex( i );
+			}
+		}
+		for( int i = modifies.Num() - 1; i >= 0; --i )
+		{
+			if( idStr::Icmp( modifies[i].epairs.GetString( "name" ), name ) == 0 )
+			{
+				modifies.RemoveIndex( i );
+			}
+		}
+	}
+
+	void RemoveByClassnamePrefix( const char* prefix )
+	{
+		if( prefix == NULL || prefix[0] == '\0' )
+		{
+			return;
+		}
+
+		const int len = ( int )strlen( prefix );
+
+		for( int i = adds.Num() - 1; i >= 0; --i )
+		{
+			if( idStr::Icmpn( adds[i].epairs.GetString( "classname" ), prefix, len ) == 0 )
+			{
+				adds.RemoveIndex( i );
+			}
+		}
+		for( int i = modifies.Num() - 1; i >= 0; --i )
+		{
+			if( idStr::Icmpn( modifies[i].epairs.GetString( "classname" ), prefix, len ) == 0 )
+			{
+				modifies.RemoveIndex( i );
+			}
+		}
+	}
+};
+
+/*
+=============
+ReadEditFileInto
+
+Reads a <map>.edit file into the flat structure above.
+
+Rules:
+  - "modify" accepts either "worldspawn" (always index 0) or "entity N".
+  - "add" adds, well any entity except "worldspawn".
+  - "remove" same rules has add.
+=============
+*/
+static bool ReadEditFileInto( const char* baseName, idEditFileData& out )
+{
+	out.Clear();
+
+	idStr fileName = baseName;
+	fileName.SetFileExtension( "edit" );
+
+	idFile* f = fileSystem->OpenFileRead( fileName );
+	if( f == NULL )
+	{
+		return false;
+	}
+
+	int length = f->Length();
+	idTempArray<char> buf( length + 1 );
+	f->Read( buf.Ptr(), length );
+	buf[length] = '\0';
+	fileSystem->CloseFile( f );
+
+	idLexer src( LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES );
+	if( !src.LoadMemory( buf.Ptr(), length, fileName ) )
+	{
+		return false;
+	}
+
+	idToken token;
+	if( !src.ReadToken( &token ) || token.type != TT_STRING )
+	{
+		return false;
+	}
+	if( !src.ExpectTokenString( "{" ) )
+	{
+		return false;
+	}
+
+	while( 1 )
+	{
+		if( !src.ReadToken( &token ) )
+		{
+			break;
+		}
+		if( token == "}" )
+		{
+			break;
+		}
+		if( token.type != TT_STRING )
+		{
+			break;
+		}
+
+		if( token == "version" )
+		{
+			idToken v;
+			src.ReadToken( &v );
+			continue;
+		}
+
+		if( token == "add" || token == "modify" )
+		{
+			const bool isAdd = ( token == "add" );
+			if( !src.ExpectTokenString( "{" ) )
+			{
+				break;
+			}
+
+			while( 1 )
+			{
+				idToken entTok;
+				if( !src.ReadToken( &entTok ) )
+				{
+					break;
+				}
+				if( entTok == "}" )
+				{
+					break;
+				}
+
+				const bool isWorldspawn = ( idStr::Icmp( entTok.c_str(), "worldspawn" ) == 0 );
+
+				// "worldspawn" is only meaningful in the modify section.
+				if( isAdd && isWorldspawn )
+				{
+					idLib::Warning( "%s: worldspawn can't be added, skipping block", __FUNCTION__ );
+					if( src.PeekTokenString( "{" ) )
+					{
+						src.ExpectTokenString( "{" );
+						src.SkipBracedSection( false );
+					}
+					continue;
+				}
+
+				int entIndex = -1;
+				if( isWorldspawn )
+				{
+					entIndex = 0;   // worldspawn is always entity 0 in the base map
+				}
+				else if( sscanf( entTok.c_str(), "entity %d", &entIndex ) != 1 )
+				{
+					idLib::Warning( "%s: bad reference '%s', skipping block", __FUNCTION__, entTok.c_str() );
+					if( src.PeekTokenString( "{" ) )
+					{
+						src.ExpectTokenString( "{" );
+						src.SkipBracedSection( false );
+					}
+					continue;
+				}
+
+				if( !src.ExpectTokenString( "{" ) )
+				{
+					break;
+				}
+
+				idEditEntry entry;
+				entry.baseIndex = isAdd ? -1 : entIndex;
+
+				while( 1 )
+				{
+					idToken k, v;
+					if( !src.ReadToken( &k ) )
+					{
+						break;
+					}
+					if( k == "}" )
+					{
+						break;
+					}
+					if( k.type != TT_STRING )
+					{
+						break;
+					}
+					if( !src.ReadToken( &v ) || v.type != TT_STRING )
+					{
+						break;
+					}
+					entry.epairs.Set( k.c_str(), v.c_str() );
+				}
+
+				if( isAdd )
+				{
+					out.adds.Append( entry );
+				}
+				else
+				{
+					out.modifies.Append( entry );
+				}
+			}
+			continue;
+		}
+
+		if( token == "remove" )
+		{
+			if( !src.ExpectTokenString( "{" ) )
+			{
+				break;
+			}
+			while( 1 )
+			{
+				idToken entTok;
+				if( !src.ReadToken( &entTok ) )
+				{
+					break;
+				}
+				if( entTok == "}" )
+				{
+					break;
+				}
+
+				// worldspawn can't be removed, neither by name nor by index 0.
+				if( idStr::Icmp( entTok.c_str(), "worldspawn" ) == 0 )
+				{
+					idLib::Warning( "%s: worldspawn can't be removed, skipping", __FUNCTION__ );
+					continue;
+				}
+
+				int entIndex = -1;
+				if( sscanf( entTok.c_str(), "entity %d", &entIndex ) != 1 )
+				{
+					continue;
+				}
+				if( entIndex == 0 )
+				{
+					idLib::Warning( "%s: entity 0 is worldspawn, can't be removed", __FUNCTION__ );
+					continue;
+				}
+				if( entIndex > 0 )
+				{
+					out.removes.Append( entIndex );
+				}
+			}
+			continue;
+		}
+
+		if( src.PeekTokenString( "{" ) )
+		{
+			src.ExpectTokenString( "{" );
+			src.SkipBracedSection( false );
+		}
+	}
+
+	return true;
+}
+
+/*
+=============
+WriteEditFileFrom
+=============
+*/
+static void WriteEditFileFrom( const char* baseName, const idEditFileData& data )
+{
+	idStr fileName = baseName;
+	fileName.SetFileExtension( "edit" );
+
+	idFile* f = fileSystem->OpenFileWrite( fileName, "fs_basepath" );
+	if( f == NULL )
+	{
+		idLib::Warning( __FUNCTION__ ": couldn't write %s", fileName.c_str() );
+		return;
+	}
+
+	// strip path and extension for the header name
+	idStr mapName = baseName;
+	const char* slash  = strrchr( baseName, '/' );
+	const char* bslash = strrchr( baseName, '\\' );
+	const char* lastSep = ( slash > bslash ) ? slash : bslash;
+	if( lastSep )
+	{
+		mapName = lastSep + 1;
+	}
+
+	f->WriteFloatString( "\"%s\"\n{\n", mapName.c_str() );
+	f->WriteFloatString( "\t\"version\" \"1\"\n\n" );
+
+	if( data.adds.Num() > 0 )
+	{
+		f->WriteFloatString( "\t\"add\"\n\t{\n" );
+		for( int i = 0; i < data.adds.Num(); ++i )
+		{
+			f->WriteFloatString( "\t\t\"entity %d\"\n\t\t{\n", i );
+			const idDict& d = data.adds[i].epairs;
+			for( int j = 0; j < d.GetNumKeyVals(); ++j )
+			{
+				const idKeyValue* kv = d.GetKeyVal( j );
+				f->WriteFloatString( "\t\t\t\"%s\" \"%s\"\n",
+									 kv->GetKey().c_str(), kv->GetValue().c_str() );
+			}
+			f->WriteFloatString( "\t\t}\n" );
+		}
+		f->WriteFloatString( "\t}\n\n" );
+	}
+
+	if( data.modifies.Num() > 0 )
+	{
+		f->WriteFloatString( "\t\"modify\"\n\t{\n" );
+		for( int i = 0; i < data.modifies.Num(); ++i )
+		{
+			const idDict& d = data.modifies[i].epairs;
+			const char* cn = d.GetString( "classname" );
+			const bool isWorldspawn = ( cn != NULL && idStr::Icmp( cn, "worldspawn" ) == 0 );
+
+			if( isWorldspawn )
+			{
+				f->WriteFloatString( "\t\t\"worldspawn\"\n\t\t{\n" );
+			}
+			else
+			{
+				f->WriteFloatString( "\t\t\"entity %d\"\n\t\t{\n", data.modifies[i].baseIndex );
+			}
+
+			for( int j = 0; j < d.GetNumKeyVals(); ++j )
+			{
+				const idKeyValue* kv = d.GetKeyVal( j );
+				f->WriteFloatString( "\t\t\t\"%s\" \"%s\"\n",
+									 kv->GetKey().c_str(), kv->GetValue().c_str() );
+			}
+			f->WriteFloatString( "\t\t}\n" );
+		}
+		f->WriteFloatString( "\t}\n\n" );
+	}
+
+	if( data.removes.Num() > 0 )
+	{
+		f->WriteFloatString( "\t\"remove\"\n\t{\n" );
+		for( int i = 0; i < data.removes.Num(); ++i )
+		{
+			f->WriteFloatString( "\t\t\"entity %d\"\n", data.removes[i] );
+		}
+		f->WriteFloatString( "\t}\n\n" );
+	}
+
+	f->WriteFloatString( "}\n" );
+
+	fileSystem->CloseFile( f );
+}
+
+/*
+=============
+ResolveBaseIndexForState
+=============
+*/
+static int ResolveBaseIndexForState( idMapFile* baseMap, const idDict& state )
+{
+	if( baseMap == NULL )
+	{
+		return -1;
+	}
+
+	const int numBase = baseMap->GetNumBaseEntities();
+
+	// Either by name
+	const char* name = state.GetString( "name" );
+	if( name && name[0] )
+	{
+		for( int i = 0; i < numBase; ++i )
+		{
+			idMapEntity* ent = baseMap->GetEntity( i );
+			if( ent && idStr::Icmp( ent->epairs.GetString( "name" ), name ) == 0 )
+			{
+				return i;
+			}
+		}
+	}
+
+	// Or by classname, here we handle worldspan case
+	const char* classname = state.GetString( "classname" );
+	if( classname && idStr::Icmp( classname, "worldspawn" ) == 0 )
+	{
+		if( numBase > 0 )
+		{
+			idMapEntity* ent = baseMap->GetEntity( 0 );
+			if( ent && idStr::Icmp( ent->epairs.GetString( "classname" ), "worldspawn" ) == 0 )
+			{
+				return 0;
+			}
+		}
+
+		// how would this happen? no idea, but better we safer than sorry
+		for( int i = 0; i < numBase; ++i )
+		{
+			idMapEntity* ent = baseMap->GetEntity( i );
+			if( ent && idStr::Icmp( ent->epairs.GetString( "classname" ), "worldspawn" ) == 0 )
+			{
+				return i;
+			}
+		}
+	}
+
+	return -1;
+}
+
+/*
 ================
-idGameEditLocal::MapSaveToExtraEnts
+idGameEditLocal::MapIsOnDisk
 ================
 */
-void idGameEditLocal::MapSaveToExtraEnts( const idDict* dict ) const
+bool idGameEditLocal::MapIsOnDisk() const
+{
+	idMapFile* mapFile = gameLocal.GetLevelMap();
+	if( mapFile == NULL )
+	{
+		return false;
+	}
+	idStr relative = mapFile->GetName();
+	relative.SetFileExtension( "map" );
+	return fileSystem->IsFileOnDisk( relative );
+}
+
+/*
+================
+idGameEditLocal::MapSaveEntitiesToEditFile
+================
+*/
+void idGameEditLocal::MapSaveEntitiesToEditFile( const idList<idDict>& states ) const
+{
+	idMapFile* baseMap = gameLocal.GetLevelMap();
+	if( baseMap == NULL || states.Num() == 0 )
+	{
+		return;
+	}
+
+	const idStr baseName = baseMap->GetName();
+
+	idEditFileData data;
+	ReadEditFileInto( baseName, data );
+
+	// Reject any entry with the same name
+	for( int i = 0; i < states.Num(); ++i )
+	{
+		const char* name = states[i].GetString( "name" );
+		if( name && name[0] )
+		{
+			data.RemoveByName( name );
+			continue;
+		}
+		const char* cn = states[i].GetString( "classname" );
+		if( cn && idStr::Icmp( cn, "worldspawn" ) == 0 )
+		{
+			data.RemoveByClassnamePrefix( "worldspawn" );
+		}
+	}
+
+	for( int i = 0; i < states.Num(); ++i )
+	{
+		const idDict& state = states[i];
+		const char* cn = state.GetString( "classname" );
+		const bool isWorldspawn = ( cn && idStr::Icmp( cn, "worldspawn" ) == 0 );
+
+		int baseIndex = ResolveBaseIndexForState( baseMap, state );
+
+		// worldspawn can only be modified.
+		if( isWorldspawn && baseIndex < 0 )
+		{
+			idLib::Warning( "%s: can't add worldspawn, skipping", __FUNCTION__ );
+			continue;
+		}
+
+		idEditEntry entry;
+		entry.baseIndex = baseIndex;
+		entry.epairs.Copy( state );
+
+		if( baseIndex >= 0 )
+		{
+			data.modifies.Append( entry );
+		}
+		else
+		{
+			data.adds.Append( entry );
+		}
+	}
+
+	WriteEditFileFrom( baseName, data );
+}
+
+/*
+================
+idGameEditLocal::MapRemoveEntityFromEditFile
+================
+*/
+void idGameEditLocal::MapRemoveEntityFromEditFile( const char* name ) const
+{
+	idMapFile* baseMap = gameLocal.GetLevelMap();
+	if( baseMap == NULL || name == NULL || name[0] == '\0' )
+	{
+		return;
+	}
+
+	// worldspawn should NEVER be removed.
+	if( idStr::Icmp( name, "worldspawn" ) == 0 )
+	{
+		idLib::Warning( "%s: can't remove worldspawn", __FUNCTION__ );
+		return;
+	}
+
+	const idStr baseName = baseMap->GetName();
+
+	idEditFileData data;
+	ReadEditFileInto( baseName, data );
+
+	data.RemoveByName( name );
+
+	const int numBase = baseMap->GetNumBaseEntities();
+	for( int i = 0; i < numBase; ++i )
+	{
+		idMapEntity* ent = baseMap->GetEntity( i );
+		if( ent && idStr::Icmp( ent->epairs.GetString( "name" ), name ) == 0 )
+		{
+			// never remove the worldspawn even if the
+			// caller somehow passed a name that resolved to it.
+			if( idStr::Icmp( ent->epairs.GetString( "classname" ), "worldspawn" ) == 0 )
+			{
+				idLib::Warning( "%s: can't remove worldspawn", __FUNCTION__ );
+				return;
+			}
+			data.removes.Append( i );
+			break;
+		}
+	}
+
+	WriteEditFileFrom( baseName, data );
+}
+
+/*
+================
+idGameEditLocal::MapSaveToEditFile
+================
+*/
+void idGameEditLocal::MapSaveToEditFile( const idDict* dict, int baseIndex ) const
 {
 	if( dict == NULL )
 	{
@@ -504,28 +1079,110 @@ void idGameEditLocal::MapSaveToExtraEnts( const idDict* dict ) const
 		return;
 	}
 
-	const char* entityName = dict->GetString( "name" );
-	if( entityName == NULL || entityName[0] == '\0' )
+	const char* classname = dict->GetString( "classname" );
+	const bool isWorldspawn = ( classname && idStr::Icmp( classname, "worldspawn" ) == 0 );
+
+	if( baseIndex < 0 )
 	{
-		gameLocal.Warning( "MapSaveToExtraEnts: dict has no \"name\"" );
+		baseIndex = ResolveBaseIndexForState( baseMap, *dict );
+	}
+
+	// worldspawn can only be modified.
+	if( isWorldspawn && baseIndex < 0 )
+	{
+		idLib::Warning( "%s: can't add worldspawn, ignoring", __FUNCTION__ );
 		return;
 	}
 
-	const idStr extrasName = idStr( baseMap->GetName() ) + "_extra_ents";
+	const idStr baseName = baseMap->GetName();
 
-	idMapFile extraMap;
-	extraMap.Parse( extrasName, true, false );
+	idEditFileData data;
+	ReadEditFileInto( baseName, data );
 
-	idMapEntity* mapEnt = extraMap.FindEntity( entityName );
-	if( mapEnt == NULL )
+	// Reject any entry with the same identity.
+	const char* name = dict->GetString( "name" );
+	if( name && name[0] )
 	{
-		mapEnt = new( TAG_SYSTEM ) idMapEntity();
-		extraMap.AddEntity( mapEnt );
+		data.RemoveByName( name );
+	}
+	else if( isWorldspawn )
+	{
+		data.RemoveByClassnamePrefix( "worldspawn" );
 	}
 
-	mapEnt->epairs.Copy( *dict );
+	idEditEntry entry;
+	entry.baseIndex = baseIndex;
+	entry.epairs.Copy( *dict );
 
-	extraMap.Write( extrasName, ".map", true );
+	if( baseIndex >= 0 )
+	{
+		data.modifies.Append( entry );
+	}
+	else
+	{
+		data.adds.Append( entry );
+	}
+
+	WriteEditFileFrom( baseName, data );
+}
+
+/*
+================
+idGameEditLocal::MapRemoveFromEditFile
+================
+*/
+void idGameEditLocal::MapRemoveFromEditFile( int baseIndex ) const
+{
+	if( baseIndex < 0 )
+	{
+		return;
+	}
+
+	idMapFile* baseMap = gameLocal.GetLevelMap();
+	if( baseMap == NULL )
+	{
+		return;
+	}
+
+	// refuse worldspawn.
+	if( baseIndex < baseMap->GetNumBaseEntities() )
+	{
+		idMapEntity* ent = baseMap->GetEntity( baseIndex );
+		if( ent && idStr::Icmp( ent->epairs.GetString( "classname" ), "worldspawn" ) == 0 )
+		{
+			idLib::Warning( "%s: can't remove worldspawn", __FUNCTION__ );
+			return;
+		}
+	}
+
+	idStr baseName = baseMap->GetName();
+
+	idEditFileData data;
+	ReadEditFileInto( baseName, data );
+
+	data.removes.Append( baseIndex );
+	WriteEditFileFrom( baseName, data );
+}
+
+/*
+================
+idGameEditLocal::MapClearEditFile
+
+Deletes the .edit file for the current map.
+================
+*/
+void idGameEditLocal::MapClearEditFile() const
+{
+	idMapFile* baseMap = gameLocal.GetLevelMap();
+	if( baseMap == NULL )
+	{
+		return;
+	}
+
+	idStr baseName = baseMap->GetName();
+	baseName.SetFileExtension( "edit" );
+
+	fileSystem->RemoveFile( baseName );
 }
 
 /*

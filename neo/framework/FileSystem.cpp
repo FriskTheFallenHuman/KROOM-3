@@ -170,6 +170,8 @@ public:
 	virtual bool			FilenameCompare( const char* s1, const char* s2 ) const;
 	virtual int				GetFileLength( const char* relativePath );
 	virtual sysFolder_t		IsFolder( const char* relativePath, const char* basePath = "fs_basepath" );
+	virtual bool			IsFileOnDisk( const char* relativePath );
+
 	// resource tracking
 	virtual void			EnableBackgroundCache( bool enable );
 	virtual void			BeginLevelLoad( const char* name, char* _blockBuffer, int _blockBufferSize );
@@ -4279,4 +4281,46 @@ idFileSystemLocal::IsFolder
 sysFolder_t idFileSystemLocal::IsFolder( const char* relativePath, const char* basePath )
 {
 	return Sys_IsFolder( RelativePathToOSPath( relativePath, basePath ) );
+}
+
+/*
+===============
+idFileSystemLocal::IsFileOnDisk
+===============
+*/
+bool idFileSystemLocal::IsFileOnDisk( const char* relativePath )
+{
+	if( !IsInitialized() )
+	{
+		return false;
+	}
+	if( relativePath == NULL || relativePath[0] == '\0' )
+	{
+		return false;
+	}
+
+	if( relativePath[0] == '/' || relativePath[0] == '\\' )
+	{
+		relativePath++;
+	}
+	if( strstr( relativePath, ".." ) || strstr( relativePath, "::" ) )
+	{
+		return false;
+	}
+	if( relativePath[0] == '\0' )
+	{
+		return false;
+	}
+
+	for( int sp = searchPaths.Num() - 1; sp >= 0; sp-- )
+	{
+		idStr netpath = BuildOSPath( searchPaths[sp].path, searchPaths[sp].gamedir, relativePath );
+		idFileHandle fp = OpenOSFile( netpath, FS_READ );
+		if( fp )
+		{
+			CloseOSFile( fp );
+			return true;
+		}
+	}
+	return false;
 }

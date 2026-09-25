@@ -240,16 +240,14 @@ ID_INLINE idMapPatch::idMapPatch( int maxPatchWidth, int maxPatchHeight )
 	expanded = false;
 }
 
-
-// RB begin
-class MapPolygon
+class idMapPolygon
 {
-	friend class MapPolygonMesh;
+	friend class idMapPolygonMesh;
 
 public:
-	MapPolygon();
-	MapPolygon( int numIndexes );
-	~MapPolygon() { }
+	idMapPolygon();
+	idMapPolygon( int numIndexes );
+	~idMapPolygon() { }
 
 	const char* 			GetMaterial() const
 	{
@@ -287,21 +285,20 @@ protected:
 	idList<int>				indexes;		// [3..n] references to vertices for each face
 };
 
-ID_INLINE MapPolygon::MapPolygon()
+ID_INLINE idMapPolygon::idMapPolygon()
 {
 }
 
-ID_INLINE MapPolygon::MapPolygon( int numIndexes )
+ID_INLINE idMapPolygon::idMapPolygon( int numIndexes )
 {
 	//indexes.AssureSize( 3 );
 }
 
-
-class MapPolygonMesh : public idMapPrimitive
+class idMapPolygonMesh : public idMapPrimitive
 {
 public:
-	MapPolygonMesh();
-	~MapPolygonMesh()
+	idMapPolygonMesh();
+	~idMapPolygonMesh()
 	{
 		//verts.DeleteContents();
 		//polygons.DeleteContents( true );
@@ -310,7 +307,7 @@ public:
 	void					ConvertFromBrush( const idMapBrush* brush, int entityNum, int primitiveNum );
 	void					ConvertFromPatch( const idMapPatch* patch, int entityNum, int primitiveNum );
 
-	static MapPolygonMesh*	Parse( idLexer& src, const idVec3& origin, float version = CURRENT_MAP_VERSION );
+	static idMapPolygonMesh*	Parse( idLexer& src, const idVec3& origin, float version = CURRENT_MAP_VERSION );
 	bool					Write( idFile* fp, int primitiveNum, const idVec3& origin ) const;
 
 	int						GetNumVertices() const
@@ -329,12 +326,12 @@ public:
 		return polygons.Num();
 	}
 
-	//int						AddPolygon( MapPolygon* face )
+	//int						AddPolygon( idMapPolygon* face )
 	//{
 	//	return polygons.Append( face );
 	//}
 
-	const MapPolygon& 			GetFace( int i ) const
+	const idMapPolygon& 			GetFace( int i ) const
 	{
 		return polygons[i];
 	}
@@ -363,7 +360,7 @@ private:
 protected:
 
 	idList<idDrawVert>		verts;			// vertices can be shared between polygons
-	idList<MapPolygon>		polygons;
+	idList<idMapPolygon>		polygons;
 
 	// derived data after parsing
 
@@ -371,10 +368,16 @@ protected:
 	int						contents;
 	bool					opaque;
 };
-// RB end
 
+ID_INLINE idMapPolygonMesh::idMapPolygonMesh()
+{
+	type = TYPE_MESH;
+	originalType = TYPE_MESH;
+	polygons.Resize( 8, 4 );
 
-
+	contents = BIT( 0 ); //CONTENTS_SOLID;
+	opaque = true;
+}
 
 class idMapEntity
 {
@@ -431,36 +434,50 @@ public:
 	bool					Parse( const char* filename, bool ignoreRegion = false, bool osPath = false );
 	bool					Write( const char* fileName, const char* ext, bool fromBasePath = true );
 
+	// apply a .edit file aka _extra_ents.map
+	bool					ApplyEditFile( const char* filename, bool osPath = false );
+
 	// RB begin
 	bool					ConvertToPolygonMeshFormat();
 	// RB end
+
+	// number of entities that came from the base .map, before any .edit
+	int GetNumBaseEntities() const
+	{
+		return numBaseEntities;
+	}
 
 	// get the number of entities in the map
 	int						GetNumEntities() const
 	{
 		return entities.Num();
 	}
+
 	// get the specified entity
 	idMapEntity* 			GetEntity( int i ) const
 	{
 		return entities[i];
 	}
+
 	// get the name without file extension
 	const char* 			GetName() const
 	{
 		return name;
 	}
+
 	// get the file time
-	ID_TIME_T					GetFileTime() const
+	ID_TIME_T				GetFileTime() const
 	{
 		return fileTime;
 	}
+
 	// get CRC for the map geometry
 	// texture coordinates and entity key/value pairs are not taken into account
 	unsigned int			GetGeometryCRC() const
 	{
 		return geometryCRC;
 	}
+
 	// returns true if the file on disk changed
 	bool					NeedsReload();
 
@@ -478,9 +495,10 @@ public:
 
 protected:
 	float					version;
-	ID_TIME_T					fileTime;
+	ID_TIME_T				fileTime;
 	unsigned int			geometryCRC;
 	idList<idMapEntity*, TAG_IDLIB_LIST_MAP>	entities;
+	int						numBaseEntities;
 	idStr					name;
 	bool					hasPrimitiveData;
 
@@ -495,6 +513,7 @@ ID_INLINE idMapFile::idMapFile()
 	geometryCRC = 0;
 	entities.Resize( 1024, 256 );
 	hasPrimitiveData = false;
+	numBaseEntities = 0;
 }
 
 #endif /* !__MAPFILE_H__ */

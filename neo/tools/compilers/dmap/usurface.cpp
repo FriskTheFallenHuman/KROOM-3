@@ -911,7 +911,7 @@ int FilterMeshesIntoTree_r( idWinding* w, mapTri_t* originalTri, node_t* node )
 			node->areaPortalTris = MergeTriLists( node->areaPortalTris, list );
 		}
 
-		const MapPolygonMesh* mapMesh = originalTri->originalMapMesh;
+		const idMapPolygonMesh* mapMesh = originalTri->originalMapMesh;
 
 		// classify the leaf by the structural brush
 		if( mapMesh->IsOpaque() )

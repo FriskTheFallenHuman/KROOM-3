@@ -66,7 +66,7 @@ bool ProcessModel( uEntity_t* e, bool floodFill )
 	// classify the leafs as opaque or areaportal
 	FilterBrushesIntoTree( e );
 
-	// RB: use mapTri_t by MapPolygonMesh primitives in case we don't use brushes
+	// RB: use mapTri_t by idMapPolygonMesh primitives in case we don't use brushes
 	FilterMeshesIntoTree( e );
 
 	// RB: dump BSP for debugging
@@ -228,6 +228,7 @@ void ResetDmapGlobals()
 	dmapGlobals.noLightCarve = false;
 	dmapGlobals.drawBounds.Clear();
 	dmapGlobals.drawflag = false;
+	dmapGlobals.portal_sky_location.Zero();
 	dmapGlobals.bspAlternateSplitWeights = false;
 	dmapGlobals.blockSize = idVec3( 1024.0f, 1024.0f, 1024.0f );	// default block size for splitting
 	dmapGlobals.inlineStatics = false;
@@ -380,6 +381,12 @@ void Dmap( const idCmdArgs& args )
 			noAAS = true;
 			idLib::Printf( "noAAS = true\n" );
 		}
+		else if( !idStr::Icmp( s, "editorOutput" ) )
+		{
+#ifdef _WIN32
+			com_outputMsg = true;
+#endif
+		}
 		else
 		{
 			break;
@@ -491,6 +498,14 @@ void Dmap( const idCmdArgs& args )
 
 	// clear the map plane list
 	dmapGlobals.mapPlanes.Clear();
+
+#ifdef _WIN32
+	if( com_outputMsg && com_hwndMsg != NULL )
+	{
+		unsigned int msg = ::RegisterWindowMessage( DMAP_DONE );
+		::PostMessage( com_hwndMsg, msg, 0, 0 );
+	}
+#endif
 }
 
 /*

@@ -236,7 +236,7 @@ void SoundEditor::SaveToExtraEnts()
 	d.Set( "name", entityName.c_str() );
 	d.Set( "classname", "light" );
 
-	gameEdit->MapSaveToExtraEnts( &d );
+	gameEdit->MapSaveToEditFile( &d );
 
 	original = current;
 }
