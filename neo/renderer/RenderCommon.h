@@ -856,6 +856,10 @@ public:
 	virtual bool			UploadImage( const char* imageName, const byte* data, int width, int height );
 	virtual void			CalcFov( float base_fov, float& fov_x, float& fov_y, const int width = SCREEN_WIDTH, const int height = SCREEN_HEIGHT, const float correctYAspect = 0.f ) const;
 
+	virtual void			OnFrame();
+
+	virtual void			RenderEditorView( idRenderWorld* world, const renderView_t* renderView, int width, int height );
+
 	virtual void			AdjustFramerateFromDisplayHz( int displayHz );
 
 	virtual void			LoadImage( const char* cname, byte** pic, int* width, int* height, ID_TIME_T* timestamp, bool makePowerOf2, int* usage );
@@ -882,8 +886,6 @@ public:
 	{
 		return frameCount;
 	};
-
-	void					OnFrame();
 
 public:
 	// renderer globals

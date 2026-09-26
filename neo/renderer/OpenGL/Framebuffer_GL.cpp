@@ -32,7 +32,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "../RenderCommon.h"
 #include "../Framebuffer.h"
 
-#if !defined(USE_VULKAN)
+static GLuint g_editorDefaultFBO = 0;
 
 static void R_ListFramebuffers_f( const idCmdArgs& args )
 {
@@ -348,17 +348,19 @@ bool Framebuffer::IsBound()
 	return ( backEnd.currentFramebuffer == this );
 }
 
+void Framebuffer::SetEditorDefaultFramebuffer( GLuint fbo )
+{
+	g_editorDefaultFBO = fbo;
+}
+
 void Framebuffer::Unbind()
 {
 	RENDERLOG_PRINTF( "Framebuffer::Unbind()\n" );
 
-	//if(backEnd.framebuffer != NULL)
-	{
-		glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-		glBindRenderbuffer( GL_RENDERBUFFER, 0 );
+	glBindFramebuffer( GL_FRAMEBUFFER, g_editorDefaultFBO );
+	glBindRenderbuffer( GL_RENDERBUFFER, 0 );
 
-		backEnd.currentFramebuffer = NULL;
-	}
+	backEnd.currentFramebuffer = NULL;
 }
 
 bool Framebuffer::IsDefaultFramebufferActive()
@@ -456,5 +458,3 @@ void Framebuffer::Check()
 
 	glBindFramebuffer( GL_FRAMEBUFFER, prev );
 }
-
-#endif // #if !defined(USE_VULKAN)

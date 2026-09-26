@@ -44,7 +44,7 @@ MaterialPropTreeView::MaterialPropTreeView( wxWindow* parent )
 	, currentStage( -1 )
 	, internalChange( false )
 {
-	registry.Init( "materialpropview.cfg", "PropTreeView" );
+	registry.Init( "materialeditor.cfg", "PropTreeView" );
 
 	m_grid = new wxPropertyGrid( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxPG_DEFAULT_STYLE | wxPG_SPLITTER_AUTO_CENTER | wxPG_BOLD_MODIFIED );
 	m_grid->SetExtraStyle( wxPG_EX_HELP_AS_TOOLTIPS );

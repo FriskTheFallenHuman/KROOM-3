@@ -2295,15 +2295,22 @@ void idRenderBackend::AmbientPass( const drawSurf_t* const* drawSurfs, int numDr
 			ambientBoost *= r_useHDR.GetBool() ? 1.1f : 1.0f;
 		}
 
-		ambientColor.x = r_forceAmbient.GetFloat() * ambientBoost;
-		ambientColor.y = r_forceAmbient.GetFloat() * ambientBoost;
-		ambientColor.z = r_forceAmbient.GetFloat() * ambientBoost;
-		ambientColor.w = 1;
+		if( viewDef->renderView.rdflags & RDF_EDITOR_PREVIEW )
+		{
+			ambientColor.Set( 0.5f, 0.5f, 0.5f, 1.0f );
+		}
+		else
+		{
+			ambientColor.x = r_forceAmbient.GetFloat() * ambientBoost;
+			ambientColor.y = r_forceAmbient.GetFloat() * ambientBoost;
+			ambientColor.z = r_forceAmbient.GetFloat() * ambientBoost;
+			ambientColor.w = 1;
+		}
 	}
 
 	renderProgManager.SetRenderParm( RENDERPARM_AMBIENT_COLOR, ambientColor.ToFloatPtr() );
 
-	bool useIBL = r_usePBR.GetBool() && !fillGbuffer;
+	bool useIBL = r_usePBR.GetBool() && !fillGbuffer && !( viewDef->renderView.rdflags & RDF_EDITOR_PREVIEW );
 
 	// setup renderparms assuming we will be drawing trivial surfaces first
 	RB_SetupForFastPathInteractions( diffuseColor, specularColor );

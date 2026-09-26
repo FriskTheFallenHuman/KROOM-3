@@ -909,6 +909,11 @@ MaterialTreeView::CanCopy
 */
 bool MaterialTreeView::CanCopy()
 {
+	if( !materialDocManager )
+	{
+		return false;
+	}
+
 	wxTreeItemId item = m_tree->GetSelection();
 	if( !item.IsOk() )
 	{
@@ -924,6 +929,10 @@ MaterialTreeView::CanPaste
 */
 bool MaterialTreeView::CanPaste()
 {
+	if( !materialDocManager )
+	{
+		return false;
+	}
 	return materialDocManager->IsCopyMaterial();
 }
 
@@ -934,6 +943,10 @@ MaterialTreeView::CanCut
 */
 bool MaterialTreeView::CanCut()
 {
+	if( !materialDocManager )
+	{
+		return false;
+	}
 	return CanCopy();
 }
 
@@ -944,6 +957,11 @@ MaterialTreeView::CanDelete
 */
 bool MaterialTreeView::CanDelete()
 {
+	if( !materialDocManager )
+	{
+		return false;
+	}
+
 	wxTreeItemId item = m_tree->GetSelection();
 	if( !item.IsOk() )
 	{
@@ -960,6 +978,11 @@ MaterialTreeView::CanRename
 */
 bool MaterialTreeView::CanRename()
 {
+	if( !materialDocManager )
+	{
+		return false;
+	}
+
 	wxTreeItemId item = m_tree->GetSelection();
 	if( !item.IsOk() )
 	{
@@ -976,6 +999,11 @@ MaterialTreeView::CanSaveFile
 */
 bool MaterialTreeView::CanSaveFile()
 {
+	if( !materialDocManager )
+	{
+		return false;
+	}
+
 	wxTreeItemId item = m_tree->GetSelection();
 	if( !item.IsOk() )
 	{

@@ -648,6 +648,8 @@ void idRenderWorldLocal::PostCommitLightDef( idRenderLightLocal* light )
 	if( light->needsReferences )
 	{
 		R_FreeLightDefDerivedData( light );
+		//R_DeriveLightData( light );
+		//light->areaNum = PointInArea( light->globalLightOrigin );
 		R_CreateLightRefs( light );
 		light->needsReferences = false;
 		tr.pc.c_lightReferenceCommits++;

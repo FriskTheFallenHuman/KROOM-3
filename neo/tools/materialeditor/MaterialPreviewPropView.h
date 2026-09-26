@@ -56,9 +56,7 @@ public:
 protected:
 	void OnPropertyGridChanged( wxPropertyGridEvent& event );
 	void OnPropertyGridRightClick( wxPropertyGridEvent& event );
-	void OnAddLight( wxCommandEvent& event );
-	void OnRemoveLight( wxCommandEvent& event );
-	void OnBrowseModel( wxCommandEvent& event );
+	void OnPropertyGridDoubleClick( wxPropertyGridEvent& event );
 
 private:
 	void BuildShaderList();
@@ -67,6 +65,9 @@ private:
 
 	void RebuildLightCategories();
 	void OnRemoveLightById( int lightId );
+
+	void OnAddLightAction();
+	void OnRemoveLightAction();
 
 	int  LightIdForProperty( wxPGProperty* prop ) const;
 
@@ -78,15 +79,15 @@ private:
 		bool    allowMove;
 	};
 
-	wxPropertyGrid*     m_grid;
-	wxButton*           m_addLightBtn;
-	wxButton*           m_removeLightBtn;
-	wxButton*           m_browseModelBtn;
+	wxPropertyGrid*      m_grid;
 	MaterialPreviewView* m_preview;
 	int                  m_numLights;
 	int                  m_columnWidth;
 	wxArrayString        m_lightShaderChoices;
 	std::vector<idStr>   m_lightShaderNames;
+	wxPGProperty*        m_addLightProp;
+	wxPGProperty*        m_removeLightProp;
+	wxPGProperty*        m_customModelProp;
 };
 
 #endif /* !__MATERIALPREVIEWPROPVIEW_H__ */

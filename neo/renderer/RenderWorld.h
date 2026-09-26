@@ -225,6 +225,7 @@ const int RDF_NOSHADOWS		= BIT( 0 ); // force renderer to use faster lighting on
 const int RDF_NOAMBIENT		= BIT( 1 ); // don't render indirect lighting
 const int RDF_IRRADIANCE	= BIT( 2 ); // render into 256^2 HDR render target for irradiance/radiance GGX calculation
 const int RDF_UNDERWATER	= BIT( 3 ); // TODO enable automatic underwater caustics and fog
+const int RDF_EDITOR_PREVIEW = BIT( 4 ); // we are on a editor preview of sorts
 
 class idRenderWorld;
 class idRenderWorldLocal;

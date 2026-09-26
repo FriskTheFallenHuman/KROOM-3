@@ -250,6 +250,7 @@ class idRenderBackend
 {
 	friend class Framebuffer;
 	friend class idRenderContext;
+	friend class idRenderSystemLocal;
 
 public:
 	idRenderBackend();

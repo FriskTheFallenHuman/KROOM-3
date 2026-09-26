@@ -45,7 +45,7 @@ FindDialog::FindDialog( MEMainFrame* pParent )
 	, m_searchFileRadio( NULL )
 	, m_searchAllRadio( NULL )
 {
-	registry.Init( "findsettings.cfg", "FindDialog" );
+	registry.Init( "materialeditor.cfg", "FindDialog" );
 
 	wxPanel* panel = new wxPanel( this );
 	wxBoxSizer* sizer = new wxBoxSizer( wxVERTICAL );

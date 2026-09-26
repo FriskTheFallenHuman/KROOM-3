@@ -31,6 +31,8 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
+#include "../../common/AboutDialog.h"
+
 #include "DebuggerApp.h"
 #include "DebuggerQuickWatchDlg.h"
 #include "DebuggerFindDlg.h"
@@ -1138,11 +1140,23 @@ rvDebuggerWindow::OnMenuHelpAbout
 */
 void rvDebuggerWindow::OnMenuHelpAbout( wxCommandEvent& event )
 {
-	wxMessageBox( GAME_NAME " Script Debugger v1.1\n\n"
-				  "Original version by Raven\n"
-				  "Dhewm3 version by Harrie van Ginneken\n"
-				  "and Daniel Gibson",
-				  "About " GAME_NAME " Script Debugger", wxOK | wxICON_INFORMATION );
+	wxArrayString holders;
+	holders.Add( "Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company." );
+	holders.Add( "Copyright (C) 2005 Raven Software" );
+	holders.Add( "Copyright (C) 2021 Daniel Gibson" );
+	holders.Add( "Copyright (C) 2021 Harrie van Ginneken" );
+
+	wxString copyright = wxJoin( holders, '\n' );
+
+	AboutDialog dlg(
+		this,
+		"Script Debugger",
+		wxString::Format( "Build %d - %s %s (x%u Build)", BUILD_NUMBER, ID__DATE__, ID__TIME__, ( unsigned int )( sizeof( void* ) * 8 ) ),
+		copyright,
+		false );
+
+	dlg.CentreOnParent();
+	dlg.ShowModal();
 }
 
 /*

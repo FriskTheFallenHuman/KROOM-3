@@ -399,6 +399,32 @@ public:
 	// get the number of frames currently
 	virtual int				GetFrameCount() const = 0;
 
+	// Submit one editor render world immediately to the DC/context made current
+	// by the tool window.  The generated commands are not retained in the host
+	// game's frame, so an embedded editor view does not render a second time in
+	// the Engine document.
+	virtual void			RenderEditorView( idRenderWorld* world, const renderView_t* renderView, int width, int height ) = 0;
+
+	// Compatibility layer for any editor's renderer.
+	// BFG split the old BeginFrame/EndFrame operations into crop and command-buffer
+	// submission.
+	void					BeginFrame( int width, int height )
+	{
+		CropRenderSize( width, height );
+	}
+	void					EndFrame( int* frontEndMsec, int* backEndMsec )
+	{
+		if( frontEndMsec != NULL )
+		{
+			*frontEndMsec = 0;
+		}
+		if( backEndMsec != NULL )
+		{
+			*backEndMsec = 0;
+		}
+		UnCrop();
+	}
+
 	virtual void			OnFrame() = 0;
 
 	virtual void			AdjustFramerateFromDisplayHz( int displayHz ) = 0;

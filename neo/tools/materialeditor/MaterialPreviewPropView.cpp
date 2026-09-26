@@ -42,28 +42,14 @@ MaterialPreviewPropView::MaterialPreviewPropView
 MaterialPreviewPropView::MaterialPreviewPropView( wxWindow* parent )
 	: wxPanel( parent )
 	, m_grid( NULL )
-	, m_addLightBtn( NULL )
-	, m_removeLightBtn( NULL )
-	, m_browseModelBtn( NULL )
 	, m_preview( NULL )
 	, m_numLights( 0 )
 	, m_columnWidth( 120 )
+	, m_addLightProp( NULL )
+	, m_removeLightProp( NULL )
+	, m_customModelProp( NULL )
 {
 	wxBoxSizer* sizer = new wxBoxSizer( wxVERTICAL );
-
-	// Toolbars
-	{
-		wxBoxSizer* bar = new wxBoxSizer( wxHORIZONTAL );
-		m_addLightBtn = new wxButton( this, wxID_ANY, "Add Light" );
-		m_removeLightBtn = new wxButton( this, wxID_ANY, "Remove Light" );
-		m_browseModelBtn = new wxButton( this, wxID_ANY, "Browse Model..." );
-
-		bar->Add( m_addLightBtn, 0, wxALL, 2 );
-		bar->Add( m_removeLightBtn, 0, wxALL, 2 );
-		bar->Add( m_browseModelBtn, 0, wxALL, 2 );
-
-		sizer->Add( bar, 0, wxEXPAND );
-	}
 
 	// Property grid
 	m_grid = new wxPropertyGrid( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxPG_DEFAULT_STYLE | wxPG_SPLITTER_AUTO_CENTER );
@@ -71,14 +57,11 @@ MaterialPreviewPropView::MaterialPreviewPropView( wxWindow* parent )
 
 	m_grid->Bind( wxEVT_PG_CHANGED, &MaterialPreviewPropView::OnPropertyGridChanged, this );
 	m_grid->Bind( wxEVT_PG_RIGHT_CLICK, &MaterialPreviewPropView::OnPropertyGridRightClick, this );
+	m_grid->Bind( wxEVT_PG_DOUBLE_CLICK, &MaterialPreviewPropView::OnPropertyGridDoubleClick, this );
 
 	sizer->Add( m_grid, 1, wxEXPAND );
 
 	SetSizer( sizer );
-
-	m_addLightBtn->Bind( wxEVT_BUTTON, &MaterialPreviewPropView::OnAddLight, this );
-	m_removeLightBtn->Bind( wxEVT_BUTTON, &MaterialPreviewPropView::OnRemoveLight, this );
-	m_browseModelBtn->Bind( wxEVT_BUTTON, &MaterialPreviewPropView::OnBrowseModel, this );
 }
 
 /*
@@ -169,7 +152,7 @@ void MaterialPreviewPropView::AddLightCategory( int lightId, const idStr& shader
 	wxPropertyCategory* cat = new wxPropertyCategory( label, name );
 	m_grid->Append( cat );
 
-	// Shader enum
+	// Shader enum.
 	int shaderIndex = 0;
 	{
 		for( size_t i = 0; i < m_lightShaderNames.size(); i++ )
@@ -194,7 +177,7 @@ void MaterialPreviewPropView::AddLightCategory( int lightId, const idStr& shader
 	shaderProp->SetHelpString( "Set the light shader." );
 	m_grid->AppendIn( cat, shaderProp );
 
-	// Colour
+	// Colour.
 	wxColourProperty* colorProp = new wxColourProperty( "Color", wxString::Format( "light_%d_color", lightId ),
 			wxColour( ( unsigned char )( color.x * 255.f ),
 					  ( unsigned char )( color.y * 255.f ),
@@ -202,12 +185,12 @@ void MaterialPreviewPropView::AddLightCategory( int lightId, const idStr& shader
 	colorProp->SetHelpString( "Color of the light." );
 	m_grid->AppendIn( cat, colorProp );
 
-	// Radius
+	// Radius.
 	wxFloatProperty* radiusProp = new wxFloatProperty( "Radius", wxString::Format( "light_%d_radius", lightId ), radius );
 	radiusProp->SetHelpString( "Radius of the light." );
 	m_grid->AppendIn( cat, radiusProp );
 
-	// Move Light
+	// Move Light.
 	wxBoolProperty* moveProp = new wxBoolProperty( "Move light", wxString::Format( "light_%d_move", lightId ), allowMove );
 	moveProp->SetAttribute( wxPG_BOOL_USE_CHECKBOX, true );
 	moveProp->SetHelpString( "When checked, allow the light to be moved with RMB drag." );
@@ -291,14 +274,33 @@ void MaterialPreviewPropView::InitializePropTree()
 {
 	m_grid->Clear();
 	m_numLights = 0;
+	m_addLightProp = NULL;
+	m_removeLightProp = NULL;
+	m_customModelProp = NULL;
 
 	BuildShaderList();
+
+	// Light Actions
+	{
+		wxPropertyCategory* actionCat = new wxPropertyCategory( "Light Actions", "lightActionRoot" );
+		m_grid->Append( actionCat );
+
+		m_addLightProp = new wxStringProperty( "Add Light", "actionAddLight", "" );
+		m_addLightProp->SetHelpString( "Double-click this row (or press Enter on the ... button) to add a new light." );
+		m_grid->AppendIn( actionCat, m_addLightProp );
+
+		m_removeLightProp = new wxStringProperty( "Remove Light", "actionRemoveLight", "" );
+		m_removeLightProp->SetHelpString( "Double-click this row (or press Enter on the ... button) to remove the last light." );
+		m_grid->AppendIn( actionCat, m_removeLightProp );
+
+		actionCat->SetExpanded( true );
+	}
 
 	// Preview Properties
 	wxPropertyCategory* previewCat = new wxPropertyCategory( "Preview Properties", "previewRoot" );
 	m_grid->Append( previewCat );
 
-	// Model Type
+	// Model Type.
 	{
 		wxArrayString modelChoices;
 		modelChoices.Add( "Cube" );
@@ -321,14 +323,19 @@ void MaterialPreviewPropView::InitializePropTree()
 		m_grid->AppendIn( previewCat, modelProp );
 	}
 
-	// Custom Model
+	// Custom Model.
 	{
-		wxStringProperty* customProp = new wxStringProperty( "Custom Model", "customModel", wxEmptyString );
-		customProp->SetHelpString( "Specify any model to display the current material." );
+		wxFileProperty* customProp = new wxFileProperty( "Custom Model", "customModel", wxEmptyString );
+		customProp->SetAttribute( wxPG_DIALOG_TITLE, "Select a model" );
+		customProp->SetAttribute( wxPG_FILE_WILDCARD, "Models (*.ase;*.lwo;*.md5mesh)|*.ase;*.lwo;*.md5mesh|All files (*.*)|*.*" );
+		customProp->SetAttribute( wxPG_FILE_SHOW_FULL_PATH, true );
+		customProp->SetHelpString( "Specify any model to display the current material. Click the ... button to browse." );
+
+		m_customModelProp = customProp;
 		m_grid->AppendIn( previewCat, customProp );
 	}
 
-	// Show Lights
+	// Show Lights.
 	{
 		wxBoolProperty* showProp = new wxBoolProperty( "Show Lights", "showLights", true );
 		showProp->SetAttribute( wxPG_BOOL_USE_CHECKBOX, true );
@@ -338,7 +345,7 @@ void MaterialPreviewPropView::InitializePropTree()
 
 	previewCat->SetExpanded( true );
 
-	// Local Parms
+	// Local Parms.
 	{
 		wxPropertyCategory* parmCat = new wxPropertyCategory( "Local Parms", "localRoot" );
 		m_grid->Append( parmCat );
@@ -353,7 +360,7 @@ void MaterialPreviewPropView::InitializePropTree()
 		parmCat->SetExpanded( false );
 	}
 
-	// Global Parms
+	// Global Parms.
 	{
 		wxPropertyCategory* parmCat = new wxPropertyCategory( "Global Parms", "globalRoot" );
 		m_grid->Append( parmCat );
@@ -368,7 +375,7 @@ void MaterialPreviewPropView::InitializePropTree()
 		parmCat->SetExpanded( false );
 	}
 
-	// Initial light
+	// Initial light.
 	if( m_preview )
 	{
 		m_preview->OnAddLight();
@@ -425,7 +432,7 @@ void MaterialPreviewPropView::OnPropertyGridChanged( wxPropertyGridEvent& event 
 
 	const wxString name = prop->GetName();
 
-	// Top-level preview
+	// Top-level preview.
 	if( name == "modelType" )
 	{
 		m_preview->OnModelChange( ( int )event.GetPropertyValue().GetLong() );
@@ -440,12 +447,30 @@ void MaterialPreviewPropView::OnPropertyGridChanged( wxPropertyGridEvent& event 
 
 	if( name == "customModel" )
 	{
-		idStr val( event.GetPropertyValue().GetString().c_str() );
-		m_preview->OnCustomModelChange( val );
+		wxString wxPath = event.GetPropertyValue().GetString();
+
+		if( wxPath.IsEmpty() )
+		{
+			m_preview->OnCustomModelChange( idStr( "" ) );
+			return;
+		}
+
+		// Normalize the path.
+		idStr relative = fileSystem->OSPathToRelativePath( wxPath.ToUTF8().data() );
+		relative.BackSlashesToSlashes();
+		relative.ToLower();
+
+		m_preview->OnCustomModelChange( relative );
 		return;
 	}
 
-	// Shader parms
+	// ignore these actions
+	if( name == "actionAddLight" || name == "actionRemoveLight" )
+	{
+		return;
+	}
+
+	// Shader parms.
 	if( name.StartsWith( "parm" ) )
 	{
 		long idx = 0;
@@ -466,7 +491,7 @@ void MaterialPreviewPropView::OnPropertyGridChanged( wxPropertyGridEvent& event 
 		return;
 	}
 
-	// Per-light
+	// Per-light.
 	if( name.StartsWith( "light_" ) )
 	{
 		const int lightId = LightIdForProperty( prop );
@@ -496,6 +521,36 @@ void MaterialPreviewPropView::OnPropertyGridChanged( wxPropertyGridEvent& event 
 		{
 			m_preview->OnLightAllowMoveChange( lightId, event.GetPropertyValue().GetBool() );
 		}
+	}
+}
+
+/*
+================
+MaterialPreviewPropView::OnPropertyGridDoubleClick
+================
+*/
+void MaterialPreviewPropView::OnPropertyGridDoubleClick( wxPropertyGridEvent& event )
+{
+	if( !m_preview )
+	{
+		return;
+	}
+
+	wxPGProperty* prop = event.GetProperty();
+	if( !prop )
+	{
+		return;
+	}
+
+	const wxString name = prop->GetName();
+
+	if( name == "actionAddLight" )
+	{
+		OnAddLightAction();
+	}
+	else if( name == "actionRemoveLight" )
+	{
+		OnRemoveLightAction();
 	}
 }
 
@@ -547,10 +602,10 @@ void MaterialPreviewPropView::OnPropertyGridRightClick( wxPropertyGridEvent& eve
 
 /*
 ================
-MaterialPreviewPropView::OnAddLight
+MaterialPreviewPropView::OnAddLightAction
 ================
 */
-void MaterialPreviewPropView::OnAddLight( wxCommandEvent& /*event*/ )
+void MaterialPreviewPropView::OnAddLightAction()
 {
 	if( !m_preview )
 	{
@@ -563,31 +618,10 @@ void MaterialPreviewPropView::OnAddLight( wxCommandEvent& /*event*/ )
 
 /*
 ================
-MaterialPreviewPropView::OnRemoveLight
+MaterialPreviewPropView::OnRemoveLightAction
 ================
 */
-void MaterialPreviewPropView::OnRemoveLightById( int lightId )
-{
-	if( !m_preview || lightId <= 0 )
-	{
-		return;   // light 0 is the default and never removable
-	}
-
-	if( lightId >= m_preview->GetLightCount() )
-	{
-		return;
-	}
-
-	m_preview->OnDeleteLight( lightId );
-	RebuildLightCategories();
-}
-
-/*
-================
-MaterialPreviewPropView::OnRemoveLight
-================
-*/
-void MaterialPreviewPropView::OnRemoveLight( wxCommandEvent& /*event*/ )
+void MaterialPreviewPropView::OnRemoveLightAction()
 {
 	if( !m_preview || m_numLights <= 0 )
 	{
@@ -609,37 +643,33 @@ void MaterialPreviewPropView::OnRemoveLight( wxCommandEvent& /*event*/ )
 		lightId = m_numLights - 1;
 	}
 
-	if( lightId < 0 )
+	// light 0 is the default and never removable.
+	if( lightId <= 0 )
 	{
 		return;
 	}
 
 	m_preview->OnDeleteLight( lightId );
-
-	m_numLights--;
 	RebuildLightCategories();
 }
 
 /*
 ================
-MaterialPreviewPropView::OnBrowseModel
+MaterialPreviewPropView::OnRemoveLightById
 ================
 */
-void MaterialPreviewPropView::OnBrowseModel( wxCommandEvent& /*event*/ )
+void MaterialPreviewPropView::OnRemoveLightById( int lightId )
 {
-	wxFileDialog dlg( this, "Select a model", "", "", "Models (*.ase;*.lwo;*.md5mesh)|*.ase;*.lwo;*.md5mesh|All files|*.*", wxFD_OPEN | wxFD_FILE_MUST_EXIST );
-	if( dlg.ShowModal() != wxID_OK )
+	if( !m_preview || lightId <= 0 )
+	{
+		return;   // light 0 is the default and never removable
+	}
+
+	if( lightId >= m_preview->GetLightCount() )
 	{
 		return;
 	}
 
-	idStr relative = fileSystem->OSPathToRelativePath( dlg.GetPath().ToUTF8().data() );
-	relative.BackSlashesToSlashes();
-	relative.ToLower();
-
-	wxPGProperty* prop = m_grid->GetProperty( "customModel" );
-	if( prop )
-	{
-		m_grid->SetPropertyValue( prop, wxString( relative.c_str() ) );
-	}
+	m_preview->OnDeleteLight( lightId );
+	RebuildLightCategories();
 }

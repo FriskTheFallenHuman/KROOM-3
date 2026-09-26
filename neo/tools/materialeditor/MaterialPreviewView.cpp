@@ -30,6 +30,7 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "../../renderer/RenderCommon.h"
+#include "../../renderer/RenderContext.h"
 
 #include "MaterialPreviewView.h"
 #include "MaterialDocManager.h"
@@ -173,6 +174,35 @@ void idGLDrawableView::InitWorld()
 
 /*
 ================
+idGLDrawableView::zoomBy
+================
+*/
+void idGLDrawableView::zoomBy( float delta )
+{
+	viewDistance += delta;
+	viewDistance = idMath::ClampFloat( -1024.f, -32.f, viewDistance );
+}
+
+/*
+================
+idGLDrawableView::panObject
+================
+*/
+void idGLDrawableView::panObject( float dx, float dy )
+{
+	idVec3 forward, right, up;
+	viewRotation.ToVectors( &forward, &right, &up );
+
+	const float scale = -viewDistance / 300.f;
+
+	viewOrigin += right * ( -dx * scale );
+	viewOrigin += up    * ( dy * scale );
+
+	UpdateModel();
+}
+
+/*
+================
 idGLDrawableView::buttonDown
 ================
 */
@@ -292,15 +322,23 @@ void idGLDrawableView::mouseMove( float x, float y )
 	}
 	else if( button == MK_MBUTTON )
 	{
+		float xo = 0.f;
 		float yo = 0.f;
+		if( x != pressX )
+		{
+			xo = ( x - pressX );
+			pressX = x;
+		}
 		if( y != pressY )
 		{
 			yo = ( y - pressY );
 			pressY = y;
 		}
 
-		viewOrigin.z -= yo;
-		UpdateModel();
+		if( xo != 0.f || yo != 0.f )
+		{
+			panObject( xo, yo );
+		}
 	}
 }
 
@@ -476,65 +514,65 @@ void idGLDrawableView::drawLights( renderView_t* refdef )
 
 /*
 ================
-idGLDrawableView::draw
+idGLDrawableView::GetLightInfo
 ================
 */
-void idGLDrawableView::draw( int x, int y, int w, int h )
+bool idGLDrawableView::GetLightInfo( int lightId, idStr& shaderName, idVec3& color, float& radius, bool& allowMove ) const
 {
-	int i;
-	renderView_t	refdef;
-	const idMaterial*		mat = material;
-
-	if( mat )
+	if( lightId < 0 || lightId >= viewLights.Num() )
 	{
-		glViewport( x, y, w, h );
-		glScissor( x, y, w, h );
-		glMatrixMode( GL_PROJECTION );
-		glClearColor( 0.1f, 0.1f, 0.1f, 0.0f );
-		glClear( GL_COLOR_BUFFER_BIT );
-
-		UpdateLights();
-
-		// render it
-		int oldNativeScreenWidth = glConfig.nativeScreenWidth;
-		int oldNativeScreenHeight = glConfig.nativeScreenHeight;
-
-		glConfig.nativeScreenWidth = w;
-		glConfig.nativeScreenHeight = h;
-
-		memset( &refdef, 0, sizeof( refdef ) );
-
-		UpdateCamera( &refdef );
-
-		// Copy global shaderparms to view
-		for( i = 0; i < MAX_GLOBAL_SHADER_PARMS; i++ )
-		{
-			refdef.shaderParms[ i ] = globalParms[ i ];
-		}
-
-		//refdef.width = SCREEN_WIDTH;
-		//refdef.height = SCREEN_HEIGHT;
-		refdef.fov_x = 90;
-		refdef.fov_y = 2 * atan( ( float )h / w ) * idMath::M_RAD2DEG;
-
-		refdef.time[1] = eventLoop->Milliseconds();
-		refdef.time[0] = eventLoop->Milliseconds();
-
-		world->RenderScene( &refdef );
-
-		if( showLights )
-		{
-			drawLights( &refdef );
-		}
-
-		glConfig.nativeScreenWidth = oldNativeScreenWidth;
-		glConfig.nativeScreenHeight = oldNativeScreenHeight;
-
-		world->DebugClearLines( refdef.time[0] );
-
-		glMatrixMode( GL_MODELVIEW );
-		glLoadIdentity();
+		return false;
 	}
+
+	const lightInfo_t* vLight = &viewLights[lightId];
+	shaderName = vLight->shader ? vLight->shader->GetName() : "";
+	color = vLight->color;
+	radius = vLight->radius;
+	allowMove  = vLight->allowMove;
+	return true;
+}
+
+/*
+================
+idGLDrawableView::renderToEngineFramebuffer
+================
+*/
+void idGLDrawableView::renderToEngineFramebuffer( int w, int h )
+{
+	if( !material || w < 1 || h < 1 )
+	{
+		return;
+	}
+
+	world->DebugClearLines( 0 );
+
+	UpdateLights();
+
+	renderView_t refdef;
+	memset( &refdef, 0, sizeof( refdef ) );
+
+	UpdateCamera( &refdef );
+
+	for( int i = 0; i < MAX_GLOBAL_SHADER_PARMS; i++ )
+	{
+		refdef.shaderParms[ i ] = globalParms[ i ];
+	}
+
+	refdef.rdflags |= RDF_EDITOR_PREVIEW;
+
+	refdef.fov_x = 90;
+	refdef.fov_y = 2 * atan( ( float )h / w ) * idMath::M_RAD2DEG;
+
+	refdef.time[0] = refdef.time[1] = eventLoop->Milliseconds();
+
+	if( showLights )
+	{
+		drawLights( &refdef );
+	}
+
+	renderSystem->RenderEditorView( world, &refdef, w, h );
+
+	world->DebugClearLines( 0 );
 }
 
 /*
@@ -620,26 +658,6 @@ void idGLDrawableView::setGlobalParm( int parmNum, float value )
 		return;
 	}
 	globalParms[parmNum] = value;
-}
-
-/*
-================
-idGLDrawableView::GetLightInfo
-================
-*/
-bool idGLDrawableView::GetLightInfo( int lightId, idStr& shaderName, idVec3& color, float& radius, bool& allowMove ) const
-{
-	if( lightId < 0 || lightId >= viewLights.Num() )
-	{
-		return false;
-	}
-
-	const lightInfo_t* vLight = &viewLights[lightId];
-	shaderName = vLight->shader ? vLight->shader->GetName() : "";
-	color = vLight->color;
-	radius = vLight->radius;
-	allowMove  = vLight->allowMove;
-	return true;
 }
 
 /*
@@ -752,8 +770,14 @@ MaterialPreviewView::MaterialPreviewView( wxWindow* parent )
 	: wxPanel( parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE | wxWANTS_CHARS )
 	, m_repaintTimer( this )
 	, m_needsRepaint( false )
-	, m_captureReady( false )
+	, m_fbo( 0 )
+	, m_colorTex( 0 )
+	, m_depthStencil( 0 )
+	, m_fboWidth( 0 )
+	, m_fboHeight( 0 )
 {
+	SetBackgroundStyle( wxBG_STYLE_PAINT );
+
 	// Default material.
 	m_renderedView.setMedia( "_default" );
 
@@ -778,107 +802,100 @@ MaterialPreviewView::~MaterialPreviewView
 */
 MaterialPreviewView::~MaterialPreviewView()
 {
+	if( m_fbo || m_colorTex || m_depthStencil )
+	{
+		rRenderContext.MakeCurrent();
+		DestroyPreviewFBO();
+	}
 }
 
 /*
 ================
-MaterialPreviewView::RenderPreviewFrame
+MaterialPreviewView::EnsurePreviewFBO
 ================
 */
-void MaterialPreviewView::RenderPreviewFrame()
+void MaterialPreviewView::EnsurePreviewFBO( int w, int h )
 {
-	if( m_captureReady )
-	{
-		ReadBackCapture();
-		m_captureReady = false;
-	}
-
-	if( !m_needsRepaint )
+	if( m_fbo && w == m_fboWidth && h == m_fboHeight )
 	{
 		return;
 	}
 
-	const wxSize size = GetClientSize();
-	if( size.GetWidth() <= 0 || size.GetHeight() <= 0 )
+	if( !m_fbo )
 	{
-		return;
+		glGenFramebuffers( 1, &m_fbo );
+		glGenTextures( 1, &m_colorTex );
+		glGenRenderbuffers( 1, &m_depthStencil );
 	}
 
-	const int captureW = renderSystem->GetWidth();
-	const int captureH = renderSystem->GetHeight();
-	if( captureW <= 0 || captureH <= 0 )
+	glBindTexture( GL_TEXTURE_2D, m_colorTex );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+
+	glBindRenderbuffer( GL_RENDERBUFFER, m_depthStencil );
+	glRenderbufferStorage( GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, w, h );
+
+	glBindFramebuffer( GL_FRAMEBUFFER, m_fbo );
+	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_colorTex, 0 );
+	glFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_depthStencil );
+
+	const GLenum status = glCheckFramebufferStatus( GL_FRAMEBUFFER );
+	if( status != GL_FRAMEBUFFER_COMPLETE )
 	{
-		return;
+		common->Warning( "MaterialPreviewView: FBO incomplete: 0x%x", status );
 	}
 
-	renderSystem->CropRenderSize( captureW, captureH );
-	m_renderedView.draw( 0, 0, captureW, captureH );
-	renderSystem->CaptureRenderToImage( PREVIEW_CAPTURE_IMAGE, true );
-	renderSystem->UnCrop();
+	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+	glBindRenderbuffer( GL_RENDERBUFFER, 0 );
 
-	m_needsRepaint = false;
-	m_captureReady = true;
+	m_fboWidth  = w;
+	m_fboHeight = h;
+
+	m_pixels.assign( size_t( w ) * size_t( h ) * 4u, 0 );
+
+	RequestRepaint();
 }
 
 /*
 ================
-MaterialPreviewView::ReadBackCapture
+MaterialPreviewView::DestroyPreviewFBO
 ================
 */
-void MaterialPreviewView::ReadBackCapture()
+void MaterialPreviewView::DestroyPreviewFBO()
 {
-	idImage* image = globalImages->GetImage( PREVIEW_CAPTURE_IMAGE );
-	if( !image || !image->IsLoaded() )
+	if( m_fbo )
 	{
-		return;
+		glDeleteFramebuffers( 1, &m_fbo );
+		m_fbo = 0;
 	}
 
-	const int w = image->GetUploadWidth();
-	const int h = image->GetUploadHeight();
-	if( w <= 0 || h <= 0 )
+	if( m_colorTex )
 	{
-		return;
+		glDeleteTextures( 1, &m_colorTex );
+		m_colorTex = 0;
 	}
 
-	idTempArray<byte> pixels( w * h * 4 );
-
-	const GLuint texId = ( GLuint )( intptr_t )image->GetImGuiTextureID();
-	glBindTexture( GL_TEXTURE_2D, texId );
-	glGetTexImage( GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.Ptr() );
-
-	// OpenGL images are bottom-to-top; wxImage expects top-to-bottom.
-	unsigned char* rgb = ( unsigned char* )malloc( w * h * 3 );
-	unsigned char* alpha = ( unsigned char* )malloc( w * h );
-	for( int y = 0; y < h; y++ )
+	if( m_depthStencil )
 	{
-		const byte* src = pixels.Ptr() + ( h - 1 - y ) * w * 4;
-		unsigned char* dstRgb = rgb + y * w * 3;
-		unsigned char* dstAlpha = alpha + y * w;
-		for( int x = 0; x < w; x++ )
-		{
-			dstRgb[x * 3 + 0] = src[x * 4 + 0];
-			dstRgb[x * 3 + 1] = src[x * 4 + 1];
-			dstRgb[x * 3 + 2] = src[x * 4 + 2];
-			dstAlpha[x] = src[x * 4 + 3];
-		}
+		glDeleteRenderbuffers( 1, &m_depthStencil );
+		m_depthStencil = 0;
 	}
 
-	wxImage img( w, h, false );
-	img.SetData( rgb );
-	img.SetAlpha( alpha );
+	m_fboWidth  = 0;
+	m_fboHeight = 0;
+}
 
-	const wxSize panelSize = GetClientSize();
-	if( panelSize.GetWidth() > 0 && panelSize.GetHeight() > 0 )
-	{
-		const float scaleX = panelSize.GetWidth() / ( float )w;
-		const float scaleY = panelSize.GetHeight() / ( float )h;
-		const float scale = ( scaleX < scaleY ) ? scaleX : scaleY;
-		const int scaledW = ( scale * w > 1.0f ) ? ( int )( scale * w ) : 1;
-		const int scaledH = ( scale * h > 1.0f ) ? ( int )( scale * h ) : 1;
-		img.Rescale( scaledW, scaledH, wxIMAGE_QUALITY_BILINEAR );
-	}
-
-	m_previewBitmap = wxBitmap( img );
+/*
+================
+MaterialPreviewView::RequestRepaint
+================
+*/
+void MaterialPreviewView::RequestRepaint()
+{
+	m_needsRepaint = true;
 
 	Refresh( false );
 }
@@ -890,12 +907,69 @@ MaterialPreviewView::OnPaint
 */
 void MaterialPreviewView::OnPaint( wxPaintEvent& /*event*/ )
 {
-	wxPaintDC dc( this );
-
-	if( m_previewBitmap.IsOk() )
+	static bool s_inEditorRender = false;
+	if( s_inEditorRender )
 	{
-		dc.DrawBitmap( m_previewBitmap, 0, 0 );
+		return;
 	}
+
+	wxAutoBufferedPaintDC dc( this );
+
+	const wxSize size = GetClientSize();
+	const int w = size.GetWidth();
+	const int h = size.GetHeight();
+
+	if( w <= 0 || h <= 0 )
+	{
+		return;
+	}
+
+	s_inEditorRender = true;
+
+	rRenderContext.MakeCurrent();
+	EnsurePreviewFBO( w, h );
+
+	glBindFramebuffer( GL_FRAMEBUFFER, m_fbo );
+	glViewport( 0, 0, w, h );
+	glScissor( 0, 0, w, h );
+	glClearColor( 0.1f, 0.1f, 0.1f, 1.0f );
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
+
+	Framebuffer::SetEditorDefaultFramebuffer( m_fbo );
+
+	m_renderedView.renderToEngineFramebuffer( w, h );
+
+	Framebuffer::SetEditorDefaultFramebuffer( 0 );
+	glBindFramebuffer( GL_FRAMEBUFFER, m_fbo );
+
+	glReadBuffer( GL_COLOR_ATTACHMENT0 );
+	glPixelStorei( GL_PACK_ALIGNMENT, 1 );
+
+	glReadPixels( 0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, m_pixels.data() );
+
+	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+
+	wxImage img( w, h );
+	unsigned char* dst = img.GetData();
+
+	for( int y = 0; y < h; ++y )
+	{
+		const unsigned char* srcRow = m_pixels.data() + size_t( h - 1 - y ) * size_t( w ) * 4u;
+		unsigned char* dstRow = dst + size_t( y ) * size_t( w ) * 3u;
+
+		for( int x = 0; x < w; ++x )
+		{
+			dstRow[x * 3 + 0] = srcRow[x * 4 + 0];
+			dstRow[x * 3 + 1] = srcRow[x * 4 + 1];
+			dstRow[x * 3 + 2] = srcRow[x * 4 + 2];
+		}
+	}
+
+	wxBitmap bmp( img );
+	dc.DrawBitmap( bmp, 0, 0, false );
+
+	m_needsRepaint = false;
+	s_inEditorRender = false;
 }
 
 /*
@@ -905,7 +979,7 @@ MaterialPreviewView::OnSize
 */
 void MaterialPreviewView::OnSize( wxSizeEvent& event )
 {
-	m_needsRepaint = true;
+	RequestRepaint();
 	event.Skip();
 }
 
@@ -962,7 +1036,7 @@ void MaterialPreviewView::OnMouseUp( wxMouseEvent& /*event*/ )
 		ReleaseMouse();
 	}
 	m_renderedView.buttonUp( 0 );
-	m_needsRepaint = true;
+	RequestRepaint();
 }
 
 /*
@@ -975,7 +1049,7 @@ void MaterialPreviewView::OnMouseMotion( wxMouseEvent& event )
 	if( HasCapture() )
 	{
 		m_renderedView.mouseMove( ( float )event.GetX(), ( float )event.GetY() );
-		m_needsRepaint = true;
+		RequestRepaint();
 	}
 }
 
@@ -986,12 +1060,11 @@ MaterialPreviewView::OnMouseWheel
 */
 void MaterialPreviewView::OnMouseWheel( wxMouseEvent& event )
 {
-	// Zoom in/out by simulating the alt+LMB drag the drawable already handles.
-	const float delta = event.GetWheelRotation() / 120.f;
-	m_renderedView.buttonDown( MK_LBUTTON, 0.f, 0.f );
-	m_renderedView.mouseMove( 0.f, delta * 16.f );
-	m_renderedView.buttonUp( MK_LBUTTON );
-	m_needsRepaint = true;
+	const float notches = event.GetWheelRotation() / 120.f;
+
+	m_renderedView.zoomBy( notches * 32.f );
+
+	RequestRepaint();
 }
 
 /*
@@ -1018,7 +1091,7 @@ void MaterialPreviewView::MV_OnMaterialSelectionChange( MaterialDoc* pMaterial )
 	{
 		m_currentMaterial = pMaterial->renderMaterial->GetName();
 		m_renderedView.setMedia( m_currentMaterial );
-		m_needsRepaint = true;
+		RequestRepaint();
 	}
 }
 
@@ -1030,7 +1103,7 @@ MaterialPreviewView::OnModelChange
 void MaterialPreviewView::OnModelChange( int modelId )
 {
 	m_renderedView.setObject( modelId );
-	m_needsRepaint = true;
+	RequestRepaint();
 }
 
 /*
@@ -1041,7 +1114,7 @@ MaterialPreviewView::OnCustomModelChange
 void MaterialPreviewView::OnCustomModelChange( idStr modelName )
 {
 	m_renderedView.setCustomModel( modelName );
-	m_needsRepaint = true;
+	RequestRepaint();
 }
 
 /*
@@ -1052,7 +1125,7 @@ MaterialPreviewView::OnShowLightsChange
 void MaterialPreviewView::OnShowLightsChange( bool showLights )
 {
 	m_renderedView.setShowLights( showLights );
-	m_needsRepaint = true;
+	RequestRepaint();
 }
 
 /*
@@ -1063,7 +1136,7 @@ MaterialPreviewView::OnLocalParmChange
 void MaterialPreviewView::OnLocalParmChange( int parmNum, float value )
 {
 	m_renderedView.setLocalParm( parmNum, value );
-	m_needsRepaint = true;
+	RequestRepaint();
 }
 
 /*
@@ -1074,7 +1147,7 @@ MaterialPreviewView::OnGlobalParmChange
 void MaterialPreviewView::OnGlobalParmChange( int parmNum, float value )
 {
 	m_renderedView.setGlobalParm( parmNum, value );
-	m_needsRepaint = true;
+	RequestRepaint();
 }
 
 /*
@@ -1085,7 +1158,7 @@ MaterialPreviewView::OnLightShaderChange
 void MaterialPreviewView::OnLightShaderChange( int lightId, idStr shaderName )
 {
 	m_renderedView.setLightShader( lightId, shaderName );
-	m_needsRepaint = true;
+	RequestRepaint();
 }
 
 /*
@@ -1096,7 +1169,7 @@ MaterialPreviewView::OnLightRadiusChange
 void MaterialPreviewView::OnLightRadiusChange( int lightId, float radius )
 {
 	m_renderedView.setLightRadius( lightId, radius );
-	m_needsRepaint = true;
+	RequestRepaint();
 }
 
 /*
@@ -1107,7 +1180,7 @@ MaterialPreviewView::OnLightColorChange
 void MaterialPreviewView::OnLightColorChange( int lightId, idVec3& color )
 {
 	m_renderedView.setLightColor( lightId, color );
-	m_needsRepaint = true;
+	RequestRepaint();
 }
 
 /*
@@ -1118,7 +1191,7 @@ MaterialPreviewView::OnLightAllowMoveChange
 void MaterialPreviewView::OnLightAllowMoveChange( int lightId, bool move )
 {
 	m_renderedView.setLightAllowMove( lightId, move );
-	m_needsRepaint = true;
+	RequestRepaint();
 }
 
 /*
@@ -1129,7 +1202,7 @@ MaterialPreviewView::OnAddLight
 void MaterialPreviewView::OnAddLight()
 {
 	m_renderedView.addLight();
-	m_needsRepaint = true;
+	RequestRepaint();
 }
 
 /*
@@ -1140,5 +1213,5 @@ MaterialPreviewView::OnDeleteLight
 void MaterialPreviewView::OnDeleteLight( int lightId )
 {
 	m_renderedView.deleteLight( lightId );
-	m_needsRepaint = true;
+	RequestRepaint();
 }

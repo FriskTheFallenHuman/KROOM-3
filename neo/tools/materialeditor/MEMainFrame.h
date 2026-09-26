@@ -31,7 +31,8 @@ If you have questions concerning this license or the applicable additional terms
 
 #include <wx/wx.h>
 #include <wx/splitter.h>
-#include <wx/notebook.h>
+#include <wx/collpane.h>
+#include <wx/aui/aui.h>
 #include <wx/statusbr.h>
 #include <wx/toolbar.h>
 #include <wx/imaglist.h>
@@ -41,6 +42,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "MaterialTreeView.h"
 #include "MEOptions.h"
 #include "MaterialDocManager.h"
+#include "../common/AutoHideStrip.h"
 
 class MaterialTreeView;
 class StageView;
@@ -74,14 +76,7 @@ public: // MEMainFrame interface
 	MaterialDocManager&     GetMaterialDocManager();
 	MEOptions&              GetOptions();
 
-private:
-	void					BuildMenuBar();
-	void					BuildToolBar();
-	void					BuildStatusBar();
-	bool					BuildEditorPage( wxWindow* parent );
-	bool					BuildConsolePage( wxWindow* parent );
-	void					RegisterViews();
-
+protected:
 	void					OnFileExit( wxCommandEvent& event );
 	void					OnFileSaveMaterial( wxCommandEvent& event );
 	void					OnFileSaveFile( wxCommandEvent& event );
@@ -102,8 +97,17 @@ private:
 	void					OnEditRedo( wxCommandEvent& event );
 
 	void					OnViewIncludeFile( wxCommandEvent& event );
+	void					OnViewResetLayout( wxCommandEvent& event );
+
 	void					OnReloadShaders( wxCommandEvent& event );
 	void					OnReloadImages( wxCommandEvent& event );
+
+	void					OnAbout( wxCommandEvent& event );
+
+	void					OnAuiPaneClose( wxAuiManagerEvent& event );
+	void					OnAuiPaneMaximize( wxAuiManagerEvent& event );
+	void					OnAuiPaneRestore( wxAuiManagerEvent& event );
+	void					OnAuiPaneButton( wxAuiManagerEvent& event );
 
 	void					OnClose( wxCloseEvent& event );
 
@@ -125,24 +129,36 @@ private:
 	void					OnEditDeleteUpdate( wxUpdateUIEvent& event );
 	void					OnEditRenameUpdate( wxUpdateUIEvent& event );
 
-private:
-	wxNotebook*              m_tabs;
-	wxPanel*                 m_editorPage;
-	wxPanel*                 m_consolePage;
+	void					OnAutoHideTabClick( wxWindow* paneWindow );
 
-	wxSplitterWindow*        m_mainSplitter;      // editor / preview
-	wxSplitterWindow*        m_editSplitter;      // tree / edit
-	wxSplitterWindow*        m_previewSplitter;   // props / preview
+private:
+	void					BuildMenuBar();
+	void					BuildToolBar();
+	void					BuildStatusBar();
+	void					RegisterViews();
+	void					BuildAutoHideStrips();
+	void					ApplyDefaultAuiPerspective( bool maximizePreview );
+	void					RebuildAutoHideStrips();
+	AutoHideStrip*			GetStripForPane( wxAuiPaneInfo& pane ) const;
+
+private:
+	wxAuiManager             m_auiManager;
+
+	wxFrame*                 m_materialEditFrame;
 
 	MaterialTreeView*        m_materialTreeView;
 	MaterialEditView*        m_materialEditView;
 	MaterialPreviewPropView* m_previewPropertyView;
 	MaterialPreviewView*     m_materialPreviewView;
-	ConsoleWidget*			 m_consoleView;
+	ConsoleWidget*           m_consoleView;
 
 	StageView*               m_stageView;
 	MaterialPropTreeView*    m_materialPropertyView;
 	wxSplitterWindow*        m_materialEditSplitter;
+
+	AutoHideStrip*           m_leftStrip;
+	AutoHideStrip*           m_rightStrip;
+	AutoHideStrip*           m_bottomStrip;
 
 	FindDialog*              m_find;
 	MaterialSearchData_t     searchData;
@@ -152,6 +168,8 @@ private:
 	MEOptions                options;
 
 	wxImageList*             m_toolbarIcons;
+
+	bool                     m_shuttingDown;
 };
 
 ID_INLINE MaterialTreeView*       MEMainFrame::GetMaterialTreeView()

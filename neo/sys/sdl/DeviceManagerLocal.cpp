@@ -252,15 +252,6 @@ bool idDeviceManagerSDL::Init( vidParms_t parms )
 
 	PreInit(); // DG: make sure SDL is initialized
 
-	// DG: make window resizable
-	Uint32 flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
-	// DG end
-
-	if( parms.fullScreen )
-	{
-		flags |= SDL_WINDOW_FULLSCREEN;
-	}
-
 	int colorbits = 24;
 	int depthbits = 24;
 	int stencilbits = 8;

@@ -82,8 +82,12 @@ wxWindow* GetMaterialEditorWindow()
 	return NULL;
 }
 
-/**
-* Initializes the material editor tool.
+/*
+================
+MaterialEditorInit
+
+Initializes the material editor tool.
+================
 */
 void MaterialEditorInit()
 {
@@ -91,10 +95,15 @@ void MaterialEditorInit()
 
 	common->ActivateTool( true );
 
-	wxApp::SetInstance( new MaterialEditorApp() );
+	if( !wxTheApp )
+	{
+		wxApp::SetInstance( new MaterialEditorApp() );
+	}
+
 	if( !wxInitialize() )
 	{
 		common->Error( "MaterialEditorInit: wxInitialize failed" );
+		common->ActivateTool( false );
 		return;
 	}
 
@@ -112,14 +121,18 @@ void MaterialEditorInit()
 	Sys_ShowWindow( false );
 }
 
-/**
-* Called every frame by the doom engine to allow the material editor to process messages.
+/*
+================
+MaterialEditorRun
+
+Called every frame by the doom engine to allow the material editor to process messages.
+================
 */
-bool MaterialEditorRun()
+void MaterialEditorRun()
 {
 	if( !wxTheApp )
 	{
-		return false;
+		return;
 	}
 
 	while( wxTheApp->Pending() )
@@ -127,20 +140,15 @@ bool MaterialEditorRun()
 		wxTheApp->Dispatch();
 	}
 
-	if( meMainFrame )
-	{
-		MaterialPreviewView* preview = meMainFrame->GetMaterialPreviewView();
-		if( preview )
-		{
-			preview->RenderPreviewFrame();
-		}
-	}
-
-	return !wxTheApp->IsMainLoopRunning();
+	Sys_Sleep( 1 );
 }
 
-/**
-* Called by the doom engine when the material editor needs to be destroyed.
+/*
+================
+MaterialEditorShutdown
+
+Called from the engine's tool dispatch when the editor is closed.
+================
 */
 void MaterialEditorShutdown()
 {
@@ -152,9 +160,15 @@ void MaterialEditorShutdown()
 
 	wxUninitialize();
 
+	com_editors &= ~EDITOR_MATERIAL;
 	common->ActivateTool( false );
 }
 
+/*
+================
+MaterialEditorPrintConsole
+================
+*/
 void MaterialEditorPrintConsole( const char* msg )
 {
 	//meMainFrame can be null when starting immedeatly from commandline.

@@ -254,7 +254,7 @@ idCVar r_shadowMapSunDepthBiasScale( "r_shadowMapSunDepthBiasScale", "0.999991",
 #if defined( USE_VULKAN )
 	idCVar r_useHDR( "r_useHDR", "0", CVAR_RENDERER | CVAR_ROM | CVAR_STATIC | CVAR_BOOL, "Can't be changed, is broken on Vulkan backend" );
 #else
-	idCVar r_useHDR( "r_useHDR", "1", CVAR_RENDERER | CVAR_ROM | CVAR_STATIC | CVAR_BOOL, "Can't be changed: Use high dynamic range rendering" );
+	idCVar r_useHDR( "r_useHDR", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "Use high dynamic range rendering" );
 #endif
 
 idCVar r_hdrAutoExposure( "r_hdrAutoExposure", "0", CVAR_RENDERER | CVAR_BOOL, "EXPENSIVE: enables adapative HDR tone mapping otherwise the exposure is derived by r_exposure" );
@@ -2693,6 +2693,50 @@ void idRenderSystemLocal::CalcFov( float base_fov, float& fov_x, float& fov_y, c
 		x = ratio_x / idMath::Tan( fov_x / 360.0f * idMath::PI );
 		fov_y = idMath::ATan( ratio_y, x ) * 360.0f / idMath::PI;
 	}
+}
+
+/*
+====================
+idRenderSystemLocal::RenderEditorView
+
+The in-process editor owns a child DC but shares the renderer and GL context
+with the game. Build and execute only the commands appended by this view,
+then unlink them so common->Frame does not replay the camera into the Engine
+window later in the same frame.
+====================
+*/
+void idRenderSystemLocal::RenderEditorView( idRenderWorld* world, const renderView_t* renderView, int width, int height )
+{
+	if( world == NULL || renderView == NULL || width < 1 || height < 1 || !IsInitialized() || frameData == NULL )
+	{
+		return;
+	}
+
+	const int savedNativeWidth  = glConfig.nativeScreenWidth;
+	const int savedNativeHeight = glConfig.nativeScreenHeight;
+
+	glConfig.nativeScreenWidth  = width;
+	glConfig.nativeScreenHeight = height;
+
+	if( globalFramebuffers.hdrFBO == NULL || globalFramebuffers.hdrFBO->GetWidth()  != width || globalFramebuffers.hdrFBO->GetHeight() != height )
+	{
+		Framebuffer::CheckFramebuffers();
+	}
+
+	CropRenderSize( width, height );
+
+	world->RenderScene( renderView );
+
+	UnCrop();
+
+	const emptyCommand_t* editorCommands = SwapCommandBuffers_FinishCommandBuffers();
+	if( editorCommands != NULL )
+	{
+		RenderCommandBuffers( editorCommands );
+	}
+
+	glConfig.nativeScreenWidth = savedNativeWidth;
+	glConfig.nativeScreenHeight = savedNativeHeight;
 }
 
 /*

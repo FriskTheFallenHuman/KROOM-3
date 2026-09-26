@@ -69,6 +69,10 @@ public:
 	void					AttachImageDepth( int target, const idImage* image );
 	void					AttachImageDepthLayer( const idImage* image, int layer );
 
+#if !defined(USE_VULKAN)
+	static void				SetEditorDefaultFramebuffer( GLuint fbo );
+#endif
+
 	// check for OpenGL errors
 	void					Check();
 	uint32_t				GetFramebuffer() const

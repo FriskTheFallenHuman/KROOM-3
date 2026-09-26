@@ -29,6 +29,8 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
+#include "../../renderer/RenderCommon.h"
+
 #include "MaterialEditor.h"
 #include "MEMainFrame.h"
 #include "MaterialEditView.h"
@@ -39,6 +41,16 @@ If you have questions concerning this license or the applicable additional terms
 #include "../common/ConsoleWidget.h"
 #include "FindDialog.h"
 #include "../common/ToolBarStrip.h"
+#include "../common/AboutDialog.h"
+
+static const char* const PANE_PREVIEW = "preview";
+static const char* const PANE_TREE = "tree";
+static const char* const PANE_PREVIEWPROP = "previewProps";
+static const char* const PANE_CONSOLE = "console";
+
+static const char* const STRIP_LEFT = "leftStrip";
+static const char* const STRIP_RIGHT = "rightStrip";
+static const char* const STRIP_BOTTOM = "bottomStrip";
 
 /*
 ================
@@ -47,12 +59,7 @@ MEMainFrame::MEMainFrame
 */
 MEMainFrame::MEMainFrame()
 	: wxFrame( NULL, wxID_ANY, "Material Editor", wxDefaultPosition, wxSize( 1280, 800 ), wxDEFAULT_FRAME_STYLE )
-	, m_tabs( NULL )
-	, m_editorPage( NULL )
-	, m_consolePage( NULL )
-	, m_mainSplitter( NULL )
-	, m_editSplitter( NULL )
-	, m_previewSplitter( NULL )
+	, m_materialEditFrame( NULL )
 	, m_materialTreeView( NULL )
 	, m_materialEditView( NULL )
 	, m_previewPropertyView( NULL )
@@ -61,61 +68,152 @@ MEMainFrame::MEMainFrame()
 	, m_stageView( NULL )
 	, m_materialPropertyView( NULL )
 	, m_materialEditSplitter( NULL )
+	, m_leftStrip( NULL )
+	, m_rightStrip( NULL )
+	, m_bottomStrip( NULL )
 	, m_find( NULL )
 	, m_toolbarIcons( NULL )
+	, m_shuttingDown( false )
 {
 	searchData.searched = false;
 
 	// Load the material property definitions from MaterialEditorDefs.med.
 	MaterialDefManager::InitializeMaterialDefLists();
 
-	// Load persisted options (splitter sizes, window placement, etc.).
+	// Load persisted options (layout, window placement, etc).
 	options.Load();
 
-	// Restore window placement if we have it.
-	options.GetWindowPlacement( "mainframe", this );
+	// Tell AUI to manage this frame before restoring the saved perspective.
+	m_auiManager.SetManagedWindow( this );
 
 	BuildMenuBar();
 	BuildToolBar();
 	BuildStatusBar();
 
-	// Central notebook with bottom tabs.
-	m_tabs = new wxNotebook( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_BOTTOM );
+	// Material editor window.
+	m_materialEditFrame = new wxFrame( this, wxID_ANY, "Material", wxDefaultPosition, wxSize( 540, 640 ), wxDEFAULT_FRAME_STYLE );
+	m_materialEditView = new MaterialEditView( m_materialEditFrame );
 
-	m_editorPage  = new wxPanel( m_tabs );
-	m_consolePage = new wxPanel( m_tabs );
+	wxBoxSizer* editSizer = new wxBoxSizer( wxVERTICAL );
+	editSizer->Add( m_materialEditView, 1, wxEXPAND );
+	m_materialEditFrame->SetSizer( editSizer );
 
-	if( !BuildEditorPage( m_editorPage ) )
+	// Hide instead of closing.
+	m_materialEditFrame->Bind( wxEVT_CLOSE_WINDOW, [this]( wxCloseEvent & e )
 	{
-		common->Error( "MEMainFrame: failed to build editor page" );
-	}
-	if( !BuildConsolePage( m_consolePage ) )
+		if( m_shuttingDown )
+		{
+			e.Skip();
+			return;
+		}
+
+		if( e.CanVeto() )
+		{
+			m_materialEditFrame->Hide();
+			e.Veto();
+		}
+		else
+		{
+			e.Skip();
+		}
+	} );
+
+	m_materialEditFrame->Hide();
+
+	// Dockable views.
+	m_materialTreeView = new MaterialTreeView( this );
+	m_previewPropertyView = new MaterialPreviewPropView( this );
+	m_materialPreviewView = new MaterialPreviewView( this );
+	m_consoleView = new ConsoleWidget( this );
+
+	m_consoleView->SetQuitHandler( [this]()
 	{
-		common->Error( "MEMainFrame: failed to build console page" );
+		this->Close( true );
+	} );
+
+
+	m_stageView = m_materialEditView->GetStageView();
+	m_materialPropertyView = m_materialEditView->GetMaterialPropTreeView();
+	m_materialEditSplitter = m_materialEditView->GetEditSplitter();
+
+	if( m_stageView && m_materialPropertyView )
+	{
+		m_stageView->SetMaterialPropertyView( m_materialPropertyView );
 	}
 
-	m_tabs->AddPage( m_editorPage, "Editor", true );
-	m_tabs->AddPage( m_consolePage, "Console", false );
-
-	// Layout: notebook fills the frame's client area, toolbar/statusbar take
-	// their space via the frame's sizer.
-	auto* sizer = new wxBoxSizer( wxVERTICAL );
-	sizer->Add( m_tabs, 1, wxEXPAND );
-	SetSizer( sizer );
-
-	// Restore splitter positions from options.
-	const int editHeight = options.GetMaterialEditHeight();
-	const int treeWidth = options.GetMaterialTreeWidth();
-	const int stageWidth = options.GetStageWidth();
-	const int previewWidth = options.GetPreviewPropertiesWidth();
-
-	m_mainSplitter->SetSashPosition( editHeight > 0 ? editHeight : 300 );
-	m_editSplitter->SetSashPosition( treeWidth > 0 ? treeWidth : 300 );
 	if( m_materialEditSplitter )
 	{
-		m_materialEditSplitter->SetSashPosition( stageWidth > 0 ? stageWidth : 200 );
+		const int stageW = options.GetStageWidth();
+		if( stageW > 0 )
+		{
+			m_materialEditSplitter->SetSashPosition( stageW );
+		}
 	}
-	m_previewSplitter->SetSashPosition( previewWidth > 0 ? previewWidth : 300 );
+
+	if( m_previewPropertyView && m_materialPreviewView )
+	{
+		m_previewPropertyView->RegisterPreviewView( m_materialPreviewView );
+	}
+
+	if( m_previewPropertyView )
+	{
+		m_previewPropertyView->InitializePropTree();
+		m_previewPropertyView->SetColumn( options.GetPreviewPropHeadingWidth() > 0 ? options.GetPreviewPropHeadingWidth() : 120 );
+	}
+
+	if( m_materialPropertyView )
+	{
+		m_materialPropertyView->LoadSettings();
+		m_materialPropertyView->SetColumn( options.GetMaterialPropHeadingWidth() > 0 ? options.GetMaterialPropHeadingWidth() : 200 );
+	}
+
+	// Dockable panes.
+	m_auiManager.AddPane( m_materialPreviewView, wxAuiPaneInfo().Name( PANE_PREVIEW ).CenterPane().Caption( "Preview" )
+						  .MaximizeButton( true ).MinimizeButton( true ).CloseButton( false ).Floatable( true ).PinButton( true ) );
+
+	m_auiManager.AddPane( m_materialTreeView, wxAuiPaneInfo().Name( PANE_TREE ).Left().Caption( "Materials" ).BestSize( 300, -1 ).MinSize( 140, -1 )
+						  .MaximizeButton( true ).Floatable( true ).PinButton( true ).CloseButton( false ) );
+
+	m_auiManager.AddPane( m_previewPropertyView, wxAuiPaneInfo().Name( PANE_PREVIEWPROP ).Right().Caption( "Preview Properties" )
+						  .BestSize( 300, -1 ).MinSize( 180, -1 ).MaximizeButton( true ).Floatable( true ).PinButton( true ).CloseButton( false ).Row( 0 ) );
+
+	m_auiManager.AddPane( m_consoleView, wxAuiPaneInfo().Name( PANE_CONSOLE ).Bottom().Caption( "Console" ).BestSize( -1, 220 ).MinSize( -1, 80 )
+						  .MaximizeButton( true ).Floatable( true ).PinButton( true ).CloseButton( false ) );
+
+	BuildAutoHideStrips();
+
+	// Restore saved perspective or fall back to a sane default.
+	const char* savedPerspective = options.GetString( "auiPerspective", "" );
+	bool restored = false;
+	if( savedPerspective && *savedPerspective )
+	{
+		wxString persp = wxString::FromUTF8( savedPerspective );
+		restored = m_auiManager.LoadPerspective( persp, false );
+	}
+
+	if( !restored )
+	{
+		m_auiManager.GetPane( PANE_PREVIEW ).Dock().Center();
+		m_auiManager.GetPane( PANE_TREE ).Dock().Left();
+		m_auiManager.GetPane( PANE_PREVIEWPROP ).Dock().Right().Row( 0 );
+		m_auiManager.GetPane( PANE_CONSOLE ).Dock().Bottom();
+	}
+
+	m_auiManager.Update();
+
+	RebuildAutoHideStrips();
+
+	// Restore window placement if we have it.
+	options.GetWindowPlacement( "mainframe", this );
+
+	// Do a re-layout.
+	CallAfter( [this]()
+	{
+		m_auiManager.Update();
+		SendSizeEvent();
+		Layout();
+		Refresh();
+	} );
 
 	// Hook up events.
 	Bind( wxEVT_CLOSE_WINDOW, &MEMainFrame::OnClose, this );
@@ -160,12 +258,22 @@ MEMainFrame::MEMainFrame()
 
 	// View
 	Bind( wxEVT_MENU, &MEMainFrame::OnViewIncludeFile, this, ID_VIEW_INCLUDEFILENAME );
+	Bind( wxEVT_MENU, &MEMainFrame::OnViewResetLayout, this, ID_ME_VIEW_RESET_LAYOUT );
 
 	// Preview reloads
 	Bind( wxEVT_MENU, &MEMainFrame::OnReloadShaders, this, ID_PREVIEW_RELOADSHADERS );
 	Bind( wxEVT_MENU, &MEMainFrame::OnReloadImages, this, ID_PREVIEW_RELOADIMAGES );
 
-	// Register with document manager
+	// Help
+	Bind( wxEVT_MENU, &MEMainFrame::OnAbout, this, IDD_ME_ABOUTBOX );
+
+	// AUI notifications.
+	Bind( wxEVT_AUI_PANE_CLOSE, &MEMainFrame::OnAuiPaneClose, this );
+	Bind( wxEVT_AUI_PANE_MAXIMIZE, &MEMainFrame::OnAuiPaneMaximize, this );
+	Bind( wxEVT_AUI_PANE_RESTORE, &MEMainFrame::OnAuiPaneRestore, this );
+	Bind( wxEVT_AUI_PANE_BUTTON, &MEMainFrame::OnAuiPaneButton, this );
+
+	// Register views with the document manager.
 	RegisterViews();
 }
 
@@ -181,7 +289,208 @@ MEMainFrame::~MEMainFrame()
 		m_find->Destroy();
 		m_find = NULL;
 	}
-	delete m_toolbarIcons;
+
+	if( m_toolbarIcons )
+	{
+		delete m_toolbarIcons;
+		m_toolbarIcons = NULL;
+	}
+}
+
+/*
+================
+MEMainFrame::BuildAutoHideStrips
+================
+*/
+void MEMainFrame::BuildAutoHideStrips()
+{
+	const int thickness = AutoHideStrip::GetThickness();
+
+	m_leftStrip = new AutoHideStrip( this, AutoHideStrip::Left );
+	m_rightStrip = new AutoHideStrip( this, AutoHideStrip::Right );
+	m_bottomStrip = new AutoHideStrip( this, AutoHideStrip::Bottom );
+
+	m_leftStrip->SetTabClickHandler( [this]( wxWindow * w )
+	{
+		OnAutoHideTabClick( w );
+	} );
+	m_rightStrip->SetTabClickHandler( [this]( wxWindow * w )
+	{
+		OnAutoHideTabClick( w );
+	} );
+	m_bottomStrip->SetTabClickHandler( [this]( wxWindow * w )
+	{
+		OnAutoHideTabClick( w );
+	} );
+
+	auto stripInfo = [&]( const wxString & name ) -> wxAuiPaneInfo
+	{
+		return wxAuiPaneInfo()
+		.Name( name )
+		.CaptionVisible( false )
+		.CloseButton( false )
+		.PinButton( false )
+		.MaximizeButton( false )
+		.MinimizeButton( false )
+		.Gripper( false )
+		.PaneBorder( false )
+		.Floatable( false )
+		.Movable( false )
+		.Resizable( false )
+		.Layer( 10 )
+		.Hide();
+	};
+
+	m_auiManager.AddPane( m_leftStrip, stripInfo( STRIP_LEFT ).Left().BestSize( thickness, -1 ).MinSize( thickness, -1 ).MaxSize( thickness, -1 ) );
+	m_auiManager.AddPane( m_rightStrip, stripInfo( STRIP_RIGHT ).Right().BestSize( thickness, -1 ).MinSize( thickness, -1 ).MaxSize( thickness, -1 ) );
+	m_auiManager.AddPane( m_bottomStrip, stripInfo( STRIP_BOTTOM ).Bottom().BestSize( -1, thickness ).MinSize( -1, thickness ).MaxSize( -1, thickness ) );
+}
+
+/*
+================
+MEMainFrame::GetStripForPane
+================
+*/
+AutoHideStrip* MEMainFrame::GetStripForPane( wxAuiPaneInfo& pane ) const
+{
+	if( pane.dock_direction == wxAUI_DOCK_LEFT )
+	{
+		return m_leftStrip;
+	}
+	if( pane.dock_direction == wxAUI_DOCK_RIGHT )
+	{
+		return m_rightStrip;
+	}
+	if( pane.dock_direction == wxAUI_DOCK_BOTTOM )
+	{
+		return m_bottomStrip;
+	}
+	return NULL;
+}
+
+/*
+================
+MEMainFrame::RebuildAutoHideStrips
+================
+*/
+void MEMainFrame::RebuildAutoHideStrips()
+{
+	if( !m_leftStrip || !m_rightStrip || !m_bottomStrip )
+	{
+		return;
+	}
+
+	m_leftStrip->Clear();
+	m_rightStrip->Clear();
+	m_bottomStrip->Clear();
+
+	const wxAuiPaneInfoArray& panes = m_auiManager.GetAllPanes();
+
+	for( size_t i = 0; i < panes.GetCount(); ++i )
+	{
+		wxAuiPaneInfo& p = panes[i];
+
+		if( p.window == m_leftStrip || p.window == m_rightStrip || p.window == m_bottomStrip )
+		{
+			continue;
+		}
+
+		if( p.caption.IsEmpty() )
+		{
+			continue;
+		}
+
+		if( p.IsShown() )
+		{
+			continue;
+		}
+
+		AutoHideStrip* strip = GetStripForPane( p );
+		if( strip )
+		{
+			strip->AddItem( p.window, p.caption );
+		}
+	}
+
+	m_leftStrip->Rebuild();
+	m_rightStrip->Rebuild();
+	m_bottomStrip->Rebuild();
+
+	m_auiManager.GetPane( m_leftStrip ).Show( m_leftStrip->GetItemCount() > 0 );
+	m_auiManager.GetPane( m_rightStrip ).Show( m_rightStrip->GetItemCount() > 0 );
+	m_auiManager.GetPane( m_bottomStrip ).Show( m_bottomStrip->GetItemCount() > 0 );
+
+	m_auiManager.Update();
+}
+
+/*
+================
+MEMainFrame::OnAutoHideTabClick
+================
+*/
+void MEMainFrame::OnAutoHideTabClick( wxWindow* paneWindow )
+{
+	if( !paneWindow )
+	{
+		return;
+	}
+
+	wxAuiPaneInfoArray& panes = m_auiManager.GetAllPanes();
+	for( size_t i = 0; i < panes.GetCount(); ++i )
+	{
+		if( panes[i].IsMaximized() )
+		{
+			m_auiManager.RestorePane( panes[i] );
+			break;
+		}
+	}
+
+	m_auiManager.GetPane( paneWindow ).Show( true );
+	m_auiManager.Update();
+
+	RebuildAutoHideStrips();
+
+	CallAfter( [this]()
+	{
+		m_auiManager.Update();
+		SendSizeEvent();
+		Layout();
+		Refresh();
+	} );
+}
+
+/*
+================
+MEMainFrame::ApplyDefaultAuiPerspective
+================
+*/
+void MEMainFrame::ApplyDefaultAuiPerspective( bool maximizePreview )
+{
+	wxAuiPaneInfoArray& panes = m_auiManager.GetAllPanes();
+	for( size_t i = 0; i < panes.GetCount(); ++i )
+	{
+		if( panes[i].IsMaximized() )
+		{
+			m_auiManager.RestorePane( panes[i] );
+		}
+	}
+
+	m_auiManager.GetPane( PANE_PREVIEW ).Dock().Center().Show();
+	m_auiManager.GetPane( PANE_TREE ).Dock().Left().Show();
+	m_auiManager.GetPane( PANE_PREVIEWPROP ).Dock().Right().Row( 0 ).Show();
+	m_auiManager.GetPane( PANE_CONSOLE ).Dock().Bottom().Show();
+
+	m_auiManager.Update();
+
+	RebuildAutoHideStrips();
+
+	CallAfter( [this]()
+	{
+		m_auiManager.Update();
+		SendSizeEvent();
+		Layout();
+		Refresh();
+	} );
 }
 
 /*
@@ -216,6 +525,8 @@ void MEMainFrame::BuildMenuBar()
 	wxMenu* viewMenu = new wxMenu();
 	viewMenu->AppendCheckItem( ID_VIEW_INCLUDEFILENAME, "&Include Filename" );
 	viewMenu->Check( ID_VIEW_INCLUDEFILENAME, true );
+	viewMenu->AppendSeparator();
+	viewMenu->Append( ID_ME_VIEW_RESET_LAYOUT, "Reset Layout" );
 
 	wxMenu* previewMenu = new wxMenu();
 	previewMenu->Append( ID_ME_PREVIEW_APPLYCHANGES, "Apply Material\tCtrl-A" );
@@ -225,11 +536,15 @@ void MEMainFrame::BuildMenuBar()
 	previewMenu->Append( ID_PREVIEW_RELOADSHADERS, "&Reload Shaders\tCtrl-R" );
 	previewMenu->Append( ID_PREVIEW_RELOADIMAGES, "Reload Images\tCtrl-I" );
 
+	wxMenu* helpMenu = new wxMenu();
+	helpMenu->Append( IDD_ME_ABOUTBOX, "&About Material Editor..." );
+
 	wxMenuBar* menuBar = new wxMenuBar();
 	menuBar->Append( fileMenu, "&File" );
 	menuBar->Append( editMenu, "&Edit" );
 	menuBar->Append( viewMenu, "&Material View" );
 	menuBar->Append( previewMenu, "&Preview" );
+	menuBar->Append( helpMenu, "&Help" );
 
 	SetMenuBar( menuBar );
 }
@@ -312,100 +627,6 @@ void MEMainFrame::BuildStatusBar()
 	SetStatusText( "Ready" );
 }
 
-bool MEMainFrame::BuildEditorPage( wxWindow* parent )
-{
-	// editor splitter.
-	m_mainSplitter = new wxSplitterWindow( parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_LIVE_UPDATE | wxSP_3DSASH | wxSP_BORDER );
-	m_mainSplitter->SetMinimumPaneSize( 80 );
-
-	// tree + edit splitter.
-	m_editSplitter = new wxSplitterWindow( m_mainSplitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_LIVE_UPDATE | wxSP_3DSASH | wxSP_BORDER );
-	m_editSplitter->SetMinimumPaneSize( 80 );
-
-	m_materialTreeView = new MaterialTreeView( m_editSplitter );
-	m_materialEditView = new MaterialEditView( m_editSplitter );
-
-	m_editSplitter->SplitVertically( m_materialTreeView, m_materialEditView );
-
-	// preview props + preview splitter.
-	m_previewSplitter = new wxSplitterWindow( m_mainSplitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_LIVE_UPDATE | wxSP_3DSASH | wxSP_BORDER );
-	m_previewSplitter->SetMinimumPaneSize( 80 );
-
-	m_previewPropertyView = new MaterialPreviewPropView( m_previewSplitter );
-	m_materialPreviewView = new MaterialPreviewView( m_previewSplitter );
-
-	m_previewSplitter->SplitVertically( m_previewPropertyView, m_materialPreviewView );
-
-	m_mainSplitter->SplitHorizontally( m_editSplitter, m_previewSplitter );
-
-	if( m_materialEditView )
-	{
-		m_stageView = m_materialEditView->GetStageView();
-		m_materialPropertyView  = m_materialEditView->GetMaterialPropTreeView();
-		m_materialEditSplitter  = m_materialEditView->GetEditSplitter();
-
-		if( m_stageView && m_materialPropertyView )
-		{
-			m_stageView->SetMaterialPropertyView( m_materialPropertyView );
-		}
-	}
-
-	// preview view.
-	if( m_previewPropertyView && m_materialPreviewView )
-	{
-		m_previewPropertyView->RegisterPreviewView( m_materialPreviewView );
-	}
-
-	// Initialise property trees.
-	if( m_previewPropertyView )
-	{
-		m_previewPropertyView->InitializePropTree();
-	}
-
-	if( m_materialPropertyView )
-	{
-		m_materialPropertyView->LoadSettings();
-	}
-
-	// Column widths.
-	if( m_materialPropertyView )
-	{
-		m_materialPropertyView->SetColumn( options.GetMaterialPropHeadingWidth() > 0 ? options.GetMaterialPropHeadingWidth() : 200 );
-	}
-
-	if( m_previewPropertyView )
-	{
-		m_previewPropertyView->SetColumn( options.GetPreviewPropHeadingWidth() > 0 ? options.GetPreviewPropHeadingWidth() : 120 );
-	}
-
-	// Layout the page.
-	wxBoxSizer* sizer = new wxBoxSizer( wxVERTICAL );
-	sizer->Add( m_mainSplitter, 1, wxEXPAND );
-	parent->SetSizer( sizer );
-
-	return true;
-}
-
-/*
-================
-MEMainFrame::BuildConsolePage
-================
-*/
-bool MEMainFrame::BuildConsolePage( wxWindow* parent )
-{
-	m_consoleView = new ConsoleWidget( parent );
-	m_consoleView->SetQuitHandler( [this]()
-	{
-		this->Close( true );
-	} );
-
-	wxBoxSizer* sizer = new wxBoxSizer( wxVERTICAL );
-	sizer->Add( m_consoleView, 1, wxEXPAND );
-	parent->SetSizer( sizer );
-
-	return true;
-}
-
 /*
 ================
 MEMainFrame::RegisterViews
@@ -414,6 +635,7 @@ MEMainFrame::RegisterViews
 void MEMainFrame::RegisterViews()
 {
 	materialDocManager.RegisterMaterialView( this );
+
 	if( m_materialTreeView )
 	{
 		materialDocManager.RegisterMaterialView( m_materialTreeView );
@@ -674,6 +896,16 @@ void MEMainFrame::OnViewIncludeFile( wxCommandEvent& event )
 
 /*
 ================
+MEMainFrame::OnViewResetLayout
+================
+*/
+void MEMainFrame::OnViewResetLayout( wxCommandEvent& )
+{
+	ApplyDefaultAuiPerspective( true );
+}
+
+/*
+================
 MEMainFrame::OnReloadShaders
 ================
 */
@@ -694,42 +926,147 @@ void MEMainFrame::OnReloadImages( wxCommandEvent& )
 
 /*
 ================
+MEMainFrame::OnAuiPaneClose
+================
+*/
+void MEMainFrame::OnAuiPaneClose( wxAuiManagerEvent& event )
+{
+	m_auiManager.Update();
+	RebuildAutoHideStrips();
+	event.Skip();
+}
+
+/*
+================
+MEMainFrame::OnAuiPaneMaximize
+================
+*/
+void MEMainFrame::OnAuiPaneMaximize( wxAuiManagerEvent& event )
+{
+	m_auiManager.Update();
+	RebuildAutoHideStrips();
+	event.Skip();
+}
+
+/*
+================
+MEMainFrame::OnAuiPaneRestore
+================
+*/
+void MEMainFrame::OnAuiPaneRestore( wxAuiManagerEvent& event )
+{
+	m_auiManager.Update();
+	RebuildAutoHideStrips();
+	event.Skip();
+}
+
+/*
+================
+MEMainFrame::OnAuiPaneButton
+================
+*/
+void MEMainFrame::OnAuiPaneButton( wxAuiManagerEvent& event )
+{
+	if( event.GetButton() == wxAUI_BUTTON_PIN )
+	{
+		wxAuiPaneInfo* pane = event.GetPane();
+		if( pane && pane->window )
+		{
+			const int dir = pane->dock_direction;
+
+			m_auiManager.GetPane( pane->window ).Show( false );
+			m_auiManager.GetPane( pane->window ).dock_direction = dir;
+			m_auiManager.Update();
+
+			RebuildAutoHideStrips();
+
+			event.Veto();
+			return;
+		}
+	}
+
+	event.Skip();
+}
+
+/*
+================
+MEMainFrame::OnAbout
+================
+*/
+void MEMainFrame::OnAbout( wxCommandEvent& )
+{
+	AboutDialog dlg(
+		this,
+		"Material Editor",
+		wxString::Format( "Build %d - %s %s (x%u Build)", BUILD_NUMBER, ID__DATE__, ID__TIME__, ( unsigned int )( sizeof( void* ) * 8 ) ),
+		"Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company." );
+
+	dlg.CenterOnParent();
+	dlg.ShowModal();
+}
+
+/*
+================
 MEMainFrame::OnClose
 ================
 */
 void MEMainFrame::OnClose( wxCloseEvent& event )
 {
-	// Persist options.
-	options.SetMaterialEditHeight( m_mainSplitter->GetSashPosition() );
-	options.SetMaterialTreeWidth( m_editSplitter->GetSashPosition() );
+	if( m_shuttingDown )
+	{
+		event.Skip();
+		return;
+	}
+
+	m_shuttingDown = true;
+
+	wxString perspective = m_auiManager.SavePerspective();
+	options.SetString( "auiPerspective", perspective.ToUTF8().data() );
+
+	if( m_materialPropertyView && m_auiManager.GetPane( m_materialPropertyView ).IsShown() )
+	{
+		options.SetMaterialPropHeadingWidth( m_materialPropertyView->GetColumn() );
+		m_materialPropertyView->SaveSettings();
+	}
+
+	if( m_previewPropertyView && m_auiManager.GetPane( m_previewPropertyView ).IsShown() )
+	{
+		options.SetPreviewPropHeadingWidth( m_previewPropertyView->GetColumn() );
+	}
+
 	if( m_materialEditSplitter )
 	{
 		options.SetStageWidth( m_materialEditSplitter->GetSashPosition() );
-	}
-	options.SetPreviewPropertiesWidth( m_previewSplitter->GetSashPosition() );
-
-	if( m_materialPropertyView )
-	{
-		options.SetMaterialPropHeadingWidth( m_materialPropertyView->GetColumn() );
-	}
-	if( m_previewPropertyView )
-	{
-		options.SetPreviewPropHeadingWidth( m_previewPropertyView->GetColumn() );
 	}
 
 	options.SetWindowPlacement( "mainframe", this );
 	options.Save();
 
-	if( m_materialPropertyView )
+	// Close the Find dialog.
+	if( m_find )
 	{
-		m_materialPropertyView->SaveSettings();
+		m_find->Destroy();
+		m_find = NULL;
 	}
 
-	// Detach views from the doc manager before tearing down.
-	materialDocManager.UnRegisterAllMaterialViews();
+	// Hide the edit window.
+	if( m_materialEditFrame )
+	{
+		m_materialEditFrame->Hide();
+	}
 
 	// Free the material property definition lists.
 	MaterialDefManager::DestroyMaterialDefLists();
+
+	// Shut down AUI before the frame is destroyed.
+	m_auiManager.UnInit();
+
+	// Free the toolbar image list.
+	if( m_toolbarIcons )
+	{
+		delete m_toolbarIcons;
+		m_toolbarIcons = NULL;
+	}
 
 	event.Skip();
 }
@@ -947,6 +1284,24 @@ void MEMainFrame::FindNext( MaterialSearchData_t* search )
 MEMainFrame::MV_OnMaterialSelectionChange
 ================
 */
-void MEMainFrame::MV_OnMaterialSelectionChange( MaterialDoc* /*pMaterial*/ )
+void MEMainFrame::MV_OnMaterialSelectionChange( MaterialDoc* pMaterial )
 {
+	if( !m_materialEditFrame )
+	{
+		return;
+	}
+
+	if( pMaterial && pMaterial->renderMaterial )
+	{
+		m_materialEditFrame->SetTitle( pMaterial->renderMaterial->GetName() );
+
+		if( !m_materialEditFrame->IsShown() )
+		{
+			m_materialEditFrame->Show();
+		}
+	}
+	else
+	{
+		m_materialEditFrame->Hide();
+	}
 }

@@ -30,6 +30,7 @@ If you have questions concerning this license or the applicable additional terms
 #define __MATERIALPREVIEWVIEW_H__
 
 #include <wx/wx.h>
+#include <wx/dcbuffer.h>
 #include <wx/timer.h>
 
 #include "MaterialEditor.h"
@@ -46,7 +47,10 @@ public:
 	~idGLDrawableView();
 
 	void setMedia( const char* name );
-	void draw( int x, int y, int w, int h );
+	void renderToEngineFramebuffer( int w, int h );
+
+	void zoomBy( float delta );
+	void panObject( float dx, float dy );
 
 	void buttonDown( int _button, float x, float y );
 	void mouseMove( float x, float y );
@@ -147,16 +151,12 @@ public:
 	int		GetLightCount() const;
 	bool	GetLightInfo( int lightId, idStr& shaderName, idVec3& color, float& radius, bool& allowMove ) const;
 
-	// Called once per engine frame, from MaterialEditorRun(), while the main
-	// GL context is current. Advances the render-to-texture pipeline: reads
-	// back the previous call's capture (if any) and, if a repaint is
-	// pending, issues a fresh render+capture for the frame after that.
-	void	RenderPreviewFrame();
-
 public: // MaterialView interface
 	virtual void MV_OnMaterialSelectionChange( MaterialDoc* pMaterial ) override;
 
 private:
+	void    RequestRepaint();
+
 	void	OnPaint( wxPaintEvent& event );
 	void	OnSize( wxSizeEvent& event );
 	void	OnEraseBackground( wxEraseEvent& event );
@@ -167,14 +167,21 @@ private:
 	void	OnMouseWheel( wxMouseEvent& event );
 	void	OnMouseLeave( wxMouseEvent& event );
 
-	void	ReadBackCapture();
+	void	EnsurePreviewFBO( int w, int h );
+	void	DestroyPreviewFBO();
 
 	idGLDrawableView    m_renderedView;
 	idStr               m_currentMaterial;
 	wxTimer             m_repaintTimer;
 	bool                m_needsRepaint;
-	bool                m_captureReady;   // a capture from a previous RenderPreviewFrame() call is safe to read back
-	wxBitmap            m_previewBitmap;
+
+	unsigned int        m_fbo;
+	unsigned int        m_colorTex;
+	unsigned int        m_depthStencil;
+	int                 m_fboWidth;
+	int                 m_fboHeight;
+
+	std::vector<unsigned char> m_pixels;
 };
 
 ID_INLINE int  MaterialPreviewView::GetLightCount() const

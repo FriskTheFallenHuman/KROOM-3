@@ -92,7 +92,7 @@ void	DebuggerServerCheckBreakpoint( idInterpreter* interpreter, idProgram* progr
 
 	//Material Editor
 	void	MaterialEditorInit();
-	bool	MaterialEditorRun();
+	void	MaterialEditorRun();
 	void	MaterialEditorShutdown();
 	void	MaterialEditorPrintConsole( const char* msg );
 #endif
