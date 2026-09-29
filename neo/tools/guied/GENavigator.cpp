@@ -34,62 +34,62 @@ If you have questions concerning this license or the applicable additional terms
 
 namespace
 {
-	constexpr int kIconW  = 16;
-	constexpr int kIconH  = 16;
-	constexpr int kBadgeW = 10;
-	constexpr int kBadgeH = 10;
+constexpr int kIconW  = 16;
+constexpr int kIconH  = 16;
+constexpr int kBadgeW = 10;
+constexpr int kBadgeH = 10;
 
-	wxImage EnsureAlpha( const wxBitmap& bmp )
+wxImage EnsureAlpha( const wxBitmap& bmp )
+{
+	wxImage img = bmp.ConvertToImage();
+	if( !img.HasAlpha() )
 	{
-		wxImage img = bmp.ConvertToImage();
-		if( !img.HasAlpha() )
-		{
-			img.InitAlpha();
-			unsigned char* a = img.GetAlpha();
-			const size_t n = (size_t)img.GetWidth() * (size_t)img.GetHeight();
-			memset( a, 255, n );
-		}
-		return img;
+		img.InitAlpha();
+		unsigned char* a = img.GetAlpha();
+		const size_t n = ( size_t )img.GetWidth() * ( size_t )img.GetHeight();
+		memset( a, 255, n );
+	}
+	return img;
+}
+
+wxBitmap NormalizeToIcon( const wxBitmap& bmp )
+{
+	if( !bmp.IsOk() )
+	{
+		return wxBitmap();
 	}
 
-	wxBitmap NormalizeToIcon( const wxBitmap& bmp )
+	if( bmp.GetWidth() == kIconW && bmp.GetHeight() == kIconH )
 	{
-		if( !bmp.IsOk() )
-		{
-			return wxBitmap();
-		}
-
-		if( bmp.GetWidth() == kIconW && bmp.GetHeight() == kIconH )
-		{
-			return bmp;
-		}
-
-		wxImage img = EnsureAlpha( bmp );
-		img = img.Scale( kIconW, kIconH, wxIMAGE_QUALITY_HIGH );
-		return wxBitmap( img, 32 );
+		return bmp;
 	}
 
-	wxBitmap CombineBadge( const wxBitmap& base, const wxBitmap& badge )
+	wxImage img = EnsureAlpha( bmp );
+	img = img.Scale( kIconW, kIconH, wxIMAGE_QUALITY_HIGH );
+	return wxBitmap( img, 32 );
+}
+
+wxBitmap CombineBadge( const wxBitmap& base, const wxBitmap& badge )
+{
+	if( !base.IsOk() || !badge.IsOk() )
 	{
-		if( !base.IsOk() || !badge.IsOk() )
-		{
-			return wxBitmap();
-		}
-
-		wxImage ib = EnsureAlpha( base );
-		wxImage ig = EnsureAlpha( badge );
-
-		ig = ig.Scale( kBadgeW, kBadgeH, wxIMAGE_QUALITY_HIGH );
-
-		wxImage out( kIconW, kIconH );
-		out.InitAlpha();
-		memset( out.GetData(), 0, (size_t)kIconW * kIconH * 3 );
-		memset( out.GetAlpha(), 0, (size_t)kIconW * kIconH );
-		out.Paste( ib, 0, 0 );
-		out.Paste( ig, kIconW - kBadgeW, kIconH - kBadgeH );   // bottom-right
-
-		return wxBitmap( out, 32 );
+		return wxBitmap();
 	}
+
+	wxImage ib = EnsureAlpha( base );
+	wxImage ig = EnsureAlpha( badge );
+
+	ig = ig.Scale( kBadgeW, kBadgeH, wxIMAGE_QUALITY_HIGH );
+
+	wxImage out( kIconW, kIconH );
+	out.InitAlpha();
+	memset( out.GetData(), 0, ( size_t )kIconW * kIconH * 3 );
+	memset( out.GetAlpha(), 0, ( size_t )kIconW * kIconH );
+	out.Paste( ib, 0, 0 );
+	out.Paste( ig, kIconW - kBadgeW, kIconH - kBadgeH );   // bottom-right
+
+	return wxBitmap( out, 32 );
+}
 }
 
 /*
@@ -114,7 +114,7 @@ rvGENavigator::rvGENavigator( wxWindow* parent )
 
 	m_icons = new wxImageList( kIconW, kIconH, true, ICON_COUNT );
 
-	auto addIcon = []( wxImageList* list, const wxBitmap& bmp )
+	auto addIcon = []( wxImageList * list, const wxBitmap & bmp )
 	{
 		if( bmp.IsOk() )
 		{
@@ -125,8 +125,8 @@ rvGENavigator::rvGENavigator( wxWindow* parent )
 		// Keep indices aligned even if a load failed.
 		wxImage blank( kIconW, kIconH );
 		blank.InitAlpha();
-		memset( blank.GetData(), 0, (size_t)kIconW * kIconH * 3 );
-		memset( blank.GetAlpha(), 0, (size_t)kIconW * kIconH );
+		memset( blank.GetData(), 0, ( size_t )kIconW * kIconH * 3 );
+		memset( blank.GetAlpha(), 0, ( size_t )kIconW * kIconH );
 		list->Add( wxBitmap( blank, 32 ) );
 	};
 

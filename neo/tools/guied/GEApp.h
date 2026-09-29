@@ -30,6 +30,8 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __GEAPP_H__
 #define __GEAPP_H__
 
+#include <map>
+
 #include <wx/wx.h>
 #include <wx/dcbuffer.h>
 #include <wx/wxprec.h>
@@ -76,6 +78,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "../common/RegistryOptions.h"
 #include "../common/ToolBarStrip.h"
 #include "../common/ImageUtils.h"
+#include "../common/SyntaxKeywords.h"
 
 class rvGEApp;
 class rvGEWorkspace;

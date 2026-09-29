@@ -92,7 +92,14 @@ rvGEViewer::rvGEViewer( wxWindow* parent )
 	m_canvas->Bind( wxEVT_CHAR, &rvGEViewer::OnChar, this );
 	m_canvas->Bind( wxEVT_MOUSE_CAPTURE_LOST, &rvGEViewer::OnCaptureLost, this );
 
+#ifdef __WXMSW__
+	wxImage blankCursorImg( 1, 1 );
+	blankCursorImg.SetAlpha();
+	blankCursorImg.SetAlpha( 0, 0, 0 );
+	m_canvas->SetCursor( wxCursor( blankCursorImg ) );
+#else
 	m_canvas->SetCursor( wxCursor( wxCURSOR_BLANK ) );
+#endif
 
 	Bind( wxEVT_CLOSE_WINDOW, &rvGEViewer::OnClose, this );
 	Bind( wxEVT_MENU, &rvGEViewer::OnPlay, this, ID_GUIED_VIEWER_PLAY );

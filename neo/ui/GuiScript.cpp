@@ -396,6 +396,58 @@ void idGuiScript::ReadFromSaveGame( idFile* savefile )
 
 /*
 =========================
+idGuiScript::GetCommandCount
+=========================
+*/
+int idGuiScript::GetCommandCount()
+{
+	return scriptCommandCount;
+}
+
+/*
+=========================
+idGuiScript::GetCommandName
+=========================
+*/
+const char* idGuiScript::GetCommandName( int index )
+{
+	if( index < 0 || index >= scriptCommandCount )
+	{
+		return "";
+	}
+	return commandList[index].name;
+}
+
+/*
+=========================
+idGuiScript::GetCommandMinParms
+=========================
+*/
+int idGuiScript::GetCommandMinParms( int index )
+{
+	if( index < 0 || index >= scriptCommandCount )
+	{
+		return 0;
+	}
+	return commandList[index].mMinParms;
+}
+
+/*
+=========================
+idGuiScript::GetCommandMaxParms
+=========================
+*/
+int idGuiScript::GetCommandMaxParms( int index )
+{
+	if( index < 0 || index >= scriptCommandCount )
+	{
+		return 0;
+	}
+	return commandList[index].mMaxParms;
+}
+
+/*
+=========================
 idGuiScript::Parse
 =========================
 */

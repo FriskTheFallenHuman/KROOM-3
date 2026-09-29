@@ -32,20 +32,66 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "GEApp.h"
 
+namespace
+{
+// Case-insensitive look up, because somepeople really can't be nice...
+bool KeywordExistsNoCase( const SyntaxKeywords& keywords, const char* name )
+{
+	if( !name || !name[0] )
+	{
+		return false;
+	}
+
+	for( int i = 0; i < keywords.GetCount(); ++i )
+	{
+		if( idStr::Icmp( keywords.GetEntry( i ).name.c_str(), name ) == 0 )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+}
+
+/*
+================
+rvGEItemScriptsDlg::rvGEItemScriptsDlg
+================
+*/
 rvGEItemScriptsDlg::rvGEItemScriptsDlg( wxWindow* parent, idWindow* window )
 	: wxDialog( parent, wxID_ANY, "Item Scripts", wxDefaultPosition, wxSize( 640, 480 ), wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER )
 	, m_window( window )
+	, m_applied( false )
+	, m_nextStyle( STYLE_FIRST_KEYWORD )
 {
 	m_edit = new wxStyledTextCtrl( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_SIMPLE );
 
 	wxFont mono( 9, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL );
-	m_edit->StyleSetFont( wxSTC_STYLE_DEFAULT, mono );
-	m_edit->StyleSetForeground( wxSTC_STYLE_DEFAULT, *wxBLACK );
-	m_edit->StyleSetBackground( wxSTC_STYLE_DEFAULT, *wxWHITE );
+
+	m_edit->StyleSetFont( STYLE_DEFAULT, mono );
+	m_edit->StyleSetForeground( STYLE_DEFAULT, wxColour( 30, 30, 30 ) );
+	m_edit->StyleSetBackground( STYLE_DEFAULT, *wxWHITE );
+	m_edit->StyleSetFont( STYLE_COMMENT, mono );
+	m_edit->StyleSetForeground( STYLE_COMMENT, wxColour( 0, 128, 0 ) );
+	m_edit->StyleSetItalic( STYLE_COMMENT, true );
+	m_edit->StyleSetBackground( STYLE_COMMENT, *wxWHITE );
+	for( int s = STYLE_FIRST_KEYWORD; s < 32; ++s )
+	{
+		m_edit->StyleSetFont( s, mono );
+		m_edit->StyleSetBold( s, true );
+		m_edit->StyleSetBackground( s, *wxWHITE );
+	}
 	m_edit->StyleClearAll();
 	m_edit->SetTabWidth( 4 );
 	m_edit->SetUseTabs( true );
-	m_edit->SetMarginWidth( 0, 32 );   // line numbers
+	m_edit->SetMarginWidth( 0, 32 );
+	m_edit->SetLexer( wxSTC_LEX_CONTAINER );
+	m_edit->SetMouseDwellTime( 400 );
+	m_edit->Bind( wxEVT_STC_DWELLSTART, &rvGEItemScriptsDlg::OnDwellStart, this );
+	m_edit->Bind( wxEVT_STC_DWELLEND, &rvGEItemScriptsDlg::OnDwellEnd, this );
+	m_edit->SetStyleBits( 5 );
+
+	m_edit->Bind( wxEVT_STC_STYLENEEDED, &rvGEItemScriptsDlg::OnStyleNeeded, this );
 
 	wxBoxSizer* sizer = new wxBoxSizer( wxVERTICAL );
 	sizer->Add( m_edit, 1, wxEXPAND | wxALL, 6 );
@@ -58,8 +104,21 @@ rvGEItemScriptsDlg::rvGEItemScriptsDlg( wxWindow* parent, idWindow* window )
 	Init();
 }
 
-rvGEItemScriptsDlg::~rvGEItemScriptsDlg() = default;
+/*
+================
+rvGEItemScriptsDlg::~rvGEItemScriptsDlg
+================
+*/
+rvGEItemScriptsDlg::~rvGEItemScriptsDlg()
+{
 
+}
+
+/*
+================
+rvGEItemScriptsDlg::Init
+================
+*/
 bool rvGEItemScriptsDlg::Init()
 {
 	rvGEWindowWrapper* wrapper = rvGEWindowWrapper::GetWrapper( m_window );
@@ -68,9 +127,43 @@ bool rvGEItemScriptsDlg::Init()
 		return false;
 	}
 
+	if( m_keywords.GetCount() == 0 )
+	{
+		if( !m_keywords.LoadFromFile( "editors/defs/gui.def" ) )
+		{
+			// Auto-append events and/or commands the .def missed.
+			static const idVec3 kEventFallbackColor( 0.0f, 0.0f, 0.7f );
+			static const idVec3 kCommandFallbackColor( 0.7f, 0.0f, 0.0f );
+
+			for( int i = 0; i < idWindow::SCRIPT_COUNT; ++i )
+			{
+				const char* name = idWindow::ScriptNames[i];
+				if( name && name[0] && !m_keywords.Find( name ) )
+				{
+					m_keywords.Add( name, "built-in script event", kEventFallbackColor );
+				}
+			}
+
+			const int cmdCount = idGuiScript::GetCommandCount();
+			for( int i = 0; i < cmdCount; ++i )
+			{
+				const char* name = idGuiScript::GetCommandName( i );
+				if( !name || !name[0] || m_keywords.Find( name ) )
+				{
+					continue;
+				}
+				idStr desc = va( "script command (%d to %d parameters)", idGuiScript::GetCommandMinParms( i ), idGuiScript::GetCommandMaxParms( i ) );
+				m_keywords.Add( name, desc, kCommandFallbackColor );
+			}
+		}
+
+		wxFont mono( 9, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL );
+		BuildKeywordStyleMap( mono );
+	}
+
+	// build the text
 	wxString text;
 
-	// Variables first, then scripts.
 	const idDict& vars = wrapper->GetVariableDict();
 	for( int i = 0; i < vars.GetNumKeyVals(); ++i )
 	{
@@ -84,7 +177,6 @@ bool rvGEItemScriptsDlg::Init()
 		text += wxString::FromUTF8( kv->GetValue().c_str() );
 		text += "\r\n";
 	}
-
 	if( vars.GetNumKeyVals() )
 	{
 		text += "\r\n";
@@ -105,12 +197,19 @@ bool rvGEItemScriptsDlg::Init()
 	}
 
 	m_edit->SetText( text );
+
+	ApplyStyles();
+
 	m_edit->GotoPos( 0 );
 	m_edit->SetFocus();
-
 	return true;
 }
 
+/*
+================
+rvGEItemScriptsDlg::Apply
+================
+*/
 bool rvGEItemScriptsDlg::Apply()
 {
 	rvGEWindowWrapper* wrapper = rvGEWindowWrapper::GetWrapper( m_window );
@@ -240,6 +339,11 @@ bool rvGEItemScriptsDlg::Apply()
 	return true;
 }
 
+/*
+================
+rvGEItemScriptsDlg::OnClose
+================
+*/
 void rvGEItemScriptsDlg::OnClose( wxCloseEvent& e )
 {
 	if( e.CanVeto() && !Apply() )
@@ -251,6 +355,11 @@ void rvGEItemScriptsDlg::OnClose( wxCloseEvent& e )
 	e.Skip();
 }
 
+/*
+================
+rvGEItemScriptsDlg::OnCharHook
+================
+*/
 void rvGEItemScriptsDlg::OnCharHook( wxKeyEvent& e )
 {
 	if( e.GetKeyCode() == WXK_ESCAPE )
@@ -259,4 +368,197 @@ void rvGEItemScriptsDlg::OnCharHook( wxKeyEvent& e )
 		return;
 	}
 	e.Skip();
+}
+
+/*
+================
+rvGEItemScriptsDlg::BuildKeywordStyleMap
+================
+*/
+void rvGEItemScriptsDlg::BuildKeywordStyleMap( const wxFont& mono )
+{
+	m_colourToStyle.clear();
+	m_wordToStyle.clear();
+	m_nextStyle = STYLE_FIRST_KEYWORD;
+
+	for( int i = 0; i < m_keywords.GetCount(); ++i )
+	{
+		const SyntaxKeywords::Entry& e = m_keywords.GetEntry( i );
+
+		const unsigned char r = ( unsigned char )( e.color.x * 255.0f );
+		const unsigned char g = ( unsigned char )( e.color.y * 255.0f );
+		const unsigned char b = ( unsigned char )( e.color.z * 255.0f );
+
+		const unsigned long key = ( ( unsigned long )r << 16 ) |
+								  ( ( unsigned long )g <<  8 ) |
+								  ( unsigned long )b;
+
+		int style;
+		auto it = m_colourToStyle.find( key );
+		if( it == m_colourToStyle.end() )
+		{
+			if( m_nextStyle >= 32 )
+			{
+				style = m_nextStyle - 1;
+			}
+			else
+			{
+				style = m_nextStyle++;
+				m_edit->StyleSetFont( style, mono );
+				m_edit->StyleSetBold( style, true );
+				m_edit->StyleSetBackground( style, *wxWHITE );
+				m_edit->StyleSetForeground( style, wxColour( r, g, b ) );
+				m_colourToStyle[key] = style;
+			}
+		}
+		else
+		{
+			style = it->second;
+		}
+
+		m_wordToStyle[wxString::FromUTF8( e.name.c_str() )] = style;
+	}
+}
+
+/*
+================
+rvGEItemScriptsDlg::OnStyleNeeded
+================
+*/
+void rvGEItemScriptsDlg::OnStyleNeeded( wxStyledTextEvent& /*e*/ )
+{
+	ApplyStyles();
+}
+
+/*
+================
+rvGEItemScriptsDlg::ApplyStyles
+
+Walks the buffer and stamps out style runs.
+================
+*/
+void rvGEItemScriptsDlg::ApplyStyles()
+{
+	if( !m_edit )
+	{
+		return;
+	}
+
+	const int len = m_edit->GetTextLength();
+	if( len <= 0 )
+	{
+		return;
+	}
+
+	const wxString text = m_edit->GetText();
+	const int n = ( int )text.length();
+
+	m_edit->StartStyling( 0 );
+
+	int i = 0;
+	int defaultStart = 0;   // first byte of the current un-styled run
+
+	auto flushDefault = [&]( int end )
+	{
+		if( end > defaultStart )
+		{
+			m_edit->SetStyling( end - defaultStart, STYLE_DEFAULT );
+		}
+	};
+
+	while( i < n )
+	{
+		const wxUniChar c = text[i];
+
+		// line comments
+		if( c == '/' && i + 1 < n && text[i + 1] == '/' )
+		{
+			flushDefault( i );
+			int end = i;
+			while( end < n && text[end] != '\n' )
+			{
+				++end;
+			}
+			m_edit->SetStyling( end - i, STYLE_COMMENT );
+			i = end;
+			defaultStart = i;
+			continue;
+		}
+
+		// identifiers / keywords
+		if( wxIsalpha( c ) || c == '_' )
+		{
+			int end = i;
+			while( end < n && ( wxIsalnum( text[end] ) || text[end] == '_' ) )
+			{
+				++end;
+			}
+
+			const wxString word = text.Mid( i, end - i );
+			auto it = m_wordToStyle.find( word );
+			if( it != m_wordToStyle.end() )
+			{
+				flushDefault( i );
+				m_edit->SetStyling( end - i, it->second );
+				defaultStart = end;
+			}
+
+			i = end;
+			continue;
+		}
+
+		++i;
+	}
+
+	// Flush the tail.
+	flushDefault( n );
+}
+
+/*
+================
+rvGEItemScriptsDlg::OnDwellStart
+================
+*/
+void rvGEItemScriptsDlg::OnDwellStart( wxStyledTextEvent& e )
+{
+	if( !m_edit || m_keywords.GetCount() == 0 )
+	{
+		return;
+	}
+
+	int pos = e.GetPosition();
+	if( pos < 0 || pos >= m_edit->GetTextLength() )
+	{
+		return;
+	}
+
+	// Expand to the whole word under the cursor.
+	const int start = m_edit->WordStartPosition( pos, true );
+	const int end   = m_edit->WordEndPosition( pos, true );
+	if( start == end )
+	{
+		return;
+	}
+
+	const wxString word = m_edit->GetTextRange( start, end );
+	const SyntaxKeywords::Entry* entry = m_keywords.Find( word.utf8_str() );
+	if( !entry || entry->description.IsEmpty() )
+	{
+		return;
+	}
+
+	m_edit->CallTipShow( start, wxString::FromUTF8( entry->description.c_str() ) );
+}
+
+/*
+================
+rvGEItemScriptsDlg::OnDwellEnd
+================
+*/
+void rvGEItemScriptsDlg::OnDwellEnd( wxStyledTextEvent& /*e*/ )
+{
+	if( m_edit )
+	{
+		m_edit->CallTipCancel();
+	}
 }

@@ -73,6 +73,11 @@ public:
 		return sz;
 	}
 
+	static int GetCommandCount();
+	static const char* GetCommandName( int index );
+	static int GetCommandMinParms( int index );
+	static int GetCommandMaxParms( int index );
+
 	void WriteToSaveGame( idFile* savefile );
 	void ReadFromSaveGame( idFile* savefile );
 

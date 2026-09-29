@@ -1,0 +1,216 @@
+keywords
+{
+	//
+	// Language keywords
+	//
+	{ "if",                (  0,   0, 220), "Conditional branch. Followed by a braced expression and a brace-delimited body." }
+	{ "else",              (  0,   0, 220), "Alternative branch following an if block." }
+	{ "while",             (  0,   0, 220), "Loop keyword. Present in the parser for completeness, rarely used in gui scripts." }
+	{ "do",                (  0,   0, 220), "Loop keyword. Present in the parser for completeness." }
+	{ "return",            (  0,   0, 220), "Return from the current script block." }
+	{ "true",              (200,   0, 200), "Boolean literal 1." }
+	{ "false",             (200,   0, 200), "Boolean literal 0." }
+	{ "null",              (200,   0, 200), "Null / empty value." }
+
+	//
+	// Window types
+	//
+	{ "windowDef",         (128,   0, 128), "Generic window. Also used purely for grouping child windows." }
+	{ "animationDef",      (128,   0, 128), "Hidden window with a zero rect. Holds onTime and onNamedEvent scripts that have no visual representation." }
+	{ "editDef",           (128,   0, 128), "Editable text field. Supports cvar binding, numeric input, password masking, and word wrap." }
+	{ "choiceDef",         (128,   0, 128), "Cycling choice widget. Writes the current index or value to a cvar or gui:: state var." }
+	{ "sliderDef",         (128,   0, 128), "Slider or scrollbar. Binds a value between low and high to a cvar or buddy window." }
+	{ "bindDef",           (128,   0, 128), "Key-bind capture widget. Captures the next key press and issues bind or clearbind." }
+	{ "listDef",           (128,   0, 128), "Multi-column list. Feed its contents from game code via an idListGUI." }
+	{ "fieldDef",          (128,   0, 128), "Read-only text field. Reads its cursor position from a gui:: state var." }
+	{ "renderDef",         (128,   0, 128), "3D model preview. Renders a model with a movable light and an optional animation." }
+	{ "gameSSDDef",        (128,   0, 128), "Super Shotgun Derby arcade minigame." }
+	{ "gameBearShootDef",  (128,   0, 128), "BearShoot arcade minigame." }
+	{ "gameBustOutDef",    (128,   0, 128), "Hell Bust-Out brick-breaker arcade minigame." }
+
+	//
+	// Variables
+	//
+	{ "definefloat",       (220, 120,   0), "Declare a float variable local to this window. The value is parsed as a full expression." }
+	{ "definevec4",        (220, 120,   0), "Declare a vec4 variable on the desktop. The value is four comma-separated expressions." }
+	{ "float",             (220, 120,   0), "Declare a float variable. Alias of definefloat." }
+
+	//
+	// Script block openers
+	//
+	{ "onNamedEvent",      (  0,   0, 180), "Defines a handler for a custom named event fired by HandleNamedEvent." }
+	{ "onTime",            (  0,   0, 180), "Runs the following block once, N milliseconds after the window's timeline starts." }
+
+	//
+	// Built-in event scripts
+	//
+	{ "onMouseEnter",      (  0,   0, 180), "Fires when the mouse cursor enters this window's drawRect." }
+	{ "onMouseExit",       (  0,   0, 180), "Fires when the mouse cursor leaves this window's drawRect." }
+	{ "onAction",          (  0,   0, 180), "Fires on primary click or Enter. The command string is appended to the gui command buffer." }
+	{ "onActionRelease",   (  0,   0, 180), "Fires when the primary click or Enter is released." }
+	{ "onActivate",        (  0,   0, 180), "Fires when the containing gui is activated via gui->Activate(true)." }
+	{ "onDeactivate",      (  0,   0, 180), "Fires when the containing gui is deactivated." }
+	{ "onESC",             (  0,   0, 180), "Fires when Escape is pressed while this window has focus." }
+	{ "onEvent",           (  0,   0, 180), "Fires every frame while the containing gui is active. Named ON_FRAME in code." }
+	{ "onTrigger",         (  0,   0, 180), "Fires from gui->Trigger(). Used to chain sub-guis from scripted events." }
+	{ "onEnter",           (  0,   0, 180), "Fires when Enter is pressed inside an embedded edit field." }
+	{ "onEnterRelease",    (  0,   0, 180), "Fires when Enter is released inside an embedded edit field." }
+
+	//
+	// Script commands
+	//
+	{ "set",               (180,   0,   0), "Assigns a value to a winvar. Special-cased for the name cmd, which appends the remaining arguments to the command buffer." }
+	{ "setFocus",          (180,   0,   0), "Gives keyboard focus to the named window." }
+	{ "endGame",           (180,   0,   0), "Queues a disconnect command." }
+	{ "resetTime",         (180,   0,   0), "Resets the named window's timeline, or this window's if no name is given, to the supplied millisecond offset." }
+	{ "showCursor",        (180,   0,   0), "Toggles the GUI cursor by setting or clearing WIN_NOCURSOR on the desktop." }
+	{ "resetCinematics",   (180,   0,   0), "Resets the cinematic start time of this window's background material." }
+	{ "transition",        (180,   0,   0), "Starts an accel and decel interpolation of a rect, vec4, or float var from one value to another over time." }
+	{ "localSound",        (180,   0,   0), "Plays a sound immediately through the sound world without touching the command buffer." }
+	{ "runScript",         (180,   0,   0), "Appends runScript NAME ; to the command buffer, chaining another gui script." }
+	{ "evalRegs",          (180,   0,   0), "Forces an immediate re-evaluation of all expression registers on this window." }
+
+	//
+	// Generic window properties 
+	//
+	{ "showtime",          (  0, 128,   0), "Debug flag WIN_SHOWTIME. Draws elapsed time and the gui source file in the top corner." }
+	{ "showcoords",        (  0, 128,   0), "Debug flag WIN_SHOWCOORDS. Draws the window origin and current cursor position." }
+	{ "forceaspectwidth",  (  0, 128,   0), "Virtual screen width used to scale the gui. Default is 640." }
+	{ "forceaspectheight", (  0, 128,   0), "Virtual screen height used to scale the gui. Default is 480." }
+	{ "matscalex",         (  0, 128,   0), "Horizontal texture scale applied to the background material." }
+	{ "matscaley",         (  0, 128,   0), "Vertical texture scale applied to the background material." }
+	{ "bordersize",        (  0, 128,   0), "Thickness of the border drawn around this window's client rect." }
+	{ "nowrap",            (  0, 128,   0), "Sets WIN_NOWRAP. Disables word wrap, so long text is clipped instead of wrapping." }
+	{ "shadow",            (  0, 128,   0), "Text shadow offset in pixels. Set to 0 to disable the shadow." }
+	{ "textalign",         (  0, 128,   0), "Text alignment. 0 is left, 1 is center, 2 is right." }
+	{ "textalignx",        (  0, 128,   0), "Horizontal offset applied to the text rect inside the client rect." }
+	{ "textaligny",        (  0, 128,   0), "Vertical offset applied to the text rect inside the client rect." }
+	{ "shear",             (  0, 128,   0), "Shear transform applied around the window origin. Two comma-separated floats." }
+	{ "wantenter",         (  0, 128,   0), "Sets WIN_WANTENTER. If true, Enter fires onAction and onActionRelease on this window." }
+	{ "naturalmatscale",   (  0, 128,   0), "Sets WIN_NATURALMAT. Scales the background to exactly one texel per screen pixel of the draw rect." }
+	{ "noclip",            (  0, 128,   0), "Sets WIN_NOCLIP. Disables clipping of child windows during redraw." }
+	{ "nocursor",          (  0, 128,   0), "Sets WIN_NOCURSOR. Hides the GUI cursor while it is over this window." }
+	{ "menugui",           (  0, 128,   0), "Sets WIN_MENUGUI. Marks the gui as a menu gui, which affects cursor sizing and menu-specific behaviour." }
+	{ "modal",             (  0, 128,   0), "Sets WIN_MODAL. Blocks input from reaching windows behind this one." }
+	{ "invertrect",        (  0, 128,   0), "Sets WIN_INVERTRECT. Draws the rect extending up and left from the origin instead of down and right." }
+	{ "name",              (  0, 128,   0), "Identifier for this window. Used by FindChildByName and gui:: state lookups." }
+	{ "comment",           (  0, 128,   0), "Free-form comment, usually shown by the editor." }
+	{ "font",              (  0, 128,   0), "Font asset used for this window's text." }
+	{ "play",              (  0, 128,   0), "Legacy: plays a cinematic on the gui. Warned and ignored in BFG." }
+
+	//
+	// WinVars
+	//
+	{ "forecolor",         (  0, 100, 180), "RGBA text colour." }
+	{ "hovercolor",        (  0, 100, 180), "RGBA colour used when the window is hovered or has focus." }
+	{ "backcolor",         (  0, 100, 180), "RGBA background fill colour drawn before the background material." }
+	{ "matcolor",          (  0, 100, 180), "RGBA tint applied to the background material." }
+	{ "bordercolor",       (  0, 100, 180), "RGBA border colour." }
+	{ "textscale",         (  0, 100, 180), "Scale factor applied to the font. Default is 0.35." }
+	{ "text",              (  0, 100, 180), "String drawn inside the window. Supports inline colour codes." }
+	{ "rect",              (  0, 100, 180), "Window position and size, written as x y w h." }
+	{ "visible",           (  0, 100, 180), "If false, this window and all its children are skipped during redraw." }
+	{ "noevents",          (  0, 100, 180), "If true, this window ignores all mouse and keyboard events." }
+	{ "notime",            (  0, 100, 180), "Disables timeline processing for this window." }
+	{ "rotate",            (  0, 100, 180), "Clockwise rotation in degrees around the window origin." }
+	{ "scale",             (  0, 100, 180), "Texture UV scale, written as x y, applied to background materials." }
+	{ "translate",         (  0, 100, 180), "Texture UV translation, written as x y, applied to background materials." }
+	{ "background",        (  0, 100, 180), "Background material. An empty string means no background is drawn." }
+	{ "backGroundName",    (  0, 100, 180), "Alias for background. Both names resolve to the same winvar." }
+	{ "varbackground",     (  0, 100, 180), "Name of a gui:: state var whose value selects the background material at runtime." }
+	{ "runscript",         (  0, 100, 180), "Legacy script hook. Use onAction instead." }
+	{ "hidecursor",        (  0, 100, 180), "If true, hides the GUI cursor while this window is drawn." }
+	{ "hideCursor",        (  0, 100, 180), "Case variant alias of hidecursor." }
+
+	//
+	// RenderWindow vars
+	//
+	{ "model",             (  0, 100, 180), "Path of the model to render inside this window." }
+	{ "anim",              (  0, 100, 180), "Name of the animation to play from the entityDef named by animClass." }
+	{ "animClass",         (  0, 100, 180), "entityDef used to look up the animation named by anim." }
+	{ "modelOrigin",       (  0, 100, 180), "Position offset applied to the model, written as x y z." }
+	{ "modelRotate",       (  0, 100, 180), "Rotation applied to the model, written as pitch yaw roll." }
+	{ "lightOrigin",       (  0, 100, 180), "Position of the preview light, written as x y z." }
+	{ "lightColor",        (  0, 100, 180), "RGB colour of the preview light." }
+	{ "viewOffset",        (  0, 100, 180), "Camera position for the preview, written as x y z." }
+	{ "needsRender",       (  0, 100, 180), "When true, the render world is rebuilt on the next draw. Reset to false by the engine." }
+
+	//
+	// SliderWindow vars
+	//
+	{ "stepsize",          (  0, 100, 180), "Amount added or removed from value per arrow key press." }
+	{ "step",              (  0, 100, 180), "Alias for stepsize." }
+	{ "low",               (  0, 100, 180), "Minimum slider value." }
+	{ "high",              (  0, 100, 180), "Maximum slider value." }
+	{ "vertical",          (  0, 100, 180), "If true, the slider runs bottom to top instead of left to right." }
+	{ "verticalflip",      (  0, 100, 180), "Reverses the direction of a vertical slider." }
+	{ "scrollbar",         (  0, 100, 180), "If true, the thumb is drawn flush to the edges rather than centred." }
+	{ "thumbshader",       (  0, 100, 180), "Material used for the slider thumb." }
+	{ "value",             (  0, 100, 180), "Current value. Written back to the bound cvar or buddy window." }
+
+	//
+	// EditWindow and FieldWindow vars
+	//
+	{ "maxchars",          (  0, 100, 180), "Maximum number of characters the user can type. 0 falls back to the field default." }
+	{ "numeric",           (  0, 100, 180), "If true, only digits and the decimal point are accepted." }
+	{ "wrap",              (  0, 100, 180), "Enables word wrap and a vertical scroller." }
+	{ "readonly",          (  0, 100, 180), "If true, the text cannot be edited." }
+	{ "forceScroll",       (  0, 100, 180), "Keeps the scroller pinned to the bottom on every update." }
+	{ "source",            (  0, 100, 180), "Loads the initial contents of the field from a file." }
+	{ "password",          (  0, 100, 180), "Masks the contents with asterisks." }
+	{ "cvarMax",           (  0, 100, 180), "Clamps the bound integer cvar to this maximum." }
+	{ "cursorvar",         (  0, 100, 180), "Name of a gui:: state var holding the cursor position, for fieldDef." }
+	{ "showcursor",        (  0, 100, 180), "If true, the cursor is drawn even when the field lacks focus." }
+
+	//
+	// ChoiceWindow vars
+	//
+	{ "choicetype",        (  0, 100, 180), "0 stores the index in the cvar, 1 stores the selected value." }
+	{ "currentchoice",     (  0, 100, 180), "Index of the currently selected choice." }
+	{ "choices",           (  0, 100, 180), "Semicolon-separated list of display strings." }
+	{ "values",            (  0, 100, 180), "Semicolon-separated list of values written to the cvar when choicetype is 1." }
+	{ "choiceVar",         (  0, 100, 180), "Name of a gui:: state var used to store the current choice." }
+
+	//
+	// Bind and cvar shared vars
+	//
+	{ "bind",              (  0, 100, 180), "Name of the bind that this widget edits." }
+	{ "cvar",              (  0, 100, 180), "Name of the cvar this widget reads from and writes to." }
+	{ "cvarGroup",         (  0, 100, 180), "Name used by cvar read and cvar write events to refresh a whole group of widgets at once." }
+	{ "liveUpdate",        (  0, 100, 180), "If true, the cvar is written on every change instead of only on activate." }
+
+	//
+	// ListWindow vars
+	//
+	{ "horizontal",        (  0, 100, 180), "If true, the list scrolls horizontally." }
+	{ "listname",          (  0, 100, 180), "Prefix used for the gui:: state vars that feed this list." }
+	{ "tabstops",          (  0, 100, 180), "Comma-separated X offsets for each column." }
+	{ "tabaligns",         (  0, 100, 180), "Comma-separated alignments for each column. 0 is left, 1 center, 2 right." }
+	{ "tabvaligns",        (  0, 100, 180), "Comma-separated vertical alignments for each column. 0 is top, 1 center, 2 bottom." }
+	{ "tabTypes",          (  0, 100, 180), "Comma-separated column types. 0 is text, 1 is icon." }
+	{ "tabIconSizes",      (  0, 100, 180), "Comma-separated width and height for icons in each column." }
+	{ "tabIconVOffset",    (  0, 100, 180), "Comma-separated vertical offsets applied to icons in each column." }
+	{ "multipleSel",       (  0, 100, 180), "If true, the user can select multiple rows with Ctrl." }
+
+	//
+	// Arcade game vars
+	//
+	{ "gamerunning",       (  0, 100, 180), "True while the arcade game is active." }
+	{ "onFire",            (  0, 100, 180), "Set to true by the gui to fire the current projectile." }
+	{ "onContinue",        (  0, 100, 180), "Set to true by the gui to resume after game over." }
+	{ "onNewGame",         (  0, 100, 180), "Set to true by the gui to start a fresh game." }
+	{ "onNewLevel",        (  0, 100, 180), "Set to true by the gui to advance to the next level." }
+	{ "numLevels",         (  0, 100, 180), "Number of board images available to the brick-breaker game." }
+	{ "beginLevel",        (  0, 100, 180), "Set to true to start the level given by nextLevel." }
+	{ "resetGame",         (  0, 100, 180), "Set to true to reset all scores and stats." }
+	{ "continueGame",      (  0, 100, 180), "Set to true to resume after game over with restored health." }
+	{ "refreshGuiData",    (  0, 100, 180), "Set to true to force an immediate gui state refresh." }
+	{ "levelcount",        (  0, 100, 180), "Number of level data blocks that follow." }
+	{ "weaponCount",       (  0, 100, 180), "Number of weapon data blocks that follow." }
+
+	//
+	// Misc keywords
+	//
+	{ "time",              (200,   0, 200), "Current gui time in milliseconds. Usable in any expression." }
+	{ "gui",               (200,   0, 200), "Prefix for gui state vars, for example gui::player_health." }
+}

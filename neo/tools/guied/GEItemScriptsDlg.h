@@ -44,13 +44,29 @@ public:
 private:
 	bool Init();
 	bool Apply();
+	void ApplyStyles();
+	void BuildKeywordStyleMap( const wxFont& mono );
 
 	void OnClose( wxCloseEvent& e );
 	void OnCharHook( wxKeyEvent& e );
+	void OnStyleNeeded( wxStyledTextEvent& e );
+	void OnDwellStart( wxStyledTextEvent& e );
+	void OnDwellEnd( wxStyledTextEvent& e );
 
-	idWindow*           m_window = nullptr;
-	wxStyledTextCtrl*   m_edit = nullptr;
-	bool                m_applied = false;
+	wxStyledTextCtrl* m_edit;
+	idWindow* m_window;
+	SyntaxKeywords m_keywords;
+	bool m_applied;
+	std::map<unsigned long, int> m_colourToStyle;
+	int m_nextStyle;
+	std::map<wxString, int> m_wordToStyle;
+
+	enum
+	{
+		STYLE_DEFAULT = 0,
+		STYLE_COMMENT = 1,
+		STYLE_FIRST_KEYWORD = 2
+	};
 };
 
 #endif /* !__GEITEMSCRIPTSDLG_H__ */
