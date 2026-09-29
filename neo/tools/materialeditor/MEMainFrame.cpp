@@ -42,6 +42,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "FindDialog.h"
 #include "../common/ToolBarStrip.h"
 #include "../common/AboutDialog.h"
+#include "../common/ImageUtils.h"
 
 static const char* const PANE_PREVIEW = "preview";
 static const char* const PANE_TREE = "tree";
@@ -77,10 +78,16 @@ MEMainFrame::MEMainFrame()
 {
 	searchData.searched = false;
 
+	const wxIcon icon = ImageUtils::IconFromRelativePath( "editors/icons/MaterialEditor.ico" );
+	if( icon.IsOk() )
+	{
+		SetIcon( icon );
+	}
+
 	// Load the material property definitions from MaterialEditorDefs.med.
 	MaterialDefManager::InitializeMaterialDefLists();
 
-	// Load persisted options (layout, window placement, etc).
+	// Load persisted options (layout, window placement, etc.).
 	options.Load();
 
 	// Tell AUI to manage this frame before restoring the saved perspective.
@@ -284,6 +291,12 @@ MEMainFrame::~MEMainFrame
 */
 MEMainFrame::~MEMainFrame()
 {
+	extern MEMainFrame* meMainFrame;
+	if( meMainFrame == this )
+	{
+		meMainFrame = NULL;
+	}
+
 	if( m_find )
 	{
 		m_find->Destroy();
@@ -1001,6 +1014,7 @@ void MEMainFrame::OnAbout( wxCommandEvent& )
 		wxString::Format( "Build %d - %s %s (x%u Build)", BUILD_NUMBER, ID__DATE__, ID__TIME__, ( unsigned int )( sizeof( void* ) * 8 ) ),
 		"Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company." );
 
+	dlg.SetIcon( GetIcon() );
 	dlg.CenterOnParent();
 	dlg.ShowModal();
 }

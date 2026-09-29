@@ -93,17 +93,17 @@ private:
 	idStr                   m_currentMaterialName;
 };
 
-ID_INLINE StageView*              MaterialEditView::GetStageView()
+ID_INLINE StageView* MaterialEditView::GetStageView()
 {
 	return m_stageView;
 }
 
-ID_INLINE MaterialPropTreeView*   MaterialEditView::GetMaterialPropTreeView()
+ID_INLINE MaterialPropTreeView* MaterialEditView::GetMaterialPropTreeView()
 {
 	return m_materialPropertyView;
 }
 
-ID_INLINE wxSplitterWindow*       MaterialEditView::GetEditSplitter()
+ID_INLINE wxSplitterWindow* MaterialEditView::GetEditSplitter()
 {
 	return m_editSplitter;
 }

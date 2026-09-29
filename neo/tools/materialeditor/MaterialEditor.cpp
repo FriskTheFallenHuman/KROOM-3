@@ -37,6 +37,8 @@ If you have questions concerning this license or the applicable additional terms
 
 MEMainFrame* meMainFrame = NULL;
 
+static bool s_meActive = false;
+
 /*
 ============================================
 
@@ -91,6 +93,11 @@ Initializes the material editor tool.
 */
 void MaterialEditorInit()
 {
+	if( s_meActive )
+	{
+		return;
+	}
+
 	com_editors = EDITOR_MATERIAL;
 
 	common->ActivateTool( true );
@@ -117,6 +124,8 @@ void MaterialEditorInit()
 
 	rRenderContext.Disable();
 
+	s_meActive = true;
+
 	// hide the doom window by default
 	Sys_ShowWindow( false );
 }
@@ -130,8 +139,15 @@ Called every frame by the doom engine to allow the material editor to process me
 */
 void MaterialEditorRun()
 {
-	if( !wxTheApp )
+	if( !wxTheApp || !s_meActive )
 	{
+		return;
+	}
+
+	if( !meMainFrame )
+	{
+		MaterialEditorShutdown();
+		common->Quit();
 		return;
 	}
 
@@ -152,6 +168,12 @@ Called from the engine's tool dispatch when the editor is closed.
 */
 void MaterialEditorShutdown()
 {
+	if( !s_meActive )
+	{
+		return;
+	}
+	s_meActive = false;
+
 	if( meMainFrame )
 	{
 		meMainFrame->Destroy();
