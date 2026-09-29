@@ -521,8 +521,9 @@ void rvDebuggerWindow::ProcessNetMessage( idBitMsg* msg )
 
 		case DBMSG_PRINT:
 		{
-			const char* text = ( const char* )msg->GetReadData() + msg->GetReadCount();
-			m_consoleWidget->AddText( text );
+			idStr text;
+			msg->ReadString( text );
+			m_consoleWidget->AddText( text.c_str() );
 			break;
 		}
 

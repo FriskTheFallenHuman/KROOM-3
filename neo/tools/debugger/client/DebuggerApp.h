@@ -87,6 +87,8 @@ protected:
 	bool				mIsInitialized;
 	wxTimer*			mNetworkPollTimer;
 
+	wxAppConsole*		mPrevWxApp;
+
 private:
 	void	OnNetworkPollTimer( wxTimerEvent& event );
 };

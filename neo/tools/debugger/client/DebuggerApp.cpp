@@ -97,6 +97,7 @@ rvDebuggerApp::rvDebuggerApp()
 
 	mDebuggerWindow = NULL;
 	mIsInitialized  = false;
+	mPrevWxApp      = NULL;
 }
 
 /*
@@ -108,7 +109,9 @@ rvDebuggerApp::~rvDebuggerApp()
 {
 	if( mIsInitialized )
 	{
-		wxEntryCleanup();
+		wxUninitialize();
+		wxApp::SetInstance( mPrevWxApp );
+		mIsInitialized = false;
 	}
 }
 
@@ -121,10 +124,12 @@ Initializes the debugger application by creating the debugger window
 */
 bool rvDebuggerApp::Initialize()
 {
+	mPrevWxApp = wxApp::GetInstance();
 	wxApp::SetInstance( new rvDebuggerMainApp() );
 	if( !wxInitialize() )
 	{
 		common->Error( "rvDebuggerApp::Initialize: wxInitialize failed" );
+		wxApp::SetInstance( mPrevWxApp );
 		return false;
 	}
 
@@ -198,6 +203,10 @@ int rvDebuggerApp::Run()
 		mDebuggerWindow->Destroy();
 		mDebuggerWindow = NULL;
 	}
+
+	wxUninitialize();
+	wxApp::SetInstance( mPrevWxApp );
+	mIsInitialized = false;
 
 	return result;
 }
