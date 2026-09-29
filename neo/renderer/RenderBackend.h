@@ -260,7 +260,6 @@ public:
 	void				Shutdown();
 
 	void				ExecuteBackEndCommands( const emptyCommand_t* cmds );
-	void				GL_BlockingSwapBuffers();
 
 	void				Print();
 	void				CheckCVars();
@@ -321,13 +320,16 @@ private:
 	void				MotionBlur();
 	void				PostProcess( const void* data );
 
-private:
+	void				SetBuffer( const void* data );
+
+public:
+	void				GL_BlockingSwapBuffers();
+
 	void				GL_StartFrame();
 	void				GL_EndFrame();
 
-public:
 	uint64				GL_GetCurrentState() const;
-private:
+
 	uint64				GL_GetCurrentStateMinusStencil() const;
 	void				GL_SetDefaultState();
 
@@ -387,8 +389,6 @@ private:
 	}
 
 //	void				GL_Color( float* color );
-
-	void				SetBuffer( const void* data );
 
 private:
 	void				DBG_SimpleSurfaceSetup( const drawSurf_t* drawSurf );

@@ -124,4 +124,132 @@ wxIcon IconFromEmbedded( const unsigned char* pixelData, unsigned int width, uns
 	return IconFromRaw( pixelData, ( int )width, ( int )height, ( int )bytesPerPixel );
 }
 
+wxBitmap BitmapFromRelativePath( const char* relativePath, const wxColour& transparentKey )
+{
+	if( !relativePath || !*relativePath )
+	{
+		return wxBitmap();
+	}
+
+	if( !fileSystem )
+	{
+		return wxBitmap();
+	}
+
+	void* buffer = NULL;
+	const int len = fileSystem->ReadFile( relativePath, &buffer, NULL );
+	if( len <= 0 || buffer == NULL )
+	{
+		return wxBitmap();
+	}
+
+	wxMemoryInputStream stream( buffer, len );
+
+	wxImage image;
+	const bool decoded = image.LoadFile( stream, wxBITMAP_TYPE_ANY );
+
+	fileSystem->FreeFile( buffer );
+
+	if( !decoded || !image.IsOk() )
+	{
+		return wxBitmap();
+	}
+
+	if( !image.HasAlpha() )
+	{
+		wxColour key = transparentKey;
+		if( !key.IsOk() )
+		{
+			key = wxColour( image.GetRed( 0, 0 ), image.GetGreen( 0, 0 ), image.GetBlue( 0, 0 ) );
+		}
+
+		image.InitAlpha();
+
+		const int w = image.GetWidth();
+		const int h = image.GetHeight();
+
+		const unsigned char kr = key.Red();
+		const unsigned char kg = key.Green();
+		const unsigned char kb = key.Blue();
+
+		for( int y = 0; y < h; ++y )
+		{
+			for( int x = 0; x < w; ++x )
+			{
+				if( image.GetRed( x, y )   == kr && image.GetGreen( x, y ) == kg && image.GetBlue( x, y )  == kb )
+				{
+					image.SetAlpha( x, y, 0 );
+				}
+			}
+		}
+	}
+
+	// 32-bit depth preserves the alpha channel.
+	return wxBitmap( image, 32 );
+}
+
+wxIcon IconFromRelativePath( const char* relativePath, const wxColour& transparentKey )
+{
+	const wxBitmap bmp = BitmapFromRelativePath( relativePath, transparentKey );
+	if( !bmp.IsOk() )
+	{
+		return wxIcon();
+	}
+
+	wxIcon icon;
+	icon.CopyFromBitmap( bmp );
+	return icon;
+}
+
+#ifdef __WXMSW__
+wxIconBundle ImageUtils::IconBundleFromRelativePath( const char* relativePath, const std::vector<int>& sizes, const wxColour& transparentKey )
+{
+	wxIconBundle bundle;
+
+	wxBitmap base = BitmapFromRelativePath( relativePath, transparentKey );
+	if( !base.IsOk() )
+	{
+		return bundle;
+	}
+
+	const int srcW = base.GetWidth();
+	const int srcH = base.GetHeight();
+
+	for( int s : sizes )
+	{
+		// Skip sizes we can't build without upscaling the source.
+		if( s > srcW || s > srcH )
+		{
+			continue;
+		}
+
+		wxImage img = base.ConvertToImage();
+		if( s != srcW || s != srcH )
+		{
+			img = img.Scale( s, s, wxIMAGE_QUALITY_HIGH );
+		}
+
+		wxIcon icon;
+		icon.CopyFromBitmap( wxBitmap( img, 32 ) );
+		if( icon.IsOk() )
+		{
+			bundle.AddIcon( icon );
+		}
+	}
+
+	// fall back to the native size.
+	if( bundle.GetIconCount() == 0 )
+	{
+		wxIcon fallback;
+		fallback.CopyFromBitmap( base );
+		if( fallback.IsOk() )
+		{
+			bundle.AddIcon( fallback );
+		}
+	}
+
+	return bundle;
+}
+#endif
+
 } // namespace ImageUtils

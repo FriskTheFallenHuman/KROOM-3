@@ -344,6 +344,73 @@ void idRegisterList::AddReg( const char* name, int type, idTokenParser* src, idW
 
 /*
 ====================
+idRegisterList::AddReg
+====================
+*/
+void idRegisterList::AddReg( const char* name, int type, idParser* src, idWindow* win, idWinVar* var )
+{
+	idRegister* reg;
+
+	reg = FindReg( name );
+
+	if( reg == NULL )
+	{
+		assert( type >= 0 && type < idRegister::NUMTYPES );
+		int numRegs = idRegister::REGCOUNT[type];
+		reg = new( TAG_OLD_UI ) idRegister( name, type );
+		reg->var = var;
+		if( type == idRegister::STRING )
+		{
+			idToken tok;
+			if( src->ReadToken( &tok ) )
+			{
+				tok = idLocalization::GetString( tok );
+				var->Init( tok, win );
+			}
+		}
+		else
+		{
+			for( int i = 0; i < numRegs; i++ )
+			{
+				reg->regs[i] = win->ParseExpression( src, NULL );
+				if( i < numRegs - 1 )
+				{
+					src->ExpectTokenString( "," );
+				}
+			}
+		}
+		int hash = regHash.GenerateKey( name, false );
+		regHash.Add( hash, regs.Append( reg ) );
+	}
+	else
+	{
+		int numRegs = idRegister::REGCOUNT[type];
+		reg->var = var;
+		if( type == idRegister::STRING )
+		{
+			idToken tok;
+			if( src->ReadToken( &tok ) )
+			{
+				var->Init( tok, win );
+			}
+		}
+		else
+		{
+			for( int i = 0; i < numRegs; i++ )
+			{
+				reg->regs[i] = win->ParseExpression( src, NULL );
+				if( i < numRegs - 1 )
+				{
+					src->ExpectTokenString( "," );
+				}
+			}
+		}
+	}
+}
+
+
+/*
+====================
 idRegisterList::GetFromRegs
 ====================
 */

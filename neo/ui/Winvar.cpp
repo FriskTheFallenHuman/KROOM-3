@@ -44,6 +44,7 @@ idWinVar::~idWinVar()
 {
 	delete name;
 	name = NULL;
+	guiDict = NULL;
 }
 
 void idWinVar::SetGuiInfo( idDict* gd, const char* _name )

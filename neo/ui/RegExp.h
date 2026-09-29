@@ -92,6 +92,7 @@ public:
 	~idRegisterList();
 
 	void				AddReg( const char* name, int type, idTokenParser* src, idWindow* win, idWinVar* var );
+	void				AddReg( const char* name, int type, idParser* src, idWindow* win, idWinVar* var );
 	void				AddReg( const char* name, int type, idVec4 data, idWindow* win, idWinVar* var );
 
 	idRegister* 		FindReg( const char* name );

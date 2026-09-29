@@ -45,6 +45,10 @@ If you have questions concerning this license or the applicable additional terms
 #include "GameBearShootWindow.h"
 #include "GameBustOutWindow.h"
 
+#ifdef ID_ALLOW_TOOLS
+	#include "tools/guied/GEWindowWrapper.h"
+#endif
+
 bool idWindow::registerIsTemporary[MAX_EXPRESSION_REGISTERS];		// statics to assist during parsing
 //float idWindow::shaderRegisters[MAX_EXPRESSION_REGISTERS];
 //wexpOp_t idWindow::shaderOps[MAX_EXPRESSION_OPS];
@@ -255,6 +259,7 @@ void idWindow::CleanUp()
 	namedEvents.DeleteContents( true );
 
 	drawWindows.Clear();
+	updateVars.Clear();
 	children.DeleteContents( true );
 	definedVars.DeleteContents( true );
 	timeLineEvents.DeleteContents( true );
@@ -1942,6 +1947,115 @@ bool idWindow::ParseScript( idTokenParser* src, idGuiScriptList& list, int* time
 
 /*
 ================
+idWindow::ParseScript
+================
+*/
+bool idWindow::ParseScript( idParser* src, idGuiScriptList& list, int* timeParm, bool elseBlock )
+{
+
+	bool	ifElseBlock = false;
+
+	idToken token;
+
+	// scripts start with { ( unless parm is true ) and have ; separated command lists.. commands are command,
+	// arg.. basically we want everything between the { } as it will be interpreted at
+	// run time
+
+	if( elseBlock )
+	{
+		src->ReadToken( &token );
+
+		if( !token.Icmp( "if" ) )
+		{
+			ifElseBlock = true;
+		}
+
+		src->UnreadToken( &token );
+
+		if( !ifElseBlock && !src->ExpectTokenString( "{" ) )
+		{
+			return false;
+		}
+	}
+	else if( !src->ExpectTokenString( "{" ) )
+	{
+		return false;
+	}
+
+	int nest = 0;
+
+	while( 1 )
+	{
+		if( !src->ReadToken( &token ) )
+		{
+			src->Error( "Unexpected end of file" );
+			return false;
+		}
+
+		if( token == "{" )
+		{
+			nest++;
+		}
+
+		if( token == "}" )
+		{
+			if( nest-- <= 0 )
+			{
+				return true;
+			}
+		}
+
+		idGuiScript* gs = new( TAG_OLD_UI ) idGuiScript();
+		if( token.Icmp( "if" ) == 0 )
+		{
+			gs->conditionReg = ParseExpression( src );
+			gs->ifList = new( TAG_OLD_UI ) idGuiScriptList();
+			ParseScript( src, *gs->ifList, NULL );
+			if( src->ReadToken( &token ) )
+			{
+				if( token == "else" )
+				{
+					gs->elseList = new( TAG_OLD_UI ) idGuiScriptList();
+					// pass true to indicate we are parsing an else condition
+					ParseScript( src, *gs->elseList, NULL, true );
+				}
+				else
+				{
+					src->UnreadToken( &token );
+				}
+			}
+
+			list.Append( gs );
+
+			// if we are parsing an else if then return out so
+			// the initial "if" parser can handle the rest of the tokens
+			if( ifElseBlock )
+			{
+				return true;
+			}
+			continue;
+		}
+		else
+		{
+			src->UnreadToken( &token );
+		}
+
+		// empty { } is not allowed
+		if( token == "{" )
+		{
+			src->Error( "Unexpected {" );
+			delete gs;
+			return false;
+		}
+
+		gs->Parse( src );
+		list.Append( gs );
+	}
+
+}
+
+/*
+================
 idWindow::SaveExpressionParseState
 ================
 */
@@ -1968,6 +2082,25 @@ idWindow::ParseScriptEntry
 ================
 */
 bool idWindow::ParseScriptEntry( const char* name, idTokenParser* src )
+{
+	for( int i = 0; i < SCRIPT_COUNT; i++ )
+	{
+		if( idStr::Icmp( name, ScriptNames[i] ) == 0 )
+		{
+			delete scripts[i];
+			scripts[i] = new( TAG_OLD_UI ) idGuiScriptList;
+			return ParseScript( src, *scripts[i] );
+		}
+	}
+	return false;
+}
+
+/*
+================
+idWindow::ParseScriptEntry
+================
+*/
+bool idWindow::ParseScriptEntry( const char* name, idParser* src )
 {
 	for( int i = 0; i < SCRIPT_COUNT; i++ )
 	{
@@ -2261,10 +2394,45 @@ void idWindow::ParseString( idTokenParser* src, idStr& out )
 
 /*
 ================
+idWindow::ParseString
+================
+*/
+void idWindow::ParseString( idParser* src, idStr& out )
+{
+	idToken tok;
+	if( src->ReadToken( &tok ) )
+	{
+		out = tok;
+	}
+}
+
+/*
+================
 idWindow::ParseVec4
 ================
 */
 void idWindow::ParseVec4( idTokenParser* src, idVec4& out )
+{
+	idToken tok;
+	src->ReadToken( &tok );
+	out.x = atof( tok );
+	src->ExpectTokenString( "," );
+	src->ReadToken( &tok );
+	out.y = atof( tok );
+	src->ExpectTokenString( "," );
+	src->ReadToken( &tok );
+	out.z = atof( tok );
+	src->ExpectTokenString( "," );
+	src->ReadToken( &tok );
+	out.w = atof( tok );
+}
+
+/*
+================
+idWindow::ParseVec4
+================
+*/
+void idWindow::ParseVec4( idParser* src, idVec4& out )
 {
 	idToken tok;
 	src->ReadToken( &tok );
@@ -2455,10 +2623,259 @@ bool idWindow::ParseInternalVar( const char* _name, idTokenParser* src )
 
 /*
 ================
+idWindow::ParseInternalVar
+================
+*/
+bool idWindow::ParseInternalVar( const char* _name, idParser* src )
+{
+
+	if( idStr::Icmp( _name, "showtime" ) == 0 )
+	{
+		if( src->ParseBool() )
+		{
+			flags |= WIN_SHOWTIME;
+		}
+		return true;
+	}
+	if( idStr::Icmp( _name, "showcoords" ) == 0 )
+	{
+		if( src->ParseBool() )
+		{
+			flags |= WIN_SHOWCOORDS;
+		}
+		return true;
+	}
+	if( idStr::Icmp( _name, "forceaspectwidth" ) == 0 )
+	{
+		forceAspectWidth = src->ParseFloat();
+		return true;
+	}
+	if( idStr::Icmp( _name, "forceaspectheight" ) == 0 )
+	{
+		forceAspectHeight = src->ParseFloat();
+		return true;
+	}
+	if( idStr::Icmp( _name, "matscalex" ) == 0 )
+	{
+		matScalex = src->ParseFloat();
+		return true;
+	}
+	if( idStr::Icmp( _name, "matscaley" ) == 0 )
+	{
+		matScaley = src->ParseFloat();
+		return true;
+	}
+	if( idStr::Icmp( _name, "bordersize" ) == 0 )
+	{
+		borderSize = src->ParseFloat();
+		return true;
+	}
+	if( idStr::Icmp( _name, "nowrap" ) == 0 )
+	{
+		if( src->ParseBool() )
+		{
+			flags |= WIN_NOWRAP;
+		}
+		return true;
+	}
+	if( idStr::Icmp( _name, "shadow" ) == 0 )
+	{
+		textShadow = src->ParseInt();
+		return true;
+	}
+	if( idStr::Icmp( _name, "textalign" ) == 0 )
+	{
+		textAlign = src->ParseInt();
+		return true;
+	}
+	if( idStr::Icmp( _name, "textalignx" ) == 0 )
+	{
+		textAlignx = src->ParseFloat();
+		return true;
+	}
+	if( idStr::Icmp( _name, "textaligny" ) == 0 )
+	{
+		textAligny = src->ParseFloat();
+		return true;
+	}
+	if( idStr::Icmp( _name, "shear" ) == 0 )
+	{
+		shear.x = src->ParseFloat();
+		idToken tok;
+		src->ReadToken( &tok );
+		if( tok.Icmp( "," ) )
+		{
+			src->Error( "Expected comma in shear definiation" );
+			return false;
+		}
+		shear.y = src->ParseFloat();
+		return true;
+	}
+	if( idStr::Icmp( _name, "wantenter" ) == 0 )
+	{
+		if( src->ParseBool() )
+		{
+			flags |= WIN_WANTENTER;
+		}
+		return true;
+	}
+	if( idStr::Icmp( _name, "naturalmatscale" ) == 0 )
+	{
+		if( src->ParseBool() )
+		{
+			flags |= WIN_NATURALMAT;
+		}
+		return true;
+	}
+	if( idStr::Icmp( _name, "noclip" ) == 0 )
+	{
+		if( src->ParseBool() )
+		{
+			flags |= WIN_NOCLIP;
+		}
+		return true;
+	}
+	if( idStr::Icmp( _name, "nocursor" ) == 0 )
+	{
+		if( src->ParseBool() )
+		{
+			flags |= WIN_NOCURSOR;
+		}
+		return true;
+	}
+	if( idStr::Icmp( _name, "menugui" ) == 0 )
+	{
+		if( src->ParseBool() )
+		{
+			flags |= WIN_MENUGUI;
+		}
+		return true;
+	}
+	if( idStr::Icmp( _name, "modal" ) == 0 )
+	{
+		if( src->ParseBool() )
+		{
+			flags |= WIN_MODAL;
+		}
+		return true;
+	}
+	if( idStr::Icmp( _name, "invertrect" ) == 0 )
+	{
+		if( src->ParseBool() )
+		{
+			flags |= WIN_INVERTRECT;
+		}
+		return true;
+	}
+	if( idStr::Icmp( _name, "name" ) == 0 )
+	{
+		ParseString( src, name );
+		return true;
+	}
+	if( idStr::Icmp( _name, "play" ) == 0 )
+	{
+		common->Warning( "play encountered during gui parse.. see Robert\n" );
+		idStr playStr;
+		ParseString( src, playStr );
+		return true;
+	}
+	if( idStr::Icmp( _name, "comment" ) == 0 )
+	{
+		ParseString( src, comment );
+		return true;
+	}
+	if( idStr::Icmp( _name, "font" ) == 0 )
+	{
+		idStr fontStr;
+		ParseString( src, fontStr );
+		font = renderSystem->RegisterFont( fontStr );
+		return true;
+	}
+	return false;
+}
+
+/*
+================
 idWindow::ParseRegEntry
 ================
 */
 bool idWindow::ParseRegEntry( const char* name, idTokenParser* src )
+{
+	idStr work;
+	work = name;
+	work.ToLower();
+
+	// DG: second argument is a bool, so use false, not NULL
+	idWinVar* var = GetWinVarByName( work, false );
+	// DG end
+	if( var )
+	{
+		for( int i = 0; i < NumRegisterVars; i++ )
+		{
+			if( idStr::Icmp( work, RegisterVars[i].name ) == 0 )
+			{
+				regList.AddReg( work, RegisterVars[i].type, src, this, var );
+				return true;
+			}
+		}
+	}
+
+	// not predefined so just read the next token and add it to the state
+	idToken tok;
+	idVec4 v;
+	idWinInt* vari;
+	idWinFloat* varf;
+	idWinStr* vars;
+	if( src->ReadToken( &tok ) )
+	{
+		if( var )
+		{
+			var->Set( tok );
+			return true;
+		}
+		switch( tok.type )
+		{
+			case TT_NUMBER :
+				if( tok.subtype & TT_INTEGER )
+				{
+					vari = new( TAG_OLD_UI ) idWinInt();
+					*vari = atoi( tok );
+					vari->SetName( work );
+					definedVars.Append( vari );
+				}
+				else if( tok.subtype & TT_FLOAT )
+				{
+					varf = new( TAG_OLD_UI ) idWinFloat();
+					*varf = atof( tok );
+					varf->SetName( work );
+					definedVars.Append( varf );
+				}
+				else
+				{
+					vars = new( TAG_OLD_UI ) idWinStr();
+					*vars = tok;
+					vars->SetName( work );
+					definedVars.Append( vars );
+				}
+				break;
+			default :
+				vars = new( TAG_OLD_UI ) idWinStr();
+				*vars = tok;
+				vars->SetName( work );
+				definedVars.Append( vars );
+				break;
+		}
+	}
+
+	return true;
+}
+
+/*
+================
+idWindow::ParseRegEntry
+================
+*/
+bool idWindow::ParseRegEntry( const char* name, idParser* src )
 {
 	idStr work;
 	work = name;
@@ -2576,6 +2993,14 @@ bool idWindow::Parse( idTokenParser* src, bool rebuild )
 	src->ExpectAnyToken( &token );
 
 	bool ret = true;
+
+	// attach a window wrapper to the window if the gui editor is running
+#ifdef ID_ALLOW_TOOLS
+	if( com_editors & EDITOR_GUI )
+	{
+		new( TAG_OLD_UI ) rvGEWindowWrapper( this, rvGEWindowWrapper::WT_NORMAL );
+	}
+#endif
 
 	while( token != "}" )
 	{
@@ -2846,11 +3271,9 @@ bool idWindow::Parse( idTokenParser* src, bool rebuild )
 		}
 		else if( ParseScriptEntry( token, src ) )
 		{
-
 		}
 		else if( ParseInternalVar( token, src ) )
 		{
-
 		}
 		else
 		{
@@ -2871,6 +3294,476 @@ bool idWindow::Parse( idTokenParser* src, bool rebuild )
 
 	SetupFromState();
 	PostParse();
+
+	// hook into the main window parsing for the gui editor
+	// If we are in the gui editor then add the internal var to the
+	// the wrapper
+#ifdef ID_ALLOW_TOOLS
+	if( com_editors & EDITOR_GUI )
+	{
+		rvGEWindowWrapper::GetWrapper( this )->Finish( );
+	}
+#endif
+
+	return ret;
+}
+
+/*
+================
+idWindow::Parse
+================
+*/
+bool idWindow::Parse( idParser* src, bool rebuild )
+{
+	idToken token, token2, token3, token4, token5, token6, token7;
+	idStr work;
+
+	if( rebuild )
+	{
+		CleanUp();
+	}
+
+	drawWin_t dwt;
+
+	timeLineEvents.Clear();
+	transitions.Clear();
+
+	namedEvents.DeleteContents( true );
+
+	src->ExpectTokenType( TT_NAME, 0, &token );
+
+	SetInitialState( token );
+
+	src->ExpectTokenString( "{" );
+	src->ExpectAnyToken( &token );
+
+	bool ret = true;
+
+	// attach a window wrapper to the window if the gui editor is running
+#ifdef ID_ALLOW_TOOLS
+	if( com_editors & EDITOR_GUI )
+	{
+		new( TAG_OLD_UI ) rvGEWindowWrapper( this, rvGEWindowWrapper::WT_NORMAL );
+	}
+#endif
+
+	while( token != "}" )
+	{
+		// track what was parsed so we can maintain it for the guieditor
+		src->SetMarker( );
+
+		if( token == "windowDef" || token == "animationDef" )
+		{
+			if( token == "animationDef" )
+			{
+				visible = false;
+				rect = idRectangle( 0, 0, 0, 0 );
+			}
+			src->ExpectTokenType( TT_NAME, 0, &token );
+			token2 = token;
+			src->UnreadToken( &token );
+			drawWin_t* dw = FindChildByName( token2.c_str() );
+			if( dw && dw->win )
+			{
+				SaveExpressionParseState();
+				dw->win->Parse( src, rebuild );
+				RestoreExpressionParseState();
+			}
+			else
+			{
+				idWindow* win = new( TAG_OLD_UI ) idWindow( gui );
+				SaveExpressionParseState();
+				win->Parse( src, rebuild );
+				RestoreExpressionParseState();
+				win->SetParent( this );
+				dwt.simp = NULL;
+				dwt.win = NULL;
+				if( win->IsSimple() )
+				{
+					idSimpleWindow* simple = new( TAG_OLD_UI ) idSimpleWindow( win );
+					dwt.simp = simple;
+					drawWindows.Append( dwt );
+					delete win;
+				}
+				else
+				{
+					AddChild( win );
+					SetFocus( win, false );
+					dwt.win = win;
+					drawWindows.Append( dwt );
+				}
+			}
+		}
+		else if( token == "editDef" )
+		{
+			idEditWindow* win = new( TAG_OLD_UI ) idEditWindow( gui );
+			SaveExpressionParseState();
+			win->Parse( src, rebuild );
+			RestoreExpressionParseState();
+			AddChild( win );
+			win->SetParent( this );
+			dwt.simp = NULL;
+			dwt.win = win;
+			drawWindows.Append( dwt );
+		}
+		else if( token == "choiceDef" )
+		{
+			idChoiceWindow* win = new( TAG_OLD_UI ) idChoiceWindow( gui );
+			SaveExpressionParseState();
+			win->Parse( src, rebuild );
+			RestoreExpressionParseState();
+			AddChild( win );
+			win->SetParent( this );
+			dwt.simp = NULL;
+			dwt.win = win;
+			drawWindows.Append( dwt );
+		}
+		else if( token == "sliderDef" )
+		{
+			idSliderWindow* win = new( TAG_OLD_UI ) idSliderWindow( gui );
+			SaveExpressionParseState();
+			win->Parse( src, rebuild );
+			RestoreExpressionParseState();
+			AddChild( win );
+			win->SetParent( this );
+			dwt.simp = NULL;
+			dwt.win = win;
+			drawWindows.Append( dwt );
+		}
+		else if( token == "bindDef" )
+		{
+			idBindWindow* win = new( TAG_OLD_UI ) idBindWindow( gui );
+			SaveExpressionParseState();
+			win->Parse( src, rebuild );
+			RestoreExpressionParseState();
+			AddChild( win );
+			win->SetParent( this );
+			dwt.simp = NULL;
+			dwt.win = win;
+			drawWindows.Append( dwt );
+		}
+		else if( token == "listDef" )
+		{
+			idListWindow* win = new( TAG_OLD_UI ) idListWindow( gui );
+			SaveExpressionParseState();
+			win->Parse( src, rebuild );
+			RestoreExpressionParseState();
+			AddChild( win );
+			win->SetParent( this );
+			dwt.simp = NULL;
+			dwt.win = win;
+			drawWindows.Append( dwt );
+		}
+		else if( token == "fieldDef" )
+		{
+			idFieldWindow* win = new( TAG_OLD_UI ) idFieldWindow( gui );
+			SaveExpressionParseState();
+			win->Parse( src, rebuild );
+			RestoreExpressionParseState();
+			AddChild( win );
+			win->SetParent( this );
+			dwt.simp = NULL;
+			dwt.win = win;
+			drawWindows.Append( dwt );
+		}
+		else if( token == "renderDef" )
+		{
+			idRenderWindow* win = new( TAG_OLD_UI ) idRenderWindow( gui );
+			SaveExpressionParseState();
+			win->Parse( src, rebuild );
+			RestoreExpressionParseState();
+			AddChild( win );
+			win->SetParent( this );
+			dwt.simp = NULL;
+			dwt.win = win;
+			drawWindows.Append( dwt );
+		}
+		else if( token == "gameSSDDef" )
+		{
+			idGameSSDWindow* win = new( TAG_OLD_UI ) idGameSSDWindow( gui );
+			SaveExpressionParseState();
+			win->Parse( src, rebuild );
+			RestoreExpressionParseState();
+			AddChild( win );
+			win->SetParent( this );
+			dwt.simp = NULL;
+			dwt.win = win;
+			drawWindows.Append( dwt );
+		}
+		else if( token == "gameBearShootDef" )
+		{
+			idGameBearShootWindow* win = new( TAG_OLD_UI ) idGameBearShootWindow( gui );
+			SaveExpressionParseState();
+			win->Parse( src, rebuild );
+			RestoreExpressionParseState();
+			AddChild( win );
+			win->SetParent( this );
+			dwt.simp = NULL;
+			dwt.win = win;
+			drawWindows.Append( dwt );
+		}
+		else if( token == "gameBustOutDef" )
+		{
+			idGameBustOutWindow* win = new( TAG_OLD_UI ) idGameBustOutWindow( gui );
+			SaveExpressionParseState();
+			win->Parse( src, rebuild );
+			RestoreExpressionParseState();
+			AddChild( win );
+			win->SetParent( this );
+			dwt.simp = NULL;
+			dwt.win = win;
+			drawWindows.Append( dwt );
+		}
+//
+//  added new onEvent
+		else if( token == "onNamedEvent" )
+		{
+			// Read the event name
+			if( !src->ReadToken( &token ) )
+			{
+				src->Error( "Expected event name" );
+				return false;
+			}
+
+			rvNamedEvent* ev = new( TAG_OLD_UI ) rvNamedEvent( token );
+
+			src->SetMarker( );
+
+			if( !ParseScript( src, *ev->mEvent ) )
+			{
+				ret = false;
+				break;
+			}
+
+			// If we are in the gui editor then add the internal var to the
+			// the wrapper
+#ifdef ID_ALLOW_TOOLS
+			if( com_editors & EDITOR_GUI )
+			{
+				idStr str;
+				idStr out;
+
+				// Grab the string from the last marker
+				src->GetStringFromMarker( str, false );
+
+				// Parse it one more time to knock unwanted tabs out
+				idLexer src2( str, str.Length(), "", src->GetFlags() );
+				src2.ParseBracedSectionExact( out, 1 );
+
+				// Save the script
+				rvGEWindowWrapper::GetWrapper( this )->GetScriptDict().Set( va( "onNamedEvent %s", token.c_str() ), out );
+			}
+#endif
+			namedEvents.Append( ev );
+		}
+		else if( token == "onTime" )
+		{
+			idTimeLineEvent* ev = new( TAG_OLD_UI ) idTimeLineEvent;
+
+			if( !src->ReadToken( &token ) )
+			{
+				src->Error( "Unexpected end of file" );
+				return false;
+			}
+			ev->time = atoi( token.c_str() );
+
+			// reset the mark since we dont want it to include the time
+			src->SetMarker( );
+
+			if( !ParseScript( src, *ev->event, &ev->time ) )
+			{
+				ret = false;
+				break;
+			}
+
+			// add the script to the wrappers script list
+			// If we are in the gui editor then add the internal var to the
+			// the wrapper
+#ifdef ID_ALLOW_TOOLS
+			if( com_editors & EDITOR_GUI )
+			{
+				idStr str;
+				idStr out;
+
+				// Grab the string from the last marker
+				src->GetStringFromMarker( str, false );
+
+				// Parse it one more time to knock unwanted tabs out
+				idLexer src2( str, str.Length(), "", src->GetFlags() );
+				src2.ParseBracedSectionExact( out, 1 );
+
+				// Save the script
+				rvGEWindowWrapper::GetWrapper( this )->GetScriptDict().Set( va( "onTime %d", ev->time ), out );
+			}
+#endif
+			// this is a timeline event
+			ev->pending = true;
+			timeLineEvents.Append( ev );
+		}
+		else if( token == "definefloat" )
+		{
+			src->ReadToken( &token );
+			work = token;
+			work.ToLower();
+			idWinFloat* varf = new( TAG_OLD_UI ) idWinFloat();
+			varf->SetName( work );
+			definedVars.Append( varf );
+
+			// add the float to the editors wrapper dict
+			// Set the marker after the float name
+			src->SetMarker( );
+
+			// Read in the float
+			regList.AddReg( work, idRegister::FLOAT, src, this, varf );
+
+			// If we are in the gui editor then add the float to the defines
+#ifdef ID_ALLOW_TOOLS
+			if( com_editors & EDITOR_GUI )
+			{
+				idStr str;
+
+				// Grab the string from the last marker and save it in the wrapper
+				src->GetStringFromMarker( str, true );
+				rvGEWindowWrapper::GetWrapper( this )->GetVariableDict().Set( va( "definefloat\t\"%s\"", token.c_str() ), str );
+			}
+#endif
+		}
+		else if( token == "definevec4" )
+		{
+			src->ReadToken( &token );
+			work = token;
+			work.ToLower();
+			idWinVec4* var = new( TAG_OLD_UI ) idWinVec4();
+			var->SetName( work );
+
+			// set the marker so we can determine what was parsed
+			// set the marker after the vec4 name
+			src->SetMarker( );
+
+			// FIXME: how about we add the var to the desktop instead of this window so it won't get deleted
+			//        when this window is destoyed which even happens during parsing with simple windows ?
+			//definedVars.Append(var);
+			gui->GetDesktop()->definedVars.Append( var );
+			gui->GetDesktop()->regList.AddReg( work, idRegister::VEC4, src, gui->GetDesktop(), var );
+
+			// store the original vec4 for the editor
+			// If we are in the gui editor then add the float to the defines
+#ifdef ID_ALLOW_TOOLS
+			if( com_editors & EDITOR_GUI )
+			{
+				idStr str;
+
+				// Grab the string from the last marker and save it in the wrapper
+				src->GetStringFromMarker( str, true );
+				rvGEWindowWrapper::GetWrapper( this )->GetVariableDict().Set( va( "definevec4\t\"%s\"", token.c_str() ), str );
+			}
+#endif
+		}
+		else if( token == "float" )
+		{
+			src->ReadToken( &token );
+			work = token;
+			work.ToLower();
+			idWinFloat* varf = new( TAG_OLD_UI ) idWinFloat();
+			varf->SetName( work );
+			definedVars.Append( varf );
+
+			// add the float to the editors wrapper dict
+			// set the marker to after the float name
+			src->SetMarker( );
+
+			// Parse the float
+			regList.AddReg( work, idRegister::FLOAT, src, this, varf );
+
+			// If we are in the gui editor then add the float to the defines
+#ifdef ID_ALLOW_TOOLS
+			if( com_editors & EDITOR_GUI )
+			{
+				idStr str;
+
+				// Grab the string from the last marker and save it in the wrapper
+				src->GetStringFromMarker( str, true );
+				rvGEWindowWrapper::GetWrapper( this )->GetVariableDict().Set( va( "float\t\"%s\"", token.c_str() ), str );
+			}
+#endif
+		}
+		else if( ParseScriptEntry( token, src ) )
+		{
+			// add the script to the wrappers script list
+			// If we are in the gui editor then add the internal var to the
+			// the wrapper
+#ifdef ID_ALLOW_TOOLS
+			if( com_editors & EDITOR_GUI )
+			{
+				idStr str;
+				idStr out;
+
+				// Grab the string from the last marker
+				src->GetStringFromMarker( str, false );
+
+				// Parse it one more time to knock unwanted tabs out
+				idLexer src2( str, str.Length(), "", src->GetFlags() );
+				src2.ParseBracedSectionExact( out, 1 );
+
+				// Save the script
+				rvGEWindowWrapper::GetWrapper( this )->GetScriptDict().Set( token, out );
+			}
+#endif
+		}
+		else if( ParseInternalVar( token, src ) )
+		{
+			// gui editor support
+			// If we are in the gui editor then add the internal var to the
+			// the wrapper
+#ifdef ID_ALLOW_TOOLS
+			if( com_editors & EDITOR_GUI )
+			{
+				idStr str;
+				src->GetStringFromMarker( str );
+				rvGEWindowWrapper::GetWrapper( this )->SetStateKey( token, str, false );
+			}
+#endif
+		}
+		else
+		{
+			ParseRegEntry( token, src );
+			// hook into the main window parsing for the gui editor
+			// If we are in the gui editor then add the internal var to the
+			// the wrapper
+#ifdef ID_ALLOW_TOOLS
+			if( com_editors & EDITOR_GUI )
+			{
+				idStr str;
+				src->GetStringFromMarker( str );
+				rvGEWindowWrapper::GetWrapper( this )->SetStateKey( token, str, false );
+			}
+#endif
+		}
+		if( !src->ReadToken( &token ) )
+		{
+			src->Error( "Unexpected end of file" );
+			ret = false;
+			break;
+		}
+	}
+
+	if( ret )
+	{
+		EvalRegs( -1, true );
+	}
+
+	SetupFromState();
+	PostParse();
+
+	// hook into the main window parsing for the gui editor
+	// If we are in the gui editor then add the internal var to the
+	// the wrapper
+#ifdef ID_ALLOW_TOOLS
+	if( com_editors & EDITOR_GUI )
+	{
+		rvGEWindowWrapper::GetWrapper( this )->Finish( );
+	}
+#endif
 
 	return ret;
 }
@@ -3190,6 +4083,18 @@ intptr_t idWindow::ParseEmitOp( idTokenParser* src, intptr_t a, wexpOpType_t opT
 	return EmitOp( a, b, opType, opp );
 }
 
+/*
+================
+idWindow::ParseEmitOp
+================
+*/
+// DG: a, b and the return value are really pointers, so use intptr_t
+intptr_t idWindow::ParseEmitOp( idParser* src, intptr_t a, wexpOpType_t opType, int priority, wexpOp_t** opp )
+{
+	intptr_t b = ParseExpressionPriority( src, priority );
+// DG end
+	return EmitOp( a, b, opType, opp );
+}
 
 /*
 ================
@@ -3316,6 +4221,129 @@ intptr_t idWindow::ParseTerm( idTokenParser* src,	idWinVar* var, intptr_t compon
 }
 
 /*
+================
+idWindow::ParseTerm
+
+Returns a register index
+=================
+*/
+// DG: component and the return value are really pointers, so use intptr_t
+intptr_t idWindow::ParseTerm( idParser* src,	idWinVar* var, intptr_t component )
+{
+	// DG end
+	idToken token;
+	// RB: 64 bit fixes, changed int to intptr_t
+	intptr_t		a, b;
+	// RB end
+
+	src->ReadToken( &token );
+
+	if( token == "(" )
+	{
+		a = ParseExpression( src );
+		src->ExpectTokenString( ")" );
+		return a;
+	}
+
+	if( !token.Icmp( "time" ) )
+	{
+		return WEXP_REG_TIME;
+	}
+
+	// parse negative numbers
+	if( token == "-" )
+	{
+		src->ReadToken( &token );
+		if( token.type == TT_NUMBER || token == "." )
+		{
+			return ExpressionConstant( -( float ) token.GetFloatValue() );
+		}
+		src->Warning( "Bad negative number '%s'", token.c_str() );
+		return 0;
+	}
+
+	if( token.type == TT_NUMBER || token == "." || token == "-" )
+	{
+		return ExpressionConstant( ( float ) token.GetFloatValue() );
+	}
+
+	// see if it is a table name
+	const idDeclTable* table = static_cast<const idDeclTable*>( declManager->FindType( DECL_TABLE, token.c_str(), false ) );
+	if( table )
+	{
+		a = table->Index();
+		// parse a table expression
+		src->ExpectTokenString( "[" );
+		b = ParseExpression( src );
+		src->ExpectTokenString( "]" );
+		return EmitOp( a, b, WOP_TYPE_TABLE );
+	}
+
+	if( var == NULL )
+	{
+		var = GetWinVarByName( token, true );
+	}
+	if( var )
+	{
+		// RB: 64 bit fixes, changed int to intptr_t
+		a = ( intptr_t )var;
+		// RB end
+
+		//assert(dynamic_cast<idWinVec4*>(var));
+		var->Init( token, this );
+		b = component;
+		if( dynamic_cast<idWinVec4*>( var ) )
+		{
+			if( src->ReadToken( &token ) )
+			{
+				if( token == "[" )
+				{
+					b = ParseExpression( src );
+					src->ExpectTokenString( "]" );
+				}
+				else
+				{
+					src->UnreadToken( &token );
+				}
+			}
+			return EmitOp( a, b, WOP_TYPE_VAR );
+		}
+		else if( dynamic_cast<idWinFloat*>( var ) )
+		{
+			return EmitOp( a, b, WOP_TYPE_VARF );
+		}
+		else if( dynamic_cast<idWinInt*>( var ) )
+		{
+			return EmitOp( a, b, WOP_TYPE_VARI );
+		}
+		else if( dynamic_cast<idWinBool*>( var ) )
+		{
+			return EmitOp( a, b, WOP_TYPE_VARB );
+		}
+		else if( dynamic_cast<idWinStr*>( var ) )
+		{
+			return EmitOp( a, b, WOP_TYPE_VARS );
+		}
+		else
+		{
+			src->Warning( "Var expression not vec4, float or int '%s'", token.c_str() );
+		}
+		return 0;
+	}
+	else
+	{
+		// ugly but used for post parsing to fixup named vars
+		char* p = new( TAG_OLD_UI ) char[token.Length() + 1];
+		strcpy( p, token );
+		// RB: 64 bit fixes, changed int to intptr_t
+		a = ( intptr_t )p;
+		// RB: 64 bit fixes, changed int to intptr_t
+		b = -2;
+		return EmitOp( a, b, WOP_TYPE_VAR );
+	}
+}
+
+/*
 =================
 idWindow::ParseExpressionPriority
 
@@ -3325,6 +4353,109 @@ Returns a register index
 #define	TOP_PRIORITY 4
 // DG: a, component and the return value are really pointers, so use intptr_t
 intptr_t idWindow::ParseExpressionPriority( idTokenParser* src, int priority, idWinVar* var, intptr_t component )
+{
+	idToken token;
+	intptr_t a;
+
+	if( priority == 0 )
+	{
+		return ParseTerm( src, var, component );
+	}
+
+	a = ParseExpressionPriority( src, priority - 1, var, component );
+
+	if( !src->ReadToken( &token ) )
+	{
+		// we won't get EOF in a real file, but we can
+		// when parsing from generated strings
+		return a;
+	}
+
+	if( priority == 1 && token == "*" )
+	{
+		return ParseEmitOp( src, a, WOP_TYPE_MULTIPLY, priority );
+	}
+	if( priority == 1 && token == "/" )
+	{
+		return ParseEmitOp( src, a, WOP_TYPE_DIVIDE, priority );
+	}
+	if( priority == 1 && token == "%" )  	// implied truncate both to integer
+	{
+		return ParseEmitOp( src, a, WOP_TYPE_MOD, priority );
+	}
+	if( priority == 2 && token == "+" )
+	{
+		return ParseEmitOp( src, a, WOP_TYPE_ADD, priority );
+	}
+	if( priority == 2 && token == "-" )
+	{
+		return ParseEmitOp( src, a, WOP_TYPE_SUBTRACT, priority );
+	}
+	if( priority == 3 && token == ">" )
+	{
+		return ParseEmitOp( src, a, WOP_TYPE_GT, priority );
+	}
+	if( priority == 3 && token == ">=" )
+	{
+		return ParseEmitOp( src, a, WOP_TYPE_GE, priority );
+	}
+	if( priority == 3 && token == "<" )
+	{
+		return ParseEmitOp( src, a, WOP_TYPE_LT, priority );
+	}
+	if( priority == 3 && token == "<=" )
+	{
+		return ParseEmitOp( src, a, WOP_TYPE_LE, priority );
+	}
+	if( priority == 3 && token == "==" )
+	{
+		return ParseEmitOp( src, a, WOP_TYPE_EQ, priority );
+	}
+	if( priority == 3 && token == "!=" )
+	{
+		return ParseEmitOp( src, a, WOP_TYPE_NE, priority );
+	}
+	if( priority == 4 && token == "&&" )
+	{
+		return ParseEmitOp( src, a, WOP_TYPE_AND, priority );
+	}
+	if( priority == 4 && token == "||" )
+	{
+		return ParseEmitOp( src, a, WOP_TYPE_OR, priority );
+	}
+	if( priority == 4 && token == "?" )
+	{
+		wexpOp_t* oop = NULL;
+		intptr_t o = ParseEmitOp( src, a, WOP_TYPE_COND, priority, &oop );
+		// DG end
+		if( !src->ReadToken( &token ) )
+		{
+			return o;
+		}
+		if( token == ":" )
+		{
+			a = ParseExpressionPriority( src, priority - 1, var );
+			oop->d = a;
+		}
+		return o;
+	}
+
+	// assume that anything else terminates the expression
+	// not too robust error checking...
+
+	src->UnreadToken( &token );
+
+	return a;
+}
+
+/*
+=================
+idWindow::ParseExpressionPriority
+
+Returns a register index
+=================
+*/
+intptr_t idWindow::ParseExpressionPriority( idParser* src, int priority, idWinVar* var, intptr_t component )
 {
 	idToken token;
 	intptr_t a;
@@ -3431,6 +4562,19 @@ Returns a register index
 intptr_t idWindow::ParseExpression( idTokenParser* src, idWinVar* var, intptr_t component )
 {
 	// DG end
+	return ParseExpressionPriority( src, TOP_PRIORITY, var );
+}
+
+/*
+================
+idWindow::ParseExpression
+
+Returns a register index
+================
+*/
+// DG: component and the return value are really pointers, so use intptr_t
+intptr_t idWindow::ParseExpression( idParser* src, idWinVar* var, intptr_t component )
+{
 	return ParseExpressionPriority( src, TOP_PRIORITY, var );
 }
 
@@ -4489,6 +5633,12 @@ idWindow::IsSimple
 */
 bool idWindow::IsSimple()
 {
+	// foresthale 2014-05-23: this was missing
+	// dont do simple windows when in gui editor
+	if( com_editors & EDITOR_GUI )
+	{
+		return false;
+	}
 
 	if( ops.Num() )
 	{

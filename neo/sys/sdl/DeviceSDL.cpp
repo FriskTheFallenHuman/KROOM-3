@@ -541,6 +541,8 @@ static void Sys_Frame()
 		{
 			wxTheApp->Dispatch();
 		}
+
+		wxTheApp->ProcessIdle();
 	}
 
 	SDL_PumpEvents();

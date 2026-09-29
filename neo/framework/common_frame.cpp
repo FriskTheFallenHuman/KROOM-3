@@ -600,13 +600,21 @@ void idCommonLocal::Frame()
 		frameTiming.startSyncTime = Sys_Microseconds();
 		const emptyCommand_t* renderCommands = NULL;
 
+		// Run the tools frame
 		if( IsToolActive() )
 		{
 			rRenderContext.MakeCurrent();
 
 			if( com_editors & EDITOR_MATERIAL )
 			{
+				//BSM Nerve: Add support for the material editor
 				MaterialEditorRun();
+			}
+
+			if( com_editors & EDITOR_GUI )
+			{
+				// GUI editor
+				GUIEditorRun();
 			}
 		}
 

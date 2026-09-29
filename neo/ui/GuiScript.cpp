@@ -458,11 +458,88 @@ bool idGuiScript::Parse( idTokenParser* src )
 		parms.Append( wv );
 	}
 
+	//
 	//  verify min/max params
 	if( handler && ( parms.Num() < commandList[i].mMinParms || parms.Num() > commandList[i].mMaxParms ) )
 	{
 		src->Error( "incorrect number of parameters for script %s", commandList[i].name );
 	}
+	//
+
+	return true;
+}
+
+/*
+=========================
+idGuiScript::Parse
+=========================
+*/
+bool idGuiScript::Parse( idParser* src )
+{
+	int i;
+
+	// first token should be function call
+	// then a potentially variable set of parms
+	// ended with a ;
+	idToken token;
+	if( !src->ReadToken( &token ) )
+	{
+		src->Error( "Unexpected end of file" );
+		return false;
+	}
+
+	handler	= NULL;
+
+	for( i = 0; i < scriptCommandCount ; i++ )
+	{
+		if( idStr::Icmp( token, commandList[i].name ) == 0 )
+		{
+			handler = commandList[i].handler;
+			break;
+		}
+	}
+
+	if( handler == NULL )
+	{
+		src->Error( "Uknown script call %s", token.c_str() );
+	}
+	// now read parms til ;
+	// all parms are read as idWinStr's but will be fixed up later
+	// to be proper types
+	while( 1 )
+	{
+		if( !src->ReadToken( &token ) )
+		{
+			src->Error( "Unexpected end of file" );
+			return false;
+		}
+
+		if( idStr::Icmp( token, ";" ) == 0 )
+		{
+			break;
+		}
+
+		if( idStr::Icmp( token, "}" ) == 0 )
+		{
+			src->UnreadToken( &token );
+			break;
+		}
+
+		idWinStr* str = new( TAG_OLD_UI ) idWinStr();
+		*str = token;
+		idGSWinVar wv;
+		wv.own = true;
+		wv.var = str;
+		parms.Append( wv );
+	}
+
+	//
+	//  verify min/max params
+	if( handler && ( parms.Num() < commandList[i].mMinParms || parms.Num() > commandList[i].mMaxParms ) )
+	{
+		src->Error( "incorrect number of parameters for script %s", commandList[i].name );
+	}
+	//
 
 	return true;
 }

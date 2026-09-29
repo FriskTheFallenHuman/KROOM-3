@@ -270,6 +270,7 @@ public:
 	};
 
 	virtual bool Parse( idTokenParser* src, bool rebuild = true );
+	virtual bool Parse( idParser* src, bool rebuild = true );
 	virtual const char* HandleEvent( const sysEvent_t* event, bool* updateVisuals );
 	void	CalcRects( float x, float y );
 	virtual void Redraw( float x, float y, bool hud );
@@ -324,11 +325,13 @@ public:
 	int NumTransitions();
 
 	bool ParseScript( idTokenParser* src, idGuiScriptList& list, int* timeParm = NULL, bool allowIf = false );
+	bool ParseScript( idParser* src, idGuiScriptList& list, int* timeParm = NULL, bool allowIf = false );
 	bool RunScript( int n );
 	bool RunScriptList( idGuiScriptList* src );
 	void SetRegs( const char* key, const char* val );
 	// DG: component and the return value are really pointers, so use intptr_t
 	intptr_t ParseExpression( idTokenParser* src, idWinVar* var = NULL, intptr_t component = 0 );
+	intptr_t ParseExpression( idParser* src, idWinVar* var = NULL, intptr_t component = 0 );
 	// DG end
 	int ExpressionConstant( float f );
 	idRegisterList* RegList()
@@ -391,18 +394,26 @@ protected:
 	// DG: a, b, component and the return values are really pointers, so use intptr_t
 	intptr_t EmitOp( intptr_t a, intptr_t b, wexpOpType_t opType, wexpOp_t** opp = NULL );
 	intptr_t ParseEmitOp( idTokenParser* src, intptr_t a, wexpOpType_t opType, int priority, wexpOp_t** opp = NULL );
+	intptr_t ParseEmitOp( idParser* src, intptr_t a, wexpOpType_t opType, int priority, wexpOp_t** opp = NULL );
 	intptr_t ParseTerm( idTokenParser* src, idWinVar* var = NULL, intptr_t component = 0 );
+	intptr_t ParseTerm( idParser* src, idWinVar* var = NULL, intptr_t component = 0 );
 	intptr_t ParseExpressionPriority( idTokenParser* src, int priority, idWinVar* var = NULL, intptr_t component = 0 );
+	intptr_t ParseExpressionPriority( idParser* src, int priority, idWinVar* var = NULL, intptr_t component = 0 );
 	// DG end
 	void EvaluateRegisters( float* registers );
 	void SaveExpressionParseState();
 	void RestoreExpressionParseState();
 	void ParseBracedExpression( idTokenParser* src );
 	bool ParseScriptEntry( const char* name, idTokenParser* src );
+	bool ParseScriptEntry( const char* name, idParser* src );
 	bool ParseRegEntry( const char* name, idTokenParser* src );
+	bool ParseRegEntry( const char* name, idParser* src );
 	virtual bool ParseInternalVar( const char* name, idTokenParser* src );
+	virtual bool ParseInternalVar( const char* name, idParser* src );
 	void ParseString( idTokenParser* src, idStr& out );
+	void ParseString( idParser* src, idStr& out );
 	void ParseVec4( idTokenParser* src, idVec4& out );
+	void ParseVec4( idParser* src, idVec4& out );
 	void ConvertRegEntry( const char* name, idTokenParser* src, idStr& out, int tabs );
 
 	float actualX;					// physical coords

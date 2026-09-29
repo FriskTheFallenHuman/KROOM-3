@@ -200,6 +200,14 @@ bool rvRegistryOptions::GetWindowPlacement( const char* name, wxWindow* win )
 			if( tlw )
 			{
 				tlw->Maximize( true );
+
+				tlw->CallAfter( [tlw]()
+				{
+					if( !tlw->IsMaximized() )
+					{
+						tlw->Maximize( true );
+					}
+				} );
 			}
 		}
 		return true;

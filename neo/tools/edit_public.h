@@ -80,10 +80,9 @@ void	DebuggerServerCheckBreakpoint( idInterpreter* interpreter, idProgram* progr
 	//void	RadiantSync( const char* mapName, const idVec3& viewOrg, const idAngles& viewAngles );
 
 	// GUI Editor
-	//void	GUIEditorInit();
-	//void	GUIEditorShutdown();
-	//void	GUIEditorRun();
-	//bool	GUIEditorHandleMessage( void* msg );
+	void	GUIEditorInit();
+	void	GUIEditorShutdown();
+	void	GUIEditorRun();
 
 
 	// Script Debugger (Client)

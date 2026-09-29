@@ -317,6 +317,12 @@ void Sys_DestroyConsole()
 		s_console->Destroy();
 		s_console = NULL;
 	}
+
+	if( s_consoleInited )
+	{
+		wxUninitialize();
+		s_consoleInited = false;
+	}
 }
 
 /*

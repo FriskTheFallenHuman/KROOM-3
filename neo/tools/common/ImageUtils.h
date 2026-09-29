@@ -31,6 +31,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include <wx/wx.h>
 #include <wx/image.h>
+#include <wx/mstream.h>
 
 // Base uppon this: https://wiki.wxwidgets.org/Embedding_PNG_Images
 namespace ImageUtils
@@ -77,6 +78,37 @@ wxIcon IconFromRaw( const unsigned char* pixelData, int width, int height, int b
  * which is a thin wrapper around IconFromRaw().
  */
 wxIcon IconFromEmbedded( const unsigned char* pixelData, unsigned int width, unsigned int height, unsigned int bytesPerPixel );
+
+/**
+ * Build a wxBitmap from a the disk.
+ *
+ * relativePath is passed straight to fileSystem->ReadFile(), so it uses the
+ * exact same search path rules, Example:
+ *
+ *     wxBitmap bmp = ImageUtils::BitmapFromRelativePath( "editors/gfx/guied_viewer_play.bmp" );
+ *
+ * The image format is auto-detected by wxImage (BMP, PNG, JPG, GIF, ...).
+ *
+ * transparentKey is applied only when the decoded image has no alpha channel:
+ *   - If a valid colour is passed, that colour becomes fully transparent.
+ *   - If wxColour() (the default) is passed, the colour of pixel (0,0) is used.
+ *   - If you do not want any colour keying, load a PNG with alpha instead.
+ *
+ * Returns an invalid wxBitmap on any failure.
+ */
+wxBitmap BitmapFromRelativePath( const char* relativePath, const wxColour& transparentKey = wxColour() );
+
+/**
+ * Convenience wrapper: relative filesystem path -> wxIcon.
+ */
+wxIcon IconFromRelativePath( const char* relativePath, const wxColour& transparentKey = wxColour() );
+
+#ifdef __WXMSW__
+/**
+ * Same has BitmapFromRelativePath, except it handles Windows-Only Icon sizes.
+ */
+wxIconBundle IconBundleFromRelativePath( const char* relativePath, const std::vector<int>& sizes = { 16, 32, 48, 256 }, const wxColour& transparentKey = wxColour() );
+#endif
 
 } // namespace ImageUtils
 

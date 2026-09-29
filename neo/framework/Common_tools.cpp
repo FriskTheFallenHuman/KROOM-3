@@ -263,6 +263,16 @@ static void Com_ScriptDebugger_f( const idCmdArgs& args )
 
 /*
 =============
+Com_EditGUIs_f
+=============
+*/
+static void Com_EditGUIs_f( const idCmdArgs& args )
+{
+	GUIEditorInit();
+}
+
+/*
+=============
 Com_MaterialEditor_f
 =============
 */
@@ -292,7 +302,7 @@ void idCommonLocal::InitCommands()
 #ifdef ID_ALLOW_TOOLS
 	// editors
 	//cmdSystem->AddCommand( "editor", Com_Editor_f, CMD_FL_TOOL, "launches the level editor Radiant" );
-	//cmdSystem->AddCommand( "editGUIs", Com_EditGUIs_f, CMD_FL_TOOL, "launches the GUI Editor" );
+	cmdSystem->AddCommand( "editGUIs", Com_EditGUIs_f, CMD_FL_TOOL, "launches the GUI Editor" );
 	cmdSystem->AddCommand( "debugger", Com_ScriptDebugger_f, CMD_FL_TOOL, "launches the Script Debugger" );
 
 	//BSM Nerve: Add support for the material editor
