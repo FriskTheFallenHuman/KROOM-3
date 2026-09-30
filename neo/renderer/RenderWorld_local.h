@@ -263,6 +263,7 @@ public:
 	// RenderWorld_load.cpp
 
 	idRenderModel* 			ParseModel( idLexer* src, const char* mapName, ID_TIME_T mapTimeStamp, idFile* fileOut );
+	bool					LoadOcl( const char* name );		// optional occlusion geometry (.ocl) for shadow maps
 	void					SetupAreaRefs();
 	void					ParseInterAreaPortals( idLexer* src, idFile* fileOut );
 	void					ParseNodes( idLexer* src, idFile* fileOut );

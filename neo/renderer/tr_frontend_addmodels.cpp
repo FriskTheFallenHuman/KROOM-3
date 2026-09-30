@@ -1041,6 +1041,12 @@ void R_AddSingleModel( viewEntity_t* vEntity )
 				continue;
 			}
 
+			// the occlusion model replaces the shadows of the static world (see R_AddLightOcclusionSurfaces)
+			if( model->IsStaticWorldModel() && R_LightUsesOcclusionModel( lightDef ) )
+			{
+				continue;
+			}
+
 			// some entities, like view weapons, don't cast any shadows
 			if( entityDef->parms.noShadow )
 			{

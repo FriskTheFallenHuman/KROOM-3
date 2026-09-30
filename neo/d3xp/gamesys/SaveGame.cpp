@@ -1619,6 +1619,8 @@ void idRestoreGame::ReadRenderLight( renderLight_t& renderLight )
 	ReadVec3( renderLight.start );
 	ReadVec3( renderLight.end );
 
+	renderLight.occlusionModel = NULL;	// idLight::Restore looks the occlusion model up by entity name
+
 	ReadInt( renderLight.lightId );
 
 	ReadMaterial( renderLight.shader );

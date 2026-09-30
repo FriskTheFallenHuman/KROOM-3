@@ -195,6 +195,7 @@ void DmapHelp()
 		"noCurves          = don't process curves\n"
 		"noCM              = don't create collision map\n"
 		"noAAS             = don't create AAS files\n"
+		"exportOCL         = export occlusion geometry (.ocl) as obj files\n"
 
 	);
 }
@@ -226,6 +227,7 @@ void ResetDmapGlobals()
 	dmapGlobals.noFlood = false;
 	dmapGlobals.noClipSides = false;
 	dmapGlobals.noLightCarve = false;
+	dmapGlobals.exportOCL = false;
 	dmapGlobals.drawBounds.Clear();
 	dmapGlobals.drawflag = false;
 	dmapGlobals.portal_sky_location.Zero();
@@ -376,6 +378,11 @@ void Dmap( const idCmdArgs& args )
 			noCM = true;
 			idLib::Printf( "noCM = true\n" );
 		}
+		else if( !idStr::Icmp( s, "exportOCL" ) )
+		{
+			dmapGlobals.exportOCL = true;
+			idLib::Printf( "exportOCL = true\n" );
+		}
 		else if( !idStr::Icmp( s, "noAAS" ) )
 		{
 			noAAS = true;
@@ -453,6 +460,7 @@ void Dmap( const idCmdArgs& args )
 	if( ProcessModels() )
 	{
 		WriteOutputFile();
+		WriteOclFile();
 	}
 	else
 	{
@@ -472,7 +480,10 @@ void Dmap( const idCmdArgs& args )
 		if( !noCM )
 		{
 			// make sure the collision model manager is not used by the game
-			cmdSystem->BufferCommandText( CMD_EXEC_NOW, "disconnect" );
+			if( idLib::IsMainThread() )
+			{
+				cmdSystem->BufferCommandText( CMD_EXEC_NOW, "disconnect" );
+			}
 
 			// create the collision map
 			start = Sys_Milliseconds();

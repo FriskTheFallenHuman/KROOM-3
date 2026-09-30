@@ -1205,6 +1205,8 @@ extern idCVar r_tonemapContrast;
 	extern idCVar r_glProfile;
 #endif
 
+extern idCVar r_useOcclusionGeometry;		// use dmap generated occlusion geometry (.ocl) for static shadow casters
+
 /*
 ====================================================================
 
@@ -1357,6 +1359,7 @@ idRenderModel* R_EntityDefDynamicModel( idRenderEntityLocal* def );
 void R_ClearEntityDefDynamicModel( idRenderEntityLocal* def );
 
 void R_SetupDrawSurfShader( drawSurf_t* drawSurf, const idMaterial* shader, const renderEntity_t* renderEntity );
+bool R_LightUsesOcclusionModel( const idRenderLightLocal* light );	// true if the static world shadow casters of this light are replaced by its occlusion model
 void R_SetupDrawSurfJoints( drawSurf_t* drawSurf, const srfTriangles_t* tri, const idMaterial* shader );
 void R_LinkDrawSurfToView( drawSurf_t* drawSurf, viewDef_t* viewDef );
 

@@ -202,11 +202,21 @@ typedef struct tree_s
 
 #define	MAX_QPATH			256			// max length of a game pathname
 
+// occlusion geometry for shadow map rendering (see dmap_ocl.cpp)
+typedef struct mapSurface_s
+{
+	srfTriangles_t*		tris;
+	const idMaterial*	material;
+} mapSurface_t;
+
 typedef struct
 {
 	idRenderLightLocal	def;
+	char				name[MAX_QPATH];		// for naming the occluder model (_occluder_<name>)
 
 	idPlane				frustumPlanes[6];		// RB: should be calculated after R_DeriveLightData()
+
+	mapSurface_t		occluders[128];			// optimized occlusion geometry, one entry per material group
 } mapLight_t;
 
 #define	MAX_GROUP_LIGHTS	16
@@ -290,6 +300,7 @@ typedef struct
 	bool	noFlood;
 	bool	noClipSides;		// don't cut sides by solid leafs, use the entire thing
 	bool	noLightCarve;		// extra triangle subdivision by light frustums
+	bool	exportOCL;			// also export occlusion geometry as obj files
 
 	idBounds	drawBounds;
 	bool	drawflag;
@@ -412,10 +423,17 @@ void	ClipSidesByTree( uEntity_t* e );
 void	SplitTrisToSurfaces( mapTri_t* triList, tree_t* tree );
 void	PutPrimitivesInAreas( uEntity_t* e );
 void	Prelight( uEntity_t* e );
+void	ClipTriByLight( const mapLight_t* light, const mapTri_t* tri, mapTri_t** in, mapTri_t** out );
 
 // RB begin
 void	FilterMeshesIntoTree( uEntity_t* e );
 // RB end
+
+//=============================================================================
+
+// ocl.cpp -- occlusion geometry for shadow maps (.ocl)
+void	BuildLightOccluders( uEntity_t* e, mapLight_t* light );
+void	WriteOclFile();
 
 //=============================================================================
 

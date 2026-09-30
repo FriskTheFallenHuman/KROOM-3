@@ -32,6 +32,15 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "RenderCommon.h"
 
+// see if we have a generated version of this
+static const byte BPROC_VERSION_BFG = 1;
+static const byte BPROC_VERSION_MOC_DATA = 2;
+static const byte BPROC_VERSION = BPROC_VERSION_MOC_DATA;
+static const byte BOCL_VERSION = 1;
+
+static const unsigned int BPROC_MAGIC_BFG = ( 'P' << 24 ) | ( 'R' << 16 ) | ( 'O' << 8 ) | BPROC_VERSION_BFG;
+static const unsigned int BPROC_MAGIC = ( 'P' << 24 ) | ( 'R' << 16 ) | ( 'O' << 8 ) | BPROC_VERSION;
+static const unsigned int BOCL_MAGIC = ( 'O' << 24 ) | ( 'C' << 16 ) | ( 'L' << 8 ) | BOCL_VERSION;
 
 /*
 ================
@@ -757,7 +766,7 @@ bool idRenderWorldLocal::InitFromMap( const char* name )
 	// check for generated file
 	idStrStatic< MAX_OSPATH > generatedFileName = filename;
 	generatedFileName.Insert( "generated/", 0 );
-	generatedFileName.SetFileExtension( "bproc" );
+	generatedFileName.SetFileExtension( PROC_BINARYFILE_EXT );
 
 	// if we are reloading the same map, check the timestamp
 	// and try to skip all the work
@@ -780,14 +789,6 @@ bool idRenderWorldLocal::InitFromMap( const char* name )
 
 	FreeWorld();
 
-	// see if we have a generated version of this
-	static const byte BPROC_VERSION_BFG = 1;
-	static const byte BPROC_VERSION_MOC_DATA = 2;
-	static const byte BPROC_VERSION = BPROC_VERSION_MOC_DATA;
-
-
-	static const unsigned int BPROC_MAGIC_BFG = ( 'P' << 24 ) | ( 'R' << 16 ) | ( 'O' << 8 ) | BPROC_VERSION_BFG;
-	static const unsigned int BPROC_MAGIC = ( 'P' << 24 ) | ( 'R' << 16 ) | ( 'O' << 8 ) | BPROC_VERSION;
 	bool loaded = false;
 	idFileLocal file( fileSystem->OpenFileReadMemory( generatedFileName ) );
 	if( file != NULL )
@@ -949,7 +950,8 @@ bool idRenderWorldLocal::InitFromMap( const char* name )
 
 	}
 
-
+	// optional occlusion geometry for shadow maps, a missing .ocl is not an error
+	LoadOcl( name );
 
 	// if it was a trivial map without any areas, create a single area
 	if( !numPortalAreas )
@@ -965,6 +967,258 @@ bool idRenderWorldLocal::InitFromMap( const char* name )
 	SetupLightGrid();
 
 	// done!
+	return true;
+}
+
+/*
+================
+ParseOccluder
+
+parses one "occluder" section of a .ocl file into a model named _occluder_<lightname>
+================
+*/
+static idRenderModel* ParseOccluder( idLexer* src )
+{
+	idToken token;
+
+	src->ExpectTokenString( "{" );
+
+	// parse the name
+	src->ExpectAnyToken( &token );
+
+	idRenderModel* model = renderModelManager->AllocModel();
+	model->InitEmpty( token );
+
+	int numSurfaces = src->ParseInt();
+	if( numSurfaces < 0 )
+	{
+		src->Error( "ParseOccluder: bad numSurfaces" );
+	}
+
+	for( int i = 0; i < numSurfaces; i++ )
+	{
+		src->ExpectTokenString( "{" );
+
+		src->ExpectAnyToken( &token );
+
+		modelSurface_t surf;
+		surf.shader = declManager->FindMaterial( token );
+
+		( ( idMaterial* )surf.shader )->AddReference();
+
+		srfTriangles_t* tri = R_AllocStaticTriSurf();
+		surf.geometry = tri;
+
+		tri->numVerts = src->ParseInt();
+		tri->numIndexes = src->ParseInt();
+		const bool hasTexCoords = ( src->ParseInt() != 1 );
+
+		R_AllocStaticTriSurfVerts( tri, tri->numVerts );
+		for( int j = 0; j < tri->numVerts; j++ )
+		{
+			float vec[5] = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+
+			src->Parse1DMatrix( hasTexCoords ? 5 : 3, vec );
+
+			tri->verts[j].Clear();
+			tri->verts[j].xyz[0] = vec[0];
+			tri->verts[j].xyz[1] = vec[1];
+			tri->verts[j].xyz[2] = vec[2];
+			tri->verts[j].SetTexCoord( vec[3], vec[4] );
+		}
+
+		R_AllocStaticTriSurfIndexes( tri, tri->numIndexes );
+		for( int j = 0; j < tri->numIndexes; j++ )
+		{
+			tri->indexes[j] = src->ParseInt();
+		}
+		src->ExpectTokenString( "}" );
+
+		// add the completed surface to the model
+		model->AddSurface( surf );
+	}
+
+	src->ExpectTokenString( "}" );
+
+	model->FinishSurfaces();
+
+	return model;
+}
+
+/*
+=====================
+ReadBinaryOcl
+=====================
+*/
+static bool ReadBinaryOcl( idFile* file, ID_TIME_T sourceTimeStamp, idList< idRenderModel* >& models )
+{
+	unsigned int magic = 0;
+	int numModels = 0;
+	ID_TIME_T timeStamp = 0;
+
+	file->ReadBig( magic );
+	if( magic != BOCL_MAGIC )
+	{
+		return false;
+	}
+
+	file->ReadBig( numModels );
+	file->ReadBig( timeStamp );
+
+	if( !fileSystem->InProductionMode() && timeStamp != sourceTimeStamp )
+	{
+		return false;
+	}
+
+	if( numModels < 0 )
+	{
+		return false;
+	}
+
+	for( int i = 0; i < numModels; i++ )
+	{
+		idStrStatic< MAX_OSPATH > modelName;
+		file->ReadString( modelName );
+
+		idRenderModel* model = renderModelManager->AllocModel();
+		model->InitEmpty( modelName );
+		if( !model->LoadBinaryModel( file, timeStamp ) )
+		{
+			delete model;
+			return false;
+		}
+		models.Append( model );
+	}
+
+	return true;
+}
+
+/*
+=====================
+WriteBinaryOcl
+=====================
+*/
+static void WriteBinaryOcl( const char* fileName, ID_TIME_T sourceTimeStamp, const idList< idRenderModel* >& models )
+{
+	for( int i = 0; i < models.Num(); i++ )
+	{
+		if( !models[i]->SupportsBinaryModel() )
+		{
+			return;
+		}
+	}
+
+	idFileLocal file( fileSystem->OpenFileWrite( fileName, "fs_basepath" ) );
+	if( file == NULL )
+	{
+		return;
+	}
+
+	file->WriteBig( BOCL_MAGIC );
+	file->WriteBig( models.Num() );
+	file->WriteBig( sourceTimeStamp );
+
+	for( int i = 0; i < models.Num(); i++ )
+	{
+		file->WriteString( models[i]->Name() );
+		models[i]->WriteBinaryModel( file, &sourceTimeStamp );
+	}
+}
+
+/*
+=====================
+idRenderWorldLocal::LoadOcl
+=====================
+*/
+bool idRenderWorldLocal::LoadOcl( const char* name )
+{
+	assert( name && name[0] && "name must not be empty at this point" );
+
+	idStrStatic< MAX_OSPATH > filename = name;
+	filename.SetFileExtension( OCL_FILE_EXT );
+
+	idStrStatic< MAX_OSPATH > generatedFileName = filename;
+	generatedFileName.Insert( "generated/", 0 );
+	generatedFileName.SetFileExtension( OCL_BINARYFILE_EXT );
+
+	const ID_TIME_T sourceTimeStamp = fileSystem->GetTimestamp( filename );
+	const bool haveSource = ( sourceTimeStamp != FILE_NOT_FOUND_TIMESTAMP );
+
+	if( !haveSource && !fileSystem->InProductionMode() )
+	{
+		common->DPrintf( "idRenderWorldLocal::LoadOcl: %s not found, using regular shadow geometry\n", filename.c_str() );
+		return true;
+	}
+
+	idList< idRenderModel* > models;
+
+	// add it to the model manager list and save it in the list to free when clearing this map
+	auto registerModels = [&]()
+	{
+		for( int i = 0; i < models.Num(); i++ )
+		{
+			renderModelManager->AddModel( models[i] );
+			localModels.Append( models[i] );
+		}
+	};
+
+	if( binaryLoadRenderModels.GetBool() )
+	{
+		idFileLocal file( fileSystem->OpenFileReadMemory( generatedFileName ) );
+		if( file != NULL )
+		{
+			if( ReadBinaryOcl( file, sourceTimeStamp, models ) )
+			{
+				registerModels();
+				return true;
+			}
+
+			// outdated or damaged, throw away what we got and fall back to the text version
+			for( int i = 0; i < models.Num(); i++ )
+			{
+				delete models[i];
+			}
+			models.Clear();
+		}
+	}
+
+	if( !haveSource )
+	{
+		return true;
+	}
+
+	idLexer src( filename, LEXFL_NOSTRINGCONCAT | LEXFL_NODOLLARPRECOMPILE );
+	if( !src.IsLoaded() )
+	{
+		common->Warning( "idRenderWorldLocal::LoadOcl: couldn't load %s, using regular shadow geometry", filename.c_str() );
+		return false;
+	}
+
+	idToken token;
+	if( !src.ReadToken( &token ) || token.Icmp( OCL_FILE_ID ) )
+	{
+		common->Warning( "idRenderWorldLocal::LoadOcl: bad id '%s' instead of '%s', using regular shadow geometry", token.c_str(), OCL_FILE_ID );
+		return false;
+	}
+
+	while( src.ReadToken( &token ) )
+	{
+		if( token == "occluder" )
+		{
+			models.Append( ParseOccluder( &src ) );
+			continue;
+		}
+
+		src.Error( "idRenderWorldLocal::LoadOcl: bad token \"%s\"", token.c_str() );
+	}
+
+	registerModels();
+
+	if( binaryLoadRenderModels.GetBool() )
+	{
+		WriteBinaryOcl( generatedFileName, sourceTimeStamp, models );
+	}
+
 	return true;
 }
 

@@ -588,11 +588,22 @@ static void CreateMapLight( const idMapEntity* mapEnt )
 	}
 
 	light = new mapLight_t;
+	memset( light->occluders, 0, sizeof( light->occluders ) );
+
+	// the name is used to match the occluder model (_occluder_<name>) to the light at runtime
+	const char* lightName = mapEnt->epairs.GetString( "name", "" );
+	idStr::Copynz( light->name, lightName, sizeof( light->name ) );
 
 	// parse parms exactly as the game do
 	// use the game's epair parsing code so
 	// we can use the same renderLight generation
 	gameEdit->ParseSpawnArgsToRenderLight( &mapEnt->epairs, &light->def.parms );
+
+	light->def.lightShader = light->def.parms.shader;
+	if( light->def.lightShader == NULL )
+	{
+		light->def.lightShader = declManager->FindMaterial( light->def.parms.pointLight ? "lights/defaultPointLight" : "lights/defaultProjectedLight" );
+	}
 
 	R_DeriveLightData( &light->def );
 

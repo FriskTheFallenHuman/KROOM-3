@@ -125,6 +125,7 @@ int idCompilerThread::Run()
 	return 0;
 }
 
+#if 0 // FIXME
 /*
 ========================
 Dmap_Threaded_f
@@ -139,6 +140,7 @@ static void Dmap_Threaded_f( const idCmdArgs& args )
 	}
 	g_compilerThread.Dispatch( Dmap_f, args, "DmapThread" );
 }
+#endif
 
 /*
 ========================
@@ -215,6 +217,8 @@ static void Amplitude_Threaded_f( const idCmdArgs& args )
 	}
 	g_compilerThread.Dispatch( Amplitude_f, args, "AmplitudeThread" );
 }
+
+#if 0 // DEBUG stuff
 /*
 ========================
 Compiler_Wait_f
@@ -244,6 +248,7 @@ static void Compiler_Status_f( const idCmdArgs& args )
 {
 	idLib::Printf( "Compiler thread: %s\n", g_compilerThread.IsRunning() ? "RUNNING" : "idle" );
 }
+#endif
 
 /*
 ========================
@@ -252,12 +257,14 @@ RegisterCompilerThreadCommands
 */
 void RegisterCompilerThreadCommands()
 {
-	cmdSystem->AddCommand( "dmap", Dmap_Threaded_f, CMD_FL_TOOL, "compiles a map", idCmdSystem::ArgCompletion_MapName );
+	//cmdSystem->AddCommand( "dmap", Dmap_Threaded_f, CMD_FL_TOOL, "compiles a map", idCmdSystem::ArgCompletion_MapName ); // FIXME: Not thread friendly!!!
 	cmdSystem->AddCommand( "runAAS", RunAAS_Threaded_f, CMD_FL_TOOL, "compiles an AAS file for a map", idCmdSystem::ArgCompletion_MapName );
 	cmdSystem->AddCommand( "runAASDir", RunAASDir_Threaded_f, CMD_FL_TOOL, "compiles AAS files for all maps in a folder", idCmdSystem::ArgCompletion_MapName );
 	cmdSystem->AddCommand( "runReach", RunReach_Threaded_f, CMD_FL_TOOL, "calculates reachability for an AAS file", idCmdSystem::ArgCompletion_MapName );
 	cmdSystem->AddCommand( "roq", RoQFileEncode_Threaded_f, CMD_FL_TOOL, "encodes a roq file" );
 	cmdSystem->AddCommand( "amplitude", Amplitude_Threaded_f, CMD_FL_TOOL, "encodes a wav file into a amp file", idCmdSystem::ArgCompletion_SoundName );
+#if 0 // DEBUG stuff
 	cmdSystem->AddCommand( "compiler_wait", Compiler_Wait_f, CMD_FL_TOOL, "block until the background compiler finishes" );
 	cmdSystem->AddCommand( "compiler_status", Compiler_Status_f, CMD_FL_TOOL, "print background compiler status" );
+#endif
 }

@@ -31,42 +31,7 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 #include "../renderer/Image.h"
 
-/*
-=============
-OBJExporter
-=============
-*/
-class OBJExporter
-{
-public:
-	struct OBJFace
-	{
-		const idMaterial*			material;
-		idList<idDrawVert>			verts;
-		idList<triIndex_t>			indexes;
-	};
-
-	struct OBJObject
-	{
-		idStr						name;
-		idList<OBJFace>				faces;
-	};
-
-	struct OBJGroup
-	{
-		idStr						name;
-		idList<OBJObject>			objects;
-	};
-
-	idList<OBJGroup>				groups;
-	idList< const idMaterial* >		materials;
-
-	void	ConvertBrushToOBJ( OBJGroup& group, const idMapBrush* mapBrush, int entityNum, int primitiveNum, const idMat4& transform );
-	void	ConvertPatchToOBJ( OBJGroup& group, const idMapPatch* patch, int entityNum, int primitiveNum, const idMat4& transform );
-	void	ConvertMeshToOBJ( OBJGroup& group, const idMapPolygonMesh* mesh, int entityNum, int primitiveNum, const idMat4& transform );
-
-	void	Write( const char* relativePath, const char* basePath = "fs_basepath" );
-};
+#include "OBJExporter.h"
 
 /*
 =============

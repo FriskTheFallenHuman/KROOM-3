@@ -997,8 +997,7 @@ If clipping was required, the outside fragments will be planar clips, which
 will benefit from re-optimization.
 =================
 */
-static void ClipTriByLight( const mapLight_t* light, const mapTri_t* tri,
-							mapTri_t** in, mapTri_t** out )
+void ClipTriByLight( const mapLight_t* light, const mapTri_t* tri, mapTri_t** in, mapTri_t** out )
 {
 	idWinding*	inside, *oldInside;
 	idWinding*	outside[6];
@@ -1228,6 +1227,12 @@ void Prelight( uEntity_t* e )
 			{
 				BoundOptimizeGroup( group );
 			}
+		}
+
+		// build occlusion geometry for shadow maps, must happen before the groups get carved by lights
+		for( i = 0 ; i < dmapGlobals.mapLights.Num() ; i++ )
+		{
+			BuildLightOccluders( e, dmapGlobals.mapLights[i] );
 		}
 
 		end = Sys_Milliseconds();

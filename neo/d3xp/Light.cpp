@@ -91,7 +91,10 @@ void idLight::UpdateChangeableSpawnArgs( const idDict* source )
 		StartSoundShader( refSound.shader, SND_CHANNEL_ANY, 0, false, NULL );
 	}
 
+	// ParseSpawnArgsToRenderLight clears the whole renderLight, keep the occlusion model
+	idRenderModel* occlusionModel = renderLight.occlusionModel;
 	gameEditLocal.ParseSpawnArgsToRenderLight( source ? source : &spawnArgs, &renderLight );
+	renderLight.occlusionModel = occlusionModel;
 
 	// RB: allow the ingame light editor to move the light
 	GetPhysics()->SetOrigin( renderLight.origin );
@@ -203,6 +206,13 @@ void idLight::Restore( idRestoreGame* savefile )
 {
 	savefile->ReadRenderLight( renderLight );
 
+	// the occlusion model is not saved, look it up by name again
+	renderLight.occlusionModel = NULL;
+	if( name[0] )
+	{
+		renderLight.occlusionModel = renderModelManager->CheckModel( va( "_occluder_%s", name.c_str() ) );
+	}
+
 	// keep compatibility.
 	bool stub;
 	savefile->ReadBool( stub );
@@ -274,6 +284,14 @@ void idLight::Spawn()
 
 	// do the parsing the same way dmap and the editor do
 	gameEditLocal.ParseSpawnArgsToRenderLight( &spawnArgs, &renderLight );
+
+	// optional occlusion geometry written by dmap (.ocl), the model is matched by the entity name.
+	// CheckModel returns NULL if the map has no .ocl or this light has no occluders
+	renderLight.occlusionModel = NULL;
+	if( name[0] )
+	{
+		renderLight.occlusionModel = renderModelManager->CheckModel( va( "_occluder_%s", name.c_str() ) );
+	}
 
 	// Store the original light radius for the light style.
 	styleBase = renderLight.lightRadius;

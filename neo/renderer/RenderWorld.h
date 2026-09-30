@@ -39,7 +39,13 @@ If you have questions concerning this license or the applicable additional terms
 */
 
 #define PROC_FILE_EXT				"proc"
+#define PROC_BINARYFILE_EXT			"bproc"
 #define	PROC_FILE_ID				"mapProcFile003"
+
+// optional occlusion geometry for shadow map rendering, written by dmap
+#define OCL_FILE_EXT				"ocl"
+#define OCL_BINARYFILE_EXT			"bocl"
+#define	OCL_FILE_ID					"mapOclFile002"
 
 // shader parms
 const int SHADERPARM_RED			= 0;
@@ -209,6 +215,11 @@ typedef struct renderLight_s
 	const idMaterial* 		shader;				// NULL = either lights/defaultPointLight or lights/defaultProjectedLight
 	float					shaderParms[MAX_ENTITY_SHADER_PARMS];		// can be used in any way by shader
 	idSoundEmitter* 		referenceSound;		// for shader sound tables, allowing effects to vary with sounds
+
+	// static occlusion geometry written by dmap (.ocl), used instead of the world surfaces
+	// when rendering shadow maps. NULL if the map has no .ocl file. Not saved, the game looks it
+	// up by entity name (_occluder_<name>) on spawn/restore.
+	idRenderModel* 			occlusionModel;
 } renderLight_t;
 
 

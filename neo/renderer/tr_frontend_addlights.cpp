@@ -42,6 +42,7 @@ If you have questions concerning this license or the applicable additional terms
 
 idCVar r_useAreasConnectedForShadowCulling( "r_useAreasConnectedForShadowCulling", "2", CVAR_RENDERER | CVAR_INTEGER, "cull entities cut off by doors" );
 idCVar r_useParallelAddLights( "r_useParallelAddLights", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_NOCHEAT, "aadd all lights in parallel with jobs" );
+idCVar r_useOcclusionGeometry( "r_useOcclusionGeometry", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "use dmap generated occlusion geometry (.ocl) instead of static world surfaces when rendering shadow maps" );
 
 /*
 ============================
@@ -102,6 +103,98 @@ if it is determined to not have any visible effect due to being flashed off or t
 Add any precomputed shadow volumes.
 ===================
 */
+
+/*
+=================
+R_LightUsesOcclusionModel
+
+the occlusion model was built by dmap for the light as it was placed in the map, so it is only
+valid until the light changes. Parallel (sun) lights render cascades that are not limited to the light
+frustum dmap clipped against, so they always use the regular shadow casters.
+=================
+*/
+bool R_LightUsesOcclusionModel( const idRenderLightLocal* light )
+{
+	return r_useOcclusionGeometry.GetBool() &&
+		   light->parms.occlusionModel != NULL &&
+		   !light->parms.parallel &&
+		   !light->lightHasMoved;
+}
+
+/*
+=================
+R_AddLightOcclusionSurfaces
+
+adds the surfaces of the occlusion model as shadow casters of the light.
+Same as the shadow drawSurfs from R_AddSingleModel, but the geometry is already in world space,
+so it uses the world viewEntity and doesn't belong to any renderEntity.
+=================
+*/
+struct occluderEntity_t
+{
+	renderEntity_t	parms;
+
+	occluderEntity_t()
+	{
+		memset( &parms, 0, sizeof( parms ) );
+		for( int i = 0; i < MAX_ENTITY_SHADER_PARMS; i++ )
+		{
+			parms.shaderParms[i] = 1.0f;
+		}
+	}
+};
+static const occluderEntity_t occluderEntity;
+
+static void R_AddLightOcclusionSurfaces( viewLight_t* vLight )
+{
+	const idRenderLightLocal* light = vLight->lightDef;
+	idRenderModel* model = light->parms.occlusionModel;
+
+	for( int i = 0; i < model->NumSurfaces(); i++ )
+	{
+		const modelSurface_t* surf = model->Surface( i );
+		srfTriangles_t* tri = surf->geometry;
+		const idMaterial* shader = surf->shader;
+
+		if( tri == NULL || tri->numVerts < 3 || tri->numIndexes < 3 || shader == NULL )
+		{
+			continue;
+		}
+
+		drawSurf_t* shadowDrawSurf = ( drawSurf_t* )R_FrameAlloc( sizeof( *shadowDrawSurf ), FRAME_ALLOC_DRAW_SURFACE );
+
+		if( !vertexCache.CacheIsCurrent( tri->indexCache ) )
+		{
+			tri->indexCache = vertexCache.AllocIndex( tri->indexes, tri->numIndexes );
+		}
+
+		if( !vertexCache.CacheIsCurrent( tri->ambientCache ) )
+		{
+			tri->ambientCache = vertexCache.AllocVertex( tri->verts, tri->numVerts );
+		}
+
+		shadowDrawSurf->numIndexes = tri->numIndexes;
+		shadowDrawSurf->indexCache = tri->indexCache;
+		shadowDrawSurf->ambientCache = tri->ambientCache;
+		shadowDrawSurf->frontEndGeo = tri;
+		shadowDrawSurf->space = &tr.viewDef->worldSpace;
+		shadowDrawSurf->material = shader;
+		shadowDrawSurf->extraGLState = 0;
+		shadowDrawSurf->scissorRect = vLight->scissorRect;
+		shadowDrawSurf->sort = 0.0f;
+
+		if( shader->Coverage() == MC_PERFORATED )
+		{
+			R_SetupDrawSurfShader( shadowDrawSurf, shader, &occluderEntity.parms );
+		}
+
+		// the light is processed by exactly one job, so it is safe to link directly
+		shadowDrawSurf->linkChain = &vLight->globalShadows;
+		shadowDrawSurf->nextOnLight = vLight->globalShadows;
+		vLight->globalShadows = shadowDrawSurf;
+	}
+}
+
 static void R_AddSingleLight( viewLight_t* vLight )
 {
 	// until proven otherwise
@@ -453,6 +546,13 @@ static void R_AddSingleLight( viewLight_t* vLight )
 	// this one stays on the list
 	vLight->removeFromList = false;
 
+	// static world shadow casters come from the occlusion model, if there is one
+	const bool useOcclusionModel = lightCastsShadows && R_LightUsesOcclusionModel( light );
+	if( useOcclusionModel )
+	{
+		R_AddLightOcclusionSurfaces( vLight );
+	}
+
 	//--------------------------------------------
 	// create interactions with all entities the light may touch, and add viewEntities
 	// that may cast shadows, even if they aren't directly visible.  Any real work
@@ -530,6 +630,13 @@ static void R_AddSingleLight( viewLight_t* vLight )
 				// surfaces are never shadowed in this light
 				continue;
 			}
+
+			// the occlusion model replaces the shadows of the static world
+			if( useOcclusionModel && eModel != NULL && eModel->IsStaticWorldModel() )
+			{
+				continue;
+			}
+
 			// if we are suppressing its shadow in this view (player shadows, etc), skip
 			if( !r_skipSuppress.GetBool() )
 			{
