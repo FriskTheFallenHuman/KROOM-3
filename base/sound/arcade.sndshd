@@ -1,0 +1,164 @@
+arcade_beargroan
+{
+	minDistance	4
+	maxDistance	15
+	volume 		0
+	no_dups
+
+	sound/arcade_machines/bearhunt/bear_groan1.ogg
+	sound/arcade_machines/bearhunt/bear_groan2.ogg
+}
+
+arcade_sargeshoot
+{
+	minDistance	4
+	maxDistance	15
+	volume 		0
+
+	sound/arcade_machines/bearhunt/sarge_shoot1.ogg
+}
+
+arcade_balloonpop
+{
+	minDistance	4
+	maxDistance	15
+	volume 		0
+
+	sound/arcade_machines/bearhunt/balloon_pop.ogg
+}
+
+arcade_blaster
+{
+	minDistance	4
+	maxDistance	15
+	volume 		0
+
+	sound/arcade_machines/mbb/blaster1.ogg
+}
+
+arcade_capture
+{
+	minDistance	4
+	maxDistance	15
+	volume 		0
+
+	sound/arcade_machines/mbb/capture1.ogg
+}
+
+arcade_explode
+{
+	minDistance	4
+	maxDistance	15
+	volume 		0
+
+	sound/arcade_machines/mbb/explode1.ogg
+}
+
+arcade_insertcoin
+{
+	minDistance	4
+	maxDistance	15
+	volume 		0
+
+	sound/arcade_machines/arc_addcredit_01.ogg
+}
+
+arcade_extraball
+{
+	minDistance	4
+	maxDistance	15
+	volume 		0
+
+	sound/arcade_machines/hellanoid/arc_ballbounce_01.ogg
+}
+
+arcade_powerup
+{
+	minDistance	4
+	maxDistance	15
+	volume 		0
+
+	sound/arcade_machines/hellanoid/arc_powerup.ogg
+}
+
+
+arcade_startgame
+{
+	minDistance	4
+	maxDistance	15
+	volume 		0
+
+	sound/arcade_machines/arc_start.ogg
+}
+
+arcade_ballbounce
+{
+	minDistance	4
+	maxDistance	15
+	volume 		0
+
+	sound/arcade_machines/hellanoid/arc_ballbounce_01.ogg
+}
+
+arcade_brickhit
+{
+	minDistance	4
+	maxDistance	15
+	volume 		0
+
+	sound/arcade_machines/hellanoid/arc_brick_01.ogg
+}
+
+arcade_levelcomplete1
+{
+	minDistance	4
+	maxDistance	15
+	volume 		0
+
+	sound/arcade_machines/hellanoid/arc_levelcomplete_01.ogg
+}
+
+arcade_startbeep
+{
+	minDistance	4
+	maxDistance	15
+	volume 		0
+
+	sound/arcade_machines/arc_startbeep.ogg
+}
+
+
+arcade_levelcomplete2
+{
+	minDistance	4
+	maxDistance	15
+	volume 		0
+
+	sound/arcade_machines/hellanoid/arc_levelcomplete_02.ogg
+}
+
+arcade_missedball
+{
+	minDistance	4
+	maxDistance	15
+	volume 		0
+
+	sound/arcade_machines/hellanoid/arc_missedball_01.ogg
+}
+
+arcade_sadsound
+{
+	minDistance	4
+	maxDistance	15
+	volume 		0
+
+	sound/arcade_machines/hellanoid/arc_sadsound_01.ogg
+}
+
+arcade_countdown
+{
+	minDistance 4
+	maxDistance 15
+	volume		0
+	sound/arcade_machines/arc_countdown.ogg
+}

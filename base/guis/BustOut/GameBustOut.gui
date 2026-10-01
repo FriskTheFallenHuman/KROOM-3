@@ -1,0 +1,592 @@
+windowDef Desktop {
+	rect	0,0,640,480
+
+	float	"credits"			0
+
+	onEvent {
+		if("desktop::credits" == 0) {
+			set "CreditText::text" "#str_00100097";
+		}
+		if("desktop::credits" == 1) {
+			set "CreditText::text" "#str_00100098";
+		}
+		if("desktop::credits" == 2) {
+			set "CreditText::text" "#str_00100099";
+		}
+		if("desktop::credits" == 3) {
+			set "CreditText::text" "#str_00100100";
+		}
+		if("desktop::credits" == 4) {
+			set "CreditText::text" "#str_00100101";
+		}
+
+	}
+
+	onNamedEvent GameOver {
+		resetTime "fnGameOver" "0"
+	}
+
+	onNamedEvent levelComplete {
+		resetTime "fnLevelComplete" "0"
+	}
+
+	onNamedEvent extraBall {
+		resetTime "fnExtraBall" "0"
+	}
+
+	windowDef mainbackground {
+		rect	0,0,640,480
+		visible	1
+
+		backcolor   0, 0, 0, 1
+		matcolor	1,1,1,.8
+
+		onAction {
+		}
+	}
+
+	//Function Windows
+	/*
+	* Fades the menu screen and begins the game
+	*/
+	windowDef fnStartGame {
+		notime 1
+
+		onTime 0 {
+			set			"game::visible" "1";
+			set			"gui::player_score" "0";
+			set			"gui::current_level" "10";
+			set			"gui::balls_remaining" "3";
+			set			"gui::next_ball_score" "10000";
+
+			"transition" "game::matcolor" "0 0 0 0" "1 1 1 1" "1000";
+			"transition" "IntroScreen::rect" "0 0 640 480" "0 -480 640 480" "1000";
+		}
+		onTime 950 {
+			set			"gameWin::onNewGame"	"1";
+		}
+		onTime 1000 {
+			set			"IntroScreen::visible" "0";
+			set			"gameWin::visible"		"1";
+			set			"gameWin::gamerunning"	"1";
+			set			"desktop::hideCursor"	"1";
+		}
+	}
+
+	/*
+	* Game Over
+	*/
+	windowDef fnGameOver {
+		notime 1
+
+		onTime 0 {
+			set			"ContinueScreen::visible"	"1";
+			set			"ContinueButton::noEvents"	"1";
+			set			"Countdown::text"	"10";
+			set			"desktop::hideCursor"	"0";
+			set			"gameWin::visible"		"0";
+			set			"gameWin::gamerunning"	"0";
+
+			"transition" "game::matcolor" "1 1 1 1" "0 0 0 0" "1000";
+			"transition" "ContinueScreen::rect" "0 -480 640 480" "0 0 640 480" "1000";
+		}
+		onTime 1000 {
+			set			"game::visible" "0";
+			resetTime	"ContinueScreen"		"0";
+			set			"ContinueButton::noEvents"	"0";
+		}
+	}
+
+	/*
+	* Continue Game
+	*/
+	windowDef fnContinueGame {
+		notime 1
+
+		onTime 0 {
+			set			"game::visible"			"1";
+			set			"ContinueButton::noEvents"	"1";
+			set			"desktop::hideCursor"	"1";
+			set			"gui::balls_remaining" "3";
+
+			"transition" "game::matcolor" "0 0 0 0" "1 1 1 1" "1000";
+			"transition" "ContinueScreen::rect" "0 0 640 480" "0 -480 640 480" "1000";
+		}
+		onTime 950 {
+			set			"gameWin::onContinue"		"1";
+		}
+		onTime 1000 {
+			set			"ContinueScreen::visible"	"0";
+			set			"gameWin::visible"			"1";
+			set			"gameWin::gamerunning"		"1";
+		}
+	}
+
+	/*
+	* Hides the main game window, so we can display level completion screen
+	*/
+	windowDef fnHideGame {
+		noTime 1
+
+		onTime 0 {
+			transition "game::matcolor" "1 1 1 1" "1 1 1 0" "500";
+			set	"gameWin::visible" "0";
+		}
+	}
+
+	windowDef fnLevelComplete {
+		noTime 1
+
+		onTime 0 {
+			resetTime		"fnHideGame" "0";
+
+			set				"desktop::hideCursor"	"0";
+			transition		"LevelCompleteScreen::rect" "0 -480 640 480" "0 0 640 480" "500";
+			resetTime		"LevelCompleteScreen" "0";
+			set				"cmd"	"play arcade_levelcomplete1" ;
+		}
+	}
+
+	windowDef fnNextLevel {
+		noTime 1
+
+		onTime 0 {
+			transition	"LevelCompleteScreen::rect"	"0 0 640 480" "0 -480 640 480" "500";
+			transition	"game::matcolor" "1 1 1 0" "1 1 1 1" "500";
+
+			set			"gameWin::onNewLevel" "1";
+		}
+		onTime 500 {
+			set			"gameWin::visible" "1";
+		}
+	}
+
+	windowDef fnExtraBall {
+		noTime 1
+
+		onTime 0 {
+			transition	"ExtraBallTitle::forecolor" "1 1 1 0" "1 1 1 0.65" "750" ;
+		}
+
+		onTime 3000 {
+			transition	"ExtraBallTitle::forecolor" "1 1 1 0.65" "1 1 1 0" "750" ;
+		}
+	}
+
+
+	/* ===================================
+	*  The Game Window
+	*  ===================================
+	*/
+	windowDef game {
+		rect 0,0,640,480
+		matcolor 0,0,0,0
+		background "guis/assets/bustout/background"
+		visible 0
+
+		gameBustOutDef gameWin {
+			rect 0,0,640,480
+			visible 0
+			gamerunning 0
+
+			numLevels 5
+
+			windowDef LevelGroup {
+				rect 520, -3, 150, 30
+
+				windowDef LevelTitle {
+					rect 30, 0, 60, 30
+					text "#str_00100103"
+					textscale .4
+				}
+				windowDef Level {
+					rect 96, 0, 30, 30
+					text "gui::current_level"
+					textscale .4
+				}
+			}
+
+			windowDef ScoreGroup {
+				rect 8,-3,280,40
+
+				windowDef ScoreTitle {
+					rect 0, 0, 70, 30
+					text "#str_00100114"
+					textscale .4
+				}
+				windowDef Score {
+					rect 74, 0, 72, 30
+					text "gui::player_score"
+					textscale .4
+				}
+			}
+
+			windowDef BallsGroup {
+				rect 266, -3, 150, 30
+
+				windowDef BallTitle {
+					rect 0, 0, 70, 30
+					text "#str_00100115"
+					textscale .4
+				}
+				windowDef Balls {
+					rect 64, 0, 52, 30
+					text "gui::balls_remaining"
+					textscale .4
+				}
+			}
+
+			windowDef ExtraBallBanner {
+				rect 210, 270, 250, 30
+
+				windowDef ExtraBallTitle {
+					rect 0, 0, 250, 30
+					forecolor	1, 1, 1, 0.0
+					text "#str_00100116"
+					textscale .4
+				}
+			}
+		}
+	}
+
+	windowDef IntroScreen {
+		rect 0,0,640,480
+		visible 1
+
+		windowDef InsertText
+		{
+			rect	0,351,640,29
+			text	"#str_00100108"
+			font	"fonts/micro"
+			textscale	0.4
+			forecolor	1,1,1,0.749
+			visible	1
+			textalign	1
+		}
+		windowDef CreditText {
+			rect	0,371,640,29
+			text	"#str_00100097"
+			font	"fonts/micro"
+			textscale	0.4
+			forecolor	1,1,1,0.349
+			visible	1
+			textalign	1
+		}
+		windowDef GameTitle {
+			rect	58,46,532,202
+
+			//text	"HELLANOID"
+			//textscale 1.8
+			//textalign 1
+			background "guis/assets/arcade/hellanoid_logo.tga"
+
+			onTime 0 {
+				transition "forecolor" "1 1 1 .9" "1 1 1 .4" "800" ;
+			}
+
+			onTime 800 {
+				transition "forecolor" "1 1 1 .4" "1 1 1 .9" "200" ;
+			}
+			onTime 1000 {
+				resetTime "0" ;
+			}
+		}
+
+		windowDef StartButton
+		{
+			rect	65,249,505,96
+			visible	0
+			background "guis/assets/arcade/arcade_coincontinue_button.tga"
+			matcolor	0.6,0,0,0.4
+
+			onTime 0 {
+				transition "matcolor" "0 0.6 0 1" "0 0.6 0 0.4" "800" ;
+			}
+
+			onTime 800 {
+				transition "matcolor" "0 0.6 0 0.4" "0 0.6 0 1" "200" ;
+			}
+
+			onTime 1000 {
+				resetTime "0" ;
+			}
+
+			onAction {
+				set	"cmd"	"play arcade_startbeep" ;
+				resetTime "fnStartGame"	"0";
+			}
+
+			windowDef TextButton
+			{
+				rect	0,10,505,96
+				text	"#str_00100110"
+				font	"fonts/bank"
+				textscale	1
+				forecolor	1,1,1,0.8
+				visible	1
+				textalign	1
+			}
+		}
+
+		windowDef InsertCredit {
+
+			rect	65,249,505,96
+			visible	1
+			background "guis/assets/arcade/arcade_coincontinue_button.tga"
+			matcolor	0.6,0,0,1
+
+
+			onAction {
+				if("desktop::credits" == 3) {
+					set	"cmd"	"play arcade_startgame" ;
+					set	"desktop::credits"	4;
+					set "InsertCredit::visible" "0";
+					set "StartButton::visible" "1";
+				}
+				if("desktop::credits" == 2) {
+					set	"cmd"	"play arcade_insertcoin" ;
+					set	"desktop::credits"	3;
+				}
+				if("desktop::credits" == 1) {
+					set	"cmd"	"play arcade_insertcoin" ;
+					set	"desktop::credits"	2;
+				}
+				if("desktop::credits" == 0) {
+					set	"cmd"	"play arcade_insertcoin" ;
+					set	"desktop::credits"	1;
+				}
+			}
+
+			windowDef TextButton
+			{
+				rect	0,10,505,96
+				text	"#str_00100111"
+				font	"fonts/bank"
+				textscale	1
+				forecolor	1,1,1,0.8
+				visible	1
+				textalign	1
+			}
+		}
+	}
+
+	windowDef ContinueScreen {
+		rect 0,-480,640,480
+		visible 0
+		notime 1
+
+		windowDef GameOver {
+
+			rect	65,50,505,96
+			visible	1
+			background	"guis/assets/teleporter/button1"
+			matcolor	0.5,0,0,1
+
+			windowDef TextButton
+			{
+				rect	0,-4,505,96
+				text	"#str_00100112"
+				font	"fonts/bank"
+				textscale	1.4
+				forecolor	1,1,1,0.8
+				visible	1
+				textalign	1
+			}
+		}
+
+		windowDef Countdown
+		{
+			backcolor 0,0,0,0
+			forecolor 1,1,1,1
+			rect	65, 150, 505, 200
+			text	"10"
+			textscale	2.5
+			textalign	1
+		}
+
+		onTime 0 {
+			set		"Countdown::text"	"10";
+		}
+		onTime 1000 {
+			set	"cmd"	"play arcade_countdown" ;
+			set		"Countdown::text"	"9";
+		}
+		onTime 2000 {
+			set	"cmd"	"play arcade_countdown" ;
+			set		"Countdown::text"	"8";
+		}
+		onTime 3000 {
+			set	"cmd"	"play arcade_countdown" ;
+			set		"Countdown::text"	"7";
+		}
+		onTime 4000 {
+			set	"cmd"	"play arcade_countdown" ;
+			set		"Countdown::text"	"6";
+		}
+		onTime 5000 {
+			set	"cmd"	"play arcade_countdown" ;
+			set		"Countdown::text"	"5";
+		}
+		onTime 6000 {
+			set	"cmd"	"play arcade_countdown" ;
+			set		"Countdown::text"	"4";
+		}
+		onTime 7000 {
+			set	"cmd"	"play arcade_countdown" ;
+			set		"Countdown::text"	"3";
+		}
+		onTime 8000 {
+			set	"cmd"	"play arcade_countdown" ;
+			set		"Countdown::text"	"2";
+		}
+		onTime 9000 {
+			set	"cmd"	"play arcade_countdown" ;
+			set		"Countdown::text"	"1";
+		}
+		onTime 10000 {
+			set	"cmd"	"play arcade_countdown" ;
+			set		"Countdown::text"	"0";
+		}
+		onTime 11000 {
+			set		"desktop::credits"			0;
+			set		"ContinueScreen::notime"	"1";
+			set		"IntroScreen::visible"		"1";
+			set		"InsertCredit::visible"		"1";
+			set		"StartButton::visible"		"0";
+
+			"transition" "IntroScreen::rect" "0 -480 640 480" "0 0 640 480" "1000";
+			"transition" "ContinueScreen::rect" "0 0 640 480" "0 -480 640 480" "1000";
+		}
+		onTime 12000 {
+			set		"ContinueScreen::visible"	"0";
+		}
+
+		windowDef ContinueButtonImage {
+			rect	120,300,400,80
+			visible	1
+			background "guis/assets/arcade/arcade_coincontinue_button.tga"
+			matcolor	0.0,0.6,0,.6
+		}
+
+		windowDef ContinueButton {
+
+			rect	120,320,400,60
+			visible	1
+
+			text	"#str_00100113"
+			textscale	.6
+			forecolor	1,1,1,1
+			textalign	1
+
+			onAction {
+				set	"cmd"	"play arcade_startbeep" ;
+				set		"ContinueScreen::notime"	"1";
+				resetTime	"fnContinueGame"	"0";
+			}
+		}
+	}
+
+	windowDef LevelCompleteScreen {
+		rect		0, -480, 640, 480
+		visible		1
+
+		noTime		1
+
+		windowDef win1 {
+			rect		0,40,640,100
+			text		"#str_00100118"
+			textscale	1
+			textalign	1
+		}
+
+		windowDef level {
+			rect		240,40,40,100
+			text		"gui::current_level"
+			textscale	1
+			textalign	0
+		}
+
+		windowDef underline {
+			rect		80, 104, 480, 12
+			backcolor	.6, 0, 0, .5
+		}
+
+		windowDef ScoreLabel {
+			rect		230,180,240,40
+			text		"#str_00100114"
+			textscale	.5
+			textalign	0
+		}
+		windowDef Score {
+			rect		200,180,210,40
+			text		"gui::player_score"
+			textscale	.5
+			textalign	2
+		}
+
+		windowDef NextBallScoreLabel {
+			rect		155,250,240,40
+			text		"#str_00100563"
+			textscale	.5
+			textalign	0
+		}
+		windowDef NextBallScore {
+			rect		200,250,210,40
+			text		"gui::next_ball_score"
+			textscale	.5
+			textalign	2
+		}
+
+		windowDef NextLevelButtonImage {
+			rect	120,360,400,75
+			visible	1
+			background "guis/assets/arcade/arcade_coincontinue_button.tga"
+			matcolor	0.6,0,0,1
+		}
+
+		windowDef NextLevelButton {
+			rect		120,370,400,55
+			text		"#str_00100120"
+			textscale	.7
+			textalign	1
+			//backcolor	.6, 0, 0, .5
+
+			onAction {
+				set	"cmd"	"play arcade_levelcomplete2" ;
+				resetTime "fnNextLevel" "0";
+				set "desktop::hideCursor" "1";
+			}
+		}
+	}
+
+
+	//Some other full screen effects
+	windowDef Reflect
+	{
+		rect	-2,-13,648,489
+		matcolor	1 ,0.8 ,0.7 ,0.15
+		visible	1
+		background	"gui/reflect2"
+	}
+	windowDef Bglow
+	{
+		rect	0, 0, 640, 480
+		background	"guis/assets/cpuserver/bglow.tga"
+		visible	1
+		matcolor	1, 0.8, 0.4, 0.1
+	}
+	windowDef Addhighlight
+	{
+		rect	7,11,-625,461
+		background	"gui/addhighlight"
+		matcolor	0.4 ,0.4 ,0.2,1
+		visible	1
+	}
+	windowDef Static1
+	{
+		rect	0,0,-640,480
+		visible	1
+		background	"gui/static"
+		matcolor	1, 1, 1, pdhalffade[ time * 0.001 ] / 8
+	}
+}

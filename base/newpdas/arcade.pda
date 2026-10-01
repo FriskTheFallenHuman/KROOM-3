@@ -1,0 +1,19 @@
+email MartianBuddyGameComplete
+{
+	date		"12-12-2145"
+	to		"Mail recipient"
+	from		"MartianBuddy.com"
+	subject	"Martian Buddy Hero!"
+	text
+	{
+	"Congratulations! You have saved enough martian buddies to be considered a true hero!!!\n\n"
+
+	"You name will go down in history as one of the few who have fought against tremendous odds to protect your martian buddies from certain death!!!\n\n"
+
+	"Visit http://www.martianbuddy.com/blaster.html for a special gift.\n\n"
+
+	"Sincerely,\n"
+	"Martian Buddy Supreme Council\n"
+
+	}
+}
