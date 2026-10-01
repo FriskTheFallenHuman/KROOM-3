@@ -463,4 +463,48 @@
 		}
 	}
 
+	"modify"
+	{	
+		"entity 79"
+		{
+			"target1" ""
+		}
+
+		"entity 118"
+		{
+			"target1" ""
+		}
+
+		"entity 129"
+		{
+			"origin" "4060 -1084 352"
+		}
+
+		"entity 250"
+		{
+			"origin" "2626 234 392"
+		}
+
+		"entity 607"
+		{
+			"origin" "4070 -1082 279"
+		}
+
+		"entity 607"
+		{
+			"origin" "4070 -1082 279"
+		}
+
+		"entity 608"
+		{
+			"origin" "4069 -1081 327"
+		}
+
+		"entity 754"
+		{
+			"target" "func_door_62"
+			"target1" ""
+		}
+	}
+
 }

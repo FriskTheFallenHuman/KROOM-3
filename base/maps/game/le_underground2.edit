@@ -935,4 +935,42 @@
 		}
 	}
 
+	"modify"
+	{	
+		"entity 504"
+		{
+			"s_waitfortrigger" "0"
+		}
+		
+		"entity 505"
+		{
+			"origin" "-711.14 -2706.09 382"
+		}
+
+		"entity 800"
+		{
+			"name" "lift_pcell_start"
+		}
+
+		"entity 803"
+		{
+			"s_waitfortrigger" "1"
+		}
+
+		"entity 804"
+		{
+			"origin" "-673.93 -1341.69 190"
+		}
+
+		"entity 805"
+		{
+			"anim" "open"
+		}
+
+		"entity 807"
+		{
+			"hide" "1"
+		}
+	}
+
 }

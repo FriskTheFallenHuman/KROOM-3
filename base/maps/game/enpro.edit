@@ -784,6 +784,29 @@
 			"origin" "-2208 760 -376"
 			"spawnclass" "idEnvProbes"
 		}
+		"entity 2447"
+		{
+			"origin" "-1403.87 2219.21 -317.84"
+			"classname" "speaker"
+			"angle" "178.027985"
+			"s_shader" "sound/ambient/steam/loop_steam_05.wav"
+			"name" "cst_speaker_30"
+			"s_volume" "-12.000000"
+			"s_mindistance" "2.000000"
+			"s_maxdistance" "12.000000"
+			"s_omni" "0"
+			"s_occlusion" "0"
+			"s_waitfortrigger" "1"
+			"soundgroup" ""
+			"s_leadthrough" "0.100000"
+			"s_plain" "0"
+			"s_looping" "1"
+			"s_justVolume" "1"
+			"wait" "0.000000"
+			"random" "0.000000"
+			"s_unclamped" "0"
+			"s_shakes" "0.000000"
+		}
 	}
 
 }

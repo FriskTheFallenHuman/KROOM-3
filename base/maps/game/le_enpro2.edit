@@ -849,4 +849,35 @@
 		}
 	}
 
+	"modify"
+	{	
+		"entity 133"
+		{
+			"target4" "light_cst_4731"
+		}
+
+		"entity 1257"
+		{
+			"gui3" ""
+		}
+
+		"entity 2007"
+		{
+			"classname" "moveable_item_armor_shard"
+			"origin" "2065 -1909 -253"
+		}
+
+		"entity 2008"
+		{
+			"classname" "moveable_item_armor_shard"
+			"origin" "2051 -1947 -253"
+		}
+
+		"entity 2009"
+		{
+			"classname" "moveable_item_armor_shard"
+			"origin" "2070 -1920 -253"
+		}
+	}
+
 }

@@ -1117,6 +1117,24 @@
 			"origin" "2420 -3869 53"
 			"spawnclass" "idEnvProbes"
 		}
+		"entity 2672"
+		{
+			"classname" "func_emitter"
+			"name" "func_emitter_163"
+			"origin" "4224 -335 -2430"
+			"model" "hh_fire1.prt"
+			"rotation" "1 0 0 0 0.5 0.866025404 0 -0.866025404 0.5"
+			"start_off" "1"
+		}
+		"entity 2673"
+		{
+			"classname" "trigger_relay"
+			"name" "trigger_relay_103"
+			"origin" "4830 -580 -2240"
+			"target" "func_emitter_163"
+			"delay" "2"
+			"noflood" "1"
+		}
 	}
 
 }

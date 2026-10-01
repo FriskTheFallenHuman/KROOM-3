@@ -600,6 +600,109 @@
 			"origin" "-5490 -5104 26"
 			"spawnclass" "idEnvProbes"
 		}
+
+		"entity 1438"
+		{
+			"classname" "moveable_player_helmet"
+			"name" "cst_player_helmet_1"
+			"origin" "-6462 -390 47"
+			"rotation" "0 1 0 -0.866025 0 -0.5 -0.5 0 0.866025" // ang 0 90 -30
+			"nodrop" "1"
+			"noimpact" "1"
+		}
+
+		"entity 1439"
+		{
+			"classname" "func_remove"
+			"name" "cst_func_remove_1"
+			"origin" "-6336 -376 56"
+			"target" "cst_player_helmet_1"
+			"noflood" "1"
+		}
+
+		"entity 1440"
+		{
+			"inv_name" "#str_00100899"
+			"inv_item" "1"
+			"classname" "moveable_item_envirotank"
+			"name" "cst_envirotank_1"
+			"origin" "-7344 -878 -158"
+			"not_hard" "1"
+		}
+
+		"entity 1441"
+		{
+			"inv_name" "#str_00100899"
+			"inv_item" "1"
+			"classname" "moveable_item_envirotank"
+			"name" "cst_envirotank_2"
+			"origin" "-8576 -2460 -62"
+			"not_hard" "1"
+		}
+
+		"entity 1442"
+		{
+			"inv_name" "#str_00100899"
+			"inv_item" "1"
+			"classname" "moveable_item_envirotank"
+			"name" "cst_envirotank_3"
+			"origin" "-7516 -3456 -62"
+			"not_hard" "1"
+		}
+
+		"entity 1443"
+		{
+			"inv_name" "#str_00100899"
+			"inv_item" "1"
+			"classname" "moveable_item_envirotank"
+			"name" "cst_envirotank_4"
+			"origin" "-6144 -4572 -62"
+			"not_hard" "1"
+		}
+	}
+	
+	"modify"
+	{
+		"entity 55"
+		{
+			"origin" "-6336 -453 56"
+			"triggerfirst" ""
+		}
+		
+		"entity 524"
+		{
+			"cinematic" "1"
+		}
+
+		"entity 525"
+		{
+			"cinematic" "1"
+		}
+		
+		"entity 957"
+		{
+			"cinematic" "1"
+		}
+		
+		"entity 958"
+		{
+			"cinematic" "1"
+		}
+
+		"entity 1000"
+		{
+			"origin" "-6336 -300 56"
+			"target" "erebus5_envirosuit_player_3"
+			"target1" "erebus5_envirosuit_on_cam_1"
+			"target2" "cst_func_remove_1"
+			"noflood" "1"
+			"triggerfirst" ""
+		}
+		
+		"entity 1009"
+		{
+			"origin" "-5773 -5183 32"
+		}
 	}
 
 }

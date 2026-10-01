@@ -29,6 +29,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
+idCVar map_editDebug( "map_editDebug", "0", CVAR_BOOL, "print .edit file operations as they are applied" );
 
 /*
 ===============
@@ -1555,6 +1556,8 @@ Rules:
   - add refuses "worldspawn" — worldspawn can't be added.
   - remove refuses both "worldspawn" and "entity 0" — worldspawn can't be
 	removed.
+
+Set "map_editDebug" to 1 to print every operation being done.
 ===============
 */
 bool idMapFile::ApplyEditFile( const char* filename, bool osPath )
@@ -1572,6 +1575,17 @@ bool idMapFile::ApplyEditFile( const char* filename, bool osPath )
 		return false;
 	}
 
+	const bool debug = map_editDebug.GetBool();
+
+	int numAdded = 0;
+	int numModified = 0;   // entities that had at least one key actually change
+	int numRemoved  = 0;
+
+	if( debug )
+	{
+		idLib::Printf( "[EDIT] applying %s\n", fullName.c_str() );
+	}
+
 	idToken token;
 
 	// map name
@@ -1579,6 +1593,11 @@ bool idMapFile::ApplyEditFile( const char* filename, bool osPath )
 	{
 		src.Error( "%s: expected map name\n", __FUNCTION__ );
 		return false;
+	}
+
+	if( debug )
+	{
+		idLib::Printf( "[EDIT]   map: %s\n", token.c_str() );
 	}
 
 	if( !src.ExpectTokenString( "{" ) )
@@ -1609,6 +1628,10 @@ bool idMapFile::ApplyEditFile( const char* filename, bool osPath )
 		{
 			idToken v;
 			src.ReadToken( &v );
+			if( debug )
+			{
+				idLib::Printf( "[EDIT]   version: %s\n", v.c_str() );
+			}
 			continue;
 		}
 
@@ -1618,6 +1641,11 @@ bool idMapFile::ApplyEditFile( const char* filename, bool osPath )
 			if( !src.ExpectTokenString( "{" ) )
 			{
 				return false;
+			}
+
+			if( debug )
+			{
+				idLib::Printf( "[EDIT]   -- add section --\n" );
 			}
 
 			while( 1 )
@@ -1690,6 +1718,26 @@ bool idMapFile::ApplyEditFile( const char* filename, bool osPath )
 					continue;
 				}
 
+				if( debug )
+				{
+					const char* cn   = mapEnt->epairs.GetString( "classname" );
+					const char* name = mapEnt->epairs.GetString( "name" );
+					if( name && name[0] )
+					{
+						idLib::Printf( "[EDIT]     + %s \"%s\" (new index %d)\n", cn, name, entities.Num() );
+					}
+					else
+					{
+						idLib::Printf( "[EDIT]     + %s (new index %d)\n", cn, entities.Num() );
+					}
+					for( int j = 0; j < mapEnt->epairs.GetNumKeyVals(); ++j )
+					{
+						const idKeyValue* kv = mapEnt->epairs.GetKeyVal( j );
+						idLib::Printf( "[EDIT]         %s = \"%s\"\n", kv->GetKey().c_str(), kv->GetValue().c_str() );
+					}
+				}
+
+				numAdded++;
 				entities.Append( mapEnt );
 			}
 			continue;
@@ -1702,6 +1750,12 @@ bool idMapFile::ApplyEditFile( const char* filename, bool osPath )
 			{
 				return false;
 			}
+
+			if( debug )
+			{
+				idLib::Printf( "[EDIT]   -- modify section --\n" );
+			}
+
 			while( 1 )
 			{
 				idToken entTok;
@@ -1744,6 +1798,36 @@ bool idMapFile::ApplyEditFile( const char* filename, bool osPath )
 					src.Warning( "%s: modify #%d out of range\n", __FUNCTION__, entIndex );
 				}
 
+				// Accumulate the changes so we can print a single header
+				// only when at least one key actually differs.
+				idList<idStr> changeLines;
+				idStr headerLine;
+
+				if( debug )
+				{
+					if( isWorldspawn )
+					{
+						headerLine = "[EDIT]     ~ worldspawn";
+					}
+					else if( mapEnt != NULL )
+					{
+						const char* cn   = mapEnt->epairs.GetString( "classname" );
+						const char* name = mapEnt->epairs.GetString( "name" );
+						if( name && name[0] )
+						{
+							headerLine = va( "[EDIT]     ~ entity %d (%s \"%s\")", entIndex, cn, name );
+						}
+						else
+						{
+							headerLine = va( "[EDIT]     ~ entity %d (%s)", entIndex, cn );
+						}
+					}
+					else
+					{
+						headerLine = va( "[EDIT]     ~ entity %d (out of range, no-op)", entIndex );
+					}
+				}
+
 				while( 1 )
 				{
 					idToken k, v;
@@ -1768,24 +1852,69 @@ bool idMapFile::ApplyEditFile( const char* filename, bool osPath )
 					}
 
 					// refuse to change the classname of worldspawn.
-					if( mapEnt == entities[0] && idStr::Icmp( k.c_str(), "classname" ) == 0 )
+					if( mapEnt != NULL && entIndex == 0 && idStr::Icmp( k.c_str(), "classname" ) == 0 )
 					{
 						src.Warning( "%s: can't change worldspawn's classname\n", __FUNCTION__ );
+						if( debug )
+						{
+							changeLines.Append( va( "        %s: refused (worldspawn classname)", k.c_str() ) );
+						}
 						continue;
 					}
 
 					if( mapEnt != NULL )
 					{
+						// capture the pre edited value for logging purposes
+						const idKeyValue* existing = mapEnt->epairs.FindKey( k.c_str() );
+						const char* oldVal = existing ? existing->GetValue().c_str() : NULL;
+
 						// empty value means "delete this key"
 						if( v.Length() > 0 )
 						{
 							mapEnt->epairs.Set( k.c_str(), v.c_str() );
+
+							if( debug )
+							{
+								if( oldVal == NULL )
+								{
+									changeLines.Append( va( "        %s: (unset) -> \"%s\"", k.c_str(), v.c_str() ) );
+								}
+								else if( idStr::Cmp( oldVal, v.c_str() ) != 0 )
+								{
+									changeLines.Append( va( "        %s: \"%s\" -> \"%s\"", k.c_str(), oldVal, v.c_str() ) );
+								}
+								// if oldVal == newVal, don't log it — no change
+							}
 						}
 						else
 						{
 							mapEnt->epairs.Delete( k.c_str() );
+
+							if( debug && oldVal != NULL )
+							{
+								changeLines.Append( va( "        %s: \"%s\" -> (deleted)", k.c_str(), oldVal ) );
+							}
 						}
 					}
+				}
+
+				if( changeLines.Num() > 0 )
+				{
+					numModified++;
+
+					if( debug )
+					{
+						idLib::Printf( "%s\n", headerLine.c_str() );
+						for( int c = 0; c < changeLines.Num(); ++c )
+						{
+							idLib::Printf( "%s\n", changeLines[c].c_str() );
+						}
+					}
+				}
+				else if( debug && !isWorldspawn && mapEnt == NULL )
+				{
+					// mention out of range modifies
+					idLib::Printf( "%s\n", headerLine.c_str() );
 				}
 			}
 			continue;
@@ -1797,6 +1926,11 @@ bool idMapFile::ApplyEditFile( const char* filename, bool osPath )
 			if( !src.ExpectTokenString( "{" ) )
 			{
 				return false;
+			}
+
+			if( debug )
+			{
+				idLib::Printf( "[EDIT]   -- remove section --\n" );
 			}
 
 			idList<int> toRemove;
@@ -1862,6 +1996,22 @@ bool idMapFile::ApplyEditFile( const char* filename, bool osPath )
 						src.Warning( "%s: refusing to remove worldspawn (index %d)\n", __FUNCTION__, idx );
 						continue;
 					}
+
+					if( debug )
+					{
+						const char* cn = entities[idx]->epairs.GetString( "classname" );
+						const char* name = entities[idx]->epairs.GetString( "name" );
+						if( name && name[0] )
+						{
+							idLib::Printf( "[EDIT]     - entity %d (%s \"%s\")\n", idx, cn, name );
+						}
+						else
+						{
+							idLib::Printf( "[EDIT]     - entity %d (%s)\n", idx, cn );
+						}
+					}
+
+					numRemoved++;
 					delete entities[idx];
 					entities.RemoveIndex( idx );
 				}
@@ -1876,6 +2026,11 @@ bool idMapFile::ApplyEditFile( const char* filename, bool osPath )
 			src.ExpectTokenString( "{" );
 			src.SkipBracedSection( false );
 		}
+	}
+
+	if( debug )
+	{
+		idLib::Printf( "[EDIT] done: +%d added, ~%d modified, -%d removed (%d entities total)\n", numAdded, numModified, numRemoved, entities.Num() );
 	}
 
 	return true;

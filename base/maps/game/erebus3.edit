@@ -759,5 +759,14 @@
 			"spawnclass" "idEnvProbes"
 		}
 	}
+	
+	"modify"
+	{
+		"entity 2359"
+		{
+			"model" "models/mapobjects/arcade_machine/arcade_machine_biggamehunt.lwo"
+			"gui" "guis/BearShoot/GameBearShoot.gui"
+		}
+	}
 
 }

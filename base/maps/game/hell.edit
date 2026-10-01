@@ -703,5 +703,13 @@
 			"spawnclass" "idEnvProbes"
 		}
 	}
+	
+	"modify"
+	{	
+		"entity 637"
+		{
+			"noshadows" "0"
+		}
+	}
 
 }

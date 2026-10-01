@@ -689,4 +689,13 @@
 		}
 	}
 
+	"modify"
+	{
+		"entity 1659"
+		{
+			"model" "models/mapobjects/arcade_machine/arcade_machine_hellanoid.lwo"
+			"gui" "guis/BustOut/GameBustOut.gui"
+		}
+	}
+
 }

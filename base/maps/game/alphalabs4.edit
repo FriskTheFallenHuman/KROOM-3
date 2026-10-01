@@ -628,4 +628,16 @@
 		}
 	}
 
+	"modify"
+	{
+		"entity 113"
+		{
+			"trigger" "target_achievement_1"
+		}
+		
+		"entity 1590"
+		{
+			"target1" ""
+		}
+	}
 }
