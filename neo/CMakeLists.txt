@@ -611,7 +611,7 @@ set(src_core
 file(GLOB src_tools tools/*.cpp tools/*.h)
 source_group("Tools" FILES ${src_tools})
 
-file(GLOB src_tools_compilers tools/compilers/*.cpp tools/compilers/*.h)
+file(GLOB src_tools_compilers CONFIGURE_DEPENDS tools/compilers/*.cpp tools/compilers/*.h)
 source_group("Tools\\Compilers" FILES ${src_tools_compilers})
 
 file(GLOB src_dmap tools/compilers/dmap/*.cpp tools/compilers/dmap/*.h)

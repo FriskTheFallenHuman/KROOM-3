@@ -274,9 +274,18 @@ typedef struct
 	char		mapFileBase[1024];
 
 	idMapFile*	dmapFile;
+	bool		prepared;
+	bool		noCM;
+	bool		noAAS;
+	bool		region;
+	int			startTime;
 
 	idPlaneSet	mapPlanes;
 	idHashTableT<int, int>	splitPlanesCounter;
+	idList<idStr> materialNames;
+	idList<const idMaterial*> materials;
+	idList<idStr> renderModelNames;
+	idList<idRenderModel*> renderModels;
 
 	int			numEntities;
 	uEntity_t*	uEntities;
@@ -313,6 +322,13 @@ typedef struct
 } dmapGlobals_t;
 
 extern dmapGlobals_t dmapGlobals;
+
+const idMaterial* DmapFindMaterial( const char* name );
+idRenderModel* DmapFindRenderModel( const char* name );
+bool DmapPreInit( const idCmdArgs& args, bool threaded );
+void Dmap_DisconnectForThread();
+void Dmap_CompilePrepared( const idCmdArgs& args );
+void Dmap_CompilePrepared_f( const idCmdArgs& args );
 
 int FindFloatPlane( const idPlane& plane, bool* fixedDegeneracies = NULL );
 

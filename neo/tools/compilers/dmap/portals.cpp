@@ -706,7 +706,7 @@ bool FloodEntities( tree_t* tree )
 			mapEnt->epairs.GetString( "texture", "", &v );
 			if( v[0] )
 			{
-				const idMaterial* mat = declManager->FindMaterial( v );
+				const idMaterial* mat = DmapFindMaterial( v );
 				if( mat->IsFogLight() )
 				{
 					continue;

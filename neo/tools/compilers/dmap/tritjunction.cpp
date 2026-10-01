@@ -703,7 +703,7 @@ void	FixGlobalTjunctions( uEntity_t* e )
 				continue;
 			}
 
-			idRenderModel*	model = renderModelManager->FindModel( modelName );
+			idRenderModel*	model = DmapFindRenderModel( modelName );
 
 //			idLib::Printf( "adding T junction verts for %s.\n", entity->mapEntity->epairs.GetString( "name" ) );
 

@@ -39,11 +39,13 @@ If you have questions concerning this license or the applicable additional terms
 
 // map processing (also see SuperOptimizeOccluders in tr_local.h)
 void Dmap_f( const idCmdArgs& args );
+void DmapDir_f( const idCmdArgs& args );
 
 // AAS file compiler
 void RunAAS_f( const idCmdArgs& args );
 void RunAASDir_f( const idCmdArgs& args );
 void RunReach_f( const idCmdArgs& args );
+void RunReachDir_f( const idCmdArgs& args );
 
 // video file encoding
 void RoQFileEncode_f( const idCmdArgs& args );

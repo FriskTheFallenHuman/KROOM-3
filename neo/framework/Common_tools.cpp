@@ -296,7 +296,7 @@ void idCommonLocal::InitCommands()
 	if( !IsServer() )
 	{
 		// compilers - non threaded
-		cmdSystem->AddCommand( "dmap", Dmap_f, CMD_FL_TOOL, "compiles a map", idCmdSystem::ArgCompletion_MapName );
+		//cmdSystem->AddCommand( "dmap", Dmap_f, CMD_FL_TOOL, "compiles a map", idCmdSystem::ArgCompletion_MapName );
 
 		// compilers
 		RegisterCompilerThreadCommands();

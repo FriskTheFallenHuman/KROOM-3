@@ -60,17 +60,15 @@ public:
 	void            WaitForCompletion();
 
 	// Last exit code returned by the compiler.
-	int             GetResult() const
-	{
-		return result;
-	}
+	int             GetResult() const;
 
 private:
 	virtual int     Run() override;
 
+	mutable idSysMutex stateMutex;
 	CompilerFunc_t	func;
 	idCmdArgs	args;
-	volatile bool	running;
+	bool	running;
 	int	result;
 };
 

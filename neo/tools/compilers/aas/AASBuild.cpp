@@ -30,6 +30,7 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "AASBuild_local.h"
+#include "../compiler_resources.h"
 
 #define BFL_PATCH		0x1000
 
@@ -144,8 +145,9 @@ bool idAASBuild::LoadProcBSP( const char* name, ID_TIME_T minFileTime )
 		return false;
 	}
 
-	// if the file is too old
-	if( src->GetFileTime() < minFileTime )
+	// .resource packed proc files have no per-file timestamp, so their age cannot be compared.
+	ID_TIME_T procFileTime = src->GetFileTime();
+	if( procFileTime != 0 && procFileTime < minFileTime )
 	{
 		delete src;
 		return false;
@@ -1202,7 +1204,10 @@ void RunAASDir_f( const idCmdArgs& args )
 		}
 	}
 
-	fileSystem->FreeFileList( mapFiles );
+	if( mapFiles )
+	{
+		fileSystem->FreeFileList( mapFiles );
+	}
 
 	if( idLib::IsMainThread() )
 	{
@@ -1214,15 +1219,46 @@ void RunAASDir_f( const idCmdArgs& args )
 
 /*
 ============
+BuildReachabilityForMap
+============
+*/
+static void BuildReachabilityForMap( idAASBuild& aas, idAASSettings& settings, const idDict* aasTypes, const idStr& mapPath, const idCmdArgs* options )
+{
+	const idKeyValue* kv = aasTypes->MatchPrefix( "type" );
+	while( kv != NULL )
+	{
+		const idDict* settingsDict = gameEdit->FindEntityDefDict( kv->GetValue(), false );
+		if( !settingsDict )
+		{
+			idLib::Warning( "Unable to find '%s' in def/aas.def", kv->GetValue().c_str() );
+		}
+		else
+		{
+			settings.FromDict( kv->GetValue(), settingsDict );
+			idStr mapName = mapPath;
+			if( options )
+			{
+				int mapIndex = ParseOptions( *options, settings );
+				mapName = idStr( "maps/" ) + options->Argv( mapIndex );
+			}
+			aas.BuildReachability( mapName, &settings );
+		}
+
+		kv = aasTypes->MatchPrefix( "type", kv );
+		if( kv )
+		{
+			idLib::Printf( "=======================================================\n" );
+		}
+	}
+}
+
+/*
+============
 RunReach_f
 ============
 */
 void RunReach_f( const idCmdArgs& args )
 {
-	int i;
-	idAASBuild aas;
-	idAASSettings settings;
-
 	if( args.Argc() <= 1 )
 	{
 		idLib::Printf( "runReach [options] <mapfile>\n" );
@@ -1241,34 +1277,71 @@ void RunReach_f( const idCmdArgs& args )
 	if( !dict )
 	{
 		idLib::Error( "Unable to find entityDef for 'aas_types'" );
+		return;
 	}
 
-	const idKeyValue* kv = dict->MatchPrefix( "type" );
-	while( kv != NULL )
-	{
-		const idDict* settingsDict = gameEdit->FindEntityDefDict( kv->GetValue(), false );
-		if( !settingsDict )
-		{
-			idLib::Warning( "Unable to find '%s' in def/aas.def", kv->GetValue().c_str() );
-		}
-		else
-		{
-			settings.FromDict( kv->GetValue(), settingsDict );
-			i = ParseOptions( args, settings );
-			aas.BuildReachability( idStr( "maps/" ) + args.Argv( i ), &settings );
-		}
-
-		kv = dict->MatchPrefix( "type", kv );
-		if( kv )
-		{
-			idLib::Printf( "=======================================================\n" );
-		}
-	}
+	idAASBuild aas;
+	idAASSettings settings;
+	BuildReachabilityForMap( aas, settings, dict, idStr(), &args );
 
 	if( idLib::IsMainThread() )
 	{
 		common->SetRefreshOnPrint( false );
 	}
 
+	common->PrintWarnings();
+}
+
+/*
+============
+RunReach_f
+============
+*/
+void RunReachDir_f( const idCmdArgs& args )
+{
+	if( args.Argc() != 2 )
+	{
+		idLib::Printf( "runReachDir <folder>\n" );
+		return;
+	}
+
+	common->ClearWarnings( "calculating AAS reachability" );
+	if( idLib::IsMainThread() )
+	{
+		common->SetRefreshOnPrint( true );
+	}
+
+	// get the aas settings definitions
+	const idDict* dict = gameEdit->FindEntityDefDict( "aas_types", false );
+	if( !dict )
+	{
+		idLib::Error( "Unable to find entityDef for 'aas_types'" );
+		return;
+	}
+
+	idStr directory = AASMapDirectoryPath( args.Argv( 1 ) );
+	idFileList* mapFiles = fileSystem->ListFiles( directory, ".map" );
+	if( !mapFiles || mapFiles->GetNumFiles() == 0 )
+	{
+		idLib::Printf( "No map files found in %s\n", directory.c_str() );
+	}
+
+	idAASBuild aas;
+	idAASSettings settings;
+	for( int fileIndex = 0; mapFiles && fileIndex < mapFiles->GetNumFiles(); fileIndex++ )
+	{
+		idStr mapName = directory + "/" + mapFiles->GetFile( fileIndex );
+		mapName.StripFileExtension();
+		BuildReachabilityForMap( aas, settings, dict, mapName, NULL );
+	}
+
+	if( mapFiles )
+	{
+		fileSystem->FreeFileList( mapFiles );
+	}
+	if( idLib::IsMainThread() )
+	{
+		common->SetRefreshOnPrint( false );
+	}
 	common->PrintWarnings();
 }

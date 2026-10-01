@@ -31,6 +31,7 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "dmap.h"
+#include "../compiler_resources.h"
 
 dmapGlobals_t	dmapGlobals;
 
@@ -209,8 +210,17 @@ void ResetDmapGlobals()
 {
 	dmapGlobals.mapFileBase[0] = '\0';
 	dmapGlobals.dmapFile = NULL;
+	dmapGlobals.prepared = false;
+	dmapGlobals.noCM = false;
+	dmapGlobals.noAAS = false;
+	dmapGlobals.region = false;
+	dmapGlobals.startTime = 0;
 	dmapGlobals.mapPlanes.Clear();
 	dmapGlobals.splitPlanesCounter.Clear();
+	dmapGlobals.materialNames.Clear();
+	dmapGlobals.materials.Clear();
+	dmapGlobals.renderModelNames.Clear();
+	dmapGlobals.renderModels.Clear();
 	dmapGlobals.numEntities = 0;
 	dmapGlobals.uEntities = NULL;
 	dmapGlobals.entityNum = 0;
@@ -242,22 +252,18 @@ void ResetDmapGlobals()
 Dmap
 ============
 */
-void Dmap( const idCmdArgs& args )
+bool DmapPreInit( const idCmdArgs& args, bool threaded )
 {
 	int			i;
-	int			start, end;
 	char		path[1024];
 	idStr		passedName;
-	bool		leaked = false;
-	bool		noCM = false;
-	bool		noAAS = false;
 
 	ResetDmapGlobals();
 
 	if( args.Argc() < 2 )
 	{
 		DmapHelp();
-		return;
+		return false;
 	}
 
 	idLib::Printf( "---- dmap ----\n" );
@@ -375,7 +381,7 @@ void Dmap( const idCmdArgs& args )
 		}
 		else if( !idStr::Icmp( s, "noCM" ) )
 		{
-			noCM = true;
+			dmapGlobals.noCM = true;
 			idLib::Printf( "noCM = true\n" );
 		}
 		else if( !idStr::Icmp( s, "exportOCL" ) )
@@ -385,7 +391,7 @@ void Dmap( const idCmdArgs& args )
 		}
 		else if( !idStr::Icmp( s, "noAAS" ) )
 		{
-			noAAS = true;
+			dmapGlobals.noAAS = true;
 			idLib::Printf( "noAAS = true\n" );
 		}
 		else if( !idStr::Icmp( s, "editorOutput" ) )
@@ -416,7 +422,6 @@ void Dmap( const idCmdArgs& args )
 	stripped.StripFileExtension();
 	idStr::Copynz( dmapGlobals.mapFileBase, stripped, sizeof( dmapGlobals.mapFileBase ) );
 
-	bool region = false;
 	// if this isn't a regioned map, delete the last saved region map
 	if( passedName.Right( 4 ) != ".reg" )
 	{
@@ -425,7 +430,7 @@ void Dmap( const idCmdArgs& args )
 	}
 	else
 	{
-		region = true;
+		dmapGlobals.region = true;
 	}
 
 
@@ -450,12 +455,73 @@ void Dmap( const idCmdArgs& args )
 	//
 	// start from scratch
 	//
-	start = Sys_Milliseconds();
+	dmapGlobals.startTime = Sys_Milliseconds();
 
 	if( !LoadDMapFile( passedName ) )
 	{
+		return false;
+	}
+
+	if( threaded )
+	{
+		DmapDisconnect();
+
+		if( !dmapGlobals.noAAS && !dmapGlobals.region )
+		{
+			AASPreloadDefinitions();
+			AASPreloadMap( dmapGlobals.dmapFile );
+		}
+	}
+
+	DmapFindMaterial( "_default" );
+	for( int entityNum = 0; entityNum < dmapGlobals.numEntities; entityNum++ )
+	{
+		idMapEntity* mapEntity = dmapGlobals.uEntities[entityNum].mapEntity;
+		const char* className = mapEntity->epairs.GetString( "classname" );
+		if( idStr::Icmp( className, "light" ) == 0 )
+		{
+			const char* texture = mapEntity->epairs.GetString( "texture", "" );
+			if( texture[0] )
+			{
+				DmapFindMaterial( texture );
+			}
+		}
+
+		const char* modelName = mapEntity->epairs.GetString( "model", "" );
+		if( modelName[0] )
+		{
+			idStr modelPath = modelName;
+			idStr extension;
+			modelPath.ExtractFileExtension( extension );
+			if( extension.Icmp( "lwo" ) == 0 || extension.Icmp( "ase" ) == 0 ||
+					extension.Icmp( "ma" ) == 0 || extension.Icmp( "md3" ) == 0 ||
+					extension.Icmp( "obj" ) == 0 )
+			{
+				DmapFindRenderModel( modelName );
+			}
+		}
+	}
+
+	dmapGlobals.prepared = true;
+	return true;
+}
+
+/*
+============
+DmapInit
+============
+*/
+void DmapInit( const idCmdArgs& args )
+{
+	if( !dmapGlobals.prepared )
+	{
+		idLib::Error( "dmap requested without being prepared" );
 		return;
 	}
+
+	int start = dmapGlobals.startTime;
+	int end;
+	bool leaked = false;
 
 	if( ProcessModels() )
 	{
@@ -477,7 +543,7 @@ void Dmap( const idCmdArgs& args )
 
 	if( !leaked )
 	{
-		if( !noCM )
+		if( !dmapGlobals.noCM )
 		{
 			// make sure the collision model manager is not used by the game
 			if( idLib::IsMainThread() )
@@ -497,7 +563,7 @@ void Dmap( const idCmdArgs& args )
 			idLib::Printf( "%5.0f seconds to create collision map\n", ( end - start ) * 0.001f );
 		}
 
-		if( !noAAS && !region )
+		if( !dmapGlobals.noAAS && !dmapGlobals.region )
 		{
 			// create AAS files
 			RunAAS_f( args );
@@ -506,6 +572,7 @@ void Dmap( const idCmdArgs& args )
 
 	// free the common .map representation
 	delete dmapGlobals.dmapFile;
+	dmapGlobals.dmapFile = NULL;
 
 	// clear the map plane list
 	dmapGlobals.mapPlanes.Clear();
@@ -517,6 +584,43 @@ void Dmap( const idCmdArgs& args )
 		::PostMessage( com_hwndMsg, msg, 0, 0 );
 	}
 #endif
+	dmapGlobals.prepared = false;
+}
+
+/*
+============
+DmapInit_f
+============
+*/
+void DmapInit_f( const idCmdArgs& args )
+{
+	DmapInit( args );
+}
+
+/*
+============
+DmapDisconnect
+============
+*/
+void DmapDisconnect()
+{
+	if( !dmapGlobals.noCM && idLib::IsMainThread() )
+	{
+		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "disconnect" );
+	}
+}
+
+/*
+============
+Dmap
+============
+*/
+void Dmap( const idCmdArgs& args )
+{
+	if( DmapPreInit( args, false ) )
+	{
+		DmapInit( args );
+	}
 }
 
 /*
@@ -542,4 +646,46 @@ void Dmap_f( const idCmdArgs& args )
 	}
 
 	common->PrintWarnings();
+}
+
+/*
+============
+DmapDir_f
+============
+*/
+void DmapDir_f( const idCmdArgs& args )
+{
+	if( args.Argc() != 2 )
+	{
+		idLib::Printf( "Usage: dmapDir <folder>\n" );
+		return;
+	}
+
+	if( !idLib::IsMainThread() )
+	{
+		idLib::Error( "dmapDir must run on the main thread" );
+		return;
+	}
+
+	idStr directory = DMapDirectoryPath( args.Argv( 1 ) );
+	idFileList* mapFiles = fileSystem->ListFiles( directory, ".map" );
+	if( !mapFiles || mapFiles->GetNumFiles() == 0 )
+	{
+		idLib::Printf( "No map files found in %s\n", directory.c_str() );
+	}
+	else
+	{
+		for( int i = 0; i < mapFiles->GetNumFiles(); i++ )
+		{
+			idStr mapName = directory + "/" + mapFiles->GetFile( i );
+			idCmdArgs mapArgs;
+			mapArgs.AppendArg( "dmap" );
+			mapArgs.AppendArg( mapName.c_str() );
+			Dmap_f( mapArgs );
+		}
+	}
+	if( mapFiles )
+	{
+		fileSystem->FreeFileList( mapFiles );
+	}
 }

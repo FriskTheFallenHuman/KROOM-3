@@ -31,11 +31,27 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "compiler_thread.h"
 #include "compiler_public.h"
+#include "compiler_resources.h"
 
 idCompilerThread g_compilerThread;
 
 // Dmap needs a large stack because BuildFaceTree_r / OptimizeIsland recurse deeply.
 static const int COMPILER_STACK_SIZE = 8 * 1024 * 1024;   // 8 MB
+
+/*
+========================
+EnsureCompilerThreadIdle
+========================
+*/
+static bool EnsureCompilerThreadIdle()
+{
+	if( g_compilerThread.IsRunning() )
+	{
+		idLib::Printf( "Compiler already running.\n" );
+		return false;
+	}
+	return true;
+}
 
 /*
 ========================
@@ -67,20 +83,42 @@ idCompilerThread::Dispatch
 */
 bool idCompilerThread::Dispatch( CompilerFunc_t f, const idCmdArgs& a, const char* threadName )
 {
-	if( running )
+	bool alreadyRunning = false;
+	{
+		idScopedCriticalSection lock( stateMutex );
+		if( running )
+		{
+			alreadyRunning = true;
+		}
+		else
+		{
+			WaitForThread();
+			func = f;
+			args = a;
+			running = true;
+			result = 0;
+		}
+	}
+
+	if( alreadyRunning )
 	{
 		idLib::Warning( "CompilerThread: a compiler job is already running." );
 		return false;
 	}
 
-	func = f;
-	args = a;
-	running = true;
-	result  = 0;
-
 	// StartThread fires Run() once and exits — unlike StartWorkerThread,
 	// which loops waiting for SignalWork().
-	StartThread( threadName, CORE_ANY, THREAD_NORMAL, COMPILER_STACK_SIZE );
+	if( !StartThread( threadName, CORE_ANY, THREAD_NORMAL, COMPILER_STACK_SIZE ) )
+	{
+		{
+			idScopedCriticalSection lock( stateMutex );
+			running = false;
+			func = nullptr;
+		}
+		idLib::Warning( "CompilerThread: failed to start compiler job." );
+		return false;
+	}
+
 	return true;
 }
 
@@ -91,7 +129,19 @@ idCompilerThread::IsRunning
 */
 bool idCompilerThread::IsRunning() const
 {
+	idScopedCriticalSection lock( stateMutex );
 	return running;
+}
+
+/*
+========================
+idCompilerThread::GetResult
+========================
+*/
+int idCompilerThread::GetResult() const
+{
+	idScopedCriticalSection lock( stateMutex );
+	return result;
 }
 
 /*
@@ -111,21 +161,32 @@ idCompilerThread::Run
 */
 int idCompilerThread::Run()
 {
-	if( func )
+	CompilerFunc_t job;
+	idCmdArgs jobArgs;
+	{
+		idScopedCriticalSection lock( stateMutex );
+		job = func;
+		jobArgs = args;
+	}
+
+	if( job )
 	{
 		// SetRefreshOnPrint is main-thread only; skip it here.
 		common->ClearWarnings( "compiler thread" );
 
-		func( args );
+		job( jobArgs );
 
 		common->PrintWarnings();
 	}
 
-	running = false;
+	{
+		idScopedCriticalSection lock( stateMutex );
+		running = false;
+		func = nullptr;
+	}
 	return 0;
 }
 
-#if 0 // FIXME
 /*
 ========================
 Dmap_Threaded_f
@@ -133,14 +194,21 @@ Dmap_Threaded_f
 */
 static void Dmap_Threaded_f( const idCmdArgs& args )
 {
-	if( g_compilerThread.IsRunning() )
+	if( !EnsureCompilerThreadIdle() )
 	{
-		idLib::Printf( "Compiler already running. Use 'compiler_wait' to block.\n" );
 		return;
 	}
-	g_compilerThread.Dispatch( Dmap_f, args, "DmapThread" );
+
+	if( !DmapPreInit( args, true ) )
+	{
+		return;
+	}
+
+	if( !g_compilerThread.Dispatch( DmapInit_f, args, "DmapThread" ) )
+	{
+		DmapInit_f( args );
+	}
 }
-#endif
 
 /*
 ========================
@@ -149,11 +217,17 @@ RunAAS_Threaded_f
 */
 static void RunAAS_Threaded_f( const idCmdArgs& args )
 {
-	if( g_compilerThread.IsRunning() )
+	if( !EnsureCompilerThreadIdle() )
 	{
-		idLib::Printf( "Compiler already running.\n" );
 		return;
 	}
+
+	if( args.Argc() > 1 )
+	{
+		AASPreloadDefinitions();
+		AASPreloadMapFile( args.Argv( args.Argc() - 1 ) );
+	}
+
 	g_compilerThread.Dispatch( RunAAS_f, args, "AASThread" );
 }
 
@@ -164,11 +238,17 @@ RunAASDir_Threaded_f
 */
 static void RunAASDir_Threaded_f( const idCmdArgs& args )
 {
-	if( g_compilerThread.IsRunning() )
+	if( !EnsureCompilerThreadIdle() )
 	{
-		idLib::Printf( "Compiler already running.\n" );
 		return;
 	}
+
+	if( args.Argc() > 1 )
+	{
+		AASPreloadDefinitions();
+		AASPreloadMapDirectory( args.Argv( 1 ) );
+	}
+
 	g_compilerThread.Dispatch( RunAASDir_f, args, "AASDirThread" );
 }
 
@@ -179,12 +259,39 @@ RunReach_Threaded_f
 */
 static void RunReach_Threaded_f( const idCmdArgs& args )
 {
-	if( g_compilerThread.IsRunning() )
+	if( !EnsureCompilerThreadIdle() )
 	{
-		idLib::Printf( "Compiler already running.\n" );
 		return;
 	}
+
+	if( args.Argc() > 1 )
+	{
+		AASPreloadDefinitions();
+		AASPreloadMapFile( args.Argv( args.Argc() - 1 ) );
+	}
+
 	g_compilerThread.Dispatch( RunReach_f, args, "ReachThread" );
+}
+
+/*
+========================
+RunReachDir_Threaded_f
+========================
+*/
+static void RunReachDir_Threaded_f( const idCmdArgs& args )
+{
+	if( !EnsureCompilerThreadIdle() )
+	{
+		return;
+	}
+
+	if( args.Argc() > 1 )
+	{
+		AASPreloadDefinitions();
+		AASPreloadMapDirectory( args.Argv( 1 ) );
+	}
+
+	g_compilerThread.Dispatch( RunReachDir_f, args, "ReachDirThread" );
 }
 
 /*
@@ -194,9 +301,8 @@ RoQFileEncode_Threaded_f
 */
 static void RoQFileEncode_Threaded_f( const idCmdArgs& args )
 {
-	if( g_compilerThread.IsRunning() )
+	if( !EnsureCompilerThreadIdle() )
 	{
-		idLib::Printf( "Compiler already running.\n" );
 		return;
 	}
 	g_compilerThread.Dispatch( RoQFileEncode_f, args, "RoQThread" );
@@ -210,9 +316,8 @@ Amplitude_Threaded_f
 
 static void Amplitude_Threaded_f( const idCmdArgs& args )
 {
-	if( g_compilerThread.IsRunning() )
+	if( !EnsureCompilerThreadIdle() )
 	{
-		idLib::Printf( "Compiler already running.\n" );
 		return;
 	}
 	g_compilerThread.Dispatch( Amplitude_f, args, "AmplitudeThread" );
@@ -257,10 +362,12 @@ RegisterCompilerThreadCommands
 */
 void RegisterCompilerThreadCommands()
 {
-	//cmdSystem->AddCommand( "dmap", Dmap_Threaded_f, CMD_FL_TOOL, "compiles a map", idCmdSystem::ArgCompletion_MapName ); // FIXME: Not thread friendly!!!
+	cmdSystem->AddCommand( "dmap", Dmap_Threaded_f, CMD_FL_TOOL, "compiles a map", idCmdSystem::ArgCompletion_MapName );
+	cmdSystem->AddCommand( "dmapDir", DmapDir_f, CMD_FL_TOOL, "compiles maps in a folder", idCmdSystem::ArgCompletion_MapName );
 	cmdSystem->AddCommand( "runAAS", RunAAS_Threaded_f, CMD_FL_TOOL, "compiles an AAS file for a map", idCmdSystem::ArgCompletion_MapName );
 	cmdSystem->AddCommand( "runAASDir", RunAASDir_Threaded_f, CMD_FL_TOOL, "compiles AAS files for all maps in a folder", idCmdSystem::ArgCompletion_MapName );
 	cmdSystem->AddCommand( "runReach", RunReach_Threaded_f, CMD_FL_TOOL, "calculates reachability for an AAS file", idCmdSystem::ArgCompletion_MapName );
+	cmdSystem->AddCommand( "runReachDir", RunReachDir_Threaded_f, CMD_FL_TOOL, "calculates reachability for maps in a folder", idCmdSystem::ArgCompletion_MapName );
 	cmdSystem->AddCommand( "roq", RoQFileEncode_Threaded_f, CMD_FL_TOOL, "encodes a roq file" );
 	cmdSystem->AddCommand( "amplitude", Amplitude_Threaded_f, CMD_FL_TOOL, "encodes a wav file into a amp file", idCmdSystem::ArgCompletion_SoundName );
 #if 0 // DEBUG stuff

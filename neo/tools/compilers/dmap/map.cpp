@@ -342,7 +342,7 @@ static void ParseBrush( const idMapBrush* mapBrush, int primitiveNum )
 
 		memset( s, 0, sizeof( *s ) );
 		s->planenum = FindFloatPlane( ms->GetPlane(), &fixedDegeneracies );
-		s->material = declManager->FindMaterial( ms->GetMaterial() );
+		s->material = DmapFindMaterial( ms->GetMaterial() );
 
 		ms->GetTextureVectors( s->texVec.v );
 
@@ -428,7 +428,7 @@ static void ParsePatch( const idMapPatch* patch, int primitiveNum )
 
 	c_numMapPatches++;
 
-	mat = declManager->FindMaterial( patch->GetMaterial() );
+	mat = DmapFindMaterial( patch->GetMaterial() );
 
 	idSurface_Patch* cp = new idSurface_Patch( *patch );
 
@@ -461,7 +461,7 @@ static int ParsePolygonMesh( const idMapPolygonMesh* mesh, int primitiveNum, int
 	{
 		const idMapPolygon& poly = mesh->GetFace( i );
 
-		const idMaterial* mat = declManager->FindMaterial( poly.GetMaterial() );
+		const idMaterial* mat = DmapFindMaterial( poly.GetMaterial() );
 
 		const idList<int>& indexes = poly.GetIndexes();
 
@@ -602,7 +602,7 @@ static void CreateMapLight( const idMapEntity* mapEnt )
 	light->def.lightShader = light->def.parms.shader;
 	if( light->def.lightShader == NULL )
 	{
-		light->def.lightShader = declManager->FindMaterial( light->def.parms.pointLight ? "lights/defaultPointLight" : "lights/defaultProjectedLight" );
+		light->def.lightShader = DmapFindMaterial( light->def.parms.pointLight ? "lights/defaultPointLight" : "lights/defaultProjectedLight" );
 	}
 
 	R_DeriveLightData( &light->def );

@@ -161,7 +161,7 @@ void BuildLightOccluders( uEntity_t* e, mapLight_t* light )
 				*check = *group;
 				if( check->material->Coverage() != MC_PERFORATED )
 				{
-					check->material = declManager->FindMaterial( "_default" );
+					check->material = DmapFindMaterial( "_default" );
 				}
 
 				check->triList = NULL;

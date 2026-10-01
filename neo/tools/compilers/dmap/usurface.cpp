@@ -817,7 +817,7 @@ void PutPrimitivesInAreas( uEntity_t* e )
 				}
 			}
 
-			idRenderModel*	model = renderModelManager->FindModel( modelName );
+			idRenderModel*	model = DmapFindRenderModel( modelName );
 
 			idLib::Printf( "inlining %s.%s\n", entityName, modelName.c_str() );
 			dmapGlobals.totalInlinedModels++;
