@@ -31,6 +31,7 @@ If you have questions concerning this license or the applicable additional terms
 
 
 #include "RenderCommon.h"
+#include "CmdlineProgressbar.h"
 
 // do this with a pointer, in case we want to make the actual manager
 // a private virtual subclass
@@ -118,7 +119,7 @@ static int R_QsortImageName( const void* a, const void* b )
 
 /*
 ===============
-R_ListImages_f
+idImageManager::R_ListImages_f
 ===============
 */
 void idImageManager::R_ListImages_f( const idCmdArgs& args )
@@ -998,9 +999,11 @@ void idImageManager::PrintMemInfo( MemInfo_t* mi )
 	fileSystem->CloseFile( f );
 }
 
-#include "CmdlineProgressbar.h"
-
-#if !defined( DMAP )
+/*
+===============
+idImageManager::CacheGlobalIlluminationData_f
+===============
+*/
 void idImageManager::CacheGlobalIlluminationData_f( const idCmdArgs& args )
 {
 	common->Printf( "Caching images to bimage files...\n" );
@@ -1045,4 +1048,3 @@ void idImageManager::CacheGlobalIlluminationData_f( const idCmdArgs& args )
 	globalImages->preloadingMapImages = false;
 	globalImages->cacheImages = false;
 }
-#endif

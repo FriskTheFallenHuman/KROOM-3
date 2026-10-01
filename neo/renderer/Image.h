@@ -628,6 +628,8 @@ public:
 	bool				ExcludePreloadImage( const char* name );
 
 	idList<idImage*, TAG_IDLIB_LIST_IMAGE>	images;
+
+private:
 	idHashIndex			imageHash;
 
 	static void			CacheGlobalIlluminationData_f( const idCmdArgs& args ); // RB
@@ -635,7 +637,7 @@ public:
 
 	bool				insideLevelLoad;			// don't actually load images now
 	bool				preloadingMapImages;		// unless this is set
-	bool									cacheImages;				// similar to preload but surpresses prints
+	bool				cacheImages;				// similar to preload but surpresses prints
 
 };
 
