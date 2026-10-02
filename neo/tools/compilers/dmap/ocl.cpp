@@ -72,13 +72,15 @@ void BuildLightOccluders( uEntity_t* e, mapLight_t* light )
 	// the name is the only thing that links the occluders to the light entity at runtime
 	if( light->name[0] == '\0' )
 	{
-		idLib::Warning( "BuildLightOccluders: light at (%f,%f,%f) has no name, skipping occluders",
-						light->def.parms.origin.x, light->def.parms.origin.y, light->def.parms.origin.z );
+		idLib::Warning( "BuildLightOccluders: light at (%f,%f,%f) has no name, skipping occluders", light->def.parms.origin.x, light->def.parms.origin.y, light->def.parms.origin.z );
 		return;
 	}
 
 	// shadowers will contain all the triangles that will cast a shadow
 	optimizeGroup_t* shadowerGroups[MAX_LIGHT_OCCLUDERS] = { NULL };
+
+	// the material of the first group that went into a slot.
+	const idMaterial* slotMaterial[MAX_LIGHT_OCCLUDERS] = { NULL };
 
 	for( int i = 0; i < e->numAreas; i++ )
 	{
@@ -124,12 +126,12 @@ void BuildLightOccluders( uEntity_t* e, mapLight_t* light )
 					break;
 				}
 
-				if( shadowerGroups[trisIndex]->material->Coverage() == MC_OPAQUE && group->material->Coverage() == MC_OPAQUE )
+				if( slotMaterial[trisIndex]->Coverage() == MC_OPAQUE && group->material->Coverage() == MC_OPAQUE )
 				{
 					break;
 				}
 
-				if( shadowerGroups[trisIndex]->material == group->material )
+				if( slotMaterial[trisIndex] == group->material )
 				{
 					break;
 				}
@@ -167,6 +169,11 @@ void BuildLightOccluders( uEntity_t* e, mapLight_t* light )
 				check->triList = NULL;
 				check->nextGroup = shadowerGroups[trisIndex];
 				shadowerGroups[trisIndex] = check;
+
+				if( slotMaterial[trisIndex] == NULL )
+				{
+					slotMaterial[trisIndex] = group->material;
+				}
 			}
 
 			check->triList = MergeTriLists( check->triList, shadowers );
