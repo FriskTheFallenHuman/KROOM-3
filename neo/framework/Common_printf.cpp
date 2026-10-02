@@ -177,8 +177,14 @@ void idCommonLocal::VPrintf( const char* fmt, va_list args )
 #endif
 
 
-	// The Tech 5 console owns a thread-safe print queue.  Feed it before the
-	// worker-thread early out so renderer and streaming jobs are visible.
+	if( !idLib::IsMainThread() )
+	{
+		// Queue worker output so every print destination receives it once on the main thread.
+		idScopedCriticalSection lock( threadedPrintQueueMutex );
+		threadedPrintQueue.Append( msg );
+		return;
+	}
+
 	console->Print( msg );
 
 #if defined(ID_ALLOW_TOOLS)
@@ -187,20 +193,6 @@ void idCommonLocal::VPrintf( const char* fmt, va_list args )
 		MaterialEditorPrintConsole( msg );
 	}
 #endif
-
-	if( !idLib::IsMainThread() )
-	{
-		// Still send to debugger/terminal for immediate visibility
-#if defined(_WIN32)
-		OutputDebugString( msg );
-#else
-		printf( "%s", msg );
-#endif
-		// Queue the message for the main thread to print to the in-game console/log
-		idScopedCriticalSection lock( threadedPrintQueueMutex );
-		threadedPrintQueue.Append( msg );
-		return;
-	}
 
 	// remove any color codes
 	idStr::RemoveColors( msg );

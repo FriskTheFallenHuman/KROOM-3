@@ -35,6 +35,7 @@ class idMapFile;
 void DmapInit_f( const idCmdArgs& args );
 bool DmapPreInit( const idCmdArgs& args, bool threaded );
 void DmapDisconnect();
+void DmapAborted();
 idStr DMapDirectoryPath( const char* directory );
 
 // AAS

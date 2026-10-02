@@ -206,7 +206,7 @@ static void Dmap_Threaded_f( const idCmdArgs& args )
 
 	if( !g_compilerThread.Dispatch( DmapInit_f, args, "DmapThread" ) )
 	{
-		DmapInit_f( args );
+		DmapAborted();
 	}
 }
 

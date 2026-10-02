@@ -612,6 +612,25 @@ void DmapDisconnect()
 
 /*
 ============
+DmapAborted
+============
+*/
+void DmapAborted()
+{
+	if( !dmapGlobals.prepared )
+	{
+		return;
+	}
+
+	FreeDMapFile();
+	delete dmapGlobals.dmapFile;
+	dmapGlobals.dmapFile = NULL;
+	dmapGlobals.mapPlanes.Clear();
+	dmapGlobals.prepared = false;
+}
+
+/*
+============
 Dmap
 ============
 */
