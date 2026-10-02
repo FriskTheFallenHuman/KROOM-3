@@ -723,3 +723,188 @@ idDeclAudio::FreeData
 void idDeclAudio::FreeData()
 {
 }
+
+/*
+========================
+convertPDAsToStrings
+========================
+*/
+CONSOLE_COMMAND_SHIP( convertPDAsToStrings, "Converts *.pda files to text which can be plugged into *.lang files.", 0 )
+{
+
+	idStr pdaStringsFileName = "strings/pdas.lang";
+	idFileLocal file( fileSystem->OpenFileWrite( pdaStringsFileName ) );
+
+	if( file == NULL )
+	{
+		idLib::Printf( "Failed to Convert PDA data to Strings.\n" );
+	}
+
+	int totalEmailCount = 0;
+	int totalAudioCount = 0;
+	int totalVideoCount = 0;
+	idStr headEnd = "\t\"#str_%s_";
+	idStr tailEnd = "\"\t\"%s\"\n";
+	idStr temp;
+
+		int count = declManager->GetNumDecls( DECL_PDA );
+	for( int i = 0; i < count; i++ )
+	{
+			const idDeclPDA* decl = static_cast< const idDeclPDA* >( declManager->DeclByIndex( DECL_PDA, i ) );
+
+		idStr pdaBaseStrId = va( headEnd.c_str(), decl->GetName() );
+
+		temp = va( "\n\n//////// %s PDA ////////////\n", decl->GetName() );
+		file->Write( temp, temp.Length() );
+
+		idStr pdaBase = pdaBaseStrId + "pda_%s" + tailEnd;
+		// Pda Name
+		temp = va( pdaBase.c_str(), "name", decl->GetPdaName() );
+		file->Write( temp, temp.Length() );
+		// Full Name
+		temp = va( pdaBase.c_str(), "fullname", decl->GetFullName() );
+		file->Write( temp, temp.Length() );
+		// ID
+		temp = va( pdaBase.c_str(), "id", decl->GetID() );
+		file->Write( temp, temp.Length() );
+		// Post
+		temp = va( pdaBase.c_str(), "post", decl->GetPost() );
+		file->Write( temp, temp.Length() );
+		// Title
+		temp = va( pdaBase.c_str(), "title", decl->GetTitle() );
+		file->Write( temp, temp.Length() );
+		// Security
+		temp = va( pdaBase.c_str(), "security", decl->GetSecurity() );
+		file->Write( temp, temp.Length() );
+
+		int emailCount = decl->GetNumEmails();
+		for( int emailIter = 0; emailIter < emailCount; emailIter++ )
+		{
+			const idDeclEmail* email = decl->GetEmailByIndex( emailIter );
+
+			idStr emailBaseStrId = va( headEnd.c_str(), email->GetName() );
+			idStr emailBase = emailBaseStrId + "email_%s" + tailEnd;
+
+			file->Write( "\t//Email\n", 9 );
+			// Date
+			temp = va( emailBase, "date", email->GetDate() );
+			file->Write( temp, temp.Length() );
+			// To
+			temp = va( emailBase, "to", email->GetTo() );
+			file->Write( temp, temp.Length() );
+			// From
+			temp = va( emailBase, "from", email->GetFrom() );
+			file->Write( temp, temp.Length() );
+			// Subject
+			temp = va( emailBase, "subject", email->GetSubject() );
+			file->Write( temp, temp.Length() );
+			// Body
+			idStr body = email->GetBody();
+			body.Replace( "\n", "\\n" );
+			temp = va( emailBase, "text", body.c_str() );
+			file->Write( temp, temp.Length() );
+
+			totalEmailCount++;
+		}
+
+		int audioCount = decl->GetNumAudios();
+		for( int audioIter = 0; audioIter < audioCount; audioIter++ )
+		{
+			const idDeclAudio* audio = decl->GetAudioByIndex( audioIter );
+
+			idStr audioBaseStrId = va( headEnd.c_str(), audio->GetName() );
+			idStr audioBase = audioBaseStrId + "audio_%s" + tailEnd;
+
+			file->Write( "\t//Audio\n", 9 );
+			// Name
+			temp = va( audioBase, "name", audio->GetAudioName() );
+			file->Write( temp, temp.Length() );
+			// Info
+			idStr info = audio->GetInfo();
+			info.Replace( "\n", "\\n" );
+			temp = va( audioBase, "info", info.c_str() );
+			file->Write( temp, temp.Length() );
+
+			totalAudioCount++;
+		}
+	}
+
+		int infoEmailCount = declManager->GetNumDecls( DECL_EMAIL );
+	if( infoEmailCount > 0 )
+	{
+		temp = "\n\n//////// PDA Info Emails ////////////\n";
+		file->Write( temp, temp.Length() );
+	}
+	for( int i = 0; i < infoEmailCount; i++ )
+	{
+			const idDeclEmail* email = static_cast< const idDeclEmail* >( declManager->DeclByIndex( DECL_EMAIL, i ) );
+
+		idStr filename = email->base->GetFileName();
+		if( filename.Icmp( "newpdas/info_emails.pda" ) != 0 )
+		{
+			continue;
+		}
+
+		idStr emailBaseStrId = va( "\t\"#str_%s_", email->GetName() );
+		idStr emailBase = emailBaseStrId + "email_%s" + tailEnd;
+
+		file->Write( "\t//Email\n", 9 );
+
+		// Date
+		temp = va( emailBase, "date", email->GetDate() );
+		file->Write( temp, temp.Length() );
+		// To
+		temp = va( emailBase, "to", email->GetTo() );
+		file->Write( temp, temp.Length() );
+		// From
+		temp = va( emailBase, "from", email->GetFrom() );
+		file->Write( temp, temp.Length() );
+		// Subject
+		temp = va( emailBase, "subject", email->GetSubject() );
+		file->Write( temp, temp.Length() );
+		// Body
+		idStr body = email->GetBody();
+		body.Replace( "\n", "\\n" );
+		temp = va( emailBase, "text", body.c_str() );
+		file->Write( temp, temp.Length() );
+
+		totalEmailCount++;
+	}
+
+		int videoCount = declManager->GetNumDecls( DECL_VIDEO );
+	if( videoCount > 0 )
+	{
+		temp = "\n\n//////// PDA Videos ////////////\n";
+		file->Write( temp, temp.Length() );
+	}
+	for( int i = 0; i < videoCount; i++ )
+	{
+			const idDeclVideo* video = static_cast< const idDeclVideo* >( declManager->DeclByIndex( DECL_VIDEO, i ) );
+
+		idStr videoBaseStrId = va( "\t\"#str_%s_", video->GetName() );
+		idStr videoBase = videoBaseStrId + "video_%s" + tailEnd;
+
+		file->Write( "\t//Video\n", 9 );
+
+		// Name
+		temp = va( videoBase, "name", video->GetVideoName() );
+		file->Write( temp, temp.Length() );
+		// Info
+		idStr info = video->GetInfo();
+		info.Replace( "\n", "\\n" );
+		temp = va( videoBase, "info", info.c_str() );
+		file->Write( temp, temp.Length() );
+
+		totalVideoCount++;
+	}
+
+	file->Flush();
+
+	idLib::Printf( "\nData written to %s\n", pdaStringsFileName.c_str() );
+	idLib::Printf( "----------------------------\n" );
+	idLib::Printf( "Wrote %d PDAs.\n", count );
+	idLib::Printf( "Wrote %d Emails.\n", totalEmailCount );
+	idLib::Printf( "Wrote %d Audio Records.\n", totalAudioCount );
+	idLib::Printf( "Wrote %d Video Records.\n", totalVideoCount );
+	idLib::Printf( "Please copy the results into the appropriate .lang file.\n" );
+}
