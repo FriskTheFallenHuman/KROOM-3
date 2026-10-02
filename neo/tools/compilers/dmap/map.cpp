@@ -769,6 +769,7 @@ FreeDMapFile
 void FreeDMapFile()
 {
 	int		i, j;
+	dmapGlobals.interAreaPortals.Clear();
 
 	FreeBrush( buildBrush );
 	buildBrush = NULL;

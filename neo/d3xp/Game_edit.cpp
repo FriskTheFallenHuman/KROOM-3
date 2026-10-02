@@ -818,13 +818,23 @@ static void WriteEditFileFrom( const char* baseName, const idEditFileData& data 
 		f->WriteFloatString( "\t\"add\"\n\t{\n" );
 		for( int i = 0; i < data.adds.Num(); ++i )
 		{
-			f->WriteFloatString( "\t\t\"entity %d\"\n\t\t{\n", i );
 			const idDict& d = data.adds[i].epairs;
+
+			// Set the entity name as the block label.
+			const char* name = d.GetString( "name" );
+			if( name && name[0] )
+			{
+				f->WriteFloatString( "\t\t\"%s\"\n\t\t{\n", name );
+			}
+			else
+			{
+				f->WriteFloatString( "\t\t\"entity %d\"\n\t\t{\n", i );
+			}
+
 			for( int j = 0; j < d.GetNumKeyVals(); ++j )
 			{
 				const idKeyValue* kv = d.GetKeyVal( j );
-				f->WriteFloatString( "\t\t\t\"%s\" \"%s\"\n",
-									 kv->GetKey().c_str(), kv->GetValue().c_str() );
+				f->WriteFloatString( "\t\t\t\"%s\" \"%s\"\n", kv->GetKey().c_str(), kv->GetValue().c_str() );
 			}
 			f->WriteFloatString( "\t\t}\n" );
 		}

@@ -84,6 +84,11 @@ int PortalVisibleSides( uPortal_t* p )
 
 void OutputWinding( idWinding* w, OBJGroup& group )
 {
+	if( !w )
+	{
+		return;
+	}
+
 	// give every surface a different color
 	static idVec4 colors[] = { colorRed, colorGreen, colorBlue, colorYellow, colorMagenta, colorCyan, colorWhite, colorPurple, colorBlue };
 	static int colorIndex = 0;
@@ -121,6 +126,11 @@ void OutputPortal( uPortal_t* p, OBJGroup& group, bool touchingVoid )
 {
 	idWinding*	w;
 	int		sides;
+
+	if( !p || !p->winding )
+	{
+		return;
+	}
 
 	sides = PortalVisibleSides( p );
 
@@ -431,9 +441,9 @@ void CollectAreaPortals( idList<OBJGroup>& groups )
 	interAreaPortal_t*	iap;
 	idWinding*			w;
 
-	for( i = 0; i < interAreaPortals.Num(); i++ )
+	for( i = 0; i < dmapGlobals.interAreaPortals.Num(); i++ )
 	{
-		iap = &interAreaPortals[i];
+		iap = &dmapGlobals.interAreaPortals[i];
 
 		if( iap->side )
 		{

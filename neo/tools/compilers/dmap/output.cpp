@@ -613,11 +613,11 @@ static void WriteOutputPortals( uEntity_t* e )
 	idWinding*			w;
 
 	procFile->WriteFloatString( "interAreaPortals { /* numAreas = */ %i /* numIAP = */ %i\n\n",
-								e->numAreas, interAreaPortals.Num() );
+								e->numAreas, dmapGlobals.interAreaPortals.Num() );
 	procFile->WriteFloatString( "/* interAreaPortal format is: numPoints positiveSideArea negativeSideArea ( point) ... */\n" );
-	for( i = 0 ; i < interAreaPortals.Num() ; i++ )
+	for( i = 0 ; i < dmapGlobals.interAreaPortals.Num() ; i++ )
 	{
-		iap = &interAreaPortals[i];
+		iap = &dmapGlobals.interAreaPortals[i];
 
 		// RB: support new area portals
 		if( iap->side )

@@ -747,10 +747,10 @@ CONSOLE_COMMAND_SHIP( convertPDAsToStrings, "Converts *.pda files to text which 
 	idStr tailEnd = "\"\t\"%s\"\n";
 	idStr temp;
 
-		int count = declManager->GetNumDecls( DECL_PDA );
+	int count = declManager->GetNumDecls( DECL_PDA );
 	for( int i = 0; i < count; i++ )
 	{
-			const idDeclPDA* decl = static_cast< const idDeclPDA* >( declManager->DeclByIndex( DECL_PDA, i ) );
+		const idDeclPDA* decl = static_cast< const idDeclPDA* >( declManager->DeclByIndex( DECL_PDA, i ) );
 
 		idStr pdaBaseStrId = va( headEnd.c_str(), decl->GetName() );
 
@@ -829,7 +829,7 @@ CONSOLE_COMMAND_SHIP( convertPDAsToStrings, "Converts *.pda files to text which 
 		}
 	}
 
-		int infoEmailCount = declManager->GetNumDecls( DECL_EMAIL );
+	int infoEmailCount = declManager->GetNumDecls( DECL_EMAIL );
 	if( infoEmailCount > 0 )
 	{
 		temp = "\n\n//////// PDA Info Emails ////////////\n";
@@ -837,7 +837,7 @@ CONSOLE_COMMAND_SHIP( convertPDAsToStrings, "Converts *.pda files to text which 
 	}
 	for( int i = 0; i < infoEmailCount; i++ )
 	{
-			const idDeclEmail* email = static_cast< const idDeclEmail* >( declManager->DeclByIndex( DECL_EMAIL, i ) );
+		const idDeclEmail* email = static_cast< const idDeclEmail* >( declManager->DeclByIndex( DECL_EMAIL, i ) );
 
 		idStr filename = email->base->GetFileName();
 		if( filename.Icmp( "newpdas/info_emails.pda" ) != 0 )
@@ -871,7 +871,7 @@ CONSOLE_COMMAND_SHIP( convertPDAsToStrings, "Converts *.pda files to text which 
 		totalEmailCount++;
 	}
 
-		int videoCount = declManager->GetNumDecls( DECL_VIDEO );
+	int videoCount = declManager->GetNumDecls( DECL_VIDEO );
 	if( videoCount > 0 )
 	{
 		temp = "\n\n//////// PDA Videos ////////////\n";
@@ -879,7 +879,7 @@ CONSOLE_COMMAND_SHIP( convertPDAsToStrings, "Converts *.pda files to text which 
 	}
 	for( int i = 0; i < videoCount; i++ )
 	{
-			const idDeclVideo* video = static_cast< const idDeclVideo* >( declManager->DeclByIndex( DECL_VIDEO, i ) );
+		const idDeclVideo* video = static_cast< const idDeclVideo* >( declManager->DeclByIndex( DECL_VIDEO, i ) );
 
 		idStr videoBaseStrId = va( "\t\"#str_%s_", video->GetName() );
 		idStr videoBase = videoBaseStrId + "video_%s" + tailEnd;

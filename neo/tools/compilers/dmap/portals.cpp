@@ -33,9 +33,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "dmap.h"
 
 
-idList<interAreaPortal_t> interAreaPortals;
-
-
 int		c_active_portals;
 int		c_peak_portals;
 
@@ -1072,9 +1069,9 @@ static void FindInterAreaPortals_r( node_t* node )
 		}
 
 		// see if we have created this portal before
-		for( i = 0; i < interAreaPortals.Num(); i++ )
+		for( i = 0; i < dmapGlobals.interAreaPortals.Num(); i++ )
 		{
-			iap = &interAreaPortals[i];
+			iap = &dmapGlobals.interAreaPortals[i];
 
 			if( side == iap->side &&
 					( ( p->nodes[0]->area == iap->area0 && p->nodes[1]->area == iap->area1 )
@@ -1084,12 +1081,12 @@ static void FindInterAreaPortals_r( node_t* node )
 			}
 		}
 
-		if( i != interAreaPortals.Num() )
+		if( i != dmapGlobals.interAreaPortals.Num() )
 		{
 			continue;	// already emited
 		}
 
-		iap = &interAreaPortals.Alloc();
+		iap = &dmapGlobals.interAreaPortals.Alloc();
 
 		if( side->planenum == p->onnode->planenum )
 		{
@@ -1133,9 +1130,9 @@ static void FindInterAreaPortals_r( node_t* node )
 		}
 
 		// see if we have created this portal before
-		for( i = 0; i < interAreaPortals.Num(); i++ )
+		for( i = 0; i < dmapGlobals.interAreaPortals.Num(); i++ )
 		{
-			iap = &interAreaPortals[i];
+			iap = &dmapGlobals.interAreaPortals[i];
 
 			if( apTriangles[0]->polygonId == iap->polygonId &&
 					( ( p->nodes[0]->area == iap->area0 && p->nodes[1]->area == iap->area1 )
@@ -1145,12 +1142,12 @@ static void FindInterAreaPortals_r( node_t* node )
 			}
 		}
 
-		if( i != interAreaPortals.Num() )
+		if( i != dmapGlobals.interAreaPortals.Num() )
 		{
 			continue;	// already emited
 		}
 
-		iap = &interAreaPortals.Alloc();
+		iap = &dmapGlobals.interAreaPortals.Alloc();
 
 		if( apTriangles[0]->planeNum == p->onnode->planenum )
 		{
@@ -1220,7 +1217,7 @@ void FloodAreas( uEntity_t* e )
 	// identify all portals between areas if this is the world
 	if( e == &dmapGlobals.uEntities[0] )
 	{
-		interAreaPortals.Clear();
+		dmapGlobals.interAreaPortals.Clear();
 		FindInterAreaPortals_r( e->tree->headnode );
 	}
 }

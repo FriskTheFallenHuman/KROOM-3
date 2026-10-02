@@ -258,15 +258,16 @@ typedef struct optimizeGroup_s
 
 // dmap.cpp
 
-typedef enum
+typedef struct interAreaPortal_s
 {
-	SO_NONE,			// 0
-	SO_MERGE_SURFACES,	// 1
-	SO_CULL_OCCLUDED,	// 2
-	SO_CLIP_OCCLUDERS,	// 3
-	SO_CLIP_SILS,		// 4
-	SO_SIL_OPTIMIZE		// 5
-} shadowOptLevel_t;
+	int				area0, area1;
+	side_t*			side = NULL;
+
+	// RB begin
+	int				polygonId;
+	idFixedWinding	w;
+	// RB end
+} interAreaPortal_t;
 
 typedef struct
 {
@@ -293,6 +294,7 @@ typedef struct
 	int			entityNum;
 
 	idList<mapLight_t*>	mapLights;
+	idList<interAreaPortal_t> interAreaPortals;
 
 	idVec3	portal_sky_location;
 
@@ -377,19 +379,6 @@ void		FreeDMapFile();
 // portals.cpp
 
 #define	MAX_INTER_AREA_PORTALS	1024
-
-struct interAreaPortal_t
-{
-	int				area0, area1;
-	side_t*			side = NULL;
-
-	// RB begin
-	int				polygonId;
-	idFixedWinding	w;
-	// RB end
-};
-
-extern idList<interAreaPortal_t> interAreaPortals;
 
 bool FloodEntities( tree_t* tree );
 void FillOutside( uEntity_t* e );

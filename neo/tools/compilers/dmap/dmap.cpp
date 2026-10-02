@@ -225,6 +225,7 @@ void ResetDmapGlobals()
 	dmapGlobals.uEntities = NULL;
 	dmapGlobals.entityNum = 0;
 	dmapGlobals.mapLights.Clear();
+	dmapGlobals.interAreaPortals.Clear();
 	dmapGlobals.verbose = false;
 	dmapGlobals.glview = false;
 	dmapGlobals.noOptimize = false;

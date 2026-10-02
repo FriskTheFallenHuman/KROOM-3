@@ -1546,16 +1546,59 @@ bool idMapFile::Write( const char* fileName, const char* ext, bool fromBasePath 
 
 /*
 ===============
+ResolveEditRef
+
+Turn a reference token from a edit file into a base map index.
+
+Returns -1 if the ref can't be resolved.
+===============
+*/
+static int ResolveEditRef( const idMapFile* file, const char* ref )
+{
+	if( file == NULL || ref == NULL || ref[0] == '\0' )
+	{
+		return -1;
+	}
+
+	if( idStr::Icmp( ref, "worldspawn" ) == 0 )
+	{
+		return 0; // worldspawn is always entity 0
+	}
+
+	int idx = -1;
+	if( sscanf( ref, "entity %d", &idx ) == 1 )
+	{
+		return ( idx >= 0 && idx < file->GetNumBaseEntities() ) ? idx : -1;
+	}
+
+	const int numBase = file->GetNumBaseEntities();
+	for( int i = 0; i < numBase; ++i )
+	{
+		idMapEntity* ent = file->GetEntity( i );
+		if( ent && idStr::Icmp( ent->epairs.GetString( "name" ), ref ) == 0 )
+		{
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+/*
+===============
 idMapFile::ApplyEditFile
 
 Reads a <map>.edit file and applies "add", "modify" and "remove" operations
 to this map's entity list.
 
+References may be:
+  - "worldspawn"      -> can only be modify not removed nor added
+  - "entity N"        -> base index N (NOT RECOMMENDED, YOU ARE WARNED)
+  - any other string  -> name lookup in [0, numBaseEntities) (Recommended)
+
 Rules:
-  - modify accepts "worldspawn" (=> base index 0) or "entity N".
-  - add refuses "worldspawn" — worldspawn can't be added.
-  - remove refuses both "worldspawn" and "entity 0" — worldspawn can't be
-	removed.
+  - add/remove refuses to add/remove worldspawn (by name and entity index).
+  - modify accepts every reference form, but refuses to change worldspawn's classname.
 
 Set "map_editDebug" to 1 to print every operation being done.
 ===============
@@ -1768,16 +1811,16 @@ bool idMapFile::ApplyEditFile( const char* filename, bool osPath )
 					break;
 				}
 
-				int entIndex = -1;
 				const bool isWorldspawn = ( idStr::Icmp( entTok.c_str(), "worldspawn" ) == 0 );
 
-				if( isWorldspawn )
+				int probeIdx = -1;
+				const bool isIndexRef = ( sscanf( entTok.c_str(), "entity %d", &probeIdx ) == 1 );
+				const bool isNameRef  = !isWorldspawn && !isIndexRef;
+
+				int entIndex = ResolveEditRef( this, entTok.c_str() );
+				if( entIndex < 0 )
 				{
-					entIndex = 0;   // worldspawn is always entity 0
-				}
-				else if( sscanf( entTok.c_str(), "entity %d", &entIndex ) != 1 )
-				{
-					src.Warning( "%s: bad reference '%s', skipping block\n", __FUNCTION__, entTok.c_str() );
+					src.Warning( "%s: can't resolve '%s', skipping block\n", __FUNCTION__, entTok.c_str() );
 
 					if( src.PeekTokenString( "{" ) )
 					{
@@ -1793,10 +1836,6 @@ bool idMapFile::ApplyEditFile( const char* filename, bool osPath )
 				}
 
 				idMapEntity* mapEnt = ( entIndex >= 0 && entIndex < entities.Num() ) ? entities[entIndex] : NULL;
-				if( mapEnt == NULL )
-				{
-					src.Warning( "%s: modify #%d out of range\n", __FUNCTION__, entIndex );
-				}
 
 				// Accumulate the changes so we can print a single header
 				// only when at least one key actually differs.
@@ -1808,6 +1847,11 @@ bool idMapFile::ApplyEditFile( const char* filename, bool osPath )
 					if( isWorldspawn )
 					{
 						headerLine = "[EDIT]     ~ worldspawn";
+					}
+					else if( isNameRef )
+					{
+						const char* cn = mapEnt ? mapEnt->epairs.GetString( "classname" ) : "?";
+						headerLine = va( "[EDIT]     ~ \"%s\" (entity %d, %s)", entTok.c_str(), entIndex, cn );
 					}
 					else if( mapEnt != NULL )
 					{
@@ -1946,16 +1990,17 @@ bool idMapFile::ApplyEditFile( const char* filename, bool osPath )
 					break;
 				}
 
-				// worldspawn can't be removed by name.
+				// worldspawn can't be removed.
 				if( idStr::Icmp( entTok.c_str(), "worldspawn" ) == 0 )
 				{
 					src.Warning( "%s: can't remove worldspawn, skipping\n", __FUNCTION__ );
 					continue;
 				}
 
-				int entIndex = -1;
-				if( sscanf( entTok.c_str(), "entity %d", &entIndex ) != 1 )
+				int entIndex = ResolveEditRef( this, entTok.c_str() );
+				if( entIndex < 0 )
 				{
+					src.Warning( "%s: can't resolve '%s', skipping\n", __FUNCTION__, entTok.c_str() );
 					continue;
 				}
 				// entity 0 is worldspawn refuse it.
