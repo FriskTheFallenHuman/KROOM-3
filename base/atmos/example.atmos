@@ -6,7 +6,7 @@
 
 atmos atmos/example
 {
-	skyMaterial		textures/skies/mars1		// 2D equirect (top half = visible hemisphere) or a cube material; remove for a plain gradient
+	//skyMaterial		textures/skies/mars1		// 2D equirect (top half = visible hemisphere) or a cube material; remove for a plain gradient
 	skyTint			1 1 1
 	zenithColor		0.16 0.28 0.48				// gradient colors, used when there is no skyMaterial
 	horizonColor	0.55 0.62 0.72
@@ -21,11 +21,11 @@ atmos atmos/example
 		heightMax	7600
 		scale		0.00021
 		coverage	0.30						// lower = denser
-		density		0.5
+		density		0.8
 		opacity		0.78
 		seed		12000
 		color		auto						// auto = average of the sky material
-		wind		55 -18						// units per second
+		wind		195 -18						// units per second
 		volume		0.65
 	}
 

@@ -1,0 +1,25 @@
+particle softparticle_smoke {
+	{
+		count				40
+		material			textures/particles/testsmoke
+		softness			64
+		time				2.850
+		cycles				0.000
+		bunching			1.000
+		distribution		cylinder 40.000 60.000 100.000 0.000 
+		direction			outward "5.000" 
+		orientation			view 
+		speed				"1.000" 
+		size				"128.000" 
+		aspect				"1.000" 
+		randomDistribution	1
+		boundsExpansion		0.000
+		fadeIn				0.700
+		fadeOut				0.800
+		fadeIndex			0.000
+		color 				0.204 0.353 0.188 1.000
+		fadeColor 			0.000 0.000 0.000 1.000
+		offset 				0.000 0.000 0.000
+		gravity 			world 0.000
+	}
+}
