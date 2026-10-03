@@ -190,6 +190,9 @@ enum renderParm_t
 	RENDERPARM_USER5,
 	RENDERPARM_USER6,
 	RENDERPARM_USER7,
+	RENDERPARM_USER8,
+	RENDERPARM_USER9,
+	RENDERPARM_USER10,
 	// RB end
 
 	RENDERPARM_TOTAL,
@@ -548,6 +551,16 @@ public:
 		BindShader_Builtin( BUILTIN_SKYBOX );
 	}
 
+	void	BindShader_AtmosSky()
+	{
+		BindShader_Builtin( BUILTIN_ATMOS_SKY );
+	}
+
+	void	BindShader_AtmosSkyCube()
+	{
+		BindShader_Builtin( BUILTIN_ATMOS_SKY_CUBE );
+	}
+
 	void	BindShader_WobbleSky()
 	{
 		BindShader_Builtin( BUILTIN_WOBBLESKY );
@@ -796,6 +809,8 @@ private:
 		BUILTIN_DIFFUSE_CUBE,
 		BUILTIN_SKYBOX,
 		BUILTIN_WOBBLESKY,
+		BUILTIN_ATMOS_SKY,
+		BUILTIN_ATMOS_SKY_CUBE,
 		BUILTIN_GLASSWARP,
 		BUILTIN_POSTPROCESS,
 		// RB begin

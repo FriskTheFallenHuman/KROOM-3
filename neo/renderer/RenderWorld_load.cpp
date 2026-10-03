@@ -4,6 +4,8 @@
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
 Copyright (C) 2015 Robert Beckebans
+Copyright (C) 2022 Stephen Pridham
+Copyright (C) 2026 Justin Marshall
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -49,6 +51,10 @@ idRenderWorldLocal::FreeWorld
 */
 void idRenderWorldLocal::FreeWorld()
 {
+	atmosDecl = NULL;
+	atmosOptOut = false;
+	R_AtmosFlushCache();
+
 	// this will free all the lightDefs and entityDefs
 	FreeDefs();
 
@@ -1288,8 +1294,7 @@ void idRenderWorldLocal::AddWorldModelEntities()
 		{
 			const modelSurface_t* surf = hModel->Surface( j );
 
-			if( surf->shader->GetName() == idStr( "textures/smf/portal_sky" ) ||
-					surf->shader->IsPortalSky() )
+			if( surf->shader->IsPortalSky() )
 			{
 				def->needsPortalSky = true;
 			}

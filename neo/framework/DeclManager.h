@@ -3,6 +3,8 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2022 Stephen Pridham
+Copyright (C) 2026 Justin Marshall
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -81,6 +83,7 @@ typedef enum
 	DECL_MAPDEF,
 
 	// new decl types can be added here
+	DECL_ATMOS,		// procedural sky
 
 	DECL_MAX_TYPES			= 32
 } declType_t;

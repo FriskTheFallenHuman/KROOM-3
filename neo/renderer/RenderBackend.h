@@ -297,6 +297,7 @@ private:
 			idVec4 matrix[2], float color[4] );
 
 	void				DrawInteractions( const viewDef_t* _viewDef );
+	void				DrawAtmos( const viewDef_t* _viewDef );
 	void				DrawSingleInteraction( drawInteraction_t* din, bool useFastPath, bool useIBL, bool setInteractionShader );
 	int					DrawShaderPasses( const drawSurf_t* const* const drawSurfs, const int numDrawSurfs );
 

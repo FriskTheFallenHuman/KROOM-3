@@ -5,6 +5,8 @@ Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
 Copyright (C) 2014-2016 Robert Beckebans
 Copyright (C) 2014-2016 Kot in Action Creative Artel
+Copyright (C) 2022 Stephen Pridham
+Copyright (C) 2026 Justin Marshall
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -1359,6 +1361,16 @@ void idRenderWorldLocal::RenderScene( const renderView_t* renderView )
 	// setup view parms for the initial view
 	viewDef_t* parms = ( viewDef_t* )R_ClearedFrameAlloc( sizeof( *parms ), FRAME_ALLOC_VIEW_DEF );
 	parms->renderView = *renderView;
+
+	// resolve the procedural sky
+	parms->atmos = R_SetupAtmosForView( this, parms );
+
+	// if no sky room was rendered (no info_portalsky, inactive, or portalSky replace)
+	// the portal sky surfaces have nothing behind them and would only write depth, leaving black holes
+	if( parms->atmos != NULL && ( parms->renderView.rdflags & ( RDF_PORTALSKY_VIEW | RDF_PORTALSKY_ACTIVE ) ) == 0 )
+	{
+		parms->renderView.rdflags |= RDF_ATMOS_REPLACE_PORTALSKY;
+	}
 
 	if( tr.takingScreenshot )
 	{

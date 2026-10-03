@@ -5,6 +5,8 @@ Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
 Copyright (C) 2014-2021 Robert Beckebans
 Copyright (C) 2014-2016 Kot in Action Creative Artel
+Copyright (C) 2022 Stephen Pridham
+Copyright (C) 2026 Justin Marshall
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -162,6 +164,12 @@ public:
 	virtual					~idRenderWorldLocal();
 
 	virtual	bool			InitFromMap( const char* mapName );
+	virtual void			SetAtmos( const idDeclAtmos* decl, bool optOut );
+	virtual int				GetAtmosPortalSkyMode() const;
+
+	const idDeclAtmos*		atmosDecl = NULL;
+	bool					atmosOptOut = false;
+
 	virtual void			ResetLocalRenderModels();				// Fixes a crash when switching between expansion packs in Doom3:BFG
 
 	virtual	qhandle_t		AddEntityDef( const renderEntity_t* re );

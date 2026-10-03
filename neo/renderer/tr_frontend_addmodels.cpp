@@ -1149,6 +1149,13 @@ Als called directly by GuiModel
 */
 void R_LinkDrawSurfToView( drawSurf_t* drawSurf, viewDef_t* viewDef )
 {
+
+	// atmos replaces the portal sky: the sky surfaces must not draw nor fill depth
+	if( ( viewDef->renderView.rdflags & RDF_ATMOS_REPLACE_PORTALSKY ) && drawSurf->material != NULL && drawSurf->material->IsPortalSky() )
+	{
+		return;
+	}
+
 	// if it doesn't fit, resize the list
 	if( viewDef->numDrawSurfs == viewDef->maxDrawSurfs )
 	{

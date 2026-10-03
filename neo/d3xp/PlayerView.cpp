@@ -3,6 +3,8 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2022 Stephen Pridham
+Copyright (C) 2026 Justin Marshall
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -457,12 +459,22 @@ void idPlayerView::SingleView( const renderView_t* view, idMenuHandler_HUD* hudM
 
 	if( gameLocal.portalSkyEnt.GetEntity() && gameLocal.IsPortalSkyAcive() && g_enablePortalSky.GetBool() )
 	{
-		renderView_t portalView = hackedView;
-		portalView.vieworg = gameLocal.portalSkyEnt.GetEntity()->GetPhysics()->GetOrigin();
-		gameRenderWorld->RenderScene( &portalView );
-		renderSystem->CaptureRenderToImage( "_currentRender" );
+		if( gameRenderWorld->GetAtmosPortalSkyMode() == ATMOS_PORTALSKY_REPLACE )
+		{
+			// Atmosphere is overriding the portal sky.
+			hackedView.rdflags |= RDF_ATMOS_REPLACE_PORTALSKY;
+		}
+		else
+		{
+			renderView_t portalView = hackedView;
+			portalView.vieworg = gameLocal.portalSkyEnt.GetEntity()->GetPhysics()->GetOrigin();
+			portalView.rdflags |= RDF_PORTALSKY_VIEW;	// atmos (if any) is drawn behind the sky room geometry
+			gameRenderWorld->RenderScene( &portalView );
+			renderSystem->CaptureRenderToImage( "_currentRender" );
 
-		hackedView.forceUpdate = true;				// FIX: for smoke particles not drawing when portalSky present
+			hackedView.rdflags |= RDF_PORTALSKY_ACTIVE;	// the sky room view already carries the atmos
+			hackedView.forceUpdate = true;				// FIX: for smoke particles not drawing when portalSky present
+		}
 	}
 
 	// process the frame

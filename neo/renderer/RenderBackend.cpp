@@ -6,6 +6,8 @@ Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
 Copyright (C) 2014 Carl Kenner
 Copyright (C) 2016-2017 Dustin Land
 Copyright (C) 2013-2021 Robert Beckebans
+Copyright (C) 2022 Stephen Pridham
+Copyright (C) 2026 Justin Marshall
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -1115,6 +1117,11 @@ void idRenderBackend::FillDepthBufferFast( drawSurf_t** drawSurfs, int numDrawSu
 	// we will defer drawing until all opaque surfaces are done
 	GL_State( GLS_DEFAULT );
 
+	// the sky room view was already rendered into this framebuffer, the sky
+	// surfaces only need to write depth, writing color would paint them black
+	const bool skyRoomRendered = ( viewDef->renderView.rdflags & RDF_PORTALSKY_ACTIVE ) != 0;
+	bool depthOnly = false;
+
 	// continue checking past the subview surfaces
 	for( ; surfNum < numDrawSurfs; surfNum++ )
 	{
@@ -1135,6 +1142,13 @@ void idRenderBackend::FillDepthBufferFast( drawSurf_t** drawSurfs, int numDrawSu
 		}
 
 		// set polygon offset?
+
+		const bool wantDepthOnly = skyRoomRendered && shader->IsPortalSky();
+		if( wantDepthOnly != depthOnly )
+		{
+			depthOnly = wantDepthOnly;
+			GL_State( depthOnly ? ( GLS_COLORMASK | GLS_ALPHAMASK | GLS_DEPTHFUNC_LESS ) : GLS_DEFAULT );
+		}
 
 		// set mvp matrix
 		if( surf->space != currentSpace )
@@ -1161,6 +1175,11 @@ void idRenderBackend::FillDepthBufferFast( drawSurf_t** drawSurfs, int numDrawSu
 		DrawElementsWithCounters( surf );
 
 		renderLog.CloseBlock();
+	}
+
+	if( depthOnly )
+	{
+		GL_State( GLS_DEFAULT );
 	}
 
 	// draw all perforated surfaces with the general code path
@@ -2323,6 +2342,12 @@ void idRenderBackend::AmbientPass( const drawSurf_t* const* drawSurfs, int numDr
 		// translucent surfaces don't put anything in the depth buffer and don't
 		// test against it, which makes them fail the mirror clip plane operation
 		if( surfaceMaterial->Coverage() == MC_TRANSLUCENT )
+		{
+			continue;
+		}
+
+		// the sky room view is already in the framebuffer, don't paint over it
+		if( surfaceMaterial->IsPortalSky() && ( viewDef->renderView.rdflags & RDF_PORTALSKY_ACTIVE ) )
 		{
 			continue;
 		}
@@ -4832,6 +4857,157 @@ void idRenderBackend::DrawScreenSpaceAmbientOcclusion( const viewDef_t* _viewDef
 #endif
 }
 
+/*
+==================
+idRenderBackend::DrawAtmos
+==================
+*/
+void idRenderBackend::DrawAtmos( const viewDef_t* _viewDef )
+{
+	const atmosFrame_t* a = _viewDef->atmos;
+	if( a == NULL || _viewDef->is2Dgui )
+	{
+		return;
+	}
+
+	const float* proj = _viewDef->projectionMatrix;
+	if( idMath::Fabs( proj[0] ) < 0.00001f || idMath::Fabs( proj[5] ) < 0.00001f )
+	{
+		return;
+	}
+
+	RENDERLOG_PRINTF( "---------- DrawAtmos ----------\n" );
+
+	idImage* image = const_cast<idImage*>( a->skyImage );
+	bool cube = false;
+	if( image != NULL )
+	{
+		if( !image->IsLoaded() )
+		{
+			image->ActuallyLoadImage( true );
+		}
+		cube = ( image->GetOpts().textureType == TT_CUBIC );
+	}
+
+	ResetViewportAndScissorToDefaultCamera( _viewDef );
+
+	// no depth write, LEQUAL against a far plane quad
+	const uint64 depthFunc = ( r_atmosDebug.GetInteger() >= 2 ) ? GLS_DEPTHFUNC_ALWAYS : GLS_DEPTHFUNC_LESS;
+	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ZERO | GLS_DEPTHMASK | depthFunc | GLS_CULL_TWOSIDED );
+
+	if( r_atmosDebug.GetInteger() > 0 )
+	{
+		static int lastPrint = -1000;
+		if( tr.frameCount - lastPrint > 120 )
+		{
+			lastPrint = tr.frameCount;
+			common->Printf( "atmos: DrawAtmos sky '%s' %s, proj %.3f %.3f\n", image ? image->GetName() : "gradient", cube ? "cube" : "2D", proj[0], proj[5] );
+		}
+	}
+
+	currentSpace = NULL;
+
+	if( cube )
+	{
+		renderProgManager.BindShader_AtmosSkyCube();
+	}
+	else
+	{
+		renderProgManager.BindShader_AtmosSky();
+	}
+
+	GL_SelectTexture( 0 );
+	if( image != NULL )
+	{
+		image->Bind();
+	}
+	else
+	{
+		globalImages->whiteImage->Bind();
+	}
+
+	// eye space axes in world space, Doom: x forward, y left, z up
+	const idMat3& axis = _viewDef->renderView.viewaxis;
+	const idVec3 right = -axis[1];
+	const idVec3 up = axis[2];
+	const idVec3 forward = axis[0];
+
+	float parm[4];
+
+	parm[0] = right.x;
+	parm[1] = right.y;
+	parm[2] = right.z;
+	parm[3] = 1.0f / proj[0];
+	renderProgManager.SetRenderParm( RENDERPARM_USER0, parm );
+
+	parm[0] = up.x;
+	parm[1] = up.y;
+	parm[2] = up.z;
+	parm[3] = 1.0f / proj[5];
+	renderProgManager.SetRenderParm( RENDERPARM_USER1, parm );
+
+	parm[0] = forward.x;
+	parm[1] = forward.y;
+	parm[2] = forward.z;
+	parm[3] = _viewDef->renderView.time[0] * 0.001f;
+	renderProgManager.SetRenderParm( RENDERPARM_USER2, parm );
+
+	// tint (material) or zenith (gradient)
+	const idVec3& top = ( image != NULL ) ? a->skyTint : a->zenithColor;
+	parm[0] = top.x;
+	parm[1] = top.y;
+	parm[2] = top.z;
+	parm[3] = ( image != NULL ) ? 1.0f : 0.0f;
+	renderProgManager.SetRenderParm( RENDERPARM_USER3, parm );
+
+	parm[0] = a->horizonColor.x;
+	parm[1] = a->horizonColor.y;
+	parm[2] = a->horizonColor.z;
+	parm[3] = ( float )a->cloudLayers;
+	renderProgManager.SetRenderParm( RENDERPARM_USER4, parm );
+
+	parm[0] = a->cloudColor.x;
+	parm[1] = a->cloudColor.y;
+	parm[2] = a->cloudColor.z;
+	parm[3] = a->cloudOpacity;
+	renderProgManager.SetRenderParm( RENDERPARM_USER5, parm );
+
+	parm[0] = a->cloudHeightMin;
+	parm[1] = a->cloudHeightMax;
+	parm[2] = a->cloudScale;
+	parm[3] = a->cloudCoverage;
+	renderProgManager.SetRenderParm( RENDERPARM_USER6, parm );
+
+	parm[0] = a->cloudDensity;
+	parm[1] = a->cloudSeed;
+	parm[2] = a->cloudWind.x;
+	parm[3] = a->cloudWind.y;
+	renderProgManager.SetRenderParm( RENDERPARM_USER7, parm );
+
+	parm[0] = a->fogColor.x;
+	parm[1] = a->fogColor.y;
+	parm[2] = a->fogColor.z;
+	parm[3] = a->fogOpacity;
+	renderProgManager.SetRenderParm( RENDERPARM_USER8, parm );
+
+	parm[0] = a->fogHeight;
+	parm[1] = a->fogPower;
+	parm[2] = a->cloudVolume;
+	parm[3] = a->intensity;
+	renderProgManager.SetRenderParm( RENDERPARM_USER9, parm );
+
+	parm[0] = proj[8];
+	parm[1] = proj[9];
+	parm[2] = a->grade;
+	parm[3] = 0.0f;
+	renderProgManager.SetRenderParm( RENDERPARM_USER10, parm );
+
+	DrawElementsWithCounters( &unitSquareSurface );
+
+	renderProgManager.Unbind();
+	GL_State( GLS_DEFAULT );
+}
+
 void idRenderBackend::DrawScreenSpaceGlobalIllumination( const viewDef_t* _viewDef )
 {
 #if !defined(USE_VULKAN)
@@ -5356,6 +5532,11 @@ void idRenderBackend::DrawViewInternal( const viewDef_t* _viewDef )
 	// main light renderer
 	//-------------------------------------------------
 	DrawInteractions( _viewDef );
+
+	//-------------------------------------------------
+	// procedural sky
+	//-------------------------------------------------
+	DrawAtmos( _viewDef );
 
 	//-------------------------------------------------
 	// capture the depth for the motion blur before rendering any post process surfaces that may contribute to the depth

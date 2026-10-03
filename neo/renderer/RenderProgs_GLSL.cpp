@@ -5,6 +5,8 @@ Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
 Copyright (C) 2013-2018 Robert Beckebans
 Copyright (C) 2016-2017 Dustin Land
+Copyright (C) 2022 Stephen Pridham
+Copyright (C) 2026 Justin Marshall
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -301,7 +303,10 @@ static const char* GLSLParmNames[RENDERPARM_TOTAL] =
 	"rpUser4",
 	"rpUser5",
 	"rpUser6",
-	"rpUser7"
+	"rpUser7",
+	"rpUser8",
+	"rpUser9",
+	"rpUser10"
 	// RB end
 };
 

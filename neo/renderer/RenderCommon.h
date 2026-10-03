@@ -5,6 +5,8 @@ Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
 Copyright (C) 2012-2021 Robert Beckebans
 Copyright (C) 2014-2016 Kot in Action Creative Artel
+Copyright (C) 2022 Stephen Pridham
+Copyright (C) 2026 Justin Marshall
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -555,6 +557,8 @@ struct viewDef_t
 
 	idRenderWorldLocal* renderWorld;
 
+	const struct atmosFrame_t*	atmos;					// NULL = no procedural sky in this view
+
 	idVec3				initialViewAreaOrigin;
 	// Used to find the portalArea that view flooding will take place from.
 	// for a normal view, the initialViewOrigin will be renderView.viewOrg,
@@ -788,6 +792,7 @@ const int MAX_GUI_SURFACES	= 1024;		// default size of the drawSurfs list for gu
 
 static const int MAX_RENDER_CROPS = 8;
 
+#include "RenderAtmos.h"
 #include "RenderBackend.h"
 
 /*

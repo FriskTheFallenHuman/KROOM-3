@@ -4,6 +4,8 @@
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
 Copyright (C) 2015 Robert Beckebans
+Copyright (C) 2022 Stephen Pridham
+Copyright (C) 2026 Justin Marshall
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -232,11 +234,15 @@ typedef struct
 
 
 // RB: added back refdef flags from Quake 3
-const int RDF_NOSHADOWS		= BIT( 0 ); // force renderer to use faster lighting only path
-const int RDF_NOAMBIENT		= BIT( 1 ); // don't render indirect lighting
-const int RDF_IRRADIANCE	= BIT( 2 ); // render into 256^2 HDR render target for irradiance/radiance GGX calculation
-const int RDF_UNDERWATER	= BIT( 3 ); // TODO enable automatic underwater caustics and fog
-const int RDF_EDITOR_PREVIEW = BIT( 4 ); // we are on a editor preview of sorts
+const int RDF_NOSHADOWS					= BIT( 0 ); // force renderer to use faster lighting only path
+const int RDF_NOAMBIENT					= BIT( 1 ); // don't render indirect lighting
+const int RDF_IRRADIANCE				= BIT( 2 ); // render into 256^2 HDR render target for irradiance/radiance GGX calculation
+const int RDF_UNDERWATER				= BIT( 3 ); // TODO enable automatic underwater caustics and fog
+const int RDF_EDITOR_PREVIEW			= BIT( 4 ); // we are on a editor preview of sorts
+const int RDF_NOATMOS					= BIT( 5 ); // never draw the atmos in this view
+const int RDF_PORTALSKY_VIEW			= BIT( 6 ); // this view is the sky room render of a portal sky
+const int RDF_PORTALSKY_ACTIVE			= BIT( 7 ); // a portal sky view was rendered before this view
+const int RDF_ATMOS_REPLACE_PORTALSKY	= BIT( 8 ); // portal sky was skipped, drop portal sky surfaces and let the atmos fill them
 
 class idRenderWorld;
 class idRenderWorldLocal;
@@ -589,6 +595,14 @@ public:
 	// this is used to regenerate all interactions ( which is currently only done during influences ), there may be a less
 	// expensive way to do it
 	virtual void			RegenerateWorld() = 0;
+
+	// decl may be NULL, can be used to disable it for this map.
+	// Cleared by FreeWorld/InitFromMap, call after the world is loaded.
+	virtual void			SetAtmos( const class idDeclAtmos* decl, bool optOut ) = 0;
+
+	// returns atmosPortalSky_t when an atmos is active for this world, -1 when not.
+	// Game side uses it to decide whether the portal sky view is rendered at all.
+	virtual int				GetAtmosPortalSkyMode() const = 0;
 
 	//-------------- Debug Visualization  -----------------
 

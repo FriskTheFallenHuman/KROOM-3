@@ -3,6 +3,8 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2022 Stephen Pridham
+Copyright (C) 2026 Justin Marshall
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -45,6 +47,34 @@ EVENT( EV_SafeRemove,			idWorldspawn::Event_Remove )
 END_CLASS
 
 /*
+=================
+SetupWorldAtmos
+
+worldspawn keys:
+	atmos <name>	idDeclAtmos to use
+	atmos none		do not use any atmos
+	noAtmos 1		same has above
+=================
+*/
+static void SetupWorldAtmos( const idDict& args )
+{
+	const char* name = args.GetString( "atmos", "" );
+	const bool optOut = args.GetBool( "noAtmos" ) || ( idStr::Icmp( name, "none" ) == 0 );
+
+	const idDeclAtmos* decl = NULL;
+	if( !optOut && name[0] != '\0' )
+	{
+		decl = static_cast<const idDeclAtmos*>( declManager->FindType( DECL_ATMOS, name, false ) );
+		if( decl == NULL )
+		{
+			gameLocal.Warning( "worldspawn: atmos decl '%s' not found", name );
+		}
+	}
+
+	gameRenderWorld->SetAtmos( decl, optOut );
+}
+
+/*
 ================
 idWorldspawn::Spawn
 ================
@@ -60,6 +90,8 @@ void idWorldspawn::Spawn()
 	gameLocal.world = this;
 
 	g_gravity.SetFloat( spawnArgs.GetFloat( "gravity", va( "%f", DEFAULT_GRAVITY ) ) );
+
+	SetupWorldAtmos( spawnArgs );
 
 	// disable stamina on hell levels
 	if( spawnArgs.GetBool( "no_stamina" ) )
@@ -118,6 +150,8 @@ void idWorldspawn::Restore( idRestoreGame* savefile )
 	assert( gameLocal.world == this );
 
 	g_gravity.SetFloat( spawnArgs.GetFloat( "gravity", va( "%f", DEFAULT_GRAVITY ) ) );
+
+	SetupWorldAtmos( spawnArgs );
 
 	// disable stamina on hell levels
 	if( spawnArgs.GetBool( "no_stamina" ) )

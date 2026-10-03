@@ -796,7 +796,7 @@ public:
 	};
 	bool				IsPortalSky() const
 	{
-		return portalSky;
+		return portalSky || sort == SS_PORTAL_SKY;
 	};
 	void				AddReference();
 
