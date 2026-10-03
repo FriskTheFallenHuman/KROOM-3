@@ -342,6 +342,7 @@ public:
 
 	listener_t			listener;
 	int					EAXarea;
+	idStr				EAXareaName;
 	idList<idSoundEmitterLocal*, TAG_AUDIO>	emitters;
 
 	idSoundEmitter* 	localSound;			// for PlayShaderDirectly()

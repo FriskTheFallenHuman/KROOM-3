@@ -44,6 +44,7 @@ idCVar s_doorDistanceAdd( "s_doorDistanceAdd", "150", CVAR_FLOAT, "reduce sound 
 idCVar s_drawSounds( "s_drawSounds", "0", CVAR_INTEGER, "", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2> );
 idCVar s_showVoices( "s_showVoices", "0", CVAR_BOOL, "show active voices" );
 idCVar s_useEAX( "s_useEAX", "1", CVAR_ARCHIVE | CVAR_BOOL, "Set if you want to use EAX audio (efx files required)" );
+idCVar s_debugEAX( "s_debugEAX", "0", CVAR_BOOL, "Set if you want to check debug logs fro EAX" );
 idCVar s_useCC( "s_useCC", "1", CVAR_ARCHIVE | CVAR_BOOL, "Set if you want to use Subtitles (ccsript files are required)" );
 idCVar s_volume_dB( "s_volume_dB", "0", CVAR_ARCHIVE | CVAR_FLOAT, "volume in dB" );
 
@@ -70,7 +71,9 @@ idSoundWorldLocal::idSoundWorldLocal()
 	listener.pos.Zero();
 	listener.id = -1;
 	listener.area = 0;
+	listener.name = idStr( "default" );
 	EAXarea = -1;
+	EAXareaName = idStr( "default" );
 	shakeAmp = 0.0f;
 	currentCushionDB = DB_SILENCE;
 
@@ -188,7 +191,8 @@ void idSoundWorldLocal::PlaceListener( const idVec3& origin, const idMat3& axis,
 	listener.axis = axis;
 	listener.pos = origin;
 	listener.id = id;
-	listener.name = locationName;
+	listener.name = idStr( locationName );
+	listener.name.ToLower();
 
 	if( renderWorld )
 	{
@@ -357,18 +361,34 @@ void idSoundWorldLocal::Update()
 	{
 		int EnvironmentID = -1;
 		idSoundEffect* effect = NULL;
-		if( EAXarea != listener.area )
+		if( EAXarea != listener.area || idStr::Cmp( listener.name.c_str(), EAXareaName.c_str() ) )
 		{
 			idStr defaultStr( "default" );
 			idStr listenerAreaStr( listener.area );
-			soundSystemLocal.EFXDatabase.FindEffect( listenerAreaStr, &effect, &EnvironmentID );
+			if( s_debugEAX.GetBool() )
+			{
+				common->Printf( "EAX DEBUG: Trying to find effect for area: %s or %s\n", listenerAreaStr.c_str(), listener.name.c_str() );
+			}
+			soundSystemLocal.EFXDatabase.FindEffect( listener.name, &effect, &EnvironmentID );
 			if( !effect )
 			{
-				soundSystemLocal.EFXDatabase.FindEffect( listener.name, &effect, &EnvironmentID );
+				soundSystemLocal.EFXDatabase.FindEffect( listenerAreaStr, &effect, &EnvironmentID );
 			}
 			if( !effect )
 			{
 				soundSystemLocal.EFXDatabase.FindEffect( defaultStr, &effect, &EnvironmentID );
+			}
+
+			if( s_debugEAX.GetBool() )
+			{
+				if( effect != NULL )
+				{
+					common->Printf( "EAX DEBUG: Found effect: %s\n", effect->name.c_str() );
+				}
+				else
+				{
+					common->Printf( "EAX DEBUG: Found No effect\n" );
+				}
 			}
 		}
 		else
@@ -383,6 +403,7 @@ void idSoundWorldLocal::Update()
 			if( soundSystemLocal.hardware->IsReverbSupported() )
 			{
 				EAXarea = listener.area;
+				EAXareaName = idStr( listener.name.c_str() );
 			}
 			listener.id = EnvironmentID;
 		}
