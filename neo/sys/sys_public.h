@@ -477,6 +477,7 @@ uint64			Sys_Microseconds();
 // for accurate performance testing
 double			Sys_GetClockTicks();
 double			Sys_ClockTicksPerSecond();
+ID_ENGINE_API void Sys_CPUCount( int& numLogicalCPUCores, int& numPhysicalCPUCores, int& numCPUPackages );
 
 // returns a selection of the CPUID_* flags
 int				Sys_GetProcessorId();
@@ -749,9 +750,9 @@ public:
 	virtual void			FPU_SetFTZ( bool enable ) = 0;
 	virtual void			FPU_SetDAZ( bool enable ) = 0;
 
-	virtual int				DLL_Load( const char* dllName ) = 0;
-	virtual void* 			DLL_GetProcAddress( int dllHandle, const char* procName ) = 0;
-	virtual void			DLL_Unload( int dllHandle ) = 0;
+	virtual uintptr_t		DLL_Load( const char* dllName ) = 0;
+	virtual void* 			DLL_GetProcAddress( uintptr_t dllHandle, const char* procName ) = 0;
+	virtual void			DLL_Unload( uintptr_t dllHandle ) = 0;
 	virtual void			DLL_GetFileName( const char* baseName, char* dllName, int maxLength ) = 0;
 
 	virtual int				PollKeyboardInputEvents() = 0;

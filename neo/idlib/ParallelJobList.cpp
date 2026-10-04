@@ -1262,8 +1262,6 @@ idParallelJobManagerLocal
 ================================================================================================
 */
 
-extern void Sys_CPUCount( int& numLogicalCPUCores, int& numPhysicalCPUCores, int& numCPUPackages );
-
 // WINDOWS LOGICAL PROCESSOR LIMITS:
 //
 // http://download.microsoft.com/download/5/7/7/577a5684-8a83-43ae-9272-ff260a9c20e2/Hyper-thread_Windows.doc

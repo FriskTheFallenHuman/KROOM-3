@@ -109,7 +109,7 @@ public:
 	virtual void		DumpAllDisplayDevices() = 0;
 
 public:
-	static idDeviceManager* GetInstance();
+	ID_ENGINE_API static idDeviceManager* GetInstance();
 	static idDeviceManager* s_instance;
 };
 

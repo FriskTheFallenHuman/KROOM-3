@@ -60,9 +60,9 @@ public:
 	virtual void			FPU_SetFTZ( bool enable );
 	virtual void			FPU_SetDAZ( bool enable );
 
-	virtual int				DLL_Load( const char* dllName );
-	virtual void* 			DLL_GetProcAddress( int dllHandle, const char* procName );
-	virtual void			DLL_Unload( int dllHandle );
+	virtual uintptr_t		DLL_Load( const char* dllName );
+	virtual void* 			DLL_GetProcAddress( uintptr_t dllHandle, const char* procName );
+	virtual void			DLL_Unload( uintptr_t dllHandle );
 	virtual void			DLL_GetFileName( const char* baseName, char* dllName, int maxLength );
 
 	virtual int				PollKeyboardInputEvents();

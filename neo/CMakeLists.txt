@@ -23,7 +23,7 @@ option(REPRODUCIBLE_BUILD "Replace __DATE__ and __TIME__ by hardcoded values for
 option(WINRT "Build for Windows RT" OFF)
 option(WINDOWS10 "Build for Windows 10" ON)
 option(USE_SYSTEM_LIBS "Prefer system-installed libraries over FetchContent" OFF)
-option(BUILD_GAME_DLL "Do not build the engine with the game code embbeded onto the exe" OFF)
+option(BUILD_GAME_DLL "Do not build the engine with the game code embbeded onto the exe" ON)
 
 include(CPUDefine)
 
@@ -121,6 +121,14 @@ if(CMAKE_COMPILER_IS_GNUCC OR (CMAKE_C_COMPILER_ID MATCHES "Clang" AND NOT CMAKE
 		set(CMAKE_CXX_EXTENSIONS OFF)
 	else()
 		message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++17 support. Please use a different C++ compiler.")
+	endif()
+
+	if(NOT WIN32)
+		CHECK_CXX_COMPILER_FLAG("-fvisibility=hidden" CXX_HAS_FVISIBILITY)
+		if(NOT CXX_HAS_FVISIBILITY)
+			message(FATAL_ERROR "Compiler does not support -fvisibility")
+		endif()
+		add_compile_options(-fvisibility=hidden)
 	endif()
 
 	if (CPU_OPTIMIZATION)
@@ -822,6 +830,13 @@ endif()
 
 add_executable(${CMAKE_PROJECT_NAME} MACOSX_BUNDLE WIN32 ${src_core})
 add_dependencies(${CMAKE_PROJECT_NAME} idLib external ${sys_thirdparty_dependencies})
+
+if(BUILD_GAME_DLL)
+	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES ENABLE_EXPORTS ON)
+	target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE ID_ENGINE_EXPORTS)
+	target_compile_definitions(game PRIVATE ID_ENGINE_IMPORTS)
+	target_link_libraries(game ${CMAKE_PROJECT_NAME})
+endif()
 
 target_link_libraries(${CMAKE_PROJECT_NAME} idLib $<$<NOT:$<BOOL:${BUILD_GAME_DLL}>>:game> external ${sys_libs} ${sys_thirdparty})
 if(NOT ${BUILD_GAME_DLL})

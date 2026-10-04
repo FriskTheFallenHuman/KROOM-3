@@ -114,7 +114,7 @@ static const char* fastEntityList[] =
 GetGameAPI
 ============
 */
-extern "C" gameExport_t* GetGameAPI( gameImport_t* import )
+extern "C" ID_GAME_API gameExport_t* GetGameAPI( gameImport_t* import )
 {
 	if( import->version == GAME_API_VERSION )
 	{

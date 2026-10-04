@@ -68,47 +68,77 @@ If you have questions concerning this license or the applicable additional terms
 
 	#define	BUILD_STRING					OSTYPESTRING "-" CPUSTRING
 
-	#ifdef _MSC_VER
-		#define ALIGN16( x )					__declspec(align(16)) x
-		#define ALIGNTYPE16						__declspec(align(16))
-		#define ALIGNTYPE128					__declspec(align(128))
+	#if defined(_MSC_VER)
+		#define ALIGN16( x )				__declspec(align(16)) x
+		#define ALIGNTYPE16					__declspec(align(16))
+		#define ALIGNTYPE128				__declspec(align(128))
+	#elif defined(__GNUC__) || defined(__clang__)
+		#define ALIGN16( x )				x __attribute__((aligned(16)))
+		#define ALIGNTYPE16					__attribute__((aligned(16)))
+		#define ALIGNTYPE128				__attribute__((aligned(128)))
 	#else
-		// DG: mingw/GCC (and probably clang) support
-		#define ALIGN16( x )					x __attribute__ ((aligned (16)))
-		// FIXME: change ALIGNTYPE* ?
-		#define ALIGNTYPE16
-		#define ALIGNTYPE128
-		// DG end
+		#error "Unsupported compiler for Windows"
 	#endif
 
 
-	#define FORMAT_PRINTF( x )
+	#if defined(__GNUC__) || defined(__clang__)
+		#define FORMAT_PRINTF( x )			__attribute__((format(ms_printf, x, x + 1)))
+	#else
+		#define FORMAT_PRINTF( x )
+	#endif
 
 	#define PATHSEPARATOR_STR				"\\"
 	#define PATHSEPARATOR_CHAR				'\\'
 	#define NEWLINE							"\r\n"
 
 	#define ID_INLINE						inline
+
 	#ifdef _MSC_VER
 		#define ID_FORCE_INLINE					__forceinline
+		#define ID_GAME_API						__declspec(dllexport)
+
+		#if defined(ID_ENGINE_EXPORTS)
+			#define ID_ENGINE_API				__declspec(dllexport)
+		#elif defined(ID_ENGINE_IMPORTS)
+			#define ID_ENGINE_API				__declspec(dllimport)
+		#else
+			#define ID_ENGINE_API
+		#endif
+	#elif defined(__GNUC__) || defined(__clang__)
+		#define ID_FORCE_INLINE					inline __attribute__((always_inline))
+		#define ID_GAME_API						__attribute__((visibility ("default")))
+
+		#if defined(ID_ENGINE_EXPORTS)
+			#define ID_ENGINE_API				__attribute__((visibility ("default")))
+		#elif defined(ID_ENGINE_IMPORTS)
+			#define ID_ENGINE_API
+		#else
+			#define ID_ENGINE_API
+		#endif
 	#else
-		// DG: this should at least work with GCC/MinGW, probably with clang as well..
-		#define ID_FORCE_INLINE					inline // TODO: always_inline?
-		// DG end
+		#define ID_FORCE_INLINE					inline
+		#define ID_GAME_API
 	#endif
+
 	// lint complains that extern used with definition is a hazard, but it
 	// has the benefit (?) of making it illegal to take the address of the function
 	#ifdef _lint
 		#define ID_INLINE_EXTERN				inline
-		#define ID_FORCE_INLINE_EXTERN			__forceinline
+		#ifdef _MSC_VER
+			#define ID_FORCE_INLINE_EXTERN			__forceinline
+		#elif defined(__GNUC__) || defined(__clang__)
+			#define ID_FORCE_INLINE_EXTERN			inline __attribute__((always_inline))
+		#else
+			#define ID_FORCE_INLINE_EXTERN			inline
+		#endif
 	#else
 		#define ID_INLINE_EXTERN				extern inline
 		#ifdef _MSC_VER
 			#define ID_FORCE_INLINE_EXTERN			extern __forceinline
+		#elif defined(__GNUC__) || defined(__clang__)
+			#define ID_FORCE_INLINE_EXTERN			extern inline __attribute__((always_inline))
 		#else
-			// DG: GCC/MinGW, probably clang
-			#define ID_FORCE_INLINE_EXTERN			extern inline // TODO: always_inline ?
-			// DG end
+			#define ID_FORCE_INLINE_EXTERN			extern inline
 		#endif
 	#endif
 
@@ -132,9 +162,9 @@ If you have questions concerning this license or the applicable additional terms
 
 	#define _alloca							alloca
 
-	#define ALIGN16( x )					x __attribute__ ((aligned (16)))
-	#define ALIGNTYPE16						__attribute__ ((aligned (16)))
-	#define ALIGNTYPE128					__attribute__ ((aligned (128)))
+	#define ALIGN16( x )					x __attribute__((aligned(16)))
+	#define ALIGNTYPE16						__attribute__((aligned(16)))
+	#define ALIGNTYPE128					__attribute__((aligned(128)))
 
 	#define FORMAT_PRINTF( x )
 
@@ -142,19 +172,30 @@ If you have questions concerning this license or the applicable additional terms
 	#define PATHSEPARATOR_CHAR				'/'
 	#define NEWLINE							"\n"
 
+	#define ID_GAME_API						__attribute__((visibility ("default")))
+
+	#if defined(ID_ENGINE_EXPORTS)
+		#define ID_ENGINE_API				__attribute__((visibility ("default")))
+	#elif defined(ID_ENGINE_IMPORTS)
+		#define ID_ENGINE_API
+	#else
+		#define ID_ENGINE_API
+	#endif
+
 	#define ID_INLINE						inline
 
-	// DG: this should at least work with GCC/MinGW, probably with clang as well..
-	#define ID_FORCE_INLINE					inline // TODO: always_inline?
-	// DG end
+	#if defined(__GNUC__) || defined(__clang__)
+		#define ID_FORCE_INLINE					inline __attribute__((always_inline))
+		#define ID_FORCE_INLINE_EXTERN			extern inline __attribute__((always_inline))
+	#else
+		#define ID_FORCE_INLINE					inline
+		#define ID_FORCE_INLINE_EXTERN			extern inline
+	#endif
 
 	#define ID_INLINE_EXTERN				extern inline
 
-	// DG: GCC/MinGW, probably clang
-	#define ID_FORCE_INLINE_EXTERN			extern inline // TODO: always_inline ?
-	// DG end
-
 	#define ID_HDRSTOP
+
 	#define CALLBACK
 	#define __cdecl
 
@@ -205,39 +246,46 @@ bulk of the codebase, so it is the best place for analyze pragmas.
 */
 
 #ifdef _MSC_VER
-	// disable some /analyze warnings here
-	#pragma warning( disable: 6255 )	// warning C6255: _alloca indicates failure by raising a stack overflow exception. Consider using _malloca instead. (Note: _malloca requires _freea.)
-	#pragma warning( disable: 6262 )	// warning C6262: Function uses '36924' bytes of stack: exceeds /analyze:stacksize'32768'. Consider moving some data to heap
-	#pragma warning( disable: 6326 )	// warning C6326: Potential comparison of a constant with another constant
+// disable some /analyze warnings here
+#pragma warning( disable: 6255 )	// warning C6255: _alloca indicates failure by raising a stack overflow exception. Consider using _malloca instead. (Note: _malloca requires _freea.)
+#pragma warning( disable: 6262 )	// warning C6262: Function uses '36924' bytes of stack: exceeds /analyze:stacksize'32768'. Consider moving some data to heap
+#pragma warning( disable: 6326 )	// warning C6326: Potential comparison of a constant with another constant
 
-	#pragma warning( disable: 6031 )	//  warning C6031: Return value ignored
-	// this warning fires whenever you have two calls to new in a function, but we assume new never fails, so it is not relevant for us
-	#pragma warning( disable: 6211 )	// warning C6211: Leaking memory 'staticModel' due to an exception. Consider using a local catch block to clean up memory
+#pragma warning( disable: 6031 )	//  warning C6031: Return value ignored
+// this warning fires whenever you have two calls to new in a function, but we assume new never fails, so it is not relevant for us
+#pragma warning( disable: 6211 )	// warning C6211: Leaking memory 'staticModel' due to an exception. Consider using a local catch block to clean up memory
 
-	// we want to fix all these at some point...
-	#pragma warning( disable: 6246 )	// warning C6246: Local declaration of 'es' hides declaration of the same name in outer scope. For additional information, see previous declaration at line '969' of 'w:\tech5\rage\game\ai\fsm\fsm_combat.cpp': Lines: 969
-	#pragma warning( disable: 6244 )	// warning C6244: Local declaration of 'viewList' hides previous declaration at line '67' of 'w:\tech5\engine\renderer\rendertools.cpp'
+// we want to fix all these at some point...
+#pragma warning( disable: 6246 )	// warning C6246: Local declaration of 'es' hides declaration of the same name in outer scope. For additional information, see previous declaration at line '969' of 'w:\tech5\rage\game\ai\fsm\fsm_combat.cpp': Lines: 969
+#pragma warning( disable: 6244 )	// warning C6244: Local declaration of 'viewList' hides previous declaration at line '67' of 'w:\tech5\engine\renderer\rendertools.cpp'
 
-	// win32 needs this, but 360 doesn't
-	#pragma warning( disable: 6540 )	// warning C6540: The use of attribute annotations on this function will invalidate all of its existing __declspec annotations [D:\tech5\engine\engine-10.vcxproj]
+// win32 needs this, but 360 doesn't
+#pragma warning( disable: 6540 )	// warning C6540: The use of attribute annotations on this function will invalidate all of its existing __declspec annotations [D:\tech5\engine\engine-10.vcxproj]
 
-	#pragma warning( disable: 4467 )	// .. Include\CodeAnalysis\SourceAnnotations.h(68): warning C4467: usage of ATL attributes is deprecated
-	#pragma warning( disable: 4595 )	// warning C4595: 'operator': non-member operator new or delete functions may not be declared inline
+#pragma warning( disable: 4467 )	// .. Include\CodeAnalysis\SourceAnnotations.h(68): warning C4467: usage of ATL attributes is deprecated
+#pragma warning( disable: 4595 )	// warning C4595: 'operator': non-member operator new or delete functions may not be declared inline
 
-	#if !defined(VERIFY_FORMAT_STRING)
-		// checking format strings catches a LOT of errors
-		#include <CodeAnalysis\SourceAnnotations.h>
-		#define	VERIFY_FORMAT_STRING	[SA_FormatString(Style="printf")]
-		// DG: alternative for GCC with attribute (NOOP for MSVC)
-		#define ID_STATIC_ATTRIBUTE_PRINTF(STRIDX, FIRSTARGIDX)
-	#endif
-
+#if !defined(VERIFY_FORMAT_STRING)
+	// checking format strings catches a LOT of errors
+	#include <CodeAnalysis\SourceAnnotations.h>
+	#define	VERIFY_FORMAT_STRING	[SA_FormatString(Style="printf")]
+	// DG: alternative for GCC with attribute (NOOP for MSVC)
+	#define ID_STATIC_ATTRIBUTE_PRINTF(STRIDX, FIRSTARGIDX)
+#endif
 #else
-	#define	VERIFY_FORMAT_STRING
-	// STRIDX: index of format string in function arguments (first arg == 1)
-	// FIRSTARGIDX: index of first argument for the format string
-	#define ID_STATIC_ATTRIBUTE_PRINTF(STRIDX, FIRSTARGIDX) __attribute__ ((format (printf, STRIDX, FIRSTARGIDX)))
-	// DG end
+#define VERIFY_FORMAT_STRING
+
+#if defined(__GNUC__) || defined(__clang__)
+#if defined(__MINGW32__) || defined(__MINGW64__)
+#define ID_STATIC_ATTRIBUTE_PRINTF( STRIDX, FIRSTARGIDX ) \
+				__attribute__((format(ms_printf, STRIDX, FIRSTARGIDX)))
+#else
+#define ID_STATIC_ATTRIBUTE_PRINTF( STRIDX, FIRSTARGIDX ) \
+				__attribute__((format(printf, STRIDX, FIRSTARGIDX)))
+#endif
+#else
+#define ID_STATIC_ATTRIBUTE_PRINTF(STRIDX, FIRSTARGIDX)
+#endif
 #endif // _MSC_VER
 
 // This needs to be handled so shift by 1
@@ -250,7 +298,7 @@ bulk of the codebase, so it is the best place for analyze pragmas.
 // RB begin
 #if defined(_MSC_VER)
 	#define NO_RETURN __declspec(noreturn)
-#elif defined(__GNUC__)
+#elif defined(__GNUC__) || defined(__clang__)
 	#define NO_RETURN __attribute__((noreturn))
 #else
 	#define NO_RETURN
@@ -279,7 +327,7 @@ extern volatile int ignoredReturnValue;
 * Macros for format conversion specifications for integer arguments of type
 * size_t or ssize_t.
 */
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__)
 	#define PRIiSIZE "Ii"
 	#define PRIuSIZE "Iu"
 	#define PRIxSIZE "Ix"
@@ -287,4 +335,4 @@ extern volatile int ignoredReturnValue;
 	#define PRIiSIZE "zi"
 	#define PRIuSIZE "zu"
 	#define PRIxSIZE "zx"
-#endif /* !_MSC_VER */
+#endif

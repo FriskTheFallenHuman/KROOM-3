@@ -1,6 +1,6 @@
 project(game)
 
-file(GLOB src_d3xp_base *.cpp *.h game.def)
+file(GLOB src_d3xp_base *.cpp *.h)
 list(REMOVE_ITEM src_d3xp_base ${CMAKE_CURRENT_SOURCE_DIR}/precompiled.cpp ${CMAKE_CURRENT_SOURCE_DIR}/EndLevel.cpp ${CMAKE_CURRENT_SOURCE_DIR}/EndLevel.h)
 source_group("Game-D3XP" FILES ${src_d3xp_base})
 
@@ -43,7 +43,7 @@ set(src_d3xp
 if(${BUILD_GAME_DLL})
 	add_library(${PROJECT_NAME} SHARED ${src_d3xp})
 	target_compile_definitions(${PROJECT_NAME} PRIVATE GAME_DLL)
-	target_link_libraries(${PROJECT_NAME} idLib gameLib external)
+	target_link_libraries(${PROJECT_NAME} idLib external)
 else()
 	add_library(${PROJECT_NAME} STATIC ${src_d3xp})
 endif()
@@ -55,14 +55,12 @@ endif()
 if(${BUILD_GAME_DLL})
 	set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")
 	set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "game${cpu_arch}")
+if (CMAKE_SIZEOF_VOID_P EQUAL 8)
+	set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY $<1:>${CMAKE_SOURCE_DIR}/../bin/x86_64/base)
+else()
+	set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY $<1:>${CMAKE_SOURCE_DIR}/../bin/x86/base)
+endif()
 	set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "dlls")
 else()
 	set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "libs")
 endif()
-
-add_custom_command(
-  TARGET ${PROJECT_NAME} POST_BUILD 
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-		  $<TARGET_FILE:${PROJECT_NAME}>
-		  "$<TARGET_PROPERTY:${PROJECT_NAME},RUNTIME_OUTPUT_DIRECTORY>/base"
-  VERBATIM)

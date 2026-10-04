@@ -39,7 +39,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "CollisionQuery.h"
 
-class idCollisionDetectionMerge
+class ID_ENGINE_API idCollisionDetectionMerge
 {
 public:
 	static bool	MergeTraceResult( trace_t& result, const trace_t& candidate,

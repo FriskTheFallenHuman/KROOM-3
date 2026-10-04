@@ -112,8 +112,6 @@ private:
 	int				hashMask;
 	int				lookupMask;
 
-	static int		INVALID_INDEX[1];
-
 	void			Init( const int initialHashSize, const int initialIndexSize );
 	void			Allocate( const int newHashSize, const int newIndexSize );
 };
@@ -187,18 +185,18 @@ ID_INLINE idHashIndex& idHashIndex::operator=( const idHashIndex& other )
 	}
 	else
 	{
-		if( other.hashSize != hashSize || hash == INVALID_INDEX )
+		if( other.hashSize != hashSize || hash == NULL )
 		{
-			if( hash != INVALID_INDEX )
+			if( hash != NULL )
 			{
 				delete[] hash;
 			}
 			hashSize = other.hashSize;
 			hash = new( TAG_IDLIB_HASH ) int[hashSize];
 		}
-		if( other.indexSize != indexSize || indexChain == INVALID_INDEX )
+		if( other.indexSize != indexSize || indexChain == NULL )
 		{
-			if( indexChain != INVALID_INDEX )
+			if( indexChain != NULL )
 			{
 				delete[] indexChain;
 			}
@@ -222,7 +220,7 @@ ID_INLINE void idHashIndex::Add( const int key, const int index )
 	int h;
 
 	assert( index >= 0 );
-	if( hash == INVALID_INDEX )
+	if( hash == NULL )
 	{
 		Allocate( hashSize, index >= indexSize ? index + 1 : indexSize );
 	}
@@ -244,7 +242,7 @@ ID_INLINE void idHashIndex::Remove( const int key, const int index )
 {
 	int k = key & hashMask;
 
-	if( hash == INVALID_INDEX )
+	if( hash == NULL )
 	{
 		return;
 	}
@@ -273,6 +271,10 @@ idHashIndex::First
 */
 ID_INLINE int idHashIndex::First( const int key ) const
 {
+	if( hash == NULL )
+	{
+		return -1;
+	}
 	return hash[key & hashMask & lookupMask];
 }
 
@@ -283,6 +285,10 @@ idHashIndex::Next
 */
 ID_INLINE int idHashIndex::Next( const int index ) const
 {
+	if( indexChain == NULL )
+	{
+		return -1;
+	}
 	assert( index >= 0 && index < indexSize );
 	return indexChain[index & lookupMask];
 }
@@ -296,7 +302,7 @@ ID_INLINE void idHashIndex::InsertIndex( const int key, const int index )
 {
 	int i, max;
 
-	if( hash != INVALID_INDEX )
+	if( hash != NULL )
 	{
 		max = index;
 		for( i = 0; i < hashSize; i++ )
@@ -344,7 +350,7 @@ ID_INLINE void idHashIndex::RemoveIndex( const int key, const int index )
 	int i, max;
 
 	Remove( key, index );
-	if( hash != INVALID_INDEX )
+	if( hash != NULL )
 	{
 		max = index;
 		for( i = 0; i < hashSize; i++ )
@@ -385,7 +391,7 @@ idHashIndex::Clear
 ID_INLINE void idHashIndex::Clear()
 {
 	// only clear the hash table because clearing the indexChain is not really needed
-	if( hash != INVALID_INDEX )
+	if( hash != NULL )
 	{
 		memset( hash, 0xff, hashSize * sizeof( hash[0] ) );
 	}

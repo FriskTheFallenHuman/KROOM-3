@@ -253,7 +253,7 @@ class idRenderEnvironmentProbeCommitted;
 // Game-facing render objects. Their public payload intentionally remains
 // layout-compatible with the BFG parameter structs while ownership and commit
 // identity live on the object, matching the idTech 5 producer-side lifecycle.
-class idRenderEntity : public renderEntity_t
+class ID_ENGINE_API idRenderEntity : public renderEntity_t
 {
 public:
 	idRenderEntity();
@@ -281,7 +281,7 @@ private:
 	bool					needsCommit;
 };
 
-class idRenderLight : public renderLight_t
+class ID_ENGINE_API idRenderLight : public renderLight_t
 {
 public:
 	idRenderLight();
@@ -308,7 +308,7 @@ private:
 };
 
 // RB: environment probes for IBL
-class idRenderEnvironmentProbe : public renderEnvironmentProbe_t
+class ID_ENGINE_API idRenderEnvironmentProbe : public renderEnvironmentProbe_t
 {
 public:
 	idRenderEnvironmentProbe();

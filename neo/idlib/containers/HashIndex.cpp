@@ -29,8 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
-int idHashIndex::INVALID_INDEX[1] = { -1 };
-
 /*
 ================
 idHashIndex::Init
@@ -41,9 +39,9 @@ void idHashIndex::Init( const int initialHashSize, const int initialIndexSize )
 	assert( idMath::IsPowerOfTwo( initialHashSize ) );
 
 	hashSize = initialHashSize;
-	hash = INVALID_INDEX;
+	hash = NULL;
 	indexSize = initialIndexSize;
-	indexChain = INVALID_INDEX;
+	indexChain = NULL;
 	granularity = DEFAULT_HASH_GRANULARITY;
 	hashMask = hashSize - 1;
 	lookupMask = 0;
@@ -76,15 +74,15 @@ idHashIndex::Free
 */
 void idHashIndex::Free()
 {
-	if( hash != INVALID_INDEX )
+	if( hash != NULL )
 	{
 		delete[] hash;
-		hash = INVALID_INDEX;
+		hash = NULL;
 	}
-	if( indexChain != INVALID_INDEX )
+	if( indexChain != NULL )
 	{
 		delete[] indexChain;
-		indexChain = INVALID_INDEX;
+		indexChain = NULL;
 	}
 	lookupMask = 0;
 }
@@ -113,7 +111,7 @@ void idHashIndex::ResizeIndex( const int newIndexSize )
 		newSize = newIndexSize + granularity - mod;
 	}
 
-	if( indexChain == INVALID_INDEX )
+	if( indexChain == NULL )
 	{
 		indexSize = newSize;
 		return;
@@ -136,7 +134,7 @@ int idHashIndex::GetSpread() const
 {
 	int i, index, totalItems, *numHashItems, average, error, e;
 
-	if( hash == INVALID_INDEX )
+	if( hash == NULL )
 	{
 		return 100;
 	}
