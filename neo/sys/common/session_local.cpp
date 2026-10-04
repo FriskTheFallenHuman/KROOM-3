@@ -347,13 +347,14 @@ void idSessionLocalWin::ListServers( const idCallback& callback )
 {
 	dedicatedServerSearch->StartSearch( callback );
 
-	idCallback* localCallBack = callback.Clone();
-	if( localCallBack )
-	{
-		localCallBack->Call();
-		delete localCallBack;
-		localCallBack = NULL;
-	}
+	// TODO: Do i need this commented?
+	//idCallback* localCallBack = callback.Clone();
+	//if( localCallBack )
+	//{
+	//	localCallBack->Call();
+	//	delete localCallBack;
+	//	localCallBack = NULL;
+	//}
 }
 
 /*

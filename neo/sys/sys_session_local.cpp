@@ -4604,15 +4604,9 @@ void idSessionLocal::ListServersCommon()
 	msg.WriteLong( localChecksum );
 
 	GetPort();
+
 	// Send the query as a broadcast
-	int startTimeSeconds = Sys_Milliseconds() / 1000;
-	int endTimeSeconds = Sys_Milliseconds() / 1000;
-	while( endTimeSeconds - startTimeSeconds < 10 )
-	{
-		GetPartyLobby().SendConnectionLess( address, idLobby::OOB_MATCH_QUERY, msg.GetReadData(), msg.GetSize() );
-		Sys_Sleep( 100 );
-		endTimeSeconds = Sys_Milliseconds() / 1000;
-	}
+	GetPartyLobby().SendConnectionLess( address, idLobby::OOB_MATCH_QUERY, msg.GetReadData(), msg.GetSize() );
 }
 
 /*
