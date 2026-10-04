@@ -4,6 +4,7 @@
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
 Copyright (C) 2013-2020 Robert Beckebans
+Copyright (C) 2016 Johannes Ohlemacher (http://github.com/eXistence/fhDOOM)
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -110,6 +111,9 @@ uniform float4 rpShadowMatrices			:	register(c58);
 #else
 uniform float4 rpShadowMatrices[6*4]	:	register(c59);
 #endif
+
+uniform float4 rpSoftParticleViewport	:	register(c140);
+uniform float4 rpSoftParticleParms		:	register(c141);
 // RB end
 
 static float dot2( float2 a, float2 b ) { return dot( a, b ); }

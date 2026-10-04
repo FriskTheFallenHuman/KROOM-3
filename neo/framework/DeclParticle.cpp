@@ -3,6 +3,7 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2016 Johannes Ohlemacher (http://github.com/eXistence/fhDOOM)
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -31,7 +32,9 @@ If you have questions concerning this license or the applicable additional terms
 
 idCVar binaryLoadParticles( "binaryLoadParticles", "1", 0, "enable binary load/write of particle decls" );
 
-static const byte BPRT_VERSION = 101;
+static const byte BPRT_VERSION_BFG = 101;
+static const byte BPRT_VERSION = 102;
+static const unsigned int BPRT_MAGIC_BFG = ( 'B' << 24 ) | ( 'P' << 16 ) | ( 'R' << 8 ) | BPRT_VERSION_BFG;
 static const unsigned int BPRT_MAGIC = ( 'B' << 24 ) | ( 'P' << 16 ) | ( 'R' << 8 ) | BPRT_VERSION;
 
 struct ParticleParmDesc
@@ -491,6 +494,11 @@ idParticleStage* idDeclParticle::ParseParticleStage( idLexer& src )
 			stage->boundsExpansion = src.ParseFloat();
 			continue;
 		}
+		if( !token.Icmp( "softness" ) )
+		{
+			stage->softness = src.ParseFloat();
+			continue;
+		}
 		if( !token.Icmp( "gravity" ) )
 		{
 			src.ReadToken( &token );
@@ -732,6 +740,7 @@ bool idDeclParticle::LoadBinary( idFile* file, unsigned int checksum )
 		file->ReadFloat( s->fadeIndexFraction );
 		file->ReadBig( s->hidden );
 		file->ReadFloat( s->boundsExpansion );
+		file->ReadFloat( s->softness );
 		file->ReadVec3( s->bounds[0] );
 		file->ReadVec3( s->bounds[1] );
 	}
@@ -823,6 +832,7 @@ void idDeclParticle::WriteBinary( idFile* file, unsigned int checksum )
 		file->WriteFloat( s->fadeIndexFraction );
 		file->WriteBig( s->hidden );
 		file->WriteFloat( s->boundsExpansion );
+		file->WriteFloat( s->softness );
 		file->WriteVec3( s->bounds[0] );
 		file->WriteVec3( s->bounds[1] );
 	}
@@ -971,6 +981,7 @@ void idDeclParticle::WriteStage( idFile* f, idParticleStage* stage )
 
 	f->WriteFloatString( "\t\trandomDistribution\t\t\t\t%i\n", static_cast<int>( stage->randomDistribution ) );
 	f->WriteFloatString( "\t\tboundsExpansion\t\t\t\t%.3f\n", stage->boundsExpansion );
+	f->WriteFloatString( "\t\tsoftness\t\t\t\t\t%.3f\n", stage->softness );
 
 
 	f->WriteFloatString( "\t\tfadeIn\t\t\t\t%.3f\n", stage->fadeInFraction );
@@ -1117,6 +1128,7 @@ idParticleStage::idParticleStage()
 	fadeIndexFraction = 0.0f;
 	hidden = false;
 	boundsExpansion = 0.0f;
+	softness = -1.0f;
 	bounds.Clear();
 }
 
@@ -1189,6 +1201,7 @@ void idParticleStage::Default()
 	fadeOutFraction = 0.25f;
 	fadeIndexFraction = 0.0f;
 	boundsExpansion = 0.0f;
+	softness = -1.0f;
 	randomDistribution = true;
 	entityColor = false;
 	cycleMsec = ( particleLife + deadTime ) * 1000;
@@ -1882,5 +1895,6 @@ void idParticleStage::operator=( const idParticleStage& src )
 	fadeIndexFraction = src.fadeIndexFraction;
 	hidden = src.hidden;
 	boundsExpansion = src.boundsExpansion;
+	softness = src.softness;
 	bounds = src.bounds;
 }

@@ -8,6 +8,7 @@ Copyright (C) 2016-2017 Dustin Land
 Copyright (C) 2013-2021 Robert Beckebans
 Copyright (C) 2022 Stephen Pridham
 Copyright (C) 2026 Justin Marshall
+Copyright (C) 2016 Johannes Ohlemacher (http://github.com/eXistence/fhDOOM)
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -3449,6 +3450,52 @@ NON-INTERACTION SHADER PASSES
 
 /*
 =====================
+R_ResolveDepthBlend
+=====================
+*/
+static depthBlendMode_t R_ResolveDepthBlend( const shaderStage_t* pStage, const drawSurf_t* surf, const uint64 stageGLState, float& range )
+{
+	depthBlendMode_t mode = pStage->depthBlendMode;
+
+	range = pStage->depthBlendRange;
+	if( range <= 0.0f )
+	{
+		range = surf->softParticleRange;
+	}
+
+	if( mode == DBM_UNDEFINED )
+	{
+		mode = ( range > 0.0f ) ? DBM_AUTO : DBM_OFF;
+	}
+
+	if( mode == DBM_AUTO )
+	{
+		const uint64 src = stageGLState & GLS_SRCBLEND_BITS;
+		const uint64 dst = stageGLState & GLS_DSTBLEND_BITS;
+
+		if( src == GLS_SRCBLEND_ONE && ( dst == GLS_DSTBLEND_ONE || dst == GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA ) )
+		{
+			mode = DBM_COLORALPHA_ZERO;
+		}
+		else if( src == GLS_SRCBLEND_SRC_ALPHA && ( dst == GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA || dst == GLS_DSTBLEND_ONE ) )
+		{
+			mode = DBM_ALPHA_ZERO;
+		}
+		else if( src == GLS_SRCBLEND_DST_COLOR && dst == GLS_DSTBLEND_ZERO )
+		{
+			mode = DBM_COLORALPHA_ONE;
+		}
+		else
+		{
+			mode = DBM_OFF;
+		}
+	}
+
+	return ( range > 0.0f ) ? mode : DBM_OFF;
+}
+
+/*
+=====================
 idRenderBackend::DrawShaderPasses
 
 Draw non-light dependent passes
@@ -3712,6 +3759,17 @@ int idRenderBackend::DrawShaderPasses( const drawSurf_t* const* const drawSurfs,
 			renderLog.OpenBlock( "Standard Shader Stage", colorGreen );
 			GL_Color( color );
 
+			// for soft particles, only the plain texture * vertex color path, never gui, screen texgen, bink or
+			// depth hacked surfaces (the hack shifts fragment depth, so it can't be compared to scene depth)
+			float softRange = 0.0f;
+			depthBlendMode_t softMode = DBM_OFF;
+			if( softParticleDepthValid && !surf->space->isGuiSurface && !viewDef->is2Dgui
+					&& !pStage->texture.cinematic && pStage->texture.texgen != TG_SCREEN
+					&& surf->space->modelDepthHack == 0.0f && !surf->space->weaponDepthHack )
+			{
+				softMode = R_ResolveDepthBlend( pStage, surf, stageGLState, softRange );
+			}
+
 			if( surf->space->isGuiSurface )
 			{
 				// Force gui surfaces to always be SVC_MODULATE
@@ -3770,7 +3828,18 @@ int idRenderBackend::DrawShaderPasses( const drawSurf_t* const* const drawSurfs,
 			}
 			else
 			{
-				if( surf->jointCache )
+				if( softMode != DBM_OFF )
+				{
+					if( surf->jointCache )
+					{
+						renderProgManager.BindShader_TextureVertexColorSkinnedSoft();
+					}
+					else
+					{
+						renderProgManager.BindShader_TextureVertexColorSoft();
+					}
+				}
+				else if( surf->jointCache )
 				{
 					renderProgManager.BindShader_TextureVertexColorSkinned();
 				}
@@ -3784,6 +3853,19 @@ int idRenderBackend::DrawShaderPasses( const drawSurf_t* const* const drawSurfs,
 
 			// bind the texture
 			BindVariableStageImage( &pStage->texture, regs );
+
+			if( softMode != DBM_OFF )
+			{
+				const idScreenRect& softViewport = viewDef->viewport;
+				const idVec4 softViewportParm( ( float )softViewport.x1, ( float )softViewport.y1, 1.0f / ( float )softViewport.GetWidth(), 1.0f / ( float )softViewport.GetHeight() );
+				const idVec4 softParms( softRange, ( float )softMode, 0.0f, 0.0f );
+				renderProgManager.SetRenderParm( RENDERPARM_SOFTPARTICLE_VIEWPORT, softViewportParm.ToFloatPtr() );
+				renderProgManager.SetRenderParm( RENDERPARM_SOFTPARTICLE_PARMS, softParms.ToFloatPtr() );
+
+				GL_SelectTexture( 1 );
+				globalImages->softParticleDepthImage->Bind();
+				GL_SelectTexture( 0 );
+			}
 
 			// set privatePolygonOffset if necessary
 			if( pStage->privatePolygonOffset )
@@ -5419,12 +5501,36 @@ void idRenderBackend::DrawViewInternal( const viewDef_t* _viewDef )
 	drawSurf_t** drawSurfs = ( drawSurf_t** )&_viewDef->drawSurfs[0];
 	const int numDrawSurfs = _viewDef->numDrawSurfs;
 
+	// soft particles need a snapshot of the opaque depth, only take it if something in this view is soft
+	bool needSoftDepth = false;
+	const bool softParticlesEnabled = r_softParticles.GetBool() && !_viewDef->is2Dgui && ( _viewDef->renderView.rdflags & RDF_IRRADIANCE ) == 0;
+
 	for( int i = 0; i < numDrawSurfs; i++ )
 	{
 		const drawSurf_t* ds = _viewDef->drawSurfs[ i ];
 		if( ds->material != NULL )
 		{
 			const_cast<idMaterial*>( ds->material )->EnsureNotPurged();
+
+			if( softParticlesEnabled && !needSoftDepth )
+			{
+				if( ds->softParticleRange > 0.0f )
+				{
+					needSoftDepth = true;
+				}
+				else
+				{
+					for( int s = 0; s < ds->material->GetNumStages(); s++ )
+					{
+						const depthBlendMode_t stageMode = ds->material->GetStage( s )->depthBlendMode;
+						if( stageMode != DBM_UNDEFINED && stageMode != DBM_OFF )
+						{
+							needSoftDepth = true;
+							break;
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -5546,6 +5652,35 @@ void idRenderBackend::DrawViewInternal( const viewDef_t* _viewDef )
 		const idScreenRect& viewport = viewDef->viewport;
 		globalImages->currentDepthImage->CopyDepthbuffer( viewport.x1, viewport.y1, viewport.GetWidth(), viewport.GetHeight() );
 	}
+
+	//-------------------------------------------------
+	// snapshot of the opaque scene depth for soft particles.
+	//-------------------------------------------------
+	softParticleDepthValid = false;
+#if !defined( USE_HDR_MSAA )
+	if( needSoftDepth )
+	{
+		Framebuffer* previousFramebuffer = currentFramebuffer;
+		if( useHDR && previousFramebuffer != globalFramebuffers.hdrFBO )
+		{
+			globalFramebuffers.hdrFBO->Bind();
+		}
+
+		// Bind() first so the texture unit cache matches the raw glBindTexture in CopyDepthbuffer
+		const idScreenRect& softViewport = _viewDef->viewport;
+		GL_SelectTexture( 1 );
+		globalImages->softParticleDepthImage->Bind();
+		globalImages->softParticleDepthImage->CopyDepthbuffer( softViewport.x1, softViewport.y1, softViewport.GetWidth(), softViewport.GetHeight() );
+		GL_SelectTexture( 0 );
+
+		if( previousFramebuffer != NULL && previousFramebuffer != currentFramebuffer )
+		{
+			previousFramebuffer->Bind();
+		}
+
+		softParticleDepthValid = true;
+	}
+#endif
 
 	//-------------------------------------------------
 	// now draw any non-light dependent shading passes

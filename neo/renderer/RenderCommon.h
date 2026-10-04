@@ -7,6 +7,7 @@ Copyright (C) 2012-2021 Robert Beckebans
 Copyright (C) 2014-2016 Kot in Action Creative Artel
 Copyright (C) 2022 Stephen Pridham
 Copyright (C) 2026 Justin Marshall
+Copyright (C) 2016 Johannes Ohlemacher (http://github.com/eXistence/fhDOOM)
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -135,6 +136,7 @@ struct drawSurf_t
 	drawSurf_t** 			linkChain;			// defer linking to lights to a serial section to avoid a mutex
 	idScreenRect			scissorRect;		// for scissor clipping, local inside renderView viewport
 	const struct portalArea_s*	area;			// RB: if != NULL then the area provides valid lightgrid
+	float					softParticleRange;	// >0 = soft particle fade range in world units, copied from srfTriangles_t
 };
 
 // areas have references to hold all the lights and entities in them
@@ -1203,6 +1205,9 @@ extern idCVar r_useMaskedOcclusionCulling;
 extern idCVar r_tonemapPreset;
 extern idCVar r_tonemapSaturation;
 extern idCVar r_tonemapContrast;
+
+extern idCVar r_softParticles;				// 1 = fade particles against the opaque scene depth
+extern idCVar r_defaultParticleSoftness;	// auto softness as a fraction of the largest billboard size
 
 #if !defined( USE_VULKAN )
 	extern idCVar r_glVersionMajor;

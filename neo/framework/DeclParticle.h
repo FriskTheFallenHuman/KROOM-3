@@ -3,6 +3,7 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2016 Johannes Ohlemacher (http://github.com/eXistence/fhDOOM)
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -167,7 +168,7 @@ public:
 
 	//------------------------------	// custom path will completely replace the standard path calculations
 
-	prtCustomPth_t			customPathType;		// use custom C code routines for determining the origin
+	prtCustomPth_t			customPathType;			// use custom C code routines for determining the origin
 	float					customPathParms[8];
 
 	//--------------------------------
@@ -180,7 +181,7 @@ public:
 	float					initialAngle;		// in degrees, random angle is used if zero ( default )
 	idParticleParm			rotationSpeed;		// half the particles will have negative rotation speeds
 
-	prtOrientation_t		orientation;	// view, aimed, or axis fixed
+	prtOrientation_t		orientation;		// view, aimed, or axis fixed
 	float					orientationParms[4];
 
 	idParticleParm			size;
@@ -196,6 +197,7 @@ public:
 	//-----------------------------------
 
 	float					boundsExpansion;	// user tweak to fix poorly calculated bounds
+	float					softness;			// 0 = off, >0 = soft particle fade range in world units, <0 = auto
 
 	idBounds				bounds;				// derived
 };

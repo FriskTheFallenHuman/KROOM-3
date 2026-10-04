@@ -5,6 +5,7 @@ Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
 Copyright (C) 2014-2016 Robert Beckebans
 Copyright (C) 2014-2016 Kot in Action Creative Artel
+Copyright (C) 2016 Johannes Ohlemacher (http://github.com/eXistence/fhDOOM)
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -917,11 +918,58 @@ idMaterial::ClearStage
 void idMaterial::ClearStage( shaderStage_t* ss )
 {
 	ss->drawStateBits = 0;
+	ss->depthBlendMode = DBM_UNDEFINED;
+	ss->depthBlendRange = 0.0f;
 	ss->conditionRegister = GetExpressionConstant( 1 );
 	ss->color.registers[0] =
 		ss->color.registers[1] =
 			ss->color.registers[2] =
 				ss->color.registers[3] = GetExpressionConstant( 1 );
+}
+
+/*
+===============
+idMaterial::ParseDepthBlendMode
+===============
+*/
+void idMaterial::ParseDepthBlendMode( idLexer& src, shaderStage_t* stage )
+{
+	idToken token;
+
+	if( !src.ReadToken( &token ) )
+	{
+		return;
+	}
+
+	if( !token.Icmp( "Off" ) )
+	{
+		stage->depthBlendMode = DBM_OFF;
+	}
+	else if( !token.Icmp( "Auto" ) )
+	{
+		stage->depthBlendMode = DBM_AUTO;
+	}
+	else if( !token.Icmp( "ColorAlphaZero" ) )
+	{
+		stage->depthBlendMode = DBM_COLORALPHA_ZERO;
+	}
+	else if( !token.Icmp( "ColorAlphaOne" ) )
+	{
+		stage->depthBlendMode = DBM_COLORALPHA_ONE;
+	}
+	else if( !token.Icmp( "AlphaZero" ) )
+	{
+		stage->depthBlendMode = DBM_ALPHA_ZERO;
+	}
+	else if( !token.Icmp( "AlphaOne" ) )
+	{
+		stage->depthBlendMode = DBM_ALPHA_ONE;
+	}
+	else
+	{
+		common->Warning( "bad depthBlendMode '%s' in material '%s'", token.c_str(), GetName() );
+		stage->depthBlendMode = DBM_OFF;
+	}
 }
 
 /*
@@ -1770,6 +1818,16 @@ void idMaterial::ParseStage( idLexer& src, const textureRepeat_t trpDefault )
 		if( !token.Icmp( "maskColor" ) )
 		{
 			ss->drawStateBits |= GLS_COLORMASK;
+			continue;
+		}
+		if( !token.Icmp( "depthBlendMode" ) )
+		{
+			ParseDepthBlendMode( src, ss );
+			continue;
+		}
+		if( !token.Icmp( "depthBlendRange" ) )
+		{
+			ss->depthBlendRange = src.ParseFloat();
 			continue;
 		}
 		if( !token.Icmp( "maskDepth" ) )

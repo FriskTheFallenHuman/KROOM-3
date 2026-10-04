@@ -5,6 +5,7 @@ Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
 Copyright (C) 2013-2018 Robert Beckebans
 Copyright (C) 2016-2017 Dustin Land
+Copyright (C) 2016 Johannes Ohlemacher (http://github.com/eXistence/fhDOOM)
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -193,6 +194,9 @@ enum renderParm_t
 	RENDERPARM_USER8,
 	RENDERPARM_USER9,
 	RENDERPARM_USER10,
+
+	RENDERPARM_SOFTPARTICLE_VIEWPORT,	// xy = viewport origin in pixels, zw = 1 / viewport size
+	RENDERPARM_SOFTPARTICLE_PARMS,		// x = fade range in world units, y = depthBlendMode_t
 	// RB end
 
 	RENDERPARM_TOTAL,
@@ -364,6 +368,16 @@ public:
 	void	BindShader_TextureVertexColorSkinned()
 	{
 		BindShader_Builtin( BUILTIN_TEXTURE_VERTEXCOLOR_SKINNED );
+	}
+
+	void	BindShader_TextureVertexColorSoft()
+	{
+		BindShader_Builtin( BUILTIN_TEXTURE_VERTEXCOLOR_SOFT );
+	}
+
+	void	BindShader_TextureVertexColorSkinnedSoft()
+	{
+		BindShader_Builtin( BUILTIN_TEXTURE_VERTEXCOLOR_SKINNED_SOFT );
 	}
 
 	void	BindShader_TextureTexGenVertexColor()
@@ -764,6 +778,8 @@ private:
 		BUILTIN_TEXTURE_VERTEXCOLOR,
 		BUILTIN_TEXTURE_VERTEXCOLOR_SRGB,
 		BUILTIN_TEXTURE_VERTEXCOLOR_SKINNED,
+		BUILTIN_TEXTURE_VERTEXCOLOR_SOFT,
+		BUILTIN_TEXTURE_VERTEXCOLOR_SKINNED_SOFT,
 		BUILTIN_TEXTURE_TEXGEN_VERTEXCOLOR,
 		BUILTIN_INTERACTION,
 		BUILTIN_INTERACTION_SKINNED,
@@ -859,6 +875,7 @@ private:
 		HDR_DEBUG,
 		USE_SRGB,
 		USE_PBR,
+		USE_SOFT_PARTICLE,
 
 		MAX_SHADER_MACRO_NAMES,
 	};

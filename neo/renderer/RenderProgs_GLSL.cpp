@@ -7,6 +7,7 @@ Copyright (C) 2013-2018 Robert Beckebans
 Copyright (C) 2016-2017 Dustin Land
 Copyright (C) 2022 Stephen Pridham
 Copyright (C) 2026 Justin Marshall
+Copyright (C) 2016 Johannes Ohlemacher (http://github.com/eXistence/fhDOOM)
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -306,7 +307,10 @@ static const char* GLSLParmNames[RENDERPARM_TOTAL] =
 	"rpUser7",
 	"rpUser8",
 	"rpUser9",
-	"rpUser10"
+	"rpUser10",
+
+	"rpSoftParticleViewport",
+	"rpSoftParticleParms"
 	// RB end
 };
 
@@ -319,7 +323,8 @@ const char* idRenderProgManager::GLSLMacroNames[MAX_SHADER_MACRO_NAMES] =
 	"BRIGHTPASS",
 	"HDR_DEBUG",
 	"USE_SRGB",
-	"USE_PBR"
+	"USE_PBR",
+	"USE_SOFT_PARTICLE"
 };
 // RB end
 

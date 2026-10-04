@@ -5,6 +5,7 @@ Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
 Copyright (C) 2014-2020 Robert Beckebans
 Copyright (C) 2014-2016 Kot in Action Creative Artel
+Copyright (C) 2016 Johannes Ohlemacher (http://github.com/eXistence/fhDOOM)
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -212,6 +213,17 @@ typedef struct
 	idImage* 			fragmentProgramImages[MAX_FRAGMENT_IMAGES];
 } newShaderStage_t;
 
+typedef enum
+{
+	DBM_UNDEFINED,
+	DBM_OFF,
+	DBM_AUTO,				// pick one of the modes below from the stage blend func, OFF if none fits
+	DBM_COLORALPHA_ZERO,	// color and alpha fade to 0 near geometry (blend add)
+	DBM_COLORALPHA_ONE,		// color and alpha fade to 1 near geometry (blend filter / modulate)
+	DBM_ALPHA_ONE,			// alpha fades to 1 near geometry
+	DBM_ALPHA_ZERO			// alpha fades to 0 near geometry (blend blend)
+} depthBlendMode_t;
+
 typedef struct
 {
 	int					conditionRegister;	// if registers[conditionRegister] == 0, skip stage
@@ -225,6 +237,8 @@ typedef struct
 	bool				ignoreAlphaTest;	// this stage should act as translucent, even
 	// if the surface is alpha tested
 	float				privatePolygonOffset;	// a per-stage polygon offset
+	depthBlendMode_t	depthBlendMode;		// soft particle fade, DBM_UNDEFINED = use the surface's softParticleRange
+	float				depthBlendRange;	// world units, 0 = use the surface's softParticleRange
 
 	newShaderStage_t*	newStage;			// vertex / fragment program based stage
 } shaderStage_t;
@@ -825,6 +839,7 @@ private:
 	bool				MatchToken( idLexer& src, const char* match );
 	void				ParseSort( idLexer& src );
 	void				ParseBlend( idLexer& src, shaderStage_t* stage );
+	void				ParseDepthBlendMode( idLexer& src, shaderStage_t* stage );
 	void				ParseVertexParm( idLexer& src, newShaderStage_t* newStage );
 	void				ParseVertexParm2( idLexer& src, newShaderStage_t* newStage );
 	void				ParseFragmentMap( idLexer& src, newShaderStage_t* newStage );

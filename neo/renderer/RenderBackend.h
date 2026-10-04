@@ -5,6 +5,7 @@ Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
 Copyright (C) 2016-2017 Dustin Land
 Copyright (C) 2017-2020 Robert Beckebans
+Copyright (C) 2016 Johannes Ohlemacher (http://github.com/eXistence/fhDOOM)
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -452,6 +453,7 @@ private:
 	idScreenRect		currentScissor;			// for scissor clipping, local inside renderView viewport
 
 	bool				currentRenderCopied;	// true if any material has already referenced _currentRender
+	bool				softParticleDepthValid;	// _softParticleDepth holds this view's opaque depth
 
 	idRenderMatrix		prevMVP[2];				// world MVP from previous frame for motion blur
 

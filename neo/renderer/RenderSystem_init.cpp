@@ -5,6 +5,7 @@ Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
 Copyright (C) 2014-2016 Robert Beckebans
 Copyright (C) 2014-2016 Kot in Action Creative Artel
+Copyright (C) 2016 Johannes Ohlemacher (http://github.com/eXistence/fhDOOM)
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -302,6 +303,9 @@ idCVar r_useMaskedOcclusionCulling( "r_useMaskedOcclusionCulling", "1", CVAR_REN
 idCVar r_tonemapPreset( "r_tonemapPreset", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "0=ACES, 1=Filmic Blender, 2=AgX, 3=Reinhard, 4=Uncharted2, 5=None", 0, 5 );
 idCVar r_tonemapSaturation( "r_tonemapSaturation", "1.0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "color saturation after tonemapping [0=grayscale, 1=natural, 2=boosted]", 0.0f, 3.0f );
 idCVar r_tonemapContrast( "r_tonemapContrast", "1.0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "contrast power curve after tonemapping", 0.1f, 3.0f );
+
+idCVar r_softParticles( "r_softParticles", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "1 = fade particles against the opaque scene depth" );
+idCVar r_defaultParticleSoftness( "r_defaultParticleSoftness", "0.35", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "auto softness (stages with softness < 0) as a fraction of the largest billboard size, 0 = no auto softness" );
 
 #if !defined( USE_VULKAN )
 	idCVar r_glVersionMajor( "r_glVersionMajor", "4", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "OpenGL major version (>= 3.2 is the minimun supported level!)", 3, 4 );

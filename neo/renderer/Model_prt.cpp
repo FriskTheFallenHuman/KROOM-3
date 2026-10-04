@@ -3,6 +3,7 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
+Copyright (C) 2016 Johannes Ohlemacher (http://github.com/eXistence/fhDOOM)
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -78,6 +79,34 @@ void idRenderModelPrt::TouchData()
 {
 	// Ensure our particle system is added to the list of referenced decls
 	particleSystem = static_cast<const idDeclParticle*>( declManager->FindType( DECL_PARTICLE, name ) );
+}
+
+/*
+====================
+R_ParticleStageSoftRange
+====================
+*/
+static float R_ParticleStageSoftRange( const idParticleStage* stage )
+{
+	static const float threshold = 0.01f;
+
+	if( !r_softParticles.GetBool() )
+	{
+		return 0.0f;
+	}
+
+	if( stage->softness > threshold )
+	{
+		return stage->softness;
+	}
+
+	const float autoScale = r_defaultParticleSoftness.GetFloat();
+	if( autoScale > threshold && stage->softness < -threshold && stage->orientation == POR_VIEW )
+	{
+		return Max( stage->size.from, stage->size.to ) * autoScale;
+	}
+
+	return 0.0f;
 }
 
 /*
@@ -274,7 +303,20 @@ idRenderModel* idRenderModelPrt::InstantiateDynamicModel( const struct renderEnt
 		surf->geometry->facePlanesCalculated = false;
 		surf->geometry->numVerts = numVerts;
 		surf->geometry->numIndexes = numIndexes;
-		surf->geometry->bounds = stage->bounds;		// just always draw the particles
+		surf->geometry->softParticleRange = R_ParticleStageSoftRange( stage );
+
+		if( numVerts > 0 )
+		{
+			surf->geometry->bounds.Clear();
+			for( int v = 0; v < numVerts; v++ )
+			{
+				surf->geometry->bounds.AddPoint( verts[v].xyz );
+			}
+		}
+		else
+		{
+			surf->geometry->bounds = stage->bounds;
+		}
 	}
 
 	return staticModel;
@@ -307,6 +349,16 @@ idRenderModelPrt::DepthHack
 */
 float idRenderModelPrt::DepthHack() const
 {
+	// soft particles replace depthHack, the legacy hack only applies when no drawn stage is soft
+	for( int i = 0; i < particleSystem->stages.Num(); i++ )
+	{
+		const idParticleStage* stage = particleSystem->stages[i];
+		if( stage->material != NULL && stage->cycleMsec != 0 && !stage->hidden && R_ParticleStageSoftRange( stage ) > 0.0f )
+		{
+			return 0.0f;
+		}
+	}
+
 	return particleSystem->depthHack;
 }
 

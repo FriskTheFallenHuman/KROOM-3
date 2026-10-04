@@ -5,6 +5,7 @@ Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
 Copyright (C) 2013-2021 Robert Beckebans
 Copyright (C) 2016-2017 Dustin Land
+Copyright (C) 2016 Johannes Ohlemacher (http://github.com/eXistence/fhDOOM)
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -617,6 +618,7 @@ public:
 	idImage* 			accumImage;
 	idImage* 			currentRenderImage;				// for SS_POST_PROCESS shaders
 	idImage* 			currentDepthImage;				// for motion blur
+	idImage* 			softParticleDepthImage;			// opaque scene depth snapshot taken before the shader passes
 	idImage* 			loadingIconImage;				// loading icon must exist always
 	idImage* 			hellLoadingIconImage;			// loading icon must exist always
 

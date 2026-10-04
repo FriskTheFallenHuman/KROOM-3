@@ -5,6 +5,7 @@ Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
 Copyright (C) 2014-2024 Robert Beckebans
 Copyright (C) 2014-2016 Kot in Action Creative Artel
+Copyright (C) 2016 Johannes Ohlemacher (http://github.com/eXistence/fhDOOM)
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -666,8 +667,10 @@ void R_AddSingleModel( viewEntity_t* vEntity )
 		// RB: test surface visibility by drawing the triangles of the bounds
 		if( r_useMaskedOcclusionCulling.GetBool() && !viewInsideSurface && !viewDef->isMirror && !viewDef->isSubview )
 		{
+			// continuously updated models (particles, beams, sprites, liquid) are not tested their surface bounds are
+			// a sampled estimate (see idDeclParticle::GetStageBounds) and the box test was seen rejecting visible particles
 			if( //!model->IsStaticWorldModel() &&
-				!renderEntity->weaponDepthHack && renderEntity->modelDepthHack == 0.0f )
+				!renderEntity->weaponDepthHack && renderEntity->modelDepthHack == 0.0f && model->IsDynamicModel() != DM_CONTINUOUS )
 			{
 				idVec4 triVerts[8];
 
@@ -757,6 +760,7 @@ void R_AddSingleModel( viewEntity_t* vEntity )
 			baseDrawSurf->space = vEntity;
 			baseDrawSurf->scissorRect = vEntity->scissorRect;
 			baseDrawSurf->extraGLState = 0;
+			baseDrawSurf->softParticleRange = tri->softParticleRange;
 
 			R_SetupDrawSurfShader( baseDrawSurf, shader, renderEntity );
 
