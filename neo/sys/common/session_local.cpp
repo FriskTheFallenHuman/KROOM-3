@@ -345,6 +345,8 @@ idSessionLocalWin::ListServers
 */
 void idSessionLocalWin::ListServers( const idCallback& callback )
 {
+	dedicatedServerSearch->StartSearch( callback );
+
 	idCallback* localCallBack = callback.Clone();
 	if( localCallBack )
 	{
