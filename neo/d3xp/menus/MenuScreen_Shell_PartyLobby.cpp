@@ -214,30 +214,35 @@ void idMenuScreen_Shell_PartyLobby::UpdateOptions()
 
 		isHost = true;
 		isPeer = false;
-
+#if 0
 		option.Append( "#str_swf_join_public" );	// Quick Match
 		menuOptions.Append( option );
 		option.Clear();
 		option.Append( "#str_swf_find_match" );	// Find Match
 		menuOptions.Append( option );
+#endif
 		option.Clear();
 		option.Append( "#str_swf_create_private" );	// Create Match
 		menuOptions.Append( option );
 		option.Clear();
 		option.Append( "#str_swf_pwf" );	// Play With Friends
 		menuOptions.Append( option );
+#if 0
 		option.Clear();
 		option.Append( "#str_swf_leaderboards" );	// Play With Friends
 		menuOptions.Append( option );
+#endif
 		option.Clear();
 		option.Append( "#str_swf_invite_only" );	// Toggle privacy
 		menuOptions.Append( option );
+#if 0
 		option.Clear();
 		option.Append( "#str_swf_invite_friends" );	// Invite Friends
 		menuOptions.Append( option );
-
+#endif
 		idMenuWidget_Button* buttonWidget = NULL;
 		int index = 0;
+#if 0
 		options->GetChildByIndex( index ).ClearEventActions();
 		options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PARTY_CMD_QUICK, index );
 		buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
@@ -254,6 +259,7 @@ void idMenuScreen_Shell_PartyLobby::UpdateOptions()
 			buttonWidget->SetDescription( "#str_swf_find_desc" );
 		}
 		index++;
+#endif
 		options->GetChildByIndex( index ).ClearEventActions();
 		options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PARTY_CMD_CREATE, index );
 		buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
@@ -270,6 +276,7 @@ void idMenuScreen_Shell_PartyLobby::UpdateOptions()
 			buttonWidget->SetDescription( "#str_swf_pwf_desc" );
 		}
 		index++;
+#if 0
 		options->GetChildByIndex( index ).ClearEventActions();
 		options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PARTY_CMD_LEADERBOARDS, index );
 		buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
@@ -278,6 +285,7 @@ void idMenuScreen_Shell_PartyLobby::UpdateOptions()
 			buttonWidget->SetDescription( "#str_swf_leaderboards_desc" );
 		}
 		index++;
+#endif
 		options->GetChildByIndex( index ).ClearEventActions();
 		options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PARTY_CMD_TOGGLE_PRIVACY, index );
 		buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
@@ -286,6 +294,7 @@ void idMenuScreen_Shell_PartyLobby::UpdateOptions()
 			buttonWidget->SetDescription( "#str_swf_toggle_privacy_desc" );
 		}
 		index++;
+#if 0
 		options->GetChildByIndex( index ).ClearEventActions();
 		options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PARTY_CMD_INVITE, index );
 		buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
@@ -293,12 +302,13 @@ void idMenuScreen_Shell_PartyLobby::UpdateOptions()
 		{
 			buttonWidget->SetDescription( "#str_swf_invite_desc" );
 		}
-
+#endif
 		options->SetListData( menuOptions );
 
 	}
 	else if( session->GetPartyLobbyBase().IsPeer() && options != NULL )
 	{
+#if 0
 		if( !isPeer || forceUpdate )
 		{
 
@@ -332,7 +342,7 @@ void idMenuScreen_Shell_PartyLobby::UpdateOptions()
 			options->SetListData( menuOptions );
 
 		}
-
+#endif
 		isPeer = true;
 		isHost = false;
 	}
@@ -790,12 +800,14 @@ void idMenuScreen_Shell_PartyLobby::UpdateLobby()
 			}
 			else if( menuOptions.Num() > 0 )
 			{
+#if 0
 				if( menuOptions[ menuOptions.Num() - 1 ][0] != "#str_swf_invite_friends" )
 				{
 					menuOptions[ menuOptions.Num() - 1 ][0] = "#str_swf_invite_friends";	// invite Xbox LIVE party
 					options->SetListData( menuOptions );
 					options->Update();
 				}
+#endif
 			}
 		}
 	}
