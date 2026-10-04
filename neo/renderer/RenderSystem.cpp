@@ -262,24 +262,25 @@ idRenderSystemLocal::~idRenderSystemLocal()
 
 /*
 =============
+idRenderSystemLocal::SetGUIColor
+
+GK: Pass through the rgba values to the GUI Model.
+Since some materials might depend on those parameters
+=============
+*/
+void idRenderSystemLocal::SetGUIColor( const idMaterial* material, const idVec4& rgba )
+{
+	guiModel->setColor( material, rgba );
+}
+//GK: End
+/*
+=============
 idRenderSystemLocal::SetColor
 =============
 */
 void idRenderSystemLocal::SetColor( const idVec4& rgba )
 {
 	currentColorNativeBytesOrder = LittleLong( PackColor( rgba ) );
-}
-
-/*
-=============
-idRenderSystemLocal::SetShaderParms
-=============
-*/
-void idRenderSystemLocal::SetShaderParms( int timeMsec, const idVec4& colorRgba )
-{
-	useShaderParms = true;
-	shaderMsec = timeMsec;
-	shaderColor = colorRgba;
 }
 
 /*
@@ -340,17 +341,7 @@ void idRenderSystemLocal::DrawStretchPic( const idVec4& topLeft, const idVec4& t
 		return;
 	}
 
-	idDrawVert* verts;
-	if( useShaderParms )
-	{
-		useShaderParms = false;
-		verts = guiModel->AllocTris( 4, quadPicIndexes, 6, material, currentGLState, true, shaderMsec, shaderColor );
-	}
-	else
-	{
-		verts = guiModel->AllocTris( 4, quadPicIndexes, 6, material, currentGLState );
-	}
-
+	idDrawVert* verts = guiModel->AllocTris( 4, quadPicIndexes, 6, material, currentGLState );
 	if( verts == NULL )
 	{
 		return;
