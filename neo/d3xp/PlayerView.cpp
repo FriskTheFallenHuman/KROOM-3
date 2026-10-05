@@ -254,7 +254,7 @@ LocalKickDir is the direction of force in the player's coordinate system,
 which will determine the head kick direction
 ==============
 */
-void idPlayerView::DamageImpulse( idVec3 localKickDir, const idDict* damageDef, bool isDamage )
+void idPlayerView::DamageImpulse( idVec3 localKickDir, const idDict* damageDef )
 {
 	//
 	// double vision effect
@@ -283,30 +283,27 @@ void idPlayerView::DamageImpulse( idVec3 localKickDir, const idDict* damageDef, 
 	//
 	// head angle kick
 	//
-	if( !isDamage )
+	float kickTime = damageDef->GetFloat( "kick_time" );
+	if( kickTime )
 	{
-		float kickTime = damageDef->GetFloat( "kick_time" );
-		if( kickTime )
+		kickFinishTime = gameLocal.slow.time + g_kickTime.GetFloat() * kickTime;
+
+		// forward / back kick will pitch view
+		kickAngles[0] = localKickDir[0];
+
+		// side kick will yaw view
+		kickAngles[1] = localKickDir[1] * 0.5f;
+
+		// up / down kick will pitch view
+		kickAngles[0] += localKickDir[2];
+
+		// roll will come from  side
+		kickAngles[2] = localKickDir[1];
+
+		float kickAmplitude = damageDef->GetFloat( "kick_amplitude" );
+		if( kickAmplitude )
 		{
-			kickFinishTime = gameLocal.slow.time + g_kickTime.GetFloat() * kickTime;
-
-			// forward / back kick will pitch view
-			kickAngles[0] = localKickDir[0];
-
-			// side kick will yaw view
-			kickAngles[1] = localKickDir[1] * 0.5f;
-
-			// up / down kick will pitch view
-			kickAngles[0] += localKickDir[2];
-
-			// roll will come from  side
-			kickAngles[2] = localKickDir[1];
-
-			float kickAmplitude = damageDef->GetFloat( "kick_amplitude" );
-			if( kickAmplitude )
-			{
-				kickAngles *= kickAmplitude;
-			}
+			kickAngles *= kickAmplitude;
 		}
 	}
 

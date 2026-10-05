@@ -417,7 +417,7 @@ public:
 
 	void				ClearEffects();
 
-	void				DamageImpulse( idVec3 localKickDir, const idDict* damageDef, bool isDamage = true );
+	void				DamageImpulse( idVec3 localKickDir, const idDict* damageDef );
 
 	void				WeaponFireFeedback( const idDict* weaponDef );
 

@@ -554,7 +554,7 @@ void idEntityFx::Run( int time )
 						{
 							if( !common->IsMultiplayer() || !fxaction.shakeIgnoreMaster || GetBindMaster() != player )
 							{
-								player->playerView.DamageImpulse( fxaction.offset, &args, false );
+								player->playerView.DamageImpulse( fxaction.offset, &args );
 							}
 						}
 					}
