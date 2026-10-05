@@ -364,6 +364,7 @@ idSessionLocalWin::CancelListServers
 */
 void idSessionLocalWin::CancelListServers()
 {
+	dedicatedServerSearch->Clear();
 }
 
 /*
@@ -393,6 +394,13 @@ idSessionLocalWin::ConnectToServer
 */
 void idSessionLocalWin::ConnectToServer( int i )
 {
+	Cancel();
+	
+	if( signInManager->GetMasterLocalUser() == NULL )
+	{
+		signInManager->RegisterLocalUser( 0 );
+	}
+	
 	lobbyConnectInfo_t serverAddr;
 	dedicatedServerSearch->GetAddrAtIndex( serverAddr.netAddr, i );
 
