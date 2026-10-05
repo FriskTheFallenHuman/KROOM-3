@@ -36,6 +36,9 @@ struct guiModelSurface_t
 	uint64				glState;
 	int					firstIndex;
 	int					numIndexes;
+	bool				useShaderParms;
+	int					shaderMsec;
+	idVec4				shaderColor;
 };
 
 class idRenderMatrix;
@@ -67,11 +70,8 @@ public:
 	// the returned pointer will be in write-combined memory, so only make contiguous
 	// 32 bit writes and never read from it.
 	idDrawVert* AllocTris( int numVerts, const triIndex_t* indexes, int numIndexes, const idMaterial* material,
-						   const uint64 glState );
+						   const uint64 glState, bool useShaderParms = false, int shaderMsec = 0, const idVec4& shaderColor = vec4_zero );
 
-	//GK: Replace the first 4 shaderparams with the rgba values
-	void		setColor( const idMaterial* material, const idVec4& rgba );
-	//GK: End
 	//---------------------------
 private:
 	void		AdvanceSurf();
@@ -80,9 +80,6 @@ private:
 	guiModelSurface_t* 			surf;
 
 	float						shaderParms[ MAX_ENTITY_SHADER_PARMS ];
-	float						oldParams[ MAX_ENTITY_SHADER_PARMS ];
-
-	idDict* guiParams;
 
 	// if we exceed these limits we stop rendering GUI surfaces
 	static const int MAX_INDEXES = ( 20000 * 6 );

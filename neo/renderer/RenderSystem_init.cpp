@@ -1797,6 +1797,9 @@ void idRenderSystemLocal::Clear()
 	currentGLState = 0;
 	guiRecursionLevel = 0;
 	guiModel = NULL;
+	useShaderParms = false;
+	shaderMsec = 0;
+	shaderColor = vec4_zero;
 	memset( gammaTable, 0, sizeof( gammaTable ) );
 	memset( &cubeAxis, 0, sizeof( cubeAxis ) ); // RB
 	takingScreenshot = false;
@@ -2262,6 +2265,9 @@ void idRenderSystemLocal::Init()
 	guiModel = new( TAG_RENDER ) idGuiModel;
 	guiModel->Clear();
 	tr_guiModel = guiModel;	// for DeviceContext fast path
+	useShaderParms = false;
+	shaderMsec = 0;
+	shaderColor = vec4_zero;
 
 	globalImages->Init();
 
@@ -2447,6 +2453,9 @@ void idRenderSystemLocal::ResetGuiModels()
 	guiModel->Clear();
 	guiModel->BeginFrame();
 	tr_guiModel = guiModel;	// for DeviceContext fast path
+	useShaderParms = false;
+	shaderMsec = 0;
+	shaderColor = vec4_zero;
 }
 
 /*

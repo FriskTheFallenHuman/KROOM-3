@@ -57,7 +57,6 @@ idPlayerView::idPlayerView()
 	kickFinishTime = 0;
 	kickAngles.Zero();
 	lastDamageTime = 0.0f;
-	lastDamageTimeEffect = 0.0f;
 	fadeTime = 0;
 	fadeRate = 0.0;
 	fadeFromColor.Zero();
@@ -216,9 +215,6 @@ idPlayerView::ClearEffects
 void idPlayerView::ClearEffects()
 {
 	lastDamageTime = MS2SEC( gameLocal.fast.time - 99999 );
-
-	lastDamageTimeEffect = MS2SEC( sys->GetMilliseconds() - 99999 );
-
 	dvFinishTime = ( gameLocal.fast.time - 99999 );
 	kickFinishTime = ( gameLocal.slow.time - 99999 );
 
@@ -260,11 +256,6 @@ which will determine the head kick direction
 */
 void idPlayerView::DamageImpulse( idVec3 localKickDir, const idDict* damageDef, bool isDamage )
 {
-	//
-	// save lastDamageTime for tunnel vision accentuation
-	//
-	lastDamageTimeEffect = MS2SEC( Sys_Milliseconds() );
-
 	//
 	// double vision effect
 	//
@@ -517,7 +508,6 @@ void idPlayerView::SingleView( const renderView_t* view, idMenuHandler_HUD* hudM
 				if( fade )
 				{
 					renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, fade );
-					renderSystem->SetGUIColor4( blob->material, 1.0f, 1.0f, 1.0f, fade );
 					renderSystem->DrawStretchPic( blob->x, blob->y, blob->w, blob->h, blob->s1, blob->t1, blob->s2, blob->t2, blob->material );
 				}
 			}
@@ -535,7 +525,6 @@ void idPlayerView::SingleView( const renderView_t* view, idMenuHandler_HUD* hudM
 		if( armorPulse > 0.0f && armorPulse < 1.0f )
 		{
 			renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f - armorPulse );
-			renderSystem->SetGUIColor4( armorMaterial, 1.0f, 1.0f, 1.0f, 1.0f - armorPulse );
 			renderSystem->DrawStretchPic( 0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0f, 0.0f, 1.0f, 1.0f, armorMaterial );
 		}
 
@@ -562,13 +551,15 @@ void idPlayerView::SingleView( const renderView_t* view, idMenuHandler_HUD* hudM
 
 		if( alpha < 1.0f )
 		{
-			renderSystem->SetGUIColor4( tunnelMaterial, ( player->health <= 0.0f ) ? MS2SEC( gameLocal.fast.time ) : lastDamageTimeEffect, 1.0f, 1.0f, ( player->health <= 0.0f ) ? 0.0f : alpha );
+			renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
+			renderSystem->SetShaderParms( gameLocal.fast.time, idVec4( ( player->health <= 0.0f ) ? MS2SEC( gameLocal.fast.time ) : lastDamageTime, 1.0f, 1.0f, ( player->health <= 0.0f ) ? 0.0f : alpha ) );
 			renderSystem->DrawStretchPic( 0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0f, 0.0f, 1.0f, 1.0f, tunnelMaterial );
 		}
 
 		if( bfgVision )
 		{
 			renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
+			renderSystem->SetShaderParms( gameLocal.fast.time, idVec4( 1.0f, 1.0f, 1.0f, 1.0f ) );
 			renderSystem->DrawStretchPic( 0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0f, 0.0f, 1.0f, 1.0f, bfgMaterial );
 		}
 
@@ -965,6 +956,7 @@ void FullscreenFX_Helltime::AccumPass( const renderView_t* view )
 	}
 	else
 	{
+		renderSystem->SetShaderParms( gameLocal.fast.time, idVec4( 1.0f, 1.0f, 1.0f, 1.0f ) );
 		renderSystem->DrawStretchPic( 0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0f, t0, 1.0f, t1, captureMaterials[level] );
 	}
 }
@@ -1412,11 +1404,9 @@ void FullscreenFX_DoubleVision::HighQuality()
 
 
 	renderSystem->SetColor4( color.x, color.y, color.z, 1.0f );
-	renderSystem->SetGUIColor4( material, color.x, color.y, color.z, 1.0f );
 	renderSystem->DrawStretchPic( 0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, s0, t0, s1, t1, material );
 
 	renderSystem->SetColor4( color.x, color.y, color.z, 0.5f );
-	renderSystem->SetGUIColor4( material, color.x, color.y, color.z, 0.5f );
 	s0 = 0.0f;
 	t0 = 1.0f;
 	s1 = ( 1.0 - shift );
@@ -1481,7 +1471,7 @@ void FullscreenFX_InfluenceVision::HighQuality()
 	if( player->GetInfluenceMaterial() )
 	{
 		renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, pct );
-		renderSystem->SetGUIColor4( player->GetInfluenceMaterial(), 1.0f, 1.0f, 1.0f, pct );
+		renderSystem->SetShaderParms( gameLocal.fast.time, idVec4( 1.0f, 1.0f, 1.0f, 1.0f ) );
 		renderSystem->DrawStretchPic( 0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0f, 0.0f, 1.0f, 1.0f, player->GetInfluenceMaterial() );
 	}
 	else if( player->GetInfluenceEntity() == NULL )
@@ -1600,7 +1590,6 @@ void FullscreenFX_Bloom::HighQuality()
 		float yScale = 1.0f;
 
 		renderSystem->SetColor4( alpha, alpha, alpha, 1 );
-		renderSystem->SetGUIColor4( drawMaterial, alpha, alpha, alpha, 1 );
 		renderSystem->DrawStretchPic( 0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, s1, t2 * yScale, s2, t1 * yScale, drawMaterial );
 
 		shift += currentIntensity;
@@ -1766,7 +1755,6 @@ void FullscreenFXManager::Blendback( float alpha )
 	if( alpha < 1.f )
 	{
 		renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f - alpha );
-		renderSystem->SetGUIColor4( blendBackMaterial, 1.0f, 1.0f, 1.0f, 1.0f - alpha );
 		float s0 = 0.0f;
 		float t0 = 1.0f;
 		float s1 = 1.0f;
