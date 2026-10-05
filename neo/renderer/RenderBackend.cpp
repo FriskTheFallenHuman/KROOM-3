@@ -3858,7 +3858,7 @@ int idRenderBackend::DrawShaderPasses( const drawSurf_t* const* const drawSurfs,
 			{
 				const idScreenRect& softViewport = viewDef->viewport;
 				const idVec4 softViewportParm( ( float )softViewport.x1, ( float )softViewport.y1, 1.0f / ( float )softViewport.GetWidth(), 1.0f / ( float )softViewport.GetHeight() );
-				const idVec4 softParms( softRange, ( float )softMode, 0.0f, 0.0f );
+				const idVec4 softParms( softRange, ( float )softMode, softRange * Max( 0.0f, r_softParticleNearFade.GetFloat() ), 0.0f );
 				renderProgManager.SetRenderParm( RENDERPARM_SOFTPARTICLE_VIEWPORT, softViewportParm.ToFloatPtr() );
 				renderProgManager.SetRenderParm( RENDERPARM_SOFTPARTICLE_PARMS, softParms.ToFloatPtr() );
 

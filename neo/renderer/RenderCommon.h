@@ -1208,6 +1208,7 @@ extern idCVar r_tonemapContrast;
 
 extern idCVar r_softParticles;				// 1 = fade particles against the opaque scene depth
 extern idCVar r_defaultParticleSoftness;	// auto softness as a fraction of the largest billboard size
+extern idCVar r_softParticleNearFade;
 
 #if !defined( USE_VULKAN )
 	extern idCVar r_glVersionMajor;

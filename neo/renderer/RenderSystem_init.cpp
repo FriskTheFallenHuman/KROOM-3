@@ -306,6 +306,7 @@ idCVar r_tonemapContrast( "r_tonemapContrast", "1.0", CVAR_RENDERER | CVAR_ARCHI
 
 idCVar r_softParticles( "r_softParticles", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "1 = fade particles against the opaque scene depth" );
 idCVar r_defaultParticleSoftness( "r_defaultParticleSoftness", "0.35", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "auto softness (stages with softness < 0) as a fraction of the largest billboard size, 0 = no auto softness" );
+idCVar r_softParticleNearFade( "r_softParticleNearFade", "1.0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "soft particles fade out near the camera over this multiple of their softness range instead of popping at the near plane, 0 = no near fade" );
 
 #if !defined( USE_VULKAN )
 	idCVar r_glVersionMajor( "r_glVersionMajor", "4", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "OpenGL major version (>= 3.2 is the minimun supported level!)", 3, 4 );

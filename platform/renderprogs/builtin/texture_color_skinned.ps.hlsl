@@ -63,6 +63,11 @@ float4 SoftParticleFade( float4 c, float4 fragPos )
 	float fragDist = SoftParticleEyeDistance( fragPos.z );
 	float f = saturate( ( sceneDist - fragDist ) / rpSoftParticleParms.x );
 
+	if( rpSoftParticleParms.z > 0.0 )
+	{
+		f *= saturate( ( fragDist + rpProjectionMatrixZ.w ) / rpSoftParticleParms.z );
+	}
+
 	int mode = int( rpSoftParticleParms.y + 0.5 );
 	if( mode == 3 )
 	{
