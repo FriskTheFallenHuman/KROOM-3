@@ -3529,7 +3529,7 @@ int idRenderBackend::DrawShaderPasses( const drawSurf_t* const* const drawSurfs,
 			continue;
 		}
 
-		if( shader->IsPortalSky() )
+		if( shader->IsPortalSky() && !viewDef->is2Dgui )
 		{
 			continue;
 		}
