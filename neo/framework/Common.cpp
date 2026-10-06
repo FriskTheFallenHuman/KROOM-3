@@ -1138,6 +1138,7 @@ void idCommonLocal::LoadGameDLL()
 	gameImport.declManager				= ::declManager;
 	gameImport.AASFileManager			= ::AASFileManager;
 	gameImport.collisionModelManager	= ::collisionModelManager;
+	gameImport.imguiSystem				= ::imguiSystem;
 
 	gameExport							= *GetGameAPI( &gameImport );
 
