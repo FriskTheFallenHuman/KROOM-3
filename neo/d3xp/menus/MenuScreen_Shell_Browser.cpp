@@ -211,9 +211,9 @@ void idMenuScreen_Shell_GameBrowser::HideScreen( const mainMenuTransition_t tran
 	}
 
 	mgr->HidePacifier();
-	
+
 	session->CancelListServers();
-	
+
 	idMenuScreen::HideScreen( transitionType );
 }
 
@@ -241,7 +241,7 @@ void idMenuScreen_Shell_GameBrowser::UpdateServerList()
 	// immediately and send back an error result to SWF. Things get confused if the showLoadingPacifier
 	// then gets called after that.
 	mgr->ShowPacifier( "#str_online_mpstatus_searching" );
-	
+
 	session->ListServers( MakeCallback( this, &idMenuScreen_Shell_GameBrowser::OnServerListReady ) );
 }
 
