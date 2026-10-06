@@ -1,0 +1,252 @@
+windowDef Desktop
+{
+	rect	0 ,0 ,640 ,480
+	backcolor	0 ,0 ,0 ,1
+	windowDef Background1
+	{
+		rect	0 ,0 ,640 ,480
+		visible	1
+		background	"guis/assets/caverns/test2"
+		matcolor	1, 1, 1, 0.6
+
+		onTime 0 {
+			set "Background2::rect" "1 1 640 480" ;
+		}
+
+		onTime 50 {
+			set "Background2::rect" "-1 0 640 480" ;
+		}
+
+		onTime 100 {
+			resetTime "0" ;
+		}
+
+	}
+	windowDef Background2
+	{
+		rect	3 ,2 ,640 ,480
+		visible	1
+		background	"guis/assets/caverns/test2"
+		matcolor	1, 1, 1, 0.2
+
+		onTime 0 {
+			transition "matcolor" "1 1 1 0.2" "1 1 1 0" "800" ;
+		}
+
+		onTime 2000 {
+			transition "matcolor" "1 1 1 0" "1 1 1 0.2" "500" ;
+		}
+
+		onTime 2800 {
+			transition "matcolor" "1 1 1 0.2" "1 1 1 0" "500" ;
+		}
+
+		onTime 3500 {
+			transition "matcolor" "1 1 1 0" "1 1 1 0.2" "500" ;
+		}
+
+		onTime 4000 {
+			resetTime "0" ;
+		}
+
+	}
+	windowDef BackgroundA
+	{
+		rect	0 ,0 ,640 ,480
+		visible	0
+		background	"guis/assets/caverns/bg256"
+		matcolor	1, 1, 1, 1
+		windowDef Top
+		{
+			rect	0, 0 , 640,-32
+			visible	1
+			background	"gui/caves/horiz"
+			matcolor	1, 1, 1, 1
+		}
+		windowDef Bottom
+		{
+			rect	0, 448 , 640,32
+			visible	1
+			background	"gui/caves/horiz"
+			matcolor	1, 1, 1, 1
+		}
+		windowDef Left
+		{
+			rect	0, 0 , -32, 480
+			visible	1
+			background	"gui/caves/verts"
+			matcolor	1, 1, 1, 1
+		}
+		windowDef Right
+		{
+			rect	608, 0 , 32, 480
+			visible	1
+			background	"gui/caves/verts"
+			matcolor	1, 1, 1, 1
+		}
+		windowDef Corner1
+		{
+			rect	0, 0 ,-32 ,-32
+			visible	1
+			background	"gui/caves/corner"
+			matcolor	1, 1, 1, 1
+		}
+		windowDef Corner2
+		{
+			rect	608, 0 ,32 ,-32
+			visible	1
+			background	"gui/caves/corner"
+			matcolor	1, 1, 1, 1
+		}
+		windowDef Corner3
+		{
+			rect	0, 448 ,-32 ,32
+			visible	1
+			background	"gui/caves/corner"
+			matcolor	1, 1, 1, 1
+		}
+		windowDef Corner4
+		{
+			rect	608, 448 ,32 ,32
+			visible	1
+			background	"gui/caves/corner"
+			matcolor	1, 1, 1, 1
+		}
+		windowDef InsetLineLeft
+		{
+			rect	0, 70 ,-32 ,240
+			visible	1
+			background	"gui/caves/vertl"
+			matcolor	1, 1, 1, 1
+		}
+		windowDef InsetLineRight
+		{
+			rect	608, 60 ,32 ,240
+			visible	1
+			background	"gui/caves/vertl"
+			matcolor	1, 1, 1, 1
+		}
+		windowDef Inset1
+		{
+			rect	0, 50 ,-32 ,-32
+			visible	1
+			background	"gui/caves/verta"
+			matcolor	1, 1, 1, 1
+		}
+		windowDef Inset2
+		{
+			rect	0, 300 ,-32 ,32
+			visible	1
+			background	"gui/caves/verta"
+			matcolor	1, 1, 1, 1
+		}
+		windowDef Inset3
+		{
+			rect	608, 50 ,32 ,-32
+			visible	1
+			background	"gui/caves/verta"
+			matcolor	1, 1, 1, 1
+		}
+		windowDef Inset4
+		{
+			rect	608, 300 ,32 ,32
+			visible	1
+			background	"gui/caves/verta"
+			matcolor	1, 1, 1, 1
+		}
+	}
+	windowDef Background3
+	{
+		rect	0, 0 ,-640 ,480
+		visible	1
+		background	"gui/testmat"
+		matcolor	1, 1, 1, 0.1
+
+		onTime 5000 {
+			transition "Background1::matcolor" "1 1 1 0.6" "1 1 1 0.3" "200" ;
+		}
+
+		onTime 5200 {
+			transition "Background1::matcolor" "1 1 1 0.3" "1 1 1 0.6" "200" ;
+		}
+
+		onTime 5400 {
+			transition "Background1::matcolor" "1 1 1 0.6" "1 1 1 0.4" "300" ;
+		}
+
+		onTime 5800 {
+			transition "Background1::matcolor" "1 1 1 0.4" "1 1 1 0.6" "400" ;
+		}
+
+		onTime 8000 {
+			resetTime "0" ;
+		}
+
+	}
+	windowDef Static
+	{
+		rect	-10 ,-10 ,660 ,500
+		visible	0
+		background	"gui/static"
+		matcolor	1, 1, 1, pdhalffade[ time * 0.001 ] / 8
+	}
+	windowDef Mask
+	{
+		rect	0 ,0 ,640 ,480
+		visible	0
+		background	"guis/assets/common/overlay"
+		matcolor	1, 1, 1, 0.1
+	}
+	windowDef Outerglow
+	{
+		rect	0 ,0 ,-640 ,480
+		background	"guis/assets/common/outerglow"
+		matcolor	1 ,1 ,1 , pdflick [ time * .0025 ] / 2.8
+		visible	0
+	}
+	windowDef Outershadow
+	{
+		rect	0 ,0 ,-640 ,480
+		background	"guis/assets/common/outershadow"
+		matcolor	1 ,1 ,1 ,1
+		visible	0
+	}
+	windowDef Addhighlight
+	{
+		rect	0 ,0 ,-640 ,480
+		background	"gui/addhighlight"
+		matcolor	0.3 ,0.8 ,0.8 ,1
+		visible	0
+	}
+	windowDef OuterGlowBar
+	{
+		rect	0 ,0 ,-640 ,480
+		background	"gui/outerglowbar"
+		matcolor	0.65 ,0.7 ,0.6 ,1
+		visible	0
+	}
+	windowDef SurfTex
+	{
+		rect	0 ,0 ,-640 ,480
+		matcolor	1, 1, 1 ,0.6
+		visible	0
+		background	"guis/assets/common/dirt6"
+		noevents	1
+	}
+	windowDef Dirt1
+	{
+		rect	0 ,0 ,-640 ,480
+		matcolor	1, 1, 1 ,0.6
+		visible	0
+		background	"guis/assets/common/dirt4"
+		noevents	1
+	}
+	windowDef Dirt2
+	{
+		rect	0 ,0 ,-640 ,480
+		matcolor	0.3, 0.1, 0 ,0.4
+		visible	0
+		background	"guis/assets/common/dirt5"
+		noevents	1
+	}
+}

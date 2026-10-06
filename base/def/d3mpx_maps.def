@@ -1,0 +1,77 @@
+mapDef game/mp/d3mpx_surface {
+    "name"        "#str_d3mpx_surface"
+    "devname"     "D3MPX - Mars Surface"
+    "Deathmatch"  "1"
+    "Team DM"     "1"
+    "Last Man"    "1"
+    "Tourney"     "1"
+    "CTF"         "0"
+    "image"       "guis/loadscreens/d3mpx_surface"
+    "screenshot"  "guis/loadscreens/d3mpx_surface"
+    "levelshot"   "guis/loadscreens/d3mpx_surface"
+}
+
+mapDef game/mp/d3mpx_commrec {
+    "name"        "#str_d3mpx_commrec"
+    "devname"     "D3MPX - CommRec"
+    "Deathmatch"  "1"
+    "Team DM"     "1"
+    "Last Man"    "1"
+    "Tourney"     "1"
+    "CTF"         "0"
+    "image"       "guis/loadscreens/d3mpx_commrec"
+    "screenshot"  "guis/loadscreens/d3mpx_commrec"
+    "levelshot"   "guis/loadscreens/d3mpx_commrec"
+}
+
+mapDef game/mp/d3mpx_caverns {
+    "name"        "#str_d3mpx_caverns"
+    "devname"     "D3MPX - Site 3-50"
+    "Deathmatch"  "1"
+    "Team DM"     "1"
+    "Last Man"    "1"
+    "Tourney"     "1"
+    "CTF"         "0"
+    "image"       "guis/loadscreens/d3mpx_caverns"
+    "screenshot"  "guis/loadscreens/d3mpx_caverns"
+    "levelshot"   "guis/loadscreens/d3mpx_caverns"
+}
+
+mapDef game/mp/d3mpx_cpu {
+    "name"        "#str_d3mpx_cpu"
+    "devname"     "D3MPX - CPU"
+    "Deathmatch"  "1"
+    "Team DM"     "1"
+    "Last Man"    "1"
+    "Tourney"     "1"
+    "CTF"         "0"
+    "image"       "guis/loadscreens/d3mpx_cpu"
+    "screenshot"  "guis/loadscreens/d3mpx_cpu"
+    "levelshot"   "guis/loadscreens/d3mpx_cpu"
+}
+
+mapDef game/mp/d3mpx_enpro {
+    "name"        "#str_d3mpx_enpro"
+    "devname"     "D3MPX - Plasma Stream"
+    "Deathmatch"  "1"
+    "Team DM"     "1"
+    "Last Man"    "1"
+    "Tourney"     "1"
+    "CTF"         "0"
+    "image"       "guis/loadscreens/d3mpx_enpro"
+    "screenshot"  "guis/loadscreens/d3mpx_enpro"
+    "levelshot"   "guis/loadscreens/d3mpx_enpro"
+}
+
+mapDef game/mp/d3mpx_hell {
+    "name"        "#str_d3mpx_hell"
+    "devname"     "D3MPX - The Pit"
+    "Deathmatch"  "1"
+    "Team DM"     "1"
+    "Last Man"    "1"
+    "Tourney"     "1"
+    "CTF"         "0"
+    "image"       "guis/loadscreens/d3mpx_hell"
+    "screenshot"  "guis/loadscreens/d3mpx_hell"
+    "levelshot"   "guis/loadscreens/d3mpx_hell"
+}

@@ -1,0 +1,17 @@
+namespace map_d3mpx_enpro {
+	void setup() {
+	}
+
+	void respawn_windows() {
+	}
+
+	void do_nothing() {
+	}
+
+	void make_windows_break() {
+	}
+
+	void main() {
+		setup();
+	}
+}

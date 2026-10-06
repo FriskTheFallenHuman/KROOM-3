@@ -1,0 +1,74 @@
+namespace map_d3mpx_hell {
+	void setup() {
+
+	}
+
+	/*
+    void stomp1() {
+        $stomp1.time (.6);
+        $stomp1.accelTime (.5);
+        $stomp1.decelTime (.05);
+        $stomp1.move (DOWN ,256);
+        sys.waitFor ($stomp1);
+
+        sys.trigger ($stomp1_particle);
+        sys.trigger ($stomp1_speaker);
+
+        $stomp1.time (.08);
+        $stomp1.accelTime (.05);
+        $stomp1.decelTime (.02);
+        $stomp1.move (UP ,4);
+        sys.waitFor ($stomp1);
+        $stomp1.move (DOWN ,4);
+        sys.waitFor ($stomp1);
+
+        sys.wait (3);
+
+        $stomp1.time (2);
+        $stomp1.accelTime (.5);
+        $stomp1.decelTime (.2);
+        $stomp1.move (UP ,256);
+        sys.waitFor ($stomp1);
+    }
+	*/
+
+	void start_stomp1() {
+        while(1) {
+            $stomp1.time (.6);
+            $stomp1.accelTime (.5);
+            $stomp1.decelTime (.05);
+            $stomp1.move (DOWN ,256);
+            sys.wait( .3 );
+            sys.trigger( $stomp_hurt );
+            sys.waitFor ($stomp1);
+
+            sys.trigger ($stomp1_particle);
+            sys.trigger ($stomp1_speaker);
+			sys.trigger( $stomp_hurt );
+
+			/*
+            $stomp1.time (.08);
+            $stomp1.accelTime (.05);
+            $stomp1.decelTime (.02);
+            $stomp1.move (UP ,4);
+            sys.waitFor ($stomp1);
+            $stomp1.move (DOWN ,4);
+            sys.waitFor ($stomp1);
+			*/
+
+            sys.wait (.8);
+            $stomp1.time (2);
+            $stomp1.accelTime (.5);
+            $stomp1.decelTime (.2);
+            $stomp1.move (UP ,256);
+            sys.waitFor ($stomp1);
+            sys.wait (1);
+		}
+	}
+
+	void main() {
+		setup();
+
+		//start_stomp1();
+	}
+}
