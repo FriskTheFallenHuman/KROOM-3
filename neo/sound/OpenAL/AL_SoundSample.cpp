@@ -235,12 +235,14 @@ void idSoundSample_OpenAL::LoadResource()
 		{
 			i++;
 		}
+
 		idStrStatic< MAX_OSPATH > generatedName = "generated/";
 		generatedName.Append( sampleName );
 		generatedName.Append( ".idwav" );
+
 		sampleName.Append( ".dummy" ); // GK: Just in case we get any odd file name, append a dummy file extension
 
-		// GK:First look for ogg,mp3 and flac and then for wav
+		// GK: First look for ogg, mp3 and flac
 		for( int j = 0; j < numSupportedExternalFormats; j++ )
 		{
 			sampleName.SetFileExtension( supportedExternalFormats[j] );
@@ -254,20 +256,22 @@ void idSoundSample_OpenAL::LoadResource()
 			}
 		}
 
+		// Prefer loose .msadpcm / .wav over generated .idwav.
 		if( s_useCompression.GetBool() )
 		{
 			sampleName.SetFileExtension( ".msadpcm" );
+			loaded = LoadWav( sampleName );
 		}
-		else
-		{
-			sampleName.SetFileExtension( ".wav" );
-		}
-		loaded = LoadGeneratedSample( generatedName ) || LoadWav( sampleName );
 
-		if( !loaded && s_useCompression.GetBool() )
+		if( !loaded )
 		{
 			sampleName.SetFileExtension( "wav" );
 			loaded = LoadWav( sampleName );
+		}
+
+		if( !loaded )
+		{
+			loaded = LoadGeneratedSample( generatedName );
 		}
 
 		if( loaded )
@@ -286,6 +290,7 @@ void idSoundSample_OpenAL::LoadResource()
 						{
 							continue;
 						}
+
 						idStrStatic< MAX_OSPATH > locName = GetName();
 						locName.Replace( "/vo/", va( "/vo/%s/", Sys_Lang( i_ ) ) );
 						WriteAllSamples( locName );

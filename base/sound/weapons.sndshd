@@ -117,7 +117,7 @@ soulcube_shred {
 flashlight_impact {
 	minDistance	3
 	maxDistance	30
-	volume		3
+	volume		4
 	unclamped
 	no_dups
 	
@@ -156,7 +156,7 @@ pda_raise {
 fist_impact_flesh {
 	minDistance	2
 	maxDistance	30
-	volume		0
+	volume		2
 	no_dups
 
 	sound/weapons/fists/impact_03.wav
@@ -168,7 +168,7 @@ fist_impact_flesh {
 fist_impact {
 	minDistance	2
 	maxDistance	30
-	volume		0
+	volume		2
 	no_dups
 	
 	sound/weapons/fists/default_punch_01.wav
@@ -185,7 +185,7 @@ fist_impact {
 fist_gorepunch {
 	minDistance	2
 	maxDistance	30
-	volume		0
+	volume		2
 	no_dups
 
 	sound/weapons/fists/gorepunch_01.wav
@@ -223,7 +223,7 @@ barrel_explosions {
 	shakes		0.2
 	
 	sound/weapons/explosions/barexp_01a.wav
-//	sound/weapons/explosions/explode_04.wav
+	sound/weapons/explosions/explode_04.wav
 	sound/weapons/explosions/barexp_02a.wav
 	sound/weapons/explosions/barexp_03a.wav
 	
@@ -352,7 +352,7 @@ bullet_ricochet {
 bullet_impact_metal {
 	minDistance	1
 	maxDistance	15
-	volume		1	//4, 0, -3
+	volume		-10	// 1, 4, 0, -3
 	no_dups
 	
 	sound/weapons/impacts/bullet_metal/metalimpact_02.wav
@@ -380,7 +380,7 @@ bullet_impact_wood {
 	sound/weapons/impacts/bullet_wood/woodimpact_01.wav
 	sound/weapons/impacts/bullet_wood/woodimpact_02.wav
 	sound/weapons/impacts/bullet_wood/woodimpact_03.wav
-//	sound/weapons/impacts/bullet_wood/woodimpact_04.wav
+	sound/weapons/impacts/bullet_wood/woodimpact_04.wav
 }
 
 bullet_impact_sand {
@@ -520,7 +520,7 @@ shotgun_impact_flesh {
 player_chainsaw_startAttack {
 	minDistance	1
 	maxDistance	25	
-	volume		0
+	volume		-5
 	sound/ed/chainsaw/start_attack.wav
 
 }
@@ -528,7 +528,7 @@ player_chainsaw_startAttack {
 player_chainsaw_attack {
 	minDistance	1
 	maxDistance	25
-	volume		0
+	volume		-6
 	looping
 	sound/ed/chainsaw/attack.wav
 }
@@ -536,14 +536,14 @@ player_chainsaw_attack {
 player_chainsaw_stopAttack {
 	minDistance	1
 	maxDistance	25	
-	volume		-2
+	volume		-5
 	sound/ed/chainsaw/stop_attack.wav
 }
 
 player_chainsaw_idle {
 	minDistance	5
 	maxDistance	25
-	volume		-3
+	volume		-5
 	looping
 	sound/ed/chainsaw/idle.wav
 }
@@ -551,7 +551,7 @@ player_chainsaw_idle {
 player_chainsaw_pull {
 	minDistance	1
 	maxDistance	25	
-	volume		3
+	volume		16
 	sound/ed/chainsaw/pull.wav
 }
 
@@ -566,7 +566,7 @@ player_chainsaw_pull_zip {
 player_chainsaw_release {
 	minDistance	1
 	maxDistance	25	
-	volume		0
+	volume		-5
 	sound/ed/chainsaw/dryrelease1.wav
 }
 
@@ -581,7 +581,7 @@ player_chainsaw_putaway {
 player_chainsaw_hit_flesh {
 	minDistance	1
 	maxDistance	25
-	volume		4
+	volume		5
 	unclamped
 	no_dups
 	
@@ -620,21 +620,21 @@ player_soulcube_fire {
 	volume 0
 	minDistance	1
 	maxDistance	25
-	sound/ed/teleporter/tele2_fadeout.wav
+	sound/ed/teleporter/soulcube_fire_start.wav
 }
 
 player_soulcube_kill {
 	volume 5
 	minDistance	1
 	maxDistance	30
-	sound/ed/teleporter/tele2_lightning2.wav
+	sound/ed/teleporter/soulcube_kill.wav
 }
 
 player_soulcube_fly {
 	volume 0
 	minDistance	1
 	maxDistance	30
-	sound/weapons/rocket/flight_01.wav
+	sound/ed/teleporter/flight_01.wav
 }
 
 player_handgrenade_throw {
@@ -816,26 +816,6 @@ player_bfg_dryfire {
 	sound/ed/bfg/bfg_dryfire.wav
 }
 
-monster_pistol_fire {
-	minDistance	5
-	maxDistance	30
-	volume		0
-	
-	sound/weapons/pistol/fire/pfire_01.wav
-	sound/weapons/pistol/fire/pfire_02.wav
-	sound/weapons/pistol/fire/pfire_03.wav
-}
-
-/*		-- Not used ?
-player_pistol_raise  {
-	minDistance	10
-	maxDistance	30
-	volume		0
-	
-	sound/xian/weapons/pistol/up_01.wav
-}
-*/
-
 player_pistol_raise_01 {
 	minDistance	10
 	maxDistance	30
@@ -848,20 +828,13 @@ player_pistol_raise_01 {
 player_pistol_fire {
 	minDistance	10
 	maxDistance	30
-	volume		0
+	volume		1
 
 	sound/_reissue/weapons/pistol/pistol_shot_01.wav
 	sound/_reissue/weapons/pistol/pistol_shot_01_a.wav
 	sound/_reissue/weapons/pistol/pistol_shot_01_b.wav
 	sound/_reissue/weapons/pistol/pistol_shot_01_c.wav
 	sound/_reissue/weapons/pistol/pistol_shot_01_d.wav
-
-/*
-	sound/weapons/pistol/pistol_shot_02a.wav
-	sound/weapons/pistol/pistol_shot_03a.wav
-	sound/weapons/pistol/pistol_shot_04a.wav
-	sound/weapons/pistol/pistol_shot_05a.wav
-*/
 }
 
 player_pistol_reload {
@@ -914,7 +887,7 @@ monster_shotgun_fire {
 player_shotgun_fire {
 	minDistance	10
 	maxDistance	30
-	volume		4 //9
+	volume		-1
 	unclamped	
 	
 	
@@ -926,9 +899,9 @@ player_shotgun_fire {
 
 	sound/_reissue/weapons/shotgun/sg_fire_01.wav
 	sound/_reissue/weapons/shotgun/sg_fire_01_a.wav
-	sound/_reissue/weapons/shotgun/sg_fire_01_b.wav
-	sound/_reissue/weapons/shotgun/sg_fire_01_c.wav
-	sound/_reissue/weapons/shotgun/sg_fire_01_d.wav
+	//sound/_reissue/weapons/shotgun/sg_fire_01_b.wav
+	//sound/_reissue/weapons/shotgun/sg_fire_01_c.wav
+	//sound/_reissue/weapons/shotgun/sg_fire_01_d.wav
 
 }
 
@@ -1034,7 +1007,7 @@ player_machinegun_fire {
 	minDistance	5
 	maxDistance	30
 	
-	volume	-1
+	volume	0
 
 	sound/_reissue/weapons/machinegun/mg_fire_01.wav
 	sound/_reissue/weapons/machinegun/mg_fire_01_a.wav
@@ -1145,13 +1118,12 @@ plasma_reload {
 }
 
 plasma_fire {
-	minDistance	3
+	minDistance	1
 	maxDistance	30
-	volume 5
+	volume 44
 
 	sound/ed/plasma/2plasma_fire1.wav
-	sound/ed/plasma/2plasma_fire3.wav
-	sound/ed/plasma/2plasma_fire6.wav
+	
 
 //	sound/ed/plasma/2plasma_fire2.wav
 //	sound/ed/plasma/2plasma_fire4.wav
@@ -1181,9 +1153,9 @@ plasma_dryfire {
 }
 
 plasma_impact {
-	minDistance	1
-	maxDistance	25
-	volume		3
+	minDistance	3
+	maxDistance	40
+	volume -10
 
 	sound/ed/plasma/plasma_impact1.wav
 	sound/ed/plasma/plasma_impact2.wav
@@ -1203,7 +1175,7 @@ plasma_flight {
 rocket_flight {
 	minDistance	5
 	maxDistance	25
-	volume		7
+	volume		12
 	looping
 	unclamped
 	shakes	0.1
@@ -1218,7 +1190,7 @@ rocket_flight {
 rocket_impact {
 	minDistance	10
 	maxDistance	65
-	volume		1
+	volume		6
 	shakes		0.1
 	unclamped
 
@@ -1250,13 +1222,13 @@ player_rocketlauncher_raise {
 player_rocketlauncher_fire {
 	minDistance	5			
 	maxDistance	30
-	volume		1
+	volume		6
 	no_dups
 	
 	sound/dane/ROCKET_LAUNCHER/ROCKET_LAUNCHER_BLAST_1.wav
 	sound/dane/ROCKET_LAUNCHER/ROCKET_LAUNCHER_BLAST_2.wav
-	sound/dane/ROCKET_LAUNCHER/ROCKET_LAUNCHER_BLAST_3.wav
-	sound/dane/ROCKET_LAUNCHER/ROCKET_LAUNCHER_BLAST_4.wav
+//	sound/dane/ROCKET_LAUNCHER/ROCKET_LAUNCHER_BLAST_3.wav
+//	sound/dane/ROCKET_LAUNCHER/ROCKET_LAUNCHER_BLAST_4.wav
 
 //	sound/weapons/rocket/fire_01.wav
 }
@@ -1302,7 +1274,7 @@ player_chaingun_acquire {
 player_chaingun_windup {
 	minDistance	5
 	maxDistance	30
-	volume	10
+	volume	18
 	
 	sound/weapons/chaingun/cg_windup_mix_01.wav
 }
@@ -1310,7 +1282,7 @@ player_chaingun_windup {
 player_chaingun_winddown {
 	minDistance	5
 	maxDistance	30
-	volume	10
+	volume	14
 	
 	sound/weapons/chaingun/cg_winddown_mix_01.wav
 }
@@ -1326,7 +1298,7 @@ player_chaingun_lowammo {
 player_chaingun_fire {
 	minDistance	5
 	maxDistance	30
-	volume	3
+	volume	10
 	unclamped
 
 	sound/dane/Chain_Gun_Shot_V3/CHAINGUN_SHOT_1v3.wav
@@ -1342,7 +1314,7 @@ player_chaingun_fire {
 player_chaingun_motorloop {
 	minDistance	5
 	maxDistance	30
-	volume	10
+	volume	17
 	unclamped
 	looping
 	sound/weapons/chaingun/cg_motor_loop_01.wav
@@ -1389,15 +1361,10 @@ zombie_chaingun_windup {
 player_rocket_explode {
 	minDistance	10
 	maxDistance	40
-	volume		4
+	volume		10
 	shakes		1 // 0.25
 
 	sound/ed/rocketlauncher/explode1.wav
-	sound/ed/rocketlauncher/explode2.wav
-	sound/ed/rocketlauncher/explode3.wav
-	sound/ed/rocketlauncher/explode4.wav
-	sound/ed/rocketlauncher/explode5.wav
-
 }
 
 rev_rockets {
