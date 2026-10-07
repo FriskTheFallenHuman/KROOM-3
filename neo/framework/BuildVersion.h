@@ -45,5 +45,6 @@ const int SAVEGAME_VERSION							= SAVEGAME_VERSION_SCRIPT_CHANGES1;
 const int NET_VERSION_BEFORE_SKIP_CINEMATIC		= 1600;
 const int NET_VERSION_CHANGE					= 1601;
 const int NET_VERSION_SCRIPT_CHANGES1			= 1602;
+const int NET_VERSION_PLATFORM_IDS				= 1603;		// platform ids added to lobbyAddress_t, lobbyConnectInfo_t and lobbyUser_t messages
 
-const int NET_VERSION							= NET_VERSION_SCRIPT_CHANGES1;
+const int NET_VERSION							= NET_VERSION_PLATFORM_IDS;

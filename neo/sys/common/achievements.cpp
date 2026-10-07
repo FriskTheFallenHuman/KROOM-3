@@ -37,75 +37,76 @@ idCVar achievements_Verbose( "achievements_Verbose", "1", CVAR_BOOL, "debug spam
 
 /*
 ========================
-idAchievementSystemWin::idAchievementSystemWin
+idAchievementSystemLocal::IsInitialized
 ========================
 */
-idAchievementSystemWin::idAchievementSystemWin()
-{
-}
-
-/*
-========================
-idAchievementSystemWin::IsInitialized
-========================
-*/
-bool idAchievementSystemWin::IsInitialized()
+bool idAchievementSystemLocal::IsInitialized() const
 {
 	return false;
 }
 
 /*
 ================================
-idAchievementSystemWin::AchievementUnlock
+idAchievementSystemLocal::AchievementUnlock
 ================================
 */
-void idAchievementSystemWin::AchievementUnlock( idLocalUser* user, int achievementID )
+void idAchievementSystemLocal::AchievementUnlock( idLocalUser* user, int achievementID )
 {
 }
 
 /*
 ========================
-idAchievementSystemWin::AchievementLock
+idAchievementSystemLocal::AchievementLock
 ========================
 */
-void idAchievementSystemWin::AchievementLock( idLocalUser* user, const int achievementID )
+void idAchievementSystemLocal::AchievementLock( idLocalUser* user, const int achievementID )
 {
 }
 
 /*
 ========================
-idAchievementSystemWin::AchievementLockAll
+idAchievementSystemLocal::AchievementLockAll
 ========================
 */
-void idAchievementSystemWin::AchievementLockAll( idLocalUser* user, const int maxId )
+void idAchievementSystemLocal::AchievementLockAll( idLocalUser* user, const int maxId )
 {
 }
 
 /*
 ========================
-idAchievementSystemWin::GetAchievementDescription
+idAchievementSystemLocal::GetAchievementDescription
 ========================
 */
-bool idAchievementSystemWin::GetAchievementDescription( idLocalUser* user, const int achievementID, achievementDescription_t& data ) const
+bool idAchievementSystemLocal::GetAchievementDescription( idLocalUser* user, const int achievementID, achievementDescription_t& data ) const
 {
 	return false;
 }
 
 /*
 ========================
-idAchievementSystemWin::GetAchievementState
+idAchievementSystemLocal::GetAchievementState
 ========================
 */
-bool idAchievementSystemWin::GetAchievementState( idLocalUser* user, idArray< bool, idAchievementSystem::MAX_ACHIEVEMENTS >& achievements ) const
+bool idAchievementSystemLocal::GetAchievementState( idLocalUser* user, idArray< bool, idAchievementSystem::MAX_ACHIEVEMENTS >& achievements ) const
 {
 	return false;
 }
 
 /*
 ================================
-idAchievementSystemWin::Pump
+idAchievementSystemLocal::Pump
 ================================
 */
-void idAchievementSystemWin::Pump()
+void idAchievementSystemLocal::Pump()
 {
+}
+
+/*
+========================
+idAchievementSystemLocal::SetAchievementState
+========================
+*/
+bool idAchievementSystemLocal::SetAchievementState( idLocalUser* user, idArray< bool, idAchievementSystem::MAX_ACHIEVEMENTS >& achievements )
+{
+	return false;
 }

@@ -103,29 +103,35 @@ public:
 	idLocalUser();
 	virtual						~idLocalUser() {}
 
-	void				Pump();
-	virtual void				PumpPlatform() = 0;
+	// Pumps the profile and achievement sync. A backend that needs per-frame work overrides this and calls it first.
+	virtual void				Pump();
 
-	virtual bool				IsPersistent() const
-	{
-		return IsProfileReady();    // True if this user is a persistent user, and can save stats, etc (signed in)
-	}
-	virtual bool				IsProfileReady() const = 0;							// True if IsPersistent is true AND profile is signed into LIVE service
+	//==========================================================================================
+	// Backend interface
+	//==========================================================================================
+	virtual bool				IsProfileReady() const = 0;							// True if the user is signed into a profile
 	virtual bool				IsOnline() const = 0;								// True if this user has online capabilities
 	virtual uint32				GetOnlineCaps() const = 0;							// Returns combination of onlineCaps_t flags
-	virtual bool				HasOwnerChanged() const
-	{
-		return false;    // Whether or not the original persistent owner has changed since it was first registered
-	}
 	virtual int					GetInputDevice() const = 0;							// Input device of controller
-	virtual const char* 		GetGamerTag() const = 0;							// Gamertag of user
-	virtual bool				IsInParty() const = 0;								// True if the user is in a party (do we support this on pc and ps3? )
+	virtual const char* 		GetGamerTag() const = 0;							// Display name of user
+	virtual bool				IsInParty() const = 0;								// True if the user is in a platform party
 	virtual int					GetPartyCount() const = 0;							// Gets the amount of users in the party
 
+	//==========================================================================================
+	// Shared implementation
+	//==========================================================================================
+	bool						IsPersistent() const								// True if this user is a persistent user, and can save stats, etc (signed in)
+	{
+		return IsProfileReady();
+	}
+	bool						CanPlayOnline() const
+	{
+		return ( GetOnlineCaps() & CAP_CAN_PLAY_ONLINE ) > 0;
+	}
+
 	// Storage related
-	virtual bool				IsStorageDeviceAvailable() const;					// Only false if the player has chosen to play without a storage device, only possible on 360, if available, everything needs to check for available space
-	virtual void				ResetStorageDevice();
-	virtual bool				StorageSizeAvailable( uint64 minSizeInBytes, int64& neededBytes );
+	bool						IsStorageDeviceAvailable() const;
+	bool						StorageSizeAvailable( uint64 minSizeInBytes, int64& neededBytes );
 
 	// These set stats within the profile as a enum/value pair
 	virtual void				SetStatInt( int stat, int value );
@@ -142,7 +148,7 @@ public:
 		return const_cast< idLocalUser* >( this )->GetProfile();
 	}
 
-	virtual idProfileMgr& 		GetProfileMgr()
+	virtual idProfileMgr& 	GetProfileMgr()
 	{
 		return profileMgr;
 	}
@@ -157,16 +163,11 @@ public:
 		return joiningLobby[lobbyType];
 	}
 
-	virtual bool				CanPlayOnline() const
-	{
-		return ( GetOnlineCaps() & CAP_CAN_PLAY_ONLINE ) > 0;
-	}
-
-	virtual localUserHandle_t	GetLocalUserHandle() const
+	virtual localUserHandle_t			GetLocalUserHandle() const
 	{
 		return localUserHandle;
 	}
-	virtual void				SetLocalUserHandle( localUserHandle_t newHandle )
+	virtual void						SetLocalUserHandle( localUserHandle_t newHandle )
 	{
 		localUserHandle = newHandle;
 	}

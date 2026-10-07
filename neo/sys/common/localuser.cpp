@@ -37,10 +37,10 @@ extern idCVar win_partyCount;
 
 /*
 ========================
-idLocalUserWin::Init
+idLocalUserLocal::Init
 ========================
 */
-void idLocalUserWin::Init( int inputDevice_, const char* gamertag_, int numLocalUsers )
+void idLocalUserLocal::Init( int inputDevice_, const char* gamertag_, int numLocalUsers )
 {
 	if( numLocalUsers == 1 )     // Check for 1, since this is now incremented before we get in here
 	{
@@ -60,10 +60,10 @@ void idLocalUserWin::Init( int inputDevice_, const char* gamertag_, int numLocal
 
 /*
 ========================
-idLocalUserWin::IsProfileReady
+idLocalUserLocal::IsProfileReady
 ========================
 */
-bool idLocalUserWin::IsProfileReady() const
+bool idLocalUserLocal::IsProfileReady() const
 {
 #ifdef _DEBUG
 	return win_userPersistent.GetBool();
@@ -74,10 +74,10 @@ bool idLocalUserWin::IsProfileReady() const
 
 /*
 ========================
-idLocalUserWin::IsOnline
+idLocalUserLocal::IsOnline
 ========================
 */
-bool idLocalUserWin::IsOnline() const
+bool idLocalUserLocal::IsOnline() const
 {
 #ifdef _DEBUG
 	return win_userOnline.GetBool();
@@ -88,10 +88,10 @@ bool idLocalUserWin::IsOnline() const
 
 /*
 ========================
-idLocalUserWin::IsInParty
+idLocalUserLocal::IsInParty
 ========================
 */
-bool idLocalUserWin::IsInParty() const
+bool idLocalUserLocal::IsInParty() const
 {
 #ifdef _DEBUG
 	return win_isInParty.GetBool();
@@ -102,10 +102,10 @@ bool idLocalUserWin::IsInParty() const
 
 /*
 ========================
-idLocalUserWin::GetPartyCount
+idLocalUserLocal::GetPartyCount
 ========================
 */
-int idLocalUserWin::GetPartyCount() const
+int idLocalUserLocal::GetPartyCount() const
 {
 	// TODO: Implement
 #ifdef _DEBUG
@@ -113,19 +113,4 @@ int idLocalUserWin::GetPartyCount() const
 #else
 	return 0;
 #endif
-}
-
-/*
-========================
-idLocalUserWin::VerifyUserState
-========================
-*/
-bool idLocalUserWin::VerifyUserState( winUserState_t& state )
-{
-
-	if( state.inputDevice != inputDevice )
-	{
-		return false;
-	}
-	return true;
 }

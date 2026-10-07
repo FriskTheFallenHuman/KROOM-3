@@ -47,10 +47,6 @@ idCVar net_LobbyRandomCoalesceTimeInSeconds( "net_LobbyRandomCoalesceTimeInSecon
 idCVar net_useGameStateLobby( "net_useGameStateLobby", "0", CVAR_BOOL, "" );
 //idCVar net_useGameStateLobby( "net_useGameStateLobby", "1", CVAR_BOOL, "" );
 
-#if !defined( ID_RETAIL ) || defined( ID_RETAIL_INTERNAL )
-	idCVar net_ignoreTitleStorage( "net_ignoreTitleStorage", "0", CVAR_BOOL, "Ignore title storage" );
-#endif
-
 idCVar net_maxLoadResourcesTimeInSeconds( "net_maxLoadResourcesTimeInSeconds", "0", CVAR_INTEGER, "How long, in seconds, clients have to load resources. Used for loose asset builds." );
 idCVar net_migrateHost( "net_migrateHost", "-1", CVAR_INTEGER, "Become host of session (0 = party, 1 = game) for testing purposes" );
 extern idCVar net_debugBaseStates;
@@ -126,9 +122,21 @@ idSessionLocal::idSessionLocal() :
 	processorSaveFiles( new( TAG_SAVEGAMES ) idSaveGameProcessorSaveFiles ),
 	processorLoadFiles( new( TAG_SAVEGAMES ) idSaveGameProcessorLoadFiles ),
 	processorDelete(	new( TAG_SAVEGAMES ) idSaveGameProcessorDelete ),
-	processorEnumerate( new( TAG_SAVEGAMES ) idSaveGameProcessorEnumerateGames )
+	processorEnumerate( new( TAG_SAVEGAMES ) idSaveGameProcessorEnumerateGames ),
+	signInManager( NULL ),
+	saveGameManager( NULL ),
+	achievementSystem( NULL ),
+	dedicatedServerSearch( NULL ),
+	canJoinLocalHost( false )
 {
 	InitBaseState();
+
+	signInManager			= new( TAG_SYSTEM ) idSignInManagerLocal;
+	saveGameManager			= new( TAG_SAVEGAMES ) idSaveGameManager();
+	voiceChat				= new( TAG_SYSTEM ) idVoiceChatMgrLocal();
+	dedicatedServerSearch	= new( TAG_NETWORKING ) idDedicatedServerSearch();
+
+	lobbyBackends.Zero();
 }
 
 /*
@@ -138,6 +146,9 @@ idSessionLocal::idSessionLocal
 */
 idSessionLocal::~idSessionLocal()
 {
+	delete voiceChat;
+	voiceChat = NULL;
+
 	// foresthale 2014-06-08: check before deleting these, the deletes were likely done in Shutdown already
 	if( processorSaveFiles )
 	{
@@ -164,6 +175,15 @@ idSessionLocal::~idSessionLocal()
 		delete sessionCallbacks;
 		sessionCallbacks = NULL;
 	}
+
+	delete achievementSystem;
+	achievementSystem = NULL;
+	delete signInManager;
+	signInManager = NULL;
+	delete saveGameManager;
+	saveGameManager = NULL;
+	delete dedicatedServerSearch;
+	dedicatedServerSearch = NULL;
 }
 
 
@@ -200,9 +220,6 @@ void idSessionLocal::InitBaseState()
 	pendingInviteDevice				= 0;
 	pendingInviteMode				= PENDING_INVITE_NONE;
 
-	downloadedContent.Clear();
-	marketplaceHasNewContent		= false;
-
 	offlineTransitionTimerStart		= 0;
 	showMigratingInfoStartTime		= 0;
 	nextGameCoalesceTime			= 0;
@@ -218,8 +235,6 @@ void idSessionLocal::InitBaseState()
 
 	storedPeer						= -1;
 	storedMsgType					= -1;
-
-	inviteInfoRequested				= false;
 
 	enumerationHandle				= 0;
 
@@ -1566,30 +1581,6 @@ bool idSessionLocal::State_Game_State_Lobby_Peer()
 	return State_Game_Lobby_Peer();
 }
 
-/*
-========================
-idSessionLocal::~idSession
-========================
-*/
-idSession::~idSession()
-{
-	if( signInManager )
-	{
-		delete signInManager;
-	}
-	signInManager = NULL;
-	if( saveGameManager )
-	{
-		delete saveGameManager;
-	}
-	saveGameManager = NULL;
-	if( dedicatedServerSearch )
-	{
-		delete dedicatedServerSearch;
-	}
-	dedicatedServerSearch = NULL;
-}
-
 idCVar net_verbose( "net_verbose", "0", CVAR_BOOL, "Print a bunch of message about the network session" );
 idCVar net_verboseResource( "net_verboseResource", "0", CVAR_BOOL, "Prints a bunch of message about network resources" );
 idCVar net_verboseReliable( "net_verboseReliable", "0", CVAR_BOOL, "Prints the more spammy messages about reliable network msgs" );
@@ -1603,19 +1594,10 @@ idCVar net_verboseSimulatedTraffic( "net_verboseSimulatedTraffic", "0", CVAR_BOO
 
 /*
 ========================
-idSessionLocal::Initialize
+idSessionLocal::DestroyServices
 ========================
 */
-void idSessionLocal::Initialize()
-{
-}
-
-/*
-========================
-idSessionLocal::Shutdown
-========================
-*/
-void idSessionLocal::Shutdown()
+void idSessionLocal::DestroyServices()
 {
 	// foresthale 2014-05-28: shut down saveGameManager early because the thread it owns will be terminated before the dtor is reached
 	if( signInManager )
@@ -2032,8 +2014,6 @@ void idSessionLocal::Pump()
 		net_migrateHost.SetInteger( -1 );
 	}
 
-	PlatformPump();
-
 	if( HasAchievementSystem() )
 	{
 		GetAchievementSystem().Pump();
@@ -2175,12 +2155,6 @@ void idSessionLocal::UpdatePendingInvite()
 	}
 
 	idLocalUser* masterLocalUser = signInManager->GetMasterLocalUser();
-
-	if( masterLocalUser == NULL && signInManager->IsDeviceBeingRegistered( pendingInviteDevice ) )
-	{
-		idLib::Printf( "masterLocalUser == NULL\n" );
-		return;		// Waiting on master to sign in to continue with invite
-	}
 
 	const bool wasFromInvite = pendingInviteMode == PENDING_INVITE_WAITING;	// Remember if this was a real invite, or a self invitation (matters when lobby is invite only)
 
@@ -2530,7 +2504,7 @@ void idSessionLocal::UpdateSignInManager()
 	// Get the master local user
 	idLocalUser* masterUser = signInManager->GetMasterLocalUser();
 
-	if( onlineMatch && masterUser != NULL && !masterUser->CanPlayOnline() && !masterUser->HasOwnerChanged() )
+	if( onlineMatch && masterUser != NULL && !masterUser->CanPlayOnline() )
 	{
 		if( localState > STATE_IDLE )
 		{
@@ -2571,9 +2545,9 @@ void idSessionLocal::UpdateSignInManager()
 		return;
 	}
 
-	// See if the master user either isn't persistent (but needs to be), OR, if the owner changed
+	// See if the master user isn't persistent (but needs to be)
 	// RequirePersistentMaster is poorly named, this really means RequireSignedInMaster
-	if( masterUser->HasOwnerChanged() || ( RequirePersistentMaster() && !masterUser->IsProfileReady() ) )
+	if( RequirePersistentMaster() && !masterUser->IsProfileReady() )
 	{
 		return;
 	}
@@ -3955,188 +3929,6 @@ void idSessionLocal::UpdateMasterUserHeadsetState()
 
 /*
 ========================
-idSessionLocal::GetNumContentPackages
-========================
-*/
-int	idSessionLocal::GetNumContentPackages() const
-{
-	return downloadedContent.Num();
-}
-
-/*
-========================
-idSessionLocal::GetContentPackageID
-========================
-*/
-int idSessionLocal::GetContentPackageID( int contentIndex ) const
-{
-	assert( contentIndex < MAX_CONTENT_PACKAGES );
-
-	if( downloadedContent[ contentIndex ].isMounted )
-	{
-		return downloadedContent[ contentIndex ].dlcID;
-	}
-
-	return 0;
-}
-
-/*
-========================
-idSessionLocal::GetContentPackagePath
-========================
-*/
-const char* idSessionLocal::GetContentPackagePath( int contentIndex ) const
-{
-	assert( contentIndex < MAX_CONTENT_PACKAGES );
-
-	if( downloadedContent[ contentIndex ].isMounted )
-	{
-		return downloadedContent[ contentIndex ].rootPath.c_str();
-	}
-
-	return NULL;
-}
-
-/*
-========================
-idSessionLocal::GetContentPackageIndexForID
-========================
-*/
-int idSessionLocal::GetContentPackageIndexForID( int contentID ) const
-{
-	int contentIndex = -1;
-
-	for( int i = 0; i < downloadedContent.Num(); i++ )
-	{
-		if( downloadedContent[i].dlcID == contentID )
-		{
-			contentIndex = i;
-			break;
-		}
-	}
-
-	return contentIndex;
-}
-
-/*
-========================
-idSessionLocal::SetLobbyUserRelativeScore
-========================
-*/
-void idSessionLocal::SetLobbyUserRelativeScore( lobbyUserID_t lobbyUserID, int relativeScore, int team )
-{
-	// All platforms but 360 stub this out
-}
-
-/*
-========================
-idSessionLocal::ReadTitleStorage
-========================
-*/
-void idSessionLocal::ReadTitleStorage( void* buffer, int bufferLen )
-{
-	// https://ps3.scedev.net/projects/ps3_sdk_docs/docs/ps3-en,NP_Lookup-Reference,sceNpLookupTitleSmallStorageAsync/1
-	// If the file is not on the server, this will be handled as though a file of 0 bytes were on the server.
-	// This means that 0 will be set to contentLength and 0 (for normal termination) will return for the return value.
-	// This situation can occur with problems in actual operation, so the application must be designed not to hang up even in such situations
-	//bufferLen = 0;
-
-	idLib::Printf( "ReadTitleStorage: %i bytes\n", bufferLen );
-
-#if !defined( ID_RETAIL ) || defined( ID_RETAIL_INTERNAL )
-	if( net_ignoreTitleStorage.GetBool() )   //&& idLib::GetProduction() < PROD_PRODUCTION ) {
-	{
-		idLib::Printf( "ReadTitleStorage: *********************** IGNORING ********************\n" );
-		return;
-	}
-#endif
-
-	//idScopedGlobalHeap	everythingHereGoesInTheGlobalHeap;
-
-	idParser parser( LEXFL_NOERRORS | LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT );
-	parser.LoadMemory( ( const char* )buffer, bufferLen, "default.tss" );
-
-	bool valid = true;
-
-	while( true )
-	{
-		idToken token;
-
-		if( !parser.ReadToken( &token ) )
-		{
-			break;
-		}
-
-		if( token.Icmp( "netvars" ) == 0 )
-		{
-			if( !titleStorageVars.Parse( parser ) )
-			{
-				valid = false;
-				break;
-			}
-		}
-		else
-		{
-			valid = false;
-			break;
-		}
-	}
-
-	if( valid )
-	{
-		titleStorageLoaded = true;
-		idLib::Printf( "ReadTitleStorage: SUCCESS\n" );
-		titleStorageVars.Print();
-	}
-	else
-	{
-		titleStorageLoaded = false;
-		idLib::Printf( "ReadTitleStorage: FAILED\n" );
-		titleStorageVars.Clear();
-	}
-}
-
-/*
-========================
-idSessionLocal::ReadDLCInfo
-========================
-*/
-bool idSessionLocal::ReadDLCInfo( idDict& dlcInfo, void* buffer, int bufferLen )
-{
-	idParser parser( LEXFL_NOERRORS | LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT );
-	parser.LoadMemory( ( const char* )buffer, bufferLen, "info.txt" );
-
-	bool valid = true;
-
-	while( true )
-	{
-		idToken token;
-
-		if( !parser.ReadToken( &token ) )
-		{
-			break;
-		}
-
-		if( token.Icmp( "dlcInfo" ) == 0 )
-		{
-			if( !dlcInfo.Parse( parser ) )
-			{
-				valid = false;
-				break;
-			}
-		}
-		else
-		{
-			valid = false;
-			break;
-		}
-	}
-
-	return valid;
-}
-
-/*
-========================
 idSessionLocal::IsPlatformPartyInLobby
 ========================
 */
@@ -4309,6 +4101,7 @@ lobbyAddress_t::lobbyAddress_t()
 {
 	memset( &netAddr, 0, sizeof( netAddr ) );
 	netAddr.type = NA_BAD;
+	platformId = 0;
 }
 
 /*
@@ -4318,6 +4111,7 @@ lobbyAddress_t::InitFromIPandPort
 */
 void lobbyAddress_t::InitFromIPandPort( const char* ip, int port )
 {
+	platformId = 0;
 	Sys_StringToNetAdr( ip, &netAddr, true );
 	if( !netAddr.port )
 	{
@@ -4335,6 +4129,20 @@ void lobbyAddress_t::InitFromNetadr( const netadr_t& netadr )
 {
 	assert( netadr.type != NA_BAD );
 	netAddr = netadr;
+	platformId = 0;
+}
+
+/*
+========================
+lobbyAddress_t::InitFromStoreFrontId
+========================
+*/
+void lobbyAddress_t::InitFromStoreFrontId( uint64 id )
+{
+	assert( id != 0 );
+	memset( &netAddr, 0, sizeof( netAddr ) );
+	netAddr.type = NA_BAD;
+	platformId = id;
 }
 
 /*
@@ -4344,6 +4152,12 @@ lobbyAddress_t::ToString
 */
 const char* lobbyAddress_t::ToString() const
 {
+	if( IsUsingStoreFront() )
+	{
+		// TODO: dected which storefront this is and format accordingly
+		return va( "steam:%llu", ( unsigned long long )platformId );
+	}
+
 	return Sys_NetAdrToString( netAddr );
 }
 
@@ -4364,6 +4178,12 @@ lobbyAddress_t::Compare
 */
 bool lobbyAddress_t::Compare( const lobbyAddress_t& addr, bool ignoreSessionCheck ) const
 {
+	// A platform identity never equals an IP address, and two identities are equal when the ids are
+	if( IsUsingStoreFront() || addr.IsUsingStoreFront() )
+	{
+		return platformId == addr.platformId;
+	}
+
 	return Sys_CompareNetAdrBase( netAddr, addr.netAddr );
 }
 
@@ -4375,6 +4195,7 @@ lobbyAddress_t::WriteToMsg
 void lobbyAddress_t::WriteToMsg( idBitMsg& msg ) const
 {
 	msg.WriteData( &netAddr, sizeof( netAddr ) );
+	msg.WriteLongLong( ( int64 )platformId );
 }
 
 /*
@@ -4385,6 +4206,7 @@ lobbyAddress_t::ReadFromMsg
 void lobbyAddress_t::ReadFromMsg( idBitMsg& msg )
 {
 	msg.ReadData( &netAddr, sizeof( netAddr ) );
+	platformId = ( uint64 )msg.ReadLongLong();
 }
 
 /*
@@ -4421,6 +4243,7 @@ idNetSessionPort::ReadRawPacket
 */
 bool idNetSessionPort::ReadRawPacket( lobbyAddress_t& from, void* data, int& size, int maxSize )
 {
+	from.platformId = 0;		// the UDP socket only ever sees IP peers
 	bool result = UDP.GetPacket( from.netAddr, data, size, maxSize );
 
 	static idRandom2 random( Sys_Milliseconds() );
@@ -4449,6 +4272,13 @@ void idNetSessionPort::SendRawPacket( const lobbyAddress_t& to, const void* data
 		return;
 	}
 	assert( size <= idPacketProcessor::MAX_FINAL_PACKET_SIZE );
+
+	if( to.IsUsingStoreFront() )
+	{
+		// netAddr is invalid for these, they need a transport that resolves the platform id
+		idLib::Warning( "idNetSessionPort::SendRawPacket: dropping packet to %s, UDP transport cannot reach a platform id", to.ToString() );
+		return;
+	}
 
 	UDP.SendPacket( to.netAddr, data, size );
 }
@@ -4510,7 +4340,13 @@ void Net_DebugOutputSignedInUsers_f
 */
 void Net_DebugOutputSignedInUsers_f( const idCmdArgs& args )
 {
-	session->GetSignInManager().DebugOutputLocalUserInfo();
+	idSignInManager& signIn = session->GetSignInManager();
+
+	for( int i = 0; i < signIn.GetNumLocalUsers(); i++ )
+	{
+		const idLocalUser* user = signIn.GetLocalUserByIndex( i );
+		idLib::Printf( "%i: '%s' inputDevice=%i profileReady=%i online=%i\n", i, user->GetGamerTag(), user->GetInputDevice(), user->IsProfileReady() ? 1 : 0, user->IsOnline() ? 1 : 0 );
+	}
 }
 idCommandLink Net_DebugOutputSignedInUsers( "net_debugOutputSignedInUsers", Net_DebugOutputSignedInUsers_f, "Outputs all the local users and other debugging information from the sign in manager" );
 

@@ -794,9 +794,6 @@ void idCommonLocal::CheckStartupStorageRequirements()
 
 		ADD_DYNAMIC_DIALOG( GDM_INSUFFICENT_STORAGE_SPACE, callbacks, optionText, true, msg );
 	}
-
-
-	session->GetAchievementSystem().Start();
 }
 
 /*

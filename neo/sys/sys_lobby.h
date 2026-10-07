@@ -955,7 +955,7 @@ public:
 	virtual idLobby& 				GetActingGameStateLobby() = 0;
 	virtual idLobby* 				GetLobbyFromType( idLobby::lobbyType_t lobbyType ) = 0;
 	virtual int						GetUniquePlayerId() const = 0;
-	virtual idSignInManagerBase&		GetSignInManager() = 0;
+	virtual idSignInManager&		GetSignInManager() = 0;
 	virtual	void					SendRawPacket( const lobbyAddress_t& to, const void* data, int size, bool useDirectPort ) = 0;
 
 	virtual bool					BecomingHost( idLobby& lobby ) = 0;			// Called when a lobby is about to become host

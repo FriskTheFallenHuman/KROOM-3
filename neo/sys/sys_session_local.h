@@ -240,14 +240,14 @@ private:
 idSessionLocal
 ================================================
 */
-class idSessionLocal : public idSession
+class idLobbyToSessionCBLocal;
+
+class idSessionLocal final : public idSession
 {
 	friend class idLeaderboards;
 	friend class idStatsSession;
-	friend class idLobbyBackend360;
-	friend class idLobbyBackendPS3;
+	friend class idLobbyToSessionCBLocal;
 	friend class idSessionLocalCallbacks;
-	friend class idPsnAsyncSubmissionLookupPS3_TitleStorage;
 	friend class idNetSessionPort;
 	friend class lobbyAddress_t;
 
@@ -295,147 +295,125 @@ protected:
 		PENDING_SELF_INVITE_WAITING	= 2,		// We invited ourselves to a match
 	};
 
-	struct contentData_t
-	{
-		bool						isMounted;
-		idStrStatic<128>			displayName;
-		idStrStatic< MAX_OSPATH >	packageFileName;
-		idStrStatic< MAX_OSPATH >	rootPath;
-		int							dlcID;
-	};
-
 public:
 	idSessionLocal();
-	virtual					~idSessionLocal();
+	~idSessionLocal() override;
 
 	void					InitBaseState();
 
-	virtual bool			IsPlatformPartyInLobby();
+	bool			IsPlatformPartyInLobby() override;
 
-	// Downloadable Content
-	virtual int				GetNumContentPackages() const;
-	virtual int				GetContentPackageID( int contentIndex ) const;
-	virtual const char* 	GetContentPackagePath( int contentIndex ) const;
-	virtual int				GetContentPackageIndexForID( int contentID ) const;
 
-	virtual bool			GetSystemMarketplaceHasNewContent() const
-	{
-		return marketplaceHasNewContent;
-	}
-	virtual void			SetSystemMarketplaceHasNewContent( bool hasNewContent )
-	{
-		marketplaceHasNewContent = hasNewContent;
-	}
 
 	// Lobby management
-	virtual void			CreatePartyLobby( const idMatchParameters& parms_ );
-	virtual void			FindOrCreateMatch( const idMatchParameters& parms );
-	virtual void			CreateMatch( const idMatchParameters& parms_ );
-	virtual void			CreateGameStateLobby( const idMatchParameters& parms_ );
+	void			CreatePartyLobby( const idMatchParameters& parms_ ) override;
+	void			FindOrCreateMatch( const idMatchParameters& parms ) override;
+	void			CreateMatch( const idMatchParameters& parms_ ) override;
+	void			CreateGameStateLobby( const idMatchParameters& parms_ ) override;
 
-	virtual void			UpdatePartyParms( const idMatchParameters& parms_ );
-	virtual void			UpdateMatchParms( const idMatchParameters& parms_ );
-	virtual void			StartMatch();
-	virtual	void			SetSessionOption( sessionOption_t option )
+	void			UpdatePartyParms( const idMatchParameters& parms_ ) override;
+	void			UpdateMatchParms( const idMatchParameters& parms_ ) override;
+	void			StartMatch() override;
+	void			SetSessionOption( sessionOption_t option ) override
 	{
 		sessionOptions |= option;
 	}
-	virtual	void			ClearSessionOption( sessionOption_t option )
+	void			ClearSessionOption( sessionOption_t option ) override
 	{
 		sessionOptions &= ~option;
 	}
-	virtual sessionState_t	GetBackState();
-	virtual void			Cancel();
-	virtual void			FinishDisconnect();
-	virtual bool			ShouldShowMigratingDialog() const;	// Note this is not in sys_session.h
-	virtual bool			IsCurrentLobbyMigrating() const;
-	virtual bool			IsLosingConnectionToHost() const;
+	sessionState_t	GetBackState() override;
+	void			Cancel() override;
+	void			FinishDisconnect() override;
+	bool			ShouldShowMigratingDialog() const;	// Note this is not in sys_session.h
+	bool			IsCurrentLobbyMigrating() const override;
+	bool			IsLosingConnectionToHost() const override;
 
 	// Migration
-	virtual bool			WasMigrationGame() const;
-	virtual bool			ShouldRelaunchMigrationGame() const;
-	virtual bool			GetMigrationGameData( idBitMsg& msg, bool reading );
-	virtual bool			GetMigrationGameDataUser( lobbyUserID_t lobbyUserID, idBitMsg& msg, bool reading );
+	bool			WasMigrationGame() const override;
+	bool			ShouldRelaunchMigrationGame() const override;
+	bool			GetMigrationGameData( idBitMsg& msg, bool reading ) override;
+	bool			GetMigrationGameDataUser( lobbyUserID_t lobbyUserID, idBitMsg& msg, bool reading ) override;
 
-	virtual bool			WasGameLobbyCoalesced() const
+	bool			WasGameLobbyCoalesced() const override
 	{
 		return gameLobbyWasCoalesced;
 	}
 
 	// Misc
-	virtual	int				GetLoadingID()
+	int				GetLoadingID() override
 	{
 		return loadingID;
 	}
-	virtual bool			IsAboutToLoad() const
+	bool			IsAboutToLoad() const override
 	{
 		return GetGameLobby().IsLobbyActive() && GetGameLobby().startLoadingFromHost;
 	}
-	virtual bool			GetMatchParamUpdate( int& peer, int& msg );
-	virtual int				GetInputRouting( int inputRouting[ MAX_INPUT_DEVICES ] );
-	virtual void			EndMatch( bool premature = false );			// Meant for host to end match gracefully, go back to lobby, tally scores, etc
-	virtual void			MatchFinished();							// this is for when the game is over before we go back to lobby. Need this incase the host leaves during this time
-	virtual void			QuitMatch();		// Meant for host or peer to quit the match before it ends, will instigate host migration, etc
-	virtual void			QuitMatchToTitle(); // Will forcefully quit the match and return to the title screen.
-	virtual void			LoadingFinished();
-	virtual void			Pump();
-	virtual void			ProcessSnapAckQueue();
+	bool			GetMatchParamUpdate( int& peer, int& msg ) override;
+	int				GetInputRouting( int inputRouting[ MAX_INPUT_DEVICES ] ) override;
+	void			EndMatch( bool premature = false ) override;			// Meant for host to end match gracefully, go back to lobby, tally scores, etc
+	void			MatchFinished() override;							// this is for when the game is over before we go back to lobby. Need this incase the host leaves during this time
+	void			QuitMatch() override;		// Meant for host or peer to quit the match before it ends, will instigate host migration, etc
+	void			QuitMatchToTitle() override; // Will forcefully quit the match and return to the title screen.
+	void			LoadingFinished() override;
+	void			Pump() override;
+	void			ProcessSnapAckQueue() override;
 
-	virtual sessionState_t	GetState() const;
-	virtual const char* 	GetStateString() const ;
+	sessionState_t	GetState() const override;
+	const char* 	GetStateString() const override;
 
-	virtual void			SendUsercmds( idBitMsg& msg );
-	virtual void			SendSnapshot( idSnapShot& ss );
-	virtual const char* 	GetPeerName( int peerNum );
+	void			SendUsercmds( idBitMsg& msg ) override;
+	void			SendSnapshot( idSnapShot& ss ) override;
+	const char* 	GetPeerName( int peerNum );
 
-	virtual const char* 	GetLocalUserName( int i ) const
+	const char* 	GetLocalUserName( int i ) const override
 	{
 		return signInManager->GetLocalUserByIndex( i )->GetGamerTag();
 	}
-	virtual void			UpdateSignInManager();
-	virtual idPlayerProfile* GetProfileFromMasterLocalUser();
+	void			UpdateSignInManager() override;
+	idPlayerProfile* GetProfileFromMasterLocalUser() override;
 
-	virtual void			PrePickNewHost( idLobby& lobby, bool forceMe, bool inviteOldHost );
-	virtual bool			PreMigrateInvite( idLobby& lobby );
+	void			PrePickNewHost( idLobby& lobby, bool forceMe, bool inviteOldHost );
+	bool			PreMigrateInvite( idLobby& lobby );
 
 	//=====================================================================================================
 	// Title Storage Vars
 	//=====================================================================================================
-	virtual float			GetTitleStorageFloat( const char* name, float defaultFloat ) const
+	float			GetTitleStorageFloat( const char* name, float defaultFloat ) const override
 	{
 		return titleStorageVars.GetFloat( name, defaultFloat );
 	}
-	virtual int				GetTitleStorageInt( const char* name, int defaultInt ) const
+	int				GetTitleStorageInt( const char* name, int defaultInt ) const override
 	{
 		return titleStorageVars.GetInt( name, defaultInt );
 	}
-	virtual bool			GetTitleStorageBool( const char* name, bool defaultBool ) const
+	bool			GetTitleStorageBool( const char* name, bool defaultBool ) const override
 	{
 		return titleStorageVars.GetBool( name, defaultBool );
 	}
-	virtual const char* 	GetTitleStorageString( const char* name, const char* defaultString ) const
+	const char* 	GetTitleStorageString( const char* name, const char* defaultString ) const override
 	{
 		return titleStorageVars.GetString( name, defaultString );
 	}
 
-	virtual bool			GetTitleStorageFloat( const char* name, float defaultFloat, float& out ) const
+	bool			GetTitleStorageFloat( const char* name, float defaultFloat, float& out ) const override
 	{
 		return titleStorageVars.GetFloat( name, defaultFloat, out );
 	}
-	virtual bool			GetTitleStorageInt( const char* name, int defaultInt, int& out ) const
+	bool			GetTitleStorageInt( const char* name, int defaultInt, int& out ) const override
 	{
 		return titleStorageVars.GetInt( name, defaultInt, out );
 	}
-	virtual bool			GetTitleStorageBool( const char* name, bool defaultBool, bool& out ) const
+	bool			GetTitleStorageBool( const char* name, bool defaultBool, bool& out ) const override
 	{
 		return titleStorageVars.GetBool( name, defaultBool, out );
 	}
-	virtual bool			GetTitleStorageString( const char* name, const char* defaultString, const char** out ) const
+	bool			GetTitleStorageString( const char* name, const char* defaultString, const char** out ) const override
 	{
 		return titleStorageVars.GetString( name, defaultString, out );
 	}
 
-	virtual bool			IsTitleStorageLoaded()
+	bool			IsTitleStorageLoaded() override
 	{
 		return titleStorageLoaded;
 	}
@@ -443,32 +421,23 @@ public:
 	//=====================================================================================================
 	//	Voice chat
 	//=====================================================================================================
-	virtual voiceState_t		GetLobbyUserVoiceState( lobbyUserID_t lobbyUserID );
-	virtual voiceStateDisplay_t GetDisplayStateFromVoiceState( voiceState_t voiceState ) const;
-	virtual void				ToggleLobbyUserVoiceMute( lobbyUserID_t lobbyUserID );
-	virtual void				SetActiveChatGroup( int groupIndex );
-	virtual void				UpdateMasterUserHeadsetState();
+	voiceState_t		GetLobbyUserVoiceState( lobbyUserID_t lobbyUserID ) override;
+	voiceStateDisplay_t GetDisplayStateFromVoiceState( voiceState_t voiceState ) const override;
+	void				ToggleLobbyUserVoiceMute( lobbyUserID_t lobbyUserID ) override;
+	void				SetActiveChatGroup( int groupIndex ) override;
+	void				UpdateMasterUserHeadsetState();
 
 	//=====================================================================================================
 	//	Bandwidth / QoS checking
 	//=====================================================================================================
-	virtual bool			StartOrContinueBandwidthChallenge( bool forceStart );
-	virtual void			DebugSetPeerSnaprate( int peerIndex, int snapRateMS );
-	virtual float			GetIncomingByteRate();
+	bool			StartOrContinueBandwidthChallenge( bool forceStart ) override;
+	void			DebugSetPeerSnaprate( int peerIndex, int snapRateMS ) override;
+	float			GetIncomingByteRate() override;
 
 	//=====================================================================================================
 	// Invites
 	//=====================================================================================================
-	virtual void			HandleBootableInvite( int64 lobbyId = 0 ) = 0;
-	virtual void			ClearBootableInvite() = 0;
-	virtual void			ClearPendingInvite() = 0;
-	virtual bool			HasPendingBootableInvite() = 0;
-	virtual void			SetDiscSwapMPInvite( void* parm ) = 0;		// call to request a discSwap multiplayer invite
-	virtual void* 			GetDiscSwapMPInviteParms() = 0;
-	virtual bool			IsDiscSwapMPInviteRequested() const
-	{
-		return inviteInfoRequested;
-	}
+	void			HandleBootableInvite( int64 lobbyId = 0 ) override;
 
 	bool					GetFlushedStats()
 	{
@@ -483,97 +452,95 @@ public:
 	// Notifications
 	//=====================================================================================================
 	// This is called when a LocalUser is signed in/out
-	virtual void			OnLocalUserSignin( idLocalUser* user );
-	virtual void			OnLocalUserSignout( idLocalUser* user );
+	void			OnLocalUserSignin( idLocalUser* user ) override;
+	void			OnLocalUserSignout( idLocalUser* user ) override;
 
 	// This is called when the master LocalUser is signed in/out, these are called after OnLocalUserSignin/out()
-	virtual void			OnMasterLocalUserSignout();
-	virtual void			OnMasterLocalUserSignin();
+	void			OnMasterLocalUserSignout() override;
+	void			OnMasterLocalUserSignin() override;
 
 	// After a local user has signed in and their profile has loaded
-	virtual void			OnLocalUserProfileLoaded( idLocalUser* user );
+	void			OnLocalUserProfileLoaded( idLocalUser* user ) override;
 
 	//=====================================================================================================
 	//	Platform specific (different platforms implement these differently)
 	//=====================================================================================================
 
-	virtual void			Initialize() = 0;
-	virtual void			Shutdown() = 0;
+	void			Initialize() override;
+	void			Shutdown() override;
 
-	virtual void			InitializeSoundRelatedSystems() = 0;
-	virtual void			ShutdownSoundRelatedSystems() = 0;
+	void			InitializeSoundRelatedSystems() override;
+	void			ShutdownSoundRelatedSystems() override;
 
-	virtual void			PlatformPump() = 0;
 
-	virtual void			InviteFriends() = 0;
-	virtual void			InviteParty() = 0;
-	virtual void			ShowPartySessions() = 0;
+	void			InviteFriends() override;
+	void			InviteParty() override;
+	void			ShowPartySessions() override;
 
-	virtual bool			ProcessInputEvent( const sysEvent_t* ev ) = 0;
+	bool			ProcessInputEvent( const sysEvent_t* ev ) override;
 
 	// Play with Friends server listing
-	virtual int				NumServers() const = 0;
-	virtual void			ListServers( const idCallback& callback ) = 0;
-	virtual void			ListServersCommon();
-	virtual void			CancelListServers() = 0;
-	virtual void			ConnectToServer( int i ) = 0;
-	virtual const serverInfo_t* ServerInfo( int i ) const = 0;
-	virtual const idList< idStr >* ServerPlayerList( int i );
-	virtual void			ShowServerGamerCardUI( int i ) = 0;
+	int				NumServers() const override;
+	void			ListServers( const idCallback& callback ) override;
+	void			ListServersCommon();
+	void			CancelListServers() override;
+	void			ConnectToServer( int i ) override;
+	const serverInfo_t* ServerInfo( int i ) const override;
+	const idList< idStr >* ServerPlayerList( int i ) override;
+	void			ShowServerGamerCardUI( int i ) override;
+	void					ShowOnlineSignin() override;
 
-	virtual void 			HandleServerQueryRequest( lobbyAddress_t& remoteAddr, idBitMsg& msg, int msgType ) = 0;
-	virtual void 			HandleServerQueryAck( lobbyAddress_t& remoteAddr, idBitMsg& msg ) = 0;
+	void 			HandleServerQueryRequest( lobbyAddress_t& remoteAddr, idBitMsg& msg, int msgType );
+	void 			HandleServerQueryAck( lobbyAddress_t& remoteAddr, idBitMsg& msg );
 
 	// System UI
-	virtual bool			IsSystemUIShowing() const = 0;
-	virtual void			SetSystemUIShowing( bool show ) = 0;
+	bool			IsSystemUIShowing() const override;
+	void			SetSystemUIShowing( bool show ) override;
 
-	virtual void			ShowSystemMarketplaceUI() const = 0;
-	virtual void			ShowLobbyUserGamerCardUI( lobbyUserID_t lobbyUserID ) = 0;
+	void			ShowLobbyUserGamerCardUI( lobbyUserID_t lobbyUserID ) override;
 
 	// Leaderboards
-	virtual const leaderboardDefinition_t* LeaderboardFindDef( int id ) = 0;
-	virtual leaderboardDefinition_t* LeaderboardCreateDef( int id_, int numColumns_, const columnDef_t* columnDefs_, int rankOrder_, bool supportsAttachments_, bool checkAgainstCurrent_ ) = 0;
-	virtual void			LeaderboardDestroyDefs() = 0;
-	virtual void			LeaderboardUpload( lobbyUserID_t lobbyUserID, const leaderboardDefinition_t* leaderboard, const column_t* stats, const idFile_Memory* attachment = NULL ) = 0;
-	virtual void			LeaderboardDownload( int sessionUserIndex, const leaderboardDefinition_t* leaderboard, int startingRank, int numRows, const idLeaderboardCallback& callback ) = 0;
-	virtual void			LeaderboardDownloadAttachment( int sessionUserIndex, const leaderboardDefinition_t* leaderboard, int64 attachmentID ) = 0;
+	const leaderboardDefinition_t* LeaderboardFindDef( int id ) override;
+	leaderboardDefinition_t* LeaderboardCreateDef( int id_, int numColumns_, const columnDef_t* columnDefs_, int rankOrder_, bool supportsAttachments_, bool checkAgainstCurrent_ ) override;
+	void			LeaderboardDestroyDefs() override;
+	void			LeaderboardUpload( lobbyUserID_t lobbyUserID, const leaderboardDefinition_t* leaderboard, const column_t* stats, const idFile_Memory* attachment = NULL ) override;
+	void			LeaderboardDownload( int sessionUserIndex, const leaderboardDefinition_t* leaderboard, int startingRank, int numRows, const idLeaderboardCallback& callback ) override;
+	void			LeaderboardDownloadAttachment( int sessionUserIndex, const leaderboardDefinition_t* leaderboard, int64 attachmentID ) override;
 
 	// Scoring (currently just for TrueSkill)
-	virtual void			SetLobbyUserRelativeScore( lobbyUserID_t lobbyUserID, int relativeScore, int team ) = 0;
 
-	virtual void			LeaderboardFlush() = 0;
+	void			LeaderboardFlush() override;
 
 	//=====================================================================================================i'
 	//	Savegames
 	//=====================================================================================================
-	virtual saveGameHandle_t	SaveGameSync( const char* name, const saveFileEntryList_t& files, const idSaveGameDetails& description );
-	virtual saveGameHandle_t	SaveGameAsync( const char* name, const saveFileEntryList_t& files, const idSaveGameDetails& description );
-	virtual saveGameHandle_t	LoadGameSync( const char* name, saveFileEntryList_t& files );
-	virtual saveGameHandle_t	EnumerateSaveGamesSync();
-	virtual saveGameHandle_t	EnumerateSaveGamesAsync();
-	virtual saveGameHandle_t	DeleteSaveGameSync( const char* name );
-	virtual saveGameHandle_t	DeleteSaveGameAsync( const char* name );
+	saveGameHandle_t	SaveGameSync( const char* name, const saveFileEntryList_t& files, const idSaveGameDetails& description ) override;
+	saveGameHandle_t	SaveGameAsync( const char* name, const saveFileEntryList_t& files, const idSaveGameDetails& description ) override;
+	saveGameHandle_t	LoadGameSync( const char* name, saveFileEntryList_t& files ) override;
+	saveGameHandle_t	EnumerateSaveGamesSync() override;
+	saveGameHandle_t	EnumerateSaveGamesAsync() override;
+	saveGameHandle_t	DeleteSaveGameSync( const char* name ) override;
+	saveGameHandle_t	DeleteSaveGameAsync( const char* name ) override;
 
-	virtual bool							IsSaveGameCompletedFromHandle( const saveGameHandle_t& handle ) const
+	bool							IsSaveGameCompletedFromHandle( const saveGameHandle_t& handle ) const override
 	{
 		return saveGameManager->IsSaveGameCompletedFromHandle( handle );
 	}
-	virtual void							CancelSaveGameWithHandle( const saveGameHandle_t& handle )
+	void							CancelSaveGameWithHandle( const saveGameHandle_t& handle ) override
 	{
 		GetSaveGameManager().CancelWithHandle( handle );
 	}
-	virtual const saveGameDetailsList_t& 	GetEnumeratedSavegames() const
+	const saveGameDetailsList_t& 	GetEnumeratedSavegames() const override
 	{
 		return saveGameManager->GetEnumeratedSavegames();
 	}
-	virtual bool							IsEnumerating() const;
-	virtual saveGameHandle_t				GetEnumerationHandle() const;
-	virtual void							SetCurrentSaveSlot( const char* slotName )
+	bool							IsEnumerating() const override;
+	saveGameHandle_t				GetEnumerationHandle() const override;
+	void							SetCurrentSaveSlot( const char* slotName ) override
 	{
 		currentSaveSlot = slotName;
 	}
-	virtual const char* 					GetCurrentSaveSlot() const
+	const char* 					GetCurrentSaveSlot() const override
 	{
 		return currentSaveSlot.c_str();
 	}
@@ -585,12 +552,8 @@ public:
 	void					OnEnumerationCompleted( idSaveLoadParms* parms );
 
 	// Error checking
-	virtual bool			IsDLCAvailable( const char* mapName );
-	virtual bool			LoadGameCheckDiscNumber( idSaveLoadParms& parms );
 	bool					LoadGameCheckDescriptionFile( idSaveLoadParms& parms );
 
-	// Downloadable Content
-	virtual void			EnumerateDownloadableContent() = 0;
 
 	void					DropClient( int peerNum, int session );
 
@@ -613,7 +576,7 @@ protected:
 	// Common functions (sys_session_local.cpp)
 	//=====================================================================================================
 	void					HandleLobbyControllerState( int lobbyType );
-	virtual void			UpdatePendingInvite();
+	void			UpdatePendingInvite();
 	bool					HandleState();
 
 	// The party and game lobby are the two platform lobbies that notify the backends (Steam/PSN/LIVE of changes)
@@ -657,21 +620,21 @@ protected:
 
 	idLobby* 				GetLobbyFromType( idLobby::lobbyType_t lobbyType );
 
-	virtual idLobbyBase& 	GetPartyLobbyBase()
+	idLobbyBase& 	GetPartyLobbyBase() override
 	{
 		return partyLobby;
 	}
-	virtual idLobbyBase& 	GetGameLobbyBase()
+	idLobbyBase& 	GetGameLobbyBase() override
 	{
 		return gameLobby;
 	}
-	virtual idLobbyBase& 	GetActingGameStateLobbyBase()
+	idLobbyBase& 	GetActingGameStateLobbyBase() override
 	{
 		return GetActingGameStateLobby();
 	}
 
-	virtual idLobbyBase& 	GetActivePlatformLobbyBase();
-	virtual idLobbyBase& 	GetLobbyFromLobbyUserID( lobbyUserID_t lobbyUserID );
+	idLobbyBase& 	GetActivePlatformLobbyBase() override;
+	idLobbyBase& 	GetLobbyFromLobbyUserID( lobbyUserID_t lobbyUserID ) override;
 
 	void					SetState( state_t newState );
 	bool					HandlePackets();
@@ -729,7 +692,6 @@ protected:
 
 	int						loadingID;
 
-	bool					inviteInfoRequested;
 
 	idSaveGameProcessorSaveFiles* processorSaveFiles;
 	idSaveGameProcessorLoadFiles* processorLoadFiles;
@@ -760,15 +722,6 @@ protected:
 	bool	State_Connect_And_Move_To_Game_State();
 	bool	State_Finalize_Connect();
 	bool	State_Busy();
-
-	// -----------------------
-	// Downloadable Content
-	// -----------------------
-	static const int MAX_CONTENT_PACKAGES = 16;
-
-
-	idStaticList<contentData_t, MAX_CONTENT_PACKAGES>	downloadedContent;
-	bool												marketplaceHasNewContent;
 
 	class idQueuePacket
 	{
@@ -814,14 +767,14 @@ protected:
 	const leaderboardDefinition_t* ReadLeaderboardFromMsg( idBitMsg& msg, column_t* stats );
 	bool	RequirePersistentMaster();
 
-	virtual idNetSessionPort& 	GetPort( bool dedicated = false ) = 0;
-	virtual idLobbyBackend* 	CreateLobbyBackend( const idMatchParameters& p, float skillLevel, idLobbyBackend::lobbyBackendType_t lobbyType ) = 0;
-	virtual idLobbyBackend* 	FindLobbyBackend( const idMatchParameters& p, int numPartyUsers, float skillLevel, idLobbyBackend::lobbyBackendType_t lobbyType ) = 0;
-	virtual idLobbyBackend* 	JoinFromConnectInfo( const lobbyConnectInfo_t& connectInfo , idLobbyBackend::lobbyBackendType_t lobbyType ) = 0;
-	virtual void				DestroyLobbyBackend( idLobbyBackend* lobby ) = 0;
-	virtual void				PumpLobbies() = 0;
-	virtual bool				GetLobbyAddressFromNetAddress( const netadr_t& netAddr, lobbyAddress_t& outAddr ) const = 0;
-	virtual bool				GetNetAddressFromLobbyAddress( const lobbyAddress_t& lobbyAddress, netadr_t& outNetAddr ) const = 0;
+	idNetSessionPort& 	GetPort( bool dedicated = false );
+	idLobbyBackend* 	CreateLobbyBackend( const idMatchParameters& p, float skillLevel, idLobbyBackend::lobbyBackendType_t lobbyType );
+	idLobbyBackend* 	FindLobbyBackend( const idMatchParameters& p, int numPartyUsers, float skillLevel, idLobbyBackend::lobbyBackendType_t lobbyType );
+	idLobbyBackend* 	JoinFromConnectInfo( const lobbyConnectInfo_t& connectInfo , idLobbyBackend::lobbyBackendType_t lobbyType );
+	void				DestroyLobbyBackend( idLobbyBackend* lobby );
+	void				PumpLobbies();
+	bool				GetLobbyAddressFromNetAddress( const netadr_t& netAddr, lobbyAddress_t& outAddr ) const;
+	bool				GetNetAddressFromLobbyAddress( const lobbyAddress_t& lobbyAddress, netadr_t& outNetAddr ) const;
 
 	void 	HandleDedicatedServerQueryRequest( lobbyAddress_t& remoteAddr, idBitMsg& msg, int msgType );
 	void 	HandleDedicatedServerQueryAck( lobbyAddress_t& remoteAddr, idBitMsg& msg );
@@ -861,9 +814,7 @@ protected:
 	void	ValidateLobbies();
 	void	ValidateLobby( idLobby& lobby );
 
-	void	ReadTitleStorage( void* buffer, int bufferLen );
 
-	bool	ReadDLCInfo( idDict& dlcInfo, void* buffer, int bufferLen );
 
 	idSessionCallbacks*	 sessionCallbacks;
 
@@ -872,6 +823,48 @@ protected:
 	bool	droppedByHost;
 
 
+
+public:
+	//------------------------
+	// Service objects
+	//------------------------
+	idSignInManager&		GetSignInManager() override
+	{
+		return *signInManager;
+	}
+	idSaveGameManager&		GetSaveGameManager() override
+	{
+		return *saveGameManager;
+	}
+	idAchievementSystem&	GetAchievementSystem() override
+	{
+		return *achievementSystem;
+	}
+	bool					HasSignInManager() const override
+	{
+		return ( signInManager != NULL );
+	}
+	bool					HasAchievementSystem() const override
+	{
+		return ( achievementSystem != NULL );
+	}
+
+	void					Connect_f( const idCmdArgs& args );
+
+private:
+	idSignInManager*			signInManager;
+	idSaveGameManager*			saveGameManager;
+	idAchievementSystem*		achievementSystem;
+	idDedicatedServerSearch*	dedicatedServerSearch;
+
+	// Direct (LAN / dedicated server) lobby backends
+	idArray< idLobbyBackend*, 3 >	lobbyBackends;
+	idNetSessionPort				port;
+	bool							canJoinLocalHost;
+
+	void					EnsurePort();
+	void					DestroyServices();
+	idLobbyBackend*			CreateLobbyInternal( idLobbyBackend::lobbyBackendType_t lobbyType );
 };
 
 /*
@@ -911,7 +904,7 @@ public:
 	{
 		return sessionLocal->currentID++;
 	}
-	virtual idSignInManagerBase&		GetSignInManager()
+	virtual idSignInManager&		GetSignInManager()
 	{
 		return *sessionLocal->signInManager;
 	}

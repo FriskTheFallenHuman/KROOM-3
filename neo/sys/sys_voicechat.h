@@ -152,4 +152,30 @@ protected:
 };
 
 
+/*
+================================================
+idVoiceChatMgrLocal
+================================================
+*/
+class idVoiceChatMgrLocal final : public idVoiceChatMgr
+{
+public:
+	~idVoiceChatMgrLocal() override {}
+
+	bool	GetLocalChatDataInternal( int talkerIndex, byte* data, int& dataSize ) override
+	{
+		return false;
+	}
+	void	SubmitIncomingChatDataInternal( int talkerIndex, const byte* data, int dataSize ) override {}
+	bool	TalkerHasData( int talkerIndex ) override
+	{
+		return false;
+	}
+	bool	RegisterTalkerInternal( int index ) override
+	{
+		return true;
+	}
+	void	UnregisterTalkerInternal( int index ) override {}
+};
+
 #endif	// __SYS_VOICECHATMGR_H__

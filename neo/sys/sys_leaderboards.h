@@ -185,8 +185,7 @@ public:
 		int64		rank;
 		idArray<int64, MAX_LEADERBOARD_COLUMNS> 	columns;
 
-		long		user_id;
-//		CSteamID	user_id;
+		uint64		user_id;		// platform account id
 	};
 
 	idLeaderboardCallback() : def( NULL ), startIndex( -1 ), localIndex( -1 ), numRowsInLeaderboard( -1 ), errorCode( LEADERBOARD_ERROR_NONE ) { }

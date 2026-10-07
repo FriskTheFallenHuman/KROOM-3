@@ -67,17 +67,16 @@ void Sys_ExecuteSavegameCommandAsyncImpl( idSaveLoadParms* savegameParms )
 idLocalUser * GetLocalUserFromUserId
 ========================
 */
-idLocalUserWin* GetLocalUserFromSaveParms( const saveGameThreadArgs_t& data )
+idLocalUser* GetLocalUserFromSaveParms( const saveGameThreadArgs_t& data )
 {
 	if( ( data.saveLoadParms != NULL ) && ( data.saveLoadParms->inputDeviceId >= 0 ) )
 	{
 		idLocalUser* user = session->GetSignInManager().GetLocalUserByInputDevice( data.saveLoadParms->inputDeviceId );
 		if( user != NULL )
 		{
-			idLocalUserWin* userWin = static_cast< idLocalUserWin* >( user );
-			if( userWin != NULL && data.saveLoadParms->userId == idStr::Hash( userWin->GetGamerTag() ) )
+			if( data.saveLoadParms->userId == idStr::Hash( user->GetGamerTag() ) )
 			{
-				return userWin;
+				return user;
 			}
 		}
 	}
@@ -92,7 +91,7 @@ idSaveGameThread::SaveGame
 */
 int idSaveGameThread::Save()
 {
-	idLocalUserWin* user = GetLocalUserFromSaveParms( data );
+	idLocalUser* user = GetLocalUserFromSaveParms( data );
 	if( user == NULL )
 	{
 		data.saveLoadParms->errorCode = SAVEGAME_E_INVALID_USER;
@@ -751,7 +750,7 @@ int idSaveGameThread::Run()
 
 	try
 	{
-		idLocalUserWin* user = GetLocalUserFromSaveParms( data );
+		idLocalUser* user = GetLocalUserFromSaveParms( data );
 		if( user != NULL && !user->IsStorageDeviceAvailable() )
 		{
 			data.saveLoadParms->errorCode = SAVEGAME_E_UNABLE_TO_SELECT_STORAGE_DEVICE;

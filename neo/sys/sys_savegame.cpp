@@ -320,9 +320,8 @@ void idSaveLoadParms::SetDefaults( int newInputDevice )
 
 	if( user != NULL )
 	{
-		idLocalUserWin* userWin = static_cast< idLocalUserWin* >( user );
-		userId = idStr::Hash( userWin->GetGamerTag() );
-		idLib::PrintfIf( saveGame_verbose.GetBool(), "profile userId/gamertag: %s (%d)\n", userWin->GetGamerTag(), userId );
+		userId = idStr::Hash( user->GetGamerTag() );
+		idLib::PrintfIf( saveGame_verbose.GetBool(), "profile userId/gamertag: %s (%d)\n", user->GetGamerTag(), userId );
 		inputDeviceId = user->GetInputDevice();
 	}
 }

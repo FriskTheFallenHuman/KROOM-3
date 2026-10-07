@@ -437,13 +437,6 @@ saveGameHandle_t idSessionLocal::LoadGameSync( const char* name, saveFileEntryLi
 		{
 			return 0;
 		}
-
-		// Checks to see if loaded map is from a DLC map and if that DLC is active
-		if( !IsDLCAvailable( parms.description.GetMapName() ) )
-		{
-			parms.errorCode = SAVEGAME_E_DLC_NOT_FOUND;
-			return 0;
-		}
 	}
 
 	common->OnLoadFilesCompleted( parms );
@@ -700,75 +693,6 @@ idSessionLocal::GetEnumerationHandle
 saveGameHandle_t idSessionLocal::GetEnumerationHandle() const
 {
 	return processorEnumerate->GetHandle();
-}
-
-/*
-========================
-idSessionLocal::IsDLCAvailable
-========================
-*/
-bool idSessionLocal::IsDLCAvailable( const char* mapName )
-{
-	bool hasContentPackage = true;
-	return hasContentPackage;
-}
-
-/*
-========================
-idSessionLocal::LoadGameCheckDiscNumber
-========================
-*/
-bool idSessionLocal::LoadGameCheckDiscNumber( idSaveLoadParms& parms )
-{
-#if 0
-	idStr mapName = parms.description.GetMapName();
-
-	assert( !discSwapStateMgr->IsWorking() );
-	discSwapStateMgr->Init( &parms.callbackSignal, idDiscSwapStateManager::DISC_SWAP_COMMAND_LOAD );
-	//// TODO_KC this is probably broken now...
-	//discSwapStateMgr->folder = folder;
-	//discSwapStateMgr->spawnInfo = newSpawnInfo;
-	//discSwapStateMgr->spawnSpot = newSpawnPoint;
-	//discSwapStateMgr->instanceFileName = instanceFileName;
-	discSwapStateMgr->user = session->GetSignInManager().GetMasterLocalUser();
-	discSwapStateMgr->map = mapName;
-
-	discSwapStateMgr->Pump();
-	while( discSwapStateMgr->IsWorking() )
-	{
-		Sys_Sleep( 15 );
-		// process input and render
-
-		discSwapStateMgr->Pump();
-	}
-
-	idDiscSwapStateManager::discSwapStateError_t discSwapError = discSwapStateMgr->GetError();
-
-	if( discSwapError == idDiscSwapStateManager::DSSE_CANCEL )
-	{
-		parms.errorCode = SAVEGAME_E_CANCELLED;
-	}
-	else if( discSwapError == idDiscSwapStateManager::DSSE_INSUFFICIENT_ROOM )
-	{
-		parms.errorCode = SAVEGAME_E_INSUFFICIENT_ROOM;
-		parms.requiredSpaceInBytes = discSwapStateMgr->GetRequiredStorageBytes();
-	}
-	else if( discSwapError == idDiscSwapStateManager::DSSE_CORRECT_DISC_ALREADY )
-	{
-		parms.errorCode = SAVEGAME_E_NONE;
-	}
-	else if( discSwapError != idDiscSwapStateManager::DSSE_OK )
-	{
-		parms.errorCode = SAVEGAME_E_DISC_SWAP;
-	}
-
-	if( parms.errorCode == SAVEGAME_E_UNKNOWN )
-	{
-		parms.errorCode = SAVEGAME_E_DISC_SWAP;
-	}
-#endif
-
-	return ( parms.GetError() == SAVEGAME_E_NONE );
 }
 
 /*

@@ -49,26 +49,44 @@ idCVar ui_name( "ui_name", "", CVAR_ARCHIVE, "player name - leave empty for defa
 
 /*
 ========================
-idSignInManagerWin::Shutdown
+idSignInManagerLocal::~idSignInManagerLocal
 ========================
 */
-void idSignInManagerWin::Shutdown()
+idSignInManagerLocal::~idSignInManagerLocal()
+{
+	for( int i = 0; i < localUsers.Num(); i++ )
+	{
+		delete localUsers[i];
+	}
+	localUsers.Clear();
+}
+
+/*
+========================
+idSignInManagerLocal::Shutdown
+========================
+*/
+void idSignInManagerLocal::Shutdown()
 {
 }
 
 /*
 ========================
-idSignInManagerWin::Pump
+idSignInManagerLocal::Pump
 ========================
 */
-void idSignInManagerWin::Pump()
+void idSignInManagerLocal::Pump()
 {
 
 	// If we have more users than we need, then set to the lower amount
 	// (don't remove the master user though)
 	if( localUsers.Num() > 1 && localUsers.Num() > maxDesiredLocalUsers )
 	{
-		localUsers.SetNum( maxDesiredLocalUsers );
+		while( localUsers.Num() > maxDesiredLocalUsers )
+		{
+			delete localUsers[ localUsers.Num() - 1 ];
+			localUsers.RemoveIndex( localUsers.Num() - 1 );
+		}
 	}
 
 #ifndef ID_RETAIL
@@ -84,27 +102,28 @@ void idSignInManagerWin::Pump()
 	// See if we need to save settings on any of the profiles
 	for( int i = 0; i < localUsers.Num(); i++ )
 	{
-		localUsers[i].Pump();
+		localUsers[i]->Pump();
 	}
 }
 
 /*
 ========================
-idSignInManagerWin::RemoveLocalUserByIndex
+idSignInManagerLocal::RemoveLocalUserByIndex
 ========================
 */
-void idSignInManagerWin::RemoveLocalUserByIndex( int index )
+void idSignInManagerLocal::RemoveLocalUserByIndex( int index )
 {
-	session->OnLocalUserSignout( &localUsers[index] );
+	session->OnLocalUserSignout( localUsers[index] );
+	delete localUsers[index];
 	localUsers.RemoveIndex( index );
 }
 
 /*
 ========================
-idSignInManagerWin::RegisterLocalUser
+idSignInManagerLocal::RegisterLocalUser
 ========================
 */
-void idSignInManagerWin::RegisterLocalUser( int inputDevice )
+void idSignInManagerLocal::RegisterLocalUser( int inputDevice )
 {
 	if( GetLocalUserByInputDevice( inputDevice ) != NULL )
 	{
@@ -135,7 +154,7 @@ void idSignInManagerWin::RegisterLocalUser( int inputDevice )
 		int nameIndex = 0;
 		int numChars = 0;
 		name.Empty();
-		while( nameIndex < nameLength && numChars++ < idLocalUserWin::MAX_GAMERTAG_CHARS )
+		while( nameIndex < nameLength && numChars++ < idLocalUserLocal::MAX_GAMERTAG_CHARS )
 		{
 			uint32 c = idStr::UTF8Char( nameSource, nameIndex );
 			name.AppendUTF8Char( c );
@@ -144,35 +163,13 @@ void idSignInManagerWin::RegisterLocalUser( int inputDevice )
 
 	idLib::Printf( "Added local user: %s\n", name.c_str() );
 
-	idLocalUserWin& localUser = *localUsers.Alloc();
+	idLocalUserLocal* localUser = new( TAG_SYSTEM ) idLocalUserLocal;
+	localUsers.Append( localUser );
 
-	localUser.Init( inputDevice, name.c_str(), localUsers.Num() );
-	localUser.SetLocalUserHandle( GetUniqueLocalUserHandle( localUser.GetGamerTag() ) );
+	localUser->Init( inputDevice, name.c_str(), localUsers.Num() );
+	localUser->SetLocalUserHandle( GetUniqueLocalUserHandle( localUser->GetGamerTag() ) );
 
-	session->OnLocalUserSignin( &localUser );
-}
-
-/*
-========================
-idSignInManagerWin::CreateNewUser
-========================
-*/
-bool idSignInManagerWin::CreateNewUser( winUserState_t& state )
-{
-	//idScopedGlobalHeap	everythingHereGoesInTheGlobalHeap;	// users obviously persist across maps
-
-	RemoveAllLocalUsers();
-	RegisterLocalUser( state.inputDevice );
-
-	if( localUsers.Num() > 0 )
-	{
-		if( !localUsers[0].VerifyUserState( state ) )
-		{
-			RemoveAllLocalUsers();
-		}
-	}
-
-	return true;
+	session->OnLocalUserSignin( localUser );
 }
 
 CONSOLE_COMMAND( testRemoveAllLocalUsers, "Forces removal of local users - mainly for PC testing", NULL )

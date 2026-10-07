@@ -87,7 +87,7 @@ ID_INLINE bool MatchTypeIsJoinInProgress( uint8 matchFlags )
 class idCompressor;
 class idLeaderboardSubmission;
 class idLeaderboardQuery;
-class idSignInManagerBase;
+class idSignInManager;
 class idPlayerProfile;
 class idGameSpawnInfo;
 class idSaveLoadParms;
@@ -434,12 +434,7 @@ public:
 		OPTION_ALL						= 0xFFFFFFFF
 	};
 
-	idSession() :
-		signInManager( NULL ),
-		saveGameManager( NULL ),
-		achievementSystem( NULL ),
-		dedicatedServerSearch( NULL ) { }
-	virtual 		~idSession();
+	virtual				~idSession() {}
 
 	virtual void			Initialize() = 0;
 	virtual void			Shutdown() = 0;
@@ -530,20 +525,11 @@ public:
 
 	virtual void			DropClient( int peerNum, int lobbyType ) = 0;
 
-	virtual void			JoinAfterSwap( void* joinID ) = 0;
 
 	//=====================================================================================================
 	//	Downloadable Content
 	//=====================================================================================================
-	virtual void			EnumerateDownloadableContent() = 0;
-	virtual int				GetNumContentPackages() const = 0;
-	virtual int				GetContentPackageID( int contentIndex ) const = 0;
-	virtual const char* 	GetContentPackagePath( int contentIndex ) const = 0;
-	virtual int				GetContentPackageIndexForID( int contentID ) const = 0;
 
-	virtual void			ShowSystemMarketplaceUI() const = 0;
-	virtual bool			GetSystemMarketplaceHasNewContent() const = 0;
-	virtual void			SetSystemMarketplaceHasNewContent( bool hasNewContent ) = 0;
 
 	//=====================================================================================================
 	// Title Storage Vars
@@ -553,29 +539,10 @@ public:
 	virtual bool			GetTitleStorageBool( const char* name, bool defaultBool ) const = 0;
 	virtual const char* 	GetTitleStorageString( const char* name, const char* defaultString ) const = 0;
 
-	virtual bool			GetTitleStorageFloat( const char* name, float defaultFloat, float& out ) const
-	{
-		out = defaultFloat;
-		return false;
-	}
-	virtual bool			GetTitleStorageInt( const char* name, int defaultInt, int& out ) const
-	{
-		out = defaultInt;
-		return false;
-	}
-	virtual bool			GetTitleStorageBool( const char* name, bool defaultBool, bool& out ) const
-	{
-		out = defaultBool;
-		return false;
-	}
-	virtual bool			GetTitleStorageString( const char* name, const char* defaultString, const char** out ) const
-	{
-		if( out != NULL )
-		{
-			*out = defaultString;
-		}
-		return false;
-	}
+	virtual bool			GetTitleStorageFloat( const char* name, float defaultFloat, float& out ) const = 0;
+	virtual bool			GetTitleStorageInt( const char* name, int defaultInt, int& out ) const = 0;
+	virtual bool			GetTitleStorageBool( const char* name, bool defaultBool, bool& out ) const = 0;
+	virtual bool			GetTitleStorageString( const char* name, const char* defaultString, const char** out ) const = 0;
 
 	virtual bool			IsTitleStorageLoaded() = 0;
 
@@ -593,7 +560,6 @@ public:
 	//=====================================================================================================
 	// Scoring (currently just for TrueSkill)
 	//=====================================================================================================
-	virtual void			SetLobbyUserRelativeScore( lobbyUserID_t lobbyUserID, int relativeScore, int team ) = 0;
 
 
 	//=====================================================================================================
@@ -627,8 +593,6 @@ public:
 	virtual const char* 			GetCurrentSaveSlot() const = 0;
 
 	// Error checking
-	virtual bool					IsDLCAvailable( const char* mapName ) = 0;
-	virtual bool					LoadGameCheckDiscNumber( idSaveLoadParms& parms ) = 0;
 
 	//=====================================================================================================
 	//	GamerCard UI
@@ -637,36 +601,20 @@ public:
 	virtual void				ShowLobbyUserGamerCardUI( lobbyUserID_t lobbyUserID ) = 0;
 
 	//=====================================================================================================
-	virtual void				UpdateRichPresence() = 0;
 
 	virtual void				SendUsercmds( idBitMsg& msg ) = 0;
 	virtual void				SendSnapshot( class idSnapShot& ss ) = 0;
 
-	virtual int					GetInputRouting( int inputRouting[ MAX_INPUT_DEVICES ] );
+	virtual int					GetInputRouting( int inputRouting[ MAX_INPUT_DEVICES ] ) = 0;
 
 	virtual void				UpdateSignInManager() = 0;
 
-	idSignInManagerBase& 		GetSignInManager()
-	{
-		return *signInManager;
-	}
-	idSaveGameManager& 			GetSaveGameManager()
-	{
-		return *saveGameManager;
-	}
-	idAchievementSystem& 		GetAchievementSystem()
-	{
-		return *achievementSystem;
-	}
+	virtual idSignInManager& 		GetSignInManager() = 0;
+	virtual idSaveGameManager& 		GetSaveGameManager() = 0;
+	virtual idAchievementSystem& 	GetAchievementSystem() = 0;
 
-	bool						HasSignInManager() const
-	{
-		return ( signInManager != NULL );
-	}
-	bool						HasAchievementSystem() const
-	{
-		return ( achievementSystem != NULL );
-	}
+	virtual bool					HasSignInManager() const = 0;
+	virtual bool					HasAchievementSystem() const = 0;
 
 	virtual bool				IsSystemUIShowing() const = 0;
 	virtual void				SetSystemUIShowing( bool show ) = 0;
@@ -678,7 +626,6 @@ public:
 	virtual voiceStateDisplay_t	GetDisplayStateFromVoiceState( voiceState_t voiceState ) const = 0;
 	virtual void				ToggleLobbyUserVoiceMute( lobbyUserID_t lobbyUserID ) = 0;
 	virtual void				SetActiveChatGroup( int groupIndex ) = 0;
-	virtual void				CheckVoicePrivileges() = 0;
 	virtual void				SetVoiceGroupsToTeams() = 0;
 	virtual void				ClearVoiceGroups() = 0;
 
@@ -693,13 +640,6 @@ public:
 	// Invites
 	//=====================================================================================================
 	virtual void				HandleBootableInvite( int64 lobbyId = 0 ) = 0;
-	virtual void				HandleExitspawnInvite( const lobbyConnectInfo_t& connectInfo ) {}
-	virtual void				ClearBootableInvite() = 0;
-	virtual void				ClearPendingInvite() = 0;
-	virtual bool				HasPendingBootableInvite() = 0;
-	virtual void				SetDiscSwapMPInvite( void* parm ) = 0;
-	virtual void* 				GetDiscSwapMPInviteParms() = 0;
-	virtual bool				IsDiscSwapMPInviteRequested() const = 0;
 
 	//=====================================================================================================
 	// Notifications
@@ -714,28 +654,7 @@ public:
 
 	// After a local user has signed in and their profile has loaded
 	virtual void				OnLocalUserProfileLoaded( idLocalUser* user ) = 0;
-
-protected:
-	idSignInManagerBase*			signInManager;			// pointer so we can treat dynamically bind platform-specific impl
-	idSaveGameManager* 			saveGameManager;
-	idAchievementSystem* 		achievementSystem;		// pointer so we can treat dynamically bind platform-specific impl
-	idDedicatedServerSearch* 	dedicatedServerSearch;
 };
-
-/*
-========================
-idSession::idGetInputRouting
-========================
-*/
-ID_INLINE int idSession::GetInputRouting( int inputRouting[ MAX_INPUT_DEVICES ] )
-{
-	for( int i = 0; i < MAX_INPUT_DEVICES; i++ )
-	{
-		inputRouting[ i ] = -1;
-	}
-	inputRouting[0] = 0;
-	return 1;
-}
 
 extern idSession* session;
 

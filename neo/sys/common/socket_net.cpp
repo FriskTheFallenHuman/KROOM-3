@@ -161,7 +161,8 @@ net_interface	netint[MAX_INTERFACES];
 NET_ErrorCode
 ========================
 */
-int NET_ErrorCode() {
+int NET_ErrorCode()
+{
 #ifndef _WIN32
 	return errno;
 #else // _WIN32

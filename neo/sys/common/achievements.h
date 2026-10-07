@@ -25,26 +25,34 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
-#ifndef __WIN_ACHIEVEMENTS_H__
-#define __WIN_ACHIEVEMENTS_H__
+#ifndef __SYS_ACHIEVEMENTS_LOCAL_H__
+#define __SYS_ACHIEVEMENTS_LOCAL_H__
 
 /*
 ================================================
-idAchievementSystemWin
+idAchievementSystemLocal
 ================================================
 */
-class idAchievementSystemWin : public idAchievementSystem
+class idAchievementSystemLocal final : public idAchievementSystem
 {
 public:
-	idAchievementSystemWin();
+	idAchievementSystemLocal() = default;
 
-	bool	IsInitialized();
-	void	AchievementUnlock( idLocalUser* user, const int achievementID );
-	void	AchievementLock( idLocalUser* user, const int achievementID );
-	void	AchievementLockAll( idLocalUser* user, const int maxId );
-	void	Pump();
-	bool	GetAchievementDescription( idLocalUser* user, const int id, achievementDescription_t& data ) const;
-	bool	GetAchievementState( idLocalUser* user, idArray< bool, idAchievementSystem::MAX_ACHIEVEMENTS >& achievements ) const;
+	void	Init() override {}
+	void	Shutdown() override {}
+	bool	IsInitialized() const override;
+	void	Pump() override;
+
+	void	RegisterLocalUser( idLocalUser* user ) override {}
+	void	RemoveLocalUser( idLocalUser* user ) override {}
+
+	void	AchievementUnlock( idLocalUser* user, const int achievementID ) override;
+	void	AchievementLock( idLocalUser* user, const int achievementID ) override;
+	void	AchievementLockAll( idLocalUser* user, const int maxId ) override;
+
+	bool	GetAchievementDescription( idLocalUser* user, const int id, achievementDescription_t& data ) const override;
+	bool	GetAchievementState( idLocalUser* user, idArray< bool, idAchievementSystem::MAX_ACHIEVEMENTS >& achievements ) const override;
+	bool	SetAchievementState( idLocalUser* user, idArray< bool, idAchievementSystem::MAX_ACHIEVEMENTS >& achievements ) override;
 };
 
-#endif // __WIN_ACHIEVEMENTS_H__
+#endif // __SYS_ACHIEVEMENTS_LOCAL_H__

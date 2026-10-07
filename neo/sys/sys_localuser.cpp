@@ -42,6 +42,11 @@ idLocalUser::idLocalUser()
 	syncAchievementsRequested = 0;
 }
 
+/*
+========================
+idLocalUser::Pump
+========================
+*/
 void idLocalUser::Pump()
 {
 	// Pump the profile
@@ -60,9 +65,6 @@ void idLocalUser::Pump()
 		}
 		session->GetAchievementSystem().Pump();
 	}
-
-	// Extra platform pump if necessary
-	PumpPlatform();
 }
 
 /*
@@ -73,15 +75,6 @@ idLocalUser::IsStorageDeviceAvailable
 bool idLocalUser::IsStorageDeviceAvailable() const
 {
 	return saveGame_enable.GetBool();
-}
-
-/*
-========================
-idLocalUser::ResetStorageDevice
-========================
-*/
-void idLocalUser::ResetStorageDevice()
-{
 }
 
 /*

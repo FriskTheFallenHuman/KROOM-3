@@ -33,35 +33,21 @@ extern idCVar fs_savepath;
 
 /*
 ========================
-idSignInManagerBase::ProcessInputEvent
+idSignInManager::ProcessInputEvent
 ========================
 */
-bool idSignInManagerBase::ProcessInputEvent( const sysEvent_t* ev )
+bool idSignInManager::ProcessInputEvent( const sysEvent_t* ev )
 {
-	// If we could use more local users, poll for them
-	if( GetNumLocalUsers() < maxDesiredLocalUsers && !IsAnyDeviceBeingRegistered() )
-	{
-		if( ev->IsKeyDown() )
-		{
-			if( ev->GetKey() == K_JOY1 || ev->GetKey() == K_JOY9 || ev->GetKey() == K_ENTER || ev->GetKey() == K_KP_ENTER )
-			{
-
-
-				// Register a local user so they can use this input device only done for demos press start screen
-				// otherwise the user is registered when selecting which game to play.
-			}
-		}
-	}
-
+	// Users are registered explicitly, never from raw inputs
 	return false;
 }
 
 /*
 ========================
-idSignInManagerBase::GetDefaultProfile
+idSignInManager::GetDefaultProfile
 ========================
 */
-idPlayerProfile* idSignInManagerBase::GetDefaultProfile()
+idPlayerProfile* idSignInManager::GetDefaultProfile()
 {
 	if( defaultProfile == NULL )
 	{
@@ -73,10 +59,10 @@ idPlayerProfile* idSignInManagerBase::GetDefaultProfile()
 
 /*
 ========================
-idSignInManagerBase::GetLocalUserByInputDevice
+idSignInManager::GetLocalUserByInputDevice
 ========================
 */
-idLocalUser* idSignInManagerBase::GetLocalUserByInputDevice( int index )
+idLocalUser* idSignInManager::GetLocalUserByInputDevice( int index )
 {
 	for( int i = 0; i < GetNumLocalUsers(); i++ )
 	{
@@ -91,10 +77,10 @@ idLocalUser* idSignInManagerBase::GetLocalUserByInputDevice( int index )
 
 /*
 ========================
-idSignInManagerBase::GetLocalUserByHandle
+idSignInManager::GetLocalUserByHandle
 ========================
 */
-idLocalUser* idSignInManagerBase::GetLocalUserByHandle( localUserHandle_t handle )
+idLocalUser* idSignInManager::GetLocalUserByHandle( localUserHandle_t handle )
 {
 	for( int i = 0; i < GetNumLocalUsers(); i++ )
 	{
@@ -109,10 +95,10 @@ idLocalUser* idSignInManagerBase::GetLocalUserByHandle( localUserHandle_t handle
 
 /*
 ========================
-idSignInManagerBase::GetPlayerProfileByInputDevice
+idSignInManager::GetPlayerProfileByInputDevice
 ========================
 */
-idPlayerProfile* idSignInManagerBase::GetPlayerProfileByInputDevice( int index )
+idPlayerProfile* idSignInManager::GetPlayerProfileByInputDevice( int index )
 {
 	idLocalUser* user = session->GetSignInManager().GetLocalUserByInputDevice( index );
 	idPlayerProfile* profile = NULL;
@@ -125,10 +111,10 @@ idPlayerProfile* idSignInManagerBase::GetPlayerProfileByInputDevice( int index )
 
 /*
 ========================
-idSignInManagerBase::RemoveLocalUserByInputDevice
+idSignInManager::RemoveLocalUserByInputDevice
 ========================
 */
-bool idSignInManagerBase::RemoveLocalUserByInputDevice( int index )
+bool idSignInManager::RemoveLocalUserByInputDevice( int index )
 {
 	for( int i = 0; i < GetNumLocalUsers(); i++ )
 	{
@@ -144,10 +130,10 @@ bool idSignInManagerBase::RemoveLocalUserByInputDevice( int index )
 
 /*
 ========================
-idSignInManagerBase::RemoveLocalUserByHandle
+idSignInManager::RemoveLocalUserByHandle
 ========================
 */
-bool idSignInManagerBase::RemoveLocalUserByHandle( localUserHandle_t handle )
+bool idSignInManager::RemoveLocalUserByHandle( localUserHandle_t handle )
 {
 	for( int i = 0; i < GetNumLocalUsers(); i++ )
 	{
@@ -163,10 +149,10 @@ bool idSignInManagerBase::RemoveLocalUserByHandle( localUserHandle_t handle )
 
 /*
 ========================
-idSignInManagerBase::SaveUserProfiles
+idSignInManager::SaveUserProfiles
 ========================
 */
-void idSignInManagerBase::SaveUserProfiles()
+void idSignInManager::SaveUserProfiles()
 {
 	for( int i = 0; i < GetNumLocalUsers(); i++ )
 	{
@@ -184,10 +170,10 @@ void idSignInManagerBase::SaveUserProfiles()
 
 /*
 ========================
-idSignInManagerBase::RemoveAllLocalUsers
+idSignInManager::RemoveAllLocalUsers
 ========================
 */
-void idSignInManagerBase::RemoveAllLocalUsers()
+void idSignInManager::RemoveAllLocalUsers()
 {
 	while( GetNumLocalUsers() > 0 )
 	{
@@ -197,10 +183,10 @@ void idSignInManagerBase::RemoveAllLocalUsers()
 
 /*
 ========================
-idSignInManagerBase::ValidateLocalUsers
+idSignInManager::ValidateLocalUsers
 ========================
 */
-void idSignInManagerBase::ValidateLocalUsers( bool requireOnline )
+void idSignInManager::ValidateLocalUsers( bool requireOnline )
 {
 	if( !RequirePersistentMaster() )
 	{
@@ -222,10 +208,10 @@ void idSignInManagerBase::ValidateLocalUsers( bool requireOnline )
 
 /*
 ========================
-idSignInManagerBase::RequirePersistentMaster
+idSignInManager::RequirePersistentMaster
 ========================
 */
-bool idSignInManagerBase::RequirePersistentMaster()
+bool idSignInManager::RequirePersistentMaster()
 {
 #ifdef ID_RETAIL
 	return true;		// ALWAYS require persistent master on retail builds
@@ -245,11 +231,11 @@ bool idSignInManagerBase::RequirePersistentMaster()
 
 /*
 ========================
-idSignInManagerBase::GetUniqueLocalUserHandle
+idSignInManager::GetUniqueLocalUserHandle
 Uniquely generate a handle based on name and time
 ========================
 */
-localUserHandle_t idSignInManagerBase::GetUniqueLocalUserHandle( const char* name )
+localUserHandle_t idSignInManager::GetUniqueLocalUserHandle( const char* name )
 {
 	MD5_CTX			ctx;
 	unsigned char	digest[16];

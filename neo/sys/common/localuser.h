@@ -25,79 +25,47 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
-#ifndef __WIN_LOCALUSER_H__
-#define __WIN_LOCALUSER_H__
-
-// This is to quickly get/set the data needed for disc-swapping
-typedef struct
-{
-	int					inputDevice;
-} winUserState_t;
+#ifndef __SYS_LOCALUSER_LOCAL_H__
+#define __SYS_LOCALUSER_LOCAL_H__
 
 /*
 ================================================
-idLocalUserWin
+idLocalUserLocal
 ================================================
 */
-class idLocalUserWin : public idLocalUser
+class idLocalUserLocal final : public idLocalUser
 {
 public:
 	static const int MAX_GAMERTAG = 64;			// max number of bytes for a gamertag
 	static const int MAX_GAMERTAG_CHARS = 16;	// max number of UTF-8 characters to show
 
-	idLocalUserWin() : inputDevice( 0 ) {}
-
-	idLocalUserWin& operator=( idLocalUserWin&& other )
-	{
-		gamertag = std::move( other.gamertag );
-		inputDevice = other.inputDevice;
-		return *this;
-	}
+	idLocalUserLocal() : inputDevice( 0 ) {}
 
 	//==========================================================================================
 	// idLocalUser interface
 	//==========================================================================================
-	virtual bool				IsProfileReady() const;
-	virtual bool				IsOnline() const;
-	virtual bool				IsInParty() const;
-	virtual int					GetPartyCount() const;
-	virtual uint32				GetOnlineCaps() const
+	bool			IsProfileReady() const override;
+	bool			IsOnline() const override;
+	bool			IsInParty() const override;
+	int				GetPartyCount() const override;
+	uint32			GetOnlineCaps() const override
 	{
 		return ( IsPersistent() && IsOnline() ) ? ( CAP_IS_ONLINE | CAP_CAN_PLAY_ONLINE ) : 0;
 	}
-	virtual int					GetInputDevice() const
+	int				GetInputDevice() const override
 	{
 		return inputDevice;
 	}
-	virtual const char* 		GetGamerTag() const
+	const char* 	GetGamerTag() const override
 	{
 		return gamertag.c_str();
 	}
-	virtual void				PumpPlatform() {}
 
-	//==========================================================================================
-	// idLocalUserWin interface
-	//==========================================================================================
-	void						SetInputDevice( int inputDevice_ )
-	{
-		inputDevice = inputDevice_;
-	}
-	void						SetGamerTag( const char* gamerTag_ )
-	{
-		gamertag = gamerTag_;
-	}
-	winUserState_t				GetUserState()
-	{
-		winUserState_t a = { inputDevice };
-		return a;
-	}
-	bool						VerifyUserState( winUserState_t& state );
-
-	void						Init( int inputDevice_, const char* gamertag_, int numLocalUsers );
+	void			Init( int inputDevice_, const char* gamertag_, int numLocalUsers );
 
 private:
 	idStrStatic< MAX_GAMERTAG >	gamertag;
 	int							inputDevice;
 };
 
-#endif // __WIN_LOCALUSER_H__
+#endif // __SYS_LOCALUSER_LOCAL_H__

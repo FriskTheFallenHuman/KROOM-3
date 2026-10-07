@@ -30,51 +30,33 @@ If you have questions concerning this license or the applicable additional terms
 
 /*
 ================================================
-idSignInManagerBase
+idSignInManager
 ================================================
 */
-class idSignInManagerBase
+class idSignInManager
 {
 public:
 
-	idSignInManagerBase() :
+	idSignInManager() :
 		minDesiredLocalUsers( 0 ),
 		maxDesiredLocalUsers( 0 ),
 		defaultProfile( NULL ) {}
-	virtual							~idSignInManagerBase() {}
+	virtual							~idSignInManager() {}
 
+	//================================================================================
+	// Backend interface
+	//================================================================================
 	virtual void					Pump() = 0;
-	virtual int					GetNumLocalUsers() const = 0;
+	virtual void					Shutdown() = 0;
+	virtual int						GetNumLocalUsers() const = 0;
 	virtual idLocalUser* 			GetLocalUserByIndex( int index ) = 0;
-	virtual const idLocalUser* 	GetLocalUserByIndex( int index ) const = 0;
+	virtual const idLocalUser* 		GetLocalUserByIndex( int index ) const = 0;
 	virtual void					RemoveLocalUserByIndex( int index ) = 0;
-	virtual void					RegisterLocalUser( int inputDevice ) = 0;								// Register a local controller user to the passed in input device
-	virtual idLocalUser* 			GetRegisteringUser()
-	{
-		return NULL;    // This is a user that has started the registration process but is not yet a local user.
-	}
-	virtual idLocalUser* 			GetRegisteringUserByInputDevice( int inputDevice )
-	{
-		return NULL;
-	}
-	virtual void					SignIn() {}
-	virtual bool					IsDeviceBeingRegistered( int intputDevice )
-	{
-		return false;
-	}
-	virtual bool					IsAnyDeviceBeingRegistered()
-	{
-		return false;
-	}
-	virtual void					Shutdown() {}
-
-	// Outputs all the local users and other debugging information from the sign in manager
-	virtual void					DebugOutputLocalUserInfo() {}
+	virtual void					RegisterLocalUser( int inputDevice ) = 0;		// Register a local controller user to the passed in input device
 
 	//================================================================================
-	// Common helper functions
+	// Shared implementation
 	//================================================================================
-
 	void 					SetDesiredLocalUsers( int minDesiredLocalUsers, int maxDesiredLocalUsers )
 	{
 		this->minDesiredLocalUsers = minDesiredLocalUsers;

@@ -44,14 +44,28 @@ public:
 
 	void InitFromIPandPort( const char* ip, int port );
 
+	// Address a peer by platform identity instead of.
+	// netAddr is left invalid, a transport that sends to these must resolve the id itself.
+	void InitFromStoreFrontId( uint64 id );
+
 	const char* ToString() const;
+
+	// Returns true if this address is a platform identity instead of an IP address.
+	bool IsUsingStoreFront() const
+	{
+		return platformId != 0;
+	}
+
 	bool UsingRelay() const;
 	bool Compare( const lobbyAddress_t& addr, bool ignoreSessionCheck = false ) const;
 	void WriteToMsg( idBitMsg& msg ) const;
 	void ReadFromMsg( idBitMsg& msg );
 
-	// IP address
+	// IP address, only valid when IsPlatform() is false
 	netadr_t	netAddr;
+
+	// Platform identity, 0 when the peer is addressed by netAddr
+	uint64		platformId;
 };
 
 struct lobbyConnectInfo_t
@@ -60,14 +74,17 @@ public:
 	void WriteToMsg( idBitMsg& msg ) const
 	{
 		msg.WriteNetadr( netAddr );
+		msg.WriteLongLong( ( int64 )platformLobbyId );
 	}
 	void ReadFromMsg( idBitMsg& msg )
 	{
 		msg.ReadNetadr( &netAddr );
+		platformLobbyId = ( uint64 )msg.ReadLongLong();
 	}
-	lobbyConnectInfo_t() : netAddr() { }
+	lobbyConnectInfo_t() : netAddr(), platformLobbyId( 0 ) { }
 
 	netadr_t				netAddr;
+	uint64					platformLobbyId;		// platform lobby id, 0 for a direct IP connection
 };
 
 class idNetSessionPort
@@ -111,6 +128,8 @@ struct lobbyUser_t
 		weaponAutoReload	= true;
 
 		migrationGameData	= -1;
+
+		platformId			= 0;
 	}
 
 	// Common variables
@@ -136,6 +155,9 @@ struct lobbyUser_t
 	int					migrationGameData;	// index into the local migration gamedata array that is associated with this user. -1=no migration game data available
 
 	// Platform variables
+	// Account id of the user, 0 if the user has no platform account.
+	// Not the same as address.platformId: that names the machine, split screen users share it.
+	uint64				platformId;
 
 	bool IsDisconnected() const
 	{
@@ -149,6 +171,7 @@ struct lobbyUser_t
 		msg.WriteLong( peerIndex );
 		msg.WriteShort( pingMs );
 		msg.WriteLong( partyToken );
+		msg.WriteLongLong( ( int64 )platformId );
 		msg.WriteString( gamertag, MAX_GAMERTAG, false );
 		WriteClientMutableData( msg );
 	}
@@ -160,6 +183,7 @@ struct lobbyUser_t
 		peerIndex = msg.ReadLong();
 		pingMs = msg.ReadShort();
 		partyToken = msg.ReadLong();
+		platformId = ( uint64 )msg.ReadLongLong();
 		msg.ReadString( gamertag, MAX_GAMERTAG );
 		ReadClientMutableData( msg );
 	}
@@ -329,6 +353,7 @@ protected:
 class idLobbyToSessionCB
 {
 public:
+	virtual										~idLobbyToSessionCB() {}
 	virtual class idLobbyBackend* 				GetLobbyBackend( idLobbyBackend::lobbyBackendType_t type ) const = 0;
 	virtual bool								CanJoinLocalHost() const = 0;
 

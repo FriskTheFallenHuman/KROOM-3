@@ -25,48 +25,47 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
-#ifndef __POSIX_SIGNIN_H__
-#define __POSIX_SIGNIN_H__
+#ifndef __SYS_SIGNIN_LOCAL_H__
+#define __SYS_SIGNIN_LOCAL_H__
 
 #include "localuser.h"
 
 /*
 ================================================
-idSignInManagerWin
+idSignInManagerLocal
 ================================================
 */
-class idSignInManagerWin : public idSignInManagerBase
+class idSignInManagerLocal final : public idSignInManager
 {
 public:
+	idSignInManagerLocal() = default;
+	~idSignInManagerLocal() override;
 
-	idSignInManagerWin() : dlcVersionChecked( false ) {}
-	virtual ~idSignInManagerWin() {}
+	idSignInManagerLocal( const idSignInManagerLocal& ) = delete;
+	idSignInManagerLocal& operator=( const idSignInManagerLocal& ) = delete;
 
 	//==========================================================================================
-	// idSignInManagerBase interface
+	// idSignInManager interface
 	//==========================================================================================
-	virtual void					Pump();
-	virtual void					Shutdown();
-	virtual int						GetNumLocalUsers() const
+	void					Pump() override;
+	void					Shutdown() override;
+	int						GetNumLocalUsers() const override
 	{
 		return localUsers.Num();
 	}
-	virtual idLocalUser* 			GetLocalUserByIndex( int index )
+	idLocalUser* 			GetLocalUserByIndex( int index ) override
 	{
-		return &localUsers[index];
+		return localUsers[index];
 	}
-	virtual const idLocalUser* 		GetLocalUserByIndex( int index ) const
+	const idLocalUser* 		GetLocalUserByIndex( int index ) const override
 	{
-		return &localUsers[index];
+		return localUsers[index];
 	}
-	virtual void					RemoveLocalUserByIndex( int index );
-	virtual void					RegisterLocalUser( int inputDevice );		// Register a local user to the passed in controller
-
-	bool							CreateNewUser( winUserState_t& state );
+	void					RemoveLocalUserByIndex( int index ) override;
+	void					RegisterLocalUser( int inputDevice ) override;		// Register a local user to the passed in controller
 
 private:
-	idStaticList< idLocalUserWin, MAX_INPUT_DEVICES >	localUsers;
-	bool												dlcVersionChecked;
+	idStaticList< idLocalUserLocal*, MAX_INPUT_DEVICES >	localUsers;		// heap allocated so a user keeps its identity when others are removed
 };
 
-#endif
+#endif // __SYS_SIGNIN_LOCAL_H__
