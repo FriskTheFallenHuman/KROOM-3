@@ -39,11 +39,6 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
-// default scripts
-#define SCRIPT_DEFAULTDEFS			"script/doom_defs.script"
-#define SCRIPT_DEFAULT				"script/doom_main.script"
-#define SCRIPT_DEFAULTFUNC			"doom_main"
-
 struct gameReturn_t
 {
 
@@ -62,9 +57,6 @@ struct gameReturn_t
 	int			vibrationLow;
 	int			vibrationHigh;
 };
-
-#define TIME_GROUP1		0
-#define TIME_GROUP2		1
 
 class idGame
 {

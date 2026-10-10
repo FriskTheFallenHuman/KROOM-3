@@ -33,6 +33,13 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "Game_local.h"
 
+const int NUM_RENDER_PORTAL_BITS	= idMath::BitsForInteger( PS_BLOCK_ALL );
+
+const float DEFAULT_GRAVITY			= 1066.0f;
+const idVec3 DEFAULT_GRAVITY_VEC3( 0, 0, -DEFAULT_GRAVITY );
+
+const int	CINEMATIC_SKIP_DELAY	= SEC2MS( 2.0f );
+
 #ifdef GAME_DLL
 
 	idSys* 						sys = NULL;
@@ -317,7 +324,7 @@ void idGameLocal::Init()
 
 	Printf( "--------- Initializing Game ----------\n" );
 	Printf( "gamename: %s\n", GAME_VERSION );
-	Printf( "gamedate: %s\n", __DATE__ );
+	Printf( "gamedate: %s\n", ID__DATE__ );
 
 	// register game specific decl types
 	declManager->RegisterDeclType( "model",				DECL_MODELDEF,		idDeclAllocator<idDeclModelDef> );

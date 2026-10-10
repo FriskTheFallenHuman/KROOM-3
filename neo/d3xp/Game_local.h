@@ -39,6 +39,8 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
+#include "GameBase.h"
+
 #ifdef ID_DEBUG_UNINITIALIZED_MEMORY
 	// This is real evil but allows the code to inspect arbitrary class variables.
 	#define private		public
@@ -47,9 +49,6 @@ If you have questions concerning this license or the applicable additional terms
 
 extern idRenderWorld* 				gameRenderWorld;
 extern idSoundWorld* 				gameSoundWorld;
-
-// the "gameversion" client command will print this plus compile date
-#define	GAME_VERSION		"baseDOOM-1"
 
 // classes used by idGameLocal
 class idEntity;
@@ -69,18 +68,6 @@ class idEditEntities;
 class idLocationEntity;
 class idMenuHandler_Shell;
 class idEnvProbes; // RB
-
-const int MAX_CLIENTS			= MAX_PLAYERS;
-const int MAX_CLIENTS_IN_PVS	= MAX_CLIENTS >> 3;
-const int GENTITYNUM_BITS		= 12;
-const int MAX_GENTITIES			= 1 << GENTITYNUM_BITS;
-const int ENTITYNUM_NONE		= MAX_GENTITIES - 1;
-const int ENTITYNUM_WORLD		= MAX_GENTITIES - 2;
-const int ENTITYNUM_MAX_NORMAL	= MAX_GENTITIES - 2;
-const int ENTITYNUM_FIRST_NON_REPLICATED	= ENTITYNUM_MAX_NORMAL - 256;
-
-const float MIN_FOV				= 50.0f;
-const float MAX_FOV				= 120.0f;
 
 //============================================================================
 
@@ -117,10 +104,7 @@ class idWeapon;
 
 //============================================================================
 
-const int MAX_GAME_MESSAGE_SIZE		= 8192;
-const int MAX_ENTITY_STATE_SIZE		= 512;
-const int ENTITY_PVS_SIZE			= ( ( MAX_GENTITIES + 31 ) >> 5 );
-const int NUM_RENDER_PORTAL_BITS	= idMath::BitsForInteger( PS_BLOCK_ALL );
+extern const int NUM_RENDER_PORTAL_BITS;
 
 const int MAX_EVENT_PARAM_SIZE		= 128;
 
@@ -871,22 +855,10 @@ typedef enum
 	SND_CHANNEL_DAMAGE
 } gameSoundChannel_t;
 
-// content masks
-#define	MASK_ALL					(-1)
-#define	MASK_SOLID					(CONTENTS_SOLID)
-#define	MASK_MONSTERSOLID			(CONTENTS_SOLID|CONTENTS_MONSTERCLIP|CONTENTS_BODY)
-#define	MASK_PLAYERSOLID			(CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BODY)
-#define	MASK_DEADSOLID				(CONTENTS_SOLID|CONTENTS_PLAYERCLIP)
-#define	MASK_WATER					(CONTENTS_WATER)
-#define	MASK_OPAQUE					(CONTENTS_OPAQUE)
-#define	MASK_SHOT_RENDERMODEL		(CONTENTS_SOLID|CONTENTS_RENDERMODEL)
-#define	MASK_SHOT_BOUNDINGBOX		(CONTENTS_SOLID|CONTENTS_BODY)
+extern const float	DEFAULT_GRAVITY;
+extern const idVec3	DEFAULT_GRAVITY_VEC3;
 
-const float DEFAULT_GRAVITY			= 1066.0f;
-#define DEFAULT_GRAVITY_STRING		"1066"
-const idVec3 DEFAULT_GRAVITY_VEC3( 0, 0, -DEFAULT_GRAVITY );
-
-const int	CINEMATIC_SKIP_DELAY	= SEC2MS( 2.0f );
+extern const int	CINEMATIC_SKIP_DELAY;
 
 //============================================================================
 
