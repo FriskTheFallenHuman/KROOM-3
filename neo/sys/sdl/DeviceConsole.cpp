@@ -30,7 +30,7 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "DeviceConsole.h"
-#include "doom_ico.h"
+#include "game_icon.h"
 #include "../tools/common/ConsoleWidget.h"
 #include "../tools/common/ImageUtils.h"
 
@@ -50,7 +50,7 @@ ConsoleFrame::ConsoleFrame()
 	, m_errorText( NULL )
 	, m_quitOnClose( false )
 {
-	wxIcon appIcon = ImageUtils::IconFromEmbedded( doom_icon.pixel_data, doom_icon.width, doom_icon.height, doom_icon.bytes_per_pixel );
+	wxIcon appIcon = ImageUtils::IconFromEmbedded( game_icon.pixel_data, game_icon.width, game_icon.height, game_icon.bytes_per_pixel );
 	if( appIcon.IsOk() )
 	{
 		SetIcon( appIcon );
@@ -232,6 +232,36 @@ bool ConsoleFrame::DrainInput( idStr& out )
 
 /*
 =================
+ConsoleFrame::SetBranding
+
+Updates the wx window title and icon to match the currently selected mod.
+=================
+*/
+void ConsoleFrame::SetBranding( const char* title, const char* iconOSPath )
+{
+	if( title && title[0] )
+	{
+		SetTitle( wxString::FromUTF8( title ) );
+	}
+
+	if( iconOSPath && iconOSPath[0] )
+	{
+		wxImage img;
+		if( img.LoadFile( wxString::FromUTF8( iconOSPath ), wxBITMAP_TYPE_ANY ) && img.IsOk() )
+		{
+			wxIcon icon;
+			icon.CopyFromBitmap( wxBitmap( img ) );
+			SetIcon( icon );
+		}
+		else
+		{
+			wxLogDebug( "SetBranding: couldn't load icon '%s'", iconOSPath );
+		}
+	}
+}
+
+/*
+=================
 ConsoleFrame::OnClose
 =================
 */
@@ -376,6 +406,19 @@ Sys_ConsoleQuitRequested
 bool Sys_ConsoleQuitRequested()
 {
 	return s_quitRequested;
+}
+
+/*
+=================
+Sys_SetConsoleBranding
+=================
+*/
+void Sys_SetConsoleBranding( const char* title, const char* iconOSPath )
+{
+	if( s_console )
+	{
+		s_console->SetBranding( title, iconOSPath );
+	}
 }
 
 /*

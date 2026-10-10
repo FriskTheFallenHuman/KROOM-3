@@ -44,6 +44,8 @@ public:
 	void SetErrorText( const char* text );
 	bool DrainInput( idStr& out );
 
+	void SetBranding( const char* title, const char* iconOSPath );
+
 	ConsoleWidget* GetConsole()
 	{
 		return m_console;

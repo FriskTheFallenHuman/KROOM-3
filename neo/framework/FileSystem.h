@@ -58,7 +58,7 @@ typedef enum
 {
 	FS_READ			= 0,
 	FS_WRITE		= 1,
-	FS_APPEND	= 2
+	FS_APPEND		= 2
 } fsMode_t;
 
 typedef enum
@@ -94,6 +94,80 @@ private:
 	idStrList				list;
 };
 
+// mod type
+typedef enum
+{
+	MODTYPE_BOTH = 0,
+	MODTYPE_SINGLEPLAYER,
+	MODTYPE_MULTIPLAYER
+} modType_t;
+
+
+typedef struct idModLaunchOption_s
+{
+	idStr					option;	// a single launch option, e.g. "+set cvar value", "+map foo" or "+exec bar"
+
+	idModLaunchOption_s() {}
+	explicit idModLaunchOption_s( const char* s ) : option( s ) {}
+} idModLaunchOption_t;
+
+// per-mod metadata parsed from description.txt
+typedef struct idModInfo_s
+{
+	idStr	name;			// directory name
+	idStr	title;			// window/UI title
+	idStr	description;	// one-line summary shown in mod list
+
+	idStr	icon;			// relative to mod folder
+	idStr	url;
+	idStr	developer;
+	idStr	manual;			// relative to mod folder
+
+	modType_t	type;
+
+	idStr	fs_game;		// overrides fs_game, if empty guess from mod folder name
+	idStr	fs_game_base;	// e.g. "d3xp"; empty means nothing
+	bool	skipBase;		// if true, do NOT mount base/
+
+	idList< idModLaunchOption_t >	launchOptions;
+
+	idModInfo_s()
+		: type( MODTYPE_BOTH )
+		, skipBase( false )
+	{
+	}
+} idModInfo_t;
+
+// mod list
+class idModList
+{
+	friend class idFileSystemLocal;
+public:
+	int						GetNumMods( void ) const
+	{
+		return infos.Num();
+	}
+	const char* 			GetMod( int index ) const
+	{
+		return infos[index].name;
+	}
+	const char* 			GetTitle( int index ) const
+	{
+		return infos[index].title;
+	}
+	const char* 			GetDescription( int index ) const
+	{
+		return infos[index].description;
+	}
+	const idModInfo_t& 		GetInfo( int index ) const
+	{
+		return infos[index];
+	}
+
+private:
+	idList< idModInfo_t >	infos;
+};
+
 class idFileSystem
 {
 public:
@@ -106,6 +180,15 @@ public:
 	virtual void			Shutdown( bool reloading ) = 0;
 	// Returns true if the file system is initialized.
 	virtual bool			IsInitialized() const = 0;
+	// Returns a list of mods found along with descriptions
+	// 'mods' contains the directory names to be passed to fs_game
+	// 'descriptions' contains a free form string to be used in the UI
+	virtual idModList* 		ListMods() = 0;
+	// Frees the given mod list
+	virtual void			FreeModList( idModList* modList ) = 0;
+	// Reads <modname>/description.txt from fs_savepath then fs_basepath.
+	// Returns true if the manifest was found and parsed.
+	virtual bool			ReadModManifest( const char* modName, idModInfo_t& out ) = 0;
 	// Lists files with the given extension in the given directory.
 	// Directory should not have either a leading or trailing '/'
 	// The returned files will not include any directories or '/' unless fullRelativePath is set.

@@ -139,6 +139,9 @@ public:
 	virtual void			Restart();
 	virtual void			Shutdown( bool reloading );
 	virtual bool			IsInitialized() const;
+	virtual idModList* 		ListMods();
+	virtual void			FreeModList( idModList* modList );
+	virtual bool			ReadModManifest( const char* modName, idModInfo_t& out );
 	virtual idFileList* 	ListFiles( const char* relativePath, const char* extension, bool sort = false, bool fullRelativePath = false, const char* gamedir = NULL );
 	virtual idFileList* 	ListFilesTree( const char* relativePath, const char* extension, bool sort = false, const char* gamedir = NULL );
 	virtual void			FreeFileList( idFileList* fileList );
@@ -236,6 +239,7 @@ public:
 	static void				Dir_f( const idCmdArgs& args );
 	static void				DirTree_f( const idCmdArgs& args );
 	static void				Path_f( const idCmdArgs& args );
+	static void				ListMods_f( const idCmdArgs& args );
 	static void				TouchFile_f( const idCmdArgs& args );
 	static void				TouchFileList_f( const idCmdArgs& args );
 	static void				BuildGame_f( const idCmdArgs& args );
@@ -287,6 +291,8 @@ private:
 	int						ListOSFiles( const char* directory, const char* extension, idStrList& list );
 	idFileHandle			OpenOSFile( const char* name, fsMode_t mode );
 	bool					SavePathFallback( const char* path, const char* relativePath, idStr& OSPath );
+	char*					ReadOSFile( char* buffer, int maxCount, idFileHandle stream );
+	bool					ReadWholeOSFile( const char* path, idStr& out );
 	void					CloseOSFile( idFileHandle o );
 	int						DirectFileLength( idFileHandle o );
 	void					CopyFile( idFile* src, const char* toOSPath );
@@ -326,6 +332,7 @@ idCVar	fs_basepath( "fs_basepath", "", CVAR_SYSTEM | CVAR_INIT, "" );
 idCVar	fs_savepath( "fs_savepath", "", CVAR_SYSTEM | CVAR_INIT, "" );
 idCVar	fs_resourceLoadPriority( "fs_resourceLoadPriority", "0", CVAR_SYSTEM , "if 1, open requests will be honored from resource files first; if 0, the resource files are checked after normal search paths" );
 idCVar	fs_enableBackgroundCaching( "fs_enableBackgroundCaching", "1", CVAR_SYSTEM , "if 1 allow the 360 to precache game files in the background" );
+idCVar	fs_skipBase( "fs_skipBase", "0", CVAR_SYSTEM | CVAR_INIT | CVAR_BOOL, "do not mount the default folder" );
 
 idFileSystemLocal	fileSystemLocal;
 idFileSystem* 		fileSystem = &fileSystemLocal;
@@ -599,6 +606,79 @@ idFileHandle idFileSystemLocal::OpenOSFile( const char* fileName, fsMode_t mode 
 	// RB end
 
 	return fp;
+}
+
+/*
+================
+idFileSystemLocal::ReadOSFile
+================
+*/
+char* idFileSystemLocal::ReadOSFile( char* buffer, int maxCount, idFileHandle stream )
+{
+	if( buffer == NULL || maxCount <= 1 )
+	{
+		return NULL;
+	}
+
+#if defined(_WIN32)
+	DWORD bytesRead = 0;
+	int totalChars = 0;
+	char ch = 0;
+
+	while( totalChars < ( maxCount - 1 ) )
+	{
+		if( !::ReadFile( stream, &ch, 1, &bytesRead, NULL ) || bytesRead == 0 )
+		{
+			break;
+		}
+
+		buffer[totalChars++] = ch;
+
+		if( ch == '\n' )
+		{
+			break;
+		}
+	}
+
+	if( totalChars == 0 )
+	{
+		return NULL;
+	}
+
+	buffer[totalChars] = '\0';
+	return buffer;
+#else
+	return ::fgets( buffer, maxCount, ( FILE* )stream.o );
+#endif
+}
+
+/*
+================
+idFileSystemLocal::ReadWholeOSFile
+
+Reads an entire text file from disk into an idStr. Returns false on
+failure or if the file is empty.
+================
+*/
+bool idFileSystemLocal::ReadWholeOSFile( const char* path, idStr& out )
+{
+	idFileHandle fp = OpenOSFile( path, FS_READ );
+	if( !fp )
+	{
+		return false;
+	}
+
+	out.Clear();
+
+	char buf[ 4096 ];
+	while( ReadOSFile( buf, sizeof( buf ), fp ) != NULL )
+	{
+		out += buf;
+	}
+
+	CloseOSFile( fp );
+
+	return out.Length() > 0;
 }
 
 /*
@@ -2587,6 +2667,390 @@ void idFileSystemLocal::FreeFileList( idFileList* fileList )
 
 /*
 ===============
+idSort_ModInfo
+===============
+*/
+class idSort_ModInfo : public idSort_Quick< idModInfo_t, idSort_ModInfo >
+{
+public:
+	int Compare( const idModInfo_t& a, const idModInfo_t& b ) const
+	{
+		return a.name.Icmp( b.name );
+	}
+};
+
+/*
+===============
+ParseModFilesystemBlock
+===============
+*/
+static void ParseModFilesystemBlock( idParser& src, idModInfo_t& info )
+{
+	idToken token;
+
+	if( !src.ReadToken( &token ) || token != "{" )
+	{
+		return;
+	}
+
+	while( src.ReadToken( &token ) )
+	{
+		if( token == "}" )
+		{
+			break;
+		}
+
+		idStr key = token.c_str();
+		key.ToLower();
+
+		idToken val;
+		if( !src.ReadToken( &val ) )
+		{
+			break;
+		}
+
+		if( key == "game" )
+		{
+			info.fs_game_base = val.c_str();
+		}
+		else if( key == "mod" )
+		{
+			info.fs_game = val.c_str();
+		}
+		else if( key == "skipbase" )
+		{
+			info.skipBase = ( atoi( val.c_str() ) != 0 );
+		}
+	}
+}
+
+/*
+===============
+ParseModCommandLineBlock
+===============
+*/
+static void ParseModCommandLineBlock( idParser& src, idModInfo_t& info )
+{
+	idToken token;
+
+	if( !src.ReadToken( &token ) || token != "{" )
+	{
+		return;
+	}
+
+	while( src.ReadToken( &token ) )
+	{
+		if( token == "}" )
+		{
+			break;
+		}
+
+		info.launchOptions.Append( idModLaunchOption_t( token.c_str() ) );
+	}
+}
+
+/*
+===============
+ParseModDescription
+
+Parses a description.txt file.
+===============
+*/
+static bool ParseModDescription( const char* text, idModInfo_t& info )
+{
+	idParser src( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT );
+
+	src.LoadMemory( text, ( int )strlen( text ), "description.txt" );
+	if( !src.IsLoaded() )
+	{
+		return false;
+	}
+
+	idToken token;
+
+	if( !src.ReadToken( &token ) )
+	{
+		return false;
+	}
+	info.name = token.c_str();
+
+	if( !src.ReadToken( &token ) || token != "{" )
+	{
+		return false;
+	}
+
+	while( src.ReadToken( &token ) )
+	{
+		if( token == "}" )
+		{
+			break;
+		}
+
+		idStr key = token.c_str();
+		key.ToLower();
+
+		if( key == "filesystem" )
+		{
+			ParseModFilesystemBlock( src, info );
+			continue;
+		}
+		if( key == "commandline" )
+		{
+			ParseModCommandLineBlock( src, info );
+			continue;
+		}
+
+		idToken val;
+		if( !src.ReadToken( &val ) )
+		{
+			break;
+		}
+
+		if( key == "title" )
+		{
+			info.title = val.c_str();
+		}
+		else if( key == "description" )
+		{
+			info.description = val.c_str();
+		}
+		else if( key == "type" )
+		{
+			idStr t = val.c_str();
+			t.ToLower();
+			if( t == "singleplayer_only" )
+			{
+				info.type = MODTYPE_SINGLEPLAYER;
+			}
+			else if( t == "multiplayer_only" )
+			{
+				info.type = MODTYPE_MULTIPLAYER;
+			}
+			else
+			{
+				info.type = MODTYPE_BOTH;
+			}
+		}
+		else if( key == "icon" )
+		{
+			info.icon = val.c_str();
+		}
+		else if( key == "url" )
+		{
+			info.url = val.c_str();
+		}
+		else if( key == "developer" )
+		{
+			info.developer = val.c_str();
+		}
+		else if( key == "manual" )
+		{
+			info.manual = val.c_str();
+		}
+	}
+
+	// defaults for optional fields
+	if( info.title.IsEmpty() )
+	{
+		info.title = info.name;
+	}
+	if( info.description.IsEmpty() )
+	{
+		info.description = info.title;
+	}
+	if( info.fs_game.IsEmpty() )
+	{
+		info.fs_game = info.name;
+	}
+
+	return true;
+}
+
+/*
+===============
+ModListHasName
+===============
+*/
+static bool ModListHasName( const idList< idModInfo_t >& list, const idStr& name )
+{
+	for( int i = 0; i < list.Num(); ++i )
+	{
+		if( list[i].name.Icmp( name ) == 0 )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+/*
+===============
+idFileSystemLocal::ListMods
+===============
+*/
+idModList* idFileSystemLocal::ListMods()
+{
+	int 		i;
+
+	idStrList	dirs;
+	idStrList	pk4s;
+
+	idModList*	list = new idModList;
+
+	const char*	search[ 2 ];
+	int			isearch;
+
+	search[0] = fs_savepath.GetString();
+	search[1] = fs_basepath.GetString();
+
+	for( isearch = 0; isearch < 2; isearch++ )
+	{
+		// skip empty savepath or such, so we don't search C:\ or / -_-
+		if( search[ isearch ][ 0 ] == '\0' )
+		{
+			continue;
+		}
+
+		dirs.Clear();
+		pk4s.Clear();
+
+		// scan for directories
+		ListOSFiles( search[ isearch ], "/", dirs );
+
+		dirs.Remove( "." );
+		dirs.Remove( ".." );
+		dirs.Remove( BASE_GAMEDIR );
+
+		// see if there are any pk4/resource files in each directory
+		for( i = 0; i < dirs.Num(); i++ )
+		{
+			idStr gamepath = BuildOSPath( search[ isearch ], dirs[ i ], "" );
+
+			if( ListOSFiles( gamepath, ".pk4", pk4s ) == 0 )
+			{
+				// no pk4s?, check for .resource files.
+				ListOSFiles( gamepath, ".resource", pk4s );
+			}
+
+			if( pk4s.Num() &&
+					!ModListHasName( list->infos, dirs[ i ] ) &&
+					dirs[ i ].Icmp( "d3xp" ) )
+			{
+				idModInfo_t info;
+				info.name = dirs[ i ];
+
+				// search every path for description.txt
+				bool parsed = false;
+				for( int j = 0; j < 2; j++ )
+				{
+					if( search[ j ][ 0 ] == '\0' )
+					{
+						continue;
+					}
+
+					idStr descfile = BuildOSPath( search[ j ], dirs[ i ], "description.txt" );
+					idStr contents;
+					if( ReadWholeOSFile( descfile, contents ) )
+					{
+						if( ParseModDescription( contents, info ) )
+						{
+							parsed = true;
+							break;
+						}
+					}
+				}
+
+				// fallback defaults if no description.txt was found
+				if( !parsed )
+				{
+					info.title = info.name;
+					info.description = info.name;
+					info.fs_game = info.name;
+					info.fs_game_base = "";
+					info.type = MODTYPE_BOTH;
+					info.skipBase = false;
+				}
+
+				list->infos.Append( info );
+			}
+		}
+	}
+
+	list->infos.SortWithTemplate( idSort_ModInfo() );
+
+	// Prepend the base game entry
+	idModInfo_t base;
+	base.name = "";
+	base.title = "Doom 3 BFG Edition";
+	base.description = "Doom 3 BFG Edition";
+	base.type = MODTYPE_BOTH;
+	base.fs_game = "";
+	base.fs_game_base = "";
+	base.skipBase = false;
+
+	list->infos.Insert( base, 0 );
+
+	return list;
+}
+
+/*
+===============
+idFileSystemLocal::FreeModList
+===============
+*/
+void idFileSystemLocal::FreeModList( idModList* modList )
+{
+	delete modList;
+}
+
+/*
+===============
+idFileSystemLocal::ReadModManifest
+===============
+*/
+bool idFileSystemLocal::ReadModManifest( const char* gameFolder, idModInfo_t& out )
+{
+    if( gameFolder == NULL || gameFolder[0] == '\0' )
+    {
+        return false;
+    }
+
+    const char* search[2] =
+    {
+        cvarSystem->GetCVarString( "fs_savepath" ),
+        cvarSystem->GetCVarString( "fs_basepath" )
+    };
+
+    for( int s = 0; s < 2; ++s )
+    {
+        if( search[s] == NULL || search[s][0] == '\0' )
+        {
+            continue;
+        }
+
+        idStr path = va( "%s/%s/description.txt", search[s], gameFolder );
+        path.BackSlashesToSlashes();
+
+        idStr contents;
+        if( !ReadWholeOSFile( path.c_str(), contents ) )
+        {
+            continue;
+        }
+
+        idModInfo_t parsed;
+        parsed.name = gameFolder;
+        if( ParseModDescription( contents.c_str(), parsed ) )
+        {
+            out = parsed;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/*
+===============
 idFileSystemLocal::ListOSFiles
 
  call to the OS for a listing of files in an OS directory
@@ -2824,6 +3288,64 @@ void idFileSystemLocal::Path_f( const idCmdArgs& args )
 			idx--;
 		}
 	}
+}
+
+/*
+================
+idFileSystemLocal::ListMods_f
+================
+*/
+void idFileSystemLocal::ListMods_f( const idCmdArgs& args )
+{
+	idModList* modList = fileSystem->ListMods();
+	if( modList == NULL )
+	{
+		common->Printf( "No mods found.\n" );
+		return;
+	}
+
+	int numMods = modList->GetNumMods();
+
+	int maxModLen = 0;
+	for( int i = 0; i < numMods; i++ )
+	{
+		const char* mod = modList->GetMod( i );
+		if( mod != NULL )
+		{
+			int len = strlen( mod );
+			if( len > maxModLen )
+			{
+				maxModLen = len;
+			}
+		}
+	}
+
+	if( maxModLen < 10 )
+	{
+		maxModLen = 10;
+	}
+
+	common->Printf( "Available mods (%d):\n", numMods );
+	common->Printf( "----------------------------------------\n" );
+
+	for( int i = 0; i < numMods; i++ )
+	{
+		const char* mod  = modList->GetMod( i );
+		const char* desc = modList->GetDescription( i );
+
+		if( mod == NULL || mod[0] == '\0' )
+		{
+			common->Printf( "%3d: %-*s - %s\n", i, maxModLen, "<base>", desc ? desc : "" );
+		}
+		else
+		{
+			common->Printf( "%3d: %-*s - %s\n", i, maxModLen, mod, desc ? desc : "" );
+		}
+	}
+
+	common->Printf( "----------------------------------------\n" );
+
+	fileSystem->FreeModList( modList );
 }
 
 /*
@@ -3278,7 +3800,10 @@ void idFileSystemLocal::Startup()
 		AddGameDirectory( fs_basepath.GetString(), PLATFORM_GAMEDIR );
 	}
 
-	SetupGameDirectories( BASE_GAMEDIR );
+    if( !fs_skipBase.GetBool() )
+    {
+        SetupGameDirectories( BASE_GAMEDIR );
+    }
 
 	// fs_game_base override
 	if( fs_game_base.GetString()[0] &&
@@ -3299,6 +3824,7 @@ void idFileSystemLocal::Startup()
 	cmdSystem->AddCommand( "dir", Dir_f, CMD_FL_SYSTEM, "lists a folder", idCmdSystem::ArgCompletion_FileName );
 	cmdSystem->AddCommand( "dirtree", DirTree_f, CMD_FL_SYSTEM, "lists a folder with subfolders" );
 	cmdSystem->AddCommand( "path", Path_f, CMD_FL_SYSTEM, "lists search paths" );
+	cmdSystem->AddCommand( "listMods", ListMods_f, CMD_FL_SYSTEM, "lists available mods" );
 	cmdSystem->AddCommand( "touchFile", TouchFile_f, CMD_FL_SYSTEM, "touches a file" );
 	cmdSystem->AddCommand( "touchFileList", TouchFileList_f, CMD_FL_SYSTEM, "touches a list of files" );
 

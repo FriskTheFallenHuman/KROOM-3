@@ -57,7 +57,11 @@ public:
 	virtual void		DumpAllDisplayDevices();
 
 public:
-	void						GrabInput( int flags );
+	void				GrabInput( int flags );
+
+	void				SetWindowTitle( const char* modTitle );
+	bool				SetTitleIcon( const char* OSPath );
+
 #if defined(USE_VULKAN)
 	std::vector<const char*>	GetRequiredExtensions();
 #endif

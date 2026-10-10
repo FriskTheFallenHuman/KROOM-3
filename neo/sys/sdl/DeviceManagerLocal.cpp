@@ -48,6 +48,7 @@ If you have questions concerning this license or the applicable additional terms
 // DG end
 
 #include <SDL2/SDL.h>
+#include <SDL_image.h>
 #ifdef _WIN32
 	#include <SDL2/SDL_syswm.h>
 #endif
@@ -1141,15 +1142,67 @@ void idDeviceManagerSDL::SetWindowsIcon( void* window )
 	amask = 0xff000000;
 #endif
 
-#include "doom_ico.h" // contains the struct doom_icon
+#include "game_icon.h" // contains the struct game_icon
 
-	SDL_Surface* icon = SDL_CreateRGBSurfaceFrom( ( void* )doom_icon.pixel_data, doom_icon.width, doom_icon.height,
-						doom_icon.bytes_per_pixel * 8, doom_icon.bytes_per_pixel * doom_icon.width,
+	SDL_Surface* icon = SDL_CreateRGBSurfaceFrom( ( void* )game_icon.pixel_data, game_icon.width, game_icon.height,
+						game_icon.bytes_per_pixel * 8, game_icon.bytes_per_pixel * game_icon.width,
 						rmask, gmask, bmask, amask );
 
 	SDL_SetWindowIcon( ( SDL_Window* )window, icon );
 
 	SDL_FreeSurface( icon );
+}
+
+/*
+========================
+idDeviceManagerSDL::SetWindowTitle
+
+Updates the OS window title. Passing NULL or an empty string reverts to
+the default title.
+========================
+*/
+void idDeviceManagerSDL::SetWindowTitle( const char* modTitle )
+{
+	if( !sdl.window )
+	{
+		return;
+	}
+
+	idStr title;
+	if( modTitle && modTitle[0] )
+	{
+		title = va( "%s - %s (x%u Build)", modTitle, GAME_NAME, ( unsigned )( sizeof( void* ) * 8 ) );
+	}
+	else
+	{
+		title = va( "%s (x%u Build)", GAME_NAME, ( unsigned )( sizeof( void* ) * 8 ) );
+	}
+
+	SDL_SetWindowTitle( sdl.window, title.c_str() );
+}
+
+/*
+========================
+idDeviceManagerSDL::SetTitleIcon
+========================
+*/
+bool idDeviceManagerSDL::SetTitleIcon( const char* OSPath )
+{
+	if( !sdl.window || !OSPath || !OSPath[0] )
+	{
+		return false;
+	}
+
+	SDL_Surface* icon = IMG_Load( OSPath );
+	if( !icon )
+	{
+		common->DPrintf( "SetTitleIcon: couldn't load '%s': %s\n", OSPath, IMG_GetError() );
+		return false;
+	}
+
+	SDL_SetWindowIcon( sdl.window, icon );
+	SDL_FreeSurface( icon );
+	return true;
 }
 
 #if defined(USE_VULKAN)

@@ -659,6 +659,9 @@ private:
 	bool				serverDedicated;
 	bool				isQuitRequested;
 
+	idModInfo_t			selectedMod;
+	bool				haveSelectedMod;
+
 private:
 	void	InitCommands();
 	void	InitSIMD();
@@ -719,6 +722,10 @@ private:
 	void	MoveToNewMap( const char* mapName, bool devmap );
 
 	void	ScrubSaveGameFileName( idStr& saveFileName ) const;
+
+	void	DoModFilesystemChanges();
+	void	DoAdditionalLaunchOptions();
+	void	DoCustomBranding();
 };
 
 extern idCommonLocal commonLocal;

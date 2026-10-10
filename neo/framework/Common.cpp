@@ -38,6 +38,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "../sound/sound.h"
 
 #include "../sys/sys_savegame.h"
+#include "../sys/sdl/DeviceManagerLocal.h"
 
 
 
@@ -117,7 +118,8 @@ idCommonLocal::idCommonLocal() :
 	lastPacifierSessionTime( 0 ),
 	lastPacifierGuiTime( 0 ),
 	lastPacifierDialogState( false ),
-	showShellRequested( false )
+	showShellRequested( false ),
+	haveSelectedMod( false )
 {
 
 	snapCurrent.localTime = -1;
@@ -1277,6 +1279,9 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 		// init commands
 		InitCommands();
 
+		// a mod is requesting some changes from the filesystem.
+		DoModFilesystemChanges();
+
 		// initialize the file system
 		fileSystem->Init();
 
@@ -1329,6 +1334,9 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 
 		// init the backend, which will open a window and connect sound and input hardware
 		renderSystem->InitBackend();
+
+		// a mod its overriding the title/icon.
+		DoCustomBranding();
 
 		// Support up to 2 digits after the decimal point
 		com_engineHz_denominator = 100LL * com_engineHz.GetFloat();
@@ -1490,6 +1498,9 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 		AddStartupCommands();
 
 		StartMenu( true );
+
+		// Queue any additional launch options.
+		DoAdditionalLaunchOptions();
 
 // SRS - changed ifndef to ifdef since legalMinTime should apply to retail builds, not dev builds
 #ifdef ID_RETAIL
@@ -1754,6 +1765,108 @@ void idCommonLocal::Stop( bool resetSession )
 	{
 		session->QuitMatchToTitle();
 	}
+}
+
+/*
+=================
+idCommonLocal::DoModFilesystemChanges
+=================
+*/
+void idCommonLocal::DoModFilesystemChanges()
+{
+	haveSelectedMod = false;
+
+	const char* game = cvarSystem->GetCVarString( "fs_game" );
+	if( game == NULL || game[0] == '\0' )
+	{
+		return;
+	}
+
+	idModInfo_t info;
+	if( !fileSystem->ReadModManifest( game, info ) )
+	{
+		// No manifest
+		return;
+	}
+
+	// Filesystem overrides.
+	if( info.fs_game_base.Length() > 0 )
+	{
+		cvarSystem->SetCVarString( "fs_game_base", info.fs_game_base.c_str() );
+	}
+	if( info.fs_game.Length() > 0 && info.fs_game.Icmp( game ) != 0 )
+	{
+		cvarSystem->SetCVarString( "fs_game", info.fs_game.c_str() );
+	}
+
+	cvarSystem->SetCVarBool( "fs_skipBase", info.skipBase );
+
+	selectedMod = info;
+	haveSelectedMod = true;
+
+	cvarSystem->ClearModifiedFlags( CVAR_INIT );
+}
+
+/*
+=================
+idCommonLocal::DoAdditionalLaunchOptions
+=================
+*/
+void idCommonLocal::DoAdditionalLaunchOptions()
+{
+	if( !haveSelectedMod )
+	{
+		return;
+	}
+
+	for( int i = 0; i < selectedMod.launchOptions.Num(); ++i )
+	{
+		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, va( "%s\n", selectedMod.launchOptions[i].option.c_str() ) );
+	}
+}
+
+/*
+=================
+idCommonLocal::DoCustomBranding
+=================
+*/
+void idCommonLocal::DoCustomBranding()
+{
+	const char* title = haveSelectedMod && selectedMod.title.Length() > 0 ? selectedMod.title.c_str() : GAME_NAME;
+
+	idDeviceManagerSDL* device = dynamic_cast< idDeviceManagerSDL* >( idDeviceManager::GetInstance() );
+	if( device )
+	{
+		device->SetWindowTitle( title );
+	}
+
+	idStr iconOSPath;
+	if( haveSelectedMod && selectedMod.icon.Length() > 0 )
+	{
+		const char* base = cvarSystem->GetCVarString( "fs_basepath" );
+		const char* save = cvarSystem->GetCVarString( "fs_savepath" );
+		const char* folder = selectedMod.name.Length() > 0 ? selectedMod.name.c_str() : BASE_GAMEDIR;
+
+		if( base && base[0] )
+		{
+			iconOSPath = fileSystem->BuildOSPath( base, folder, selectedMod.icon.c_str() );
+			if( device && !device->SetTitleIcon( iconOSPath.c_str() ) )
+			{
+				iconOSPath.Clear();
+			}
+		}
+
+		if( iconOSPath.IsEmpty() && save && save[0] )
+		{
+			iconOSPath = fileSystem->BuildOSPath( save, folder, selectedMod.icon.c_str() );
+			if( device && !device->SetTitleIcon( iconOSPath.c_str() ) )
+			{
+				iconOSPath.Clear();
+			}
+		}
+	}
+
+	Sys_SetConsoleBranding( title, iconOSPath.c_str() );
 }
 
 /*

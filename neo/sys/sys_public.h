@@ -444,6 +444,7 @@ char* 			Sys_ConsoleInput();
 bool			Sys_ConsoleExists();
 bool			Sys_ConsoleQuitRequested();
 void			Sys_ShowConsole( int visLevel, bool quitOnClose );
+void			Sys_SetConsoleBranding( const char* title, const char* iconOSPath );
 void			Win_SetErrorText( const char* buf );
 void			Conbuf_AppendText( const char* msg );
 
