@@ -32,72 +32,61 @@ If you have questions concerning this license or the applicable additional terms
 
 bool idAchievementManager::cheatingDialogShown = false;
 
-const struct achievementInfo_t
-{
-	int required;
-	bool lifetime; // true means the current count is stored on the player profile.  Doesn't matter for single count achievements.
-} achievementInfo [ACHIEVEMENTS_NUM] =
-{
-	{ 50, true }, // ACHIEVEMENT_EARN_ALL_50_TROPHIES
-	{ 1, true }, // ACHIEVEMENT_COMPLETED_DIFFICULTY_0
-	{ 1, true }, // ACHIEVEMENT_COMPLETED_DIFFICULTY_1
-	{ 1, true }, // ACHIEVEMENT_COMPLETED_DIFFICULTY_2
-	{ 1, true }, // ACHIEVEMENT_COMPLETED_DIFFICULTY_3
-	{ 64, false }, // ACHIEVEMENT_PDAS_BASE
-	{ 14, false }, // ACHIEVEMENT_WATCH_ALL_VIDEOS
-	{ 1, false }, // ACHIEVEMENT_KILL_MONSTER_WITH_1_HEALTH_LEFT
-	{ 35, false }, // ACHIEVEMENT_OPEN_ALL_LOCKERS
-	{ 20, true }, // ACHIEVEMENT_KILL_20_ENEMY_FISTS_HANDS
-	{ 1, true }, // ACHIEVEMENT_KILL_SCI_NEXT_TO_RCR
-	{ 1, true }, // ACHIEVEMENT_KILL_TWO_IMPS_ONE_SHOTGUN
-	{ 1, true }, // ACHIEVEMENT_SCORE_25000_TURKEY_PUNCHER
-	{ 50, true }, // ACHIEVEMENT_DESTROY_BARRELS
-	{ 1, true }, // ACHIEVEMENT_GET_BFG_FROM_SECURITY_OFFICE
-	{ 1, true }, // ACHIEVEMENT_COMPLETE_LEVEL_WITHOUT_TAKING_DMG
-	{ 1, true }, // ACHIEVEMENT_FIND_RAGE_LOGO
-	{ 1, true }, // ACHIEVEMENT_SPEED_RUN
-	{ 1, true }, // ACHIEVEMENT_DEFEAT_VAGARY_BOSS
-	{ 1, true }, // ACHIEVEMENT_DEFEAT_GUARDIAN_BOSS
-	{ 1, true }, // ACHIEVEMENT_DEFEAT_SABAOTH_BOSS
-	{ 1, true }, // ACHIEVEMENT_DEFEAT_CYBERDEMON_BOSS
-	{ 1, true }, // ACHIEVEMENT_SENTRY_BOT_ALIVE_TO_DEST
-	{ 20, true }, // ACHIEVEMENT_KILL_20_ENEMY_WITH_CHAINSAW
-	{ 1, true }, // ACHIEVEMENT_ID_LOGO_SECRET_ROOM
-	{ 1, true }, // ACHIEVEMENT_BLOODY_HANDWORK_OF_BETRUGER
-	{ 1, true }, // ACHIEVEMENT_TWO_DEMONS_FIGHT_EACH_OTHER
-	{ 20, true }, // ACHIEVEMENT_USE_SOUL_CUBE_TO_DEFEAT_20_ENEMY
-	{ 1, true }, // ACHIEVEMENT_ROE_COMPLETED_DIFFICULTY_0
-	{ 1, true }, // ACHIEVEMENT_ROE_COMPLETED_DIFFICULTY_1
-	{ 1, true }, // ACHIEVEMENT_ROE_COMPLETED_DIFFICULTY_2
-	{ 1, true }, // ACHIEVEMENT_ROE_COMPLETED_DIFFICULTY_3
-	{ 22, false }, // ACHIEVEMENT_PDAS_ROE
-	{ 1, true }, // ACHIEVEMENT_KILL_5_ENEMY_HELL_TIME
-	{ 1, true }, // ACHIEVEMENT_DEFEAT_HELLTIME_HUNTER
-	{ 1, true }, // ACHIEVEMENT_DEFEAT_BERSERK_HUNTER
-	{ 1, true }, // ACHIEVEMENT_DEFEAT_INVULNERABILITY_HUNTER
-	{ 1, true }, // ACHIEVEMENT_DEFEAT_MALEDICT_BOSS
-	{ 20, true }, // ACHIEVEMENT_GRABBER_KILL_20_ENEMY
-	{ 20, true }, // ACHIEVEMENT_ARTIFACT_WITH_BERSERK_PUNCH_20
-	{ 1, true }, // ACHIEVEMENT_LE_COMPLETED_DIFFICULTY_0
-	{ 1, true }, // ACHIEVEMENT_LE_COMPLETED_DIFFICULTY_1
-	{ 1, true }, // ACHIEVEMENT_LE_COMPLETED_DIFFICULTY_2
-	{ 1, true }, // ACHIEVEMENT_LE_COMPLETED_DIFFICULTY_3
-	{ 10, false }, // ACHIEVEMENT_PDAS_LE
-	{ 1, true }, // ACHIEVEMENT_MP_KILL_PLAYER_VIA_TELEPORT
-	{ 1, true }, // ACHIEVEMENT_MP_CATCH_ENEMY_IN_ROFC
-	{ 5, true }, // ACHIEVEMENT_MP_KILL_5_PLAYERS_USING_INVIS
-	{ 1, true }, // ACHIEVEMENT_MP_COMPLETE_MATCH_WITHOUT_DYING
-	{ 1, true }, // ACHIEVEMENT_MP_USE_BERSERK_TO_KILL_PLAYER
-	{ 1, true }, // ACHIEVEMENT_MP_KILL_2_GUYS_IN_ROOM_WITH_BFG
+const achievementInfo_t achievementInfo[ACHIEVEMENTS_NUM] = {
+	{ 50,	true,	"ach_earn_all_50_trophies"				}, // ACHIEVEMENT_EARN_ALL_50_TROPHIES
+	{ 1,	true,	"ach_completed_difficulty_0"			}, // ACHIEVEMENT_COMPLETED_DIFFICULTY_0
+	{ 1,	true,	"ach_completed_difficulty_1"			}, // ACHIEVEMENT_COMPLETED_DIFFICULTY_1
+	{ 1,	true,	"ach_completed_difficulty_2"			}, // ACHIEVEMENT_COMPLETED_DIFFICULTY_2
+	{ 1,	true,	"ach_completed_difficulty_3"			}, // ACHIEVEMENT_COMPLETED_DIFFICULTY_3
+	{ 64,	false,	"ach_pdas_base"							}, // ACHIEVEMENT_PDAS_BASE
+	{ 14,	false,	"ach_watch_all_videos"					}, // ACHIEVEMENT_WATCH_ALL_VIDEOS
+	{ 1,	false,	"ach_kill_monster_with_1_health_left"	}, // ACHIEVEMENT_KILL_MONSTER_WITH_1_HEALTH_LEFT
+	{ 35,	false,	"ach_open_all_lockers"					}, // ACHIEVEMENT_OPEN_ALL_LOCKERS
+	{ 20,	true,	"ach_kill_20_enemy_fists_hands"			}, // ACHIEVEMENT_KILL_20_ENEMY_FISTS_HANDS
+	{ 1,	true,	"ach_kill_sci_next_to_rcr"				}, // ACHIEVEMENT_KILL_SCI_NEXT_TO_RCR
+	{ 1,	true,	"ach_kill_two_imps_one_shotgun"			}, // ACHIEVEMENT_KILL_TWO_IMPS_ONE_SHOTGUN
+	{ 1,	true,	"ach_score_25000_turkey_puncher"		}, // ACHIEVEMENT_SCORE_25000_TURKEY_PUNCHER
+	{ 50,	true,	"ach_destroy_barrels"					}, // ACHIEVEMENT_DESTROY_BARRELS
+	{ 1,	true,	"ach_get_bfg_from_security_office"		}, // ACHIEVEMENT_GET_BFG_FROM_SECURITY_OFFICE
+	{ 1,	true,	"ach_complete_level_without_taking_dmg" }, // ACHIEVEMENT_COMPLETE_LEVEL_WITHOUT_TAKING_DMG
+	{ 1,	true,	"ach_find_rage_logo"					}, // ACHIEVEMENT_FIND_RAGE_LOGO
+	{ 1,	true,	"ach_speed_run"							}, // ACHIEVEMENT_SPEED_RUN
+	{ 1,	true,	"ach_defeat_vagary_boss"				}, // ACHIEVEMENT_DEFEAT_VAGARY_BOSS
+	{ 1,	true,	"ach_defeat_guardian_boss"				}, // ACHIEVEMENT_DEFEAT_GUARDIAN_BOSS
+	{ 1,	true,	"ach_defeat_sabaoth_boss"				}, // ACHIEVEMENT_DEFEAT_SABAOTH_BOSS
+	{ 1,	true,	"ach_defeat_cyberdemon_boss"			}, // ACHIEVEMENT_DEFEAT_CYBERDEMON_BOSS
+	{ 1,	true,	"ach_sentry_bot_alive_to_dest"			}, // ACHIEVEMENT_SENTRY_BOT_ALIVE_TO_DEST
+	{ 20,	true,	"ach_kill_20_enemy_with_chainsaw"		}, // ACHIEVEMENT_KILL_20_ENEMY_WITH_CHAINSAW
+	{ 1,	true,	"ach_id_logo_secret_room"				}, // ACHIEVEMENT_ID_LOGO_SECRET_ROOM
+	{ 1,	true,	"ach_bloody_handwork_of_betruger"		}, // ACHIEVEMENT_BLOODY_HANDWORK_OF_BETRUGER
+	{ 1,	true,	"ach_two_demons_fight_each_other"		}, // ACHIEVEMENT_TWO_DEMONS_FIGHT_EACH_OTHER
+	{ 20,	true,	"ach_use_soul_cube_to_defeat_20_enemy"	}, // ACHIEVEMENT_USE_SOUL_CUBE_TO_DEFEAT_20_ENEMY
+	{ 1,	true,	"ach_roe_completed_difficulty_0"		}, // ACHIEVEMENT_ROE_COMPLETED_DIFFICULTY_0
+	{ 1,	true,	"ach_roe_completed_difficulty_1"		}, // ACHIEVEMENT_ROE_COMPLETED_DIFFICULTY_1
+	{ 1,	true,	"ach_roe_completed_difficulty_2"		}, // ACHIEVEMENT_ROE_COMPLETED_DIFFICULTY_2
+	{ 1,	true,	"ach_roe_completed_difficulty_3"		}, // ACHIEVEMENT_ROE_COMPLETED_DIFFICULTY_3
+	{ 22,	false,	"ach_pdas_roe"							}, // ACHIEVEMENT_PDAS_ROE
+	{ 1,	true,	"ach_kill_5_enemy_hell_time"			}, // ACHIEVEMENT_KILL_5_ENEMY_HELL_TIME
+	{ 1,	true,	"ach_defeat_helltime_hunter"			}, // ACHIEVEMENT_DEFEAT_HELLTIME_HUNTER
+	{ 1,	true,	"ach_defeat_berserk_hunter"				}, // ACHIEVEMENT_DEFEAT_BERSERK_HUNTER
+	{ 1,	true,	"ach_defeat_invulnerability_hunter"		}, // ACHIEVEMENT_DEFEAT_INVULNERABILITY_HUNTER
+	{ 1,	true,	"ach_defeat_maledict_boss"				}, // ACHIEVEMENT_DEFEAT_MALEDICT_BOSS
+	{ 20,	true,	"ach_grabber_kill_20_enemy"				}, // ACHIEVEMENT_GRABBER_KILL_20_ENEMY
+	{ 20,	true,	"ach_artifact_with_berserk_punch_20"	}, // ACHIEVEMENT_ARTIFACT_WITH_BERSERK_PUNCH_20
+	{ 1,	true,	"ach_le_completed_difficulty_0"			}, // ACHIEVEMENT_LE_COMPLETED_DIFFICULTY_0
+	{ 1,	true,	"ach_le_completed_difficulty_1"			}, // ACHIEVEMENT_LE_COMPLETED_DIFFICULTY_1
+	{ 1,	true,	"ach_le_completed_difficulty_2"			}, // ACHIEVEMENT_LE_COMPLETED_DIFFICULTY_2
+	{ 1,	true,	"ach_le_completed_difficulty_3"			}, // ACHIEVEMENT_LE_COMPLETED_DIFFICULTY_3
+	{ 10,	false,	"ach_pdas_le"							}, // ACHIEVEMENT_PDAS_LE
+	{ 1,	true,	"ach_mp_kill_player_via_teleport"		}, // ACHIEVEMENT_MP_KILL_PLAYER_VIA_TELEPORT
+	{ 1,	true,	"ach_mp_catch_enemy_in_rofc"			}, // ACHIEVEMENT_MP_CATCH_ENEMY_IN_ROFC
+	{ 5,	true,	"ach_mp_kill_5_players_using_invis"		}, // ACHIEVEMENT_MP_KILL_5_PLAYERS_USING_INVIS
+	{ 1,	true,	"ach_mp_complete_match_without_dying"	}, // ACHIEVEMENT_MP_COMPLETE_MATCH_WITHOUT_DYING
+	{ 1,	true,	"ach_mp_use_berserk_to_kill_player"		}, // ACHIEVEMENT_MP_USE_BERSERK_TO_KILL_PLAYER
+	{ 1,	true,	"ach_mp_kill_2_guys_in_room_with_bfg"	}  // ACHIEVEMENT_MP_KILL_2_GUYS_IN_ROOM_WITH_BFG
 };
 
-/*
-================================================================================================
-
-	idAchievementManager
-
-================================================================================================
-*/
+compile_time_assert( sizeof( achievementInfo ) / sizeof( achievementInfo[0] ) == ACHIEVEMENTS_NUM );
 
 /*
 ========================

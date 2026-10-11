@@ -33,6 +33,10 @@ If you have questions concerning this license or the applicable additional terms
 #include "sys_voicechat.h"
 #include "sys_dedicated_server_search.h"
 
+#ifdef USE_STEAMWORKS
+	#include "steam/steam_local.h"
+#endif
+
 
 idCVar ui_skinIndex( "ui_skinIndex", "0", CVAR_ARCHIVE, "Selected skin index" );
 idCVar ui_autoSwitch( "ui_autoSwitch", "1", CVAR_ARCHIVE | CVAR_BOOL, "auto switch weapon" );
@@ -219,6 +223,7 @@ void idSessionLocal::InitBaseState()
 
 	pendingInviteDevice				= 0;
 	pendingInviteMode				= PENDING_INVITE_NONE;
+	pendingInviteStartTime			= 0;
 
 	offlineTransitionTimerStart		= 0;
 	showMigratingInfoStartTime		= 0;
@@ -2014,6 +2019,20 @@ void idSessionLocal::Pump()
 		net_migrateHost.SetInteger( -1 );
 	}
 
+#ifdef USE_STEAMWORKS
+	if( Steam_IsRunning() )
+	{
+		Steam_RunCallbacks();
+
+		// The player accepted an invite or started the game with +connect_lobby
+		const uint64 joinLobbyId = Steam_PopLobbyJoinRequest();
+		if( joinLobbyId != 0 )
+		{
+			HandleBootableInvite( ( int64 )joinLobbyId );
+		}
+	}
+#endif
+
 	if( HasAchievementSystem() )
 	{
 		GetAchievementSystem().Pump();
@@ -2045,6 +2064,44 @@ void idSessionLocal::Pump()
 		// Temp location
 		UpdateMasterUserHeadsetState();
 	}
+
+#ifdef USE_STEAMWORKS
+	if( Steam_IsRunning() )
+	{
+		// "Join Game" in the friends list needs the id of the party lobby, only while it is a Steam lobby that is ready
+		steamPresence_t presence;
+		presence.state = GetState();
+		presence.partyLobbyId = 0;
+		presence.numPlayers = 1;
+		presence.maxPlayers = 1;
+
+		idLobby& partyLobby = GetPartyLobby();
+		if( partyLobby.IsLobbyActive() && partyLobby.lobbyBackend != NULL && partyLobby.lobbyBackend->GetState() == idLobbyBackend::STATE_READY )
+		{
+			presence.partyLobbyId = partyLobby.lobbyBackend->GetConnectInfo().platformLobbyId;
+			presence.numPlayers = partyLobby.GetNumActiveLobbyUsers();
+			presence.maxPlayers = partyLobby.GetMatchParms().numSlots;
+		}
+		Steam_UpdatePresence( presence );
+
+		// The game browser lists the party lobby of a host while it runs an open game
+		steamBrowseListing_t listing = {};
+		idLobby& gameLobby = GetGameLobby();
+		if( partyLobby.IsLobbyActive() && partyLobby.IsHost() && gameLobby.IsLobbyActive() && gameLobby.IsHost() )
+		{
+			const idMatchParameters& gameParms = gameLobby.GetMatchParms();
+			listing.gameMode = ( int )gameParms.gameMode;
+			listing.gameMap = ( int )gameParms.gameMap;
+			listing.numPlayers = gameLobby.GetNumLobbyUsers();
+			listing.maxPlayers = gameParms.numSlots;
+			listing.joinable = ( GetState() >= idSession::GAME_LOBBY );
+			listing.listed = listing.joinable && MatchTypeIsOnline( gameParms.matchFlags ) && !MatchTypeIsPrivate( gameParms.matchFlags ) &&
+							 !MatchTypeInviteOnly( gameParms.matchFlags ) && !MatchTypeInviteOnly( partyLobby.GetMatchParms().matchFlags ) &&
+							 listing.numPlayers < listing.maxPlayers && !common->GetServerDedicated();
+		}
+		Steam_SetBrowseListing( listing );
+	}
+#endif
 
 	// Do some last minute checks, make sure everything about the current state and lobbyBackend state is valid, otherwise, take action
 	ValidateLobbies();
@@ -2153,6 +2210,21 @@ void idSessionLocal::UpdatePendingInvite()
 	{
 		return;		// No pending invite
 	}
+
+#ifdef USE_STEAMWORKS
+	// A Steam invite can arrive in any state, the player may be in a game. Join from the main menu, Cancel steps one state back.
+	if( pendingInviteConnectInfo.platformLobbyId != 0 && localState != STATE_IDLE )
+	{
+		if( Sys_Milliseconds() - pendingInviteStartTime > 10 * 1000 )
+		{
+			idLib::Printf( "ignoring invite - could not return to the main menu\n" );
+			pendingInviteMode = PENDING_INVITE_NONE;
+			return;
+		}
+		Cancel();
+		return;
+	}
+#endif
 
 	idLocalUser* masterLocalUser = signInManager->GetMasterLocalUser();
 
@@ -4246,6 +4318,14 @@ bool idNetSessionPort::ReadRawPacket( lobbyAddress_t& from, void* data, int& siz
 	from.platformId = 0;		// the UDP socket only ever sees IP peers
 	bool result = UDP.GetPacket( from.netAddr, data, size, maxSize );
 
+#ifdef USE_STEAMWORKS
+	if( !result )
+	{
+		// peers that are addressed by Steam id, from.platformId is set when this returns true
+		result = Steam_NetReadPacket( from, data, size, maxSize );
+	}
+#endif
+
 	static idRandom2 random( Sys_Milliseconds() );
 	if( net_forceDrop.GetInteger() != 0 )
 	{
@@ -4275,6 +4355,12 @@ void idNetSessionPort::SendRawPacket( const lobbyAddress_t& to, const void* data
 
 	if( to.IsUsingStoreFront() )
 	{
+#ifdef USE_STEAMWORKS
+		if( Steam_NetSendPacket( to, data, size ) )
+		{
+			return;
+		}
+#endif
 		// netAddr is invalid for these, they need a transport that resolves the platform id
 		idLib::Warning( "idNetSessionPort::SendRawPacket: dropping packet to %s, UDP transport cannot reach a platform id", to.ToString() );
 		return;

@@ -58,6 +58,8 @@ public:
 		idStr		name;
 		int64		rank;
 		idArray< int64, MAX_LEADERBOARD_COLUMNS > 	columns;
+
+		uint64		user_id;		// platform account id of the row, 0 if the platform has none
 	};
 
 	idLeaderboardCallback() : def( NULL ), startIndex( -1 ), localIndex( -1 ), numRowsInLeaderboard( -1 ), errorCode( LEADERBOARD_ERROR_NONE ) { }

@@ -112,6 +112,14 @@ void idMenuScreen_Shell_GameOptions::Initialize( idMenuHandler* data )
 	control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_PRESS_FOCUSED, options->GetChildren().Num() );
 	options->AddChild( control );
 
+	control = new( TAG_SWF ) idMenuWidget_ControlButton();
+	control->SetOptionType( OPTION_SLIDER_TEXT );
+	control->SetLabel( "Voice Chat" );	// Open Mic / Push To Talk / Disabled, only builds with a platform voice backend do anything with it
+	control->SetDataSource( &systemData, idMenuDataSource_GameSettings::GAME_FIELD_VOICE_MODE );
+	control->SetupEvents( DEFAULT_REPEAT_TIME, options->GetChildren().Num() );
+	control->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_PRESS_FOCUSED, options->GetChildren().Num() );
+	options->AddChild( control );
+
 	options->AddEventAction( WIDGET_EVENT_SCROLL_DOWN ).Set( new( TAG_SWF ) idWidgetActionHandler( options, WIDGET_ACTION_EVENT_SCROLL_DOWN_START_REPEATER, WIDGET_EVENT_SCROLL_DOWN ) );
 	options->AddEventAction( WIDGET_EVENT_SCROLL_UP ).Set( new( TAG_SWF ) idWidgetActionHandler( options, WIDGET_ACTION_EVENT_SCROLL_UP_START_REPEATER, WIDGET_EVENT_SCROLL_UP ) );
 	options->AddEventAction( WIDGET_EVENT_SCROLL_DOWN_RELEASE ).Set( new( TAG_SWF ) idWidgetActionHandler( options, WIDGET_ACTION_EVENT_STOP_REPEATER, WIDGET_EVENT_SCROLL_DOWN_RELEASE ) );
@@ -287,6 +295,28 @@ idMenuScreen_Shell_GameOptions::idMenuDataSource_GameSettings::idMenuDataSource_
 
 /*
 ========================
+idMenuScreen_Shell_GameOptions::idMenuDataSource_GameSettings::GetField
+========================
+*/
+idSWFScriptVar idMenuScreen_Shell_GameOptions::idMenuDataSource_GameSettings::GetField( const int fieldIndex ) const
+{
+	if( fieldIndex == GAME_FIELD_VOICE_MODE )
+	{
+		switch( fields[ fieldIndex ].ToInteger() )
+		{
+			case 0:
+				return "Open Mic";
+			case 1:
+				return "Push To Talk";
+			default:
+				return "#str_swf_disabled";
+		}
+	}
+	return fields[ fieldIndex ];
+}
+
+/*
+========================
 idMenuScreen_Shell_GameOptions::idMenuDataSource_AudioSettings::LoadData
 ========================
 */
@@ -298,6 +328,7 @@ void idMenuScreen_Shell_GameOptions::idMenuDataSource_GameSettings::LoadData()
 	fields[ GAME_FIELD_AUTO_RELOAD ].SetBool( cvarSystem->GetCVarBool( "ui_autoReload" ) );
 	fields[ GAME_FIELD_AIM_ASSIST ].SetBool( aa_targetAimAssistEnable.GetBool() );
 	fields[ GAME_FIELD_ALWAYS_SPRINT ].SetBool( cvarSystem->GetCVarBool( "in_alwaysRun" ) );
+	fields[ GAME_FIELD_VOICE_MODE ].SetInteger( idMath::ClampInt( 0, 2, cvarSystem->GetCVarInteger( "voice_mode" ) ) );
 	originalFields = fields;
 }
 
@@ -319,6 +350,7 @@ void idMenuScreen_Shell_GameOptions::idMenuDataSource_GameSettings::CommitData()
 	cvarSystem->SetCVarBool( "ui_autoReload", fields[ GAME_FIELD_AUTO_RELOAD ].ToBool() );
 	aa_targetAimAssistEnable.SetBool( fields[ GAME_FIELD_AIM_ASSIST ].ToBool() );
 	cvarSystem->SetCVarBool( "in_alwaysRun", fields[ GAME_FIELD_ALWAYS_SPRINT ].ToBool() );
+	cvarSystem->SetCVarInteger( "voice_mode", fields[ GAME_FIELD_VOICE_MODE ].ToInteger() );
 
 	cvarSystem->SetModifiedFlags( CVAR_ARCHIVE );
 
@@ -336,6 +368,11 @@ void idMenuScreen_Shell_GameOptions::idMenuDataSource_GameSettings::AdjustField(
 	if( fieldIndex == GAME_FIELD_FOV )
 	{
 		fields[ fieldIndex ].SetInteger( idMath::ClampInt( MIN_FOV, MAX_FOV, fields[ fieldIndex ].ToInteger() + adjustAmount ) );
+	}
+	else if( fieldIndex == GAME_FIELD_VOICE_MODE )
+	{
+		// wraps around: Open Mic, Push To Talk, Disabled
+		fields[ fieldIndex ].SetInteger( ( fields[ fieldIndex ].ToInteger() + ( adjustAmount < 0 ? 2 : 1 ) ) % 3 );
 	}
 	else
 	{
@@ -377,6 +414,11 @@ bool idMenuScreen_Shell_GameOptions::idMenuDataSource_GameSettings::IsDataChange
 	}
 
 	if( fields[ GAME_FIELD_ALWAYS_SPRINT ].ToBool() != originalFields[ GAME_FIELD_ALWAYS_SPRINT ].ToBool() )
+	{
+		return true;
+	}
+
+	if( fields[ GAME_FIELD_VOICE_MODE ].ToInteger() != originalFields[ GAME_FIELD_VOICE_MODE ].ToInteger() )
 	{
 		return true;
 	}

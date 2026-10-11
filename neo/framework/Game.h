@@ -30,6 +30,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #ifndef __GAME_H__
 #define __GAME_H__
+#pragma once
 
 /*
 ===============================================================================
@@ -575,6 +576,29 @@ public:
 extern idLeaderboards* 		leaderBoards;
 
 /*
+================================================================================================
+
+	Achievements
+
+================================================================================================
+*/
+
+class idGameAchievements
+{
+public:
+	virtual						~idGameAchievements() {}
+
+	// number of achievements the we define, the valid ids are 0 to GetNumAchievements() - 1
+	virtual int					GetNumAchievements() const = 0;
+
+	// name of the achievement on the platform backend.
+	// NULL if the id is not an achievement of the game
+	virtual const char*			GetAchievementName( int id ) const = 0;
+};
+
+extern idGameAchievements* 	gameAchievements;
+
+/*
 ===============================================================================
 
 	Public game interface with methods for in-game editing.
@@ -767,7 +791,7 @@ extern idAnimManager* 			animationLib;
 ===============================================================================
 */
 
-const int GAME_API_VERSION		= 8;
+const int GAME_API_VERSION		= 9;
 
 class idKey;
 class idSession;
@@ -805,6 +829,7 @@ typedef struct
 	idGameMainMenu*				mainMenu;				// interface for the main menu
 	idGameDialogs*				dialogs;				// interface for the gui dialogs
 	idAnimManager* 				animationLib;			// interface for animating models
+	idGameAchievements*			achievements;			// interface for the achievement definitions
 
 } gameExport_t;
 

@@ -281,6 +281,7 @@ lobbyUser_t idLobby::CreateLobbyUserFromLocalUser( const idLocalUser* localUser 
 	lobbyUser.peerIndex			= -1;
 	lobbyUser.lobbyUserID		= lobbyUserID_t( localUser->GetLocalUserHandle(), lobbyType );	// Generate the lobby using a combination of local user id, and lobby type
 	lobbyUser.disconnecting		= false;
+	lobbyUser.platformId		= localUser->GetPlatformId();
 
 	// If we are in a game lobby (or dedicated game state lobby), and we have a party lobby running, assume we can grab the party token from our equivalent user in the party.
 	if( ( lobbyType == TYPE_GAME || lobbyType == TYPE_GAME_STATE ) && sessionCB->GetPartyLobby().IsLobbyActive() )
@@ -801,6 +802,13 @@ void idLobby::AddUsersFromMsg( idBitMsg& msg, int fromPeer )
 				// local users will already have this information filled out.
 				newUser.address		= peers[ fromPeer ].address;
 				newUser.peerIndex	= fromPeer;
+
+				// The account id comes from the peer, anybody can claim any id.
+				if( newUser.platformId != newUser.address.platformId )
+				{
+					newUser.platformId = 0;
+				}
+
 				if( lobbyType == TYPE_PARTY )
 				{
 					newUser.partyToken = GetPartyTokenAsHost();

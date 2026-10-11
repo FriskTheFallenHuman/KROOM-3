@@ -46,6 +46,8 @@ struct achievementDescription_t
 	bool	hidden;
 };
 
+#define ACHIEVEMENT_PREFIX		"ach_"
+
 /*
 ================================================
 idAchievementSystem

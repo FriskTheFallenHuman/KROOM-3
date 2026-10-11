@@ -158,6 +158,7 @@ extern "C" ID_GAME_API gameExport_t* GetGameAPI( gameImport_t* import )
 	gameExport.mainMenu = mainMenu;
 	gameExport.dialogs = dialogs;
 	gameExport.animationLib = animationLib;
+	gameExport.achievements = gameAchievements;
 
 	return &gameExport;
 }
@@ -733,6 +734,9 @@ void idGameLocal::GetSaveGameDetails( idSaveGameDetails& gameDetails )
 	declManager->SetDictInt( &gameDetails.descriptors, SAVEGAME_DETAIL_FIELD_EXPANSION, expansionType );
 	declManager->SetDictStr( &gameDetails.descriptors, SAVEGAME_DETAIL_FIELD_MAP, mapPrettyName );
 	declManager->SetDictStr( &gameDetails.descriptors, SAVEGAME_DETAIL_FIELD_MAP_LOCATE, locationStr );
+	idStrStatic< MAX_OSPATH > mapFileNoExt = mapFileName;
+	mapFileNoExt.StripFileExtension();
+	declManager->SetDictStr( &gameDetails.descriptors, SAVEGAME_DETAIL_FIELD_MAP_FILE, mapFileNoExt.c_str() );
 	declManager->SetDictInt( &gameDetails.descriptors, SAVEGAME_DETAIL_FIELD_SAVE_VERSION, SAVEGAME_VERSION );
 	declManager->SetDictInt( &gameDetails.descriptors, SAVEGAME_DETAIL_FIELD_DIFFICULTY, g_skill.GetInteger() );
 	declManager->SetDictInt( &gameDetails.descriptors, SAVEGAME_DETAIL_FIELD_PLAYTIME, playTime );

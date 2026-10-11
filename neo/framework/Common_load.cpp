@@ -34,6 +34,10 @@ If you have questions concerning this license or the applicable additional terms
 #include "Common_local.h"
 #include "../sys/sys_lobby_backend.h"
 
+#ifdef USE_STEAMWORKS
+	#include "../sys/steam/steam_local.h"
+#endif
+
 idCVar com_wipeSeconds( "com_wipeSeconds", "1", CVAR_SYSTEM, "" );
 idCVar com_disableAutoSaves( "com_disableAutoSaves", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
 idCVar com_disableAllSaves( "com_disableAllSaves", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
@@ -99,6 +103,25 @@ void idCommonLocal::ClearWipe()
 
 /*
 ===============
+MapAvailable
+===============
+*/
+static bool MapAvailable( const char* mapName )
+{
+#ifdef USE_STEAMWORKS
+	if( !Steam_IsMapAvailable( mapName ) )
+	{
+		idLib::Warning( "map '%s' needs a DLC that is not available", mapName );
+		dialogs->AddDialog( GDM_DLC_ERROR_MISSING_GENERIC, DIALOG_CONTINUE, NULL, NULL, false );
+		return false;
+	}
+#endif
+
+	return true;
+}
+
+/*
+===============
 idCommonLocal::StartNewGame
 ===============
 */
@@ -115,6 +138,11 @@ void idCommonLocal::StartNewGame( const char* mapName, bool devmap, int gameMode
 	idStr mapNameClean = mapName;
 	mapNameClean.StripFileExtension();
 	mapNameClean.BackSlashesToSlashes();
+
+	if( !MapAvailable( mapNameClean ) )
+	{
+		return;
+	}
 
 	idMatchParameters matchParameters;
 	matchParameters.mapName = mapNameClean;
@@ -174,6 +202,11 @@ Single player transition from one map to another
 */
 void idCommonLocal::MoveToNewMap( const char* mapName, bool devmap )
 {
+	if( !MapAvailable( mapName ) )
+	{
+		return;
+	}
+
 	idMatchParameters matchParameters;
 	matchParameters.numSlots = 1;
 	matchParameters.gameMode = GAME_MODE_SINGLEPLAYER;

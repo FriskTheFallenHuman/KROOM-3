@@ -40,6 +40,10 @@ If you have questions concerning this license or the applicable additional terms
 #include "../sys/sys_savegame.h"
 #include "../sys/sdl/DeviceManagerLocal.h"
 
+#ifdef USE_STEAMWORKS
+	#include "../sys/steam/steam_local.h"
+#endif
+
 
 
 #if defined( _DEBUG )
@@ -91,6 +95,7 @@ int64 com_engineHz_denominator = 100LL * 60LL;
 	idGameDialogs*	dialogs = NULL;
 	idGameMainMenu*	mainMenu = NULL;
 	idAnimManager*	animationLib = NULL;
+	idGameAchievements*	gameAchievements = NULL;
 #endif
 
 idCommonLocal	commonLocal;
@@ -1155,6 +1160,7 @@ void idCommonLocal::LoadGameDLL()
 	mainMenu							= gameExport.mainMenu;
 	dialogs								= gameExport.dialogs;
 	animationLib						= gameExport.animationLib;
+	gameAchievements					= gameExport.achievements;
 
 #endif
 
@@ -1270,6 +1276,15 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 
 		// override cvars from command line
 		StartupVariable( NULL );
+
+#ifdef USE_STEAMWORKS
+		// If Steam is not available the offline is used
+		if( Steam_Init() == STEAM_INIT_RESTART )
+		{
+			// the game was not started through Steam, relaunches it.
+			Sys_Quit();
+		}
+#endif
 
 		consoleUsed = com_allowConsole.GetBool();
 
@@ -1644,6 +1659,11 @@ void idCommonLocal::Shutdown()
 	session->ShutdownSoundRelatedSystems();
 	printf( "session->Shutdown();\n" );
 	session->Shutdown();
+
+#ifdef USE_STEAMWORKS
+	printf( "Steam_Shutdown();\n" );
+	Steam_Shutdown();
+#endif
 
 	// shutdown, deallocate leaderboard definitions.
 	if( leaderBoards != NULL )

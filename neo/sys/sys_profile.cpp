@@ -28,6 +28,10 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
+#ifdef USE_STEAMWORKS
+	#include "steam/steam_local.h"
+#endif
+
 #define SAVEGAME_PROFILE_FILENAME			"profile.bin"
 
 idCVar profile_verbose( "profile_verbose", "0", CVAR_BOOL, "Turns on debug spam for profiles" );
@@ -129,8 +133,12 @@ void idProfileMgr::Pump()
 	{
 		profile->MarkDirty( false );
 		SaveSettingsAsync();
+
+#ifdef USE_STEAMWORKS
 		// Syncs the steam data
-		//session->StoreStats();
+		Steam_StoreStats();
+#endif
+
 		profile->SetRequestedState( idPlayerProfile::IDLE );
 	}
 	else if( profile->GetRequestedState() == idPlayerProfile::LOAD_REQUESTED )

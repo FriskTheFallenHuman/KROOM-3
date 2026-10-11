@@ -29,6 +29,10 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 #include "../Game_local.h"
 
+#ifdef USE_STEAMWORKS
+	#include "../../sys/steam/steam_local.h"
+#endif
+
 const static int NUM_LEADERBOARD_ITEMS = 16;
 const int MAX_STAT_LISTINGS = 16;
 static const int MAX_ROWS_PER_BLOCK = 50;
@@ -1223,4 +1227,10 @@ idMainMenu::SetSPLeaderboardFromMenuSettings
 */
 void idLBCache::DisplayGamerCardUI( const idLeaderboardCallback::row_t* row )
 {
+#ifdef USE_STEAMWORKS
+	if( row != NULL && row->user_id != 0 )
+	{
+		Steam_ShowUserOverlay( row->user_id );		// the Steam profile of the row
+	}
+#endif
 }

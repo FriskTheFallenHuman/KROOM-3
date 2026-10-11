@@ -43,7 +43,7 @@ set(src_d3xp
 if(${BUILD_GAME_DLL})
 	add_library(${PROJECT_NAME} SHARED ${src_d3xp})
 	target_compile_definitions(${PROJECT_NAME} PRIVATE GAME_DLL)
-	target_link_libraries(${PROJECT_NAME} idLib external)
+	target_link_libraries(${PROJECT_NAME} idLib)
 else()
 	add_library(${PROJECT_NAME} STATIC ${src_d3xp})
 endif()

@@ -214,7 +214,7 @@ void idMenuScreen_Shell_PartyLobby::UpdateOptions()
 
 		isHost = true;
 		isPeer = false;
-#if 0
+#ifdef USE_STEAMWORKS
 		option.Append( "#str_swf_join_public" );	// Quick Match
 		menuOptions.Append( option );
 		option.Clear();
@@ -227,7 +227,7 @@ void idMenuScreen_Shell_PartyLobby::UpdateOptions()
 		option.Clear();
 		option.Append( "#str_swf_pwf" );	// Play With Friends
 		menuOptions.Append( option );
-#if 0
+#ifdef USE_STEAMWORKS
 		option.Clear();
 		option.Append( "#str_swf_leaderboards" );	// Play With Friends
 		menuOptions.Append( option );
@@ -240,7 +240,7 @@ void idMenuScreen_Shell_PartyLobby::UpdateOptions()
 #endif
 		idMenuWidget_Button* buttonWidget = NULL;
 		int index = 0;
-#if 0
+#ifdef USE_STEAMWORKS
 		options->GetChildByIndex( index ).ClearEventActions();
 		options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PARTY_CMD_QUICK, index );
 		buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
@@ -274,7 +274,7 @@ void idMenuScreen_Shell_PartyLobby::UpdateOptions()
 			buttonWidget->SetDescription( "#str_swf_pwf_desc" );
 		}
 		index++;
-#if 0
+#ifdef USE_STEAMWORKS
 		options->GetChildByIndex( index ).ClearEventActions();
 		options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PARTY_CMD_LEADERBOARDS, index );
 		buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
@@ -304,7 +304,7 @@ void idMenuScreen_Shell_PartyLobby::UpdateOptions()
 	}
 	else if( session->GetPartyLobbyBase().IsPeer() && options != NULL )
 	{
-#if 0
+#ifdef USE_STEAMWORKS
 		if( !isPeer || forceUpdate )
 		{
 
@@ -759,12 +759,12 @@ void idMenuScreen_Shell_PartyLobby::UpdateLobby()
 		idSWFTextInstance* privacy = GetSprite()->GetScriptObject()->GetNestedText( "matchInfo", "txtPrivacy" );
 		if( privacy != NULL )
 		{
-#if 0
+#ifdef USE_STEAMWORKS
 			if( isPeer )
 			{
 #endif
 				privacy->SetText( "" );
-#if 0
+#ifdef USE_STEAMWORKS
 			}
 			else
 			{
@@ -800,7 +800,7 @@ void idMenuScreen_Shell_PartyLobby::UpdateLobby()
 			}
 			else if( menuOptions.Num() > 0 )
 			{
-#if 0
+#ifdef USE_STEAMWORKS
 				if( menuOptions[ menuOptions.Num() - 1 ][0] != "#str_swf_invite_friends" )
 				{
 					menuOptions[ menuOptions.Num() - 1 ][0] = "#str_swf_invite_friends";	// invite Xbox LIVE party

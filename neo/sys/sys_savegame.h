@@ -55,6 +55,7 @@ If you have questions concerning this license or the applicable additional terms
 #define SAVEGAME_DETAIL_FIELD_EXPANSION		"expansion"
 #define SAVEGAME_DETAIL_FIELD_MAP			"mapName"
 #define SAVEGAME_DETAIL_FIELD_MAP_LOCATE	"mapLocation"
+#define SAVEGAME_DETAIL_FIELD_MAP_FILE		"mapFile"
 #define SAVEGAME_DETAIL_FIELD_DIFFICULTY	"difficulty"
 #define SAVEGAME_DETAIL_FIELD_PLAYTIME		"playTime"
 #define SAVEGAME_DETAIL_FIELD_LANGUAGE		"language"

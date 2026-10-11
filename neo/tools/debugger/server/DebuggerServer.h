@@ -37,7 +37,7 @@ If you have questions concerning this license or the applicable additional terms
 	#include "DebuggerBreakpoint.h"
 #endif
 
-#include "../d3xp/Game.h"
+#include "../framework/Game.h"
 
 class idInterpreter;
 class idProgram;

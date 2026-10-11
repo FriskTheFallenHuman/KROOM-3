@@ -33,8 +33,6 @@ If you have questions concerning this license or the applicable additional terms
 
 idCVar achievements_Verbose( "achievements_Verbose", "1", CVAR_BOOL, "debug spam" );
 
-#define STEAM_ACHIEVEMENT_PREFIX		"ach_"
-
 /*
 ========================
 idAchievementSystemLocal::IsInitialized

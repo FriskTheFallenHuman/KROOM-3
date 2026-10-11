@@ -29,6 +29,8 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 #include "sys_voicechat.h"
 
+idCVar voice_mode( "voice_mode", "0", CVAR_SYSTEM | CVAR_INTEGER | CVAR_ARCHIVE, "microphone: 0 = open, 1 = push to talk, 2 = voice chat disabled", 0, VOICE_MODE_NUM - 1 );
+
 /*
 ================================================
 idVoiceChatMgr::Init

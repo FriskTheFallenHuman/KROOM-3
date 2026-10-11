@@ -131,6 +131,8 @@ userCmdString_t	userCmdStrings[] =
 	{ "_showScores",	UB_SHOWSCORES },
 	{ "_use",			UB_USE },
 
+	{ "_talk",			UB_TALK },
+
 	{ "_impulse0",		UB_IMPULSE0 },
 	{ "_impulse1",		UB_IMPULSE1 },
 	{ "_impulse2",		UB_IMPULSE2 },

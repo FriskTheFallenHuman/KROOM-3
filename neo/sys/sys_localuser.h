@@ -116,6 +116,10 @@ public:
 	virtual const char* 		GetGamerTag() const = 0;							// Display name of user
 	virtual bool				IsInParty() const = 0;								// True if the user is in a platform party
 	virtual int					GetPartyCount() const = 0;							// Gets the amount of users in the party
+	virtual uint64				GetPlatformId() const								// Account id of the platform the user is signed into, 0 if the user has no platform account
+	{
+		return 0;
+	}
 
 	//==========================================================================================
 	// Shared implementation
@@ -128,6 +132,9 @@ public:
 	{
 		return ( GetOnlineCaps() & CAP_CAN_PLAY_ONLINE ) > 0;
 	}
+
+	// Id the save game code uses to find this user again, stable for a platform account and otherwise a hash of the gamertag
+	int							GetSaveGameUserId() const;
 
 	// Storage related
 	bool						IsStorageDeviceAvailable() const;

@@ -24,6 +24,11 @@ option(WINRT "Build for Windows RT" OFF)
 option(WINDOWS10 "Build for Windows 10" ON)
 option(USE_SYSTEM_LIBS "Prefer system-installed libraries over FetchContent" OFF)
 option(BUILD_GAME_DLL "Do not build the engine with the game code embbeded onto the exe" ON)
+option(USE_STEAMWORKS "Build the engine with steam integration" OFF)
+set(STEAM_APP_ID "208200" CACHE STRING "Steam App ID passed to the engine (208200 = Doom 3 BFG Edition)")
+
+# Some FetchContent dependencies do not explicitly sets SHARED or STATIC, so we force them to be static to avoid linking issues with shared libraries.
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "Force static libraries" FORCE)
 
 include(CPUDefine)
 
@@ -401,6 +406,7 @@ else()
 	SET_FORCED_OPTION(ALSOFT_INSTALL_HRTF_DATA OFF)
 	SET_FORCED_OPTION(ALSOFT_INSTALL_CONFIG OFF)
 	SET_FORCED_OPTION(ALSOFT_INSTALL OFF)
+	SET_FORCED_OPTION(ALSOFT_UPDATE_BUILD_VERSION OFF)
 
 	# OpenAL
 	find_or_fetch(OpenAL
@@ -417,13 +423,10 @@ if(UNIX)
 	include_directories(${SDL2_INCLUDE_DIRS})
 	link_directories(${SDL2_LIBRARY_DIRS})
 
-	pkg_check_modules(SDL2_IMAGE REQUIRED SDL2_image)
-	include_directories(${SDL2_IMAGE_INCLUDE_DIRS})
-	link_directories(${SDL2_IMAGE_LIBRARY_DIRS})
-
-	set(SDLX_LIBRARY ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES})
+	set(SDLX_LIBRARY ${SDL2_LIBRARIES})
 else()
 	SET_FORCED_OPTION(SDL_STATIC OFF)
+	SET_FORCED_OPTION(SDL_SHARED ON)
 	SET_FORCED_OPTION(SDL_TEST OFF)
 	if(MSVC)
 		SET_FORCED_OPTION(SDL_JOYSTICK_XINPUT ON)
@@ -435,35 +438,7 @@ else()
 		GIT_TAG release-2.30.10
 		GIT_SHALLOW TRUE)
 
-
-	SET_FORCED_OPTION(SDL2_DISABLE_INSTALL ON)
-	SET_FORCED_OPTION(SDL2IMAGE_SAMPLES OFF)
-	SET_FORCED_OPTION(SDL2IMAGE_TESTS OFF)
-	SET_FORCED_OPTION(SDL2IMAGE_AVIF OFF)
-	SET_FORCED_OPTION(SDL2IMAGE_BMP OFF)
-	SET_FORCED_OPTION(SDL2IMAGE_GIF OFF)
-	SET_FORCED_OPTION(SDL2IMAGE_JPG ON)
-	SET_FORCED_OPTION(SDL2IMAGE_JXL OFF)
-	SET_FORCED_OPTION(SDL2IMAGE_LBM OFF)
-	SET_FORCED_OPTION(SDL2IMAGE_PCX OFF)
-	SET_FORCED_OPTION(SDL2IMAGE_PNG ON)
-	SET_FORCED_OPTION(SDL2IMAGE_PNM OFF)
-	SET_FORCED_OPTION(SDL2IMAGE_QOI OFF)
-	SET_FORCED_OPTION(SDL2IMAGE_SVG OFF)
-	SET_FORCED_OPTION(SDL2IMAGE_TGA OFF)
-	SET_FORCED_OPTION(SDL2IMAGE_TIF OFF)
-	SET_FORCED_OPTION(SDL2IMAGE_WEBP OFF)
-	SET_FORCED_OPTION(SDL2IMAGE_XCF OFF)
-	SET_FORCED_OPTION(SDL2IMAGE_XPM OFF)
-	SET_FORCED_OPTION(SDL2IMAGE_XV OFF)
-
-	# SDL_Image (SDL2 Branch)
-	find_or_fetch(SDL2_image
-		GIT_REPOSITORY https://github.com/libsdl-org/SDL_image.git
-		GIT_TAG release-2.8.12
-		GIT_SHALLOW TRUE)
-
-	set(SDLX_LIBRARY SDL2::SDL2 SDL2::SDL2main SDL2_image::SDL2_image)
+	set(SDLX_LIBRARY SDL2::SDL2 SDL2::SDL2main)
 endif()
 list(APPEND sys_thirdparty ${SDLX_LIBRARY})
 
@@ -481,10 +456,13 @@ if(NOT USE_VULKAN)
 endif()
 
 if(USE_INTRINSICS_SSE)
+	SET_FORCED_OPTION(BUILD_DLL OFF)
+	SET_FORCED_OPTION(ENABLE_INSTALL OFF)
+	
 	# MaskedOcclusionCulling
 	find_or_fetch(MaskedOcclusionCulling
 		GIT_REPOSITORY https://github.com/FriskTheFallenHuman/MaskedOcclusionCulling.git
-		GIT_TAG v1.0.0)
+		GIT_TAG v1.0.1)
 	list(APPEND sys_thirdparty_dependencies MaskedOcclusionCulling)
 	list(APPEND sys_thirdparty MaskedOcclusionCulling)
 endif()
@@ -494,6 +472,9 @@ SET_FORCED_OPTION(REPROC_DEVELOP ON)
 SET_FORCED_OPTION(REPROC_TEST OFF)
 SET_FORCED_OPTION(REPROC_EXAMPLES OFF)
 SET_FORCED_OPTION(REPROC_TIDY OFF)
+SET_FORCED_OPTION(REPROC_OBJECT_LIBRARIES OFF)
+SET_FORCED_OPTION(REPROC_INSTALL OFF)
+SET_FORCED_OPTION(REPROC_INSTALL_PKGCONFIG OFF)
 
 find_or_fetch(reproc
 	GIT_REPOSITORY https://github.com/daandemeyer/reproc.git
@@ -509,6 +490,7 @@ list(APPEND sys_thirdparty reproc++)
 SET_FORCED_OPTION(CPPTRACE_BUILD_TESTING OFF)
 SET_FORCED_OPTION(CPPTRACE_BUILD_BENCHMARKING OFF)
 SET_FORCED_OPTION(CPPTRACE_BUILD_TOOLS OFF)
+SET_FORCED_OPTION(CPPTRACE_BUILD_SHARED OFF)
 
 find_or_fetch(cpptrace
 	GIT_REPOSITORY https://github.com/jeremy-rifkin/cpptrace.git
@@ -549,25 +531,93 @@ else()
 endif()
 list(APPEND sys_thirdparty ${WXWIDGETS_LIBRARY})
 
-# optimize this source file even in debug builds, to make speed (esp. loading times) more bearable
-# used for libs integrated here like stb_* and miniz(ip)
-if(CMAKE_MAJOR_VERSION LESS 3 OR (CMAKE_MAJOR_VERSION EQUAL 3 AND CMAKE_MINOR_VERSION LESS 11))
-	function(always_optimize_sourcefile srcfilename)
-		if(MSVC)
-			set_source_files_properties(${srcfilename} PROPERTIES COMPILE_FLAGS "/Ox")
+# SteamWorksSDK
+if(USE_STEAMWORKS)
+	add_subdirectory(extern/PipeDownloader/cmake)
+
+	find_path(STEAM_INCLUDE_DIR "steam_api.h" PATH_SUFFIXES "stean")
+
+	file(GLOB_RECURSE _sw_header "${CMAKE_SOURCE_DIR}/extern/PipeDownloader/steam/include/steam_api.h")
+	if(NOT _sw_header)
+		message(FATAL_ERROR "steam_api.h not found under ${CMAKE_SOURCE_DIR}/extern/PipeDownloader/steam/include")
+	endif()
+	list(GET _sw_header 0 _sw_header)
+	get_filename_component(_sw_include "${_sw_header}" DIRECTORY)
+	get_filename_component(_sw_include "${_sw_include}" DIRECTORY)
+
+	include_directories(${_sw_include})
+	
+	if(WIN32)
+		if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+			set(_sw_libname "steam_api64.lib")
 		else()
-			set_source_files_properties(${srcfilename} PROPERTIES COMPILE_FLAGS "-O2")
+			set(_sw_libname "steam_api.lib")
 		endif()
-	endfunction()
-else()
-	function(always_optimize_sourcefile srcfilename)
-		if(MSVC)
-			set_source_files_properties(${srcfilename} PROPERTIES COMPILE_OPTIONS "/Ox")
-		else()
-			set_source_files_properties(${srcfilename} PROPERTIES COMPILE_OPTIONS "-O2")
-		endif()
-	endfunction()
+	elseif(APPLE)
+		set(_sw_libname "libsteam_api.dylib")
+	else()
+		set(_sw_libname "libsteam_api.so")
+	endif()
+	file(GLOB_RECURSE _sw_lib "${CMAKE_SOURCE_DIR}/extern/PipeDownloader/steam/lib/steam/${_sw_libname}")
+	if(NOT _sw_lib)
+		message(FATAL_ERROR "${_sw_libname} not found under ${CMAKE_SOURCE_DIR}/extern/PipeDownloader/steam/lib/steam")
+	endif()
+	list(GET _sw_lib 0 _sw_lib)
+
+	file(GLOB_RECURSE _sw_ticketlib "${CMAKE_CURRENT_SOURCE_DIR}/extern/PipeDownloader/steam/lib/steam/sdkencryptedappticket*.lib")
+
+	link_directories(${_sw_lib})
+
+	if(_sw_ticketlib)
+		list(GET _sw_ticketlib 0 _sw_ticketlib)
+		link_directories(${_sw_ticketlib})
+	endif()
+
+	add_definitions(-DUSE_STEAMWORKS -DSTEAM_APP_ID=${STEAM_APP_ID})
+
+	list(APPEND sys_thirdparty_dependencies PipeDownloader)
+	list(APPEND sys_thirdparty ${_sw_lib})
 endif()
+
+# SDL_Image (SDL2 Branch)
+if(UNIX)
+	pkg_check_modules(SDL2_IMAGE REQUIRED SDL2_image)
+	include_directories(${SDL2_IMAGE_INCLUDE_DIRS})
+	link_directories(${SDL2_IMAGE_LIBRARY_DIRS})
+
+	set(SDLX_IMAGE_LIBRARY ${SDL2_IMAGE_LIBRARIES})
+else()
+	SET_FORCED_OPTION(SDL2_DISABLE_INSTALL ON)
+	SET_FORCED_OPTION(SDL2IMAGE_SAMPLES OFF)
+	SET_FORCED_OPTION(SDL2IMAGE_TESTS OFF)
+	SET_FORCED_OPTION(SDL2IMAGE_AVIF OFF)
+	SET_FORCED_OPTION(SDL2IMAGE_BMP OFF)
+	SET_FORCED_OPTION(SDL2IMAGE_GIF OFF)
+	SET_FORCED_OPTION(SDL2IMAGE_JPG ON)
+	SET_FORCED_OPTION(SDL2IMAGE_JXL OFF)
+	SET_FORCED_OPTION(SDL2IMAGE_LBM OFF)
+	SET_FORCED_OPTION(SDL2IMAGE_PCX OFF)
+	SET_FORCED_OPTION(SDL2IMAGE_PNG ON)
+	SET_FORCED_OPTION(SDL2IMAGE_PNM OFF)
+	SET_FORCED_OPTION(SDL2IMAGE_QOI OFF)
+	SET_FORCED_OPTION(SDL2IMAGE_SVG OFF)
+	SET_FORCED_OPTION(SDL2IMAGE_TGA OFF)
+	SET_FORCED_OPTION(SDL2IMAGE_TIF OFF)
+	SET_FORCED_OPTION(SDL2IMAGE_WEBP OFF)
+	SET_FORCED_OPTION(SDL2IMAGE_XCF OFF)
+	SET_FORCED_OPTION(SDL2IMAGE_XPM OFF)
+	SET_FORCED_OPTION(SDL2IMAGE_XV OFF)
+	
+	set(BUILD_SHARED_LIBS ON)
+	find_or_fetch(SDL2_image
+		GIT_REPOSITORY https://github.com/libsdl-org/SDL_image.git
+		GIT_TAG release-2.8.12
+		GIT_SHALLOW TRUE)
+	unset(BUILD_SHARED_LIBS)
+
+	set(SDLX_IMAGE_LIBRARY SDL2_image::SDL2_image)
+endif()
+list(APPEND sys_thirdparty ${SDLX_IMAGE_LIBRARY})
 
 ##################### Core ###########################
 
@@ -627,6 +677,11 @@ source_group("Sys" FILES ${src_sys})
 file(GLOB src_sys_common sys/common/*.cpp sys/common/*.h)
 source_group("Sys\\Common" FILES ${src_sys_common})
 
+if(USE_STEAMWORKS)
+file(GLOB src_sys_steam sys/steam/*.cpp sys/steam/*.h)
+source_group("Sys\\Steam" FILES ${src_sys_steam})
+endif()
+
 file(GLOB src_sys_sdl sys/sdl/*.cpp sys/sdl/*.h)
 source_group("Sys\\SDL" FILES ${src_sys_sdl})
 
@@ -646,6 +701,10 @@ set(src_core
 	${src_sys_sdl}
 	${src_sys_common}
 	${src_ui})
+
+if(USE_STEAMWORKS)
+list(APPEND src_core ${src_sys_steam})
+endif()
 
 ##################### Compilers ###########################
 
@@ -768,14 +827,44 @@ include_directories(
 	${CMAKE_SOURCE_DIR}/extern/imgui
 	${CMAKE_SOURCE_DIR}/extern/cpptrace/include)
 
-add_subdirectory(idlib)
-add_subdirectory(d3xp)
-add_subdirectory(extern)
-
 add_definitions(-D__DOOM__)
 if(${BUILD_GAME_DLL})
 	add_definitions(-D__DOOM_DLL__)
 endif()
+
+add_subdirectory(idlib)
+add_subdirectory(d3xp)
+add_subdirectory(extern)
+
+# Group every FetchContent'd target under "third-party" in IDE solutions.
+function(_collect_targets out dir)
+	get_property(_targets DIRECTORY "${dir}" PROPERTY BUILDSYSTEM_TARGETS)
+	get_property(_subdirs DIRECTORY "${dir}" PROPERTY SUBDIRECTORIES)
+	foreach(_sub IN LISTS _subdirs)
+		_collect_targets(_sub_targets "${_sub}")
+		list(APPEND _targets ${_sub_targets})
+	endforeach()
+	set(${out} "${_targets}" PARENT_SCOPE)
+endfunction()
+
+_collect_targets(_all_targets "${CMAKE_SOURCE_DIR}")
+foreach(_tgt IN LISTS _all_targets)
+	get_target_property(_type ${_tgt} TYPE)
+	if(_type STREQUAL "INTERFACE_LIBRARY")
+		continue()
+	endif()
+
+	get_target_property(_dir ${_tgt} SOURCE_DIR)
+	cmake_path(IS_PREFIX FETCHCONTENT_BASE_DIR "${_dir}" NORMALIZE _is_dep)
+	if(_is_dep)
+		#get_target_property(_folder ${_tgt} FOLDER)
+		#if(_folder)
+		#	set_target_properties(${_tgt} PROPERTIES FOLDER "third-party/${_folder}")
+		#else()
+		set_target_properties(${_tgt} PROPERTIES FOLDER "third-party")
+		#endif()
+	endif()
+endforeach()
 
 if(MSVC)
 	if(USE_VULKAN)
@@ -910,6 +999,13 @@ if(MSVC)
 	  TARGET ${CMAKE_PROJECT_NAME} POST_BUILD COMMAND
 	  ${CMAKE_COMMAND} -E copy_if_different
 		$<TARGET_FILE:SDL2::SDL2>
+		$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>
+	  VERBATIM )
+
+	add_custom_command(
+	  TARGET ${CMAKE_PROJECT_NAME} POST_BUILD COMMAND
+	  ${CMAKE_COMMAND} -E copy_if_different
+		$<TARGET_FILE:SDL2_image::SDL2_image>
 		$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>
 	  VERBATIM )
 

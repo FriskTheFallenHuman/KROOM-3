@@ -675,6 +675,7 @@ protected:
 
 	pendingInviteMode_t		pendingInviteMode;
 	int						pendingInviteDevice;
+	int						pendingInviteStartTime;		// when the invite arrived, an invite that waits for the main menu is dropped after a while
 	lobbyConnectInfo_t		pendingInviteConnectInfo;
 
 	bool					isSysUIShowing;
@@ -864,7 +865,7 @@ private:
 
 	void					EnsurePort();
 	void					DestroyServices();
-	idLobbyBackend*			CreateLobbyInternal( idLobbyBackend::lobbyBackendType_t lobbyType );
+	idLobbyBackend*			CreateLobbyInternal( idLobbyBackend::lobbyBackendType_t lobbyType, bool usePlatform = false );
 };
 
 /*

@@ -74,7 +74,7 @@ idLocalUser* GetLocalUserFromSaveParms( const saveGameThreadArgs_t& data )
 		idLocalUser* user = session->GetSignInManager().GetLocalUserByInputDevice( data.saveLoadParms->inputDeviceId );
 		if( user != NULL )
 		{
-			if( data.saveLoadParms->userId == idStr::Hash( user->GetGamerTag() ) )
+			if( data.saveLoadParms->userId == user->GetSaveGameUserId() )
 			{
 				return user;
 			}

@@ -31,6 +31,10 @@ If you have questions concerning this license or the applicable additional terms
 #include "sys_session_local.h"
 #include "sys_session_savegames.h"
 
+#ifdef USE_STEAMWORKS
+	#include "steam/steam_local.h"
+#endif
+
 
 extern idCVar saveGame_verbose;
 
@@ -722,6 +726,13 @@ bool idSessionLocal::LoadGameCheckDescriptionFile( idSaveLoadParms& parms )
 		{
 			parms.errorCode = SAVEGAME_E_INCOMPATIBLE_NEWER_VERSION;
 		}
+#ifdef USE_STEAMWORKS
+		else if( !Steam_IsMapAvailable( parms.description.descriptors.GetString( SAVEGAME_DETAIL_FIELD_MAP_FILE, "" ) ) )
+		{
+			// the DLC of the map of this save is not owned/installed
+			parms.errorCode = SAVEGAME_E_DLC_NOT_FOUND;
+		}
+#endif
 	}
 
 	return ( parms.GetError() == SAVEGAME_E_NONE );

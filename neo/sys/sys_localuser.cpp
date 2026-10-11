@@ -69,6 +69,23 @@ void idLocalUser::Pump()
 
 /*
 ========================
+idLocalUser::GetSaveGameUserId
+
+The gamertag can change, the platform account id does not.
+========================
+*/
+int idLocalUser::GetSaveGameUserId() const
+{
+	const uint64 platformId = GetPlatformId();
+	if( platformId != 0 )
+	{
+		return ( int )( ( uint32 )platformId ^ ( uint32 )( platformId >> 32 ) );
+	}
+	return idStr::Hash( GetGamerTag() );
+}
+
+/*
+========================
 idLocalUser::IsStorageDeviceAvailable
 ========================
 */

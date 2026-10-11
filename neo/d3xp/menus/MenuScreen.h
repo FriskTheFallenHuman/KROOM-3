@@ -937,6 +937,7 @@ public:
 			GAME_FIELD_AUTO_RELOAD,
 			GAME_FIELD_AIM_ASSIST,
 			GAME_FIELD_ALWAYS_SPRINT,
+			GAME_FIELD_VOICE_MODE,
 			MAX_GAME_FIELDS
 		};
 
@@ -952,10 +953,7 @@ public:
 		virtual bool				IsDataChanged() const;
 
 		// retrieves a particular field for reading or updating
-		virtual idSWFScriptVar		GetField( const int fieldIndex ) const
-		{
-			return fields[ fieldIndex ];
-		}
+		virtual idSWFScriptVar		GetField( const int fieldIndex ) const;
 
 		virtual void				AdjustField( const int fieldIndex, const int adjustAmount );
 

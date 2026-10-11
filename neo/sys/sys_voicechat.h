@@ -30,6 +30,16 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "sys_lobby_backend.h"
 
+typedef enum
+{
+	VOICE_MODE_OPEN,					// the microphone is always on
+	VOICE_MODE_PUSH_TO_TALK,			// on while the key bound to "_talk" is held
+	VOICE_MODE_DISABLED,
+	VOICE_MODE_NUM
+} voiceMode_t;
+
+extern idCVar voice_mode;
+
 /*
 ================================================
 idVoiceChatMgr

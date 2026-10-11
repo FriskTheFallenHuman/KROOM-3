@@ -3010,43 +3010,43 @@ idFileSystemLocal::ReadModManifest
 */
 bool idFileSystemLocal::ReadModManifest( const char* gameFolder, idModInfo_t& out )
 {
-    if( gameFolder == NULL || gameFolder[0] == '\0' )
-    {
-        return false;
-    }
+	if( gameFolder == NULL || gameFolder[0] == '\0' )
+	{
+		return false;
+	}
 
-    const char* search[2] =
-    {
-        cvarSystem->GetCVarString( "fs_savepath" ),
-        cvarSystem->GetCVarString( "fs_basepath" )
-    };
+	const char* search[2] =
+	{
+		cvarSystem->GetCVarString( "fs_savepath" ),
+		cvarSystem->GetCVarString( "fs_basepath" )
+	};
 
-    for( int s = 0; s < 2; ++s )
-    {
-        if( search[s] == NULL || search[s][0] == '\0' )
-        {
-            continue;
-        }
+	for( int s = 0; s < 2; ++s )
+	{
+		if( search[s] == NULL || search[s][0] == '\0' )
+		{
+			continue;
+		}
 
-        idStr path = va( "%s/%s/description.txt", search[s], gameFolder );
-        path.BackSlashesToSlashes();
+		idStr path = va( "%s/%s/description.txt", search[s], gameFolder );
+		path.BackSlashesToSlashes();
 
-        idStr contents;
-        if( !ReadWholeOSFile( path.c_str(), contents ) )
-        {
-            continue;
-        }
+		idStr contents;
+		if( !ReadWholeOSFile( path.c_str(), contents ) )
+		{
+			continue;
+		}
 
-        idModInfo_t parsed;
-        parsed.name = gameFolder;
-        if( ParseModDescription( contents.c_str(), parsed ) )
-        {
-            out = parsed;
-            return true;
-        }
-    }
+		idModInfo_t parsed;
+		parsed.name = gameFolder;
+		if( ParseModDescription( contents.c_str(), parsed ) )
+		{
+			out = parsed;
+			return true;
+		}
+	}
 
-    return false;
+	return false;
 }
 
 /*
@@ -3800,10 +3800,10 @@ void idFileSystemLocal::Startup()
 		AddGameDirectory( fs_basepath.GetString(), PLATFORM_GAMEDIR );
 	}
 
-    if( !fs_skipBase.GetBool() )
-    {
-        SetupGameDirectories( BASE_GAMEDIR );
-    }
+	if( !fs_skipBase.GetBool() )
+	{
+		SetupGameDirectories( BASE_GAMEDIR );
+	}
 
 	// fs_game_base override
 	if( fs_game_base.GetString()[0] &&

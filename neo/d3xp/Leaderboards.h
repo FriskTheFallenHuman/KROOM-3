@@ -29,7 +29,7 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __LEADERBOARDS_LOCAL_H__
 #define __LEADERBOARDS_LOCAL_H__
 
-#include "Game.h"
+#include "../framework/Game.h"
 
 struct leaderboardStats_t
 {
