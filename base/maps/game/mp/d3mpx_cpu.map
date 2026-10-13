@@ -36302,6 +36302,7 @@ brushDef3
 "name" "info_player_deathmatch_1"
 "angle" "225"
 "origin" "-1584 1528 -2048"
+"initial" "1"
 }
 // entity 66
 {

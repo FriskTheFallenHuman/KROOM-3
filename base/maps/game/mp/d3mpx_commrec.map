@@ -17643,6 +17643,7 @@ patchDef2
 "classname" "info_player_deathmatch"
 "name" "info_player_deathmatch_1"
 "origin" "-4336 -1552 80"
+"initial" "1"
 }
 // entity 45
 {

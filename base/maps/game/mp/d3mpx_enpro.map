@@ -19709,6 +19709,7 @@ patchDef2
 "name" "info_player_deathmatch_1"
 "angle" "0"
 "origin" "1592 696 -128"
+"initial" "1"
 }
 // entity 43
 {

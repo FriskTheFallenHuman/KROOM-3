@@ -7838,6 +7838,7 @@ brushDef3
 "classname" "info_player_deathmatch"
 "name" "info_player_deathmatch_6"
 "angle" "300"
+"initial" "1"
 "origin" "1224 6264 112"
 }
 // entity 18
@@ -8486,7 +8487,7 @@ patchDef2
 {
 "classname" "func_door"
 "name" "func_door_200"
-"locked" "2"
+"locked" "1"
 "model" "models/mapobjects/doors/hazdoor1/hazdoor1lf.lwo"
 "movedir" "270"
 "origin" "832 5120 -220"
@@ -8497,7 +8498,7 @@ patchDef2
 {
 "classname" "func_door"
 "name" "func_door_202"
-"locked" "2"
+"locked" "1"
 "model" "models/mapobjects/doors/hazdoor1/hazdoor1rt.lwo"
 "movedir" "90"
 "origin" "832 5120 -220"
