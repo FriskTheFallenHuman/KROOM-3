@@ -178,12 +178,16 @@ public:
 	virtual const renderEntity_t* GetRenderEntity( qhandle_t entityHandle ) const;
 	virtual qhandle_t		AddRenderEntity( idRenderEntity* entity );
 	virtual void			QueueRenderEntity( idRenderEntity* entity );
+	virtual idRenderEntity*	CreateRenderEntity();
+	virtual void			DestroyRenderEntity( idRenderEntity* e );
 
 	virtual	qhandle_t		AddLightDef( const renderLight_t* rlight );
 	virtual	void			UpdateLightDef( qhandle_t lightHandle, const renderLight_t* rlight );
 	virtual	void			FreeLightDef( qhandle_t lightHandle );
 	virtual const renderLight_t* GetRenderLight( qhandle_t lightHandle ) const;
 	virtual qhandle_t		AddRenderLight( idRenderLight* light );
+	virtual idRenderLight*  CreateRenderLight();
+	virtual void            DestroyRenderLight( idRenderLight* l );
 
 	// RB: environment probes for IBL
 	virtual	qhandle_t		AddEnvironmentProbeDef( const renderEnvironmentProbe_t* ep );
@@ -191,6 +195,8 @@ public:
 	virtual	void			FreeEnvironmentProbeDef( qhandle_t envprobeHandle );
 	virtual const renderEnvironmentProbe_t* GetRenderEnvironmentProbe( qhandle_t envprobeHandle ) const;
 	virtual qhandle_t		AddRenderEnvironmentProbe( idRenderEnvironmentProbe* envprobe );
+	virtual idRenderEnvironmentProbe*   CreateRenderEnvironmentProbe();
+	virtual void            DestroyRenderEnvironmentProbe( idRenderEnvironmentProbe* p );
 	// RB end
 
 	virtual bool			CheckAreaForPortalSky( int areaNum );

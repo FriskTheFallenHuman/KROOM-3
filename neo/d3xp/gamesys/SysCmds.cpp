@@ -342,8 +342,8 @@ void Cmd_Give_f( const idCmdArgs& args )
 			{
 				if( gameLocal.entities[ i ] )
 				{
-					gameLocal.entities[i]->ProcessEvent( &EV_Player_EnableWeapon ); // see idTarget_EnableLevelWeapons::Event_Activate
-					gameLocal.entities[i]->PostEventSec( &EV_Player_SelectWeapon, 0.5f, gameLocal.entities[i]->spawnArgs.GetString( "def_weapon2" ) );
+					gameLocal.entities[ i ]->ProcessEvent( &EV_Player_EnableWeapon ); // see idTarget_EnableLevelWeapons::Event_Activate
+					gameLocal.entities[ i ]->PostEventSec( &EV_Player_SelectWeapon, 0.5f, gameLocal.entities[i]->spawnArgs.GetString( "def_weapon2" ) );
 				}
 			}
 		}
@@ -1001,7 +1001,7 @@ void Cmd_Spawn_f( const idCmdArgs& args )
 
 	org = player->GetPhysics()->GetOrigin() + idAngles( 0, yaw, 0 ).ToForward() * 80 + idVec3( 0, 0, 1 );
 
-	// RB: put env_probes a bit higher
+	// put env_probes a bit higher
 	if( idStr::Icmp( value, "env_probe" ) == 0 )
 	{
 		//org.z = 64;
@@ -1028,6 +1028,7 @@ void Cmd_Spawn_f( const idCmdArgs& args )
 /*
 ===============
 Cmd_SpawnAdvanced_f
+
 Spawn but can only speciy the angles and origin
 ===============
 */
@@ -1532,7 +1533,6 @@ static void PrintFloat( float f )
 	char buf[128];
 	int i;
 
-	// snPrintf() returns >= 0 here, cast to uint to avoid false positive -Wstringop-overflow
 	for( i = ( unsigned int )idStr::snPrintf( buf, sizeof( buf ), "%3.2f", f ); i < 7; i++ )
 	{
 		buf[i] = ' ';
@@ -2396,6 +2396,11 @@ static void Cmd_SaveEnvprobes_f( const idCmdArgs& args )
 	}
 }
 
+/*
+==================
+Cmd_SaveParticles_f
+==================
+*/
 static void Cmd_SaveParticles_f( const idCmdArgs& args )
 {
 	if( !gameLocal.CheatsOk() )
@@ -2805,6 +2810,7 @@ void Cmd_PrintEntityInfo_f( const idCmdArgs& args )
 /*
 ===============
 exportRagdolls
+
 export all ragdolls matching the specified classname
 ===============
 */

@@ -96,25 +96,9 @@ If you have questions concerning this license or the applicable additional terms
 	#ifdef _MSC_VER
 		#define ID_FORCE_INLINE					__forceinline
 		#define ID_GAME_API						__declspec(dllexport)
-
-		#if defined(ID_ENGINE_EXPORTS)
-			#define ID_ENGINE_API				__declspec(dllexport)
-		#elif defined(ID_ENGINE_IMPORTS)
-			#define ID_ENGINE_API				__declspec(dllimport)
-		#else
-			#define ID_ENGINE_API
-		#endif
 	#elif defined(__GNUC__) || defined(__clang__)
 		#define ID_FORCE_INLINE					inline __attribute__((always_inline))
 		#define ID_GAME_API						__attribute__((visibility ("default")))
-
-		#if defined(ID_ENGINE_EXPORTS)
-			#define ID_ENGINE_API				__attribute__((visibility ("default")))
-		#elif defined(ID_ENGINE_IMPORTS)
-			#define ID_ENGINE_API
-		#else
-			#define ID_ENGINE_API
-		#endif
 	#else
 		#define ID_FORCE_INLINE					inline
 		#define ID_GAME_API
@@ -173,14 +157,6 @@ If you have questions concerning this license or the applicable additional terms
 	#define NEWLINE							"\n"
 
 	#define ID_GAME_API						__attribute__((visibility ("default")))
-
-	#if defined(ID_ENGINE_EXPORTS)
-		#define ID_ENGINE_API				__attribute__((visibility ("default")))
-	#elif defined(ID_ENGINE_IMPORTS)
-		#define ID_ENGINE_API
-	#else
-		#define ID_ENGINE_API
-	#endif
 
 	#define ID_INLINE						inline
 

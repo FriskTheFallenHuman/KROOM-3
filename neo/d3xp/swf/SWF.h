@@ -29,6 +29,9 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __SWF_H__
 #define __SWF_H__
 
+#include "../../renderer/Font.h"
+#include "../../renderer/GLState.h"
+
 #include "SWF_Enums.h"
 #include "SWF_Types.h"
 #include "SWF_Bitstream.h"

@@ -567,6 +567,16 @@ public:
 									const idVec3& start, const idVec6& dir, const float depth,
 									const idTraceModel* trm, const idMat3& trmAxis, int contentMask,
 									const idPositionedCollisionModel* positionedModels );
+
+	// Query-result merging
+	bool			MergeTraceResult( trace_t& result, const trace_t& candidate,
+									  int entityNum, int physicsId );
+	int				MergeContentsResults( int initialContents, const int* results,
+										  const idPositionedCollisionModel* models, int numModels, int contentMask );
+	int				MergeContactsResults( contactInfo_t* output, int maxContacts, int initialContacts,
+										  const contactInfo_t* inputs, const int* inputCounts, int contactsPerModel,
+										  const idPositionedCollisionModel* models, int numModels );
+
 	// test collision detection
 	void			DebugOutput( const idVec3& origin );
 	// draw a model

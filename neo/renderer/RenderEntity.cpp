@@ -31,60 +31,218 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "RenderCommon.h"
 
-idRenderEntity::idRenderEntity()
+class idRenderEntityImpl : public idRenderEntity
 {
-	memset( static_cast< renderEntity_t* >( this ), 0, sizeof( renderEntity_t ) );
-	world = NULL;
-	index = -1;
-	committed = NULL;
-	needsCommit = false;
-	needsCommit = false;
-}
-
-idRenderEntity::~idRenderEntity()
-{
-	FreeRenderEntity();
-}
-
-void idRenderEntity::CommitThisFrame( bool forceUpdate )
-{
-	if( world != NULL && index >= 0 )
+public:
+	idRenderEntityImpl()
 	{
-		if( forceUpdate )
+		memset( static_cast< renderEntity_t* >( this ), 0, sizeof( renderEntity_t ) );
+		world = NULL;
+		index = -1;
+		committed = NULL;
+		needsCommit = false;
+	}
+
+	~idRenderEntityImpl() override
+	{
+		FreeRenderEntity();
+	}
+
+	void CommitThisFrame( bool forceUpdate ) override
+	{
+		if( world != NULL && index >= 0 )
 		{
-			this->forceUpdate = true;
+			if( forceUpdate )
+			{
+				this->forceUpdate = true;
+			}
+			world->QueueRenderEntity( this );
 		}
-		world->QueueRenderEntity( this );
 	}
-}
 
-void idRenderEntity::FreeRenderEntity()
-{
-	if( world != NULL && index >= 0 )
+	void FreeRenderEntity() override
 	{
-		world->FreeEntityDef( index );
+		if( world != NULL && index >= 0 )
+		{
+			world->FreeEntityDef( index );
+		}
 	}
-}
 
-void idRenderEntity::ForceUpdate()
-{
-	CommitThisFrame( true );
-}
-
-void idRenderEntity::ProjectOverlay( const idPlane localTextureAxis[2], const idMaterial* material )
-{
-	if( world != NULL && index >= 0 )
+	void ForceUpdate() override
 	{
-		world->ProjectOverlay( index, localTextureAxis, material, 0 );
+		CommitThisFrame( true );
 	}
+
+	int GetIndex() const override
+	{
+		return index;
+	}
+
+	bool IsRegistered() const override
+	{
+		return world != NULL && index >= 0;
+	}
+
+	void ProjectOverlay( const idPlane localTextureAxis[2], const idMaterial* material ) override
+	{
+		if( world != NULL && index >= 0 )
+		{
+			world->ProjectOverlay( index, localTextureAxis, material, 0 );
+		}
+	}
+
+	void RemoveDecals() override
+	{
+		if( world != NULL && index >= 0 )
+		{
+			world->RemoveDecals( index );
+		}
+	}
+};
+
+class idRenderLightImpl : public idRenderLight
+{
+public:
+	idRenderLightImpl()
+	{
+		memset( static_cast< renderLight_t* >( this ), 0, sizeof( renderLight_t ) );
+		world = NULL;
+		index = -1;
+		committed = NULL;
+		needsCommit = false;
+	}
+
+	~idRenderLightImpl() override
+	{
+		FreeRenderLight();
+	}
+
+	void CommitThisFrame( bool forceUpdate ) override
+	{
+		if( world != NULL && index >= 0 )
+		{
+			tr.pc.c_lightCommitRequests++;
+			needsCommit = true;
+		}
+	}
+
+	void FreeRenderLight() override
+	{
+		if( world != NULL && index >= 0 )
+		{
+			world->FreeLightDef( index );
+		}
+	}
+
+	void ForceUpdate() override
+	{
+		CommitThisFrame( true );
+	}
+
+	int GetIndex() const override
+	{
+		return index;
+	}
+
+	bool IsRegistered() const override
+	{
+		return world != NULL && index >= 0;
+	}
+};
+
+class idRenderEnvironmentProbeImpl : public idRenderEnvironmentProbe
+{
+public:
+	idRenderEnvironmentProbeImpl()
+	{
+		memset( static_cast< renderEnvironmentProbe_t* >( this ), 0, sizeof( renderEnvironmentProbe_t ) );
+		world = NULL;
+		index = -1;
+		committed = NULL;
+		needsCommit = false;
+	}
+
+	~idRenderEnvironmentProbeImpl() override
+	{
+		FreeRenderEnvprobe();
+	}
+
+	void CommitThisFrame( bool forceUpdate ) override
+	{
+		if( world != NULL && index >= 0 )
+		{
+			tr.pc.c_environmentprobeCommitRequests++;
+			needsCommit = true;
+		}
+	}
+
+	void FreeRenderEnvprobe() override
+	{
+		if( world != NULL && index >= 0 )
+		{
+			world->FreeEnvironmentProbeDef( index );
+		}
+	}
+
+	void ForceUpdate() override
+	{
+		CommitThisFrame( true );
+	}
+
+	int GetIndex() const override
+	{
+		return index;
+	}
+
+	bool IsRegistered() const override
+	{
+		return world != NULL && index >= 0;
+	}
+};
+
+idRenderEntity* idRenderWorldLocal::CreateRenderEntity()
+{
+	return new( TAG_RENDER_ENTITY ) idRenderEntityImpl();
 }
 
-void idRenderEntity::RemoveDecals()
+void idRenderWorldLocal::DestroyRenderEntity( idRenderEntity* entity )
 {
-	if( world != NULL && index >= 0 )
+	if( entity == NULL )
 	{
-		world->RemoveDecals( index );
+		return;
 	}
+	entity->FreeRenderEntity();
+	delete entity;
+}
+
+idRenderLight* idRenderWorldLocal::CreateRenderLight()
+{
+	return new( TAG_RENDER_LIGHT ) idRenderLightImpl();
+}
+
+void idRenderWorldLocal::DestroyRenderLight( idRenderLight* light )
+{
+	if( light == NULL )
+	{
+		return;
+	}
+	light->FreeRenderLight();
+	delete light;
+}
+
+idRenderEnvironmentProbe* idRenderWorldLocal::CreateRenderEnvironmentProbe()
+{
+	return new( TAG_RENDER_ENVPROBE ) idRenderEnvironmentProbeImpl();
+}
+
+void idRenderWorldLocal::DestroyRenderEnvironmentProbe( idRenderEnvironmentProbe* probe )
+{
+	if( probe == NULL )
+	{
+		return;
+	}
+	probe->FreeRenderEnvprobe();
+	delete probe;
 }
 
 void idRenderEntityCommitted::ReadFromDemoFile( class idDemoFile* f )
@@ -207,6 +365,7 @@ void idRenderEntityCommitted::ReadFromDemoFile( class idDemoFile* f )
 		common->Printf( "DC_UPDATE_ENTITYDEF: %i = %s\n", index, parms.hModel ? parms.hModel->Name() : "NULL" );
 	}
 }
+
 void idRenderEntityCommitted::WriteToDemoFile( class idDemoFile* f ) const
 {
 	f->WriteInt( index );
@@ -288,41 +447,6 @@ void idRenderEntityCommitted::WriteToDemoFile( class idDemoFile* f ) const
 	}
 }
 
-idRenderLight::idRenderLight()
-{
-	memset( static_cast< renderLight_t* >( this ), 0, sizeof( renderLight_t ) );
-	world = NULL;
-	index = -1;
-	committed = NULL;
-}
-
-idRenderLight::~idRenderLight()
-{
-	FreeRenderLight();
-}
-
-void idRenderLight::CommitThisFrame( bool forceUpdate )
-{
-	if( world != NULL && index >= 0 )
-	{
-		tr.pc.c_lightCommitRequests++;
-		needsCommit = true;
-	}
-}
-
-void idRenderLight::FreeRenderLight()
-{
-	if( world != NULL && index >= 0 )
-	{
-		world->FreeLightDef( index );
-	}
-}
-
-void idRenderLight::ForceUpdate()
-{
-	CommitThisFrame( true );
-}
-
 idRenderEntityCommitted::idRenderEntityCommitted()
 {
 	memset( &parms, 0, sizeof( parms ) );
@@ -381,43 +505,6 @@ idRenderLightLocal::idRenderLightLocal() : idRenderLightCommitted()
 	stagedFalloffImage = NULL;
 	needsCommit = false;
 	needsPostCommit = false;
-}
-
-//======================================================================
-
-idRenderEnvironmentProbe::idRenderEnvironmentProbe()
-{
-	memset( static_cast< renderEnvironmentProbe_t* >( this ), 0, sizeof( renderEnvironmentProbe_t ) );
-	world = NULL;
-	index = -1;
-	committed = NULL;
-}
-
-idRenderEnvironmentProbe::~idRenderEnvironmentProbe()
-{
-	FreeRenderEnvprobe();
-}
-
-void idRenderEnvironmentProbe::CommitThisFrame( bool forceUpdate )
-{
-	if( world != NULL && index >= 0 )
-	{
-		tr.pc.c_environmentprobeCommitRequests++;
-		needsCommit = true;
-	}
-}
-
-void idRenderEnvironmentProbe::FreeRenderEnvprobe()
-{
-	if( world != NULL && index >= 0 )
-	{
-		world->FreeEnvironmentProbeDef( index );
-	}
-}
-
-void idRenderEnvironmentProbe::ForceUpdate()
-{
-	CommitThisFrame( true );
 }
 
 //======================================================================

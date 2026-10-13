@@ -38,15 +38,25 @@ static const char* smokeParticle_SnapshotName = "_SmokeParticle_Snapshot_";
 idSmokeParticles::idSmokeParticles
 ================
 */
-idSmokeParticles::idSmokeParticles()
+idSmokeParticles::idSmokeParticles():
+	renderEntity( NULL )
 {
 	initialized = false;
-	memset( static_cast< renderEntity_t* >( &renderEntity ), 0, sizeof( renderEntity_t ) );
 	renderEntityHandle = -1;
 	memset( smokes, 0, sizeof( smokes ) );
 	freeSmokes = NULL;
 	numActiveSmokes = 0;
 	currentParticleTime = -1;
+}
+
+/*
+================
+idSmokeParticles::~idSmokeParticles
+================
+*/
+idSmokeParticles::~idSmokeParticles()
+{
+	Shutdown();
 }
 
 /*
@@ -72,28 +82,33 @@ void idSmokeParticles::Init()
 
 	activeStages.Clear();
 
-	memset( static_cast< renderEntity_t* >( &renderEntity ), 0, sizeof( renderEntity_t ) );
+	if( renderEntity == NULL )
+	{
+		renderEntity = gameRenderWorld->CreateRenderEntity();
+	}
 
-	renderEntity.bounds.Clear();
-	renderEntity.axis = mat3_identity;
-	renderEntity.shaderParms[ SHADERPARM_RED ]		= 1;
-	renderEntity.shaderParms[ SHADERPARM_GREEN ]	= 1;
-	renderEntity.shaderParms[ SHADERPARM_BLUE ]		= 1;
-	renderEntity.shaderParms[3] = 1;
+	memset( static_cast< renderEntity_t* >( renderEntity ), 0, sizeof( renderEntity_t ) );
 
-	renderEntity.hModel = renderModelManager->AllocModel();
-	renderEntity.hModel->InitEmpty( smokeParticle_SnapshotName );
+	renderEntity->bounds.Clear();
+	renderEntity->axis = mat3_identity;
+	renderEntity->shaderParms[ SHADERPARM_RED ]		= 1;
+	renderEntity->shaderParms[ SHADERPARM_GREEN ]	= 1;
+	renderEntity->shaderParms[ SHADERPARM_BLUE ]		= 1;
+	renderEntity->shaderParms[3] = 1;
+
+	renderEntity->hModel = renderModelManager->AllocModel();
+	renderEntity->hModel->InitEmpty( smokeParticle_SnapshotName );
 
 	// we certainly don't want particle shadows
-	renderEntity.noShadow = 1;
+	renderEntity->noShadow = 1;
 
 	// huge bounds, so it will be present in every world area
-	renderEntity.bounds.AddPoint( idVec3( -100000, -100000, -100000 ) );
-	renderEntity.bounds.AddPoint( idVec3( 100000,  100000,  100000 ) );
+	renderEntity->bounds.AddPoint( idVec3( -100000, -100000, -100000 ) );
+	renderEntity->bounds.AddPoint( idVec3( 100000,  100000,  100000 ) );
 
-	renderEntity.callback = idSmokeParticles::ModelCallback;
+	renderEntity->callback = idSmokeParticles::ModelCallback;
 	// add to renderer list
-	renderEntityHandle = gameRenderWorld->AddRenderEntity( &renderEntity );
+	renderEntityHandle = gameRenderWorld->AddRenderEntity( renderEntity );
 
 	currentParticleTime = -1;
 
@@ -108,16 +123,24 @@ idSmokeParticles::Shutdown
 void idSmokeParticles::Shutdown()
 {
 	// make sure the render entity is freed before the model is freed
-	if( renderEntityHandle != -1 )
+	if( renderEntityHandle != -1 && renderEntity != NULL )
 	{
-		renderEntity.FreeRenderEntity();
+		renderEntity->FreeRenderEntity();
 		renderEntityHandle = -1;
 	}
-	if( renderEntity.hModel != NULL )
+
+	if( renderEntity != NULL && renderEntity->hModel != NULL )
 	{
-		renderModelManager->FreeModel( renderEntity.hModel );
-		renderEntity.hModel = NULL;
+		renderModelManager->FreeModel( renderEntity->hModel );
+		renderEntity->hModel = NULL;
 	}
+
+	if( renderEntity != NULL )
+	{
+		gameRenderWorld->DestroyRenderEntity( renderEntity );
+		renderEntity = NULL;
+	}
+
 	initialized = false;
 }
 

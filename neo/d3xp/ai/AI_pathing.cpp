@@ -1352,7 +1352,6 @@ bool idAI::PredictPath( const idEntity* ent, const idAAS* aas, const idVec3& sta
 	curStart = start;
 	curVelocity = velocity;
 
-	// RB: fixed integer division by 0
 	if( frameTime != 0 )
 	{
 		numFrames = ( totalTime + frameTime - 1 ) / frameTime;
@@ -1361,7 +1360,7 @@ bool idAI::PredictPath( const idEntity* ent, const idAAS* aas, const idVec3& sta
 	{
 		numFrames = ( totalTime + frameTime - 1 );
 	}
-	// RB end
+
 	curFrameTime = frameTime;
 	for( i = 0; i < numFrames; i++ )
 	{

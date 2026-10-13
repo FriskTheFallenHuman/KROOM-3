@@ -226,7 +226,7 @@ idInventory::GivePowerUp
 void idInventory::GivePowerUp( idPlayer* player, int powerup, int msec )
 {
 	powerups |= 1 << powerup;
-	powerupEndTime[powerup] = gameLocal.fast.time + msec;
+	powerupEndTime[ powerup ] = gameLocal.fast.time + msec;
 }
 
 /*
@@ -1936,13 +1936,13 @@ void idPlayer::Init()
 	if( ( common->IsMultiplayer() || g_testDeath.GetBool() ) && skin )
 	{
 		SetSkin( skin );
-		renderEntity.shaderParms[6] = 0.0f;
+		renderEntity->shaderParms[6] = 0.0f;
 	}
 	else if( spawnArgs.GetString( "spawn_skin", NULL, &value ) )
 	{
 		skin = declManager->FindSkin( value );
 		SetSkin( skin );
-		renderEntity.shaderParms[6] = 0.0f;
+		renderEntity->shaderParms[6] = 0.0f;
 	}
 
 	value = spawnArgs.GetString( "bone_hips", "" );
@@ -2067,7 +2067,7 @@ void idPlayer::Spawn()
 	SetPhysics( &physicsObj );
 	InitAASLocation();
 
-	skin = renderEntity.customSkin;
+	skin = renderEntity->customSkin;
 
 	// only the local player needs guis
 	if( !common->IsMultiplayer() || IsLocallyControlled() )
@@ -2121,10 +2121,10 @@ void idPlayer::Spawn()
 	playerView.SetPlayerEntity( this );
 
 	// supress model in non-player views, but allow it in mirrors and remote views
-	renderEntity.suppressSurfaceInViewID = entityNumber + 1;
+	renderEntity->suppressSurfaceInViewID = entityNumber + 1;
 
 	// don't project shadow on self or weapon
-	renderEntity.noSelfShadow = true;
+	renderEntity->noSelfShadow = true;
 
 	idAFAttachment* headEnt = head.GetEntity();
 	if( headEnt )
@@ -4670,11 +4670,11 @@ void idPlayer::UpdatePowerUps()
 	{
 		if( powerUpSkin )
 		{
-			renderEntity.customSkin = powerUpSkin;
+			renderEntity->customSkin = powerUpSkin;
 		}
 		else
 		{
-			renderEntity.customSkin = skin;
+			renderEntity->customSkin = skin;
 		}
 	}
 
@@ -7358,7 +7358,7 @@ void idPlayer::UpdateOxygen()
 			// otherwise a rotating player box may poke into an outside area
 			if( num == 1 )
 			{
-				const int* pvsAreas = GetPVSAreas();
+				const int*	pvsAreas = GetPVSAreas();
 				areaNum = pvsAreas[0];
 			}
 			else
@@ -7525,6 +7525,7 @@ void idPlayer::UpdatePowerupHud()
 	{
 		return;
 	}
+
 	if( lastHudPowerup != hudPowerup )
 	{
 		if( lastHudPowerup == ENVIROTIME && hud )
@@ -7533,6 +7534,7 @@ void idPlayer::UpdatePowerupHud()
 		}
 		lastHudPowerup = hudPowerup;
 	}
+
 	if( hudPowerup == ENVIROTIME && hud )
 	{
 		int value = 0;
@@ -7550,6 +7552,7 @@ void idPlayer::UpdatePowerupHud()
 				}
 			}
 		}
+
 		hud->UpdateEnviro( true, bar, value );
 	}
 }
@@ -8112,6 +8115,14 @@ void idPlayer::PerformImpulse( int impulse )
 				{
 					gameLocal.mpGame.SetScoreboardActive( true );
 				}
+			}
+			break;
+		}
+		case IMPULSE_22:
+		{
+			if( common->IsClient() || IsLocallyControlled() )
+			{
+				gameLocal.mpGame.ToggleSpectate();
 			}
 			break;
 		}
@@ -9158,14 +9169,14 @@ void idPlayer::UpdateDeathSkin( bool state_hitch )
 		{
 			deathClearContentsTime = spawnArgs.GetInt( "deathSkinTime" );
 			doingDeathSkin = true;
-			renderEntity.noShadow = true;
+			renderEntity->noShadow = true;
 			if( state_hitch )
 			{
-				renderEntity.shaderParms[ SHADERPARM_TIME_OF_DEATH ] = gameLocal.time * 0.001f - 2.0f;
+				renderEntity->shaderParms[ SHADERPARM_TIME_OF_DEATH ] = gameLocal.time * 0.001f - 2.0f;
 			}
 			else
 			{
-				renderEntity.shaderParms[ SHADERPARM_TIME_OF_DEATH ] = gameLocal.time * 0.001f;
+				renderEntity->shaderParms[ SHADERPARM_TIME_OF_DEATH ] = gameLocal.time * 0.001f;
 			}
 			UpdateVisuals();
 		}
@@ -9179,8 +9190,8 @@ void idPlayer::UpdateDeathSkin( bool state_hitch )
 	}
 	else
 	{
-		renderEntity.noShadow = false;
-		renderEntity.shaderParms[ SHADERPARM_TIME_OF_DEATH ] = 0.0f;
+		renderEntity->noShadow = false;
+		renderEntity->shaderParms[ SHADERPARM_TIME_OF_DEATH ] = 0.0f;
 		UpdateVisuals();
 		doingDeathSkin = false;
 	}
@@ -9487,7 +9498,7 @@ void idPlayer::Think()
 
 	if( common->IsMultiplayer() || g_showPlayerShadow.GetBool() )
 	{
-		renderEntity.suppressShadowInViewID	= 0;
+		renderEntity->suppressShadowInViewID	= 0;
 		if( headRenderEnt )
 		{
 			headRenderEnt->suppressShadowInViewID = 0;
@@ -9495,14 +9506,14 @@ void idPlayer::Think()
 	}
 	else
 	{
-		renderEntity.suppressShadowInViewID	= entityNumber + 1;
+		renderEntity->suppressShadowInViewID	= entityNumber + 1;
 		if( headRenderEnt )
 		{
 			headRenderEnt->suppressShadowInViewID = entityNumber + 1;
 		}
 	}
 	// never cast shadows from our first-person muzzle flashes
-	renderEntity.suppressShadowInLightID = LIGHTID_VIEW_MUZZLE_FLASH + entityNumber;
+	renderEntity->suppressShadowInLightID = LIGHTID_VIEW_MUZZLE_FLASH + entityNumber;
 	if( headRenderEnt )
 	{
 		headRenderEnt->suppressShadowInLightID = LIGHTID_VIEW_MUZZLE_FLASH + entityNumber;
@@ -11972,7 +11983,7 @@ void idPlayer::ClientThink( const int curTime, const float fraction, const bool 
 
 	if( common->IsMultiplayer() || g_showPlayerShadow.GetBool() )
 	{
-		renderEntity.suppressShadowInViewID	= 0;
+		renderEntity->suppressShadowInViewID	= 0;
 		if( headRenderEnt )
 		{
 			headRenderEnt->suppressShadowInViewID = 0;
@@ -11980,14 +11991,14 @@ void idPlayer::ClientThink( const int curTime, const float fraction, const bool 
 	}
 	else
 	{
-		renderEntity.suppressShadowInViewID	= entityNumber + 1;
+		renderEntity->suppressShadowInViewID	= entityNumber + 1;
 		if( headRenderEnt )
 		{
 			headRenderEnt->suppressShadowInViewID = entityNumber + 1;
 		}
 	}
 	// never cast shadows from our first-person muzzle flashes
-	renderEntity.suppressShadowInLightID = LIGHTID_VIEW_MUZZLE_FLASH + entityNumber;
+	renderEntity->suppressShadowInLightID = LIGHTID_VIEW_MUZZLE_FLASH + entityNumber;
 	if( headRenderEnt )
 	{
 		headRenderEnt->suppressShadowInLightID = LIGHTID_VIEW_MUZZLE_FLASH + entityNumber;

@@ -1357,7 +1357,7 @@ idParallelJobManagerLocal::Init
 */
 void idParallelJobManagerLocal::Init()
 {
-	Sys_CPUCount( numLogicalCpuCores, numPhysicalCpuCores, numCpuPackages );
+	sys->GetCPUCount( numLogicalCpuCores, numPhysicalCpuCores, numCpuPackages );
 	idLib::Printf( "CPU core count: %d physical, %d logical\n", numPhysicalCpuCores, numLogicalCpuCores );
 
 	idStr exePath;

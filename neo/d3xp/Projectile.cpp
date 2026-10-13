@@ -79,7 +79,8 @@ idProjectile::idProjectile
 */
 idProjectile::idProjectile() :
 	launchOrigin( 0.0f ),
-	launchAxis( mat3_identity )
+	launchAxis( mat3_identity ),
+	renderLight( NULL )
 {
 	owner				= NULL;
 	lightDefHandle		= -1;
@@ -98,7 +99,11 @@ idProjectile::idProjectile() :
 	mTouchTriggers		= false;
 	mNoExplodeDisappear = false;
 	memset( &projectileFlags, 0, sizeof( projectileFlags ) );
-	memset( static_cast< renderLight_t* >( &renderLight ), 0, sizeof( renderLight_t ) );
+
+	if( gameRenderWorld != NULL )
+	{
+		renderLight = gameRenderWorld->CreateRenderLight();
+	}
 
 	tracerEffect = NULL;
 
@@ -121,6 +126,11 @@ void idProjectile::Spawn()
 	SetPhysics( &physicsObj );
 	mNoExplodeDisappear = spawnArgs.GetBool( "no_explode_disappear", mNoExplodeDisappear );
 	mTouchTriggers = spawnArgs.GetBool( "touch_triggers", mTouchTriggers );
+
+	if( renderLight == NULL )
+	{
+		renderLight = gameRenderWorld->CreateRenderLight();
+	}
 }
 
 /*
@@ -140,7 +150,7 @@ void idProjectile::Save( idSaveGame* savefile ) const
 	savefile->WriteFloat( thrust );
 	savefile->WriteInt( thrust_end );
 
-	savefile->WriteRenderLight( renderLight );
+	savefile->WriteRenderLight( *renderLight );
 	savefile->WriteInt( ( int )lightDefHandle );
 	savefile->WriteVec3( lightOffset );
 	savefile->WriteInt( lightStartTime );
@@ -176,7 +186,7 @@ void idProjectile::Restore( idRestoreGame* savefile )
 	savefile->ReadFloat( thrust );
 	savefile->ReadInt( thrust_end );
 
-	savefile->ReadRenderLight( renderLight );
+	savefile->ReadRenderLight( *renderLight );
 	savefile->ReadInt( ( int& )lightDefHandle );
 	savefile->ReadVec3( lightOffset );
 	savefile->ReadInt( lightStartTime );
@@ -209,7 +219,7 @@ void idProjectile::Restore( idRestoreGame* savefile )
 
 	if( lightDefHandle >= 0 )
 	{
-		lightDefHandle = gameRenderWorld->AddRenderLight( &renderLight );
+		lightDefHandle = gameRenderWorld->AddRenderLight( renderLight );
 	}
 
 	// Reinitialize the damage Def
@@ -254,24 +264,30 @@ void idProjectile::Create( idEntity* owner, const idVec3& start, const idVec3& d
 
 	this->owner = owner;
 
-	memset( static_cast< renderLight_t* >( &renderLight ), 0, sizeof( renderLight_t ) );
+	if( renderLight == NULL )
+	{
+		renderLight = gameRenderWorld->CreateRenderLight();
+	}
+
+	memset( static_cast< renderLight_t* >( renderLight ), 0, sizeof( renderLight_t ) );
+
 	shaderName = spawnArgs.GetString( "mtr_light_shader" );
 	if( *( const char* )shaderName )
 	{
-		renderLight.shader = declManager->FindMaterial( shaderName, false );
-		renderLight.pointLight = true;
-		renderLight.lightRadius[0] =
-			renderLight.lightRadius[1] =
-				renderLight.lightRadius[2] = spawnArgs.GetFloat( "light_radius" );
+		renderLight->shader = declManager->FindMaterial( shaderName, false );
+		renderLight->pointLight = true;
+		renderLight->lightRadius[0] =
+			renderLight->lightRadius[1] =
+				renderLight->lightRadius[2] = spawnArgs.GetFloat( "light_radius" );
 #ifdef ID_PC
-		renderLight.lightRadius *= 1.5f;
-		renderLight.forceShadows = true;
+		renderLight->lightRadius *= 1.5f;
+		renderLight->forceShadows = true;
 #endif
 		spawnArgs.GetVector( "light_color", "1 1 1", light_color );
-		renderLight.shaderParms[0] = light_color[0];
-		renderLight.shaderParms[1] = light_color[1];
-		renderLight.shaderParms[2] = light_color[2];
-		renderLight.shaderParms[3] = 1.0f;
+		renderLight->shaderParms[0] = light_color[0];
+		renderLight->shaderParms[1] = light_color[1];
+		renderLight->shaderParms[2] = light_color[2];
+		renderLight->shaderParms[3] = 1.0f;
 	}
 
 	spawnArgs.GetVector( "light_offset", "0 0 0", lightOffset );
@@ -285,7 +301,7 @@ void idProjectile::Create( idEntity* owner, const idVec3& start, const idVec3& d
 
 	if( spawnArgs.GetBool( "reset_time_offset", "0" ) )
 	{
-		renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time );
+		renderEntity->shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time );
 	}
 
 	UpdateVisuals();
@@ -303,6 +319,12 @@ idProjectile::~idProjectile()
 	StopSound( SND_CHANNEL_ANY, false );
 	FreeLightDef();
 
+	if( renderLight != NULL )
+	{
+		gameRenderWorld->DestroyRenderLight( renderLight );
+		renderLight = NULL;
+	}
+
 	if( tracerEffect )
 	{
 		delete tracerEffect;
@@ -318,7 +340,7 @@ void idProjectile::FreeLightDef()
 {
 	if( lightDefHandle != -1 )
 	{
-		renderLight.FreeRenderLight();
+		renderLight->FreeRenderLight();
 		lightDefHandle = -1;
 	}
 }
@@ -526,7 +548,7 @@ void idProjectile::Launch( const idVec3& start, const idVec3& dir, const idVec3&
 	{
 		float f = gameLocal.random.RandomFloat();
 		f *= 0.5f;
-		renderEntity.shaderParms[SHADERPARM_DIVERSITY] = f;
+		renderEntity->shaderParms[SHADERPARM_DIVERSITY] = f;
 	}
 
 	UpdateVisuals();
@@ -608,10 +630,10 @@ void idProjectile::AddParticlesAndLight()
 	}
 
 	// add the light
-	if( renderLight.lightRadius.x > 0.0f && g_projectileLights.GetBool() )
+	if( renderLight->lightRadius.x > 0.0f && g_projectileLights.GetBool() )
 	{
-		renderLight.origin = GetPhysics()->GetOrigin() + GetPhysics()->GetAxis() * lightOffset;
-		renderLight.axis = GetPhysics()->GetAxis();
+		renderLight->origin = GetPhysics()->GetOrigin() + GetPhysics()->GetAxis() * lightOffset;
+		renderLight->axis = GetPhysics()->GetAxis();
 		if( ( lightDefHandle != -1 ) )
 		{
 			SetTimeState ts( originalTimeGroup );
@@ -623,15 +645,15 @@ void idProjectile::AddParticlesAndLight()
 					float frac = ( float )( gameLocal.time - lightStartTime ) / ( float )( lightEndTime - lightStartTime );
 					color.Lerp( lightColor, color, frac );
 				}
-				renderLight.shaderParms[SHADERPARM_RED] = color.x;
-				renderLight.shaderParms[SHADERPARM_GREEN] = color.y;
-				renderLight.shaderParms[SHADERPARM_BLUE] = color.z;
+				renderLight->shaderParms[SHADERPARM_RED] = color.x;
+				renderLight->shaderParms[SHADERPARM_GREEN] = color.y;
+				renderLight->shaderParms[SHADERPARM_BLUE] = color.z;
 			}
-			renderLight.CommitThisFrame();
+			renderLight->CommitThisFrame();
 		}
 		else
 		{
-			lightDefHandle = gameRenderWorld->AddRenderLight( &renderLight );
+			lightDefHandle = gameRenderWorld->AddRenderLight( renderLight );
 		}
 	}
 }
@@ -1247,16 +1269,16 @@ void idProjectile::Explode( const trace_t& collision, idEntity* ignore )
 		// check whether we used beam model as tracer
 		if( tracerEffect != NULL && tracerEffect->IsType( dnBeamTracer::Type() ) )
 		{
-			memset( &renderEntity, 0, sizeof( renderEntity ) );
+			memset( static_cast< renderEntity_t* >( renderEntity ), 0, sizeof( renderEntity_t ) );
 		}
 
 		SetModel( fxname );
-		renderEntity.shaderParms[SHADERPARM_RED] =
-			renderEntity.shaderParms[SHADERPARM_GREEN] =
-				renderEntity.shaderParms[SHADERPARM_BLUE] =
-					renderEntity.shaderParms[SHADERPARM_ALPHA] = 1.0f;
-		renderEntity.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( idTime );
-		renderEntity.shaderParms[SHADERPARM_DIVERSITY] = gameLocal.random.CRandomFloat();
+		renderEntity->shaderParms[SHADERPARM_RED] =
+			renderEntity->shaderParms[SHADERPARM_GREEN] =
+				renderEntity->shaderParms[SHADERPARM_BLUE] =
+					renderEntity->shaderParms[SHADERPARM_ALPHA] = 1.0f;
+		renderEntity->shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( idTime );
+		renderEntity->shaderParms[SHADERPARM_DIVERSITY] = gameLocal.random.CRandomFloat();
 		Show();
 		removeTime = ( removeTime > 3000 ) ? removeTime : 3000;
 	}
@@ -1271,30 +1293,30 @@ void idProjectile::Explode( const trace_t& collision, idEntity* ignore )
 
 	if( *light_shader )
 	{
-		renderLight.shader = declManager->FindMaterial( light_shader, false );
-		renderLight.pointLight = true;
-		renderLight.lightRadius[0] =
-			renderLight.lightRadius[1] =
-				renderLight.lightRadius[2] = spawnArgs.GetFloat( "explode_light_radius" );
+		renderLight->shader = declManager->FindMaterial( light_shader, false );
+		renderLight->pointLight = true;
+		renderLight->lightRadius[0] =
+			renderLight->lightRadius[1] =
+				renderLight->lightRadius[2] = spawnArgs.GetFloat( "explode_light_radius" );
 #ifdef ID_PC
-		renderLight.lightRadius *= 2.0f;
-		renderLight.forceShadows = true;
+		renderLight->lightRadius *= 2.0f;
+		renderLight->forceShadows = true;
 #endif
 
 		// Midnight ctf
 		if( gameLocal.mpGame.IsGametypeFlagBased() && gameLocal.serverInfo.GetBool( "si_midnight" ) )
 		{
-			renderLight.lightRadius[0] =
-				renderLight.lightRadius[1] =
-					renderLight.lightRadius[2] = spawnArgs.GetFloat( "explode_light_radius" ) * 2;
+			renderLight->lightRadius[0] =
+				renderLight->lightRadius[1] =
+					renderLight->lightRadius[2] = spawnArgs.GetFloat( "explode_light_radius" ) * 2;
 		}
 
 		spawnArgs.GetVector( "explode_light_color", "1 1 1", lightColor );
-		renderLight.shaderParms[SHADERPARM_RED] = lightColor.x;
-		renderLight.shaderParms[SHADERPARM_GREEN] = lightColor.y;
-		renderLight.shaderParms[SHADERPARM_BLUE] = lightColor.z;
-		renderLight.shaderParms[SHADERPARM_ALPHA] = 1.0f;
-		renderLight.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( idTime );
+		renderLight->shaderParms[SHADERPARM_RED] = lightColor.x;
+		renderLight->shaderParms[SHADERPARM_GREEN] = lightColor.y;
+		renderLight->shaderParms[SHADERPARM_BLUE] = lightColor.z;
+		renderLight->shaderParms[SHADERPARM_ALPHA] = 1.0f;
+		renderLight->shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( idTime );
 
 		// Midnight ctf
 		if( gameLocal.mpGame.IsGametypeFlagBased() && gameLocal.serverInfo.GetBool( "si_midnight" ) )
@@ -1674,7 +1696,7 @@ void idProjectile::ClientThink( const int curTime, const float fraction, const b
 	}
 	else
 	{
-		if( !renderEntity.hModel )
+		if( !renderEntity->hModel )
 		{
 			return;
 		}
@@ -1691,7 +1713,7 @@ idProjectile::ClientPredictionThink
 */
 void idProjectile::ClientPredictionThink()
 {
-	if( !renderEntity.hModel )
+	if( !renderEntity->hModel )
 	{
 		return;
 	}
@@ -1770,7 +1792,7 @@ void idProjectile::ReadFromSnapshot( const idBitMsg& msg )
 			case EXPLODED:
 			{
 				StopSound( SND_CHANNEL_BODY2, false );
-				gameEditLocal.ParseSpawnArgsToRenderEntity( &spawnArgs, &renderEntity );
+				gameEditLocal.ParseSpawnArgsToRenderEntity( &spawnArgs, renderEntity );
 				state = SPAWNED;
 				break;
 			}
@@ -2140,15 +2162,31 @@ void idGuidedProjectile::Launch( const idVec3& start, const idVec3& dir, const i
 	UpdateVisuals();
 }
 
+/*
+=================
+idGuidedProjectile::SetEnemy
+=================
+*/
 void idGuidedProjectile::SetEnemy( idEntity* ent )
 {
 	enemy = ent;
 }
+
+/*
+=================
+idGuidedProjectile::Event_SetEnemy
+=================
+*/
 void idGuidedProjectile::Event_SetEnemy( idEntity* ent )
 {
 	SetEnemy( ent );
 }
 
+/*
+=================
+idGuidedProjectile::UnGuide
+=================
+*/
 void idGuidedProjectile::UnGuide()
 {
 	unGuided = true;
@@ -2914,7 +2952,7 @@ idBFGProjectile::ClientThink
 */
 void idBFGProjectile::ClientThink( const int curTime, const float fraction, const bool predict )
 {
-	if( !renderEntity.hModel )
+	if( !renderEntity->hModel )
 	{
 		return;
 	}
@@ -3360,7 +3398,7 @@ void idDebris::Launch()
 	bool		randomVelocity;
 	idMat3		axis;
 
-	renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time );
+	renderEntity->shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time );
 
 	spawnArgs.GetVector( "velocity", "0 0 0", velocity );
 	angular_velocity_vect = spawnArgs.GetAngles( "angular_velocity", "0 0 0" ).ToAngularVelocity();
@@ -3382,7 +3420,7 @@ void idDebris::Launch()
 
 	if( randomVelocity )
 	{
-		float rand = spawnArgs.GetFloat( "linear_velocity_rand", "0.35" );
+		float rand = spawnArgs.GetFloat( "linear_velocity_rand", "0.5" );
 
 		// sets velocity randomly between ((1-rand)*100)% and ((1+rand)*100)%
 		// e.g.1: if rand = 0.2, velocity will be randomly set between 80% and 120%
@@ -3427,7 +3465,7 @@ void idDebris::Launch()
 	if( !collisionModelManager->TrmFromModel( clipModelName, trm ) )
 	{
 		// default to a box
-		physicsObj.SetClipBox( renderEntity.bounds, 1.0f );
+		physicsObj.SetClipBox( renderEntity->bounds, 1.0f );
 	}
 	else
 	{
@@ -3928,19 +3966,41 @@ void idHomingProjectile::Launch( const idVec3& start, const idVec3& dir, const i
 	UpdateVisuals();
 }
 
+/*
+=================
+idHomingProjectile::SetEnemy
+=================
+*/
 void idHomingProjectile::SetEnemy( idEntity* ent )
 {
 	enemy = ent;
 }
+
+/*
+=================
+idHomingProjectile::SetSeekPos
+=================
+*/
 void idHomingProjectile::SetSeekPos( idVec3 pos )
 {
 	seekPos = pos;
 }
+
+/*
+=================
+idHomingProjectile::Event_SetEnemy
+=================
+*/
 void idHomingProjectile::Event_SetEnemy( idEntity* ent )
 {
 	SetEnemy( ent );
 }
 
+/*
+=================
+idHomingProjectile::UnGuide
+=================
+*/
 void idHomingProjectile::UnGuide()
 {
 	unGuided = true;

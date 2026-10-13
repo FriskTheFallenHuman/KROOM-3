@@ -54,6 +54,8 @@ public:
 
 	virtual double			GetClockTicks();
 	virtual double			ClockTicksPerSecond();
+	virtual void			GetCPUCount( int& numLogicalCPUCores, int& numPhysicalCPUCores, int& numCPUPackages );
+
 	virtual int				GetProcessorId();
 	virtual const char* 	GetProcessorString();
 

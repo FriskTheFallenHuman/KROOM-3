@@ -796,6 +796,7 @@ const int GAME_API_VERSION		= 9;
 class idKey;
 class idSession;
 class idImGuiSystem;
+class idDeviceManager;
 
 typedef struct
 {
@@ -816,6 +817,7 @@ typedef struct
 	idAASFileManager* 			AASFileManager;			// AAS file manager
 	idCollisionModelManager* 	collisionModelManager;	// collision model manager
 	idImGuiSystem*				imguiSystem;			// imgui overlay manager
+	idDeviceManager*			deviceManager;			// device manager
 
 } gameImport_t;
 

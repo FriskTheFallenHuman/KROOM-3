@@ -254,7 +254,7 @@ void idEntity::UpdateChangeableSpawnArgs( const idDict* source )
 
 	for( i = 0; i < MAX_RENDERENTITY_GUI; i++ )
 	{
-		UpdateGuiParms( renderEntity.gui[ i ], source );
+		UpdateGuiParms( renderEntity->gui[ i ], source );
 	}
 }
 
@@ -268,7 +268,8 @@ idEntity::idEntity():
 	predictionKey( INVALID_PREDICTION_KEY ),
 	originDelta( vec3_zero ),
 	axisDelta( mat3_identity ),
-	interpolationBehavior( USE_NO_INTERPOLATION )
+	interpolationBehavior( USE_NO_INTERPOLATION ),
+	renderEntity( NULL )
 {
 
 	entityNumber	= ENTITYNUM_NONE;
@@ -306,7 +307,11 @@ idEntity::idEntity():
 	memset( &fl, 0, sizeof( fl ) );
 	fl.neverDormant	= true;			// most entities never go dormant
 
-	memset( static_cast< renderEntity_t* >( &renderEntity ), 0, sizeof( renderEntity_t ) );
+	if( gameRenderWorld != NULL )
+	{
+		renderEntity = gameRenderWorld->CreateRenderEntity();
+	}
+
 	modelDefHandle	= -1;
 	memset( &refSound, 0, sizeof( refSound ) );
 
@@ -355,6 +360,11 @@ void idEntity::Spawn()
 
 	gameLocal.RegisterEntity( this, -1, gameLocal.GetSpawnArgs() );
 
+	if( renderEntity == NULL )
+	{
+		renderEntity = gameRenderWorld->CreateRenderEntity();
+	}
+
 	spawnArgs.GetString( "classname", NULL, &classname );
 	const idDeclEntityDef* def = gameLocal.FindEntityDef( classname, false );
 	if( def )
@@ -365,14 +375,14 @@ void idEntity::Spawn()
 	FixupLocalizedStrings();
 
 	// parse static models the same way the editor display does
-	gameEditLocal.ParseSpawnArgsToRenderEntity( &spawnArgs, &renderEntity );
+	gameEditLocal.ParseSpawnArgsToRenderEntity( &spawnArgs, renderEntity );
 
-	renderEntity.entityNum = entityNumber;
+	renderEntity->entityNum = entityNumber;
 
 	noGrab = spawnArgs.GetBool( "noGrab", "0" );
 
 	xraySkin = NULL;
-	renderEntity.xrayIndex = 1;
+	renderEntity->xrayIndex = 1;
 
 	idStr str;
 	if( spawnArgs.GetString( "skin_xray", "", str ) )
@@ -382,14 +392,14 @@ void idEntity::Spawn()
 
 	if( spawnArgs.GetBool( "use_spawntime" ) )
 	{
-		renderEntity.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.realClientTime );
+		renderEntity->shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.realClientTime );
 	}
 
 	// go dormant within 100ms so that when the map starts most monsters are dormant
 	dormantStart = gameLocal.time - DELAY_DORMANT_TIME + 100;
 
-	origin = renderEntity.origin;
-	axis = renderEntity.axis;
+	origin = renderEntity->origin;
+	axis = renderEntity->axis;
 
 	// do the audio parsing the same way dmap and the editor do
 	gameEditLocal.ParseSpawnArgsToRefSound( &spawnArgs, &refSound );
@@ -408,7 +418,7 @@ void idEntity::Spawn()
 
 	for( i = 0; i < MAX_RENDERENTITY_GUI; i++ )
 	{
-		UpdateGuiParms( renderEntity.gui[ i ], &spawnArgs );
+		UpdateGuiParms( renderEntity->gui[ i ], &spawnArgs );
 	}
 
 	fl.solidForTeam = spawnArgs.GetBool( "solidForTeam", "0" );
@@ -548,6 +558,12 @@ idEntity::~idEntity()
 		xrayEntityHandle = -1;
 	}
 
+	if( renderEntity != NULL )
+	{
+		gameRenderWorld->DestroyRenderEntity( renderEntity );
+		renderEntity = NULL;
+	}
+
 	gameLocal.UnregisterEntity( this );
 }
 
@@ -592,7 +608,7 @@ void idEntity::Save( idSaveGame* savefile ) const
 	savefile->WriteInt( xrayEntityHandle );
 	savefile->WriteSkin( xraySkin );
 
-	savefile->WriteRenderEntity( renderEntity );
+	savefile->WriteRenderEntity( *renderEntity );
 	savefile->WriteInt( modelDefHandle );
 	savefile->WriteRefSound( refSound );
 
@@ -681,7 +697,7 @@ void idEntity::Restore( idRestoreGame* savefile )
 	}
 	savefile->ReadSkin( xraySkin );
 
-	savefile->ReadRenderEntity( renderEntity );
+	savefile->ReadRenderEntity( *renderEntity );
 	savefile->ReadInt( modelDefHandle );
 	savefile->ReadRefSound( refSound );
 
@@ -727,7 +743,7 @@ void idEntity::Restore( idRestoreGame* savefile )
 	// restore must retrieve modelDefHandle from the renderer
 	if( modelDefHandle != -1 )
 	{
-		modelDefHandle = gameRenderWorld->AddRenderEntity( &renderEntity );
+		modelDefHandle = gameRenderWorld->AddRenderEntity( renderEntity );
 	}
 }
 
@@ -994,7 +1010,7 @@ void idEntity::BecomeInactive( int flags )
 			}
 		}
 		// Becoming inactive automagically turns on motion blur again
-		renderEntity.skipMotionBlur = false;
+		renderEntity->skipMotionBlur = false;
 		BecomeActive( TH_UPDATEVISUALS );
 	}
 }
@@ -1018,7 +1034,7 @@ void idEntity::SetShaderParm( int parmnum, float value )
 		return;
 	}
 
-	renderEntity.shaderParms[ parmnum ] = value;
+	renderEntity->shaderParms[ parmnum ] = value;
 	UpdateVisuals();
 }
 
@@ -1029,9 +1045,9 @@ idEntity::SetColor
 */
 void idEntity::SetColor( float red, float green, float blue )
 {
-	renderEntity.shaderParms[ SHADERPARM_RED ]		= red;
-	renderEntity.shaderParms[ SHADERPARM_GREEN ]	= green;
-	renderEntity.shaderParms[ SHADERPARM_BLUE ]		= blue;
+	renderEntity->shaderParms[ SHADERPARM_RED ]		= red;
+	renderEntity->shaderParms[ SHADERPARM_GREEN ]	= green;
+	renderEntity->shaderParms[ SHADERPARM_BLUE ]		= blue;
 	UpdateVisuals();
 }
 
@@ -1053,9 +1069,9 @@ idEntity::GetColor
 */
 void idEntity::GetColor( idVec3& out ) const
 {
-	out[ 0 ] = renderEntity.shaderParms[ SHADERPARM_RED ];
-	out[ 1 ] = renderEntity.shaderParms[ SHADERPARM_GREEN ];
-	out[ 2 ] = renderEntity.shaderParms[ SHADERPARM_BLUE ];
+	out[ 0 ] = renderEntity->shaderParms[ SHADERPARM_RED ];
+	out[ 1 ] = renderEntity->shaderParms[ SHADERPARM_GREEN ];
+	out[ 2 ] = renderEntity->shaderParms[ SHADERPARM_BLUE ];
 }
 
 /*
@@ -1065,10 +1081,10 @@ idEntity::SetColor
 */
 void idEntity::SetColor( const idVec4& color )
 {
-	renderEntity.shaderParms[ SHADERPARM_RED ]		= color[ 0 ];
-	renderEntity.shaderParms[ SHADERPARM_GREEN ]	= color[ 1 ];
-	renderEntity.shaderParms[ SHADERPARM_BLUE ]		= color[ 2 ];
-	renderEntity.shaderParms[ SHADERPARM_ALPHA ]	= color[ 3 ];
+	renderEntity->shaderParms[ SHADERPARM_RED ]		= color[ 0 ];
+	renderEntity->shaderParms[ SHADERPARM_GREEN ]	= color[ 1 ];
+	renderEntity->shaderParms[ SHADERPARM_BLUE ]		= color[ 2 ];
+	renderEntity->shaderParms[ SHADERPARM_ALPHA ]	= color[ 3 ];
 	UpdateVisuals();
 }
 
@@ -1079,10 +1095,10 @@ idEntity::GetColor
 */
 void idEntity::GetColor( idVec4& out ) const
 {
-	out[ 0 ] = renderEntity.shaderParms[ SHADERPARM_RED ];
-	out[ 1 ] = renderEntity.shaderParms[ SHADERPARM_GREEN ];
-	out[ 2 ] = renderEntity.shaderParms[ SHADERPARM_BLUE ];
-	out[ 3 ] = renderEntity.shaderParms[ SHADERPARM_ALPHA ];
+	out[ 0 ] = renderEntity->shaderParms[ SHADERPARM_RED ];
+	out[ 1 ] = renderEntity->shaderParms[ SHADERPARM_GREEN ];
+	out[ 2 ] = renderEntity->shaderParms[ SHADERPARM_BLUE ];
+	out[ 3 ] = renderEntity->shaderParms[ SHADERPARM_ALPHA ];
 }
 
 /*
@@ -1107,23 +1123,23 @@ void idEntity::SetModel( const char* modelname )
 
 	FreeModelDef();
 
-	renderEntity.hModel = renderModelManager->FindModel( modelname );
+	renderEntity->hModel = renderModelManager->FindModel( modelname );
 
-	if( renderEntity.hModel )
+	if( renderEntity->hModel )
 	{
-		renderEntity.hModel->Reset();
+		renderEntity->hModel->Reset();
 	}
 
-	renderEntity.callback = NULL;
-	renderEntity.numJoints = 0;
-	renderEntity.joints = NULL;
-	if( renderEntity.hModel )
+	renderEntity->callback = NULL;
+	renderEntity->numJoints = 0;
+	renderEntity->joints = NULL;
+	if( renderEntity->hModel )
 	{
-		renderEntity.bounds = renderEntity.hModel->Bounds( &renderEntity );
+		renderEntity->bounds = renderEntity->hModel->Bounds( renderEntity );
 	}
 	else
 	{
-		renderEntity.bounds.Zero();
+		renderEntity->bounds.Zero();
 	}
 
 	UpdateVisuals();
@@ -1136,7 +1152,7 @@ idEntity::SetSkin
 */
 void idEntity::SetSkin( const idDeclSkin* skin )
 {
-	renderEntity.customSkin = skin;
+	renderEntity->customSkin = skin;
 	UpdateVisuals();
 }
 
@@ -1147,7 +1163,7 @@ idEntity::GetSkin
 */
 const idDeclSkin* idEntity::GetSkin() const
 {
-	return renderEntity.customSkin;
+	return renderEntity->customSkin;
 }
 
 /*
@@ -1159,7 +1175,7 @@ void idEntity::FreeModelDef()
 {
 	if( modelDefHandle != -1 )
 	{
-		renderEntity.FreeRenderEntity();
+		renderEntity->FreeRenderEntity();
 		modelDefHandle = -1;
 	}
 }
@@ -1224,14 +1240,14 @@ void idEntity::UpdateModelTransform()
 
 	if( GetPhysicsToVisualTransform( origin, axis ) )
 	{
-		renderEntity.axis = axis * GetPhysics()->GetAxis();
-		renderEntity.origin = GetPhysics()->GetOrigin() + origin * renderEntity.axis;
+		renderEntity->axis = axis * GetPhysics()->GetAxis();
+		renderEntity->origin = GetPhysics()->GetOrigin() + origin * renderEntity->axis;
 	}
 	else
 	{
 		// Add the deltas here, used for projectiles in MP. These deltas should only affect the visuals.
-		renderEntity.axis = GetPhysics()->GetAxis() * axisDelta;
-		renderEntity.origin = GetPhysics()->GetOrigin() + originDelta;
+		renderEntity->axis = GetPhysics()->GetAxis() * axisDelta;
+		renderEntity->origin = GetPhysics()->GetOrigin() + originDelta;
 	}
 }
 
@@ -1242,7 +1258,7 @@ idEntity::UpdateModel
 */
 void idEntity::UpdateModel()
 {
-	renderEntity.timeGroup = timeGroup;
+	renderEntity->timeGroup = timeGroup;
 
 	UpdateModelTransform();
 
@@ -1251,7 +1267,7 @@ void idEntity::UpdateModel()
 	if( animator != NULL && animator->ModelHandle() != NULL )
 	{
 		// set the callback to update the joints
-		renderEntity.callback = idEntity::ModelCallback;
+		renderEntity->callback = idEntity::ModelCallback;
 	}
 
 	// set to invalid number to force an update the next time the PVS areas are retrieved
@@ -1263,7 +1279,7 @@ void idEntity::UpdateModel()
 	// If the entity has an xray skin, go ahead and add it
 	if( xraySkin != NULL )
 	{
-		xrayEntity = renderEntity;
+		xrayEntity = *renderEntity;
 		xrayEntity.xrayIndex = 2;
 		xrayEntity.customSkin = xraySkin;
 
@@ -1300,14 +1316,14 @@ void idEntity::UpdatePVSAreas()
 	idBounds modelAbsBounds;
 	int i;
 
-	modelAbsBounds.FromTransformedBounds( renderEntity.bounds, renderEntity.origin, renderEntity.axis );
+	modelAbsBounds.FromTransformedBounds( renderEntity->bounds, renderEntity->origin, renderEntity->axis );
 	localNumPVSAreas = gameLocal.pvs.GetPVSAreas( modelAbsBounds, localPVSAreas, sizeof( localPVSAreas ) / sizeof( localPVSAreas[0] ) );
 
 	// FIXME: some particle systems may have huge bounds and end up in many PVS areas
 	// the first MAX_PVS_AREAS may not be visible to a network client and as a result the particle system may not show up when it should
 	if( localNumPVSAreas > MAX_PVS_AREAS )
 	{
-		localNumPVSAreas = gameLocal.pvs.GetPVSAreas( idBounds( renderEntity.origin ).Expand( 64.0f ), localPVSAreas, sizeof( localPVSAreas ) / sizeof( localPVSAreas[0] ) );
+		localNumPVSAreas = gameLocal.pvs.GetPVSAreas( idBounds( renderEntity->origin ).Expand( 64.0f ), localPVSAreas, sizeof( localPVSAreas ) / sizeof( localPVSAreas[0] ) );
 	}
 
 	for( numPVSAreas = 0; numPVSAreas < MAX_PVS_AREAS && numPVSAreas < localNumPVSAreas; numPVSAreas++ )
@@ -1438,7 +1454,7 @@ void idEntity::ProjectOverlay( const idVec3& origin, const idVec3& dir, float si
 	}
 
 	// only do this on dynamic md5 models
-	if( renderEntity.hModel->IsDynamicModel() != DM_CACHED )
+	if( renderEntity->hModel->IsDynamicModel() != DM_CACHED )
 	{
 		return;
 	}
@@ -1450,9 +1466,9 @@ void idEntity::ProjectOverlay( const idVec3& origin, const idVec3& dir, float si
 	axis[0] = axistemp[ 0 ] * c + axistemp[ 1 ] * -s;
 	axis[1] = axistemp[ 0 ] * -s + axistemp[ 1 ] * -c;
 
-	renderEntity.axis.ProjectVector( origin - renderEntity.origin, localOrigin );
-	renderEntity.axis.ProjectVector( axis[0], localAxis[0] );
-	renderEntity.axis.ProjectVector( axis[1], localAxis[1] );
+	renderEntity->axis.ProjectVector( origin - renderEntity->origin, localOrigin );
+	renderEntity->axis.ProjectVector( axis[0], localAxis[0] );
+	renderEntity->axis.ProjectVector( axis[1], localAxis[1] );
 
 	size = 1.0f / size;
 	localAxis[0] *= size;
@@ -1498,11 +1514,11 @@ void idEntity::Present()
 	// camera target for remote render views
 	if( cameraTarget && gameLocal.InPlayerPVS( this ) )
 	{
-		renderEntity.remoteRenderView = cameraTarget->GetRenderView();
+		renderEntity->remoteRenderView = cameraTarget->GetRenderView();
 	}
 
 	// if set to invisible, skip
-	if( !renderEntity.hModel || IsHidden() )
+	if( !renderEntity->hModel || IsHidden() )
 	{
 		return;
 	}
@@ -1510,11 +1526,11 @@ void idEntity::Present()
 	// add to refresh list
 	if( modelDefHandle == -1 )
 	{
-		modelDefHandle = gameRenderWorld->AddRenderEntity( &renderEntity );
+		modelDefHandle = gameRenderWorld->AddRenderEntity( renderEntity );
 	}
 	else
 	{
-		renderEntity.CommitThisFrame();
+		renderEntity->CommitThisFrame();
 	}
 }
 
@@ -1525,7 +1541,7 @@ idEntity::GetRenderEntity
 */
 renderEntity_t* idEntity::GetRenderEntity()
 {
-	return &renderEntity;
+	return renderEntity;
 }
 
 /*
@@ -1751,7 +1767,7 @@ bool idEntity::StartSoundShader( const idSoundShader* shader, const s_channelTyp
 	}
 
 	// set reference to the sound for shader synced effects
-	renderEntity.referenceSound = refSound.referenceSound;
+	renderEntity->referenceSound = refSound.referenceSound;
 
 	return true;
 }
@@ -2315,8 +2331,8 @@ void idEntity::ConvertLocalToWorldTransform( idVec3& offset, idMat3& axis )
 {
 	UpdateModelTransform();
 
-	offset = renderEntity.origin + offset * renderEntity.axis;
-	axis *= renderEntity.axis;
+	offset = renderEntity->origin + offset * renderEntity->axis;
+	axis *= renderEntity->axis;
 }
 
 /*
@@ -2456,8 +2472,8 @@ bool idEntity::GetMasterPosition( idVec3& masterOrigin, idMat3& masterAxis ) con
 			else
 			{
 				masterAnimator->GetJointTransform( bindJoint, gameLocal.time, masterOrigin, masterAxis );
-				masterAxis *= bindMaster->renderEntity.axis;
-				masterOrigin = bindMaster->renderEntity.origin + masterOrigin * bindMaster->renderEntity.axis;
+				masterAxis *= bindMaster->renderEntity->axis;
+				masterOrigin = bindMaster->renderEntity->origin + masterOrigin * bindMaster->renderEntity->axis;
 			}
 		}
 		else if( bindBody >= 0 && bindMaster->GetPhysics() )
@@ -2467,8 +2483,8 @@ bool idEntity::GetMasterPosition( idVec3& masterOrigin, idMat3& masterAxis ) con
 		}
 		else
 		{
-			masterOrigin = bindMaster->renderEntity.origin;
-			masterAxis = bindMaster->renderEntity.axis;
+			masterOrigin = bindMaster->renderEntity->origin;
+			masterAxis = bindMaster->renderEntity->axis;
 		}
 		return true;
 	}
@@ -2938,7 +2954,7 @@ bool idEntity::RunPhysics()
 	const bool useAbnormalVelocityHack = ( idStr::Cmp( name, "houndola" ) == 0 );
 
 	// Disable motion blur if this object pushes the local player
-	renderEntity.skipMotionBlur = false;
+	renderEntity->skipMotionBlur = false;
 
 	// set pushed
 	for( i = 0; i < gameLocal.push.GetNumPushedEntities(); i++ )
@@ -2948,7 +2964,7 @@ bool idEntity::RunPhysics()
 		{
 			if( gameLocal.GetLocalClientNum() == ent->entityNumber )
 			{
-				renderEntity.skipMotionBlur = true;
+				renderEntity->skipMotionBlur = true;
 			}
 			if( useAbnormalVelocityHack )
 			{
@@ -2969,7 +2985,7 @@ bool idEntity::RunPhysics()
 	// Propogate skipMotionBlur to all team members
 	for( part = this; part != NULL; part = part->teamChain )
 	{
-		part->renderEntity.skipMotionBlur = renderEntity.skipMotionBlur;
+		part->renderEntity->skipMotionBlur = renderEntity->skipMotionBlur;
 	}
 
 	if( common->IsClient() )
@@ -3273,8 +3289,8 @@ void idEntity::UpdateParticles( void )
 		idVec3 origin;
 		idVec3 dir;
 
-		dir = de->dir * renderEntity.axis;
-		origin = renderEntity.origin + de->origin * renderEntity.axis;
+		dir = de->dir * renderEntity->axis;
+		origin = renderEntity->origin + de->origin * renderEntity->axis;
 
 		// This key fixes an issue where some particles are not at all emitted
 		if( de->time == -1 )
@@ -3765,8 +3781,8 @@ void idEntity::AddDamageEffect( const trace_t& collision, const idVec3& velocity
 		de->next = this->entDamageEffects;
 		this->entDamageEffects = de;
 
-		de->origin = ( collision.c.point - renderEntity.origin ) * renderEntity.axis.Transpose();
-		de->dir = collision.c.normal * renderEntity.axis.Transpose();
+		de->origin = ( collision.c.point - renderEntity->origin ) * renderEntity->axis.Transpose();
+		de->dir = collision.c.normal * renderEntity->axis.Transpose();
 		de->type = static_cast<const idDeclParticle*>( declManager->FindType( DECL_PARTICLE, bleed ) );
 
 		//de->isTimeInitialized = false;
@@ -4117,9 +4133,9 @@ void idEntity::TriggerGuis()
 	int i;
 	for( i = 0; i < MAX_RENDERENTITY_GUI; i++ )
 	{
-		if( renderEntity.gui[ i ] )
+		if( renderEntity->gui[ i ] )
 		{
-			renderEntity.gui[i]->Trigger( gameLocal.fast.time );
+			renderEntity->gui[ i ]->Trigger( gameLocal.fast.time );
 		}
 	}
 }
@@ -4180,7 +4196,7 @@ bool idEntity::HandleGuiCommands( idEntity* entityGui, const char* cmds )
 					}
 				}
 
-				entityGui->renderEntity.shaderParms[ SHADERPARM_MODE ] = 1.0f;
+				entityGui->renderEntity->shaderParms[ SHADERPARM_MODE ] = 1.0f;
 				continue;
 			}
 
@@ -4255,11 +4271,11 @@ bool idEntity::HandleGuiCommands( idEntity* entityGui, const char* cmds )
 
 			if( !token.Icmp( "turkeyscore" ) )
 			{
-				if( src.ReadToken( &token2 ) && entityGui->renderEntity.gui[0] )
+				if( src.ReadToken( &token2 ) && entityGui->renderEntity->gui[0] )
 				{
-					int score = entityGui->renderEntity.gui[0]->State().GetInt( "score" );
+					int score = entityGui->renderEntity->gui[0]->State().GetInt( "score" );
 					score += atoi( token2 );
-					entityGui->renderEntity.gui[0]->SetStateInt( "score", score );
+					entityGui->renderEntity->gui[0]->SetStateInt( "score", score );
 					if( gameLocal.GetLocalPlayer() && score >= 25000 )
 					{
 						gameLocal.GetLocalPlayer()->GetAchievementManager().EventCompletesAchievement( ACHIEVEMENT_SCORE_25000_TURKEY_PUNCHER );
@@ -4416,9 +4432,9 @@ void idEntity::ActivateTargets( idEntity* activator ) const
 		}
 		for( j = 0; j < MAX_RENDERENTITY_GUI; j++ )
 		{
-			if( ent->renderEntity.gui[ j ] )
+			if( ent->renderEntity->gui[ j ] )
 			{
-				ent->renderEntity.gui[j]->Trigger( gameLocal.fast.time );
+				ent->renderEntity->gui[ j ]->Trigger( gameLocal.fast.time );
 			}
 		}
 	}
@@ -4815,8 +4831,8 @@ void idEntity::Event_SpawnBind()
 
 					//FIXME: need a BindToJoint that accepts a joint position
 					parentAnimator->CreateFrame( gameLocal.time, true );
-					idJointMat* frame = parent->renderEntity.joints;
-					gameEditLocal.ANIM_CreateAnimFrame( parentAnimator->ModelHandle(), anim->MD5Anim( 0 ), parent->renderEntity.numJoints, frame, 0, parentAnimator->ModelDef()->GetVisualOffset(), parentAnimator->RemoveOrigin() );
+					idJointMat* frame = parent->renderEntity->joints;
+					gameEditLocal.ANIM_CreateAnimFrame( parentAnimator->ModelHandle(), anim->MD5Anim( 0 ), parent->renderEntity->numJoints, frame, 0, parentAnimator->ModelDef()->GetVisualOffset(), parentAnimator->RemoveOrigin() );
 					BindToJoint( parent, joint, bindOrientated );
 					parentAnimator->ForceUpdate();
 				}
@@ -4871,7 +4887,7 @@ idEntity::Event_SetSkin
 */
 void idEntity::Event_SetSkin( const char* skinname )
 {
-	renderEntity.customSkin = declManager->FindSkin( skinname );
+	renderEntity->customSkin = declManager->FindSkin( skinname );
 	UpdateVisuals();
 }
 
@@ -4888,7 +4904,7 @@ void idEntity::Event_GetShaderParm( int parmnum )
 		return;
 	}
 
-	idThread::ReturnFloat( renderEntity.shaderParms[ parmnum ] );
+	idThread::ReturnFloat( renderEntity->shaderParms[ parmnum ] );
 }
 
 /*
@@ -4908,10 +4924,10 @@ idEntity::Event_SetShaderParms
 */
 void idEntity::Event_SetShaderParms( float parm0, float parm1, float parm2, float parm3 )
 {
-	renderEntity.shaderParms[ SHADERPARM_RED ]		= parm0;
-	renderEntity.shaderParms[ SHADERPARM_GREEN ]	= parm1;
-	renderEntity.shaderParms[ SHADERPARM_BLUE ]		= parm2;
-	renderEntity.shaderParms[ SHADERPARM_ALPHA ]	= parm3;
+	renderEntity->shaderParms[ SHADERPARM_RED ]		= parm0;
+	renderEntity->shaderParms[ SHADERPARM_GREEN ]	= parm1;
+	renderEntity->shaderParms[ SHADERPARM_BLUE ]		= parm2;
+	renderEntity->shaderParms[ SHADERPARM_ALPHA ]	= parm3;
 	UpdateVisuals();
 }
 
@@ -5207,14 +5223,14 @@ void idEntity::Event_SetGuiParm( const char* key, const char* val )
 {
 	for( int i = 0; i < MAX_RENDERENTITY_GUI; i++ )
 	{
-		if( renderEntity.gui[ i ] )
+		if( renderEntity->gui[ i ] )
 		{
 			if( idStr::Icmpn( key, "gui_", 4 ) == 0 )
 			{
 				spawnArgs.Set( key, val );
 			}
-			renderEntity.gui[ i ]->SetStateString( key, val );
-			renderEntity.gui[i]->StateChanged( gameLocal.fast.time );
+			renderEntity->gui[ i ]->SetStateString( key, val );
+			renderEntity->gui[ i ]->StateChanged( gameLocal.fast.time );
 		}
 	}
 }
@@ -5228,10 +5244,10 @@ void idEntity::Event_SetGuiFloat( const char* key, float f )
 {
 	for( int i = 0; i < MAX_RENDERENTITY_GUI; i++ )
 	{
-		if( renderEntity.gui[ i ] )
+		if( renderEntity->gui[ i ] )
 		{
-			renderEntity.gui[ i ]->SetStateString( key, va( "%f", f ) );
-			renderEntity.gui[i]->StateChanged( gameLocal.fast.time );
+			renderEntity->gui[ i ]->SetStateString( key, va( "%f", f ) );
+			renderEntity->gui[ i ]->StateChanged( gameLocal.fast.time );
 		}
 	}
 }
@@ -5597,7 +5613,7 @@ void idEntity::Event_SetGui( int guiNum, const char* guiName )
 
 	if( guiNum >= 1 && guiNum <= MAX_RENDERENTITY_GUI )
 	{
-		gui = &renderEntity.gui[ guiNum - 1 ];
+		gui = &renderEntity->gui[ guiNum - 1 ];
 	}
 
 	if( gui )
@@ -5605,7 +5621,7 @@ void idEntity::Event_SetGui( int guiNum, const char* guiName )
 		*gui = uiManager->FindGui( guiName, true, false );
 		UpdateGuiParms( *gui, &spawnArgs );
 		UpdateChangeableSpawnArgs( NULL );
-		renderEntity.CommitThisFrame();
+		renderEntity->CommitThisFrame();
 
 	}
 	else
@@ -5635,9 +5651,9 @@ idEntity::Event_GetGuiParm
 */
 void idEntity::Event_GetGuiParm( int guiNum, const char* key )
 {
-	if( renderEntity.gui[guiNum - 1] )
+	if( renderEntity->gui[guiNum - 1] )
 	{
-		idThread::ReturnString( renderEntity.gui[guiNum - 1]->GetStateString( key ) );
+		idThread::ReturnString( renderEntity->gui[guiNum - 1]->GetStateString( key ) );
 		return;
 	}
 	idThread::ReturnString( "" );
@@ -5650,9 +5666,9 @@ idEntity::Event_GetGuiParmFloat
 */
 void idEntity::Event_GetGuiParmFloat( int guiNum, const char* key )
 {
-	if( renderEntity.gui[guiNum - 1] )
+	if( renderEntity->gui[guiNum - 1] )
 	{
-		idThread::ReturnFloat( renderEntity.gui[guiNum - 1]->GetStateFloat( key ) );
+		idThread::ReturnFloat( renderEntity->gui[guiNum - 1]->GetStateFloat( key ) );
 		return;
 	}
 	idThread::ReturnFloat( 0.0f );
@@ -5665,9 +5681,9 @@ idEntity::Event_GuiNamedEvent
 */
 void idEntity::Event_GuiNamedEvent( int guiNum, const char* event )
 {
-	if( renderEntity.gui[guiNum - 1] )
+	if( renderEntity->gui[guiNum - 1] )
 	{
-		renderEntity.gui[guiNum - 1]->HandleNamedEvent( event );
+		renderEntity->gui[guiNum - 1]->HandleNamedEvent( event );
 	}
 }
 
@@ -5869,10 +5885,10 @@ void idEntity::WriteColorToSnapshot( idBitMsg& msg ) const
 {
 	idVec4 color;
 
-	color[0] = renderEntity.shaderParms[ SHADERPARM_RED ];
-	color[1] = renderEntity.shaderParms[ SHADERPARM_GREEN ];
-	color[2] = renderEntity.shaderParms[ SHADERPARM_BLUE ];
-	color[3] = renderEntity.shaderParms[ SHADERPARM_ALPHA ];
+	color[0] = renderEntity->shaderParms[ SHADERPARM_RED ];
+	color[1] = renderEntity->shaderParms[ SHADERPARM_GREEN ];
+	color[2] = renderEntity->shaderParms[ SHADERPARM_BLUE ];
+	color[3] = renderEntity->shaderParms[ SHADERPARM_ALPHA ];
 	msg.WriteLong( PackColor( color ) );
 }
 
@@ -5886,10 +5902,10 @@ void idEntity::ReadColorFromSnapshot( const idBitMsg& msg )
 	idVec4 color;
 
 	UnpackColor( msg.ReadLong(), color );
-	renderEntity.shaderParms[ SHADERPARM_RED ] = color[0];
-	renderEntity.shaderParms[ SHADERPARM_GREEN ] = color[1];
-	renderEntity.shaderParms[ SHADERPARM_BLUE ] = color[2];
-	renderEntity.shaderParms[ SHADERPARM_ALPHA ] = color[3];
+	renderEntity->shaderParms[ SHADERPARM_RED ] = color[0];
+	renderEntity->shaderParms[ SHADERPARM_GREEN ] = color[1];
+	renderEntity->shaderParms[ SHADERPARM_BLUE ] = color[2];
+	renderEntity->shaderParms[ SHADERPARM_ALPHA ] = color[3];
 }
 
 /*
@@ -5900,9 +5916,9 @@ idEntity::WriteGUIToSnapshot
 void idEntity::WriteGUIToSnapshot( idBitMsg& msg ) const
 {
 	// no need to loop over MAX_RENDERENTITY_GUI at this time
-	if( renderEntity.gui[ 0 ] )
+	if( renderEntity->gui[ 0 ] )
 	{
-		msg.WriteByte( renderEntity.gui[ 0 ]->State().GetInt( "networkState" ) );
+		msg.WriteByte( renderEntity->gui[ 0 ]->State().GetInt( "networkState" ) );
 	}
 	else
 	{
@@ -5920,7 +5936,7 @@ void idEntity::ReadGUIFromSnapshot( const idBitMsg& msg )
 	int state;
 	idUserInterface* gui;
 	state = msg.ReadByte( );
-	gui = renderEntity.gui[ 0 ];
+	gui = renderEntity->gui[ 0 ];
 	if( gui && state != mpGUIState )
 	{
 		mpGUIState = state;
@@ -6332,12 +6348,12 @@ void idAnimatedEntity::Restore( idRestoreGame* savefile )
 	if( animator.ModelHandle() )
 	{
 		// set the callback to update the joints
-		renderEntity.callback = idEntity::ModelCallback;
-		animator.GetJoints( &renderEntity.numJoints, &renderEntity.joints );
-		animator.GetBounds( gameLocal.time, renderEntity.bounds );
+		renderEntity->callback = idEntity::ModelCallback;
+		animator.GetJoints( &renderEntity->numJoints, &renderEntity->joints );
+		animator.GetBounds( gameLocal.time, renderEntity->bounds );
 		if( modelDefHandle != -1 )
 		{
-			renderEntity.CommitThisFrame();
+			renderEntity->CommitThisFrame();
 		}
 	}
 }
@@ -6417,8 +6433,8 @@ void idAnimatedEntity::UpdateAnimation()
 	}
 
 	// get the latest frame bounds
-	animator.GetBounds( gameLocal.time, renderEntity.bounds );
-	if( renderEntity.bounds.IsCleared() && !fl.hidden )
+	animator.GetBounds( gameLocal.time, renderEntity->bounds );
+	if( renderEntity->bounds.IsCleared() && !fl.hidden )
 	{
 		gameLocal.DPrintf( "%d: inside out bounds\n", gameLocal.time );
 	}
@@ -6449,22 +6465,22 @@ void idAnimatedEntity::SetModel( const char* modelname )
 {
 	FreeModelDef();
 
-	renderEntity.hModel = animator.SetModel( modelname );
-	if( !renderEntity.hModel )
+	renderEntity->hModel = animator.SetModel( modelname );
+	if( !renderEntity->hModel )
 	{
 		idEntity::SetModel( modelname );
 		return;
 	}
 
-	if( !renderEntity.customSkin )
+	if( !renderEntity->customSkin )
 	{
-		renderEntity.customSkin = animator.ModelDef()->GetDefaultSkin();
+		renderEntity->customSkin = animator.ModelDef()->GetDefaultSkin();
 	}
 
 	// set the callback to update the joints
-	renderEntity.callback = idEntity::ModelCallback;
-	animator.GetJoints( &renderEntity.numJoints, &renderEntity.joints );
-	animator.GetBounds( gameLocal.time, renderEntity.bounds );
+	renderEntity->callback = idEntity::ModelCallback;
+	animator.GetJoints( &renderEntity->numJoints, &renderEntity->joints );
+	animator.GetBounds( gameLocal.time, renderEntity->bounds );
 
 	UpdateVisuals();
 }
@@ -6511,7 +6527,7 @@ bool idAnimatedEntity::GetJointTransformForAnim( jointHandle_t jointHandle, int 
 	}
 
 	frame = ( idJointMat* )_alloca16( numJoints * sizeof( idJointMat ) );
-	gameEditLocal.ANIM_CreateAnimFrame( animator.ModelHandle(), anim->MD5Anim( 0 ), renderEntity.numJoints, frame, frameTime, animator.ModelDef()->GetVisualOffset(), animator.RemoveOrigin() );
+	gameEditLocal.ANIM_CreateAnimFrame( animator.ModelHandle(), anim->MD5Anim( 0 ), renderEntity->numJoints, frame, frameTime, animator.ModelDef()->GetVisualOffset(), animator.RemoveOrigin() );
 
 	offset = frame[ jointHandle ].ToVec3();
 	axis = frame[ jointHandle ].ToMat3();
@@ -6531,7 +6547,7 @@ void idAnimatedEntity::AddDamageEffect( const trace_t& collision, const idVec3& 
 	jointHandle_t jointNum;
 	idVec3 dir;
 
-	if( !g_bloodEffects.GetBool() || renderEntity.joints == NULL )
+	if( !g_bloodEffects.GetBool() || renderEntity->joints == NULL )
 	{
 		return;
 	}
@@ -6715,8 +6731,7 @@ void idAnimatedEntity::AddLocalDamageEffect( jointHandle_t jointNum, const idVec
 
 	if( *bleed != '\0' )
 	{
-
-		de = new damageEffect_t;
+		de = new( TAG_ENTITY ) damageEffect_t;
 		de->next = this->damageEffects;
 		this->damageEffects = de;
 
@@ -6726,8 +6741,8 @@ void idAnimatedEntity::AddLocalDamageEffect( jointHandle_t jointNum, const idVec
 		idVec3 boneOrigin;
 		idMat3 boneAxis;
 
-		boneAxis = renderEntity.joints[jointNum].ToMat3() * renderEntity.axis;
-		boneOrigin = renderEntity.origin + renderEntity.joints[jointNum].ToVec3() * renderEntity.axis;
+		boneAxis = renderEntity->joints[jointNum].ToMat3() * renderEntity->axis;
+		boneOrigin = renderEntity->origin + renderEntity->joints[jointNum].ToVec3() * renderEntity->axis;
 
 		de->localOrigin = ( origin - boneOrigin ) * boneAxis.Transpose();
 		de->localNormal	= normal * boneAxis.Transpose();
@@ -6789,15 +6804,15 @@ void idAnimatedEntity::UpdateDamageEffects()
 
 		// Sometimes it happens that the original animated model is replace by a particle effect, e.g. on flying lost soul's death.
 		// In that case we wont be able to find any joints. So a proper check should be made.
-		if( renderEntity.numJoints <= 0 )
+		if( renderEntity->numJoints <= 0 )
 		{
-			axis = renderEntity.axis;
-			origin = renderEntity.origin;
+			axis = renderEntity->axis;
+			origin = renderEntity->origin;
 		}
 		else
 		{
-			axis = renderEntity.joints[de->jointNum].ToMat3() * renderEntity.axis;
-			origin = renderEntity.origin + renderEntity.joints[de->jointNum].ToVec3() * renderEntity.axis;
+			axis = renderEntity->joints[de->jointNum].ToMat3() * renderEntity->axis;
+			origin = renderEntity->origin + renderEntity->joints[de->jointNum].ToVec3() * renderEntity->axis;
 		}
 
 		origin = origin + de->localOrigin * axis;

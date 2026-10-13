@@ -44,7 +44,7 @@ If you have questions concerning this license or the applicable additional terms
 #define ID_TIME_T int64 // Signed because -1 means "File not found" and we don't want that to compare > than any other time
 
 // non-portable system services
-#include "sys/sys_public.h"
+#include "../sys/sys_public.h"
 
 // id lib
 #include "sys/sys_stacktrace.h"
@@ -131,6 +131,9 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 #include "tools/compilers/aas/AASFile.h"
 #include "tools/compilers/aas/AASFileManager.h"
 
+// device manager
+#include "../sys/DeviceManager.h"
+
 // game
 #include "framework/Game.h"
 
@@ -149,6 +152,9 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 #include "sys/sys_stats.h"
 #include "sys/sys_session.h"
 #include "sys/sys_achievements.h"
+
+// device manager
+#include "../sys/DeviceManager.h"
 
 // tools
 #include "tools/edit_public.h"

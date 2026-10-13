@@ -731,12 +731,15 @@ void idSaveGame::WriteRenderLight( const renderLight_t& renderLight )
 	}
 }
 
-// RB begin
+/*
+================
+idSaveGame::WriteRenderEnvironmentProbe
+================
+*/
 void idSaveGame::WriteRenderEnvironmentProbe( const renderEnvironmentProbe_t& renderEnvprobe )
 {
 	WriteVec3( renderEnvprobe.origin );
 }
-// Rb end
 
 /*
 ================
@@ -1634,12 +1637,15 @@ void idRestoreGame::ReadRenderLight( renderLight_t& renderLight )
 	renderLight.referenceSound = gameSoundWorld->EmitterForIndex( index );
 }
 
-// RB begin
+/*
+================
+idSaveGame::ReadRenderEnvironmentProbe
+================
+*/
 void idRestoreGame::ReadRenderEnvironmentProbe( renderEnvironmentProbe_t& renderEnvprobe )
 {
 	ReadVec3( renderEnvprobe.origin );
 }
-// RB end
 
 /*
 ================

@@ -478,7 +478,7 @@ uint64			Sys_Microseconds();
 // for accurate performance testing
 double			Sys_GetClockTicks();
 double			Sys_ClockTicksPerSecond();
-ID_ENGINE_API void Sys_CPUCount( int& numLogicalCPUCores, int& numPhysicalCPUCores, int& numCPUPackages );
+void			Sys_CPUCount( int& numLogicalCPUCores, int& numPhysicalCPUCores, int& numCPUPackages );
 
 // returns a selection of the CPUID_* flags
 int				Sys_GetProcessorId();
@@ -745,6 +745,8 @@ public:
 
 	virtual double			GetClockTicks() = 0;
 	virtual double			ClockTicksPerSecond() = 0;
+	virtual void			GetCPUCount( int& numLogicalCPUCores, int& numPhysicalCPUCores, int& numCPUPackages ) = 0;
+
 	virtual int				GetProcessorId() = 0;
 	virtual const char* 	GetProcessorString() = 0;
 

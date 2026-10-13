@@ -101,7 +101,8 @@ enum achievement_t
 
 compile_time_assert( ACHIEVEMENTS_NUM <= idPlayerProfile::MAX_PLAYER_PROFILE_STATS );
 
-struct achievementInfo_t {
+struct achievementInfo_t
+{
 	int required;
 	bool lifetime;    // true means the current count is stored on the player profile.
 	const char* name; // name of the achievement on the platform, case sensitive

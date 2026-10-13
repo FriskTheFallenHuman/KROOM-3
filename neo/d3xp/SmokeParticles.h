@@ -73,6 +73,7 @@ class idSmokeParticles
 {
 public:
 	idSmokeParticles();
+	~idSmokeParticles();
 
 	// creats an entity covering the entire world that will call back each rendering
 	void						Init();
@@ -88,7 +89,7 @@ public:
 private:
 	bool						initialized;
 
-	idRenderEntity				renderEntity;			// game-facing render entity
+	idRenderEntity*				renderEntity;			// game-facing render entity (engine-owned)
 	int							renderEntityHandle;		// handle to static renderer model
 
 	static const int			MAX_SMOKE_PARTICLES = 10000;

@@ -45,7 +45,7 @@ extern const idEventDef EV_SafeRemove;
 
 // typedef void ( idClass::*eventCallback_t )();
 
-// RB: Store event callbacks opaquely because MSVC/clang-cl member function pointer sizes can differ
+// Store event callbacks opaquely because MSVC/clang-cl member function pointer sizes can differ
 // (multiple inheritance/adjustor). Casting to `void (idClass::*)()` is not ABI-safe and fails.
 // This affects all idClass-derived types that register EVENT callbacks (the eventCallbacks tables),
 // including the base idClass entries and any subclasses that add events.

@@ -432,12 +432,11 @@ bool idMD5Anim::LoadBinary( idFile* file, ID_TIME_T sourceTimeStamp )
 	ID_TIME_T loadedTimeStamp;
 	file->ReadBig( loadedTimeStamp );
 
-	// RB: source might be from .resources, so we ignore the time stamp and assume a release build
+	// source might be from .resources, so we ignore the time stamp and assume a release build
 	if( !fileSystem->InProductionMode() && ( sourceTimeStamp != FILE_NOT_FOUND_TIMESTAMP ) && ( sourceTimeStamp != 0 ) && ( sourceTimeStamp != loadedTimeStamp ) )
 	{
 		return false;
 	}
-	// RB end
 
 	file->ReadBig( numFrames );
 	file->ReadBig( frameRate );

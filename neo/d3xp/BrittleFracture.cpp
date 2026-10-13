@@ -91,7 +91,7 @@ idBrittleFracture::~idBrittleFracture()
 
 	// make sure the render entity is freed before the model is freed
 	FreeModelDef();
-	renderModelManager->FreeModel( renderEntity.hModel );
+	renderModelManager->FreeModel( renderEntity->hModel );
 
 	// Free our events list memory
 	storedEvents.Clear();
@@ -218,12 +218,12 @@ void idBrittleFracture::Restore( idRestoreGame* savefile )
 		}
 	}
 
-	renderEntity.hModel = renderModelManager->AllocModel();
-	renderEntity.hModel->InitEmpty( brittleFracture_SnapshotName );
-	renderEntity.callback = idBrittleFracture::ModelCallback;
-	renderEntity.noShadow = true;
-	renderEntity.noSelfShadow = true;
-	renderEntity.noDynamicInteractions = false;
+	renderEntity->hModel = renderModelManager->AllocModel();
+	renderEntity->hModel->InitEmpty( brittleFracture_SnapshotName );
+	renderEntity->callback = idBrittleFracture::ModelCallback;
+	renderEntity->noShadow = true;
+	renderEntity->noSelfShadow = true;
+	renderEntity->noDynamicInteractions = false;
 
 	savefile->ReadBool( isXraySurface );
 }
@@ -271,9 +271,9 @@ void idBrittleFracture::Spawn()
 	spawnArgs.SetBool( "bleed", 1 );
 
 	// check for xray surface
-	if( renderEntity.hModel != NULL )
+	if( renderEntity->hModel != NULL )
 	{
-		const idRenderModel* model = renderEntity.hModel;
+		const idRenderModel* model = renderEntity->hModel;
 
 		isXraySurface = false;
 
@@ -289,17 +289,17 @@ void idBrittleFracture::Spawn()
 		}
 	}
 
-	CreateFractures( renderEntity.hModel );
+	CreateFractures( renderEntity->hModel );
 
 	FindNeighbours();
 
-	defaultRenderModel = renderEntity.hModel;
-	renderEntity.hModel = renderModelManager->AllocModel();
-	renderEntity.hModel->InitEmpty( brittleFracture_SnapshotName );
-	renderEntity.callback = idBrittleFracture::ModelCallback;
-	renderEntity.noShadow = true;
-	renderEntity.noSelfShadow = true;
-	renderEntity.noDynamicInteractions = false;
+	defaultRenderModel = renderEntity->hModel;
+	renderEntity->hModel = renderModelManager->AllocModel();
+	renderEntity->hModel->InitEmpty( brittleFracture_SnapshotName );
+	renderEntity->callback = idBrittleFracture::ModelCallback;
+	renderEntity->noShadow = true;
+	renderEntity->noSelfShadow = true;
+	renderEntity->noDynamicInteractions = false;
 }
 
 /*
@@ -570,21 +570,21 @@ void idBrittleFracture::Present()
 	}
 	BecomeInactive( TH_UPDATEVISUALS );
 
-	renderEntity.bounds = bounds;
-	renderEntity.origin.Zero();
-	renderEntity.axis.Identity();
+	renderEntity->bounds = bounds;
+	renderEntity->origin.Zero();
+	renderEntity->axis.Identity();
 
 	// force an update because the bounds/origin/axis may stay the same while the model changes
-	renderEntity.forceUpdate = true;
+	renderEntity->forceUpdate = true;
 
 	// add to refresh list
 	if( modelDefHandle == -1 )
 	{
-		modelDefHandle = gameRenderWorld->AddRenderEntity( &renderEntity );
+		modelDefHandle = gameRenderWorld->AddRenderEntity( renderEntity );
 	}
 	else
 	{
-		renderEntity.CommitThisFrame();
+		renderEntity->CommitThisFrame();
 	}
 
 	changed = true;
@@ -1176,8 +1176,8 @@ void idBrittleFracture::AddDamageEffect( const trace_t& collision, const idVec3&
 		de->next = this->entDamageEffects;
 		this->entDamageEffects = de;
 
-		de->origin = ( collision.c.point - renderEntity.origin ) * renderEntity.axis.Transpose();
-		de->dir = collision.c.normal * renderEntity.axis.Transpose();
+		de->origin = ( collision.c.point - renderEntity->origin ) * renderEntity->axis.Transpose();
+		de->dir = collision.c.normal * renderEntity->axis.Transpose();
 		de->type = static_cast<const idDeclParticle*>( declManager->FindType( DECL_PARTICLE, bleed ) );
 
 		de->time = -1;	//	We use this as a flag initially, idEntity::UpdateParticles() will actually set it to proper value.

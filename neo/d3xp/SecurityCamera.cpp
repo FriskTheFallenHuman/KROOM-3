@@ -358,7 +358,7 @@ void idSecurityCamera::SetAlertMode( int alert )
 	{
 		alertMode = alert;
 	}
-	renderEntity.shaderParms[ SHADERPARM_MODE ] = alertMode;
+	renderEntity->shaderParms[ SHADERPARM_MODE ] = alertMode;
 	UpdateVisuals();
 }
 
@@ -618,11 +618,11 @@ void idSecurityCamera::Present()
 	// camera target for remote render views
 	if( cameraTarget )
 	{
-		renderEntity.remoteRenderView = cameraTarget->GetRenderView();
+		renderEntity->remoteRenderView = cameraTarget->GetRenderView();
 	}
 
 	// if set to invisible, skip
-	if( !renderEntity.hModel || IsHidden() )
+	if( !renderEntity->hModel || IsHidden() )
 	{
 		return;
 	}
@@ -630,10 +630,10 @@ void idSecurityCamera::Present()
 	// add to refresh list
 	if( modelDefHandle == -1 )
 	{
-		modelDefHandle = gameRenderWorld->AddRenderEntity( &renderEntity );
+		modelDefHandle = gameRenderWorld->AddRenderEntity( renderEntity );
 	}
 	else
 	{
-		renderEntity.CommitThisFrame();
+		renderEntity->CommitThisFrame();
 	}
 }

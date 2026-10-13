@@ -57,6 +57,7 @@ const int	CINEMATIC_SKIP_DELAY	= SEC2MS( 2.0f );
 	idAASFileManager* 			AASFileManager = NULL;
 	idCollisionModelManager* 	collisionModelManager = NULL;
 	idImGuiSystem*				imguiSystem = NULL;
+	idDeviceManager*			deviceManager = NULL;
 	idCVar* 					idCVar::staticVars = NULL;
 
 	idCVar com_forceGenericSIMD( "com_forceGenericSIMD", "0", CVAR_BOOL | CVAR_SYSTEM, "force generic platform independent SIMD" );
@@ -142,6 +143,7 @@ extern "C" ID_GAME_API gameExport_t* GetGameAPI( gameImport_t* import )
 		AASFileManager				= import->AASFileManager;
 		collisionModelManager		= import->collisionModelManager;
 		imguiSystem					= import->imguiSystem;
+		deviceManager				= import->deviceManager;
 	}
 
 	// set interface pointers used by idLib

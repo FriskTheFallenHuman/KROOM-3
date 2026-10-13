@@ -245,9 +245,9 @@ protected:
 	idEntityPtr<idAFAttachment>	head;
 	idList<copyJoints_t, TAG_ACTOR>		copyJoints;			// copied from the body animation to the head model
 
-	idEntityPtr<idWeapon>		heldWeapon;
-	int							heldWeaponAmmo;
-	int							heldWeaponFireEndTime;
+	idEntityPtr<idWeapon>	heldWeapon;
+	int						heldWeaponAmmo;
+	int						heldWeaponFireEndTime;
 
 	// state variables
 	const function_t*		state;

@@ -576,7 +576,7 @@ void idDamagable::BecomeBroken( idEntity* activator )
 	}
 
 	// offset the start time of the shader to sync it to the gameLocal time
-	renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time );
+	renderEntity->shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time );
 
 	spawnArgs.GetInt( "numstates", "1", numStates );
 	spawnArgs.GetInt( "cycle", "0", cycle );
@@ -585,22 +585,22 @@ void idDamagable::BecomeBroken( idEntity* activator )
 	// set the state parm
 	if( cycle )
 	{
-		renderEntity.shaderParms[ SHADERPARM_MODE ]++;
-		if( renderEntity.shaderParms[ SHADERPARM_MODE ] > numStates )
+		renderEntity->shaderParms[ SHADERPARM_MODE ]++;
+		if( renderEntity->shaderParms[ SHADERPARM_MODE ] > numStates )
 		{
-			renderEntity.shaderParms[ SHADERPARM_MODE ] = 0;
+			renderEntity->shaderParms[ SHADERPARM_MODE ] = 0;
 		}
 	}
 	else if( forceState )
 	{
-		renderEntity.shaderParms[ SHADERPARM_MODE ] = forceState;
+		renderEntity->shaderParms[ SHADERPARM_MODE ] = forceState;
 	}
 	else
 	{
-		renderEntity.shaderParms[ SHADERPARM_MODE ] = gameLocal.random.RandomInt( numStates ) + 1;
+		renderEntity->shaderParms[ SHADERPARM_MODE ] = gameLocal.random.RandomInt( numStates ) + 1;
 	}
 
-	renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time );
+	renderEntity->shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time );
 
 	ActivateTargets( activator );
 
@@ -711,12 +711,12 @@ void idExplodable::Event_Explode( idEntity* activator )
 	StartSound( "snd_explode", SND_CHANNEL_ANY, 0, false, NULL );
 
 	// Show() calls UpdateVisuals, so we don't need to call it ourselves after setting the shaderParms
-	renderEntity.shaderParms[SHADERPARM_RED]		= 1.0f;
-	renderEntity.shaderParms[SHADERPARM_GREEN]		= 1.0f;
-	renderEntity.shaderParms[SHADERPARM_BLUE]		= 1.0f;
-	renderEntity.shaderParms[SHADERPARM_ALPHA]		= 1.0f;
-	renderEntity.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.time );
-	renderEntity.shaderParms[SHADERPARM_DIVERSITY]	= 0.0f;
+	renderEntity->shaderParms[SHADERPARM_RED]		= 1.0f;
+	renderEntity->shaderParms[SHADERPARM_GREEN]		= 1.0f;
+	renderEntity->shaderParms[SHADERPARM_BLUE]		= 1.0f;
+	renderEntity->shaderParms[SHADERPARM_ALPHA]		= 1.0f;
+	renderEntity->shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.time );
+	renderEntity->shaderParms[SHADERPARM_DIVERSITY]	= 0.0f;
 	Show();
 
 	PostEventMS( &EV_Remove, 2000 );
@@ -1323,7 +1323,7 @@ idAnimated::GetPhysicsToSoundTransform
 bool idAnimated::GetPhysicsToSoundTransform( idVec3& origin, idMat3& axis )
 {
 	animator.GetJointTransform( soundJoint, gameLocal.time, origin, axis );
-	axis = renderEntity.axis;
+	axis = renderEntity->axis;
 	return true;
 }
 
@@ -1419,7 +1419,7 @@ void idAnimated::PlayNextAnim()
 	}
 
 	// offset the start time of the shader to sync it to the game time
-	renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time );
+	renderEntity->shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time );
 
 	animator.ForceUpdate();
 	UpdateAnimation();
@@ -1550,7 +1550,7 @@ void idAnimated::Event_Start()
 	}
 
 	// offset the start time of the shader to sync it to the game time
-	renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time );
+	renderEntity->shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time );
 
 	animator.ForceUpdate();
 	UpdateAnimation();
@@ -1595,10 +1595,10 @@ void idAnimated::Event_LaunchMissilesUpdate( int launchjoint, int targetjoint, i
 	StartSound( "snd_missile", SND_CHANNEL_WEAPON, 0, false, NULL );
 
 	animator.GetJointTransform( ( jointHandle_t )launchjoint, gameLocal.time, launchPos, axis );
-	launchPos = renderEntity.origin + launchPos * renderEntity.axis;
+	launchPos = renderEntity->origin + launchPos * renderEntity->axis;
 
 	animator.GetJointTransform( ( jointHandle_t )targetjoint, gameLocal.time, targetPos, axis );
-	targetPos = renderEntity.origin + targetPos * renderEntity.axis;
+	targetPos = renderEntity->origin + targetPos * renderEntity->axis;
 
 	dir = targetPos - launchPos;
 	dir.Normalize();
@@ -1774,13 +1774,9 @@ void idStaticEntity::Spawn()
 	idStr model = spawnArgs.GetString( "model" );
 	if( gameLocal.world->spawnArgs.GetBool( "inlineAllStatics" ) )
 	{
-		// RB: this wasn't used in Doom 3 BFG
-
 		// don't break interactive GUIs
 		bool isGUI = false;
-		if( spawnArgs.GetString( "gui", NULL ) != NULL ||
-				spawnArgs.GetString( "gui2", NULL ) != NULL ||
-				spawnArgs.GetString( "gui3", NULL ) != NULL )
+		if( spawnArgs.GetString( "gui", NULL ) != NULL || spawnArgs.GetString( "gui2", NULL ) != NULL || spawnArgs.GetString( "gui3", NULL ) != NULL )
 		{
 			isGUI = true;
 		}
@@ -1789,11 +1785,8 @@ void idStaticEntity::Spawn()
 		model.ExtractFileExtension( extension );
 
 		// only support real model formats and no brush models
-		if( ( ( extension.Icmp( "lwo" ) == 0 ) ||
-				( extension.Icmp( "ase" ) == 0 ) ||
-				( extension.Icmp( "ma" ) == 0 ) ||
-				( extension.Icmp( "md3" ) == 0 ) ||
-				( extension.Icmp( "obj" ) == 0 ) ) )
+		if( ( ( extension.Icmp( "lwo" ) == 0 ) || ( extension.Icmp( "ase" ) == 0 ) || ( extension.Icmp( "ma" ) == 0 ) ||
+				( extension.Icmp( "md3" ) == 0 ) || ( extension.Icmp( "obj" ) == 0 ) ) )
 		{
 			if( !isGUI )
 			{
@@ -1821,7 +1814,7 @@ void idStaticEntity::Spawn()
 	if( model.Find( ".prt" ) >= 0 )
 	{
 		// we want the parametric particles out of sync with each other
-		renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = gameLocal.random.RandomInt( 32767 );
+		renderEntity->shaderParms[ SHADERPARM_TIMEOFFSET ] = gameLocal.random.RandomInt( 32767 );
 	}
 
 	fadeFrom.Set( 1, 1, 1, 1 );
@@ -1856,21 +1849,21 @@ void idStaticEntity::Think()
 	idEntity::Think();
 	if( thinkFlags & TH_THINK )
 	{
-		if( runGui && renderEntity.gui[0] )
+		if( runGui && renderEntity->gui[0] )
 		{
 			idPlayer* player = gameLocal.GetLocalPlayer();
 			if( player )
 			{
 				if( !player->objectiveSystemOpen )
 				{
-					renderEntity.gui[0]->StateChanged( gameLocal.time, true );
-					if( renderEntity.gui[1] )
+					renderEntity->gui[0]->StateChanged( gameLocal.time, true );
+					if( renderEntity->gui[1] )
 					{
-						renderEntity.gui[1]->StateChanged( gameLocal.time, true );
+						renderEntity->gui[1]->StateChanged( gameLocal.time, true );
 					}
-					if( renderEntity.gui[2] )
+					if( renderEntity->gui[2] )
 					{
-						renderEntity.gui[2]->StateChanged( gameLocal.time, true );
+						renderEntity->gui[2]->StateChanged( gameLocal.time, true );
 					}
 				}
 			}
@@ -1957,12 +1950,12 @@ void idStaticEntity::Event_Activate( idEntity* activator )
 		}
 	}
 
-	renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( spawnTime );
-	renderEntity.shaderParms[5] = active;
+	renderEntity->shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( spawnTime );
+	renderEntity->shaderParms[5] = active;
 	// this change should be a good thing, it will automatically turn on
 	// lights etc.. when triggered so that does not have to be specifically done
 	// with trigger parms.. it MIGHT break things so need to keep an eye on it
-	renderEntity.shaderParms[ SHADERPARM_MODE ] = ( renderEntity.shaderParms[ SHADERPARM_MODE ] ) ?  0.0f : 1.0f;
+	renderEntity->shaderParms[ SHADERPARM_MODE ] = ( renderEntity->shaderParms[ SHADERPARM_MODE ] ) ?  0.0f : 1.0f;
 	BecomeActive( TH_UPDATEVISUALS );
 }
 
@@ -2045,7 +2038,7 @@ void idFuncEmitter::Spawn()
 	if( spawnArgs.GetBool( "start_off" ) )
 	{
 		hidden = true;
-		renderEntity.shaderParms[SHADERPARM_PARTICLE_STOPTIME] = MS2SEC( 1 );
+		renderEntity->shaderParms[SHADERPARM_PARTICLE_STOPTIME] = MS2SEC( 1 );
 		UpdateVisuals();
 	}
 	else
@@ -2083,13 +2076,13 @@ void idFuncEmitter::Event_Activate( idEntity* activator )
 {
 	if( hidden || spawnArgs.GetBool( "cycleTrigger" ) )
 	{
-		renderEntity.shaderParms[SHADERPARM_PARTICLE_STOPTIME] = 0;
-		renderEntity.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.time );
+		renderEntity->shaderParms[SHADERPARM_PARTICLE_STOPTIME] = 0;
+		renderEntity->shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.time );
 		hidden = false;
 	}
 	else
 	{
-		renderEntity.shaderParms[SHADERPARM_PARTICLE_STOPTIME] = MS2SEC( gameLocal.time );
+		renderEntity->shaderParms[SHADERPARM_PARTICLE_STOPTIME] = MS2SEC( gameLocal.time );
 		hidden = true;
 	}
 	UpdateVisuals();
@@ -2103,8 +2096,8 @@ idFuncEmitter::WriteToSnapshot
 void idFuncEmitter::WriteToSnapshot( idBitMsg& msg ) const
 {
 	msg.WriteBits( hidden ? 1 : 0, 1 );
-	msg.WriteFloat( renderEntity.shaderParms[ SHADERPARM_PARTICLE_STOPTIME ] );
-	msg.WriteFloat( renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] );
+	msg.WriteFloat( renderEntity->shaderParms[ SHADERPARM_PARTICLE_STOPTIME ] );
+	msg.WriteFloat( renderEntity->shaderParms[ SHADERPARM_TIMEOFFSET ] );
 }
 
 /*
@@ -2115,8 +2108,8 @@ idFuncEmitter::ReadFromSnapshot
 void idFuncEmitter::ReadFromSnapshot( const idBitMsg& msg )
 {
 	hidden = msg.ReadBits( 1 ) != 0;
-	renderEntity.shaderParms[ SHADERPARM_PARTICLE_STOPTIME ] = msg.ReadFloat();
-	renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = msg.ReadFloat();
+	renderEntity->shaderParms[ SHADERPARM_PARTICLE_STOPTIME ] = msg.ReadFloat();
+	renderEntity->shaderParms[ SHADERPARM_TIMEOFFSET ] = msg.ReadFloat();
 	if( msg.HasChanged() )
 	{
 		UpdateVisuals();
@@ -2283,8 +2276,8 @@ idFuncShootProjectile::WriteToSnapshot
 void idFuncShootProjectile::WriteToSnapshot( idBitMsg& msg ) const
 {
 	// 	msg.WriteBits( hidden ? 1 : 0, 1 );
-	// 	msg.WriteFloat( renderEntity.shaderParms[ SHADERPARM_PARTICLE_STOPTIME ] );
-	// 	msg.WriteFloat( renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] );
+	// 	msg.WriteFloat( renderEntity->shaderParms[ SHADERPARM_PARTICLE_STOPTIME ] );
+	// 	msg.WriteFloat( renderEntity->shaderParms[ SHADERPARM_TIMEOFFSET ] );
 }
 
 /*
@@ -2295,8 +2288,8 @@ idFuncShootProjectile::ReadFromSnapshot
 void idFuncShootProjectile::ReadFromSnapshot( const idBitMsg& msg )
 {
 	// 	hidden = msg.ReadBits( 1 ) != 0;
-	// 	renderEntity.shaderParms[ SHADERPARM_PARTICLE_STOPTIME ] = msg.ReadFloat();
-	// 	renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = msg.ReadFloat();
+	// 	renderEntity->shaderParms[ SHADERPARM_PARTICLE_STOPTIME ] = msg.ReadFloat();
+	// 	renderEntity->shaderParms[ SHADERPARM_TIMEOFFSET ] = msg.ReadFloat();
 	// 	if ( msg.HasChanged() ) {
 	// 		UpdateVisuals();
 	// 	}
@@ -2933,7 +2926,7 @@ void idBeam::Spawn()
 
 	if( spawnArgs.GetFloat( "width", "0", width ) )
 	{
-		renderEntity.shaderParms[ SHADERPARM_BEAM_WIDTH ] = width;
+		renderEntity->shaderParms[ SHADERPARM_BEAM_WIDTH ] = width;
 	}
 
 	SetModel( "_BEAM" );
@@ -2984,11 +2977,11 @@ idBeam::SetBeamTarget
 */
 void idBeam::SetBeamTarget( const idVec3& origin )
 {
-	if( ( renderEntity.shaderParms[ SHADERPARM_BEAM_END_X ] != origin.x ) || ( renderEntity.shaderParms[ SHADERPARM_BEAM_END_Y ] != origin.y ) || ( renderEntity.shaderParms[ SHADERPARM_BEAM_END_Z ] != origin.z ) )
+	if( ( renderEntity->shaderParms[ SHADERPARM_BEAM_END_X ] != origin.x ) || ( renderEntity->shaderParms[ SHADERPARM_BEAM_END_Y ] != origin.y ) || ( renderEntity->shaderParms[ SHADERPARM_BEAM_END_Z ] != origin.z ) )
 	{
-		renderEntity.shaderParms[ SHADERPARM_BEAM_END_X ] = origin.x;
-		renderEntity.shaderParms[ SHADERPARM_BEAM_END_Y ] = origin.y;
-		renderEntity.shaderParms[ SHADERPARM_BEAM_END_Z ] = origin.z;
+		renderEntity->shaderParms[ SHADERPARM_BEAM_END_X ] = origin.x;
+		renderEntity->shaderParms[ SHADERPARM_BEAM_END_Y ] = origin.y;
+		renderEntity->shaderParms[ SHADERPARM_BEAM_END_Z ] = origin.z;
 		UpdateVisuals();
 	}
 }
@@ -3080,9 +3073,9 @@ void idBeam::WriteToSnapshot( idBitMsg& msg ) const
 	GetPhysics()->WriteToSnapshot( msg );
 	WriteBindToSnapshot( msg );
 	WriteColorToSnapshot( msg );
-	msg.WriteFloat( renderEntity.shaderParms[SHADERPARM_BEAM_END_X] );
-	msg.WriteFloat( renderEntity.shaderParms[SHADERPARM_BEAM_END_Y] );
-	msg.WriteFloat( renderEntity.shaderParms[SHADERPARM_BEAM_END_Z] );
+	msg.WriteFloat( renderEntity->shaderParms[SHADERPARM_BEAM_END_X] );
+	msg.WriteFloat( renderEntity->shaderParms[SHADERPARM_BEAM_END_Y] );
+	msg.WriteFloat( renderEntity->shaderParms[SHADERPARM_BEAM_END_Z] );
 }
 
 /*
@@ -3095,9 +3088,9 @@ void idBeam::ReadFromSnapshot( const idBitMsg& msg )
 	GetPhysics()->ReadFromSnapshot( msg );
 	ReadBindFromSnapshot( msg );
 	ReadColorFromSnapshot( msg );
-	renderEntity.shaderParms[SHADERPARM_BEAM_END_X] = msg.ReadFloat();
-	renderEntity.shaderParms[SHADERPARM_BEAM_END_Y] = msg.ReadFloat();
-	renderEntity.shaderParms[SHADERPARM_BEAM_END_Z] = msg.ReadFloat();
+	renderEntity->shaderParms[SHADERPARM_BEAM_END_X] = msg.ReadFloat();
+	renderEntity->shaderParms[SHADERPARM_BEAM_END_Y] = msg.ReadFloat();
+	renderEntity->shaderParms[SHADERPARM_BEAM_END_Z] = msg.ReadFloat();
 	if( msg.HasChanged() )
 	{
 		UpdateVisuals();
@@ -3146,7 +3139,7 @@ idLiquid::Spawn
 void idLiquid::Spawn()
 {
 	/*
-		model = dynamic_cast<idRenderModelLiquid *>( renderEntity.hModel );
+		model = dynamic_cast<idRenderModelLiquid *>( renderEntity->hModel );
 		if ( !model ) {
 			gameLocal.Error( "Entity '%s' must have liquid model", name.c_str() );
 		}

@@ -67,6 +67,9 @@ If you have questions concerning this license or the applicable additional terms
 #include "DeviceSDL.h"
 #include "DeviceManagerLocal.h"
 
+idDeviceManagerLocal deviceManagerLocal;
+idDeviceManager* deviceManager = &deviceManagerLocal;
+
 #if !defined(USE_VULKAN)
 	// RB: FIXME this shit. We need the OpenGL alpha channel for advanced rendering effects
 	idCVar SDLVars_t::sdl_waylandcompat( "sdl_waylandcompat", "0", CVAR_SYSTEM | CVAR_NOCHEAT | CVAR_ARCHIVE, "wayland compatible framebuffer" );
@@ -74,10 +77,10 @@ If you have questions concerning this license or the applicable additional terms
 
 /*
 ========================
-idDeviceManagerSDL::TestSwapBuffers
+idDeviceManagerLocal::TestSwapBuffers
 ========================
 */
-void idDeviceManagerSDL::TestSwapBuffers( const idCmdArgs& args )
+void idDeviceManagerLocal::TestSwapBuffers( const idCmdArgs& args )
 {
 	if( !sdl.window )
 	{
@@ -86,7 +89,7 @@ void idDeviceManagerSDL::TestSwapBuffers( const idCmdArgs& args )
 	}
 
 #if !defined(USE_VULKAN)
-	common->Printf( "idDeviceManagerSDL::TestSwapBuffers\n" );
+	common->Printf( "idDeviceManagerLocal::TestSwapBuffers\n" );
 	static const int MAX_FRAMES = 5;
 	uint64 timestamps[MAX_FRAMES];
 
@@ -159,10 +162,10 @@ void idDeviceManagerSDL::TestSwapBuffers( const idCmdArgs& args )
 
 /*
 ========================
-idDeviceManagerSDL::SaveGamma
+idDeviceManagerLocal::SaveGamma
 ========================
 */
-void idDeviceManagerSDL::SaveGamma()
+void idDeviceManagerLocal::SaveGamma()
 {
 	if( SDL_GetWindowGammaRamp( sdl.window, oldHardwareGamma[0], oldHardwareGamma[1], oldHardwareGamma[2] ) == 0 )
 	{
@@ -177,10 +180,10 @@ void idDeviceManagerSDL::SaveGamma()
 
 /*
 ========================
-idDeviceManagerSDL::RestoreGamma
+idDeviceManagerLocal::RestoreGamma
 ========================
 */
-void idDeviceManagerSDL::RestoreGamma()
+void idDeviceManagerLocal::RestoreGamma()
 {
 	if( gammaSaved )
 	{
@@ -199,12 +202,12 @@ void idDeviceManagerSDL::RestoreGamma()
 
 /*
 ========================
-idDeviceManagerSDL::SetGamma
+idDeviceManagerLocal::SetGamma
 
 The renderer calls this when the user adjusts r_gamma or r_brightness
 ========================
 */
-void idDeviceManagerSDL::SetGamma( unsigned short red[256], unsigned short green[256], unsigned short blue[256] )
+void idDeviceManagerLocal::SetGamma( unsigned short red[256], unsigned short green[256], unsigned short blue[256] )
 {
 	if( !sdl.window )
 	{
@@ -220,14 +223,14 @@ void idDeviceManagerSDL::SetGamma( unsigned short red[256], unsigned short green
 
 /*
 ===================
-idDeviceManagerSDL::PreInit
+idDeviceManagerLocal::PreInit
 
  GetModeListForDisplay is called before Init(), but SDL needs SDL_Init() first.
  So do that in PreInit()
  Calling that function more than once doesn't make a difference
 ===================
 */
-void idDeviceManagerSDL::PreInit()
+void idDeviceManagerLocal::PreInit()
 {
 	if( !SDL_WasInit( SDL_INIT_VIDEO ) )
 	{
@@ -241,12 +244,12 @@ void idDeviceManagerSDL::PreInit()
 
 /*
 ===================
-idDeviceManagerSDL::Init
+idDeviceManagerLocal::Init
 ===================
 */
-bool idDeviceManagerSDL::Init( vidParms_t parms )
+bool idDeviceManagerLocal::Init( vidParms_t parms )
 {
-	cmdSystem->AddCommand( "testSwapBuffers", idDeviceManagerSDL::TestSwapBuffers, CMD_FL_SYSTEM, "Times swapbuffer options" );
+	cmdSystem->AddCommand( "testSwapBuffers", idDeviceManagerLocal::TestSwapBuffers, CMD_FL_SYSTEM, "Times swapbuffer options" );
 
 	common->Printf( "Initializing render subsystem with multisamples:%i fullscreen:%i\n",
 					parms.multiSamples, parms.fullScreen );
@@ -628,10 +631,10 @@ bool idDeviceManagerSDL::Init( vidParms_t parms )
 
 /*
 ====================
-idDeviceManagerSDL::DumpAllDisplayDevices
+idDeviceManagerLocal::DumpAllDisplayDevices
 ====================
 */
-void idDeviceManagerSDL::DumpAllDisplayDevices()
+void idDeviceManagerLocal::DumpAllDisplayDevices()
 {
 	int numDisplays = SDL_GetNumVideoDisplays();
 	if( numDisplays <= 0 )
@@ -684,7 +687,7 @@ void idDeviceManagerSDL::DumpAllDisplayDevices()
 GetNumVideoDisplays
 ====================
 */
-int idDeviceManagerSDL::GetNumVideoDisplays()
+int idDeviceManagerLocal::GetNumVideoDisplays()
 {
 	return SDL_GetNumVideoDisplays();
 }
@@ -708,24 +711,24 @@ public:
 
 /*
 ====================
-idDeviceManagerSDL::GetModeListForDisplay
+idDeviceManagerLocal::GetModeListForDisplay
 ====================
 */
-bool idDeviceManagerSDL::GetModeListForDisplay( const int requestedDisplayNum, idList<vidMode_t>& modeList, const int minHeight )
+bool idDeviceManagerLocal::GetModeListForDisplay( const int requestedDisplayNum, idList<vidMode_t>& modeList, const int minHeight )
 {
 	assert( requestedDisplayNum >= 0 );
 	modeList.Clear();
 
 	if( requestedDisplayNum >= SDL_GetNumVideoDisplays() )
 	{
-		common->Warning( "idDeviceManagerSDL::GetModeListForDisplay: invalid display index %d (only %d displays)", requestedDisplayNum, SDL_GetNumVideoDisplays() );
+		common->Warning( "idDeviceManagerLocal::GetModeListForDisplay: invalid display index %d (only %d displays)", requestedDisplayNum, SDL_GetNumVideoDisplays() );
 		return false;
 	}
 
 	int numModes = SDL_GetNumDisplayModes( requestedDisplayNum );
 	if( numModes <= 0 )
 	{
-		common->Warning( "idDeviceManagerSDL::GetModeListForDisplay: no modes for display %d", requestedDisplayNum );
+		common->Warning( "idDeviceManagerLocal::GetModeListForDisplay: no modes for display %d", requestedDisplayNum );
 		return false;
 	}
 
@@ -752,7 +755,7 @@ bool idDeviceManagerSDL::GetModeListForDisplay( const int requestedDisplayNum, i
 
 	if( modeList.Num() == 0 )
 	{
-		common->Warning( "idDeviceManagerSDL::GetModeListForDisplay: no modes passed filtering (minHeight=%d)", minHeight );
+		common->Warning( "idDeviceManagerLocal::GetModeListForDisplay: no modes passed filtering (minHeight=%d)", minHeight );
 		return false;
 	}
 
@@ -762,10 +765,10 @@ bool idDeviceManagerSDL::GetModeListForDisplay( const int requestedDisplayNum, i
 
 /*
 ====================
-idDeviceManagerSDL::GetDefaultDisplayMode
+idDeviceManagerLocal::GetDefaultDisplayMode
 ====================
 */
-bool idDeviceManagerSDL::GetDefaultDisplayMode( int& defaultDisplayNum, vidMode_t& defaultMode )
+bool idDeviceManagerLocal::GetDefaultDisplayMode( int& defaultDisplayNum, vidMode_t& defaultMode )
 {
 	defaultDisplayNum = 0;
 
@@ -790,13 +793,13 @@ bool idDeviceManagerSDL::GetDefaultDisplayMode( int& defaultDisplayNum, vidMode_
 
 /*
 ====================
-idDeviceManagerSDL::GetRefreshRatesForDisplay
+idDeviceManagerLocal::GetRefreshRatesForDisplay
 
 Returns all distinct refresh rates available for a given resolution on
 the given display.
 ====================
 */
-bool idDeviceManagerSDL::GetRefreshRatesForDisplay( const int displayNum, const int width, const int height, idList<int>& rateList )
+bool idDeviceManagerLocal::GetRefreshRatesForDisplay( const int displayNum, const int width, const int height, idList<int>& rateList )
 {
 	rateList.Clear();
 
@@ -844,12 +847,12 @@ bool idDeviceManagerSDL::GetRefreshRatesForDisplay( const int displayNum, const 
 
 /*
 ===================
-idDeviceManagerSDL::ScreenParmsHandleDisplayIndex
+idDeviceManagerLocal::ScreenParmsHandleDisplayIndex
 
 Helper functions for SetScreenParms()
 ===================
 */
-int idDeviceManagerSDL::ScreenParmsHandleDisplayIndex( vidParms_t parms )
+int idDeviceManagerLocal::ScreenParmsHandleDisplayIndex( vidParms_t parms )
 {
 	int displayIdx;
 	if( parms.fullScreen > 0 )
@@ -891,10 +894,10 @@ int idDeviceManagerSDL::ScreenParmsHandleDisplayIndex( vidParms_t parms )
 
 /*
 ===================
-idDeviceManagerSDL::SetScreenParmsFullscreen
+idDeviceManagerLocal::SetScreenParmsFullscreen
 ===================
 */
-bool idDeviceManagerSDL::SetScreenParmsFullscreen( vidParms_t parms )
+bool idDeviceManagerLocal::SetScreenParmsFullscreen( vidParms_t parms )
 {
 	SDL_DisplayMode m = {0};
 	int displayIdx = ScreenParmsHandleDisplayIndex( parms );
@@ -933,10 +936,10 @@ bool idDeviceManagerSDL::SetScreenParmsFullscreen( vidParms_t parms )
 
 /*
 ===================
-idDeviceManagerSDL::SetScreenParmsWindowed
+idDeviceManagerLocal::SetScreenParmsWindowed
 ===================
 */
-bool idDeviceManagerSDL::SetScreenParmsWindowed( vidParms_t parms )
+bool idDeviceManagerLocal::SetScreenParmsWindowed( vidParms_t parms )
 {
 	// if we're currently in fullscreen mode, we need to disable that
 	if( SDL_GetWindowFlags( sdl.window ) & SDL_WINDOW_FULLSCREEN )
@@ -957,10 +960,10 @@ bool idDeviceManagerSDL::SetScreenParmsWindowed( vidParms_t parms )
 
 /*
 ===================
-idDeviceManagerSDL::SetScreenParms
+idDeviceManagerLocal::SetScreenParms
 ===================
 */
-bool idDeviceManagerSDL::SetScreenParms( vidParms_t parms )
+bool idDeviceManagerLocal::SetScreenParms( vidParms_t parms )
 {
 	if( parms.fullScreen == -1 )
 	{
@@ -991,7 +994,7 @@ bool idDeviceManagerSDL::SetScreenParms( vidParms_t parms )
 	}
 	else
 	{
-		common->Warning( "idDeviceManagerSDL::SetScreenParms: unsupported fullScreen value %d", parms.fullScreen );
+		common->Warning( "idDeviceManagerLocal::SetScreenParms: unsupported fullScreen value %d", parms.fullScreen );
 		return false;
 	}
 
@@ -1014,10 +1017,10 @@ bool idDeviceManagerSDL::SetScreenParms( vidParms_t parms )
 
 /*
 ===================
-idDeviceManagerSDL::Shutdown
+idDeviceManagerLocal::Shutdown
 ===================
 */
-void idDeviceManagerSDL::Shutdown( bool shutdownSDL )
+void idDeviceManagerLocal::Shutdown( bool shutdownSDL )
 {
 #if !defined(USE_VULKAN)
 	common->Printf( "Shutting down OpenGL subsystem\n" );
@@ -1057,10 +1060,10 @@ void idDeviceManagerSDL::Shutdown( bool shutdownSDL )
 
 /*
 ===================
-idDeviceManagerSDL::SwapBuffers
+idDeviceManagerLocal::SwapBuffers
 ===================
 */
-void idDeviceManagerSDL::SwapBuffers()
+void idDeviceManagerLocal::SwapBuffers()
 {
 #if !defined(USE_VULKAN)
 	if( r_swapInterval.IsModified() )
@@ -1084,10 +1087,10 @@ void idDeviceManagerSDL::SwapBuffers()
 
 /*
 ===================
-idDeviceManagerSDL::GrabInput
+idDeviceManagerLocal::GrabInput
 ===================
 */
-void idDeviceManagerSDL::GrabInput( int flags )
+void idDeviceManagerLocal::GrabInput( int flags )
 {
 	bool grab = flags & GRAB_ENABLE;
 
@@ -1121,10 +1124,10 @@ void idDeviceManagerSDL::GrabInput( int flags )
 
 /*
 ========================
-idDeviceManagerSDL::SetWindowsIcon
+idDeviceManagerLocal::SetWindowsIcon
 ========================
 */
-void idDeviceManagerSDL::SetWindowsIcon( void* window )
+void idDeviceManagerLocal::SetWindowsIcon( void* window )
 {
 	Uint32 rmask, gmask, bmask, amask;
 
@@ -1155,13 +1158,13 @@ void idDeviceManagerSDL::SetWindowsIcon( void* window )
 
 /*
 ========================
-idDeviceManagerSDL::SetWindowTitle
+idDeviceManagerLocal::SetWindowTitle
 
 Updates the OS window title. Passing NULL or an empty string reverts to
 the default title.
 ========================
 */
-void idDeviceManagerSDL::SetWindowTitle( const char* modTitle )
+void idDeviceManagerLocal::SetWindowTitle( const char* modTitle )
 {
 	if( !sdl.window )
 	{
@@ -1183,10 +1186,10 @@ void idDeviceManagerSDL::SetWindowTitle( const char* modTitle )
 
 /*
 ========================
-idDeviceManagerSDL::SetTitleIcon
+idDeviceManagerLocal::SetTitleIcon
 ========================
 */
-bool idDeviceManagerSDL::SetTitleIcon( const char* OSPath )
+bool idDeviceManagerLocal::SetTitleIcon( const char* OSPath )
 {
 	if( !sdl.window || !OSPath || !OSPath[0] )
 	{
@@ -1211,10 +1214,10 @@ bool idDeviceManagerSDL::SetTitleIcon( const char* OSPath )
 
 /*
 ========================
-idDeviceManagerSDL::GetRequiredExtensions
+idDeviceManagerLocal::GetRequiredExtensions
 ========================
 */
-std::vector<const char*> idDeviceManagerSDL::GetRequiredExtensions()
+std::vector<const char*> idDeviceManagerLocal::GetRequiredExtensions()
 {
 	uint32_t sdlCount = 0;
 	std::vector<const char*> sdlInstanceExtensions = {};

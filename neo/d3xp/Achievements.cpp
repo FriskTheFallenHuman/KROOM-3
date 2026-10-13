@@ -32,7 +32,8 @@ If you have questions concerning this license or the applicable additional terms
 
 bool idAchievementManager::cheatingDialogShown = false;
 
-const achievementInfo_t achievementInfo[ACHIEVEMENTS_NUM] = {
+const achievementInfo_t achievementInfo[ACHIEVEMENTS_NUM] =
+{
 	{ 50,	true,	"ach_earn_all_50_trophies"				}, // ACHIEVEMENT_EARN_ALL_50_TROPHIES
 	{ 1,	true,	"ach_completed_difficulty_0"			}, // ACHIEVEMENT_COMPLETED_DIFFICULTY_0
 	{ 1,	true,	"ach_completed_difficulty_1"			}, // ACHIEVEMENT_COMPLETED_DIFFICULTY_1

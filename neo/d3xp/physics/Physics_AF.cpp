@@ -30,7 +30,6 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "../Game_local.h"
-#include "../../cm/CollisionMerge.h"
 
 CLASS_DECLARATION( idPhysics_Base, idPhysics_AF )
 END_CLASS
@@ -6551,7 +6550,7 @@ void idPhysics_AF::CheckForCollisions( float timeStep )
 				SetupCollisionForBody( state.body );
 				gameLocal.clip.TranslationEntities( entityTrace, state.start, state.end,
 													state.body->clipModel, state.startAxis, state.body->clipMask, state.passEntity );
-				idCollisionDetectionMerge::MergeTraceResult( state.translationTrace, entityTrace,
+				collisionModelManager->MergeTraceResult( state.translationTrace, entityTrace,
 						entityTrace.fraction < 1.0f ? entityTrace.c.entityNum : ENTITYNUM_NONE,
 						entityTrace.fraction < 1.0f ? entityTrace.c.id : 0 );
 			}
@@ -6640,7 +6639,7 @@ void idPhysics_AF::CheckForCollisions( float timeStep )
 						gameLocal.clip.RotationEntities( entityTrace, state.translationTrace.endpos,
 														 state.endRotation, state.body->clipModel, state.startAxis,
 														 state.body->clipMask, state.passEntity );
-						idCollisionDetectionMerge::MergeTraceResult( state.rotationTrace, entityTrace,
+						collisionModelManager->MergeTraceResult( state.rotationTrace, entityTrace,
 								entityTrace.fraction < 1.0f ? entityTrace.c.entityNum : ENTITYNUM_NONE,
 								entityTrace.fraction < 1.0f ? entityTrace.c.id : 0 );
 					}

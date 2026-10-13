@@ -1143,6 +1143,7 @@ void idCommonLocal::LoadGameDLL()
 	gameImport.AASFileManager			= ::AASFileManager;
 	gameImport.collisionModelManager	= ::collisionModelManager;
 	gameImport.imguiSystem				= ::imguiSystem;
+	gameImport.deviceManager			= ::deviceManager;
 
 	gameExport							= *GetGameAPI( &gameImport );
 
@@ -1854,7 +1855,7 @@ void idCommonLocal::DoCustomBranding()
 {
 	const char* title = haveSelectedMod && selectedMod.title.Length() > 0 ? selectedMod.title.c_str() : GAME_NAME;
 
-	idDeviceManagerSDL* device = dynamic_cast< idDeviceManagerSDL* >( idDeviceManager::GetInstance() );
+	idDeviceManagerLocal* device = dynamic_cast< idDeviceManagerLocal* >( deviceManager );
 	if( device )
 	{
 		device->SetWindowTitle( title );

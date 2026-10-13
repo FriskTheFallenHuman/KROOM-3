@@ -875,22 +875,22 @@ void idWeapon::Clear()
 		nozzleGlowHandle = -1;
 	}
 
-	memset( static_cast< renderEntity_t* >( &renderEntity ), 0, sizeof( renderEntity_t ) );
-	renderEntity.entityNum	= entityNumber;
+	memset( static_cast< renderEntity_t* >( renderEntity ), 0, sizeof( renderEntity_t ) );
+	renderEntity->entityNum	= entityNumber;
 
-	renderEntity.noShadow		= true;
-	renderEntity.noSelfShadow	= true;
-	renderEntity.customSkin		= NULL;
+	renderEntity->noShadow		= true;
+	renderEntity->noSelfShadow	= true;
+	renderEntity->customSkin		= NULL;
 
 	// set default shader parms
-	renderEntity.shaderParms[ SHADERPARM_RED ]	= 1.0f;
-	renderEntity.shaderParms[ SHADERPARM_GREEN ] = 1.0f;
-	renderEntity.shaderParms[ SHADERPARM_BLUE ]	= 1.0f;
-	renderEntity.shaderParms[3] = 1.0f;
-	renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = 0.0f;
-	renderEntity.shaderParms[5] = 0.0f;
-	renderEntity.shaderParms[6] = 0.0f;
-	renderEntity.shaderParms[7] = 0.0f;
+	renderEntity->shaderParms[ SHADERPARM_RED ]	= 1.0f;
+	renderEntity->shaderParms[ SHADERPARM_GREEN ] = 1.0f;
+	renderEntity->shaderParms[ SHADERPARM_BLUE ]	= 1.0f;
+	renderEntity->shaderParms[3] = 1.0f;
+	renderEntity->shaderParms[ SHADERPARM_TIMEOFFSET ] = 0.0f;
+	renderEntity->shaderParms[5] = 0.0f;
+	renderEntity->shaderParms[6] = 0.0f;
+	renderEntity->shaderParms[7] = 0.0f;
 
 	if( refSound.referenceSound )
 	{
@@ -1425,11 +1425,11 @@ void idWeapon::GetWeaponDef( const char* objectname, int ammoinclip )
 		// TODO - idInventory for AI
 	}
 
-	renderEntity.gui[ 0 ] = NULL;
+	renderEntity->gui[ 0 ] = NULL;
 	guiName = weaponDef->dict.GetString( "gui" );
 	if( guiName[0] )
 	{
-		renderEntity.gui[ 0 ] = uiManager->FindGui( guiName, true, false, true );
+		renderEntity->gui[ 0 ] = uiManager->FindGui( guiName, true, false, true );
 	}
 
 	zoomFov = weaponDef->dict.GetInt( "zoomFov", "70" );
@@ -1694,7 +1694,7 @@ idWeapon::UpdateGUI
 */
 void idWeapon::UpdateGUI()
 {
-	if( !renderEntity.gui[ 0 ] )
+	if( !renderEntity->gui[ 0 ] )
 	{
 		return;
 	}
@@ -1739,26 +1739,26 @@ void idWeapon::UpdateGUI()
 	if( ammoamount < 0 )
 	{
 		// show infinite ammo
-		renderEntity.gui[ 0 ]->SetStateString( "player_ammo", "" );
+		renderEntity->gui[ 0 ]->SetStateString( "player_ammo", "" );
 	}
 	else
 	{
 		// show remaining ammo
-		renderEntity.gui[ 0 ]->SetStateString( "player_totalammo", va( "%i", ammoamount ) );
-		renderEntity.gui[ 0 ]->SetStateString( "player_ammo", ClipSize() ? va( "%i", inclip ) : "--" );
-		renderEntity.gui[ 0 ]->SetStateString( "player_clips", ClipSize() ? va( "%i", ammoamount / ClipSize() ) : "--" );
+		renderEntity->gui[ 0 ]->SetStateString( "player_totalammo", va( "%i", ammoamount ) );
+		renderEntity->gui[ 0 ]->SetStateString( "player_ammo", ClipSize() ? va( "%i", inclip ) : "--" );
+		renderEntity->gui[ 0 ]->SetStateString( "player_clips", ClipSize() ? va( "%i", ammoamount / ClipSize() ) : "--" );
 
-		renderEntity.gui[ 0 ]->SetStateString( "player_allammo", va( "%i/%i", inclip, ammoamount ) );
+		renderEntity->gui[ 0 ]->SetStateString( "player_allammo", va( "%i/%i", inclip, ammoamount ) );
 	}
-	renderEntity.gui[ 0 ]->SetStateBool( "player_ammo_empty", ( ammoamount == 0 ) );
-	renderEntity.gui[ 0 ]->SetStateBool( "player_clip_empty", ( inclip == 0 ) );
-	renderEntity.gui[ 0 ]->SetStateBool( "player_clip_low", ( inclip <= lowAmmo ) );
+	renderEntity->gui[ 0 ]->SetStateBool( "player_ammo_empty", ( ammoamount == 0 ) );
+	renderEntity->gui[ 0 ]->SetStateBool( "player_clip_empty", ( inclip == 0 ) );
+	renderEntity->gui[ 0 ]->SetStateBool( "player_clip_low", ( inclip <= lowAmmo ) );
 
 	//Let the HUD know the total amount of ammo regardless of the ammo required value
-	renderEntity.gui[ 0 ]->SetStateString( "player_ammo_count", va( "%i", AmmoCount() ) );
+	renderEntity->gui[ 0 ]->SetStateString( "player_ammo_count", va( "%i", AmmoCount() ) );
 
 	//Grabber Gui Info
-	renderEntity.gui[ 0 ]->SetStateString( "grabber_state", va( "%i", grabberState ) );
+	renderEntity->gui[ 0 ]->SetStateString( "grabber_state", va( "%i", grabberState ) );
 }
 
 /***********************************************************************
@@ -1885,7 +1885,7 @@ void idWeapon::UpdateWeaponFx()
 				else
 				{
 					light->light.shaderParms[ SHADERPARM_TIMEOFFSET ]	= -MS2SEC( gameLocal.time );
-					light->light.shaderParms[ SHADERPARM_DIVERSITY ]	= renderEntity.shaderParms[ SHADERPARM_DIVERSITY ]; // For muzzleflashes.
+					light->light.shaderParms[ SHADERPARM_DIVERSITY ]	= renderEntity->shaderParms[ SHADERPARM_DIVERSITY ]; // For muzzleflashes.
 					light->lightHandle = gameRenderWorld->AddLightDef( &light->light );
 				}
 
@@ -2005,10 +2005,10 @@ void idWeapon::MuzzleFlashLight()
 
 	// these will be different each fire
 	muzzleFlash.shaderParms[ SHADERPARM_TIMEOFFSET ]	= -MS2SEC( gameLocal.time );
-	muzzleFlash.shaderParms[ SHADERPARM_DIVERSITY ]		= renderEntity.shaderParms[ SHADERPARM_DIVERSITY ];
+	muzzleFlash.shaderParms[ SHADERPARM_DIVERSITY ]		= renderEntity->shaderParms[ SHADERPARM_DIVERSITY ];
 
 	worldMuzzleFlash.shaderParms[ SHADERPARM_TIMEOFFSET ]	= -MS2SEC( gameLocal.time );
-	worldMuzzleFlash.shaderParms[ SHADERPARM_DIVERSITY ]	= renderEntity.shaderParms[ SHADERPARM_DIVERSITY ];
+	worldMuzzleFlash.shaderParms[ SHADERPARM_DIVERSITY ]	= renderEntity->shaderParms[ SHADERPARM_DIVERSITY ];
 
 	// the light will be removed at this time
 	muzzleFlashEnd = gameLocal.time + flashTime;
@@ -2156,18 +2156,18 @@ void idWeapon::SetModel( const char* modelname )
 		gameRenderWorld->RemoveDecals( modelDefHandle );
 	}
 
-	renderEntity.hModel = animator.SetModel( modelname );
-	if( renderEntity.hModel )
+	renderEntity->hModel = animator.SetModel( modelname );
+	if( renderEntity->hModel )
 	{
-		renderEntity.customSkin = animator.ModelDef()->GetDefaultSkin();
-		animator.GetJoints( &renderEntity.numJoints, &renderEntity.joints );
+		renderEntity->customSkin = animator.ModelDef()->GetDefaultSkin();
+		animator.GetJoints( &renderEntity->numJoints, &renderEntity->joints );
 	}
 	else
 	{
-		renderEntity.customSkin = NULL;
-		renderEntity.callback = NULL;
-		renderEntity.numJoints = 0;
-		renderEntity.joints = NULL;
+		renderEntity->customSkin = NULL;
+		renderEntity->callback = NULL;
+		renderEntity->numJoints = 0;
+		renderEntity->joints = NULL;
 	}
 
 	// hide the model until an animation is played
@@ -2652,8 +2652,8 @@ void idWeapon::UpdateNozzleFx()
 		s = ( ( float )la / nozzleFxFade );
 		l = 1.0f - s;
 	}
-	renderEntity.shaderParms[5] = s;
-	renderEntity.shaderParms[6] = l;
+	renderEntity->shaderParms[5] = s;
+	renderEntity->shaderParms[6] = l;
 
 	if( ventLightJointView == INVALID_JOINT )
 	{
@@ -3040,10 +3040,10 @@ void idWeapon::PresentWeapon( bool showViewModel )
 	UpdateAnimation();
 
 	// only show the surface in player view
-	renderEntity.allowSurfaceInViewID = owner->entityNumber + 1;
+	renderEntity->allowSurfaceInViewID = owner->entityNumber + 1;
 
 	// crunch the depth range so it never pokes into walls this breaks the machine gun gui
-	renderEntity.weaponDepthHack = true;
+	renderEntity->weaponDepthHack = true;
 
 	// present the model
 	if( showViewModel )
@@ -3664,11 +3664,11 @@ bool idWeapon::ClientReceiveEvent( int event, int time, const idBitMsg& msg )
 		case EVENT_CHANGESKIN:
 		{
 			int index = gameLocal.ClientRemapDecl( DECL_SKIN, msg.ReadLong() );
-			renderEntity.customSkin = ( index != -1 ) ? static_cast<const idDeclSkin*>( declManager->DeclByIndex( DECL_SKIN, index ) ) : NULL;
+			renderEntity->customSkin = ( index != -1 ) ? static_cast<const idDeclSkin*>( declManager->DeclByIndex( DECL_SKIN, index ) ) : NULL;
 			UpdateVisuals();
 			if( worldModel.GetEntity() )
 			{
-				worldModel.GetEntity()->SetSkin( renderEntity.customSkin );
+				worldModel.GetEntity()->SetSkin( renderEntity->customSkin );
 			}
 			return true;
 		}
@@ -4141,12 +4141,12 @@ void idWeapon::Event_SetSkin( const char* skinname )
 	}
 
 	// Don't update if the skin hasn't changed.
-	if( renderEntity.customSkin == skinDecl && worldModel.GetEntity() != NULL && worldModel.GetEntity()->GetSkin() == skinDecl )
+	if( renderEntity->customSkin == skinDecl && worldModel.GetEntity() != NULL && worldModel.GetEntity()->GetSkin() == skinDecl )
 	{
 		return;
 	}
 
-	renderEntity.customSkin = skinDecl;
+	renderEntity->customSkin = skinDecl;
 	UpdateVisuals();
 
 	if( worldModel.GetEntity() )
@@ -4445,13 +4445,13 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 
 	// set the shader parm to the time of last projectile firing,
 	// which the gun material shaders can reference for single shot barrel glows, etc
-	renderEntity.shaderParms[ SHADERPARM_DIVERSITY ]	= gameLocal.random.CRandomFloat();
-	renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ]	= -MS2SEC( gameLocal.realClientTime );
+	renderEntity->shaderParms[ SHADERPARM_DIVERSITY ]	= gameLocal.random.CRandomFloat();
+	renderEntity->shaderParms[ SHADERPARM_TIMEOFFSET ]	= -MS2SEC( gameLocal.realClientTime );
 
 	if( worldModel.GetEntity() )
 	{
-		worldModel.GetEntity()->SetShaderParm( SHADERPARM_DIVERSITY, renderEntity.shaderParms[ SHADERPARM_DIVERSITY ] );
-		worldModel.GetEntity()->SetShaderParm( SHADERPARM_TIMEOFFSET, renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] );
+		worldModel.GetEntity()->SetShaderParm( SHADERPARM_DIVERSITY, renderEntity->shaderParms[ SHADERPARM_DIVERSITY ] );
+		worldModel.GetEntity()->SetShaderParm( SHADERPARM_TIMEOFFSET, renderEntity->shaderParms[ SHADERPARM_TIMEOFFSET ] );
 	}
 
 	// calculate the muzzle position
@@ -4787,13 +4787,13 @@ void idWeapon::Event_LaunchProjectilesEllipse( int num_projectiles, float spread
 
 	// set the shader parm to the time of last projectile firing,
 	// which the gun material shaders can reference for single shot barrel glows, etc
-	renderEntity.shaderParms[ SHADERPARM_DIVERSITY ]	= gameLocal.random.CRandomFloat();
-	renderEntity.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.realClientTime );
+	renderEntity->shaderParms[ SHADERPARM_DIVERSITY ]	= gameLocal.random.CRandomFloat();
+	renderEntity->shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.realClientTime );
 
 	if( worldModel.GetEntity() )
 	{
-		worldModel.GetEntity()->SetShaderParm( SHADERPARM_DIVERSITY, renderEntity.shaderParms[ SHADERPARM_DIVERSITY ] );
-		worldModel.GetEntity()->SetShaderParm( SHADERPARM_TIMEOFFSET, renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] );
+		worldModel.GetEntity()->SetShaderParm( SHADERPARM_DIVERSITY, renderEntity->shaderParms[ SHADERPARM_DIVERSITY ] );
+		worldModel.GetEntity()->SetShaderParm( SHADERPARM_TIMEOFFSET, renderEntity->shaderParms[ SHADERPARM_TIMEOFFSET ] );
 	}
 
 	GetProjectileLaunchOriginAndAxis( muzzleOrigin, muzzleAxis );
@@ -5094,13 +5094,13 @@ void idWeapon::Event_LaunchPowerup( const char* powerup, float duration, int use
 
 	// set the shader parm to the time of last projectile firing,
 	// which the gun material shaders can reference for single shot barrel glows, etc
-	renderEntity.shaderParms[ SHADERPARM_DIVERSITY ]	= gameLocal.random.CRandomFloat();
-	renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ]	= -MS2SEC( gameLocal.time );
+	renderEntity->shaderParms[ SHADERPARM_DIVERSITY ]	= gameLocal.random.CRandomFloat();
+	renderEntity->shaderParms[ SHADERPARM_TIMEOFFSET ]	= -MS2SEC( gameLocal.time );
 
 	if( worldModel.GetEntity() )
 	{
-		worldModel.GetEntity()->SetShaderParm( SHADERPARM_DIVERSITY, renderEntity.shaderParms[ SHADERPARM_DIVERSITY ] );
-		worldModel.GetEntity()->SetShaderParm( SHADERPARM_TIMEOFFSET, renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] );
+		worldModel.GetEntity()->SetShaderParm( SHADERPARM_DIVERSITY, renderEntity->shaderParms[ SHADERPARM_DIVERSITY ] );
+		worldModel.GetEntity()->SetShaderParm( SHADERPARM_TIMEOFFSET, renderEntity->shaderParms[ SHADERPARM_TIMEOFFSET ] );
 	}
 
 	// add the light for the muzzleflash
@@ -5206,7 +5206,7 @@ void idWeapon::Event_StartWeaponLight( const char* name )
 
 		// these will be different each fire
 		light->light.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time );
-		light->light.shaderParms[ SHADERPARM_DIVERSITY ] = renderEntity.shaderParms[ SHADERPARM_DIVERSITY ];
+		light->light.shaderParms[ SHADERPARM_DIVERSITY ] = renderEntity->shaderParms[ SHADERPARM_DIVERSITY ];
 
 		if( !light->lightFlags.isAlwaysOn )
 		{
@@ -5570,7 +5570,7 @@ void idWeapon::Event_SetWeaponGuiParm( const char* key, const char* val )
 {
 	// code below is adapted from idWeapon::UpdateGUI and idEntity::Event_SetGuiParm
 
-	if( !renderEntity.gui[0] || !owner )
+	if( !renderEntity->gui[0] || !owner )
 	{
 		return;
 	}
@@ -5593,6 +5593,6 @@ void idWeapon::Event_SetWeaponGuiParm( const char* key, const char* val )
 		}
 	}
 
-	renderEntity.gui[0]->SetStateString( key, val );
-	renderEntity.gui[0]->StateChanged( gameLocal.fast.time );
+	renderEntity->gui[0]->SetStateString( key, val );
+	renderEntity->gui[0]->StateChanged( gameLocal.fast.time );
 }

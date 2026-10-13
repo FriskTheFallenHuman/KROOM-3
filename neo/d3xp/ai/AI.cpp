@@ -3872,7 +3872,7 @@ const idDeclParticle* idAI::SpawnParticlesOnJoint( particleEmitter_t& pe, const 
 	else
 	{
 		animator.GetJointTransform( pe.joint, gameLocal.time, origin, axis );
-		origin = renderEntity.origin + origin * renderEntity.axis;
+		origin = renderEntity->origin + origin * renderEntity->axis;
 
 		BecomeActive( TH_UPDATEPARTICLES );
 
@@ -3987,7 +3987,7 @@ void idAI::Killed( idEntity* inflictor, idEntity* attacker, int damage, const id
 	{
 		// lost soul is only case that does not use a ragdoll and has a model_death so get the death sound in here
 		StartSound( "snd_death", SND_CHANNEL_VOICE, 0, false, NULL );
-		renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time );
+		renderEntity->shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time );
 		SetModel( modelDeath );
 		physicsObj.SetLinearVelocity( vec3_zero );
 		physicsObj.PutToRest();
@@ -5449,8 +5449,8 @@ void idAI::TriggerWeaponEffects( const idVec3& muzzle )
 
 	// muzzle flash
 	// offset the shader parms so muzzle flashes show up
-	renderEntity.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.time );
-	renderEntity.shaderParms[ SHADERPARM_DIVERSITY ] = gameLocal.random.CRandomFloat();
+	renderEntity->shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.time );
+	renderEntity->shaderParms[ SHADERPARM_DIVERSITY ] = gameLocal.random.CRandomFloat();
 
 	idVec3 flashColor;
 	spawnArgs.GetVector( "flashColor", "1 0.82 0.45", flashColor );
@@ -5747,7 +5747,7 @@ void idAI::UpdateParticles()
 				else
 				{
 					animator.GetJointTransform( particles[i].joint, gameLocal.time, realVector, realAxis );
-					realAxis *= renderEntity.axis;
+					realAxis *= renderEntity->axis;
 					realVector = physicsObj.GetOrigin() + ( realVector + modelOffset ) * ( viewAxis * physicsObj.GetGravityAxis() );
 				}
 

@@ -29,8 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __DEVICEMANAGER_SDL_H__
 #define __DEVICEMANAGER_SDL_H__
 
-#include "../DeviceManager.h"
-
 const int GRAB_ENABLE		= BIT( 0 );
 const int GRAB_REENABLE		= BIT( 1 );
 const int GRAB_HIDECURSOR	= BIT( 2 );
@@ -38,10 +36,10 @@ const int GRAB_SETSTATE		= BIT( 3 );
 
 /*
 =================================
-idDeviceManagerSDL
+idDeviceManagerLocal
 =================================
 */
-class idDeviceManagerSDL : public idDeviceManager
+class idDeviceManagerLocal : public idDeviceManager
 {
 public:
 	virtual void		PreInit();
@@ -81,5 +79,7 @@ private:
 	unsigned short		oldHardwareGamma[3][256];
 	bool				gammaSaved = false;
 };
+
+extern idDeviceManagerLocal deviceManagerLocal;
 
 #endif /* !__DEVICEMANAGER_SDL_H__ */

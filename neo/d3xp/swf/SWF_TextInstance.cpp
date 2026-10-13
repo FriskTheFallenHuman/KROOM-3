@@ -31,8 +31,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "../Game_local.h"
 
-#include "../renderer/Font.h"
-
 idSWFScriptObject_TextInstancePrototype textInstanceScriptObjectPrototype;
 
 idCVar swf_textScrollSpeed( "swf_textScrollSpeed", "80", CVAR_INTEGER, "scroll speed for text" );

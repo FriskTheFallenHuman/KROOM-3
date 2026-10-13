@@ -814,10 +814,10 @@ void idActor::SetupHead()
 		idAttachInfo& attach = attachments.Alloc();
 		attach.channel = animator.GetChannelForJoint( joint );
 		animator.GetJointTransform( joint, gameLocal.time, origin, axis );
-		origin = renderEntity.origin + ( origin + modelOffset ) * renderEntity.axis;
+		origin = renderEntity->origin + ( origin + modelOffset ) * renderEntity->axis;
 		attach.ent = headEnt;
 		headEnt->SetOrigin( origin );
-		headEnt->SetAxis( renderEntity.axis );
+		headEnt->SetAxis( renderEntity->axis );
 		headEnt->BindToJoint( this, joint, true );
 	}
 }
@@ -1856,7 +1856,7 @@ void idActor::LinkCombat()
 
 	if( combatModel )
 	{
-		combatModel->Link( gameLocal.clip, this, 0, renderEntity.origin, renderEntity.axis, modelDefHandle );
+		combatModel->Link( gameLocal.clip, this, 0, renderEntity->origin, renderEntity->axis, modelDefHandle );
 	}
 	headEnt = head.GetEntity();
 	if( headEnt )
@@ -2034,7 +2034,7 @@ void idActor::Attach( idEntity* ent )
 	GetJointWorldTransform( joint, gameLocal.time, origin, axis );
 	attach.ent = ent;
 
-	ent->SetOrigin( origin + originOffset * renderEntity.axis );
+	ent->SetOrigin( origin + originOffset * renderEntity->axis );
 	idMat3 rotate = angleOffset.ToMat3();
 	idMat3 newAxis = rotate * axis;
 	ent->SetAxis( newAxis );
@@ -2728,7 +2728,7 @@ void idActor::Damage( idEntity* inflictor, idEntity* attacker, const idVec3& dir
 							{
 								player->GetAchievementManager().EventCompletesAchievement( ACHIEVEMENT_GRABBER_KILL_20_ENEMY );
 							}
-							if( renderEntity.hModel && idStr::Icmp( renderEntity.hModel->Name(), "models/md5/monsters/imp/imp.md5mesh" ) == 0 )
+							if( renderEntity->hModel && idStr::Icmp( renderEntity->hModel->Name(), "models/md5/monsters/imp/imp.md5mesh" ) == 0 )
 							{
 								if( idStr::FindText( inflictor->GetName(), "shotgun" ) > -1 )
 								{

@@ -141,7 +141,7 @@ public:
 
 	const renderLight_t& GetRenderLight() const
 	{
-		return renderLight;
+		return *renderLight;
 	}
 
 	enum
@@ -156,7 +156,7 @@ public:
 	virtual bool	ClientReceiveEvent( int event, int time, const idBitMsg& msg );
 
 private:
-	idRenderLight	renderLight;				// game-facing render object
+	idRenderLight*	renderLight;				// game-facing render object
 	idVec3			localLightOrigin;			// light origin relative to the physics origin
 	idMat3			localLightAxis;				// light axis relative to physics axis
 	qhandle_t		lightDefHandle;				// handle to renderer light def

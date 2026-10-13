@@ -89,9 +89,9 @@ void Sys_Error( const char* error, ... )
 
 	Sys_Printf( "%s\n", text );
 
-	if( idDeviceManager::GetInstance() )
+	if( deviceManager )
 	{
-		idDeviceManagerSDL* device = dynamic_cast<idDeviceManagerSDL*>( idDeviceManager::GetInstance() );
+		idDeviceManagerLocal* device = dynamic_cast<idDeviceManagerLocal*>( deviceManager );
 		if( device )
 		{
 			device->GrabInput( GRAB_SETSTATE );
@@ -108,9 +108,9 @@ void Sys_Error( const char* error, ... )
 
 	Sys_ShutdownInput();
 
-	if( idDeviceManager::GetInstance() )
+	if( deviceManager )
 	{
-		idDeviceManager::GetInstance()->Shutdown();
+		deviceManager->Shutdown();
 	}
 
 	extern idCVar com_productionMode;
@@ -650,9 +650,6 @@ int main( int argc, char* argv[] )
 
 	// get the initial time base
 	Sys_Milliseconds();
-
-	static idDeviceManagerSDL deviceMgr;
-	idDeviceManager::s_instance = &deviceMgr;
 
 	common->Init( 0, NULL, sys_cmdline );
 

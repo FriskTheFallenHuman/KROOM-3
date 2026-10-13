@@ -180,6 +180,16 @@ double idSysLocal::ClockTicksPerSecond()
 
 /*
 ==================
+idSysLocal::GetCPUCount
+==================
+*/
+void idSysLocal::GetCPUCount( int& numLogicalCPUCores, int& numPhysicalCPUCores, int& numCPUPackages )
+{
+	Sys_CPUCount( numLogicalCPUCores, numPhysicalCPUCores, numCPUPackages );
+}
+
+/*
+==================
 idSysLocal::GetMilliseconds
 ==================
 */

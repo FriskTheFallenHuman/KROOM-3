@@ -163,11 +163,11 @@ void idMenuScreen_Shell_Resolution::ShowScreen( const mainMenuTransition_t trans
 	int viewIndex = 0;
 	idList< idList<vidMode_t> > displays;
 
-	const int numDisplays = ( idDeviceManager::GetInstance() && idDeviceManager::GetInstance()->GetNumVideoDisplays() );
+	const int numDisplays = ( deviceManager && deviceManager->GetNumVideoDisplays() );
 	for( int displayNum = 0; displayNum < numDisplays; ++displayNum )
 	{
 		idList<vidMode_t>& modeList = displays.Alloc();
-		if( !idDeviceManager::GetInstance() || !idDeviceManager::GetInstance()->GetModeListForDisplay( displayNum, modeList, 600 ) ) // get modes with height >= 600 only
+		if( !deviceManager || !deviceManager->GetModeListForDisplay( displayNum, modeList, 600 ) ) // get modes with height >= 600 only
 		{
 			displays.RemoveIndex( displays.Num() - 1 );
 			break;
@@ -322,11 +322,11 @@ bool idMenuScreen_Shell_Resolution::HandleAction( idWidgetAction& action, const 
 					// If the current refresh rate is not available at the new
 					// resolution, fall back to auto.
 					const int curRate = cvarSystem->GetCVarInteger( "r_vidDisplayRefresh" );
-					if( curRate != 0 && idDeviceManager::GetInstance() != NULL )
+					if( curRate != 0 && deviceManager != NULL )
 					{
 						idList<int> rates;
 						bool found = false;
-						if( idDeviceManager::GetInstance()->GetRefreshRatesForDisplay( currentOption.monitor - 1, currentOption.width, currentOption.height, rates ) )
+						if( deviceManager->GetRefreshRatesForDisplay( currentOption.monitor - 1, currentOption.width, currentOption.height, rates ) )
 						{
 							for( int i = 0; i < rates.Num(); i++ )
 							{

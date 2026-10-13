@@ -223,6 +223,14 @@ public:
 											const idTraceModel* trm, const idMat3& trmAxis, int contentMask,
 											const idPositionedCollisionModel* positionedModels ) = 0;
 
+	virtual bool			MergeTraceResult( trace_t& result, const trace_t& candidate,
+			int entityNum, int physicsId ) = 0;
+	virtual int				MergeContentsResults( int initialContents, const int* results,
+			const idPositionedCollisionModel* models, int numModels, int contentMask ) = 0;
+	virtual int				MergeContactsResults( contactInfo_t* output, int maxContacts, int initialContacts,
+			const contactInfo_t* inputs, const int* inputCounts, int contactsPerModel,
+			const idPositionedCollisionModel* models, int numModels ) = 0;
+
 	// Tests collision detection.
 	virtual void			DebugOutput( const idVec3& origin ) = 0;
 

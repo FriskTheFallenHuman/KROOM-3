@@ -2134,7 +2134,6 @@ bool idInterpreter::Execute()
 	return threadDying;
 }
 
-// RB: moved from Script_Interpreter.h to avoid include problems with the script debugger
 /*
 ================
 idInterpreter::GetEntity
@@ -2170,4 +2169,3 @@ idScriptObject* idInterpreter::GetScriptObject( int entnum ) const
 	}
 	return NULL;
 }
-// RB end

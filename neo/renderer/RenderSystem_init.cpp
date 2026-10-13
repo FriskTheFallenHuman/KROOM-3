@@ -353,7 +353,7 @@ static bool R_SetDefaultVideoParms()
 	vidMode_t defaultMode = {};
 
 	// get the default display and its default mode
-	if( !idDeviceManager::GetInstance() || !idDeviceManager::GetInstance()->GetDefaultDisplayMode( defaultDisplay, defaultMode ) )
+	if( !deviceManager || !deviceManager->GetDefaultDisplayMode( defaultDisplay, defaultMode ) )
 	{
 		idLib::Printf( "Couldn't get default video mode.\n" );
 		return false;
@@ -361,7 +361,7 @@ static bool R_SetDefaultVideoParms()
 
 	// make sure the default mode is on the list of modes for the default display
 	idList<vidMode_t> modeList;
-	if( !idDeviceManager::GetInstance() || !idDeviceManager::GetInstance()->GetModeListForDisplay( defaultDisplay, modeList, 1 ) )
+	if( !deviceManager || !deviceManager->GetModeListForDisplay( defaultDisplay, modeList, 1 ) )
 	{
 		idLib::Printf( "Couldn't get mode list for default display.\n" );
 		return false;
@@ -427,7 +427,7 @@ static void R_FillParmsForFullscreenMode( vidParms_t& parms, bool& defaultParmsC
 	{
 		// get the mode list for this monitor
 		idList<vidMode_t> modeList;
-		if( !defaultParmsCalled && ( !idDeviceManager::GetInstance() || !idDeviceManager::GetInstance()->GetModeListForDisplay( r_vidMonitor.GetInteger() - 1, modeList, 1 ) ) )
+		if( !defaultParmsCalled && ( !deviceManager || !deviceManager->GetModeListForDisplay( r_vidMonitor.GetInteger() - 1, modeList, 1 ) ) )
 		{
 			idLib::Printf( "Mode list failed for display %d. Using default video parms.\n", r_vidMonitor.GetInteger() );
 			defaultParmsCalled = true;
@@ -554,7 +554,7 @@ void R_SetNewMode( const bool fullInit )
 		if( fullInit )
 		{
 			// create the context as well as setting up the window
-			if( idDeviceManager::GetInstance() && idDeviceManager::GetInstance()->Init( parms ) )
+			if( deviceManager && deviceManager->Init( parms ) )
 			{
 				// it worked
 
@@ -568,7 +568,7 @@ void R_SetNewMode( const bool fullInit )
 		else
 		{
 			// just rebuild the window
-			if( idDeviceManager::GetInstance() && idDeviceManager::GetInstance()->SetScreenParms( parms ) )
+			if( deviceManager && deviceManager->SetScreenParms( parms ) )
 			{
 				// it worked
 
@@ -677,11 +677,11 @@ R_ListModes_f
 */
 static void R_ListModes_f( const idCmdArgs& args )
 {
-	const int numDisplays = ( idDeviceManager::GetInstance() && idDeviceManager::GetInstance()->GetNumVideoDisplays() );
+	const int numDisplays = ( deviceManager && deviceManager->GetNumVideoDisplays() );
 	for( int displayNum = 0; displayNum < numDisplays; ++displayNum )
 	{
 		idList<vidMode_t> modeList;
-		if( !idDeviceManager::GetInstance() || !idDeviceManager::GetInstance()->GetModeListForDisplay( displayNum, modeList, 1 ) )
+		if( !deviceManager || !deviceManager->GetModeListForDisplay( displayNum, modeList, 1 ) )
 		{
 			break;
 		}
@@ -1569,9 +1569,9 @@ void R_SetColorMappings()
 		tr.gammaTable[i] = idMath::ClampInt( 0, 0xFFFF, inf );
 	}
 
-	if( idDeviceManager::GetInstance() )
+	if( deviceManager )
 	{
-		idDeviceManager::GetInstance()->SetGamma( tr.gammaTable, tr.gammaTable, tr.gammaTable );
+		deviceManager->SetGamma( tr.gammaTable, tr.gammaTable, tr.gammaTable );
 	}
 }
 

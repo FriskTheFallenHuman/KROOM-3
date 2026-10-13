@@ -62,7 +62,7 @@ void idEnvProbes::UpdateChangeableSpawnArgs( const idDict* source )
 		source->Print();
 	}
 
-	gameEditLocal.ParseSpawnArgsToRenderEnvprobe( source ? source : &spawnArgs, &renderEnvprobe );
+	gameEditLocal.ParseSpawnArgsToRenderEnvprobe( source ? source : &spawnArgs, renderEnvprobe );
 
 	UpdateVisuals();
 }
@@ -72,12 +72,17 @@ void idEnvProbes::UpdateChangeableSpawnArgs( const idDict* source )
 idEnvProbes::idEnvProbes
 ================
 */
-idEnvProbes::idEnvProbes()
+idEnvProbes::idEnvProbes():
+	renderEnvprobe( NULL )
 {
-	memset( static_cast< renderEnvironmentProbe_t* >( &renderEnvprobe ), 0, sizeof( renderEnvironmentProbe_t ) );
 	localEnvprobeOrigin	= vec3_zero;
 	localEnvprobeAxis	= mat3_identity;
 	envprobeDefHandle	= -1;
+
+	if( gameRenderWorld != NULL )
+	{
+		renderEnvprobe = gameRenderWorld->CreateRenderEnvironmentProbe();
+	}
 }
 
 /*
@@ -87,9 +92,10 @@ idEnvProbes::~idEnvProbes
 */
 idEnvProbes::~idEnvProbes()
 {
-	if( envprobeDefHandle != -1 )
+	if( renderEnvprobe != NULL )
 	{
-		renderEnvprobe.FreeRenderEnvprobe();
+		gameRenderWorld->DestroyRenderEnvironmentProbe( renderEnvprobe );
+		renderEnvprobe = NULL;
 	}
 }
 
@@ -102,7 +108,7 @@ archives object for save game file
 */
 void idEnvProbes::Save( idSaveGame* savefile ) const
 {
-	savefile->WriteRenderEnvironmentProbe( renderEnvprobe );
+	savefile->WriteRenderEnvironmentProbe( *renderEnvprobe );
 
 	savefile->WriteVec3( localEnvprobeOrigin );
 	savefile->WriteMat3( localEnvprobeAxis );
@@ -117,7 +123,7 @@ unarchives object from save game file
 */
 void idEnvProbes::Restore( idRestoreGame* savefile )
 {
-	savefile->ReadRenderEnvironmentProbe( renderEnvprobe );
+	savefile->ReadRenderEnvironmentProbe( *renderEnvprobe );
 
 	savefile->ReadVec3( localEnvprobeOrigin );
 	savefile->ReadMat3( localEnvprobeAxis );
@@ -132,12 +138,17 @@ idEnvProbes::Spawn
 */
 void idEnvProbes::Spawn()
 {
+	if( renderEnvprobe == NULL )
+	{
+		renderEnvprobe = gameRenderWorld->CreateRenderEnvironmentProbe();
+	}
+
 	// do the parsing the same way dmap and the editor do
-	gameEditLocal.ParseSpawnArgsToRenderEnvprobe( &spawnArgs, &renderEnvprobe );
+	gameEditLocal.ParseSpawnArgsToRenderEnvprobe( &spawnArgs, renderEnvprobe );
 
 	// we need the origin and axis relative to the physics origin/axis
-	localEnvprobeOrigin = ( renderEnvprobe.origin - GetPhysics()->GetOrigin() ) * GetPhysics()->GetAxis().Transpose();
-	localEnvprobeAxis = GetPhysics()->GetAxis().Transpose();
+	localEnvprobeOrigin = ( renderEnvprobe->origin - GetPhysics()->GetOrigin() ) * GetPhysics()->GetAxis().Transpose();
+	localEnvprobeAxis   = GetPhysics()->GetAxis().Transpose();
 
 	// game specific functionality, not mirrored in
 	// editor or dmap light parsing
@@ -159,11 +170,11 @@ void idEnvProbes::PresentEnvprobeDefChange()
 	// let the renderer apply it to the world
 	if( ( envprobeDefHandle != -1 ) )
 	{
-		renderEnvprobe.CommitThisFrame();
+		renderEnvprobe->CommitThisFrame();
 	}
 	else
 	{
-		envprobeDefHandle = gameRenderWorld->AddRenderEnvironmentProbe( &renderEnvprobe );
+		envprobeDefHandle = gameRenderWorld->AddRenderEnvironmentProbe( renderEnvprobe );
 	}
 }
 
@@ -184,7 +195,7 @@ void idEnvProbes::Present()
 	idEntity::Present();
 
 	// current transformation
-	renderEnvprobe.origin  = GetPhysics()->GetOrigin() + GetPhysics()->GetAxis() * localEnvprobeOrigin;
+	renderEnvprobe->origin  = GetPhysics()->GetOrigin() + GetPhysics()->GetAxis() * localEnvprobeOrigin;
 
 	// update the renderLight and renderEntity to render the light and flare
 	PresentEnvprobeDefChange();
@@ -208,9 +219,9 @@ idEnvProbes::FreeEnvironmentProbeDef
 */
 void idEnvProbes::FreeEnvironmentProbeDef()
 {
-	if( envprobeDefHandle != -1 )
+	if( renderEnvprobe != NULL )
 	{
-		renderEnvprobe.FreeRenderEnvprobe();
+		renderEnvprobe->FreeRenderEnvprobe();
 		envprobeDefHandle = -1;
 	}
 }

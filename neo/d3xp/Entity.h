@@ -534,7 +534,7 @@ public:
 	}
 
 protected:
-	idRenderEntity			renderEntity;						// game-facing render object
+	idRenderEntity*			renderEntity;						// game-facing render object
 	int						modelDefHandle;						// handle to static renderer model
 	refSound_t				refSound;							// used to present sound to the audio engine
 	entDamageEffect_t* 		entDamageEffects;					// We are going to add damage effect to every entity.
@@ -604,7 +604,6 @@ public:
 	idStr					GetNextKey( const char* prefix, const char* lastMatch );
 
 private:
-
 	// events
 	void					Event_GetName();
 	void					Event_SetName( const char* name );

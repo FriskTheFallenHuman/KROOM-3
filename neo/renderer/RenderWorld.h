@@ -253,85 +253,67 @@ class idRenderEnvironmentProbeCommitted;
 // Game-facing render objects. Their public payload intentionally remains
 // layout-compatible with the BFG parameter structs while ownership and commit
 // identity live on the object, matching the idTech 5 producer-side lifecycle.
-class ID_ENGINE_API idRenderEntity : public renderEntity_t
+class idRenderEntity : public renderEntity_t
 {
 public:
-	idRenderEntity();
-	~idRenderEntity();
+	virtual					~idRenderEntity() {}
 
-	void				CommitThisFrame( bool forceUpdate = false );
-	void				FreeRenderEntity();
-	void				ForceUpdate();
-	int					GetIndex() const
-	{
-		return index;
-	}
-	bool				IsRegistered() const
-	{
-		return world != NULL && index >= 0;
-	}
-	void				ProjectOverlay( const idPlane localTextureAxis[2], const idMaterial* material );
-	void				RemoveDecals();
+	virtual void			CommitThisFrame( bool forceUpdate = false ) = 0;
+	virtual void			FreeRenderEntity() = 0;
+	virtual void			ForceUpdate() = 0;
+	virtual int				GetIndex() const = 0;
+	virtual bool			IsRegistered() const = 0;
+	virtual void			ProjectOverlay( const idPlane localTextureAxis[2], const idMaterial* material ) = 0;
+	virtual void			RemoveDecals() = 0;
 
-private:
+protected:
 	friend class idRenderWorldLocal;
-	idRenderWorld* 			world;
-	int					index;
-	idRenderEntityCommitted* committed;
-	bool					needsCommit;
+
+	idRenderWorld* world = NULL;
+	int	index = -1;
+	idRenderEntityCommitted* committed	= NULL;
+	bool needsCommit = false;
 };
 
-class ID_ENGINE_API idRenderLight : public renderLight_t
+class idRenderLight : public renderLight_t
 {
 public:
-	idRenderLight();
-	~idRenderLight();
+	virtual					~idRenderLight() {}
 
-	void				CommitThisFrame( bool forceUpdate = false );
-	void				FreeRenderLight();
-	void				ForceUpdate();
-	int					GetIndex() const
-	{
-		return index;
-	}
-	bool				IsRegistered() const
-	{
-		return world != NULL && index >= 0;
-	}
+	virtual void			CommitThisFrame( bool forceUpdate = false ) = 0;
+	virtual void			FreeRenderLight() = 0;
+	virtual void			ForceUpdate() = 0;
+	virtual int				GetIndex() const = 0;
+	virtual bool			IsRegistered() const = 0;
 
-private:
+protected:
 	friend class idRenderWorldLocal;
-	idRenderWorld* 			world;
-	int					index;
-	idRenderLightCommitted* committed;
-	bool					needsCommit;
+
+	idRenderWorld* world = NULL;
+	int index = -1;
+	idRenderLightCommitted* committed = NULL;
+	bool needsCommit = false;
 };
 
 // RB: environment probes for IBL
-class ID_ENGINE_API idRenderEnvironmentProbe : public renderEnvironmentProbe_t
+class idRenderEnvironmentProbe : public renderEnvironmentProbe_t
 {
 public:
-	idRenderEnvironmentProbe();
-	~idRenderEnvironmentProbe();
+	virtual					~idRenderEnvironmentProbe() {}
 
-	void				CommitThisFrame( bool forceUpdate = false );
-	void				FreeRenderEnvprobe();
-	void				ForceUpdate();
-	int					GetIndex() const
-	{
-		return index;
-	}
-	bool				IsRegistered() const
-	{
-		return world != NULL && index >= 0;
-	}
+	virtual void			CommitThisFrame( bool forceUpdate = false ) = 0;
+	virtual void			FreeRenderEnvprobe() = 0;
+	virtual void			ForceUpdate() = 0;
+	virtual int				GetIndex() const = 0;
+	virtual bool			IsRegistered() const = 0;
 
-private:
+protected:
 	friend class idRenderWorldLocal;
-	idRenderWorld* 			world;
-	int					index;
-	idRenderEnvironmentProbeCommitted* committed;
-	bool					needsCommit;
+
+	idRenderWorld* world = NULL;
+	int index = -1;
+	idRenderEnvironmentProbeCommitted* 	committed = NULL;
+	bool needsCommit = false;
 };
 // RB end
 
@@ -473,12 +455,16 @@ public:
 	virtual const renderEntity_t* GetRenderEntity( qhandle_t entityHandle ) const = 0;
 	virtual qhandle_t		AddRenderEntity( idRenderEntity* entity ) = 0;
 	virtual void			QueueRenderEntity( idRenderEntity* entity ) = 0;
+	virtual idRenderEntity*	CreateRenderEntity() = 0;
+	virtual void			DestroyRenderEntity( idRenderEntity* e ) = 0;
 
 	virtual	qhandle_t		AddLightDef( const renderLight_t* rlight ) = 0;
 	virtual	void			UpdateLightDef( qhandle_t lightHandle, const renderLight_t* rlight ) = 0;
 	virtual	void			FreeLightDef( qhandle_t lightHandle ) = 0;
 	virtual const renderLight_t* GetRenderLight( qhandle_t lightHandle ) const = 0;
 	virtual qhandle_t		AddRenderLight( idRenderLight* light ) = 0;
+	virtual idRenderLight*  CreateRenderLight() = 0;
+	virtual void            DestroyRenderLight( idRenderLight* l ) = 0;
 
 	// RB: environment probes for IBL
 	virtual	qhandle_t		AddEnvironmentProbeDef( const renderEnvironmentProbe_t* ep ) = 0;
@@ -486,6 +472,8 @@ public:
 	virtual	void			FreeEnvironmentProbeDef( qhandle_t envprobeHandle ) = 0;
 	virtual const renderEnvironmentProbe_t* GetRenderEnvironmentProbe( qhandle_t envprobeHandle ) const = 0;
 	virtual qhandle_t		AddRenderEnvironmentProbe( idRenderEnvironmentProbe* envprobe ) = 0;
+	virtual idRenderEnvironmentProbe*   CreateRenderEnvironmentProbe() = 0;
+	virtual void            DestroyRenderEnvironmentProbe( idRenderEnvironmentProbe* p ) = 0;
 	// RB end
 
 	// returns true if this area model needs portal sky to draw

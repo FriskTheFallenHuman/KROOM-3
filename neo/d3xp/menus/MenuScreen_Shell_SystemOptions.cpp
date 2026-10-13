@@ -386,7 +386,7 @@ void idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings::LoadData
 	refreshRates.Clear();
 	refreshRates.Append( 0 );
 
-	if( idDeviceManager::GetInstance() != NULL )
+	if( deviceManager != NULL )
 	{
 		int displayIdx = cvarSystem->GetCVarInteger( "r_vidMonitor" ) - 1;
 		if( displayIdx < 0 )
@@ -404,7 +404,7 @@ void idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings::LoadData
 		}
 
 		idList<int> rates;
-		if( idDeviceManager::GetInstance()->GetRefreshRatesForDisplay( displayIdx, width, height, rates ) )
+		if( deviceManager->GetRefreshRatesForDisplay( displayIdx, width, height, rates ) )
 		{
 			for( int i = 0; i < rates.Num(); i++ )
 			{

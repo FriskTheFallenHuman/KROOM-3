@@ -70,7 +70,7 @@ public:
 	virtual void	ReadFromSnapshot( const idBitMsg& msg );
 
 private:
-	idRenderEnvironmentProbe	renderEnvprobe;		// game-facing render object
+	idRenderEnvironmentProbe*	renderEnvprobe;		// game-facing render object
 	idVec3			localEnvprobeOrigin;			// light origin relative to the physics origin
 	idMat3			localEnvprobeAxis;				// light axis relative to physics axis
 	qhandle_t		envprobeDefHandle;				// handle to renderer light def

@@ -283,7 +283,7 @@ void idItem::Present()
 		// also add a highlight shell model
 		renderEntity_t	shell;
 
-		shell = renderEntity;
+		shell = *renderEntity;
 
 		// we will mess with shader parms when the item is in view
 		// to give the "item pulse" effect
@@ -602,7 +602,7 @@ void idItem::Event_DropToFloor()
 		return;
 	}
 
-	gameLocal.clip.TraceBounds( trace, renderEntity.origin, renderEntity.origin - idVec3( 0, 0, 64 ), renderEntity.bounds, MASK_SOLID | CONTENTS_CORPSE, this );
+	gameLocal.clip.TraceBounds( trace, renderEntity->origin, renderEntity->origin - idVec3( 0, 0, 64 ), renderEntity->bounds, MASK_SOLID | CONTENTS_CORPSE, this );
 	SetOrigin( trace.endpos );
 }
 
@@ -2221,7 +2221,7 @@ void idMoveableItem::Gib( const idVec3& dir, const char* damageDefName )
 	if( *smokeName != '\0' )
 	{
 		const idDeclParticle* smoke = static_cast<const idDeclParticle*>( declManager->FindType( DECL_PARTICLE, smokeName ) );
-		gameLocal.smokeParticles->EmitSmoke( smoke, gameLocal.time, gameLocal.random.CRandomFloat(), renderEntity.origin, renderEntity.axis, timeGroup /*_D3XP*/ );
+		gameLocal.smokeParticles->EmitSmoke( smoke, gameLocal.time, gameLocal.random.CRandomFloat(), renderEntity->origin, renderEntity->axis, timeGroup /*_D3XP*/ );
 	}
 	// remove the entity
 	PostEventMS( &EV_Remove, 0 );

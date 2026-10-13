@@ -32,7 +32,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "../Game_local.h"
 #include "../../cm/CollisionQuery.h"
-#include "../../cm/CollisionMerge.h"
 
 #define	MAX_SECTOR_DEPTH				12
 #define MAX_SECTORS						((1<<(MAX_SECTOR_DEPTH+1))-1)
@@ -1502,7 +1501,7 @@ void idClip::TranslationEntities( trace_t& results, const idVec3& start, const i
 												touch->Handle(), touch->origin, touch->axis );
 		}
 
-		if( idCollisionDetectionMerge::MergeTraceResult( results, trace,
+		if( collisionModelManager->MergeTraceResult( results, trace,
 				touch->entity->entityNumber, touch->id ) && results.fraction == 0.0f )
 		{
 			break;
@@ -1586,7 +1585,7 @@ void idClip::RotationEntities( trace_t& results, const idVec3& start,
 											 contentMask, touch->Handle(), touch->origin, touch->axis );
 		}
 
-		if( idCollisionDetectionMerge::MergeTraceResult( results, trace,
+		if( collisionModelManager->MergeTraceResult( results, trace,
 				touch->entity->entityNumber, touch->id ) && results.fraction == 0.0f )
 		{
 			break;
@@ -1709,7 +1708,7 @@ bool idClip::Translation( trace_t& results, const idVec3& start, const idVec3& e
 												touch->Handle(), touch->origin, touch->axis );
 		}
 
-		if( idCollisionDetectionMerge::MergeTraceResult( results, trace,
+		if( collisionModelManager->MergeTraceResult( results, trace,
 				touch->entity->entityNumber, touch->id ) && results.fraction == 0.0f )
 		{
 			break;
@@ -1826,7 +1825,7 @@ bool idClip::Rotation( trace_t& results, const idVec3& start, const idRotation& 
 											 touch->Handle(), touch->origin, touch->axis );
 		}
 
-		if( idCollisionDetectionMerge::MergeTraceResult( results, trace,
+		if( collisionModelManager->MergeTraceResult( results, trace,
 				touch->entity->entityNumber, touch->id ) && results.fraction == 0.0f )
 		{
 			break;
@@ -1966,7 +1965,7 @@ bool idClip::Motion( trace_t& results, const idVec3& start, const idVec3& end, c
 													touch->Handle(), touch->origin, touch->axis );
 			}
 
-			if( idCollisionDetectionMerge::MergeTraceResult( translationalTrace, trace,
+			if( collisionModelManager->MergeTraceResult( translationalTrace, trace,
 					touch->entity->entityNumber, touch->id ) && translationalTrace.fraction == 0.0f )
 			{
 				break;
@@ -2052,7 +2051,7 @@ bool idClip::Motion( trace_t& results, const idVec3& start, const idVec3& end, c
 												 touch->Handle(), touch->origin, touch->axis );
 			}
 
-			if( idCollisionDetectionMerge::MergeTraceResult( rotationalTrace, trace,
+			if( collisionModelManager->MergeTraceResult( rotationalTrace, trace,
 					touch->entity->entityNumber, touch->id ) && rotationalTrace.fraction == 0.0f )
 			{
 				break;
@@ -2146,7 +2145,7 @@ int idClip::Contacts( contactInfo_t* contacts, const int maxContacts, const idVe
 											   remainingContacts, numPositionedModels, start, dir, depth, trm, trmAxis,
 											   contentMask, positionedModels.Ptr() );
 
-		return idCollisionDetectionMerge::MergeContactsResults( contacts, maxContacts,
+		return collisionModelManager->MergeContactsResults( contacts, maxContacts,
 				numContacts, positionedContacts.Ptr(), positionedContactCounts.Ptr(),
 				remainingContacts, positionedModels.Ptr(), numPositionedModels );
 	}
@@ -2247,7 +2246,7 @@ int idClip::Contents( const idVec3& start, const idClipModel* mdl, const idMat3&
 		idClip::numContents += numPositionedModels;
 		collisionModelManager->ContentsModels( positionedResults.Ptr(), numPositionedModels,
 											   start, trm, trmAxis, contentMask, positionedModels.Ptr() );
-		return idCollisionDetectionMerge::MergeContentsResults( contents,
+		return collisionModelManager->MergeContentsResults( contents,
 				positionedResults.Ptr(), positionedModels.Ptr(), numPositionedModels, contentMask );
 	}
 

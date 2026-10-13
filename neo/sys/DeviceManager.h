@@ -107,10 +107,8 @@ public:
 
 	virtual int			GetNumVideoDisplays() = 0;
 	virtual void		DumpAllDisplayDevices() = 0;
-
-public:
-	ID_ENGINE_API static idDeviceManager* GetInstance();
-	static idDeviceManager* s_instance;
 };
+
+extern idDeviceManager* 		deviceManager;
 
 #endif /* !__DEVICEMANAGER_H__ */

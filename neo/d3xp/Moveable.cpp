@@ -405,9 +405,9 @@ void idMoveable::Killed( idEntity* inflictor, idEntity* attacker, int damage, co
 		}
 	}
 
-	if( renderEntity.gui[ 0 ] )
+	if( renderEntity->gui[ 0 ] )
 	{
-		renderEntity.gui[ 0 ] = NULL;
+		renderEntity->gui[ 0 ] = NULL;
 	}
 
 	ActivateTargets( this );
@@ -546,13 +546,13 @@ idMoveable::GetRenderModelMaterial
 */
 const idMaterial* idMoveable::GetRenderModelMaterial() const
 {
-	if( renderEntity.customShader )
+	if( renderEntity->customShader )
 	{
-		return renderEntity.customShader;
+		return renderEntity->customShader;
 	}
-	if( renderEntity.hModel && renderEntity.hModel->NumSurfaces() )
+	if( renderEntity->hModel && renderEntity->hModel->NumSurfaces() )
 	{
-		return renderEntity.hModel->Surface( 0 )->shader;
+		return renderEntity->hModel->Surface( 0 )->shader;
 	}
 	return NULL;
 }

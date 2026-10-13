@@ -2242,7 +2242,7 @@ void idAI::Event_PreBurn()
 	noGrab = true;
 
 	// for now this just turns shadows off
-	renderEntity.noShadow = true;
+	renderEntity->noShadow = true;
 }
 
 /*
@@ -2252,7 +2252,7 @@ idAI::Event_Burn
 */
 void idAI::Event_Burn()
 {
-	renderEntity.shaderParms[ SHADERPARM_TIME_OF_DEATH ] = gameLocal.time * 0.001f;
+	renderEntity->shaderParms[ SHADERPARM_TIME_OF_DEATH ] = gameLocal.time * 0.001f;
 	SpawnParticles( "smoke_burnParticleSystem" );
 	UpdateVisuals();
 }
@@ -2264,8 +2264,8 @@ idAI::Event_ClearBurn
 */
 void idAI::Event_ClearBurn()
 {
-	renderEntity.noShadow = spawnArgs.GetBool( "noshadows" );
-	renderEntity.shaderParms[ SHADERPARM_TIME_OF_DEATH ] = 0.0f;
+	renderEntity->noShadow = spawnArgs.GetBool( "noshadows" );
+	renderEntity->shaderParms[ SHADERPARM_TIME_OF_DEATH ] = 0.0f;
 	UpdateVisuals();
 }
 

@@ -487,9 +487,9 @@ void idRenderBackend::Init()
 	}
 
 	// DG: make sure SDL has setup video so getting supported modes in R_SetNewMode() works
-	if( idDeviceManager::GetInstance() )
+	if( deviceManager )
 	{
-		idDeviceManager::GetInstance()->PreInit();
+		deviceManager->PreInit();
 	}
 	// DG end
 
@@ -575,9 +575,9 @@ idRenderBackend::Shutdown
 */
 void idRenderBackend::Shutdown()
 {
-	if( idDeviceManager::GetInstance() )
+	if( deviceManager )
 	{
-		idDeviceManager::GetInstance()->Shutdown();
+		deviceManager->Shutdown();
 	}
 }
 
@@ -773,9 +773,9 @@ void idRenderBackend::GL_BlockingSwapBuffers()
 		common->Printf( "%i msec to glFinish\n", beforeSwap - beforeFinish );
 	}
 
-	if( idDeviceManager::GetInstance() )
+	if( deviceManager )
 	{
-		idDeviceManager::GetInstance()->SwapBuffers();
+		deviceManager->SwapBuffers();
 	}
 
 	// RB: at this time the image is presented on the screen

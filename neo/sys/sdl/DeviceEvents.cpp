@@ -283,7 +283,7 @@ void Sys_GrabMouseCursor( bool grabIt )
 		flags = GRAB_SETSTATE;
 	}
 
-	idDeviceManagerSDL* device = dynamic_cast<idDeviceManagerSDL*>( idDeviceManager::GetInstance() );
+	idDeviceManagerLocal* device = dynamic_cast<idDeviceManagerLocal*>( deviceManager );
 	if( device )
 	{
 		device->GrabInput( flags );

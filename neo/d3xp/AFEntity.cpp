@@ -108,19 +108,19 @@ void idMultiModelAF::Present()
 			continue;
 		}
 
-		renderEntity.origin = physicsObj.GetOrigin( i );
-		renderEntity.axis = physicsObj.GetAxis( i );
-		renderEntity.hModel = modelHandles[i];
-		renderEntity.bodyId = i;
+		renderEntity->origin = physicsObj.GetOrigin( i );
+		renderEntity->axis = physicsObj.GetAxis( i );
+		renderEntity->hModel = modelHandles[i];
+		renderEntity->bodyId = i;
 
 		// add to refresh list
 		if( modelDefHandles[i] == -1 )
 		{
-			modelDefHandles[i] = gameRenderWorld->AddEntityDef( &renderEntity );
+			modelDefHandles[i] = gameRenderWorld->AddEntityDef( renderEntity );
 		}
 		else
 		{
-			gameRenderWorld->UpdateEntityDef( modelDefHandles[i], &renderEntity );
+			gameRenderWorld->UpdateEntityDef( modelDefHandles[i], renderEntity );
 		}
 	}
 }
@@ -549,7 +549,7 @@ void idAFAttachment::LinkCombat()
 
 	if( combatModel )
 	{
-		combatModel->Link( gameLocal.clip, this, 0, renderEntity.origin, renderEntity.axis, modelDefHandle );
+		combatModel->Link( gameLocal.clip, this, 0, renderEntity->origin, renderEntity->axis, modelDefHandle );
 	}
 }
 
@@ -984,7 +984,7 @@ void idAFEntity_Base::LinkCombat()
 	}
 	if( combatModel )
 	{
-		combatModel->Link( gameLocal.clip, this, 0, renderEntity.origin, renderEntity.axis, modelDefHandle );
+		combatModel->Link( gameLocal.clip, this, 0, renderEntity->origin, renderEntity->axis, modelDefHandle );
 	}
 }
 
@@ -1203,12 +1203,12 @@ void idAFEntity_Gibbable::InitSkeletonModel()
 		{
 			skeletonModel = renderModelManager->FindModel( modelName );
 		}
-		if( skeletonModel != NULL && renderEntity.hModel != NULL )
+		if( skeletonModel != NULL && renderEntity->hModel != NULL )
 		{
-			if( skeletonModel->NumJoints() != renderEntity.hModel->NumJoints() )
+			if( skeletonModel->NumJoints() != renderEntity->hModel->NumJoints() )
 			{
 				gameLocal.Error( "gib model '%s' has different number of joints than model '%s'",
-								 skeletonModel->Name(), renderEntity.hModel->Name() );
+								 skeletonModel->Name(), renderEntity->hModel->Name() );
 			}
 		}
 	}
@@ -1237,7 +1237,7 @@ void idAFEntity_Gibbable::Present()
 	// update skeleton model
 	if( gibbed && !IsHidden() && skeletonModel != NULL )
 	{
-		skeleton = renderEntity;
+		skeleton = *renderEntity;
 		skeleton.hModel = skeletonModel;
 		// add to refresh list
 		if( skeletonModelDefHandle == -1 )
@@ -1437,8 +1437,8 @@ void idAFEntity_Gibbable::Gib( const idVec3& dir, const char* damageDefName )
 		{
 			gameLocal.SetGibTime( gameLocal.fast.time + GIB_DELAY );
 			SpawnGibs( dir, damageDefName );
-			renderEntity.noShadow = true;
-			renderEntity.shaderParms[ SHADERPARM_TIME_OF_DEATH ] = gameLocal.time * 0.001f;
+			renderEntity->noShadow = true;
+			renderEntity->shaderParms[ SHADERPARM_TIME_OF_DEATH ] = gameLocal.time * 0.001f;
 			StartSound( "snd_gibbed", SND_CHANNEL_ANY, 0, false, NULL );
 			gibbed = true;
 		}
@@ -1451,8 +1451,8 @@ void idAFEntity_Gibbable::Gib( const idVec3& dir, const char* damageDefName )
 			}
 			if( skinName[0] || skeletonModel )
 			{
-				renderEntity.noShadow = true;
-				renderEntity.shaderParms[SHADERPARM_TIME_OF_DEATH] = gameLocal.time * 0.001f;
+				renderEntity->noShadow = true;
+				renderEntity->shaderParms[SHADERPARM_TIME_OF_DEATH] = gameLocal.time * 0.001f;
 				gibbed = true;
 			}
 		}
@@ -1735,9 +1735,9 @@ void idAFEntity_WithAttachedHead::SetupHead()
 			headEnt->UpdateModel();
 		}
 		animator.GetJointTransform( joint, gameLocal.time, origin, axis );
-		origin = renderEntity.origin + origin * renderEntity.axis;
+		origin = renderEntity->origin + origin * renderEntity->axis;
 		headEnt->SetOrigin( origin );
-		headEnt->SetAxis( renderEntity.axis );
+		headEnt->SetAxis( renderEntity->axis );
 		headEnt->BindToJoint( this, joint, true );
 	}
 }
@@ -1768,7 +1768,7 @@ void idAFEntity_WithAttachedHead::LinkCombat()
 
 	if( combatModel )
 	{
-		combatModel->Link( gameLocal.clip, this, 0, renderEntity.origin, renderEntity.axis, modelDefHandle );
+		combatModel->Link( gameLocal.clip, this, 0, renderEntity->origin, renderEntity->axis, modelDefHandle );
 	}
 	headEnt = head.GetEntity();
 	if( headEnt )
@@ -1972,8 +1972,6 @@ idAFEntity_Vehicle::Spawn
 */
 void idAFEntity_Vehicle::Spawn()
 {
-
-
 	LoadAF();
 
 	SetCombatModel();
@@ -2086,11 +2084,11 @@ bool idAFEntity_Vehicle::StartDriving( idPlayer* player )
 
 	driver = player;
 	animator.GetJointTransform( eyesJoint, gameLocal.time, origin, axis );
-	origin = renderEntity.origin + origin * renderEntity.axis;
+	origin = renderEntity->origin + origin * renderEntity->axis;
 	driver->GetPhysics()->SetOrigin( origin );
 	driver->BindToBody( this, 0, false ); // was true, but 'false' fixes wrong view angles after teleport
 
-	angles = renderEntity.axis.ToAngles();
+	angles = renderEntity->axis.ToAngles();
 	angles.roll = 0.0f;
 	driver->SetViewAngles( angles );
 
@@ -2138,7 +2136,7 @@ void idAFEntity_Vehicle::GetCameraPos( idVec3& origin, idMat3& axis )
 	//GetJointWorldTransform( cameraJoint, gameLocal.time, origin, axis );
 	//...which would be slower
 	animator.GetJointTransform( cameraJoint, gameLocal.time, origin, axis );
-	origin = renderEntity.origin + origin * renderEntity.axis;
+	origin = renderEntity->origin + origin * renderEntity->axis;
 }
 
 /*
@@ -2288,7 +2286,7 @@ void idAFEntity_Vehicle::Teleport( const idVec3& origin, const idAngles& angles,
 {
 	if( driver )
 	{
-		idAngles viewAngles = renderEntity.axis.ToAngles();
+		idAngles viewAngles = renderEntity->axis.ToAngles();
 		viewAngles.roll = 0.0f;
 		driver->SetViewAngles( viewAngles );
 	}
@@ -2672,7 +2670,7 @@ void idAFEntity_VehicleSimple::Spawn()
 
 	trm.SetupPolygon( wheelPoly, 4 );
 	trm.Translate( idVec3( 0, 0, -wheelRadius ) );
-	wheelModel = new( TAG_PHYSICS_CLIP_AF )  idClipModel( trm );
+	wheelModel = new( TAG_PHYSICS_CLIP_AF ) idClipModel( trm );
 
 	for( i = 0; i < 4; i++ )
 	{
@@ -2688,9 +2686,9 @@ void idAFEntity_VehicleSimple::Spawn()
 		}
 
 		GetAnimator()->GetJointTransform( wheelJoints[i], 0, origin, axis );
-		origin = renderEntity.origin + origin * renderEntity.axis;
+		origin = renderEntity->origin + origin * renderEntity->axis;
 
-		suspension[i] = new( TAG_PHYSICS_AF )  idAFConstraint_Suspension();
+		suspension[i] = new( TAG_PHYSICS_AF ) idAFConstraint_Suspension();
 		suspension[i]->Setup( va( "suspension%d", i ), af.GetPhysics()->GetBody( 0 ), wheelModel );
 		suspension[i]->SetPosition( origin, af.GetPhysics()->GetAxis( 0 ) );
 		suspension[i]->SetSuspension(	vehicleSuspensionUp,
@@ -2815,7 +2813,7 @@ void idAFEntity_VehicleSimple::Think()
 			}
 
 			// set wheel position for suspension
-			origin = ( origin - renderEntity.origin ) * renderEntity.axis.Transpose();
+			origin = ( origin - renderEntity->origin ) * renderEntity->axis.Transpose();
 			GetAnimator()->SetJointPos( wheelJoints[i], JOINTMOD_WORLD_OVERRIDE, origin );
 
 			// spawn dust particle effects
@@ -4239,7 +4237,6 @@ void idHarvestable::BeginBurn()
 	{
 		return;
 	}
-
 
 	parent->spawnArgs.SetBool( "gib", false );
 	parent->noGrab = true;

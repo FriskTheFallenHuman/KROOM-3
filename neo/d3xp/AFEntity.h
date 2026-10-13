@@ -160,7 +160,7 @@ public:
 	void					Restore( idRestoreGame* savefile );
 
 	// recreate dynamically-added constraints to 'constraints' while physics obejct is being restored
-	virtual void		RecreateDynamicConstraints( idList<idAFConstraint*, TAG_IDLIB_LIST_PHYSICS>* constraints );
+	virtual void			RecreateDynamicConstraints( idList<idAFConstraint*, TAG_IDLIB_LIST_PHYSICS>* constraints );
 
 	virtual void			Think();
 	virtual void			AddDamageEffect( const trace_t& collision, const idVec3& velocity, const char* damageDefName, idEntity* soundEnt = NULL );;
@@ -463,7 +463,7 @@ public:
 
 	void					Save( idSaveGame* savefile ) const;
 	void					Restore( idRestoreGame* savefile );
-	virtual void		RecreateDynamicConstraints( idList<idAFConstraint*, TAG_IDLIB_LIST_PHYSICS>* constraints );
+	virtual void			RecreateDynamicConstraints( idList<idAFConstraint*, TAG_IDLIB_LIST_PHYSICS>* constraints );
 
 protected:
 	idClipModel* 			wheelModel;
