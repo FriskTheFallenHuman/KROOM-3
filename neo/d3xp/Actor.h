@@ -56,9 +56,6 @@ extern const idEventDef AI_GetBlendFrames;
 extern const idEventDef AI_SetState;
 
 class idDeclParticle;
-class idWeapon;
-
-extern const int WEAPON_DROP_TIME;
 
 class idAnimState
 {
@@ -162,7 +159,6 @@ public:
 	idVec3					EyeOffset() const;
 	idVec3					GetEyePosition() const;
 	virtual void			GetViewPos( idVec3& origin, idMat3& axis ) const;
-	virtual void			GetAimAxisFromOrigin( const idVec3& firePos, idMat3& axis ) const;
 	void					SetFOV( float fov );
 	bool					CheckFOV( const idVec3& pos ) const;
 	bool					CanSee( idEntity* ent, bool useFOV ) const;
@@ -200,9 +196,6 @@ public:
 
 	void					Attach( idEntity* ent );
 
-	void					SetupHeldWeapon( const char* weaponDefName );
-	void					UpdateHeldWeapon();
-
 	virtual void			Teleport( const idVec3& origin, const idAngles& angles, idEntity* destination );
 
 	virtual	renderView_t* 	GetRenderView();
@@ -223,8 +216,6 @@ public:
 		return head.GetEntity();
 	};
 
-	idAFEntity_Vehicle*		GetCurrentVehicle() const;
-
 protected:
 	friend class			idAnimState;
 
@@ -244,10 +235,6 @@ protected:
 	bool						use_combat_bbox;	// whether to use the bounding box for combat collision
 	idEntityPtr<idAFAttachment>	head;
 	idList<copyJoints_t, TAG_ACTOR>		copyJoints;			// copied from the body animation to the head model
-
-	idEntityPtr<idWeapon>	heldWeapon;
-	int						heldWeaponAmmo;
-	int						heldWeaponFireEndTime;
 
 	// state variables
 	const function_t*		state;
@@ -286,8 +273,6 @@ protected:
 	idList<idAttachInfo, TAG_ACTOR>	attachments;
 
 	int						damageCap;
-
-	idAFEntity_Vehicle*		currentVehicle;
 
 	virtual void			Gib( const idVec3& dir, const char* damageDefName );
 
@@ -351,10 +336,5 @@ private:
 	void					Event_GetWaitState();
 
 };
-
-ID_INLINE idAFEntity_Vehicle* idActor::GetCurrentVehicle() const
-{
-	return currentVehicle;
-}
 
 #endif /* !__GAME_ACTOR_H__ */

@@ -1,9 +1,0 @@
-namespace map_d3mpx_commrec {
-	void setup() {
-	}
-
-	void main() {
-		setup();	
-	
-	}
-}

@@ -31,8 +31,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "Game_local.h"
 
-// time before a weapon dropped to the floor disappears
-const int WEAPON_DROP_TIME = 20 * 1000;
 
 /***********************************************************************
 
@@ -501,10 +499,6 @@ idActor::idActor()
 	finalBoss			= false;
 	damageNotByFists	= false;		// for killed by fists achievement
 
-	heldWeapon				= NULL;
-	heldWeaponAmmo			= 0;
-	heldWeaponFireEndTime	= 0;
-
 	attachments.SetGranularity( 1 );
 
 	enemyNode.SetOwner( this );
@@ -514,8 +508,6 @@ idActor::idActor()
 	aimAssistNode.AddToEnd( gameLocal.aimAssistEntities );
 
 	damageCap = -1;
-
-	currentVehicle		= NULL;
 }
 
 /*
@@ -535,9 +527,6 @@ idActor::~idActor()
 
 	delete combatModel;
 	combatModel = NULL;
-
-	delete heldWeapon.GetEntity();
-	heldWeapon = NULL;
 
 	if( head.GetEntity() )
 	{
@@ -1001,10 +990,6 @@ void idActor::Save( idSaveGame* savefile ) const
 
 	savefile->WriteInt( damageCap );
 
-	savefile->WriteObject( currentVehicle );
-
-	heldWeapon.Save( savefile );
-
 }
 
 /*
@@ -1124,10 +1109,6 @@ void idActor::Restore( idRestoreGame* savefile )
 	}
 
 	savefile->ReadInt( damageCap );
-
-	savefile->ReadObject( reinterpret_cast<idClass*&>( currentVehicle ) );
-
-	heldWeapon.Restore( savefile );
 }
 
 /*
@@ -1651,16 +1632,6 @@ void idActor::GetViewPos( idVec3& origin, idMat3& axis ) const
 
 /*
 =====================
-idActor::GetAimAxisFromOrigin
-=====================
-*/
-void idActor::GetAimAxisFromOrigin( const idVec3& firePos, idMat3& axis ) const
-{
-	axis = viewAxis;
-}
-
-/*
-=====================
 idActor::CheckFOV
 =====================
 */
@@ -1699,40 +1670,18 @@ bool idActor::CanSee( idEntity* ent, bool useFov ) const
 	idVec3		eye;
 	idVec3		toPos;
 
+	if( ent->IsHidden() )
+	{
+		return false;
+	}
+
 	if( ent->IsType( idActor::Type ) )
 	{
-		idActor* actor = static_cast<idActor*>( ent );
-		if( actor->GetCurrentVehicle() )
-		{
-			if( actor->GetCurrentVehicle()->IsHidden() )
-			{
-				return false;
-			}
-			toPos = actor->GetCurrentVehicle()->GetEyePosition();
-		}
-		else
-		{
-			if( actor->IsHidden() )
-			{
-				return false;
-			}
-			toPos = actor->GetEyePosition();
-		}
+		toPos = ( ( idActor* )ent )->GetEyePosition();
 	}
 	else
 	{
-		if( ent->IsHidden() )
-		{
-			return false;
-		}
-		if( ent->IsType( idAFEntity_Vehicle::Type ) )
-		{
-			toPos = static_cast<idAFEntity_Vehicle*>( ent )->GetEyePosition();
-		}
-		else
-		{
-			toPos = ent->GetPhysics()->GetOrigin();
-		}
+		toPos = ent->GetPhysics()->GetOrigin();
 	}
 
 	if( useFov && !CheckFOV( toPos ) )
@@ -2040,55 +1989,6 @@ void idActor::Attach( idEntity* ent )
 	ent->SetAxis( newAxis );
 	ent->BindToJoint( this, joint, true );
 	ent->cinematic = cinematic;
-}
-
-/*
-================
-idActor::SetupHeldWeapon
-================
-*/
-void idActor::SetupHeldWeapon( const char* weaponDefName )
-{
-	if( heldWeapon.GetEntity() )
-	{
-		return;
-	}
-
-	if( !weaponDefName || !weaponDefName[0] )
-	{
-		return;
-	}
-
-	idEntity* ent = gameLocal.SpawnEntityType( idWeapon::Type, NULL );
-	idWeapon* newWeapon = static_cast<idWeapon*>( ent );
-
-	heldWeapon = newWeapon;
-	newWeapon->SetOwner( this );
-
-	idWeapon::CacheWeapon( weaponDefName );
-
-	newWeapon->GetWeaponDef( weaponDefName, 0 );
-	newWeapon->ForceAmmoInClip();
-	newWeapon->Raise();
-}
-
-/*
-================
-idActor::UpdateHeldWeapon
-================
-*/
-void idActor::UpdateHeldWeapon()
-{
-	if( heldWeapon.GetEntity() )
-	{
-		if( heldWeaponFireEndTime && gameLocal.time >= heldWeaponFireEndTime )
-		{
-			heldWeapon.GetEntity()->EndAttack();
-			heldWeaponFireEndTime = 0;
-		}
-
-		heldWeapon.GetEntity()->PresentWeapon( false );
-	}
 }
 
 /*
@@ -2540,10 +2440,6 @@ void idActor::Gib( const idVec3& dir, const char* damageDefName )
 		return;
 	}
 	idAFEntity_Gibbable::Gib( dir, damageDefName );
-
-	// moved from idActor::SpawnGibs
-	RemoveAttachments();
-
 	if( head.GetEntity() )
 	{
 		head.GetEntity()->Hide();
@@ -2755,17 +2651,7 @@ void idActor::Damage( idEntity* inflictor, idEntity* attacker, const idVec3& dir
 			}
 
 			Killed( inflictor, attacker, damage, dir, location );
-
-			// GibHealth is suppossed to be declared in entityDef
-			int healthToGib = spawnArgs.GetInt( "gibHealth" );
-
-			// If its not there, set it to default value
-			if( healthToGib == 0 )
-			{
-				healthToGib = -20 ;
-			}
-
-			if( ( health < healthToGib ) && spawnArgs.GetBool( "gib" ) && damageDef->GetBool( "gib" ) )
+			if( ( health < -20 ) && spawnArgs.GetBool( "gib" ) && damageDef->GetBool( "gib" ) )
 			{
 				Gib( dir, damageDefName );
 			}
@@ -2914,6 +2800,7 @@ idActor::SpawnGibs
 void idActor::SpawnGibs( const idVec3& dir, const char* damageDefName )
 {
 	idAFEntity_Gibbable::SpawnGibs( dir, damageDefName );
+	RemoveAttachments();
 }
 
 /*

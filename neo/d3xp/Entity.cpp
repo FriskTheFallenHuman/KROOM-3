@@ -116,10 +116,6 @@ const idEventDef EV_MotionBlurOn( "motionBlurOn" );
 const idEventDef EV_MotionBlurOff( "motionBlurOff" );
 const idEventDef EV_GuiNamedEvent( "guiNamedEvent", "ds" );
 
-const idEventDef EV_FireProjectile( "fireProjectile", "svv", 'e' );
-const idEventDef EV_GetDriver( "getDriver", NULL, 'e' );
-const idEventDef EV_GetAimAngles( "getAimAngles", "v", 'v' );
-
 ABSTRACT_DECLARATION( idClass, idEntity )
 EVENT( EV_GetName,				idEntity::Event_GetName )
 EVENT( EV_SetName,				idEntity::Event_SetName )
@@ -189,7 +185,6 @@ EVENT( EV_PrecacheGui,			idEntity::Event_PrecacheGui )
 EVENT( EV_GetGuiParm,			idEntity::Event_GetGuiParm )
 EVENT( EV_GetGuiParmFloat,		idEntity::Event_GetGuiParmFloat )
 EVENT( EV_GuiNamedEvent,		idEntity::Event_GuiNamedEvent )
-EVENT( EV_FireProjectile,		idEntity::Event_FireProjectile )
 END_CLASS
 
 /*
@@ -297,7 +292,6 @@ idEntity::idEntity():
 	teamMaster		= NULL;
 	teamChain		= NULL;
 	signals			= NULL;
-	entDamageEffects = NULL;
 
 	snapshotsReceived = 0;
 
@@ -388,11 +382,6 @@ void idEntity::Spawn()
 	if( spawnArgs.GetString( "skin_xray", "", str ) )
 	{
 		xraySkin = declManager->FindSkin( str.c_str() );
-	}
-
-	if( spawnArgs.GetBool( "use_spawntime" ) )
-	{
-		renderEntity->shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.realClientTime );
 	}
 
 	// go dormant within 100ms so that when the map starts most monsters are dormant
@@ -526,13 +515,6 @@ idEntity::~idEntity()
 	// we have to set back the default physics object before unbinding because the entity
 	// specific physics object might be an entity variable and as such could already be destroyed.
 	SetPhysics( NULL );
-
-	// Clear damage effects if any
-	for( entDamageEffect_t* de = entDamageEffects; de; de = entDamageEffects )
-	{
-		entDamageEffects = de->next;
-		delete de;
-	}
 
 	// remove any entities that are bound to me
 	RemoveBinds();
@@ -812,11 +794,6 @@ void idEntity::Think()
 {
 	RunPhysics();
 	Present();
-
-	if( thinkFlags & TH_UPDATEWOUNDPARTICLES )
-	{
-		UpdateParticles();
-	}
 }
 
 /*
@@ -3242,69 +3219,6 @@ void idEntity::UpdateFromPhysics( bool moveBack )
 }
 
 /*
-==============
-idEntity::UpdateParticles
-==============
-*/
-void idEntity::UpdateParticles( void )
-{
-	entDamageEffect_t*	de, **prev;
-
-	// free any that have timed out
-	prev = &this->entDamageEffects;
-	while( *prev )
-	{
-		de = *prev;
-
-		// FIXME:SMOKE
-		if( de->time == 0 )
-		{
-			*prev = de->next;
-			delete de;
-		}
-		else
-		{
-			prev = &de->next;
-		}
-	}
-
-	if( !g_bloodEffects.GetBool() )
-	{
-		return;
-	}
-
-	// If no more particles left...
-	if( !this->entDamageEffects )
-	{
-		if( thinkFlags & TH_UPDATEWOUNDPARTICLES )
-		{
-			BecomeInactive( TH_UPDATEWOUNDPARTICLES );
-		}
-		return;
-	}
-
-	// emit a particle for each bleeding wound
-	for( de = this->entDamageEffects; de; de = de->next )
-	{
-		idVec3 origin;
-		idVec3 dir;
-
-		dir = de->dir * renderEntity->axis;
-		origin = renderEntity->origin + de->origin * renderEntity->axis;
-
-		// This key fixes an issue where some particles are not at all emitted
-		if( de->time == -1 )
-		{
-			de->time = gameLocal.time;
-		}
-		if( !gameLocal.smokeParticles->EmitSmoke( de->type, de->time, gameLocal.random.CRandomFloat(), origin, dir.ToMat3(), timeGroup /*_D3XP*/ ) )
-		{
-			de->time = 0;
-		}
-	}
-}
-
-/*
 ================
 idEntity::GetPhysicsTimeStep
 ================
@@ -3686,10 +3600,9 @@ void idEntity::Damage( idEntity* inflictor, idEntity* attacker, const idVec3& di
 idEntity::AddDamageEffect
 ================
 */
-void idEntity::AddDamageEffect( const trace_t& collision, const idVec3& velocity, const char* damageDefName, idEntity* soundEnt )
+void idEntity::AddDamageEffect( const trace_t& collision, const idVec3& velocity, const char* damageDefName )
 {
-	const char* sound, *decal;
-	idStr key;
+	const char* sound, *decal, *key;
 
 	const idDeclEntityDef* def = gameLocal.FindEntityDef( damageDefName, false );
 	if( def == NULL )
@@ -3706,24 +3619,9 @@ void idEntity::AddDamageEffect( const trace_t& collision, const idVec3& velocity
 	{
 		sound = def->dict.GetString( key );
 	}
-	if( *sound == '\0' )
-	{
-		sound = def->dict.GetString( "snd_metal" );	// default sound 1
-	}
-	if( *sound == '\0' )
-	{
-		sound = def->dict.GetString( "snd_impact" ); // default sound 2
-	}
 	if( *sound != '\0' )
 	{
-		if( soundEnt == NULL )
-		{
-			StartSoundShader( declManager->FindSound( sound ), SND_CHANNEL_BODY, 0, false, NULL );
-		}
-		else
-		{
-			soundEnt->StartSoundShader( declManager->FindSound( sound ), SND_CHANNEL_BODY, 0, false, NULL );
-		}
+		StartSoundShader( declManager->FindSound( sound ), SND_CHANNEL_BODY, 0, false, NULL );
 	}
 
 	if( g_decals.GetBool() )
@@ -3735,62 +3633,11 @@ void idEntity::AddDamageEffect( const trace_t& collision, const idVec3& velocity
 		{
 			decal = def->dict.RandomPrefix( key, gameLocal.random );
 		}
-		if( *decal == '\0' )
-		{
-			decal = def->dict.GetString( "mtr_wound" ); // Default decal
-		}
 		if( *decal != '\0' )
 		{
-			float size;
 			idVec3 dir = velocity;
 			dir.Normalize();
-
-			// If Material Specific decal size not found, look for default size
-			if( !def->dict.GetFloat( va( "size_wound_%s", materialType ), "6.0", size ) )
-			{
-				size = def->dict.GetFloat( "size_wound", "6.0" );
-			}
-
-			gameLocal.ProjectDecal( collision.c.point, -collision.c.normal, 8.0f, true, size, decal );
-		}
-	}
-
-	// a blood spurting wound is added
-
-	key = va( "smoke_wound_%s", materialType );
-	const char* bleed = spawnArgs.GetString( key );
-
-	if( *bleed == '\0' )
-	{
-		bleed = def->dict.GetString( key );
-
-		if( *bleed == '\0' )
-		{
-			bleed = def->dict.GetString( "smoke_wound_metal" );    // play default smoke
-		}
-
-		if( *bleed == '\0' )
-		{
-			bleed = def->dict.GetString( "smoke_wound" );    // play default smoke
-		}
-	}
-
-	if( *bleed != '\0' )
-	{
-		entDamageEffect_t*	de = new entDamageEffect_t;
-		de->next = this->entDamageEffects;
-		this->entDamageEffects = de;
-
-		de->origin = ( collision.c.point - renderEntity->origin ) * renderEntity->axis.Transpose();
-		de->dir = collision.c.normal * renderEntity->axis.Transpose();
-		de->type = static_cast<const idDeclParticle*>( declManager->FindType( DECL_PARTICLE, bleed ) );
-
-		//de->isTimeInitialized = false;
-		de->time = -1; // -1 means this effect has just started, see idEntity::UpdateParticles()
-
-		if( !( thinkFlags & TH_UPDATEWOUNDPARTICLES ) ) // if flag was not set before set it now
-		{
-			BecomeActive( TH_UPDATEWOUNDPARTICLES );
+			ProjectOverlay( collision.c.point, dir, 20.0f, decal );
 		}
 	}
 }
@@ -3909,33 +3756,6 @@ void idEntity::DeconstructScriptObject()
 		delete thread;
 	}
 }
-
-/*
-================
-idEntity::GetFunction
-================
-*/
-bool idEntity::GetFunction( const char* function )
-{
-	bool bret;
-
-	const function_t* func;
-
-	func = scriptObject.GetFunction( function );
-	if( !func )
-	{
-		common->Warning( "Can't find function '%s' in object '%s'", function, scriptObject.GetTypeName() );
-		bret = false;
-	}
-	else
-	{
-		// Have we found it?
-		bret = true;
-	}
-
-	return bret;
-}
-
 
 /*
 ================
@@ -5687,90 +5507,6 @@ void idEntity::Event_GuiNamedEvent( int guiNum, const char* event )
 	}
 }
 
-/*
-================
-idEntity::SysFireProjectile
-================
-*/
-idProjectile* idEntity::SysFireProjectile( const char* projDefName, idVec3& firePos, idVec3& dir, const float launchPower )
-{
-	idProjectile*	proj;
-	idEntity*		ent;
-	idDict			projectileDict;
-	float			damageScale;
-	idEntity*		owner;
-
-	if( common->IsClient() )
-	{
-		return NULL;
-	}
-
-	const idDeclEntityDef* projectileDef = gameLocal.FindEntityDef( projDefName, false );
-	if( !projectileDef )
-	{
-		gameLocal.Warning( "No def '%s' found", projDefName );
-		return NULL;
-	}
-
-	projectileDict = projectileDef->dict;
-	if( !projectileDict.GetNumKeyVals() )
-	{
-		gameLocal.Warning( "No projectile defined '%s'", projDefName );
-		return NULL;
-	}
-
-	if( IsType( idProjectile::Type ) )
-	{
-		owner = static_cast<idProjectile*>( this )->GetOwner() ? static_cast<idProjectile*>( this )->GetOwner() : this;
-	}
-	else
-	{
-		owner = this;
-	}
-
-	if( owner->IsType( idPlayer::Type ) )
-	{
-		gameLocal.AlertAI( owner, firePos );
-		damageScale = 1.0f; //TODO: get current mult?
-	}
-	else
-	{
-		damageScale = 1.0f;
-	}
-
-	gameLocal.SpawnEntityDef( projectileDict, &ent, false );
-
-	if( !ent || !ent->IsType( idProjectile::Type ) )
-	{
-		gameLocal.Error( "'%s' is not an idProjectile", projDefName );
-	}
-
-	if( projectileDict.GetBool( "net_instanthit" ) )
-	{
-		ent->fl.networkSync = false;
-	}
-
-	proj = static_cast<idProjectile*>( ent );
-	proj->Create( owner, firePos, dir );
-	proj->Launch( firePos, dir, vec3_origin, 0.0f, launchPower, damageScale );
-	return proj;
-}
-
-/*
-================
-idEntity::Event_FireProjectile
-================
-*/
-void idEntity::Event_FireProjectile( const char* projDefName, idVec3& firePos, idAngles& fireAng )
-{
-	idProjectile*	proj;
-	idVec3			dir;
-
-	dir = fireAng.ToForward();
-	proj = SysFireProjectile( projDefName , firePos, dir );
-
-	idThread::ReturnEntity( proj );
-}
 
 /***********************************************************************
 
@@ -5952,13 +5688,6 @@ idEntity::WriteToSnapshot
 */
 void idEntity::WriteToSnapshot( idBitMsg& msg ) const
 {
-	if( spawnArgs.GetBool( "sync_origin" ) )
-	{
-		const idVec3& syncOrigin = GetPhysics()->GetOrigin();
-		msg.WriteFloat( syncOrigin.x );
-		msg.WriteFloat( syncOrigin.y );
-		msg.WriteFloat( syncOrigin.z );
-	}
 }
 
 /*
@@ -5968,18 +5697,6 @@ idEntity::ReadFromSnapshot
 */
 void idEntity::ReadFromSnapshot( const idBitMsg& msg )
 {
-	if( spawnArgs.GetBool( "sync_origin" ) )
-	{
-		idVec3 syncOrigin;
-		syncOrigin.x = msg.ReadFloat();
-		syncOrigin.y = msg.ReadFloat();
-		syncOrigin.z = msg.ReadFloat();
-		GetPhysics()->SetOrigin( syncOrigin );
-		if( msg.HasChanged() )
-		{
-			UpdateVisuals();
-		}
-	}
 }
 
 /*
@@ -6299,7 +6016,6 @@ idAnimatedEntity::idAnimatedEntity()
 {
 	animator.SetEntity( this );
 	damageEffects = NULL;
-	nextBloodPoolTime = 0;
 }
 
 /*
@@ -6392,11 +6108,7 @@ void idAnimatedEntity::Think()
 	RunPhysics();
 	UpdateAnimation();
 	Present();
-
-	if( thinkFlags & TH_UPDATEWOUNDPARTICLES )
-	{
-		UpdateDamageEffects();
-	}
+	UpdateDamageEffects();
 }
 
 /*
@@ -6542,10 +6254,11 @@ idAnimatedEntity::AddDamageEffect
   Dammage effects track the animating impact position, spitting out particles.
 ==============
 */
-void idAnimatedEntity::AddDamageEffect( const trace_t& collision, const idVec3& velocity, const char* damageDefName, idEntity* soundEnt = NULL )
+void idAnimatedEntity::AddDamageEffect( const trace_t& collision, const idVec3& velocity, const char* damageDefName )
 {
 	jointHandle_t jointNum;
-	idVec3 dir;
+	idVec3 origin, dir, localDir, localOrigin, localNormal;
+	idMat3 axis;
 
 	if( !g_bloodEffects.GetBool() || renderEntity->joints == NULL )
 	{
@@ -6567,7 +6280,14 @@ void idAnimatedEntity::AddDamageEffect( const trace_t& collision, const idVec3& 
 	dir = velocity;
 	dir.Normalize();
 
-	AddLocalDamageEffect( jointNum, collision.c.point, collision.c.normal, dir, def, collision.c.material, soundEnt );
+	axis = renderEntity->joints[jointNum].ToMat3() * renderEntity->axis;
+	origin = renderEntity->origin + renderEntity->joints[jointNum].ToVec3() * renderEntity->axis;
+
+	localOrigin = ( collision.c.point - origin ) * axis.Transpose();
+	localNormal = collision.c.normal * axis.Transpose();
+	localDir = dir * axis.Transpose();
+
+	AddLocalDamageEffect( jointNum, localOrigin, localNormal, localDir, def, collision.c.material );
 }
 
 /*
@@ -6585,15 +6305,20 @@ int	idAnimatedEntity::GetDefaultSurfaceType() const
 idAnimatedEntity::AddLocalDamageEffect
 ==============
 */
-void idAnimatedEntity::AddLocalDamageEffect( jointHandle_t jointNum, const idVec3& origin, const idVec3& normal, const idVec3& dir, const idDeclEntityDef* def, const idMaterial* collisionMaterial, idEntity* soundEnt )
+void idAnimatedEntity::AddLocalDamageEffect( jointHandle_t jointNum, const idVec3& localOrigin, const idVec3& localNormal, const idVec3& localDir, const idDeclEntityDef* def, const idMaterial* collisionMaterial )
 {
-	const char* sound, *splat, *decal, *bleed;
-	idStr key;
+	const char* sound, *splat, *decal, *bleed, *key;
 	damageEffect_t*	de;
-	idVec3 gravDir;
-	idPhysics* phys;
+	idVec3 origin, dir;
+	idMat3 axis;
 
 	SetTimeState ts( timeGroup );
+
+	axis = renderEntity->joints[jointNum].ToMat3() * renderEntity->axis;
+	origin = renderEntity->origin + renderEntity->joints[jointNum].ToVec3() * renderEntity->axis;
+
+	origin = origin + localOrigin * axis;
+	dir = localDir * axis;
 
 	int type = collisionMaterial->GetSurfaceType();
 	if( type == SURFTYPE_NONE )
@@ -6610,24 +6335,9 @@ void idAnimatedEntity::AddLocalDamageEffect( jointHandle_t jointNum, const idVec
 	{
 		sound = def->dict.GetString( key );
 	}
-	if( *sound == '\0' )
-	{
-		sound = def->dict.GetString( "snd_metal" );	// default sound 1
-	}
-	if( *sound == '\0' )
-	{
-		sound = def->dict.GetString( "snd_impact" ); // default sound 2
-	}
 	if( *sound != '\0' )
 	{
-		if( soundEnt == NULL )
-		{
-			StartSoundShader( declManager->FindSound( sound ), SND_CHANNEL_BODY, 0, false, NULL );
-		}
-		else
-		{
-			soundEnt->StartSoundShader( declManager->FindSound( sound ), SND_CHANNEL_BODY, 0, false, NULL );
-		}
+		StartSoundShader( declManager->FindSound( sound ), SND_CHANNEL_BODY, 0, false, NULL );
 	}
 
 	// blood splats are thrown onto nearby surfaces
@@ -6642,57 +6352,9 @@ void idAnimatedEntity::AddLocalDamageEffect( jointHandle_t jointNum, const idVec
 		gameLocal.BloodSplat( origin, dir, 64.0f, splat );
 	}
 
-	// Create blood pools at feet, Only when alive.
-	if( health > 0 )
-	{
-		int bloodpoolTime;
-
-		if( gameLocal.time > nextBloodPoolTime )
-		{
-			key = va( "mtr_bloodPool_%s", materialType );
-			splat = spawnArgs.RandomPrefix( key, gameLocal.random );
-			if( *splat == '\0' )
-			{
-				splat = def->dict.RandomPrefix( key, gameLocal.random );
-			}
-			if( *splat != '\0' )
-			{
-				phys = GetPhysics();
-				gravDir = phys->GetGravity();
-				gravDir.Normalize();
-				if( spawnArgs.GetBool( "bloodPool_below_origin" ) )
-				{
-					gameLocal.BloodSplat( phys->GetOrigin(), gravDir, def->dict.GetFloat( va( "size_bloodPool_%s", materialType ), "64.0f" ), splat );
-				}
-				else
-				{
-					gameLocal.BloodSplat( origin, gravDir, def->dict.GetFloat( va( "size_bloodPool_%s", materialType ), "64.0f" ), splat );
-				}
-			}
-			// This condition makes sure that we dont spawn overlapping bloodpools in a single frame.
-			if( !spawnArgs.GetInt( "next_bloodpool_time", "050", bloodpoolTime ) )
-			{
-				bloodpoolTime = def->dict.GetInt( "next_bloodpool_time", "050" );
-			}
-			nextBloodPoolTime = gameLocal.time +  bloodpoolTime; // This avoids excessive bloodpool overlapping
-		}
-	}
-
 	// can't see wounds on the player model in single player mode
 	if( !( IsType( idPlayer::Type ) && !common->IsMultiplayer() ) )
 	{
-		// blood splats can be thrown on the body itself two
-		key = va( "mtr_splatSelf_%s", materialType );
-		splat = spawnArgs.RandomPrefix( key, gameLocal.random );
-		if( *splat == '\0' )
-		{
-			splat = def->dict.RandomPrefix( key, gameLocal.random );
-		}
-		if( *splat != '\0' )
-		{
-			ProjectOverlay( origin, dir, def->dict.GetFloat( va( "size_splatSelf_%s", materialType ), "15.0f" ), splat );
-		}
-
 		// place a wound overlay on the model
 		key = va( "mtr_wound_%s", materialType );
 		decal = spawnArgs.RandomPrefix( key, gameLocal.random );
@@ -6700,20 +6362,9 @@ void idAnimatedEntity::AddLocalDamageEffect( jointHandle_t jointNum, const idVec
 		{
 			decal = def->dict.RandomPrefix( key, gameLocal.random );
 		}
-		if( *decal == '\0' )
-		{
-			decal = def->dict.GetString( "mtr_wound" ); // Default decal
-		}
 		if( *decal != '\0' )
 		{
-			float size;
-
-			// If Material Specific decal size not found, look for default size
-			if( !def->dict.GetFloat( va( "size_wound_%s", materialType ), "6.0", size ) )
-			{
-				size = def->dict.GetFloat( "size_wound", "6.0" );
-			}
-			ProjectOverlay( origin, dir, size, decal );
+			ProjectOverlay( origin, dir, 20.0f, decal );
 		}
 	}
 
@@ -6723,12 +6374,7 @@ void idAnimatedEntity::AddLocalDamageEffect( jointHandle_t jointNum, const idVec
 	if( *bleed == '\0' )
 	{
 		bleed = def->dict.GetString( key );
-		if( *bleed == '\0' )
-		{
-			bleed = def->dict.GetString( "smoke_wound" );    // play default smoke
-		}
 	}
-
 	if( *bleed != '\0' )
 	{
 		de = new( TAG_ENTITY ) damageEffect_t;
@@ -6736,23 +6382,10 @@ void idAnimatedEntity::AddLocalDamageEffect( jointHandle_t jointNum, const idVec
 		this->damageEffects = de;
 
 		de->jointNum = jointNum;
+		de->localOrigin = localOrigin;
+		de->localNormal = localNormal;
 		de->type = static_cast<const idDeclParticle*>( declManager->FindType( DECL_PARTICLE, bleed ) );
-
-		idVec3 boneOrigin;
-		idMat3 boneAxis;
-
-		boneAxis = renderEntity->joints[jointNum].ToMat3() * renderEntity->axis;
-		boneOrigin = renderEntity->origin + renderEntity->joints[jointNum].ToVec3() * renderEntity->axis;
-
-		de->localOrigin = ( origin - boneOrigin ) * boneAxis.Transpose();
-		de->localNormal	= normal * boneAxis.Transpose();
-		de->time = -1; // used as flag, notifies UpdateDamageEffects that this effect is just started
-
-		// if flag was not set before set it now
-		if( !( thinkFlags & TH_UPDATEWOUNDPARTICLES ) )
-		{
-			BecomeActive( TH_UPDATEWOUNDPARTICLES );
-		}
+		de->time = gameLocal.time;
 	}
 }
 
@@ -6786,44 +6419,17 @@ void idAnimatedEntity::UpdateDamageEffects()
 		return;
 	}
 
-	// If no more particles left...
-	if( !this->damageEffects )
-	{
-		if( thinkFlags & TH_UPDATEWOUNDPARTICLES )
-		{
-			BecomeInactive( TH_UPDATEWOUNDPARTICLES );
-		}
-		return;
-	}
-
 	// emit a particle for each bleeding wound
 	for( de = this->damageEffects; de; de = de->next )
 	{
-		idVec3 origin, dir;
+		idVec3 origin, start;
 		idMat3 axis;
 
-		// Sometimes it happens that the original animated model is replace by a particle effect, e.g. on flying lost soul's death.
-		// In that case we wont be able to find any joints. So a proper check should be made.
-		if( renderEntity->numJoints <= 0 )
-		{
-			axis = renderEntity->axis;
-			origin = renderEntity->origin;
-		}
-		else
-		{
-			axis = renderEntity->joints[de->jointNum].ToMat3() * renderEntity->axis;
-			origin = renderEntity->origin + renderEntity->joints[de->jointNum].ToVec3() * renderEntity->axis;
-		}
-
-		origin = origin + de->localOrigin * axis;
-		dir = de->localNormal * axis;
-
-		// initialize start time just before passing it to emitSmoke
-		if( de->time == -1 )
-		{
-			de->time = gameLocal.time;
-		}
-		if( !gameLocal.smokeParticles->EmitSmoke( de->type, de->time, gameLocal.random.CRandomFloat(), origin, dir.ToMat3(), timeGroup /*_D3XP*/ ) )
+		animator.GetJointTransform( de->jointNum, gameLocal.time, origin, axis );
+		axis *= renderEntity->axis;
+		origin = renderEntity->origin + origin * renderEntity->axis;
+		start = origin + de->localOrigin * axis;
+		if( !gameLocal.smokeParticles->EmitSmoke( de->type, de->time, gameLocal.random.CRandomFloat(), start, axis, timeGroup /*_D3XP*/ ) )
 		{
 			de->time = 0;
 		}

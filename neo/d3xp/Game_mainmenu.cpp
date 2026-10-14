@@ -173,11 +173,28 @@ void idGameMainMenuLocal::LoadingGui( const char* mapName, bool& hellMap )
 
 	renderSystem->LoadLevelImages();
 
-	if( mat->IsImplicit() )
+	if( mat->GetImageWidth() < 32 )
 	{
+		hellMap = false;
+
 		mat = declManager->FindMaterial( "guis/assets/loadscreens/default" );
 		renderSystem->LoadLevelImages();
+
+		loadGUI->Activate( true );
+		idSWFSpriteInstance* bgImg = loadGUI->GetRootObject().GetSprite( "bgImage" );
+		if( bgImg != NULL )
+		{
+			bgImg->SetMaterial( mat );
+		}
+
+		idSWFSpriteInstance* overlay = loadGUI->GetRootObject().GetSprite( "overlay" );
+		if( overlay != NULL )
+		{
+			overlay->SetVisible( true );
+		}
+
 		defaultLoadscreen = true;
+		return;
 	}
 
 	loadTipList.SetNum( loadTipList.Max() );

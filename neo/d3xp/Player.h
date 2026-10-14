@@ -295,7 +295,6 @@ public:
 	bool					freeCamFlyMode;
 	bool					freeCamRMBLatch;
 	bool					godmode;
-	bool					demigodmode;
 
 	bool					spawnAnglesSet;		// on first usercmd, we must set deltaAngles
 	idAngles				spawnAngles;
@@ -343,6 +342,7 @@ public:
 	idTarget_SetPrimaryObjective* primaryObjective;
 
 	int						flashlightBattery;
+	idEntityPtr<idWeapon>	flashlight;
 
 	idEntityPtr<idWeapon>	weapon;
 	idMenuHandler_HUD* 		hudManager;
@@ -620,8 +620,7 @@ public:
 	void					SetCurrentHeartRate();
 	int						GetBaseHeartRate();
 	void					UpdateAir();
-	void					UpdateOxygen();
-	void					UpdateEnviro();
+
 	void					UpdatePowerupHud();
 
 	virtual bool			HandleSingleGuiCommand( idEntity* entityGui, idLexer* src );
@@ -823,10 +822,6 @@ public:
 		return newPDAUp;
 	}
 
-	bool					UseThirdPersonCamera( void );
-	void					EnterVehicle( idAFEntity_Vehicle* vehicle );
-	void					ExitVehicle();
-
 private:
 	// Stats & achievements
 	idAchievementManager	achievementManager;
@@ -864,7 +859,6 @@ private:
 	int						previousWeapon;
 	int						weaponSwitchTime;
 	bool					weaponEnabled;
-	bool					weaponEnabledOnRideExit;
 
 	int						skinIndex;
 	const idDeclSkin* 		skin;
@@ -903,14 +897,12 @@ private:
 
 	// if there is a focusGUIent, the attack button will be changed into mouse clicks
 	idEntity* 				focusGUIent;
-	idUserInterface* 		focusUI;				// focusGUIent->renderEntity->gui, gui2, or gui3
+	idUserInterface* 		focusUI;				// focusGUIent->renderEntity.gui, gui2, or gui3
 	idAI* 					focusCharacter;
 	int						talkCursor;				// show the state of the focusCharacter (0 == can't talk/dead, 1 == ready to talk, 2 == busy talking)
 	int						focusTime;
 	idAFEntity_Vehicle* 	focusVehicle;
 	idUserInterface* 		cursor;
-
-	int						nextVehicleTime;
 
 	// full screen guis track mouse movements directly
 	int						oldMouseX;
@@ -994,11 +986,7 @@ private:
 	idAngles				GunTurningOffset();
 	idVec3					GunAcceleratingOffset();
 
-	void					CommonRidingSetup( idEntity* riddenEnt );
-	void					CommonRidingCleanUp( bool killed );
-	bool					IsRiding();
-
-	void					Use();
+	void					UseObjects();
 	void					CrashLand( const idVec3& oldOrigin, const idVec3& oldVelocity );
 	void					BobCycle( const idVec3& pushVelocity );
 	void					UpdateViewAngles();
@@ -1026,6 +1014,8 @@ private:
 	void					Respawn_Shared();
 
 	bool					WeaponAvailable( const char* name );
+
+	void					UseVehicle();
 
 	void					Event_GetButtons();
 	void					Event_GetMove();
@@ -1058,8 +1048,6 @@ private:
 	void					Event_SetBloomParms( float speed, float intensity );
 	void					Event_Damage( const char* damageDef );
 
-	void					Event_IsOnVehicle();
-
 	class idCrouchRate
 	{
 	public:
@@ -1073,11 +1061,6 @@ private:
 	};
 	idCrouchRate			crouchRate;
 };
-
-ID_INLINE bool idPlayer::IsRiding()
-{
-	return currentVehicle;
-}
 
 ID_INLINE bool idPlayer::IsRespawning()
 {

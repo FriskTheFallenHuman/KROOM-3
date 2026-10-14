@@ -354,6 +354,8 @@ void idMenuWidget_Shell_ModInfo::Update()
 		return;
 	}
 
+	infoSprite->SetIgnoreColor( false );
+
 	if( modList == NULL || modIndex < 0 || modIndex >= modList->Num() )
 	{
 		infoSprite->SetText( "" );

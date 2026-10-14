@@ -4053,12 +4053,6 @@ void idDoor::Use( idEntity* other, idEntity* activator )
 {
 	if( gameLocal.RequirementMet( activator, requires, removeItem ) )
 	{
-		// don't re-trigger the mover if it's already opening to avoid sound spam
-		if( IsOpening() )
-		{
-			return;
-		}
-
 		if( syncLock.Length() )
 		{
 			idEntity* sync = gameLocal.FindEntity( syncLock );
@@ -4066,7 +4060,6 @@ void idDoor::Use( idEntity* other, idEntity* activator )
 			{
 				if( static_cast<idDoor*>( sync )->IsOpen() )
 				{
-					static_cast<idDoor*>( sync )->Close();
 					return;
 				}
 			}
@@ -4159,16 +4152,6 @@ idDoor::IsOpen
 bool idDoor::IsOpen()
 {
 	return ( moverState != MOVER_POS1 );
-}
-
-/*
-================
-idDoor::IsOpening
-================
-*/
-bool idDoor::IsOpening()
-{
-	return ( moverState == MOVER_1TO2 );
 }
 
 /*

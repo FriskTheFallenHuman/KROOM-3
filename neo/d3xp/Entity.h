@@ -58,8 +58,6 @@ extern const idEventDef EV_SetSkin;
 extern const idEventDef EV_StartSoundShader;
 extern const idEventDef EV_StopSound;
 extern const idEventDef EV_CacheSoundShader;
-extern const idEventDef EV_GetDriver;
-extern const idEventDef EV_GetAimAngles;
 
 // Think flags
 enum
@@ -69,8 +67,7 @@ enum
 	TH_PHYSICS				= 2,		// run physics each frame
 	TH_ANIMATE				= 4,		// update animation each frame
 	TH_UPDATEVISUALS		= 8,		// update renderEntity
-	TH_UPDATEPARTICLES		= 16,		// This flag is used by various classes derived from entity in various situations
-	TH_UPDATEWOUNDPARTICLES = 32		// so create a new flag.
+	TH_UPDATEPARTICLES		= 16
 };
 
 //
@@ -109,24 +106,6 @@ class signalList_t
 public:
 	idList<signal_t, TAG_ENTITY> signal[ NUM_SIGNALS ];
 };
-
-class idProjectile;
-
-/*
-================================================
-entDamageEffect_s
-
-enDamage effect holds information about wound effects being played on the entities
-================================================
-*/
-typedef struct entDamageEffect_s
-{
-	idVec3					origin;
-	idVec3					dir;
-	int						time;
-	const idDeclParticle*	type;
-	struct entDamageEffect_s* 	next;
-} entDamageEffect_t;
 
 
 /*
@@ -292,7 +271,6 @@ public:
 	void					BecomeActive( int flags );
 	void					BecomeInactive( int flags );
 	void					UpdatePVSAreas( const idVec3& pos );
-	void					UpdateParticles( void );  // damage particle effects
 	void					BecomeReplicated();
 
 	// visuals
@@ -415,8 +393,7 @@ public:
 	// applies damage to this entity
 	virtual	void			Damage( idEntity* inflictor, idEntity* attacker, const idVec3& dir, const char* damageDefName, const float damageScale, const int location );
 	// adds a damage effect like overlays, blood, sparks, debris etc.
-	// the soundEnt parameter helps unifying how sound is played upon projectile impact.
-	virtual void			AddDamageEffect( const trace_t& collision, const idVec3& velocity, const char* damageDefName, idEntity* soundEnt = NULL );
+	virtual void			AddDamageEffect( const trace_t& collision, const idVec3& velocity, const char* damageDefName );
 	// callback function for when another entity received damage from this entity.  damage can be adjusted and returned to the caller.
 	virtual void			DamageFeedback( idEntity* victim, idEntity* inflictor, int& damage );
 	// notifies this entity that it is in pain
@@ -428,7 +405,6 @@ public:
 	virtual bool			ShouldConstructScriptObjectAtSpawn() const;
 	virtual idThread* 		ConstructScriptObject();
 	virtual void			DeconstructScriptObject();
-	virtual bool			GetFunction( const char* function );
 	void					SetSignal( signalNum_t signalnum, idThread* thread, const function_t* function );
 	void					ClearSignal( idThread* thread, signalNum_t signalnum );
 	void					ClearSignalThread( signalNum_t signalnum, idThread* thread );
@@ -537,7 +513,6 @@ protected:
 	idRenderEntity*			renderEntity;						// game-facing render object
 	int						modelDefHandle;						// handle to static renderer model
 	refSound_t				refSound;							// used to present sound to the audio engine
-	entDamageEffect_t* 		entDamageEffects;					// We are going to add damage effect to every entity.
 
 	idVec3					GetOriginDelta() const
 	{
@@ -594,8 +569,6 @@ private:
 	void					QuitTeam();					// leave the current team
 
 	void					UpdatePVSAreas();
-
-	idProjectile*			SysFireProjectile( const char* projDefName, idVec3& firePos, idVec3& dir, const float launchPower = 1.0f );
 
 public:
 	idVec3					GetOrigin();
@@ -673,7 +646,6 @@ private:
 	void					Event_GetGuiParm( int guiNum, const char* key );
 	void					Event_GetGuiParmFloat( int guiNum, const char* key );
 	void					Event_GuiNamedEvent( int guiNum, const char* event );
-	void					Event_FireProjectile( const char* projDefName , idVec3& firePos, idAngles& fireAng );
 };
 
 ID_INLINE float idEntity::DistanceTo( idEntity* ent )
@@ -728,8 +700,8 @@ public:
 	bool					GetJointTransformForAnim( jointHandle_t jointHandle, int animNum, int currentTime, idVec3& offset, idMat3& axis ) const;
 
 	virtual int				GetDefaultSurfaceType() const;
-	virtual void			AddDamageEffect( const trace_t& collision, const idVec3& velocity, const char* damageDefName, idEntity* soundEnt );
-	void					AddLocalDamageEffect( jointHandle_t jointNum, const idVec3& localPoint, const idVec3& localNormal, const idVec3& localDir, const idDeclEntityDef* def, const idMaterial* collisionMaterial, idEntity* soundEnt = NULL );
+	virtual void			AddDamageEffect( const trace_t& collision, const idVec3& velocity, const char* damageDefName );
+	void					AddLocalDamageEffect( jointHandle_t jointNum, const idVec3& localPoint, const idVec3& localNormal, const idVec3& localDir, const idDeclEntityDef* def, const idMaterial* collisionMaterial );
 	void					UpdateDamageEffects();
 
 	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg& msg );
@@ -743,7 +715,6 @@ public:
 protected:
 	idAnimator				animator;
 	damageEffect_t* 		damageEffects;
-	int						nextBloodPoolTime;
 
 private:
 	void					Event_GetJointHandle( const char* jointname );

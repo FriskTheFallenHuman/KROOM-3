@@ -1,5 +1,0 @@
-models/mapobjects/cpu/sab_floor2_vv
-{
-    qer_editorimage models/mapobjects/cpu/sab_floor2
-    diffusemap models/mapobjects/cpu/sab_floor2
-}

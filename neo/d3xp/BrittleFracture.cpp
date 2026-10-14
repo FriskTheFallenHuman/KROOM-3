@@ -677,11 +677,6 @@ void idBrittleFracture::Think()
 
 	RunPhysics();
 	Present();
-
-	if( thinkFlags & TH_UPDATEWOUNDPARTICLES )
-	{
-		UpdateParticles();
-	}
 }
 
 /*
@@ -735,7 +730,7 @@ void idBrittleFracture::AddForce( idEntity* ent, int id, const idVec3& point, co
 idBrittleFracture::ProjectDecal
 ================
 */
-void idBrittleFracture::ProjectDecal( const idVec3& point, const idVec3& dir, const int time, const char* damageDefName, idEntity* soundEnt )
+void idBrittleFracture::ProjectDecal( const idVec3& point, const idVec3& dir, const int time, const char* damageDefName )
 {
 	int i, j, bits, clipBits;
 	float a, c, s;
@@ -771,33 +766,27 @@ void idBrittleFracture::ProjectDecal( const idVec3& point, const idVec3& dir, co
 	{
 		// try to get the sound from the damage def
 		const idDeclEntityDef* damageDef = NULL;
+		const idSoundShader* sndShader = NULL;
 		if( damageDefName )
 		{
 			damageDef = gameLocal.FindEntityDef( damageDefName, false );
 			if( damageDef )
 			{
-				const char* sndName = damageDef->dict.GetString( "snd_shatter" );
+				const char* sndName = damageDef->dict.GetString( "snd_shatter", "" );
 				if( sndName[0] != 0 )
 				{
-					sndName = damageDef->dict.GetString( "snd_glass" );
-				}
-
-				if( sndName[0] != 0 )
-				{
-					if( soundEnt == NULL )
-					{
-						StartSoundShader( declManager->FindSound( sndName ), SND_CHANNEL_ANY, 0, false, NULL );
-					}
-					else
-					{
-						soundEnt->StartSoundShader( declManager->FindSound( sndName ), SND_CHANNEL_ANY, 0, false, NULL );
-					}
-				}
-				else
-				{
-					StartSound( "snd_bullethole", SND_CHANNEL_ANY, 0, false, NULL );
+					sndShader = declManager->FindSound( sndName );
 				}
 			}
+		}
+
+		if( sndShader )
+		{
+			StartSoundShader( sndShader, SND_CHANNEL_ANY, 0, false, NULL );
+		}
+		else
+		{
+			StartSound( "snd_bullethole", SND_CHANNEL_ANY, 0, false, NULL );
 		}
 	}
 
@@ -1128,65 +1117,11 @@ void idBrittleFracture::Killed( idEntity* inflictor, idEntity* attacker, int dam
 idBrittleFracture::AddDamageEffect
 ================
 */
-void idBrittleFracture::AddDamageEffect( const trace_t& collision, const idVec3& velocity, const char* damageDefName, idEntity* soundEnt )
+void idBrittleFracture::AddDamageEffect( const trace_t& collision, const idVec3& velocity, const char* damageDefName )
 {
 	if( !disableFracture )
 	{
-		ProjectDecal( collision.c.point, collision.c.normal, gameLocal.time, damageDefName, soundEnt );
-	}
-
-	// a damage effect is added
-	const idDeclEntityDef* def = gameLocal.FindEntityDef( damageDefName, false );
-	if( def == NULL )
-	{
-		return;
-	}
-
-	// play sound only when the flag is set, otherwise idBrittleFracture::ProjectDecal will take care of playing the sound
-	if( disableFracture )
-	{
-		const char* sndName = def->dict.GetString( "snd_shatter" );
-		if( sndName[0] != 0 )
-		{
-			sndName = def->dict.GetString( "snd_glass" );
-		}
-
-		if( sndName[0] != 0 )
-		{
-			if( soundEnt == NULL )
-			{
-				StartSoundShader( declManager->FindSound( sndName ), SND_CHANNEL_ANY, 0, false, NULL );
-			}
-			else
-			{
-				soundEnt->StartSoundShader( declManager->FindSound( sndName ), SND_CHANNEL_ANY, 0, false, NULL );
-			}
-		}
-		else
-		{
-			StartSound( "snd_bullethole", SND_CHANNEL_ANY, 0, false, NULL );
-		}
-	}
-
-	const char* bleed = def->dict.GetString( "smoke_wound_glass" );
-
-	if( *bleed != '\0' )
-	{
-		entDamageEffect_t*	de = new entDamageEffect_t;
-		de->next = this->entDamageEffects;
-		this->entDamageEffects = de;
-
-		de->origin = ( collision.c.point - renderEntity->origin ) * renderEntity->axis.Transpose();
-		de->dir = collision.c.normal * renderEntity->axis.Transpose();
-		de->type = static_cast<const idDeclParticle*>( declManager->FindType( DECL_PARTICLE, bleed ) );
-
-		de->time = -1;	//	We use this as a flag initially, idEntity::UpdateParticles() will actually set it to proper value.
-
-		// if flag was not set before set it now
-		if( !( thinkFlags & TH_UPDATEWOUNDPARTICLES ) )
-		{
-			BecomeActive( TH_UPDATEWOUNDPARTICLES );
-		}
+		ProjectDecal( collision.c.point, collision.c.normal, gameLocal.time, damageDefName );
 	}
 }
 

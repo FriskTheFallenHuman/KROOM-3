@@ -57,7 +57,6 @@ const idEventDef EV_Weapon_WeaponReloading( "weaponReloading" );
 const idEventDef EV_Weapon_WeaponHolstered( "weaponHolstered" );
 const idEventDef EV_Weapon_WeaponRising( "weaponRising" );
 const idEventDef EV_Weapon_WeaponLowering( "weaponLowering" );
-const idEventDef EV_Weapon_MuzzleFlashlight( "muzzleFlashLight", "d" );
 const idEventDef EV_Weapon_Flashlight( "flashlight", "d" );
 const idEventDef EV_Weapon_LaunchProjectiles( "launchProjectiles", "dffff" );
 const idEventDef EV_Weapon_CreateProjectile( "createProjectile", NULL, 'e' );
@@ -80,11 +79,6 @@ const idEventDef EV_Weapon_StartWeaponParticle( "startWeaponParticle", "s" );
 const idEventDef EV_Weapon_StopWeaponParticle( "stopWeaponParticle", "s" );
 const idEventDef EV_Weapon_StartWeaponLight( "startWeaponLight", "s" );
 const idEventDef EV_Weapon_StopWeaponLight( "stopWeaponLight", "s" );
-const idEventDef EV_Weapon_GetAux( "getAux", NULL, 'd' );
-const idEventDef EV_Weapon_SetAux( "setAux", "d" );
-const idEventDef EV_Weapon_BeginLightSync( "beginLightSync" );
-const idEventDef EV_Weapon_SetNetfiring( "setNetfiring", "d" );
-const idEventDef EV_Weapon_SetWeaponGuiParm( "setWeaponGuiParm", "ss" );
 
 //
 // class def
@@ -112,7 +106,6 @@ EVENT( AI_GetBlendFrames,					idWeapon::Event_GetBlendFrames )
 EVENT( AI_AnimDone,							idWeapon::Event_AnimDone )
 EVENT( EV_Weapon_Next,						idWeapon::Event_Next )
 EVENT( EV_SetSkin,							idWeapon::Event_SetSkin )
-EVENT( EV_Weapon_MuzzleFlashlight,			idWeapon::Event_MuzzleFlashlight )
 EVENT( EV_Weapon_Flashlight,				idWeapon::Event_Flashlight )
 EVENT( EV_Light_GetLightParm,				idWeapon::Event_GetLightParm )
 EVENT( EV_Light_SetLightParm,				idWeapon::Event_SetLightParm )
@@ -138,15 +131,14 @@ EVENT( EV_Weapon_StartWeaponParticle,		idWeapon::Event_StartWeaponParticle )
 EVENT( EV_Weapon_StopWeaponParticle,		idWeapon::Event_StopWeaponParticle )
 EVENT( EV_Weapon_StartWeaponLight,			idWeapon::Event_StartWeaponLight )
 EVENT( EV_Weapon_StopWeaponLight,			idWeapon::Event_StopWeaponLight )
-EVENT( EV_Weapon_GetAux,					idWeapon::Event_GetAux )
-EVENT( EV_Weapon_SetAux,					idWeapon::Event_SetAux )
-EVENT( EV_Weapon_BeginLightSync,			idWeapon::Event_BeginLightSync )
-EVENT( EV_Weapon_SetNetfiring,				idWeapon::Event_SetNetfiring )
-EVENT( EV_Weapon_SetWeaponGuiParm,			idWeapon::Event_SetWeaponGuiParm )
 END_CLASS
 
 
 idCVar cg_projectile_clientAuthoritative_maxCatchup( "cg_projectile_clientAuthoritative_maxCatchup", "500", CVAR_INTEGER, "" );
+
+idCVar g_useWeaponDepthHack( "g_useWeaponDepthHack", "1", CVAR_BOOL, "Crunch z depth on weapons" );
+
+idCVar g_weaponShadows( "g_weaponShadows", "0", CVAR_BOOL | CVAR_ARCHIVE, "Cast shadows from weapons" );
 
 extern idCVar cg_predictedSpawn_debug;
 
@@ -169,16 +161,12 @@ idWeapon::idWeapon()
 	thread					= NULL;
 
 	memset( &guiLight, 0, sizeof( guiLight ) );
-	memset( &flashLight, 0, sizeof( flashLight ) );
 	memset( &muzzleFlash, 0, sizeof( muzzleFlash ) );
 	memset( &worldMuzzleFlash, 0, sizeof( worldMuzzleFlash ) );
 	memset( &nozzleGlow, 0, sizeof( nozzleGlow ) );
 
 	muzzleFlashEnd			= 0;
 	flashColor				= vec3_origin;
-	flashLightColor			= vec3_origin;
-
-	flashLightHandle		= -1;
 	muzzleFlashHandle		= -1;
 	worldMuzzleFlashHandle	= -1;
 	guiLightHandle			= -1;
@@ -190,6 +178,7 @@ idWeapon::idWeapon()
 	brassDelay				= 0;
 
 	allowDrop				= true;
+	isPlayerFlashlight		= false;
 
 	fraccos = 0.0f;
 	fraccos2 = 0.0f;
@@ -225,8 +214,7 @@ void idWeapon::Spawn()
 		worldModel.GetEntity()->fl.networkSync = true;
 	}
 
-	idPlayer* playerOwner = GetPlayerOwner();
-	if( playerOwner )
+	if( 1 /*!common->IsMultiplayer()*/ )
 	{
 		grabber.Initialize();
 	}
@@ -243,39 +231,35 @@ idWeapon::SetOwner
 Only called at player spawn time, not each weapon switch
 ================
 */
-void idWeapon::SetOwner( idActor* _owner )
+void idWeapon::SetOwner( idPlayer* _owner )
 {
 	assert( !owner );
 	owner = _owner;
+	SetName( va( "%s_weapon", owner->name.c_str() ) );
 
-	if( _owner->IsType( idPlayer::Type ) )
+	if( worldModel.GetEntity() )
 	{
-		SetName( va( "%s_weapon", owner->name.c_str() ) );
-
-		if( worldModel.GetEntity() )
-		{
-			worldModel.GetEntity()->SetName( va( "%s_weapon_worldmodel", owner->name.c_str() ) );
-		}
-	}
-	else
-	{
-		SetName( va( "%s_%d_weapon_npc", owner->name.c_str(), owner->entityNumber ) );
-
-		if( worldModel.GetEntity() )
-		{
-			worldModel.GetEntity()->SetName( va( "%s_%d_weapon_npc_worldmodel", owner->name.c_str(), owner->entityNumber ) );
-		}
+		worldModel.GetEntity()->SetName( va( "%s_weapon_worldmodel", owner->name.c_str() ) );
 	}
 }
 
 /*
 ================
-idWeapon::GetPlayerOwner
+idWeapon::SetFlashlightOwner
+
+Only called at player spawn time, not each weapon switch
 ================
 */
-idPlayer* idWeapon::GetPlayerOwner() const
+void idWeapon::SetFlashlightOwner( idPlayer* _owner )
 {
-	return ( owner && owner->IsType( idPlayer::Type ) ) ? static_cast<idPlayer*>( owner ) : NULL;
+	assert( !owner );
+	owner = _owner;
+	SetName( va( "%s_weapon_flashlight", owner->name.c_str() ) );
+
+	if( worldModel.GetEntity() )
+	{
+		worldModel.GetEntity()->SetName( va( "%s_weapon_flashlight_worldmodel", owner->name.c_str() ) );
+	}
 }
 
 /*
@@ -387,9 +371,6 @@ void idWeapon::Save( idSaveGame* savefile ) const
 	savefile->WriteInt( guiLightHandle );
 	savefile->WriteRenderLight( guiLight );
 
-	savefile->WriteInt( flashLightHandle );
-	savefile->WriteRenderLight( flashLight );
-
 	savefile->WriteInt( muzzleFlashHandle );
 	savefile->WriteRenderLight( muzzleFlash );
 
@@ -397,12 +378,10 @@ void idWeapon::Save( idSaveGame* savefile ) const
 	savefile->WriteRenderLight( worldMuzzleFlash );
 
 	savefile->WriteVec3( flashColor );
-	savefile->WriteVec3( flashLightColor );
 	savefile->WriteInt( muzzleFlashEnd );
 	savefile->WriteInt( flashTime );
 
 	savefile->WriteBool( lightOn );
-	savefile->WriteBool( flashlightOn );
 	savefile->WriteBool( silent_fire );
 
 	savefile->WriteInt( kick_endtime );
@@ -476,67 +455,29 @@ void idWeapon::Save( idSaveGame* savefile ) const
 	for( int i = 0; i < weaponParticles.Num(); i++ )
 	{
 		WeaponParticle_t* part = weaponParticles.GetIndex( i );
-		particleFlags_t flags = part->particleFlags;
-
-		LittleBitField( &flags, sizeof( flags ) );
-		savefile->Write( &flags, sizeof( flags ) );
-
 		savefile->WriteString( part->name );
 		savefile->WriteString( part->particlename );
+		savefile->WriteBool( part->active );
 		savefile->WriteInt( part->startTime );
 		savefile->WriteJoint( part->joint );
-
-		if( !part->particleFlags.isSmoke )
+		savefile->WriteBool( part->smoke );
+		if( !part->smoke )
 		{
-			savefile->WriteRenderEntity( part->renderEntity );
-		}
-
-		if( part->particleFlags.isDir )
-		{
-			savefile->WriteVec3( part->dir );
-		}
-
-		if( part->particleFlags.isOffset )
-		{
-			savefile->WriteVec3( part->offset );
+			savefile->WriteObject( part->emitter );
 		}
 	}
-
 	savefile->WriteInt( weaponLights.Num() );
 	for( int i = 0; i < weaponLights.Num(); i++ )
 	{
-
 		WeaponLight_t* light = weaponLights.GetIndex( i );
-		lightFlags_t flags = light->lightFlags;
-
-		LittleBitField( &flags, sizeof( flags ) );
-		savefile->Write( &flags, sizeof( flags ) );
-
 		savefile->WriteString( light->name );
+		savefile->WriteBool( light->active );
 		savefile->WriteInt( light->startTime );
 		savefile->WriteJoint( light->joint );
 		savefile->WriteInt( light->lightHandle );
 		savefile->WriteRenderLight( light->light );
-
-		if( !light->lightFlags.isAlwaysOn )
-		{
-			savefile->WriteInt( light->endTime );
-		}
-
-		if( light->lightFlags.isDir )
-		{
-			savefile->WriteVec3( light->dir );
-		}
-
-		if( light->lightFlags.isOffset )
-		{
-			savefile->WriteVec3( light->offset );
-		}
 	}
 
-	savefile->WriteInt( snapshotLight );
-	savefile->WriteBool( canSyncLight );
-	savefile->WriteInt( isAux );
 }
 
 /*
@@ -594,7 +535,7 @@ void idWeapon::Restore( idRestoreGame* savefile )
 	weaponDef = gameLocal.FindEntityDef( objectname );
 	meleeDef = gameLocal.FindEntityDef( weaponDef->dict.GetString( "def_melee" ), false );
 
-	projectileDef = gameLocal.FindEntityDef( weaponDef->dict.GetString( "def_projectile" ), false );
+	const idDeclEntityDef* projectileDef = gameLocal.FindEntityDef( weaponDef->dict.GetString( "def_projectile" ), false );
 	if( projectileDef )
 	{
 		projectileDict = projectileDef->dict;
@@ -604,7 +545,7 @@ void idWeapon::Restore( idRestoreGame* savefile )
 		projectileDict.Clear();
 	}
 
-	brassDef = gameLocal.FindEntityDef( weaponDef->dict.GetString( "def_ejectBrass" ), false );
+	const idDeclEntityDef* brassDef = gameLocal.FindEntityDef( weaponDef->dict.GetString( "def_ejectBrass" ), false );
 	if( brassDef )
 	{
 		brassDict = brassDef->dict;
@@ -629,13 +570,6 @@ void idWeapon::Restore( idRestoreGame* savefile )
 		guiLightHandle = gameRenderWorld->AddLightDef( &guiLight );
 	}
 
-	savefile->ReadInt( flashLightHandle );
-	savefile->ReadRenderLight( flashLight );
-	if( flashLightHandle >= 0 )
-	{
-		flashLightHandle = gameRenderWorld->AddLightDef( &flashLight );
-	}
-
 	savefile->ReadInt( muzzleFlashHandle );
 	savefile->ReadRenderLight( muzzleFlash );
 	if( muzzleFlashHandle >= 0 )
@@ -651,12 +585,10 @@ void idWeapon::Restore( idRestoreGame* savefile )
 	}
 
 	savefile->ReadVec3( flashColor );
-	savefile->ReadVec3( flashLightColor );
 	savefile->ReadInt( muzzleFlashEnd );
 	savefile->ReadInt( flashTime );
 
 	savefile->ReadBool( lightOn );
-	savefile->ReadBool( flashlightOn );
 	savefile->ReadBool( silent_fire );
 
 	savefile->ReadInt( kick_endtime );
@@ -742,35 +674,24 @@ void idWeapon::Restore( idRestoreGame* savefile )
 		WeaponParticle_t newParticle;
 		memset( &newParticle, 0, sizeof( newParticle ) );
 
-		savefile->Read( &newParticle.particleFlags, sizeof( newParticle.particleFlags ) );
-		LittleBitField( &newParticle.particleFlags, sizeof( newParticle.particleFlags ) );
-
-		idStr prtName, particlename;
-		savefile->ReadString( prtName );
+		idStr name, particlename;
+		savefile->ReadString( name );
 		savefile->ReadString( particlename );
 
-		strcpy( newParticle.name, prtName.c_str() );
+		strcpy( newParticle.name, name.c_str() );
 		strcpy( newParticle.particlename, particlename.c_str() );
 
+		savefile->ReadBool( newParticle.active );
 		savefile->ReadInt( newParticle.startTime );
 		savefile->ReadJoint( newParticle.joint );
-
-		if( newParticle.particleFlags.isSmoke )
+		savefile->ReadBool( newParticle.smoke );
+		if( newParticle.smoke )
 		{
 			newParticle.particle = static_cast<const idDeclParticle*>( declManager->FindType( DECL_PARTICLE, particlename, false ) );
 		}
 		else
 		{
-			savefile->ReadRenderEntity( newParticle.renderEntity );
-			newParticle.modelDefHandle = -1;
-		}
-		if( newParticle.particleFlags.isDir )
-		{
-			savefile->ReadVec3( newParticle.dir );
-		}
-		if( newParticle.particleFlags.isOffset )
-		{
-			savefile->ReadVec3( newParticle.offset );
+			savefile->ReadObject( reinterpret_cast<idClass*&>( newParticle.emitter ) );
 		}
 
 		weaponParticles.Set( newParticle.name, newParticle );
@@ -783,44 +704,21 @@ void idWeapon::Restore( idRestoreGame* savefile )
 		WeaponLight_t newLight;
 		memset( &newLight, 0, sizeof( newLight ) );
 
-		savefile->Read( &newLight.lightFlags, sizeof( newLight.lightFlags ) );
-		LittleBitField( &newLight.lightFlags, sizeof( newLight.lightFlags ) );
+		idStr name;
+		savefile->ReadString( name );
+		strcpy( newLight.name, name.c_str() );
 
-		idStr lightName;
-		savefile->ReadString( lightName );
-		strcpy( newLight.name, lightName.c_str() );
-
+		savefile->ReadBool( newLight.active );
 		savefile->ReadInt( newLight.startTime );
 		savefile->ReadJoint( newLight.joint );
 		savefile->ReadInt( newLight.lightHandle );
 		savefile->ReadRenderLight( newLight.light );
-
 		if( newLight.lightHandle >= 0 )
 		{
 			newLight.lightHandle = gameRenderWorld->AddLightDef( &newLight.light );
 		}
-
-		if( !newLight.lightFlags.isAlwaysOn )
-		{
-			savefile->ReadInt( newLight.endTime );
-		}
-
-		if( newLight.lightFlags.isDir )
-		{
-			savefile->ReadVec3( newLight.dir );
-		}
-
-		if( newLight.lightFlags.isOffset )
-		{
-			savefile->ReadVec3( newLight.offset );
-		}
-
 		weaponLights.Set( newLight.name, newLight );
 	}
-
-	savefile->ReadInt( snapshotLight );
-	savefile->ReadBool( canSyncLight );
-	savefile->ReadInt( isAux );
 }
 
 /***********************************************************************
@@ -849,11 +747,6 @@ void idWeapon::Clear()
 	WEAPON_RAISEWEAPON.Unlink();
 	WEAPON_LOWERWEAPON.Unlink();
 
-	if( flashLightHandle != -1 )
-	{
-		gameRenderWorld->FreeLightDef( flashLightHandle );
-		flashLightHandle = -1;
-	}
 	if( muzzleFlashHandle != -1 )
 	{
 		gameRenderWorld->FreeLightDef( muzzleFlashHandle );
@@ -960,16 +853,10 @@ void idWeapon::Clear()
 
 	flashTime		= 250;
 	lightOn			= false;
-	flashlightOn	= false;
 	silent_fire		= false;
 
 	grabberState	= -1;
-
-	idPlayer* playerOwner = GetPlayerOwner();
-	if( playerOwner )
-	{
-		grabber.Update( playerOwner, true );
-	}
+	grabber.Update( owner, true );
 
 	ammoType		= 0;
 	ammoRequired	= 0;
@@ -1002,11 +889,12 @@ void idWeapon::Clear()
 	for( int i = 0; i < weaponParticles.Num(); i++ )
 	{
 		WeaponParticle_t* part = weaponParticles.GetIndex( i );
-		if( !part->particleFlags.isSmoke )
+		if( !part->smoke )
 		{
-			if( part->modelDefHandle >= 0 )
+			if( part->emitter != NULL )
 			{
-				gameRenderWorld->FreeEntityDef( part->modelDefHandle );
+				//Destroy the emitters
+				part->emitter->PostEventMS( &EV_Remove, 0 );
 			}
 		}
 	}
@@ -1049,10 +937,6 @@ void idWeapon::Clear()
 	projectileEnt		= NULL;
 
 	isFiring			= false;
-
-	snapshotLight		= 0;
-	canSyncLight		= false;
-	isAux				= 0;
 }
 
 /*
@@ -1070,42 +954,20 @@ void idWeapon::InitWorldModel( const idDeclEntityDef* def )
 	assert( def );
 
 	const char* model = def->dict.GetString( "model_world" );
-	const char* modelNPC = def->dict.GetString( "model_world_npc" );
 	const char* attach = def->dict.GetString( "joint_attach" );
-	const char* attachNPC = def->dict.GetString( "joint_attach_npc", "gun" );
 
 	ent->SetSkin( NULL );
 	if( model[0] && attach[0] )
 	{
-		idPlayer* playerOwner = GetPlayerOwner();
-
 		ent->Show();
-
-		if( playerOwner )
-		{
-			ent->SetModel( model );
-		}
-		else
-		{
-			ent->SetModel( modelNPC );
-		}
-
+		ent->SetModel( model );
 		if( ent->GetAnimator()->ModelDef() )
 		{
 			ent->SetSkin( ent->GetAnimator()->ModelDef()->GetDefaultSkin() );
 		}
 		ent->GetPhysics()->SetContents( 0 );
 		ent->GetPhysics()->SetClipModel( NULL, 1.0f );
-
-		if( playerOwner )
-		{
-			ent->BindToJoint( owner, attach, true );
-		}
-		else
-		{
-			ent->BindToJoint( owner, attachNPC, true );
-		}
-
+		ent->BindToJoint( owner, attach, true );
 		ent->GetPhysics()->SetOrigin( vec3_origin );
 		ent->GetPhysics()->SetAxis( mat3_identity );
 
@@ -1169,10 +1031,15 @@ void idWeapon::GetWeaponDef( const char* objectname, int ammoinclip )
 	icon				= weaponDef->dict.GetString( "icon" );
 	pdaIcon				= weaponDef->dict.GetString( "pdaIcon" );
 	displayName			= weaponDef->dict.GetString( "display_name" );
-	itemDesc			= weaponDef->dict.GetString( "display_desc" );
+	itemDesc			= weaponDef->dict.GetString( "inv_desc" );
 
 	silent_fire			= weaponDef->dict.GetBool( "silent_fire" );
 	powerAmmo			= weaponDef->dict.GetBool( "powerAmmo" );
+
+	muzzle_kick_time	= SEC2MS( weaponDef->dict.GetFloat( "muzzle_kick_time" ) );
+	muzzle_kick_maxtime	= SEC2MS( weaponDef->dict.GetFloat( "muzzle_kick_maxtime" ) );
+	muzzle_kick_angles	= weaponDef->dict.GetAngles( "muzzle_kick_angles" );
+	muzzle_kick_offset	= weaponDef->dict.GetVector( "muzzle_kick_offset" );
 
 	hideTime			= SEC2MS( weaponDef->dict.GetFloat( "hide_time", "0.3" ) );
 	hideDistance		= weaponDef->dict.GetFloat( "hide_distance", "-15" );
@@ -1249,19 +1116,10 @@ void idWeapon::GetWeaponDef( const char* objectname, int ammoinclip )
 	// get the projectile
 	projectileDict.Clear();
 
-	idPlayer* playerOwner = GetPlayerOwner();
-	if( playerOwner )
-	{
-		projectileName = weaponDef->dict.GetString( "def_projectile" );
-	}
-	else
-	{
-		projectileName = weaponDef->dict.GetString( "def_projectile_npc" );
-	}
-
+	projectileName = weaponDef->dict.GetString( "def_projectile" );
 	if( projectileName[0] != '\0' )
 	{
-		projectileDef = gameLocal.FindEntityDef( projectileName, false );
+		const idDeclEntityDef* projectileDef = gameLocal.FindEntityDef( projectileName, false );
 		if( !projectileDef )
 		{
 			gameLocal.Warning( "Unknown projectile '%s' in weapon '%s'", projectileName, objectname );
@@ -1282,15 +1140,22 @@ void idWeapon::GetWeaponDef( const char* objectname, int ammoinclip )
 	}
 
 	// set up muzzleflash render light
+	const idMaterial* flashShader;
+	idVec3			flashTarget;
+	idVec3			flashUp;
+	idVec3			flashRight;
+	float			flashRadius;
+	bool			flashPointLight;
+
 	weaponDef->dict.GetString( "mtr_flashShader", "", &shader );
-	const idMaterial* flashShader = declManager->FindMaterial( shader, false );
-	bool flashPointLight = weaponDef->dict.GetBool( "flashPointLight", "1" );
+	flashShader = declManager->FindMaterial( shader, false );
+	flashPointLight = weaponDef->dict.GetBool( "flashPointLight", "1" );
 	weaponDef->dict.GetVector( "flashColor", "0 0 0", flashColor );
-	float flashRadius		= ( float )weaponDef->dict.GetInt( "flashRadius" );	// if 0, no light will spawn
+	flashRadius		= ( float )weaponDef->dict.GetInt( "flashRadius" );	// if 0, no light will spawn
 	flashTime		= SEC2MS( weaponDef->dict.GetFloat( "flashTime", "0.25" ) );
-	idVec3 flashTarget		= weaponDef->dict.GetVector( "flashTarget" );
-	idVec3 flashUp			= weaponDef->dict.GetVector( "flashUp" );
-	idVec3 flashRight		= weaponDef->dict.GetVector( "flashRight" );
+	flashTarget		= weaponDef->dict.GetVector( "flashTarget" );
+	flashUp			= weaponDef->dict.GetVector( "flashUp" );
+	flashRight		= weaponDef->dict.GetVector( "flashRight" );
 
 	memset( &muzzleFlash, 0, sizeof( muzzleFlash ) );
 	muzzleFlash.lightId = LIGHTID_VIEW_MUZZLE_FLASH + owner->entityNumber;
@@ -1327,41 +1192,6 @@ void idWeapon::GetWeaponDef( const char* objectname, int ammoinclip )
 
 	//-----------------------------------
 
-	// set up flash light render light
-	weaponDef->dict.GetString( "mtr_flashLightShader", "", &shader );
-	const idMaterial* flashLightShader = declManager->FindMaterial( shader, false );
-	bool flashLightPointLight = weaponDef->dict.GetBool( "flashLightPointLight", "1" );
-	weaponDef->dict.GetVector( "flashLightColor", "0 0 0", flashLightColor );
-	float flashLightRadius		= ( float )weaponDef->dict.GetInt( "flashLightRadius" );	// if 0, no light will spawn
-	idVec3 flashLightTarget		= weaponDef->dict.GetVector( "flashLightTarget" );
-	idVec3 flashLightUp			= weaponDef->dict.GetVector( "flashLightUp" );
-	idVec3 flashLightRight		= weaponDef->dict.GetVector( "flashLightRight" );
-
-	memset( &flashLight, 0, sizeof( flashLight ) );
-	flashLight.lightId = LIGHTID_FLASH_LIGHT + owner->entityNumber;
-	flashLight.allowLightInViewID = owner->entityNumber + 1;
-
-	flashLight.pointLight								= flashLightPointLight;
-	flashLight.shader									= flashLightShader;
-	flashLight.shaderParms[ SHADERPARM_RED ]			= flashLightColor[0];
-	flashLight.shaderParms[ SHADERPARM_GREEN ]			= flashLightColor[1];
-	flashLight.shaderParms[ SHADERPARM_BLUE ]			= flashLightColor[2];
-	flashLight.shaderParms[ SHADERPARM_TIMESCALE ]		= 1.0f;
-
-	flashLight.lightRadius[0]							= flashLightRadius;
-	flashLight.lightRadius[1]							= flashLightRadius;
-	flashLight.lightRadius[2]							= flashLightRadius;
-
-	if( !flashLightPointLight )
-	{
-		flashLight.target								= flashLightTarget;
-		flashLight.up									= flashLightUp;
-		flashLight.right								= flashLightRight;
-		flashLight.end									= flashLightTarget;
-	}
-
-	//-----------------------------------
-
 	nozzleFx			= weaponDef->dict.GetBool( "nozzleFx" );
 	nozzleFxFade		= weaponDef->dict.GetInt( "nozzleFxFade", "1500" );
 	nozzleGlowColor		= weaponDef->dict.GetVector( "nozzleGlowColor", "1 1 1" );
@@ -1388,7 +1218,7 @@ void idWeapon::GetWeaponDef( const char* objectname, int ammoinclip )
 
 	if( brassDefName[0] )
 	{
-		brassDef = gameLocal.FindEntityDef( brassDefName, false );
+		const idDeclEntityDef* brassDef = gameLocal.FindEntityDef( brassDefName, false );
 		if( !brassDef )
 		{
 			gameLocal.Warning( "Unknown brass '%s'", brassDefName );
@@ -1409,20 +1239,13 @@ void idWeapon::GetWeaponDef( const char* objectname, int ammoinclip )
 	{
 		// first time using this weapon so have it fully loaded to start
 		ammoClip = clipSize;
-
-		idPlayer* playerOwner = GetPlayerOwner();
-		if( playerOwner )
+		ammoAvail = owner->inventory.HasAmmo( ammoType, ammoRequired );
+		if( ammoClip.Get() > ammoAvail )
 		{
-			ammoAvail = playerOwner->inventory.HasAmmo( ammoType, ammoRequired );
-			if( ammoClip.Get() > ammoAvail )
-			{
-				ammoClip = ammoAvail;
-			}
-			//In D3XP we use ammo as soon as it is moved into the clip. This allows for weapons that share ammo
-			playerOwner->inventory.UseAmmo( ammoType, ammoClip.Get() );
+			ammoClip = ammoAvail;
 		}
-
-		// TODO - idInventory for AI
+		//In D3XP we use ammo as soon as it is moved into the clip. This allows for weapons that share ammo
+		owner->inventory.UseAmmo( ammoType, ammoClip.Get() );
 	}
 
 	renderEntity->gui[ 0 ] = NULL;
@@ -1478,166 +1301,94 @@ void idWeapon::GetWeaponDef( const char* objectname, int ammoinclip )
 	// make sure we have the correct skin
 	UpdateSkin();
 
-	// Init the weapon fxs
-	InitWeaponFx();
-
 	idEntity* ent = worldModel.GetEntity();
 	DetermineTimeGroup( weaponDef->dict.GetBool( "slowmo", "0" ) );
 	if( ent )
 	{
 		ent->DetermineTimeGroup( weaponDef->dict.GetBool( "slowmo", "0" ) );
 	}
-}
-
-/*
-================
-idWeapon::initWeaponFx
-================
-*/
-void idWeapon::InitWeaponFx()
-{
-	const idKeyValue* pkv;
 
 	//Initialize the particles
-	pkv = weaponDef->dict.MatchPrefix( "weapon_particle", NULL );
-	while( pkv )
+	if( !common->IsMultiplayer() )
 	{
-		WeaponParticle_t newParticle;
-		memset( &newParticle, 0, sizeof( newParticle ) );
 
-		idStr prtName = pkv->GetValue();
-
-		strcpy( newParticle.name, prtName.c_str() );
-
-		newParticle.particleFlags.isOffset = weaponDef->dict.GetVector( va( "%s_offset", prtName.c_str() ), "0 0 0", newParticle.offset );  // this offset will be added to the origin
-		newParticle.particleFlags.isDir = weaponDef->dict.GetVector( va( "%s_dir", prtName.c_str() ), "1 0 0", newParticle.dir );  // adjust the dir
-
-		newParticle.particleFlags.isOnWorldModel = weaponDef->dict.GetBool( va( "%s_onWorldModel", prtName.c_str() ), "0" );
-
-		idStr jointName = weaponDef->dict.GetString( va( "%s_joint", prtName.c_str() ) );
-
-		// Smoke is not differentiated as world and view particles
-		if( !newParticle.particleFlags.isOnWorldModel )
+		const idKeyValue* pkv = weaponDef->dict.MatchPrefix( "weapon_particle", NULL );
+		while( pkv )
 		{
-			newParticle.particleFlags.isSmoke = weaponDef->dict.GetBool( va( "%s_smoke", prtName.c_str() ), "0" );
+			WeaponParticle_t newParticle;
+			memset( &newParticle, 0, sizeof( newParticle ) );
+
+			idStr name = pkv->GetValue();
+
+			strcpy( newParticle.name, name.c_str() );
+
+			idStr jointName = weaponDef->dict.GetString( va( "%s_joint", name.c_str() ) );
 			newParticle.joint = animator.GetJointHandle( jointName.c_str() );
-		}
-		else
-		{
-			idEntity* ent = worldModel.GetEntity();
-			newParticle.particleFlags.isSmoke = false;
-			newParticle.joint = ent->GetAnimator()->GetJointHandle( jointName.c_str() );
-		}
+			newParticle.smoke = weaponDef->dict.GetBool( va( "%s_smoke", name.c_str() ) );
+			newParticle.active = false;
+			newParticle.startTime = 0;
 
-		newParticle.particleFlags.isActive = false;
-		newParticle.startTime = 0;
+			idStr particle = weaponDef->dict.GetString( va( "%s_particle", name.c_str() ) );
+			strcpy( newParticle.particlename, particle.c_str() );
 
-		idStr particle = weaponDef->dict.GetString( va( "%s_particle", prtName.c_str() ) );
-		strcpy( newParticle.particlename, particle.c_str() );
-		newParticle.particleFlags.isContinuous = weaponDef->dict.GetBool( va( "%s_continuous", prtName.c_str() ), "1" );
-
-		if( newParticle.particleFlags.isSmoke )
-		{
-			newParticle.particle = static_cast<const idDeclParticle*>( declManager->FindType( DECL_PARTICLE, particle.c_str(), false ) );
-		}
-		else
-		{
-			newParticle.renderEntity.shaderParms[ SHADERPARM_RED ]		= 1.0;
-			newParticle.renderEntity.shaderParms[ SHADERPARM_GREEN ]	= 1.0;
-			newParticle.renderEntity.shaderParms[ SHADERPARM_BLUE ]		= 1.0;
-			newParticle.renderEntity.shaderParms[ SHADERPARM_ALPHA ]	= 1.0;
-
-			if( newParticle.particleFlags.isOnWorldModel )
+			if( newParticle.smoke )
 			{
-				newParticle.renderEntity.suppressSurfaceInViewID = owner->entityNumber + 1; // Make sure this is third person effect only.
+				newParticle.particle = static_cast<const idDeclParticle*>( declManager->FindType( DECL_PARTICLE, particle, false ) );
 			}
 			else
 			{
-				newParticle.renderEntity.weaponDepthHack = weaponDef->dict.GetBool( va( "%s_weaponDepthHack", prtName.c_str() ), "0" );
-				newParticle.renderEntity.allowSurfaceInViewID = owner->entityNumber + 1; // Make sure this is first person effect only.
+				idDict args;
+
+				const idDeclEntityDef* emitterDef = gameLocal.FindEntityDef( "func_emitter", false );
+				args = emitterDef->dict;
+				args.Set( "model", particle.c_str() );
+				args.SetBool( "start_off", true );
+
+				idEntity* ent;
+				gameLocal.SpawnEntityDef( args, &ent, false );
+				newParticle.emitter = ( idFuncEmitter* )ent;
+
+				if( newParticle.emitter != NULL )
+				{
+					newParticle.emitter->BecomeActive( TH_THINK );
+				}
 			}
 
-			const idDeclModelDef* modelDef = static_cast<const idDeclModelDef*>( declManager->FindType( DECL_MODELDEF, newParticle.particlename ) );
-			if( modelDef )
-			{
-				newParticle.renderEntity.hModel = renderModelManager->FindModel( newParticle.particlename );
-			}
-			newParticle.modelDefHandle = -1;
-		}
-		weaponParticles.Set( prtName.c_str(), newParticle );
+			weaponParticles.Set( name.c_str(), newParticle );
 
-		pkv = weaponDef->dict.MatchPrefix( "weapon_particle", pkv );
-	}
-
-	const idKeyValue* lkv = weaponDef->dict.MatchPrefix( "weapon_light", NULL );
-	while( lkv )
-	{
-		WeaponLight_t newLight;
-		memset( &newLight, 0, sizeof( newLight ) );
-
-		newLight.lightHandle = -1;
-		newLight.lightFlags.isActive = false;
-		newLight.startTime = 0;
-
-		idStr lightName = lkv->GetValue(), debug;
-		strcpy( newLight.name, lightName.c_str() );
-
-		newLight.lightFlags.isOffset = weaponDef->dict.GetVector( va( "%s_offset", lightName.c_str() ), "0 0 0", newLight.offset );  // this offset will be added to the origin
-		newLight.lightFlags.isDir = weaponDef->dict.GetVector( va( "%s_dir", lightName.c_str() ), "1 0 0", newLight.dir );  // Direction can be adjusted with this
-
-		idStr lightShader = weaponDef->dict.GetString( va( "%s_shader", lightName.c_str() ) );
-		newLight.light.shader = declManager->FindMaterial( lightShader.c_str(), false );
-
-		float radius = weaponDef->dict.GetFloat( va( "%s_radius", lightName.c_str() ) );
-
-		newLight.light.lightRadius[0] = radius;
-		newLight.light.lightRadius[1] = radius;
-		newLight.light.lightRadius[2] = radius;
-
-		newLight.lightFlags.isAlwaysOn = weaponDef->dict.GetBool( va( "%s_alwaysOn", lightName.c_str() ), "1" );
-		newLight.light.pointLight = weaponDef->dict.GetBool( va( "%s_pointLight", lightName.c_str() ), "0" );
-		newLight.light.noShadows = weaponDef->dict.GetBool( va( "%s_noShadows", lightName.c_str() ), "0" );
-
-		if( !newLight.light.pointLight )
-		{
-			newLight.light.target	= weaponDef->dict.GetVector( va( "%s_target", lightName.c_str() ) );
-			newLight.light.up		= weaponDef->dict.GetVector( va( "%s_up", lightName.c_str() ) );
-			newLight.light.right	= weaponDef->dict.GetVector( va( "%s_right", lightName.c_str() ) );
-			newLight.light.end		= newLight.light.target;
+			pkv = weaponDef->dict.MatchPrefix( "weapon_particle", pkv );
 		}
 
-		if( !newLight.lightFlags.isAlwaysOn )
+		const idKeyValue* lkv = weaponDef->dict.MatchPrefix( "weapon_light", NULL );
+		while( lkv )
 		{
-			newLight.endTime = SEC2MS( weaponDef->dict.GetFloat( va( "%s_endTime", lightName.c_str() ), "0.25" ) );
-		}
+			WeaponLight_t newLight;
+			memset( &newLight, 0, sizeof( newLight ) );
 
-		idVec3 lightColor = weaponDef->dict.GetVector( va( "%s_color", lightName.c_str() ), "1 1 1" );
+			newLight.lightHandle = -1;
+			newLight.active = false;
+			newLight.startTime = 0;
 
-		newLight.light.shaderParms[ SHADERPARM_RED ]		= lightColor[0];
-		newLight.light.shaderParms[ SHADERPARM_GREEN ]		= lightColor[1];
-		newLight.light.shaderParms[ SHADERPARM_BLUE ]		= lightColor[2];
-		newLight.light.shaderParms[ SHADERPARM_TIMESCALE ]	= 1.0f;
+			idStr name = lkv->GetValue();
+			strcpy( newLight.name, name.c_str() );
 
-		newLight.lightFlags.isOnWorldModel = weaponDef->dict.GetBool( va( "%s_onWorldModel", lightName.c_str() ), "0" );
-
-		idStr jointName = weaponDef->dict.GetString( va( "%s_joint", lightName.c_str() ) );
-
-		// third person only light
-		if( newLight.lightFlags.isOnWorldModel )
-		{
-			idEntity* ent = worldModel.GetEntity();
-			newLight.joint = ent->GetAnimator()->GetJointHandle( jointName.c_str() );
-			newLight.light.suppressLightInViewID = owner->entityNumber + 1;
-		}
-		else
-		{
+			idStr jointName = weaponDef->dict.GetString( va( "%s_joint", name.c_str() ) );
 			newLight.joint = animator.GetJointHandle( jointName.c_str() );
+
+			idStr shader = weaponDef->dict.GetString( va( "%s_shader", name.c_str() ) );
+			newLight.light.shader = declManager->FindMaterial( shader, false );
+
+			float radius = weaponDef->dict.GetFloat( va( "%s_radius", name.c_str() ) );
+			newLight.light.lightRadius[0] = newLight.light.lightRadius[1] = newLight.light.lightRadius[2] = radius;
+			newLight.light.pointLight = true;
+			newLight.light.noShadows = true;
+
 			newLight.light.allowLightInViewID = owner->entityNumber + 1;
+
+			weaponLights.Set( name.c_str(), newLight );
+
+			lkv = weaponDef->dict.MatchPrefix( "weapon_light", lkv );
 		}
-
-		weaponLights.Set( lightName.c_str(), newLight );
-
-		lkv = weaponDef->dict.MatchPrefix( "weapon_light", lkv );
 	}
 }
 
@@ -1704,19 +1455,13 @@ void idWeapon::UpdateGUI()
 		return;
 	}
 
-	idPlayer* playerOwner = GetPlayerOwner();
-	if( !playerOwner )
-	{
-		return;
-	}
-
-	if( playerOwner->weaponGone )
+	if( owner->weaponGone )
 	{
 		// dropping weapons was implemented wierd, so we have to not update the gui when it happens or we'll get a negative ammo count
 		return;
 	}
 
-	if( !playerOwner->IsLocallyControlled() )
+	if( !owner->IsLocallyControlled() )
 	{
 		// if updating the hud for a followed client
 		if( gameLocal.GetLocalClientNum() >= 0 && gameLocal.entities[ gameLocal.GetLocalClientNum() ] && gameLocal.entities[ gameLocal.GetLocalClientNum() ]->IsType( idPlayer::Type ) )
@@ -1763,224 +1508,50 @@ void idWeapon::UpdateGUI()
 
 /***********************************************************************
 
-	Model and muzzleflash/flashlight
+	Model and muzzleflash
 
 ***********************************************************************/
 
 /*
 ================
-idWeapon::UpdateWeaponFx
-
-Updates custom weapon particles and lights
+idWeapon::UpdateFlashPosition
 ================
 */
-void idWeapon::UpdateWeaponFx()
-{
-	for( int i = 0; i < weaponParticles.Num(); i++ )
-	{
-		WeaponParticle_t* part = weaponParticles.GetIndex( i );
-
-		if( part->particleFlags.isActive )
-		{
-			if( part->particleFlags.isSmoke )
-			{
-				if( part->joint != INVALID_JOINT )
-				{
-					GetGlobalJointTransform( true, part->joint, muzzleOrigin, muzzleAxis );
-				}
-				else
-				{
-					// default to going straight out the view
-					muzzleOrigin = playerViewOrigin;
-					muzzleAxis = playerViewAxis;
-				}
-
-				if( part->particleFlags.isOffset )
-				{
-					muzzleOrigin += muzzleAxis * part->offset;
-				}
-				if( part->particleFlags.isDir )
-				{
-					idVec3& dir = muzzleAxis[ 0 ];
-
-					dir = muzzleAxis * part->dir;
-					dir.Normalize();
-
-					muzzleAxis = dir.ToMat3();
-				}
-
-				if( !gameLocal.smokeParticles->EmitSmoke( part->particle, part->startTime, gameLocal.random.RandomFloat(), muzzleOrigin, muzzleAxis, timeGroup /* D3XP */ ) )
-				{
-					if( !part->particleFlags.isContinuous )
-					{
-						part->particleFlags.isActive = false;	// all done
-						part->startTime = 0;
-					}
-					else
-					{
-						part->startTime = gameLocal.time; // for continuous effect
-					}
-				}
-			}
-			else
-			{
-
-				if( part->renderEntity.hModel )
-				{
-
-					GetGlobalJointTransform( !part->particleFlags.isOnWorldModel, part->joint, part->renderEntity.origin, part->renderEntity.axis );
-
-					if( part->particleFlags.isOffset )
-					{
-						part->renderEntity.origin += part->renderEntity.axis * part->offset;
-					}
-					if( part->particleFlags.isDir )
-					{
-						idVec3& dir = part->renderEntity.axis[ 0 ];
-
-						dir = part->renderEntity.axis * part->dir;
-						dir.Normalize();
-						part->renderEntity.axis = dir.ToMat3();
-					}
-
-					if( part->modelDefHandle != -1 )
-					{
-						gameRenderWorld->UpdateEntityDef( part->modelDefHandle, &part->renderEntity );
-					}
-					else
-					{
-						part->renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ]	= -MS2SEC( gameLocal.time );
-						part->renderEntity.shaderParms[ SHADERPARM_DIVERSITY ]	= gameLocal.random.RandomFloat(); // For effects like muzzleflashes etc.
-						part->modelDefHandle = gameRenderWorld->AddEntityDef( &part->renderEntity );
-					}
-				}
-			}
-		}
-	}
-
-	for( int i = 0; i < weaponLights.Num(); i++ )
-	{
-		WeaponLight_t* light = weaponLights.GetIndex( i );
-
-		if( light->lightFlags.isActive )
-		{
-			if( GetGlobalJointTransform( !light->lightFlags.isOnWorldModel, light->joint, light->light.origin, light->light.axis ) )
-			{
-				if( light->lightFlags.isOffset )
-				{
-					light->light.origin += light->light.axis[ 0 ] * light->offset[ 0 ] + light->light.axis[ 1 ] * light->offset[ 1 ] + light->light.axis[ 2 ] * light->offset[ 2 ];
-				}
-				if( light->lightFlags.isDir )
-				{
-					idVec3& dir = light->light.axis[ 0 ];
-
-					dir = light->light.axis * light->dir;
-					dir.Normalize();
-					light->light.axis = dir.ToMat3();
-				}
-				if( ( light->lightHandle != -1 ) )
-				{
-					gameRenderWorld->UpdateLightDef( light->lightHandle, &light->light );
-				}
-				else
-				{
-					light->light.shaderParms[ SHADERPARM_TIMEOFFSET ]	= -MS2SEC( gameLocal.time );
-					light->light.shaderParms[ SHADERPARM_DIVERSITY ]	= renderEntity->shaderParms[ SHADERPARM_DIVERSITY ]; // For muzzleflashes.
-					light->lightHandle = gameRenderWorld->AddLightDef( &light->light );
-				}
-
-				if( !light->lightFlags.isAlwaysOn && ( gameLocal.time >= light->endTime ) )
-				{
-					light->endTime -= light->startTime; // readjust the value.
-					Event_StopWeaponLight( light->name );
-				}
-			}
-		}
-	}
-}
-
-/*
-================
-idWeapon::StopWeaponFx
-
-Stops custom weapon particles and lights temporarily
-================
-*/
-void idWeapon::StopWeaponFx()
-{
-	for( int i = 0; i < weaponParticles.Num(); i++ )
-	{
-		WeaponParticle_t* part = weaponParticles.GetIndex( i );
-
-		if( part->particleFlags.isActive )
-		{
-			//Free the particles
-			if( !part->particleFlags.isSmoke && part->modelDefHandle > -1 )
-			{
-				gameRenderWorld->FreeEntityDef( part->modelDefHandle );
-				part->modelDefHandle = -1;
-			}
-		}
-	}
-
-	for( int i = 0; i < weaponLights.Num(); i++ )
-	{
-		WeaponLight_t* light = weaponLights.GetIndex( i );
-		if( light->lightFlags.isActive )
-		{
-			if( light->lightHandle != -1 )
-			{
-				gameRenderWorld->FreeLightDef( light->lightHandle );
-				light->lightHandle = -1;
-			}
-		}
-	}
-}
-
-/*
-================
-idWeapon::UpdateMuzzleFlashPosition
-================
-*/
-void idWeapon::UpdateMuzzleFlashPosition()
+void idWeapon::UpdateFlashPosition()
 {
 	// the flash has an explicit joint for locating it
 	GetGlobalJointTransform( true, flashJointView, muzzleFlash.origin, muzzleFlash.axis );
+
+	if( isPlayerFlashlight )
+	{
+		static float pscale = 2.0f;
+		static float yscale = 0.25f;
+
+// 		static idVec3 baseAdjustPos = vec3_zero;	//idVec3( 0.0f, 10.0f, 0.0f );
+// 		idVec3 adjustPos = baseAdjustPos;
+//		muzzleFlash.origin += adjustPos.x * muzzleFlash.axis[1] + adjustPos.y * muzzleFlash.axis[0] + adjustPos.z * muzzleFlash.axis[2];
+		muzzleFlash.origin += owner->GetViewBob();
+
+//		static idAngles baseAdjustAng = ang_zero;	//idAngles( 0.0f, 10.0f, 0.0f );
+		idAngles adjustAng = /*baseAdjustAng +*/ idAngles( fraccos * yscale, 0.0f, fraccos2 * pscale );
+		idAngles bobAngles = owner->GetViewBobAngles();
+		SwapValues( bobAngles.pitch, bobAngles.roll );
+		adjustAng += bobAngles * 3.0f;
+		muzzleFlash.axis = adjustAng.ToMat3() * muzzleFlash.axis /** adjustAng.ToMat3()*/;
+	}
 
 	// if the desired point is inside or very close to a wall, back it up until it is clear
 	idVec3	start = muzzleFlash.origin - playerViewAxis[0] * 16;
 	idVec3	end = muzzleFlash.origin + playerViewAxis[0] * 8;
 	trace_t	tr;
 	gameLocal.clip.TracePoint( tr, start, end, MASK_SHOT_RENDERMODEL, owner );
-
 	// be at least 8 units away from a solid
 	muzzleFlash.origin = tr.endpos - playerViewAxis[0] * 8;
 
+	muzzleFlash.noShadows = !g_weaponShadows.GetBool();
+
 	// put the world muzzle flash on the end of the joint, no matter what
 	GetGlobalJointTransform( false, flashJointWorld, worldMuzzleFlash.origin, worldMuzzleFlash.axis );
-}
-
-/*
-================
-idWeapon::UpdateFlashlightPosition
-================
-*/
-void idWeapon::UpdateFlashlightPosition()
-{
-	// the flash has an explicit joint for locating it
-	GetGlobalJointTransform( true, flashJointView, flashLight.origin, flashLight.axis );
-
-	// if the desired point is inside or very close to a wall, back it up until it is clear
-	idVec3	start = flashLight.origin - playerViewAxis[0] * 16;
-	idVec3	end = flashLight.origin + playerViewAxis[0] * 8;
-	trace_t	tr;
-	gameLocal.clip.TracePoint( tr, start, end, MASK_SHOT_RENDERMODEL, owner );
-
-	// be at least 8 units away from a solid
-	flashLight.origin = tr.endpos - playerViewAxis[0] * 8;
-
-	// dont cast shadows, it causes weird geo issues with weapons like the flashlight
-	flashLight.noShadows = true;
 }
 
 /*
@@ -2001,7 +1572,7 @@ void idWeapon::MuzzleFlashLight()
 		return;
 	}
 
-	UpdateMuzzleFlashPosition();
+	UpdateFlashPosition();
 
 	// these will be different each fire
 	muzzleFlash.shaderParms[ SHADERPARM_TIMEOFFSET ]	= -MS2SEC( gameLocal.time );
@@ -2022,39 +1593,6 @@ void idWeapon::MuzzleFlashLight()
 	{
 		muzzleFlashHandle = gameRenderWorld->AddLightDef( &muzzleFlash );
 		worldMuzzleFlashHandle = gameRenderWorld->AddLightDef( &worldMuzzleFlash );
-	}
-}
-
-/*
-================
-idWeapon::FlashLight
-================
-*/
-void idWeapon::FlashLight()
-{
-
-	if( !flashlightOn && !flashLight.lightRadius[0] )
-	{
-		return;
-	}
-
-	if( flashJointView == INVALID_JOINT )
-	{
-		return;
-	}
-
-	UpdateFlashlightPosition();
-
-	// the light will be removed at this time
-	//muzzleFlashEnd = gameLocal.time + flashTime;
-
-	if( flashLightHandle != -1 )
-	{
-		gameRenderWorld->UpdateLightDef( flashLightHandle, &flashLight );
-	}
-	else
-	{
-		flashLightHandle = gameRenderWorld->AddLightDef( &flashLight );
 	}
 }
 
@@ -2104,6 +1642,7 @@ void idWeapon::FlashlightOn()
 	func = scriptObject.GetFunction( "TurnOn" );
 	if( !func )
 	{
+		common->Warning( "Can't find function 'TurnOn' in object '%s'", scriptObject.GetTypeName() );
 		return;
 	}
 
@@ -2132,6 +1671,7 @@ void idWeapon::FlashlightOff()
 	func = scriptObject.GetFunction( "TurnOff" );
 	if( !func )
 	{
+		common->Warning( "Can't find function 'TurnOff' in object '%s'", scriptObject.GetTypeName() );
 		return;
 	}
 
@@ -2357,10 +1897,6 @@ void idWeapon::ShowWeapon()
 	{
 		MuzzleFlashLight();
 	}
-	if( flashlightOn )
-	{
-		FlashLight();
-	}
 }
 
 /*
@@ -2404,16 +1940,11 @@ void idWeapon::OwnerDied()
 		// Update the grabber effects
 		if( /*!common->IsMultiplayer() &&*/ grabberState != -1 )
 		{
-			idPlayer* playerOwner = GetPlayerOwner();
-			if( playerOwner )
-			{
-				grabber.Update( playerOwner, hide );
-			}
+			grabber.Update( owner, hide );
 		}
 	}
 
 	Hide();
-
 	if( worldModel.GetEntity() )
 	{
 		worldModel.GetEntity()->Hide();
@@ -2968,63 +2499,66 @@ idWeapon::PresentWeapon
 */
 void idWeapon::PresentWeapon( bool showViewModel )
 {
-	idPlayer* playerOwner = GetPlayerOwner();
+	playerViewOrigin = owner->firstPersonViewOrigin;
+	playerViewAxis = owner->firstPersonViewAxis;
 
-	// moved from ReadFromSnapshot (with changes)
-	if( common->IsClient() && IsLinked() && canSyncLight && snapshotLight > 0 )
+	if( isPlayerFlashlight )
 	{
-		bool playerLightOn = ( bool )( snapshotLight - 1 );
-		if( playerOwner != NULL && !playerOwner->IsLocallyControlled() && playerLightOn != lightOn )
-		{
-			// flashlight
-			Reload();
-		}
-		snapshotLight = 0;
-	}
+		viewWeaponOrigin = playerViewOrigin;
+		viewWeaponAxis = playerViewAxis;
 
-	if( playerOwner )
-	{
-		playerViewOrigin = playerOwner->firstPersonViewOrigin;
-		playerViewAxis = playerOwner->firstPersonViewAxis;
+		fraccos = cos( ( gameLocal.framenum & 255 ) / 127.0f * idMath::PI );
 
-		// calculate weapon position based on player movement bobbing
-		playerOwner->CalculateViewWeaponPos( viewWeaponOrigin, viewWeaponAxis );
+		static unsigned int divisor = 32;
+		unsigned int val = ( gameLocal.framenum + gameLocal.framenum / divisor ) & 255;
+		fraccos2 = cos( val / 127.0f * idMath::PI );
+
+		static idVec3 baseAdjustPos = idVec3( -8.0f, -20.0f, -10.0f );		// rt, fwd, up
+		static float pscale = 0.5f;
+		static float yscale = 0.125f;
+		idVec3 adjustPos = baseAdjustPos;// + ( idVec3( fraccos, 0.0f, fraccos2 ) * scale );
+		viewWeaponOrigin += adjustPos.x * viewWeaponAxis[1] + adjustPos.y * viewWeaponAxis[0] + adjustPos.z * viewWeaponAxis[2];
+//		viewWeaponOrigin += owner->viewBob;
+
+		static idAngles baseAdjustAng = idAngles( 88.0f, 10.0f, 0.0f );		//
+		idAngles adjustAng = baseAdjustAng + idAngles( fraccos * pscale, fraccos2 * yscale, 0.0f );
+//		adjustAng += owner->GetViewBobAngles();
+		viewWeaponAxis = adjustAng.ToMat3() * viewWeaponAxis;
 	}
 	else
 	{
-		owner->GetViewPos( playerViewOrigin, playerViewAxis );
-		viewWeaponOrigin = playerViewOrigin;
-		viewWeaponAxis = playerViewAxis;
-	}
+		// calculate weapon position based on player movement bobbing
+		owner->CalculateViewWeaponPos( viewWeaponOrigin, viewWeaponAxis );
 
-	// hide offset is for dropping the gun when approaching a GUI or NPC
-	// This is simpler to manage than doing the weapon put-away animation
-	if( gameLocal.time - hideStartTime < hideTime )
-	{
-		float frac = ( float )( gameLocal.time - hideStartTime ) / ( float )hideTime;
-		if( hideStart < hideEnd )
+		// hide offset is for dropping the gun when approaching a GUI or NPC
+		// This is simpler to manage than doing the weapon put-away animation
+		if( gameLocal.time - hideStartTime < hideTime )
 		{
-			frac = 1.0f - frac;
-			frac = 1.0f - frac * frac;
+			float frac = ( float )( gameLocal.time - hideStartTime ) / ( float )hideTime;
+			if( hideStart < hideEnd )
+			{
+				frac = 1.0f - frac;
+				frac = 1.0f - frac * frac;
+			}
+			else
+			{
+				frac = frac * frac;
+			}
+			hideOffset = hideStart + ( hideEnd - hideStart ) * frac;
 		}
 		else
 		{
-			frac = frac * frac;
+			hideOffset = hideEnd;
+			if( hide && disabled )
+			{
+				Hide();
+			}
 		}
-		hideOffset = hideStart + ( hideEnd - hideStart ) * frac;
-	}
-	else
-	{
-		hideOffset = hideEnd;
-		if( hide && disabled )
-		{
-			Hide();
-		}
-	}
-	viewWeaponOrigin += hideOffset * viewWeaponAxis[ 2 ];
+		viewWeaponOrigin += hideOffset * viewWeaponAxis[ 2 ];
 
-	// kick up based on repeat firing
-	MuzzleRise( viewWeaponOrigin, viewWeaponAxis );
+		// kick up based on repeat firing
+		MuzzleRise( viewWeaponOrigin, viewWeaponAxis );
+	}
 
 	// set the physics position and orientation
 	GetPhysics()->SetOrigin( viewWeaponOrigin );
@@ -3043,7 +2577,7 @@ void idWeapon::PresentWeapon( bool showViewModel )
 	renderEntity->allowSurfaceInViewID = owner->entityNumber + 1;
 
 	// crunch the depth range so it never pokes into walls this breaks the machine gun gui
-	renderEntity->weaponDepthHack = true;
+	renderEntity->weaponDepthHack = g_useWeaponDepthHack.GetBool();
 
 	// present the model
 	if( showViewModel )
@@ -3110,10 +2644,68 @@ void idWeapon::PresentWeapon( bool showViewModel )
 		}
 	}
 
-	// disabled flag ensures that fx wont be played when entering cinematic
-	if( showViewModel && !disabled )
+	if( showViewModel && !hide )
 	{
-		UpdateWeaponFx();
+
+		for( int i = 0; i < weaponParticles.Num(); i++ )
+		{
+			WeaponParticle_t* part = weaponParticles.GetIndex( i );
+
+			if( part->active )
+			{
+				if( part->smoke )
+				{
+					if( part->joint != INVALID_JOINT )
+					{
+						GetGlobalJointTransform( true, part->joint, muzzleOrigin, muzzleAxis );
+					}
+					else
+					{
+						// default to going straight out the view
+						muzzleOrigin = playerViewOrigin;
+						muzzleAxis = playerViewAxis;
+					}
+					if( !gameLocal.smokeParticles->EmitSmoke( part->particle, part->startTime, gameLocal.random.RandomFloat(), muzzleOrigin, muzzleAxis, timeGroup /*_D3XP*/ ) )
+					{
+						part->active = false;	// all done
+						part->startTime = 0;
+					}
+				}
+				else
+				{
+					if( part->emitter != NULL )
+					{
+						//Manually update the position of the emitter so it follows the weapon
+						renderEntity_t* rendEnt = part->emitter->GetRenderEntity();
+						GetGlobalJointTransform( true, part->joint, rendEnt->origin, rendEnt->axis );
+
+						if( part->emitter->GetModelDefHandle() != -1 )
+						{
+							gameRenderWorld->UpdateEntityDef( part->emitter->GetModelDefHandle(), rendEnt );
+						}
+					}
+				}
+			}
+		}
+
+		for( int i = 0; i < weaponLights.Num(); i++ )
+		{
+			WeaponLight_t* light = weaponLights.GetIndex( i );
+
+			if( light->active )
+			{
+
+				GetGlobalJointTransform( true, light->joint, light->light.origin, light->light.axis );
+				if( ( light->lightHandle != -1 ) )
+				{
+					gameRenderWorld->UpdateLightDef( light->lightHandle, &light->light );
+				}
+				else
+				{
+					light->lightHandle = gameRenderWorld->AddLightDef( &light->light );
+				}
+			}
+		}
 	}
 
 	// remove the muzzle flash light when it's done
@@ -3131,32 +2723,15 @@ void idWeapon::PresentWeapon( bool showViewModel )
 		}
 	}
 
-	// remove the flash light when it's done
-	if( !flashlightOn || IsHidden() )
-	{
-		if( flashLightHandle != -1 )
-		{
-			gameRenderWorld->FreeLightDef( flashLightHandle );
-			flashLightHandle = -1;
-		}
-	}
-
 	// update the muzzle flash light, so it moves with the gun
 	if( muzzleFlashHandle != -1 )
 	{
-		UpdateMuzzleFlashPosition();
+		UpdateFlashPosition();
 		gameRenderWorld->UpdateLightDef( muzzleFlashHandle, &muzzleFlash );
 		gameRenderWorld->UpdateLightDef( worldMuzzleFlashHandle, &worldMuzzleFlash );
-	}
-
-	// update the flash light, so it moves with the gun
-	if( flashLightHandle != -1 )
-	{
-		UpdateFlashlightPosition();
-		gameRenderWorld->UpdateLightDef( flashLightHandle, &flashLight );
 
 		// wake up monsters with the flashlight
-		if( !common->IsMultiplayer() && flashlightOn && !owner->fl.notarget )
+		if( !common->IsMultiplayer() && lightOn && !owner->fl.notarget )
 		{
 			AlertMonsters();
 		}
@@ -3190,26 +2765,28 @@ void idWeapon::PresentWeapon( bool showViewModel )
 	float lowMagnitude = weaponDef->dict.GetFloat( "controllerConstantShakeLowMag" );
 	int lowDuration = weaponDef->dict.GetInt( "controllerConstantShakeLowTime" );
 
-	if( playerOwner )
+	if( owner->IsLocallyControlled() )
 	{
-		if( playerOwner->IsLocallyControlled() )
-		{
-			playerOwner->SetControllerShake( highMagnitude, highDuration, lowMagnitude, lowDuration );
-		}
+		owner->SetControllerShake( highMagnitude, highDuration, lowMagnitude, lowDuration );
 	}
 }
 
 /*
 ================
-idWeapon::RemoveFlashlight
+idWeapon::RemoveMuzzleFlashlight
 ================
 */
-void idWeapon::RemoveFlashlight()
+void idWeapon::RemoveMuzzleFlashlight()
 {
-	if( flashLightHandle != -1 )
+	if( muzzleFlashHandle != -1 )
 	{
-		gameRenderWorld->FreeLightDef( flashLightHandle );
-		flashLightHandle = -1;
+		gameRenderWorld->FreeLightDef( muzzleFlashHandle );
+		muzzleFlashHandle = -1;
+	}
+	if( worldMuzzleFlashHandle != -1 )
+	{
+		gameRenderWorld->FreeLightDef( worldMuzzleFlashHandle );
+		worldMuzzleFlashHandle = -1;
 	}
 }
 
@@ -3221,7 +2798,6 @@ idWeapon::EnterCinematic
 void idWeapon::EnterCinematic()
 {
 	StopSound( SND_CHANNEL_ANY, false );
-	StopWeaponFx();
 
 	if( isLinked )
 	{
@@ -3236,11 +2812,7 @@ void idWeapon::EnterCinematic()
 		WEAPON_RAISEWEAPON	= false;
 		WEAPON_LOWERWEAPON	= false;
 
-		idPlayer* playerOwner = GetPlayerOwner();
-		if( playerOwner )
-		{
-			grabber.Update( playerOwner, true );
-		}
+		grabber.Update( this->GetOwner(), true );
 	}
 
 	disabled = true;
@@ -3289,12 +2861,10 @@ idWeapon::GetZoomFov
 int	idWeapon::GetZoomFov()
 {
 	int fov;
-
-	idPlayer* playerOwner = GetPlayerOwner();
-	if( playerOwner )
+	if( owner )
 	{
 		float invAmpFactor = idMath::Tan( DEG2RAD( ( float )zoomFov * 0.5f ) ) / idMath::Tan( DEG2RAD( 90.0f * 0.5f ) );
-		float newFov = RAD2DEG( 2.0f * idMath::ATan( invAmpFactor * idMath::Tan( DEG2RAD( playerOwner->DefaultFov() ) * 0.5f ) ) );
+		float newFov = RAD2DEG( 2.0f * idMath::ATan( invAmpFactor * idMath::Tan( DEG2RAD( owner->DefaultFov() ) * 0.5f ) ) );
 		fov = idMath::ClampInt( 1, 179, ( int )newFov );
 	}
 	else
@@ -3392,7 +2962,7 @@ const char* idWeapon::GetAmmoNameForNum( ammo_t ammonum )
 		return NULL;
 	}
 
-	idStr::snPrintf( text, sizeof( text ), "%d", ammonum );
+	sprintf( text, "%d", ammonum );
 
 	num = ammoDict->GetNumKeyVals();
 	for( i = 0; i < num; i++ )
@@ -3427,7 +2997,7 @@ const char* idWeapon::GetAmmoPickupNameForNum( ammo_t ammonum )
 
 	const char* name = GetAmmoNameForNum( ammonum );
 
-	if( name != NULL && *name != '\0' )
+	if( name != NULL && *name != NULL )
 	{
 		num = ammoDict->GetNumKeyVals();
 		for( i = 0; i < num; i++ )
@@ -3450,14 +3020,9 @@ idWeapon::AmmoAvailable
 */
 int idWeapon::AmmoAvailable() const
 {
-	if( idPlayer* playerOwner = GetPlayerOwner() )
+	if( owner )
 	{
-		return playerOwner->inventory.HasAmmo( ammoType, ammoRequired );
-	}
-	else if( owner )
-	{
-		// TODO: idInventory for AI
-		return 1000;
+		return owner->inventory.HasAmmo( ammoType, ammoRequired );
 	}
 	else
 	{
@@ -3554,15 +3119,10 @@ Returns the total number of rounds regardless of the required ammo
 */
 int idWeapon::AmmoCount() const
 {
-	idPlayer* playerOwner = GetPlayerOwner();
-	if( playerOwner )
+
+	if( owner )
 	{
-		return playerOwner->inventory.HasAmmo( ammoType, 1 );
-	}
-	else if( owner )
-	{
-		// TODO: idInventory for AI
-		return 1000;
+		return owner->inventory.HasAmmo( ammoType, 1 );
 	}
 	else
 	{
@@ -3579,15 +3139,8 @@ void idWeapon::WriteToSnapshot( idBitMsg& msg ) const
 {
 	msg.WriteBits( ammoClip.Get(), ASYNC_PLAYER_INV_CLIP_BITS );
 	msg.WriteBits( worldModel.GetSpawnId(), 32 );
-
-	int lightState = 0;
-	if( canSyncLight )
-	{
-		lightState = ( int )lightOn + 1;
-	}
-	msg.WriteBits( lightState, 2 );
+	msg.WriteBits( lightOn, 1 );
 	msg.WriteBits( isFiring ? 1 : 0, 1 );
-	msg.WriteBits( isAux, AUX_BITS );
 }
 
 /*
@@ -3599,9 +3152,8 @@ void idWeapon::ReadFromSnapshot( const idBitMsg& msg )
 {
 	const int snapshotAmmoClip = msg.ReadBits( ASYNC_PLAYER_INV_CLIP_BITS );
 	worldModel.SetSpawnId( msg.ReadBits( 32 ) );
-	snapshotLight = msg.ReadBits( 2 );
+	const bool snapshotLightOn = msg.ReadBits( 1 ) != 0;
 	isFiring = msg.ReadBits( 1 ) != 0;
-	isAux = msg.ReadBits( AUX_BITS );
 
 	// Local clients predict the ammo in the clip. Only use the ammo cpunt from the snapshot for local clients
 	// if the server has processed the same usercmd in which we predicted the ammo count.
@@ -3611,12 +3163,36 @@ void idWeapon::ReadFromSnapshot( const idBitMsg& msg )
 	}
 
 	// WEAPON_NETFIRING is only turned on for other clients we're predicting. not for local client
-	idPlayer* playerOwner = GetPlayerOwner();
-	if( playerOwner )
+	if( owner && !owner->IsLocallyControlled() && WEAPON_NETFIRING.IsLinked() )
 	{
-		if( !playerOwner->IsLocallyControlled() && WEAPON_NETFIRING.IsLinked() )
+
+		// immediately go to the firing state so we don't skip fire animations
+		if( !WEAPON_NETFIRING && isFiring )
 		{
-			WEAPON_NETFIRING = isFiring;
+			idealState = "Fire";
+		}
+
+		// immediately switch back to idle
+		if( WEAPON_NETFIRING && !isFiring )
+		{
+			idealState = "Idle";
+		}
+
+		WEAPON_NETFIRING = isFiring;
+		WEAPON_ATTACK = isFiring;
+	}
+
+	// Only update the flashlight state if it has changed, and if this isn't the local player.
+	// The local player sets their flashlight immediately for responsiveness.
+	if( owner != NULL && !owner->IsLocallyControlled() && lightOn != snapshotLightOn )
+	{
+		if( snapshotLightOn )
+		{
+			FlashlightOn();
+		}
+		else
+		{
+			FlashlightOff();
 		}
 	}
 }
@@ -3634,16 +3210,12 @@ bool idWeapon::ClientReceiveEvent( int event, int time, const idBitMsg& msg )
 		case EVENT_RELOAD:
 		{
 			// Local clients predict reloads, only process this event for remote clients.
-			idPlayer* playerOwner = GetPlayerOwner();
-			if( playerOwner )
+			if( owner != NULL && !owner->IsLocallyControlled() && ( gameLocal.time - time < 1000 ) )
 			{
-				if( !playerOwner->IsLocallyControlled() && ( gameLocal.time - time < 1000 ) )
+				if( WEAPON_NETRELOAD.IsLinked() )
 				{
-					if( WEAPON_NETRELOAD.IsLinked() )
-					{
-						WEAPON_NETRELOAD = true;
-						WEAPON_NETENDRELOAD = false;
-					}
+					WEAPON_NETRELOAD = true;
+					WEAPON_NETENDRELOAD = false;
 				}
 			}
 			return true;
@@ -3651,13 +3223,9 @@ bool idWeapon::ClientReceiveEvent( int event, int time, const idBitMsg& msg )
 		case EVENT_ENDRELOAD:
 		{
 			// Local clients predict reloads, only process this event for remote clients.
-			idPlayer* playerOwner = GetPlayerOwner();
-			if( playerOwner )
+			if( owner != NULL && !owner->IsLocallyControlled() && WEAPON_NETENDRELOAD.IsLinked() )
 			{
-				if( !playerOwner->IsLocallyControlled() && WEAPON_NETENDRELOAD.IsLinked() )
-				{
-					WEAPON_NETENDRELOAD = true;
-				}
+				WEAPON_NETENDRELOAD = true;
 			}
 			return true;
 		}
@@ -3673,10 +3241,10 @@ bool idWeapon::ClientReceiveEvent( int event, int time, const idBitMsg& msg )
 			return true;
 		}
 		default:
-			break;
+		{
+			return idEntity::ClientReceiveEvent( event, time, msg );
+		}
 	}
-
-	return idEntity::ClientReceiveEvent( event, time, msg );
 }
 
 /***********************************************************************
@@ -3722,6 +3290,27 @@ void idWeapon::Event_WeaponState( const char* statename, int blendFrames )
 	}
 
 	idealState = statename;
+
+	// HACK, Fixes reload animation on player not playing on second reload ( on non local client players, and only with host viewing. )
+	if( common->IsMultiplayer() && strcmp( weaponDef->GetName(), "weapon_shotgun_double_mp" ) == 0 )
+	{
+		if( strcmp( statename, "Reload" ) != 0 )
+		{
+			if( status ==  WP_RELOAD )
+			{
+				status =  WP_READY;
+			}
+		}
+	}
+
+	if( !idealState.Icmp( "Fire" ) )
+	{
+		isFiring = true;
+	}
+	else
+	{
+		isFiring = false;
+	}
 
 	animBlendFrames = blendFrames;
 	thread->DoneProcessing();
@@ -3801,12 +3390,7 @@ void idWeapon::Event_WeaponRising()
 	{
 		WEAPON_LOWERWEAPON = false;
 	}
-
-	idPlayer* playerOwner = GetPlayerOwner();
-	if( playerOwner )
-	{
-		playerOwner->WeaponRisingCallback();
-	}
+	owner->WeaponRisingCallback();
 }
 
 /*
@@ -3822,12 +3406,7 @@ void idWeapon::Event_WeaponLowering()
 	{
 		WEAPON_RAISEWEAPON = false;
 	}
-
-	idPlayer* playerOwner = GetPlayerOwner();
-	if( playerOwner )
-	{
-		playerOwner->WeaponLoweringCallback();
-	}
+	owner->WeaponLoweringCallback();
 }
 
 /*
@@ -3837,17 +3416,14 @@ idWeapon::Event_UseAmmo
 */
 void idWeapon::Event_UseAmmo( int amount )
 {
-	idPlayer* playerOwner = GetPlayerOwner();
-
-	if( owner == NULL || ( playerOwner && common->IsClient() && !playerOwner->IsLocallyControlled() ) )
+	if( owner == NULL || ( common->IsClient() && !owner->IsLocallyControlled() ) )
 	{
 		return;
 	}
 
-	if( clipSize == 0 && playerOwner )
+	if( clipSize == 0 )
 	{
-		// TODO: idInventory for AIs
-		playerOwner->inventory.UseAmmo( ammoType, ( powerAmmo ) ? amount : ( amount * ammoRequired ) );
+		owner->inventory.UseAmmo( ammoType, ( powerAmmo ) ? amount : ( amount * ammoRequired ) );
 	}
 
 	if( clipSize && ammoRequired )
@@ -3867,15 +3443,15 @@ idWeapon::Event_AddToClip
 */
 void idWeapon::Event_AddToClip( int amount )
 {
-	idPlayer* playerOwner = GetPlayerOwner();
+	int ammoAvail;
 
-	if( owner == NULL || ( playerOwner && common->IsClient() && !playerOwner->IsLocallyControlled() ) )
+	if( owner == NULL || ( common->IsClient() && !owner->IsLocallyControlled() ) )
 	{
 		return;
 	}
 
 	int oldAmmo = ammoClip.Get();
-	int ammoAvail = AmmoAvailable() + AmmoInClip();
+	ammoAvail = owner->inventory.HasAmmo( ammoType, ammoRequired ) + AmmoInClip();
 
 	ammoClip += amount;
 	if( ammoClip.Get() > clipSize )
@@ -3891,10 +3467,7 @@ void idWeapon::Event_AddToClip( int amount )
 
 	// for shared ammo we need to use the ammo when it is moved into the clip
 	int usedAmmo = ammoClip.Get() - oldAmmo;
-	if( playerOwner )
-	{
-		playerOwner->inventory.UseAmmo( ammoType, usedAmmo );
-	}
+	owner->inventory.UseAmmo( ammoType, usedAmmo );
 }
 
 /*
@@ -3915,7 +3488,7 @@ idWeapon::Event_AmmoAvailable
 */
 void idWeapon::Event_AmmoAvailable()
 {
-	int ammoAvail = AmmoAvailable();
+	int ammoAvail = owner->inventory.HasAmmo( ammoType, ammoRequired );
 	ammoAvail += AmmoInClip();
 
 	idThread::ReturnFloat( ammoAvail );
@@ -3928,7 +3501,7 @@ idWeapon::Event_TotalAmmoCount
 */
 void idWeapon::Event_TotalAmmoCount()
 {
-	int ammoAvail = AmmoCount();
+	int ammoAvail = owner->inventory.HasAmmo( ammoType, 1 );
 	idThread::ReturnFloat( ammoAvail );
 }
 
@@ -3951,22 +3524,14 @@ void idWeapon::Event_AutoReload()
 {
 	assert( owner );
 
-	idPlayer* playerOwner = GetPlayerOwner();
-	if( !playerOwner )
-	{
-		// idAI always auto-reload
-		idThread::ReturnFloat( 1.0f );
-		return;
-	}
-
-	if( common->IsClient() && !playerOwner->IsLocallyControlled() )
+	if( common->IsClient() && owner != NULL && !owner->IsLocallyControlled() )
 	{
 		idThread::ReturnFloat( 0.0f );
 		return;
 	}
 
 	idLobbyBase& lobby = session->GetActingGameStateLobbyBase();
-	lobbyUserID_t& lobbyUserID = gameLocal.lobbyUserIDs[playerOwner->entityNumber];
+	lobbyUserID_t& lobbyUserID = gameLocal.lobbyUserIDs[owner->entityNumber];
 	idThread::ReturnFloat( lobby.GetLobbyUserWeaponAutoReload( lobbyUserID ) );
 }
 
@@ -4016,8 +3581,7 @@ void idWeapon::Event_PlayAnim( int channel, const char* animname )
 	}
 	else
 	{
-		idPlayer* playerOwner = GetPlayerOwner();
-		if( !( playerOwner && playerOwner->GetInfluenceLevel() ) )
+		if( !( owner && owner->GetInfluenceLevel() ) )
 		{
 			Show();
 		}
@@ -4054,8 +3618,7 @@ void idWeapon::Event_PlayCycle( int channel, const char* animname )
 	}
 	else
 	{
-		idPlayer* playerOwner = GetPlayerOwner();
-		if( !( playerOwner && playerOwner->GetInfluenceLevel() ) )
+		if( !( owner && owner->GetInfluenceLevel() ) )
 		{
 			Show();
 		}
@@ -4116,11 +3679,7 @@ idWeapon::Event_Next
 void idWeapon::Event_Next()
 {
 	// change to another weapon if possible
-	idPlayer* playerOwner = GetPlayerOwner();
-	if( playerOwner )
-	{
-		playerOwner->NextBestWeapon();
-	}
+	owner->NextBestWeapon();
 }
 
 /*
@@ -4155,8 +3714,7 @@ void idWeapon::Event_SetSkin( const char* skinname )
 	}
 
 	// Hack, don't send message if flashlight, because clients process the flashlight instantly.
-	idPlayer* skinPlayerOwner = GetPlayerOwner();
-	if( common->IsServer() && owner && ( !skinPlayerOwner || skinPlayerOwner->GetCurrentWeaponSlot() != skinPlayerOwner->weapon_flashlight ) )
+	if( common->IsServer() && !isPlayerFlashlight && owner && owner->GetCurrentWeaponSlot() != owner->weapon_flashlight )
 	{
 		idBitMsg			msg;
 		byte				msgBuf[MAX_EVENT_PARAM_SIZE];
@@ -4169,29 +3727,10 @@ void idWeapon::Event_SetSkin( const char* skinname )
 
 /*
 ================
-idWeapon::Event_MuzzleFlashlight
-================
-*/
-void idWeapon::Event_Flashlight( int enable )
-{
-	if( enable )
-	{
-		flashlightOn = true;
-		FlashLight();
-	}
-	else
-	{
-		flashlightOn = false;
-		//muzzleFlashEnd = 0;
-	}
-}
-
-/*
-================
 idWeapon::Event_Flashlight
 ================
 */
-void idWeapon::Event_MuzzleFlashlight( int enable )
+void idWeapon::Event_Flashlight( int enable )
 {
 	if( enable )
 	{
@@ -4329,39 +3868,22 @@ idWeapon::GetProjectileLaunchOriginAndAxis
 */
 void idWeapon::GetProjectileLaunchOriginAndAxis( idVec3& origin, idMat3& axis )
 {
-	idPlayer* playerOwner = GetPlayerOwner();
-	if( playerOwner )
-	{
-		// calculate the muzzle position
-		if( barrelJointView != INVALID_JOINT && projectileDict.GetBool( "launchFromBarrel" ) )
-		{
-			// there is an explicit joint for the muzzle
-			GetGlobalJointTransform( true, barrelJointView, origin, axis );
-		}
-		else
-		{
-			// go straight out of the view
-			origin = playerViewOrigin;
-			axis = playerViewAxis;
-		}
+	assert( owner != NULL );
 
-		axis = playerViewAxis;	// Fix for plasma rifle not firing correctly on initial shot of a burst fire
+	// calculate the muzzle position
+	if( barrelJointView != INVALID_JOINT && projectileDict.GetBool( "launchFromBarrel" ) )
+	{
+		// there is an explicit joint for the muzzle
+		GetGlobalJointTransform( true, barrelJointView, origin, axis );
 	}
 	else
 	{
-		// calculate the muzzle position
-		if( barrelJointWorld != INVALID_JOINT )
-		{
-			idMat3 jointAxis;
-			GetGlobalJointTransform( false, barrelJointWorld, origin, jointAxis );
-		}
-		else
-		{
-			owner->GetViewPos( origin, axis );
-		}
-
-		owner->GetAimAxisFromOrigin( origin, axis );
+		// go straight out of the view
+		origin = playerViewOrigin;
+		axis = playerViewAxis;
 	}
+
+	axis = playerViewAxis;	// Fix for plasma rifle not firing correctly on initial shot of a burst fire
 }
 
 /*
@@ -4385,8 +3907,6 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 
 	assert( owner != NULL );
 
-	idPlayer* playerOwner = GetPlayerOwner();
-
 	if( IsHidden() )
 	{
 		return;
@@ -4400,7 +3920,7 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 	}
 
 	// Predict clip ammo on locally controlled MP clients.
-	if( common->IsServer() || ( playerOwner && playerOwner->IsLocallyControlled() ) )
+	if( common->IsServer() || owner->IsLocallyControlled() )
 	{
 		if( ( clipSize != 0 ) && ( ammoClip.Get() <= 0 ) )
 		{
@@ -4422,13 +3942,13 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 			}
 		}
 
-		if( clipSize == 0 && playerOwner )
+		if( clipSize == 0 )
 		{
 			//Weapons with a clip size of 0 launch straight from inventory without moving to a clip
 
 			//In D3XP we used the ammo when the ammo was moved into the clip so we don't want to
 			//use it now.
-			playerOwner->inventory.UseAmmo( ammoType, ( powerAmmo ) ? dmgPower : ammoRequired );
+			owner->inventory.UseAmmo( ammoType, ( powerAmmo ) ? dmgPower : ammoRequired );
 		}
 
 		if( clipSize && ammoRequired && !g_infiniteAmmo.GetBool() )
@@ -4440,7 +3960,7 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 	if( !silent_fire )
 	{
 		// wake up nearby monsters
-		gameLocal.AlertAI( owner, playerViewOrigin );
+		gameLocal.AlertAI( owner );
 	}
 
 	// set the shader parm to the time of last projectile firing,
@@ -4468,51 +3988,10 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 		kick_endtime = gameLocal.realClientTime + muzzle_kick_maxtime;
 	}
 
-	bool barrelLaunch = projectileDict.GetBool( "launchFromBarrel" );
-	bool beam = ( projectileDict.GetFloat( "fuse" ) <= 0.0f || projectileDict.GetBool( "rail_beam" ) );
-	bool tracer = ( !beam && projectileDict.GetBool( "tracers" ) && ( projectileDict.GetFloat( "tracer_probability", "1.0" ) > gameLocal.random.RandomFloat() ) );
-
-	// Get player view origin/axis for trace
-	idVec3 view_pos = muzzleOrigin + muzzleAxis[ 0 ] * 2.0f;   // fallback
-	idMat3 viewAxis = muzzleAxis;
-	if( playerOwner )
-	{
-		const renderView_t* view = playerOwner->GetRenderView();
-		if( view )
-		{
-			view_pos = view->vieworg;
-			viewAxis = view->viewaxis;
-		}
-	}
-
-	idVec3 barrelPos = muzzleOrigin;           // default barrel position
-	float muzzleDistFromView = 0.0f;
-	idVec3 muzzleDir( vec3_zero );
-	float traceDist = 0.0f, muzzleToTargetDist = 0.0f;
-
-	// If we have a dedicated barrel joint (optional), use it instead of muzzleOrigin
-	if( barrelLaunch || tracer || beam )
-	{
-		if( barrelJointView != INVALID_JOINT )
-		{
-			GetGlobalJointTransform( true, barrelJointView, barrelPos, muzzleAxis );
-			if( barrelLaunch )
-			{
-				tracer = false;    // barrel launch overrides tracers
-			}
-		}
-		else
-		{
-			// fallback to standard muzzle
-			barrelPos = muzzleOrigin;
-		}
-		muzzleDistFromView = ( barrelPos - view_pos ).LengthSqr() * 3.5f;
-	}
-
 	// "Predict" damage effects on clients by just spawning a local projectile that deals no damage. Used only
 	// for sound & visual effects. Damage will be handled through reliable messages to the host.
 	const bool isHitscan = projectileDict.GetBool( "net_instanthit" );
-	const bool attackerIsLocal = ( playerOwner == NULL ) || playerOwner->IsLocallyControlled();
+	const bool attackerIsLocal = owner->IsLocallyControlled();
 	const bool forceReplication = projectileDict.GetBool( "net_replicate" );
 	const bool actuallySpawnProjectile = common->IsServer() || ( attackerIsLocal && !forceReplication ) || isHitscan;
 
@@ -4521,49 +4000,15 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 
 		ownerBounds = owner->GetPhysics()->GetAbsBounds();
 
-		if( playerOwner )
-		{
-			playerOwner->AddProjectilesFired( num_projectiles );
-		}
+		owner->AddProjectilesFired( num_projectiles );
 
 		float spreadRad = DEG2RAD( spread );
 		for( i = 0; i < num_projectiles; i++ )
 		{
 			ang = idMath::Sin( spreadRad * gameLocal.random.RandomFloat() );
 			spin = ( float )DEG2RAD( 360.0f ) * gameLocal.random.RandomFloat();
-			dir = viewAxis[ 0 ] + viewAxis[ 2 ] * ( ang * idMath::Sin( spin ) ) - viewAxis[ 1 ] * ( ang * idMath::Cos( spin ) );
+			dir = muzzleAxis[ 0 ] + muzzleAxis[ 2 ] * ( ang * idMath::Sin( spin ) ) - muzzleAxis[ 1 ] * ( ang * idMath::Cos( spin ) );
 			dir.Normalize();
-
-			if( barrelLaunch || tracer || beam )
-			{
-				gameLocal.clip.Translation( tr, view_pos, view_pos + dir * 4096.0f, NULL, mat3_identity, MASK_SHOT_RENDERMODEL, owner );
-				traceDist = ( tr.endpos - view_pos ).LengthSqr();
-
-				if( traceDist > muzzleDistFromView )    // enough distance to aim
-				{
-					if( barrelLaunch )
-					{
-						// Aim from the barrel to the impact point
-						dir = tr.endpos - barrelPos;
-						dir.Normalize();
-					}
-					else if( tracer )
-					{
-						muzzleDir = tr.endpos - barrelPos;
-						muzzleToTargetDist = muzzleDir.LengthSqr();
-						muzzleDir.Normalize();
-					}
-				}
-				else
-				{
-					// too close to wall – disable tracer/beam
-					if( tracer || beam )
-					{
-						tracer = false;
-						beam = false;
-					}
-				}
-			}
 
 			if( projectileEnt )
 			{
@@ -4601,34 +4046,26 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 				// don't synchronize this on top of the already predicted effect
 				ent->fl.networkSync = false;
 			}
-			else if( playerOwner != NULL )
+			else if( owner != NULL )
 			{
 				// Set the prediction key only for non-instanthit projectiles.
 				if( common->IsClient() )
 				{
-					playerOwner->IncrementFireCount();
+					owner->IncrementFireCount();
 				}
-				predictedKey = gameLocal.GeneratePredictionKey( this, playerOwner, -1 );
+				predictedKey = gameLocal.GeneratePredictionKey( this, owner, -1 );
 				ent->SetPredictedKey( predictedKey );
 			}
 
 			proj = static_cast<idProjectile*>( ent );
 			proj->Create( owner, muzzleOrigin, dir );
 
-			if( barrelLaunch )
-			{
-				muzzle_pos = barrelPos;    // from barrel
-			}
-			else
-			{
-				muzzle_pos = muzzleOrigin + muzzleAxis[ 0 ] * 2.0f;    // standard
-			}
-
 			projBounds = proj->GetPhysics()->GetBounds().Rotate( proj->GetPhysics()->GetAxis() );
 
 			// make sure the projectile starts inside the bounding box of the owner
 			if( i == 0 )
 			{
+				muzzle_pos = muzzleOrigin + muzzleAxis[ 0 ] * 2.0f;
 				if( ( ownerBounds - projBounds ).RayIntersection( muzzle_pos, muzzleAxis[0], distance ) )
 				{
 					start = muzzle_pos + distance * muzzleAxis[0];
@@ -4644,9 +4081,9 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 			// If this is the server simulating a remote client, the client has spawned the projectile in the past.
 			// The server will catch-up the projectile so that its position will be as if the projectile had spawned
 			// when the client fired it.
-			if( common->IsServer() && playerOwner != NULL && !playerOwner->IsLocallyControlled() && !projectileDict.GetBool( "net_instanthit" ) )
+			if( common->IsServer() && owner != NULL && !owner->IsLocallyControlled() && !projectileDict.GetBool( "net_instanthit" ) )
 			{
-				int serverTimeOnClient = playerOwner->usercmd.serverGameMilliseconds;
+				int serverTimeOnClient = owner->usercmd.serverGameMilliseconds;
 
 				int delta = idMath::ClampInt( 0, cg_projectile_clientAuthoritative_maxCatchup.GetInteger(), gameLocal.GetServerGameTimeMs() - serverTimeOnClient );
 
@@ -4664,38 +4101,6 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 			}
 			else
 			{
-				if( tracer )
-				{
-					bool beamTracer = ( projectileDict.GetString( "beam_skin", NULL ) != NULL );
-					float tracer_speed = projectileDict.GetFloat( "tracer_speed", "0.0f" );
-					if( tracer_speed != 0.0f )
-					{
-						if( beamTracer )
-						{
-							proj->setTracerEffect( new dnBeamSpeedTracer( proj, tracer_speed, muzzleToTargetDist * idMath::RSqrt( muzzleToTargetDist ), barrelPos, muzzleDir.ToMat3() ) );
-						}
-						else
-						{
-							proj->setTracerEffect( new dnSpeedTracer( proj, tracer_speed, muzzleToTargetDist * idMath::RSqrt( muzzleToTargetDist ), barrelPos, muzzleDir.ToMat3() ) );
-						}
-					}
-					else
-					{
-						if( beamTracer )
-						{
-							proj->setTracerEffect( new dnBeamTracer( proj, traceDist / muzzleToTargetDist, view_pos, barrelPos, muzzleDir.ToMat3() ) );
-						}
-						else
-						{
-							proj->setTracerEffect( new dnTracer( proj, traceDist / muzzleToTargetDist, view_pos, barrelPos, muzzleDir.ToMat3() ) );
-						}
-					}
-				}
-				else if( beam )
-				{
-					proj->setTracerEffect( new dnRailBeam( proj, muzzleOrigin ) );
-				}
-
 				// Normal launch
 				proj->Launch( muzzle_pos, dir, pushVelocity, fuseOffset, launchPower, dmgPower );
 			}
@@ -4714,10 +4119,7 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 		MuzzleFlashLight();
 	}
 
-	if( playerOwner )
-	{
-		playerOwner->WeaponFireFeedback( &weaponDef->dict );
-	}
+	owner->WeaponFireFeedback( &weaponDef->dict );
 
 	// reset muzzle smoke
 	weaponSmokeStartTime = gameLocal.realClientTime;
@@ -4742,10 +4144,6 @@ void idWeapon::Event_LaunchProjectilesEllipse( int num_projectiles, float spread
 	idVec3			muzzle_pos;
 	idBounds		ownerBounds, projBounds;
 
-	assert( owner != NULL );
-
-	idPlayer* playerOwner = GetPlayerOwner();
-
 	if( IsHidden() )
 	{
 		return;
@@ -4759,30 +4157,30 @@ void idWeapon::Event_LaunchProjectilesEllipse( int num_projectiles, float spread
 	}
 
 	// Predict clip ammo on locally controlled MP clients.
-	if( common->IsServer() || ( playerOwner && playerOwner->IsLocallyControlled() ) )
+	if( common->IsServer() || owner->IsLocallyControlled() )
 	{
 		if( ( clipSize != 0 ) && ( ammoClip.Get() <= 0 ) )
 		{
 			return;
 		}
 
-		if( clipSize == 0 && playerOwner )
+		if( clipSize == 0 )
 		{
 			//Weapons with a clip size of 0 launch strait from inventory without moving to a clip
-			playerOwner->inventory.UseAmmo( ammoType, ammoRequired );
+			owner->inventory.UseAmmo( ammoType, ammoRequired );
 		}
 
-		// see Event_LaunchProjectiles
 		if( clipSize && ammoRequired && !g_infiniteAmmo.GetBool() )
 		{
 			ammoClip -= ammoRequired;
 		}
-	}
 
-	if( !silent_fire )
-	{
-		// wake up nearby monsters
-		gameLocal.AlertAI( owner, playerViewOrigin );
+		if( !silent_fire )
+		{
+			// wake up nearby monsters
+			gameLocal.AlertAI( owner );
+		}
+
 	}
 
 	// set the shader parm to the time of last projectile firing,
@@ -4808,63 +4206,18 @@ void idWeapon::Event_LaunchProjectilesEllipse( int num_projectiles, float spread
 		kick_endtime = gameLocal.realClientTime + muzzle_kick_maxtime;
 	}
 
-	bool barrelLaunch = projectileDict.GetBool( "launchFromBarrel" );
-	bool beam = ( projectileDict.GetFloat( "fuse" ) <= 0.0f || projectileDict.GetBool( "rail_beam" ) );
-	bool tracer = ( !beam && projectileDict.GetBool( "tracers" ) &&
-					( projectileDict.GetFloat( "tracer_probability", "1.0" ) > gameLocal.random.RandomFloat() ) );
-
-	// Get player view origin/axis for trace
-	idVec3 view_pos = muzzleOrigin + muzzleAxis[ 0 ] * 2.0f;   // fallback
-	idMat3 viewAxis = muzzleAxis;
-	if( playerOwner )
-	{
-		const renderView_t* view = playerOwner->GetRenderView();
-		if( view )
-		{
-			view_pos = view->vieworg;
-			viewAxis = view->viewaxis;
-		}
-	}
-
-	idVec3 barrelPos = muzzleOrigin;           // default barrel position
-	float muzzleDistFromView = 0.0f;
-	idVec3 muzzleDir( vec3_zero );
-	float traceDist = 0.0f, muzzleToTargetDist = 0.0f;
-
-	// If we have a dedicated barrel joint (optional), use it instead of muzzleOrigin
-	if( barrelLaunch || tracer || beam )
-	{
-		if( barrelJointView != INVALID_JOINT )
-		{
-			GetGlobalJointTransform( true, barrelJointView, barrelPos, muzzleAxis );
-			if( barrelLaunch )
-			{
-				tracer = false;    // barrel launch overrides tracers
-			}
-		}
-		else
-		{
-			barrelPos = muzzleOrigin;
-		}
-		muzzleDistFromView = ( barrelPos - view_pos ).LengthSqr() * 3.5f;
-	}
-
 	// "Predict" damage effects on clients by just spawning a local projectile that deals no damage. Used only
 	// for sound & visual effects. Damage will be handled through reliable messages to the host.
 	const bool isHitscan = projectileDict.GetBool( "net_instanthit" );
-	const bool attackerIsLocal = ( playerOwner == NULL ) || playerOwner->IsLocallyControlled();
-	//const bool actuallySpawnProjectile = common->IsServer() || attackerIsLocal || isHitscan;
-	const bool forceReplication = projectileDict.GetBool( "net_replicate" );
+	const bool attackerIsLocal = owner->IsLocallyControlled();
+	const bool forceReplication = projectileDict.GetBool( "net_replicate" ) || projectileEnt->GetEntityDefName() == "projectile_bfg_mp"; // HACK: i don't want to ship modified def files
 	const bool actuallySpawnProjectile = common->IsServer() || ( attackerIsLocal && !forceReplication ) || isHitscan;
 
 	if( actuallySpawnProjectile )
 	{
 		ownerBounds = owner->GetPhysics()->GetAbsBounds();
 
-		if( playerOwner )
-		{
-			playerOwner->AddProjectilesFired( num_projectiles );
-		}
+		owner->AddProjectilesFired( num_projectiles );
 
 		float spreadRadA = DEG2RAD( spreada );
 		float spreadRadB = DEG2RAD( spreadb );
@@ -4875,39 +4228,8 @@ void idWeapon::Event_LaunchProjectilesEllipse( int num_projectiles, float spread
 			spin = ( float )DEG2RAD( 360.0f ) * gameLocal.random.RandomFloat();
 			anga = idMath::Sin( spreadRadA * gameLocal.random.RandomFloat() );
 			angb = idMath::Sin( spreadRadB * gameLocal.random.RandomFloat() );
-			dir = viewAxis[ 0 ] + viewAxis[ 2 ] * ( angb * idMath::Sin( spin ) ) - viewAxis[ 1 ] * ( anga * idMath::Cos( spin ) );
+			dir = playerViewAxis[ 0 ] + playerViewAxis[ 2 ] * ( angb * idMath::Sin( spin ) ) - playerViewAxis[ 1 ] * ( anga * idMath::Cos( spin ) );
 			dir.Normalize();
-
-			if( barrelLaunch || tracer || beam )
-			{
-				gameLocal.clip.Translation( tr, view_pos, view_pos + dir * 4096.0f, NULL, mat3_identity, MASK_SHOT_RENDERMODEL, owner );
-				traceDist = ( tr.endpos - view_pos ).LengthSqr();
-
-				if( traceDist > muzzleDistFromView )    // enough distance to aim
-				{
-					if( barrelLaunch )
-					{
-						// Aim from the barrel to the impact point
-						dir = tr.endpos - barrelPos;
-						dir.Normalize();
-					}
-					else if( tracer )
-					{
-						muzzleDir = tr.endpos - barrelPos;
-						muzzleToTargetDist = muzzleDir.LengthSqr();
-						muzzleDir.Normalize();
-					}
-				}
-				else
-				{
-					// too close to wall – disable tracer/beam
-					if( tracer || beam )
-					{
-						tracer = false;
-						beam = false;
-					}
-				}
-			}
 
 			if( common->IsClient() )
 			{
@@ -4920,7 +4242,7 @@ void idWeapon::Event_LaunchProjectilesEllipse( int num_projectiles, float spread
 				projectileDict.SetBool( "net_skip_replication", false );
 			}
 
-			gameLocal.SpawnEntityDef( projectileDict, &ent, false );
+			gameLocal.SpawnEntityDef( projectileDict, &ent );
 			if( ent == NULL || !ent->IsType( idProjectile::Type ) )
 			{
 				const char* projectileName = weaponDef->dict.GetString( "def_projectile" );
@@ -4935,39 +4257,29 @@ void idWeapon::Event_LaunchProjectilesEllipse( int num_projectiles, float spread
 				// don't synchronize this on top of the already predicted effect
 				ent->fl.networkSync = false;
 			}
-			else if( playerOwner != NULL )
+			else if( owner != NULL )
 			{
 				// Set the prediction key only for non-instanthit projectiles.
 				if( common->IsClient() )
 				{
-					playerOwner->IncrementFireCount();
+					owner->IncrementFireCount();
 				}
-				predictedKey = gameLocal.GeneratePredictionKey( this, playerOwner, -1 );
+				predictedKey = gameLocal.GeneratePredictionKey( this, owner, -1 );
 				ent->SetPredictedKey( predictedKey );
 			}
 
 			proj = static_cast<idProjectile*>( ent );
 			proj->Create( owner, muzzleOrigin, dir );
 
-			// Determine launch position
-			if( barrelLaunch )
-			{
-				muzzle_pos = barrelPos;
-			}
-			else
-			{
-				muzzle_pos = muzzleOrigin + muzzleAxis[ 0 ] * 2.0f;
-			}
-
-
 			projBounds = proj->GetPhysics()->GetBounds().Rotate( proj->GetPhysics()->GetAxis() );
 
 			// make sure the projectile starts inside the bounding box of the owner
 			if( i == 0 )
 			{
-				if( ( ownerBounds - projBounds ).RayIntersection( muzzle_pos, muzzleAxis[0], distance ) )
+				muzzle_pos = muzzleOrigin + playerViewAxis[ 0 ] * 2.0f;
+				if( ( ownerBounds - projBounds ).RayIntersection( muzzle_pos, playerViewAxis[0], distance ) )
 				{
-					start = muzzle_pos + distance * muzzleAxis[0];
+					start = muzzle_pos + distance * playerViewAxis[0];
 				}
 				else
 				{
@@ -4980,15 +4292,14 @@ void idWeapon::Event_LaunchProjectilesEllipse( int num_projectiles, float spread
 			// If this is the server simulating a remote client, the client has spawned the projectile in the past.
 			// The server will catch-up the projectile so that its position will be as if the projectile had spawned
 			// when the client fired it.
-			if( common->IsServer() && playerOwner != NULL && !playerOwner->IsLocallyControlled() && !projectileDict.GetBool( "net_instanthit" ) )
+			if( common->IsServer() && owner != NULL && !owner->IsLocallyControlled() && !projectileDict.GetBool( "net_instanthit" ) )
 			{
-				int serverTimeOnClient = playerOwner->usercmd.serverGameMilliseconds;
+				int serverTimeOnClient = owner->usercmd.serverGameMilliseconds;
 
 				int delta = idMath::ClampInt( 0, cg_projectile_clientAuthoritative_maxCatchup.GetInteger(), gameLocal.GetServerGameTimeMs() - serverTimeOnClient );
 
 				int startTime = gameLocal.GetServerGameTimeMs() - delta;
 
-				//proj->Launch(muzzle_pos, dir, pushVelocity, fuseOffset, launchPower, dmgPower);
 				proj->Launch( muzzle_pos, dir, pushVelocity, fuseOffset, power );
 
 				// predictively spawned, but no need to simulate - was needed for correct processing of client mines when spawned on the server (because we're futzing with the clip models)
@@ -5001,40 +4312,7 @@ void idWeapon::Event_LaunchProjectilesEllipse( int num_projectiles, float spread
 			}
 			else
 			{
-				if( tracer )
-				{
-					bool beamTracer = ( projectileDict.GetString( "beam_skin", NULL ) != NULL );
-					float tracer_speed = projectileDict.GetFloat( "tracer_speed", "0.0f" );
-					if( tracer_speed != 0.0f )
-					{
-						if( beamTracer )
-						{
-							proj->setTracerEffect( new dnBeamSpeedTracer( proj, tracer_speed, muzzleToTargetDist * idMath::RSqrt( muzzleToTargetDist ), barrelPos, muzzleDir.ToMat3() ) );
-						}
-						else
-						{
-							proj->setTracerEffect( new dnSpeedTracer( proj, tracer_speed, muzzleToTargetDist * idMath::RSqrt( muzzleToTargetDist ), barrelPos, muzzleDir.ToMat3() ) );
-						}
-					}
-					else
-					{
-						if( beamTracer )
-						{
-							proj->setTracerEffect( new dnBeamTracer( proj, traceDist / muzzleToTargetDist, view_pos, barrelPos, muzzleDir.ToMat3() ) );
-						}
-						else
-						{
-							proj->setTracerEffect( new dnTracer( proj, traceDist / muzzleToTargetDist, view_pos, barrelPos, muzzleDir.ToMat3() ) );
-						}
-					}
-				}
-				else if( beam )
-				{
-					proj->setTracerEffect( new dnRailBeam( proj, muzzleOrigin ) );
-				}
-
 				// Normal launch
-				//proj->Launch(muzzle_pos, dir, pushVelocity, fuseOffset, launchPower, dmgPower);
 				proj->Launch( muzzle_pos, dir, pushVelocity, fuseOffset, power );
 			}
 		}
@@ -5052,29 +4330,17 @@ void idWeapon::Event_LaunchProjectilesEllipse( int num_projectiles, float spread
 		MuzzleFlashLight();
 	}
 
-	if( playerOwner )
-	{
-		playerOwner->WeaponFireFeedback( &weaponDef->dict );
-	}
+	owner->WeaponFireFeedback( &weaponDef->dict );
 
 	weaponSmokeStartTime = gameLocal.realClientTime;
 }
 
-/*
-=====================
-idWeapon::Event_LaunchPowerup
-
-Gives the player a powerup as if it were a weapon shot. It will use the ammo amount specified
-as ammoRequired.
-=====================
+/**
+* Gives the player a powerup as if it were a weapon shot. It will use the ammo amount specified
+* as ammoRequired.
 */
 void idWeapon::Event_LaunchPowerup( const char* powerup, float duration, int useAmmo )
 {
-	idPlayer* playerOwner = GetPlayerOwner();
-	if( !playerOwner )
-	{
-		return;
-	}
 
 	if( IsHidden() )
 	{
@@ -5084,12 +4350,12 @@ void idWeapon::Event_LaunchPowerup( const char* powerup, float duration, int use
 	// check if we're out of ammo
 	if( useAmmo )
 	{
-		int ammoAvail = playerOwner->inventory.HasAmmo( ammoType, ammoRequired );
+		int ammoAvail = owner->inventory.HasAmmo( ammoType, ammoRequired );
 		if( !ammoAvail )
 		{
 			return;
 		}
-		playerOwner->inventory.UseAmmo( ammoType, ammoRequired );
+		owner->inventory.UseAmmo( ammoType, ammoRequired );
 	}
 
 	// set the shader parm to the time of last projectile firing,
@@ -5109,124 +4375,82 @@ void idWeapon::Event_LaunchPowerup( const char* powerup, float duration, int use
 		MuzzleFlashLight();
 	}
 
-	playerOwner->Give( powerup, va( "%f", duration ), ITEM_GIVE_FEEDBACK | ITEM_GIVE_UPDATE_STATE | ITEM_GIVE_FROM_WEAPON );
+	owner->Give( powerup, va( "%f", duration ), ITEM_GIVE_FEEDBACK | ITEM_GIVE_UPDATE_STATE | ITEM_GIVE_FROM_WEAPON );
 
 
 }
 
-/*
-=====================
-idWeapon::Event_StartWeaponSmoke
-=====================
-*/
 void idWeapon::Event_StartWeaponSmoke()
 {
+
 	// reset muzzle smoke
 	weaponSmokeStartTime = gameLocal.time;
 }
 
-/*
-=====================
-idWeapon::Event_StopWeaponSmoke
-=====================
-*/
 void idWeapon::Event_StopWeaponSmoke()
 {
+
 	// reset muzzle smoke
 	weaponSmokeStartTime = 0;
 }
 
-/*
-=====================
-idWeapon::Event_StartWeaponParticle
-=====================
-*/
 void idWeapon::Event_StartWeaponParticle( const char* name )
 {
 	WeaponParticle_t* part;
 	weaponParticles.Get( name, &part );
-
 	if( part )
 	{
+		part->active = true;
+		part->startTime = gameLocal.time;
 
-		part->particleFlags.isActive = true;
-		if( part->particleFlags.isSmoke )
+		//Toggle the emitter
+		if( !part->smoke && part->emitter != NULL )
 		{
-			part->startTime = gameLocal.time;
-		}
-		else
-		{
-			if( part->modelDefHandle > -1 )
-			{
-				gameRenderWorld->FreeEntityDef( part->modelDefHandle );
-				part->modelDefHandle = -1;
-			}
-			//part->renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ]	= -MS2SEC( gameLocal.time );
-			//part->renderEntity.shaderParms[ SHADERPARM_DIVERSITY ]	= gameLocal.random.RandomFloat(); // For effects like muzzleflashes etc.
+			part->emitter->Show();
+			part->emitter->PostEventMS( &EV_Activate, 0, this );
 		}
 	}
 }
 
-/*
-=====================
-idWeapon::Event_StopWeaponParticle
-=====================
-*/
 void idWeapon::Event_StopWeaponParticle( const char* name )
 {
 	WeaponParticle_t* part;
 	weaponParticles.Get( name, &part );
 	if( part )
 	{
-		part->particleFlags.isActive = false;
+		part->active = false;
 		part->startTime = 0;
 
-		//Free the particles
-		if( !part->particleFlags.isSmoke && part->modelDefHandle >= 0 )
+		//Toggle the emitter
+		if( !part->smoke )
 		{
-			gameRenderWorld->FreeEntityDef( part->modelDefHandle );
-			part->modelDefHandle = -1;
+			if( part->emitter != NULL )
+			{
+				part->emitter->Hide();
+				part->emitter->PostEventMS( &EV_Activate, 0, this );
+			}
 		}
 	}
 }
 
-/*
-=====================
-idWeapon::Event_StartWeaponLight
-=====================
-*/
 void idWeapon::Event_StartWeaponLight( const char* name )
 {
 	WeaponLight_t* light;
 	weaponLights.Get( name, &light );
 	if( light )
 	{
-		light->lightFlags.isActive = true;
+		light->active = true;
 		light->startTime = gameLocal.time;
-
-		// these will be different each fire
-		light->light.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time );
-		light->light.shaderParms[ SHADERPARM_DIVERSITY ] = renderEntity->shaderParms[ SHADERPARM_DIVERSITY ];
-
-		if( !light->lightFlags.isAlwaysOn )
-		{
-			light->endTime += light->startTime;
-		}
 	}
 }
 
-/*
-=====================
-idWeapon::Event_StopWeaponLight
-=====================
-*/
 void idWeapon::Event_StopWeaponLight( const char* name )
 {
 	WeaponLight_t* light;
 	weaponLights.Get( name, &light );
 	if( light )
 	{
-		light->lightFlags.isActive = false;
+		light->active = false;
 		light->startTime = 0;
 		if( light->lightHandle != -1 )
 		{
@@ -5235,7 +4459,6 @@ void idWeapon::Event_StopWeaponLight( const char* name )
 		}
 	}
 }
-
 /*
 =====================
 idWeapon::Event_Melee
@@ -5258,15 +4481,10 @@ void idWeapon::Event_Melee()
 		return;
 	}
 
-	idPlayer* playerOwner = GetPlayerOwner();
-
 	if( !common->IsClient() )
 	{
-		// No powerups are granted to idAIs
-		float meleeDistanceMod = playerOwner ? playerOwner->PowerUpModifier( MELEE_DISTANCE ) : 1.0f;
-
 		idVec3 start = playerViewOrigin;
-		idVec3 end = start + playerViewAxis[0] * ( meleeDistance * meleeDistanceMod );
+		idVec3 end = start + playerViewAxis[0] * ( meleeDistance * owner->PowerUpModifier( MELEE_DISTANCE ) );
 		gameLocal.clip.TracePoint( tr, start, end, MASK_SHOT_RENDERMODEL, owner );
 		if( tr.fraction < 1.0f )
 		{
@@ -5293,8 +4511,7 @@ void idWeapon::Event_Melee()
 		{
 
 			float push = meleeDef->dict.GetFloat( "push" );
-			float speedMod = playerOwner ? playerOwner->PowerUpModifier( SPEED ) : 1.0f;
-			idVec3 impulse = -push * speedMod * tr.c.normal;
+			idVec3 impulse = -push * owner->PowerUpModifier( SPEED ) * tr.c.normal;
 
 			if( gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) && ( ent->IsType( idActor::Type ) || ent->IsType( idAFAttachment::Type ) ) )
 			{
@@ -5308,15 +4525,14 @@ void idWeapon::Event_Melee()
 			if( common->IsMultiplayer()
 					&& weaponDef->dict.GetBool( "stealing" )
 					&& ent->IsType( idPlayer::Type )
-					&& playerOwner
-					&& !playerOwner->PowerUpActive( BERSERK )
+					&& !owner->PowerUpActive( BERSERK )
 					&& ( ( gameLocal.gameType != GAME_TDM ) || gameLocal.serverInfo.GetBool( "si_teamDamage" ) || ( owner->team != static_cast< idPlayer* >( ent )->team ) )
 			  )
 			{
 
 				if( !gameLocal.mpGame.IsGametypeFlagBased() )
 				{
-					playerOwner->StealWeapon( static_cast< idPlayer* >( ent ) );
+					owner->StealWeapon( static_cast< idPlayer* >( ent ) );
 				}
 			}
 
@@ -5326,7 +4542,7 @@ void idWeapon::Event_Melee()
 				meleeDef->dict.GetVector( "kickDir", "0 0 0", kickDir );
 				globalKickDir = muzzleAxis * kickDir;
 				//Adjust the melee powerup modifier for the invulnerability boss fight
-				float mod = playerOwner ? playerOwner->PowerUpModifier( MELEE_DAMAGE ) : 1.0f;
+				float mod = owner->PowerUpModifier( MELEE_DAMAGE );
 				if( !strcmp( ent->GetEntityDefName(), "monster_hunter_invul" ) )
 				{
 					//Only do a quater of the damage mod
@@ -5342,7 +4558,7 @@ void idWeapon::Event_Melee()
 				if( ent->spawnArgs.GetBool( "bleed" ) )
 				{
 
-					hitSound = meleeDef->dict.GetString( ( playerOwner && playerOwner->PowerUpActive( BERSERK ) ) ? "snd_hit_berserk" : "snd_hit" );
+					hitSound = meleeDef->dict.GetString( owner->PowerUpActive( BERSERK ) ? "snd_hit_berserk" : "snd_hit" );
 
 					ent->AddDamageEffect( tr, impulse, meleeDef->dict.GetString( "classname" ) );
 
@@ -5370,7 +4586,7 @@ void idWeapon::Event_Melee()
 						const char* decal;
 						// project decal
 						decal = weaponDef->dict.GetString( "mtr_strike" );
-						if( decal != NULL && *decal != '\0' )
+						if( decal != NULL && *decal != NULL )
 						{
 							gameLocal.ProjectDecal( tr.c.point, -tr.c.normal, 8.0f, true, 6.0, decal );
 						}
@@ -5395,18 +4611,12 @@ void idWeapon::Event_Melee()
 		}
 
 		idThread::ReturnInt( hit );
-		if( playerOwner )
-		{
-			playerOwner->WeaponFireFeedback( &weaponDef->dict );
-		}
+		owner->WeaponFireFeedback( &weaponDef->dict );
 		return;
 	}
 
 	idThread::ReturnInt( 0 );
-	if( playerOwner )
-	{
-		playerOwner->WeaponFireFeedback( &weaponDef->dict );
-	}
+	owner->WeaponFireFeedback( &weaponDef->dict );
 }
 
 /*
@@ -5445,8 +4655,7 @@ Toss a shell model out from the breach if the bone is present
 */
 void idWeapon::Event_EjectBrass()
 {
-	idPlayer* playerOwner = GetPlayerOwner();
-	if( !g_showBrass.GetBool() || ( playerOwner && !playerOwner->CanShowWeaponViewmodel() ) )
+	if( !g_showBrass.GetBool() || !owner->CanShowWeaponViewmodel() )
 	{
 		return;
 	}
@@ -5479,14 +4688,11 @@ void idWeapon::Event_EjectBrass()
 	debris->Create( owner, origin, axis );
 	debris->Launch();
 
-	if( spawnArgs.GetBool( "fixed_brass_dir" ) )
-	{
-		linear_velocity = 40 * ( playerViewAxis[0] + playerViewAxis[1] + playerViewAxis[2] );
-		angular_velocity.Set( 10 * gameLocal.random.CRandomFloat(), 10 * gameLocal.random.CRandomFloat(), 10 * gameLocal.random.CRandomFloat() );
+	linear_velocity = 40 * ( playerViewAxis[0] + playerViewAxis[1] + playerViewAxis[2] );
+	angular_velocity.Set( 10 * gameLocal.random.CRandomFloat(), 10 * gameLocal.random.CRandomFloat(), 10 * gameLocal.random.CRandomFloat() );
 
-		debris->GetPhysics()->SetLinearVelocity( linear_velocity );
-		debris->GetPhysics()->SetAngularVelocity( angular_velocity );
-	}
+	debris->GetPhysics()->SetLinearVelocity( linear_velocity );
+	debris->GetPhysics()->SetAngularVelocity( angular_velocity );
 }
 
 /*
@@ -5501,8 +4707,7 @@ void idWeapon::Event_IsInvisible()
 		idThread::ReturnFloat( 0 );
 		return;
 	}
-	idPlayer* playerOwner = GetPlayerOwner();
-	idThread::ReturnFloat( ( playerOwner && playerOwner->PowerUpActive( INVISIBILITY ) ) ? 1 : 0 );
+	idThread::ReturnFloat( owner->PowerUpActive( INVISIBILITY ) ? 1 : 0 );
 }
 
 /*
@@ -5512,6 +4717,7 @@ idWeapon::ClientThink
 */
 void idWeapon::ClientThink( const int curTime, const float fraction, const bool predict )
 {
+	UpdateAnimation();
 }
 
 /*
@@ -5521,78 +4727,19 @@ idWeapon::ClientPredictionThink
 */
 void idWeapon::ClientPredictionThink()
 {
+	UpdateAnimation();
 }
 
-
-void idWeapon::ForceAmmoInClip()
-{
-	ammoClip = clipSize;
-}
-
+/*
+===============
+idWeapon::UpdateGrabber
+===============
+*/
 void idWeapon::UpdateGrabber()
 {
 	// moved from PresentWeapon (with changes)
-	idPlayer* playerOwner = GetPlayerOwner();
-	if( !common->IsMultiplayer() && grabberState != -1 && playerOwner )
+	if( !common->IsMultiplayer() && grabberState != -1 )
 	{
-		grabberState = grabber.Update( playerOwner, hide );
+		grabberState = grabber.Update( owner, hide );
 	}
-}
-
-void idWeapon::Event_GetAux()
-{
-	idThread::ReturnInt( isAux );
-}
-
-void idWeapon::Event_SetAux( int aux )
-{
-	if( common->IsServer() )
-	{
-		isAux = aux;
-	}
-}
-
-void idWeapon::Event_BeginLightSync()
-{
-	canSyncLight = true;
-}
-
-void idWeapon::Event_SetNetfiring( int isNetfiring )
-{
-	if( common->IsServer() )
-	{
-		// this will set/clear WEAPON_NETFIRING on clients; see WriteToSnapshot/ReadFromSnapshot
-		isFiring = isNetfiring;
-	}
-}
-
-void idWeapon::Event_SetWeaponGuiParm( const char* key, const char* val )
-{
-	// code below is adapted from idWeapon::UpdateGUI and idEntity::Event_SetGuiParm
-
-	if( !renderEntity->gui[0] || !owner )
-	{
-		return;
-	}
-
-	int localClientNum = gameLocal.GetLocalClientNum();
-	if( localClientNum != owner->entityNumber )
-	{
-		// if updating the hud for a followed client
-		if( localClientNum >= 0 && gameLocal.entities[localClientNum] && gameLocal.entities[localClientNum]->IsType( idPlayer::Type ) )
-		{
-			idPlayer* p = static_cast< idPlayer* >( gameLocal.entities[localClientNum] );
-			if( !p->spectating || p->spectator != owner->entityNumber )
-			{
-				return;
-			}
-		}
-		else
-		{
-			return;
-		}
-	}
-
-	renderEntity->gui[0]->SetStateString( key, val );
-	renderEntity->gui[0]->StateChanged( gameLocal.fast.time );
 }

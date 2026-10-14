@@ -13,36 +13,34 @@ While this is a D3ModdingKit succesor is not by any means a fully replacement.
 # Compiling Instructions
 
 Compiling its straight forward following these steps:
+
 - For Windows 10/11:
-	* Install Visual Studio 2022 Community Edition With C++ Workspace.
-	* For x64/x86 run **cmake_msvc.cmd** bat file.
+  
+  * Install Visual Studio 2022 Community Edition With C++ Workspace.
+  * For x64/x86 run **cmake_msvc.cmd** bat file.
+
 - For Windows 7 (Untested):
-	* Install Visual Studio 2019/2017
-	* [Download and Install DirectX SDK June 2010](https://www.microsoft.com/en-us/download/details.aspx?id=6812)
-	* For x64/x86 run **cmake_msvc.cmd** bat file.
+  
+  * Install Visual Studio 2019/2017
+  * [Download and Install DirectX SDK June 2010](https://www.microsoft.com/en-us/download/details.aspx?id=6812)
+  * For x64/x86 run **cmake_msvc.cmd** bat file.
+
 - For Debian base distros
-	* Install the pre-requirements
-	```
-	sudo apt-get install -y build-essential nasm pkgconf autoconf libtool libx11-dev libxft-dev libxext-dev libwayland-dev libxkbcommon-dev libegl1-mesa-dev libibus-1.0-dev libglfw3-dev libgl1-mesa-dev libglu1-mesa-dev freeglut3-dev mesa-common-dev libxmu-dev libxi-dev libgl-dev libdecor-0-dev libxrandr-dev libxxf86vm-dev libx11-xcb-dev libxcb-dri2-0-dev libxcb-glx0-dev libxcb-icccm4-dev libxcb-keysyms1-dev libxcb-randr0-dev python3-jinja2 libltdl-dev ninja-build
-	```
-	* Open a termina in **neo/** folder and run:
-	```
-	chmod +x cmake_linux.sh
-	```
-	* In the same terminal run:
-	```
-	./cmake_linux.sh gcc debug
-	```
-
-# ".plan" <a name="plan"></a>
-
-Currently there's not a .plan set in stone there's a lot of things that i want to get going like:
-
-- Re-introduced MFC tools
-- Refactor the render apis to be like v1.5.0 RBDOOM3-BFG
-
-# Credits
-
-- JC Clone Denton's DentonMod has most of its features are use here.
-- fva's CstDoom3-BFG has we use it has a base for fixes for the base game + expansions.
-- Ivan's Fragging Free has we use their Improve Vehicle Code.
+  
+  * Install the pre-requirements
+    
+    ```
+    sudo apt-get install -y build-essential nasm pkgconf autoconf libtool libx11-dev libxft-dev libxext-dev libwayland-dev libxkbcommon-dev libegl1-mesa-dev libibus-1.0-dev libglfw3-dev libgl1-mesa-dev libglu1-mesa-dev freeglut3-dev mesa-common-dev libxmu-dev libxi-dev libgl-dev libdecor-0-dev libxrandr-dev libxxf86vm-dev libx11-xcb-dev libxcb-dri2-0-dev libxcb-glx0-dev libxcb-icccm4-dev libxcb-keysyms1-dev libxcb-randr0-dev python3-jinja2 libltdl-dev ninja-build
+    ```
+  
+  * Open a termina in **neo/** folder and run:
+    
+    ```
+    chmod +x cmake_linux.sh
+    ```
+  
+  * In the same terminal run:
+    
+    ```
+    ./cmake_linux.sh gcc debug
+    ```

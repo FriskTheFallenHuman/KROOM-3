@@ -262,11 +262,6 @@ void idItem::Think()
 	}
 
 	Present();
-
-	if( thinkFlags & TH_UPDATEWOUNDPARTICLES )
-	{
-		UpdateParticles();
-	}
 }
 
 /*
@@ -1989,11 +1984,6 @@ void idMoveableItem::Think()
 	}
 
 	Present();
-
-	if( thinkFlags & TH_UPDATEWOUNDPARTICLES )
-	{
-		UpdateParticles();
-	}
 }
 
 /*

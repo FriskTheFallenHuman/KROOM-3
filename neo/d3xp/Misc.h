@@ -560,34 +560,6 @@ public:
 private:
 };
 
-class idHazardSeparatorEntity : public idEntity
-{
-public:
-	CLASS_PROTOTYPE( idHazardSeparatorEntity );
-
-	idHazardSeparatorEntity();
-
-	void				Spawn();
-
-	void				Save( idSaveGame* savefile ) const;
-	void				Restore( idRestoreGame* savefile );
-
-	void				Event_Activate( idEntity* activator );
-
-private:
-	qhandle_t			portal;
-};
-
-class idHazardEntity : public idEntity
-{
-public:
-	CLASS_PROTOTYPE( idHazardEntity );
-	static int					index;
-	void				Spawn();
-
-private:
-};
-
 
 /*
 ===============================================================================

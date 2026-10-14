@@ -575,7 +575,10 @@ idMoveable::ReadFromSnapshot
 void idMoveable::ReadFromSnapshot( const idBitMsg& msg )
 {
 	physicsObj.ReadFromSnapshot( msg );
-	UpdateVisuals();
+	if( msg.HasChanged() )
+	{
+		UpdateVisuals();
+	}
 }
 
 /*
@@ -835,11 +838,6 @@ void idBarrel::Think()
 	}
 
 	BarrelThink();
-
-	if( thinkFlags & TH_UPDATEWOUNDPARTICLES )
-	{
-		UpdateParticles();
-	}
 }
 
 /*
@@ -1088,11 +1086,6 @@ void idExplodingBarrel::Think()
 {
 	idBarrel::BarrelThink();
 
-	if( thinkFlags & TH_UPDATEWOUNDPARTICLES )
-	{
-		UpdateParticles();
-	}
-
 	UpdateLight();
 
 	if( !common->IsClient() && state != BURNING && state != EXPLODING )
@@ -1324,7 +1317,7 @@ void idExplodingBarrel::Killed( idEntity* inflictor, idEntity* attacker, int dam
 	}
 
 	float f = spawnArgs.GetFloat( "burn" );
-	int explodeHealth = spawnArgs.GetInt( "explode_health" );
+	int explodeHealth = spawnArgs.GetInt( "explode_health", -15 );
 
 	if( f > 0.0f && state == NORMAL && health > explodeHealth )
 	{

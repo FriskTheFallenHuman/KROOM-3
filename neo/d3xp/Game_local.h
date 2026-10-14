@@ -3,8 +3,6 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
-Copyright (C) 2014-2016 Robert Beckebans
-Copyright (C) 2014-2016 Kot in Action Creative Artel
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -338,8 +336,6 @@ public:
 
 	int						vacuumAreaNum;			// -1 if level doesn't have any outside areas
 
-	int						hazardAreaNums[ 32 ];	// -1 if level doesn't have any outside areas
-
 	gameType_t				gameType;
 	idLinkList<idEntity>	snapshotEntities;		// entities from the last snapshot
 	int						realClientTime;			// real client time
@@ -498,9 +494,8 @@ public:
 
 	bool					RequirementMet( idEntity* activator, const idStr& requires, int removeItem );
 
-	void					AlertAI( idEntity* ent, const idVec3& pos );
+	void					AlertAI( idEntity* ent );
 	idActor* 				GetAlertEntity();
-	const idVec3& 			GetAlertPos() const;
 
 	bool					InPlayerPVS( idEntity* ent ) const;
 	bool					InPlayerConnectedArea( idEntity* ent ) const;
@@ -635,7 +630,6 @@ private:
 
 	idEntityPtr<idActor>	lastAIAlertEntity;
 	int						lastAIAlertTime;
-	idVec3					lastAIAlertPos;
 
 	idDict					spawnArgs;				// spawn args used during entity spawning  FIXME: shouldn't be necessary anymore
 
@@ -736,6 +730,9 @@ extern idGameMainMenuLocal	mainMenuLocal;
 extern idGameDialogsLocal	dialogsLocal;
 
 extern idAnimManagerLocal	animationLibLocal;
+
+#include "Game_achievements.h"
+extern idGameAchievementsLocal gameAchievementsLocal;
 
 //============================================================================
 
@@ -889,7 +886,6 @@ extern const int	CINEMATIC_SKIP_DELAY;
 #include "AFEntity.h"
 #include "Misc.h"
 #include "Actor.h"
-#include "Tracer.h"
 #include "Projectile.h"
 #include "Weapon.h"
 #include "Light.h"

@@ -1050,11 +1050,6 @@ void idAI::Spawn()
 	// init the move variables
 	StopMove( MOVE_STATUS_DONE );
 
-	idStr weaponName;
-	if( spawnArgs.GetString( "def_weapon", "", weaponName ) && weaponName.Length() )
-	{
-		SetupHeldWeapon( weaponName );
-	}
 
 	spawnArgs.GetBool( "spawnClearMoveables", "0", spawnClearMoveables );
 }
@@ -1253,8 +1248,6 @@ void idAI::Think()
 		ideal_yaw = idMath::AngleNormalize180( ideal_yaw + deltaViewAngles.yaw );
 		deltaViewAngles.Zero();
 		viewAxis = idAngles( 0, current_yaw, 0 ).ToMat3();
-
-		UpdateHeldWeapon();
 
 		if( num_cinematics )
 		{
@@ -3763,11 +3756,11 @@ int idAI::ReactionTo( const idEntity* ent )
 	// monsters will fight when attacked by lower ranked monsters.  rank 0 never fights back.
 	if( rank && ( actor->rank < rank ) )
 	{
-		return ATTACK_IGNORE;
+		return ATTACK_ON_DAMAGE;
 	}
 
-	// fight back
-	return ATTACK_ON_DAMAGE;
+	// don't fight back
+	return ATTACK_IGNORE;
 }
 
 
@@ -3803,7 +3796,7 @@ bool idAI::Pain( idEntity* inflictor, idEntity* attacker, int damage, const idVe
 			actor = ( idActor* )attacker;
 			if( ReactionTo( actor ) & ATTACK_ON_DAMAGE )
 			{
-				gameLocal.AlertAI( actor, actor->GetPhysics()->GetOrigin() );
+				gameLocal.AlertAI( actor );
 				SetEnemy( actor );
 			}
 		}
@@ -3957,7 +3950,7 @@ void idAI::Killed( idEntity* inflictor, idEntity* attacker, int damage, const id
 
 	if( attacker && attacker->IsType( idActor::Type ) )
 	{
-		gameLocal.AlertAI( ( idActor* )attacker, attacker->GetPhysics()->GetOrigin() );
+		gameLocal.AlertAI( ( idActor* )attacker );
 	}
 
 	// activate targets
@@ -3976,14 +3969,12 @@ void idAI::Killed( idEntity* inflictor, idEntity* attacker, int damage, const id
 
 	Unbind();
 
-	// To be properly grabbed by the Grabber, the lost soul now has a ragdoll. Only the Grabber should start it, however.
-	bool hasModelDeath = spawnArgs.GetString( "model_death", "", &modelDeath );
-	if( !hasModelDeath && StartRagdoll() )
+	if( StartRagdoll() )
 	{
 		StartSound( "snd_death", SND_CHANNEL_VOICE, 0, false, NULL );
 	}
 
-	if( hasModelDeath )
+	if( spawnArgs.GetString( "model_death", "", &modelDeath ) )
 	{
 		// lost soul is only case that does not use a ragdoll and has a model_death so get the death sound in here
 		StartSound( "snd_death", SND_CHANNEL_VOICE, 0, false, NULL );
@@ -3994,34 +3985,6 @@ void idAI::Killed( idEntity* inflictor, idEntity* attacker, int damage, const id
 		physicsObj.DisableImpact();
 		// No grabbing if "model_death"
 		noGrab = true;
-	}
-
-	// Drop held weapon
-	if( heldWeapon.GetEntity() )
-	{
-		idWeapon* weap = heldWeapon.GetEntity();
-
-		// Tell the weapon its owner died.
-		weap->OwnerDied();
-
-		if( weap->CanDrop() )
-		{
-			// Forward and up vectors from the AI's view axis
-			idVec3 forward = viewAxis[0];
-			idVec3 up = viewAxis[2];
-
-			// Add some random spread to the drop velocity
-			idVec3 velocity = 150.0f * forward + 150.0f * up;
-			velocity.x += gameLocal.random.CRandomFloat() * 50.0f;
-			velocity.y += gameLocal.random.CRandomFloat() * 50.0f;
-			velocity.z += gameLocal.random.CRandomFloat() * 30.0f;
-
-			// Drop it.
-			weap->DropItem( velocity, 500, 20000, false );
-		}
-
-		weap->PostEventMS( &EV_Remove, 0 );
-		heldWeapon = NULL;
 	}
 
 	restartParticles = false;
@@ -4754,58 +4717,6 @@ void idAI::CreateProjectileClipModel() const
 
 /*
 =====================
-idAI::GetViewPos
-=====================
-*/
-void idAI::GetViewPos( idVec3& origin, idMat3& axis ) const
-{
-	origin = GetEyePosition();
-
-	idActor* enemyActor = enemy.GetEntity();
-	if( enemyActor )
-	{
-		idVec3 headPos, chestPos;
-		enemyActor->GetAIAimTargets( enemyActor->GetPhysics()->GetOrigin(), headPos, chestPos );
-
-		idVec3 dir = chestPos - origin;
-		dir.Normalize();
-		axis = dir.ToMat3();
-	}
-	else
-	{
-		axis = viewAxis;
-	}
-}
-
-/*
-=====================
-idAI::GetAimAxisFromOrigin
-
-Same as GetViewPos but aims from firePos instead of the eye.
-=====================
-*/
-void idAI::GetAimAxisFromOrigin( const idVec3& firePos, idMat3& axis ) const
-{
-	idActor* enemyActor = enemy.GetEntity();
-	if( enemyActor )
-	{
-		idVec3 headPos, chestPos;
-		enemyActor->GetAIAimTargets( enemyActor->GetPhysics()->GetOrigin(), headPos, chestPos );
-
-		idVec3 dir = chestPos - firePos;
-		dir.Normalize();
-
-		idAngles ang = dir.ToAngles();
-		axis = ang.ToMat3();
-	}
-	else
-	{
-		axis = viewAxis;
-	}
-}
-
-/*
-=====================
 idAI::GetAimDir
 =====================
 */
@@ -4817,45 +4728,9 @@ bool idAI::GetAimDir( const idVec3& firePos, idEntity* aimAtEnt, const idEntity*
 	float	max_height;
 	bool	result;
 
-	// if no aimAtEnt set
-	if( !aimAtEnt )
+	// if no aimAtEnt or projectile set
+	if( !aimAtEnt || !projectileDef )
 	{
-		aimDir = viewAxis[ 0 ] * physicsObj.GetGravityAxis();
-		return false;
-	}
-
-	if( !projectileDef )
-	{
-		// We use heldWeapon to determine the AIM direction this NPC
-		// Can shot at
-		if( heldWeapon.GetEntity() )
-		{
-			if( aimAtEnt->IsType( idActor::Type ) )
-			{
-				static_cast<idActor*>( aimAtEnt )->GetAIAimTargets( aimAtEnt->GetPhysics()->GetOrigin(), targetPos1, targetPos2 );
-			}
-			else
-			{
-				targetPos1 = aimAtEnt->GetPhysics()->GetAbsBounds().GetCenter();
-				targetPos2 = targetPos1;
-			}
-
-			delta = targetPos1 - firePos;
-			aimDir = delta;
-			aimDir.Normalize();
-
-			const idDeclEntityDef* weaponDeclDef = heldWeapon.GetEntity()->GetDeclEntityDef();
-			float maxRange = weaponDeclDef ? weaponDeclDef->dict.GetFloat( "attack_range_npc", "0" ) : 0.0f;
-			if( maxRange > 0.0f && delta.LengthFast() > maxRange )
-			{
-				return false;
-			}
-
-			trace_t tr;
-			gameLocal.clip.TracePoint( tr, firePos, targetPos1, MASK_SHOT_RENDERMODEL, ignore );
-			return ( tr.fraction >= 1.0f || tr.c.entityNum == aimAtEnt->entityNumber );
-		}
-
 		aimDir = viewAxis[ 0 ] * physicsObj.GetGravityAxis();
 		return false;
 	}

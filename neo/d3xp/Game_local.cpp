@@ -3,8 +3,6 @@
 
 Doom 3 BFG Edition GPL Source Code
 Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
-Copyright (C) 2014-2021 Robert Beckebans
-Copyright (C) 2014-2016 Kot in Action Creative Artel
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -260,7 +258,6 @@ void idGameLocal::Clear()
 	aasNames.Clear();
 	lastAIAlertEntity = NULL;
 	lastAIAlertTime = 0;
-	lastAIAlertPos.Zero();
 	spawnArgs.Clear();
 	gravity.Set( 0, 0, -1 );
 	playerPVS.h = ( unsigned int ) - 1;
@@ -628,11 +625,6 @@ void idGameLocal::SaveGame( idFile* f, idFile* strings )
 
 	savegame.WriteInt( vacuumAreaNum );
 
-	for( int i = 0; i < 32; i++ )
-	{
-		savegame.WriteInt( hazardAreaNums[i] );
-	}
-
 	savegame.WriteInt( entityDefBits );
 
 	savegame.WriteInt( GetLocalClientNum() );
@@ -675,7 +667,6 @@ void idGameLocal::SaveGame( idFile* f, idFile* strings )
 
 	lastAIAlertEntity.Save( &savegame );
 	savegame.WriteInt( lastAIAlertTime );
-	savegame.WriteVec3( lastAIAlertPos );
 
 	savegame.WriteDict( &spawnArgs );
 
@@ -1049,7 +1040,6 @@ void idGameLocal::LoadMap( const char* mapName, int randseed )
 
 	lastAIAlertEntity = NULL;
 	lastAIAlertTime = 0;
-	lastAIAlertPos.Zero();
 
 	previousTime	= 0;
 	time			= 0;
@@ -1063,18 +1053,6 @@ void idGameLocal::LoadMap( const char* mapName, int randseed )
 	ResetSlowTimeVars();
 
 	vacuumAreaNum = -1;		// if an info_vacuum is spawned, it will set this
-
-	int hazardAreaNumSize = sizeof( hazardAreaNums ) / sizeof( int );
-
-	for( int i = 0; i < hazardAreaNumSize; i++ )
-	{
-		if( hazardAreaNums[i] == -1 )
-		{
-			break;
-		}
-		hazardAreaNums[i] = -1;
-	}
-	idHazardEntity::index = 0;
 
 	if( !editEntities )
 	{
@@ -1594,11 +1572,6 @@ bool idGameLocal::InitFromSaveGame( const char* mapName, idRenderWorld* renderWo
 
 	savegame.ReadInt( vacuumAreaNum );
 
-	for( int i = 0; i < 32; i++ )
-	{
-		savegame.ReadInt( hazardAreaNums[i] );
-	}
-
 	savegame.ReadInt( entityDefBits );
 
 	// the localClientNum member of idGameLocal was removed,
@@ -1657,7 +1630,6 @@ bool idGameLocal::InitFromSaveGame( const char* mapName, idRenderWorld* renderWo
 
 	lastAIAlertEntity.Restore( &savegame );
 	savegame.ReadInt( lastAIAlertTime );
-	savegame.ReadVec3( lastAIAlertPos );
 
 	savegame.ReadDict( &spawnArgs );
 
@@ -4506,24 +4478,13 @@ bool idGameLocal::RequirementMet( idEntity* activator, const idStr& requires, in
 idGameLocal::AlertAI
 ============
 */
-void idGameLocal::AlertAI( idEntity* ent, const idVec3& pos )
+void idGameLocal::AlertAI( idEntity* ent )
 {
-	if( ent )
+	if( ent && ent->IsType( idActor::Type ) )
 	{
-		if( ent->IsType( idActor::Type ) )
-		{
-			// alert them for the next frame
-			lastAIAlertTime = framenum + 1;
-			lastAIAlertEntity = static_cast<idActor*>( ent );
-			lastAIAlertPos = pos;
-		}
-		else if( ent->IsType( idAFEntity_Vehicle::Type ) )
-		{
-			// alert them for the next frame
-			lastAIAlertTime = framenum + 1;
-			lastAIAlertEntity = static_cast<idAFEntity_Vehicle*>( ent )->GetDriver();
-			lastAIAlertPos = pos;
-		}
+		// alert them for the next frame
+		lastAIAlertTime = time + 1;
+		lastAIAlertEntity = static_cast<idActor*>( ent );
 	}
 }
 
@@ -4540,16 +4501,6 @@ idActor* idGameLocal::GetAlertEntity()
 	}
 
 	return NULL;
-}
-
-/*
-============
-idGameLocal::GetAlertPos
-============
-*/
-const idVec3& idGameLocal::GetAlertPos() const
-{
-	return lastAIAlertPos;
 }
 
 /*
@@ -4790,10 +4741,6 @@ void idGameLocal::RadiusPush( const idVec3& origin, const float radius, const fl
 		if( ent == inflictor || ( ent->IsType( idAFAttachment::Type ) && static_cast<idAFAttachment*>( ent )->GetBody() == inflictor ) )
 		{
 			scale = inflictorScale;
-		}
-		else if( ent->IsType( idAFEntity_Base::Type ) && static_cast<idAFEntity_Base*>( ent )->IsActiveAF() )
-		{
-			scale = ent->spawnArgs.GetFloat( "ragdoll_push_scale", "1.0" );	// Scales down ragdoll push based on def's value
 		}
 		else
 		{

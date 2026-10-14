@@ -39,8 +39,6 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
-#define AUX_BITS	2
-
 extern const idEventDef EV_Weapon_State;
 
 typedef enum
@@ -60,61 +58,28 @@ class idPlayer;
 
 static const int LIGHTID_WORLD_MUZZLE_FLASH = 1;
 static const int LIGHTID_VIEW_MUZZLE_FLASH = 100;
-static const int LIGHTID_FLASH_LIGHT = 200;
 
 class idMoveableItem;
 
 typedef struct
 {
-	bool		isActive			: 1;		// Is the particle active
-	bool		isSmoke				: 1;		// Is this a smoke particle
-	bool		isContinuous		: 1;		// Is the effect continuous
-	bool		isOffset			: 1;		// Is new Offset needed
-	bool		isDir				: 1;		// Is new Direction needed
-	bool		isOnWorldModel		: 1;		// Is this effect intended for world model only
-	bool		isUpdateJoint		: 1;
-} particleFlags_t;
-
-typedef struct
-{
 	char			name[64];
 	char			particlename[128];
-	//bool			active;
+	bool			active;
 	int				startTime;
-	idVec3			offset;			//Sometimes you cant find proper joint, then use offset along with muzzle bone
-	idVec3			dir;
 	jointHandle_t	joint;			//The joint on which to attach the particle
-	//bool			smoke;			//Is this a smoke particle
-	particleFlags_t particleFlags;	// flags
+	bool			smoke;			//Is this a smoke particle
 	const idDeclParticle* particle;		//Used for smoke particles
-	renderEntity_t renderEntity;
-	qhandle_t modelDefHandle;
-	//idFuncEmitter*  emitter;		//Used for non-smoke particles
+	idFuncEmitter*  emitter;		//Used for non-smoke particles
 } WeaponParticle_t;
-
-
-typedef struct
-{
-	bool		isActive		: 1;		// Is the particle active
-	bool		isAlwaysOn		: 1;		// Is this light always on
-	bool		isOffset		: 1;		// Is new Offset needed
-	bool		isDir			: 1;		// Is new Direction needed
-	bool		isOnWorldModel	: 1;		// Is this light intended for world model only
-} lightFlags_t;
 
 typedef struct
 {
 	char			name[64];
-	//bool			active;
+	bool			active;
 	int				startTime;
-	int				endTime;
-	int				lightHandle;
-	idVec3			offset;			//If weapons does not have bones in proper places for some effect use this
-	idVec3			dir;			//If the desired bone is not pointing in proper direction use this to fix it.
-	// Note that the dir should be vector representing X-axis of the bone.
-	lightFlags_t	lightFlags;
 	jointHandle_t	joint;
-	//int				lightHandle;
+	int				lightHandle;
 	renderLight_t	light;
 } WeaponLight_t;
 
@@ -128,10 +93,10 @@ public:
 
 	// Init
 	void					Spawn();
-	void					SetOwner( idActor* owner );
-	idActor*				GetOwner();
-	idPlayer*				GetPlayerOwner() const;
+	void					SetOwner( idPlayer* owner );
+	idPlayer*				GetOwner();
 	virtual bool			ShouldConstructScriptObjectAtSpawn() const;
+	void					SetFlashlightOwner( idPlayer* owner );
 
 	static void				CacheWeapon( const char* weaponName );
 
@@ -178,7 +143,6 @@ public:
 	idEntity* 				DropItem( const idVec3& velocity, int activateDelay, int removeDelay, bool died );
 	bool					CanDrop() const;
 	void					WeaponStolen();
-	void					ForceAmmoInClip();
 
 	weaponStatus_t			GetStatus()
 	{
@@ -201,7 +165,10 @@ public:
 	void					GetWeaponAngleOffsets( int* average, float* scale, float* max );
 	void					GetWeaponTimeOffsets( float* time, float* scale );
 	bool					BloodSplat( float size );
-
+	void					SetIsPlayerFlashlight( bool bl )
+	{
+		isPlayerFlashlight = bl;
+	}
 	void					FlashlightOn();
 	void					FlashlightOff();
 
@@ -241,13 +208,7 @@ public:
 	virtual void			ClientPredictionThink();
 	virtual void			ClientThink( const int curTime, const float fraction, const bool predict );
 	void					MuzzleFlashLight();
-
-	void					FlashLight();
-	void					RemoveFlashlight();
-	bool					IsFlashLightOn()
-	{
-		return flashlightOn;
-	}
+	void					RemoveMuzzleFlashlight();
 
 	void					GetProjectileLaunchOriginAndAxis( idVec3& origin, idMat3& axis );
 
@@ -273,11 +234,12 @@ private:
 	int						animBlendFrames;
 	int						animDoneTime;
 	bool					isLinked;
+	bool					isPlayerFlashlight;
 
 	// precreated projectile
 	idEntity*				projectileEnt;
 
-	idActor* 				owner;
+	idPlayer* 				owner;
 	idEntityPtr<idAnimatedEntity>	worldModel;
 
 	// hiding (for GUIs and NPCs)
@@ -307,20 +269,15 @@ private:
 
 	idVec3					pushVelocity;
 
-public:
 	// weapon definition
 	// we maintain local copies of the projectile and brass dictionaries so they
 	// do not have to be copied across the DLL boundary when entities are spawned
 	const idDeclEntityDef* 	weaponDef;
-	const idDeclEntityDef*	projectileDef;
 	const idDeclEntityDef* 	meleeDef;
-	const idDeclEntityDef*	brassDef;
 	idDict					projectileDict;
 	float					meleeDistance;
 	idStr					meleeDefName;
 	idDict					brassDict;
-
-private:
 	int						brassDelay;
 	idStr					icon;
 	idStr					pdaIcon;
@@ -335,9 +292,6 @@ private:
 	renderLight_t			muzzleFlash;		// positioned on view weapon bone
 	int						muzzleFlashHandle;
 
-	renderLight_t			flashLight;		// positioned on view weapon bone
-	int						flashLightHandle;
-
 	renderLight_t			worldMuzzleFlash;	// positioned on world weapon bone
 	int						worldMuzzleFlashHandle;
 
@@ -345,11 +299,9 @@ private:
 	float					fraccos2;
 
 	idVec3					flashColor;
-	idVec3					flashLightColor;
 	int						muzzleFlashEnd;
 	int						flashTime;
 	bool					lightOn;
-	bool					flashlightOn;
 	bool					silent_fire;
 	bool					allowDrop;
 
@@ -432,11 +384,7 @@ private:
 	void					InitWorldModel( const idDeclEntityDef* def );
 	void					MuzzleRise( idVec3& origin, idMat3& axis );
 	void					UpdateNozzleFx();
-	void					InitWeaponFx();
-	void					StopWeaponFx();
-	void					UpdateWeaponFx();
-	void					UpdateMuzzleFlashPosition();
-	void					UpdateFlashlightPosition();
+	void					UpdateFlashPosition();
 
 	// script events
 	void					Event_Clear();
@@ -462,7 +410,6 @@ private:
 	void					Event_GetBlendFrames( int channel );
 	void					Event_Next();
 	void					Event_SetSkin( const char* skinname );
-	void					Event_MuzzleFlashlight( int enable );
 	void					Event_Flashlight( int enable );
 	void					Event_GetLightParm( int parmnum );
 	void					Event_SetLightParm( int parmnum, float value );
@@ -495,16 +442,6 @@ private:
 
 	void					Event_StartWeaponLight( const char* name );
 	void					Event_StopWeaponLight( const char* name );
-
-	int						snapshotLight;
-	bool					canSyncLight;
-	int						isAux;
-
-	void					Event_GetAux();
-	void					Event_SetAux( int aux );
-	void					Event_BeginLightSync();
-	void					Event_SetNetfiring( int isNetfiring );
-	void					Event_SetWeaponGuiParm( const char* key, const char* val );
 };
 
 ID_INLINE bool idWeapon::IsLinked()
@@ -517,7 +454,7 @@ ID_INLINE bool idWeapon::IsWorldModelReady()
 	return ( worldModel.GetEntity() != NULL );
 }
 
-ID_INLINE idActor* idWeapon::GetOwner()
+ID_INLINE idPlayer* idWeapon::GetOwner()
 {
 	return owner;
 }
