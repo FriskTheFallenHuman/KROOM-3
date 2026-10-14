@@ -157,12 +157,66 @@ void idMenuScreen_Shell_Pause::ShowScreen( const mainMenuTransition_t transition
 		}
 	}
 
-	if( g_demoMode.GetBool() )
+	if( common->IsMultiplayer() )
+	{
+		isMpPause = true;
+		option.Append( "#str_04106" );	// return to game
+		menuOptions.Append( option );
+		option.Clear();
+		option.Append( "#str_swf_settings" );	// settings
+		menuOptions.Append( option );
+		option.Clear();
+#ifdef USE_STEAMWORKS
+		option.Append( "#str_swf_invite_friends_upper" );	// settings
+		menuOptions.Append( option );
+		option.Clear();
+#endif
+		option.Append( "#str_swf_leave_game" );	// leave game
+		menuOptions.Append( option );
+
+		int index = 0;
+		idMenuWidget_Button* buttonWidget = NULL;
+		options->GetChildByIndex( index ).ClearEventActions();
+		options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PAUSE_CMD_RETURN );
+		buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
+		if( buttonWidget != NULL )
+		{
+			buttonWidget->SetDescription( "#str_swf_resume_desc" );
+		}
+		index++;
+		options->GetChildByIndex( index ).ClearEventActions();
+		options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PAUSE_CMD_SETTINGS );
+		buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
+		if( buttonWidget != NULL )
+		{
+			buttonWidget->SetDescription( "#str_02206" );
+		}
+		index++;
+#ifdef USE_STEAMWORKS
+		options->GetChildByIndex( index ).ClearEventActions();
+		options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PAUSE_CMD_INVITE_FRIENDS );
+		buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
+		if( buttonWidget != NULL )
+		{
+			buttonWidget->SetDescription( "#str_swf_invite_desc" );
+		}
+		index++;
+#endif
+		options->GetChildByIndex( index ).ClearEventActions();
+		options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PAUSE_CMD_LEAVE );
+		buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
+		if( buttonWidget != NULL )
+		{
+			buttonWidget->SetDescription( "#str_swf_exit_game_desc" );
+		}
+
+	}
+	else
 	{
 		isMpPause = false;
 		if( isDead )
 		{
-			option.Append( "#str_swf_restart_map" );	// retart map
+			option.Append( "#str_02187" );	// load game
 			menuOptions.Append( option );
 			option.Clear();
 			option.Append( "#str_swf_settings" );	// settings
@@ -172,60 +226,47 @@ void idMenuScreen_Shell_Pause::ShowScreen( const mainMenuTransition_t transition
 			menuOptions.Append( option );
 
 			int index = 0;
+			idMenuWidget_Button* buttonWidget = NULL;
 			options->GetChildByIndex( index ).ClearEventActions();
-			options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PAUSE_CMD_DEAD_RESTART );
+			options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PAUSE_CMD_LOAD );
+			buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
+			if( buttonWidget != NULL )
+			{
+				buttonWidget->SetDescription( "#str_02213" );
+			}
 			index++;
 			options->GetChildByIndex( index ).ClearEventActions();
 			options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PAUSE_CMD_SETTINGS );
+			buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
+			if( buttonWidget != NULL )
+			{
+				buttonWidget->SetDescription( "#str_02206" );
+			}
 			index++;
 			options->GetChildByIndex( index ).ClearEventActions();
-			options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PAUSE_CMD_LEAVE );
+			options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PAUSE_CMD_EXIT );
+			buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
+			if( buttonWidget != NULL )
+			{
+				buttonWidget->SetDescription( "#str_swf_exit_game_desc" );
+			}
+
 		}
 		else
 		{
 			option.Append( "#str_04106" );	// return to game
 			menuOptions.Append( option );
 			option.Clear();
-			option.Append( "#str_swf_restart_map" );	// retart map
+			option.Append( "#str_02179" );	// save game
+			menuOptions.Append( option );
+			option.Clear();
+			option.Append( "#str_02187" );	// load game
 			menuOptions.Append( option );
 			option.Clear();
 			option.Append( "#str_swf_settings" );	// settings
 			menuOptions.Append( option );
 			option.Clear();
 			option.Append( "#str_swf_exit_game" );	// exit game
-			menuOptions.Append( option );
-
-			int index = 0;
-			options->GetChildByIndex( index ).ClearEventActions();
-			options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PAUSE_CMD_RETURN );
-			index++;
-			options->GetChildByIndex( index ).ClearEventActions();
-			options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PAUSE_CMD_RESTART );
-			index++;
-			options->GetChildByIndex( index ).ClearEventActions();
-			options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PAUSE_CMD_SETTINGS );
-			index++;
-			options->GetChildByIndex( index ).ClearEventActions();
-			options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PAUSE_CMD_EXIT );
-		}
-	}
-	else
-	{
-		if( common->IsMultiplayer() )
-		{
-			isMpPause = true;
-			option.Append( "#str_04106" );	// return to game
-			menuOptions.Append( option );
-			option.Clear();
-			option.Append( "#str_swf_settings" );	// settings
-			menuOptions.Append( option );
-			option.Clear();
-#if 0
-			option.Append( "#str_swf_invite_friends_upper" );	// settings
-			menuOptions.Append( option );
-			option.Clear();
-#endif
-			option.Append( "#str_swf_leave_game" );	// leave game
 			menuOptions.Append( option );
 
 			int index = 0;
@@ -239,6 +280,22 @@ void idMenuScreen_Shell_Pause::ShowScreen( const mainMenuTransition_t transition
 			}
 			index++;
 			options->GetChildByIndex( index ).ClearEventActions();
+			options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PAUSE_CMD_SAVE );
+			buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
+			if( buttonWidget != NULL )
+			{
+				buttonWidget->SetDescription( "#str_02211" );
+			}
+			index++;
+			options->GetChildByIndex( index ).ClearEventActions();
+			options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PAUSE_CMD_LOAD );
+			buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
+			if( buttonWidget != NULL )
+			{
+				buttonWidget->SetDescription( "#str_02213" );
+			}
+			index++;
+			options->GetChildByIndex( index ).ClearEventActions();
 			options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PAUSE_CMD_SETTINGS );
 			buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
 			if( buttonWidget != NULL )
@@ -246,124 +303,12 @@ void idMenuScreen_Shell_Pause::ShowScreen( const mainMenuTransition_t transition
 				buttonWidget->SetDescription( "#str_02206" );
 			}
 			index++;
-#if 0
 			options->GetChildByIndex( index ).ClearEventActions();
-			options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PAUSE_CMD_INVITE_FRIENDS );
-			buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
-			if( buttonWidget != NULL )
-			{
-				buttonWidget->SetDescription( "#str_swf_invite_desc" );
-			}
-			index++;
-#endif
-			options->GetChildByIndex( index ).ClearEventActions();
-			options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PAUSE_CMD_LEAVE );
+			options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PAUSE_CMD_EXIT );
 			buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
 			if( buttonWidget != NULL )
 			{
 				buttonWidget->SetDescription( "#str_swf_exit_game_desc" );
-			}
-
-		}
-		else
-		{
-			isMpPause = false;
-			if( isDead )
-			{
-				option.Append( "#str_02187" );	// load game
-				menuOptions.Append( option );
-				option.Clear();
-				option.Append( "#str_swf_settings" );	// settings
-				menuOptions.Append( option );
-				option.Clear();
-				option.Append( "#str_swf_exit_game" );	// exit game
-				menuOptions.Append( option );
-
-				int index = 0;
-				idMenuWidget_Button* buttonWidget = NULL;
-				options->GetChildByIndex( index ).ClearEventActions();
-				options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PAUSE_CMD_LOAD );
-				buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
-				if( buttonWidget != NULL )
-				{
-					buttonWidget->SetDescription( "#str_02213" );
-				}
-				index++;
-				options->GetChildByIndex( index ).ClearEventActions();
-				options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PAUSE_CMD_SETTINGS );
-				buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
-				if( buttonWidget != NULL )
-				{
-					buttonWidget->SetDescription( "#str_02206" );
-				}
-				index++;
-				options->GetChildByIndex( index ).ClearEventActions();
-				options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PAUSE_CMD_EXIT );
-				buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
-				if( buttonWidget != NULL )
-				{
-					buttonWidget->SetDescription( "#str_swf_exit_game_desc" );
-				}
-
-			}
-			else
-			{
-				option.Append( "#str_04106" );	// return to game
-				menuOptions.Append( option );
-				option.Clear();
-				option.Append( "#str_02179" );	// save game
-				menuOptions.Append( option );
-				option.Clear();
-				option.Append( "#str_02187" );	// load game
-				menuOptions.Append( option );
-				option.Clear();
-				option.Append( "#str_swf_settings" );	// settings
-				menuOptions.Append( option );
-				option.Clear();
-				option.Append( "#str_swf_exit_game" );	// exit game
-				menuOptions.Append( option );
-
-				int index = 0;
-				idMenuWidget_Button* buttonWidget = NULL;
-				options->GetChildByIndex( index ).ClearEventActions();
-				options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PAUSE_CMD_RETURN );
-				buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
-				if( buttonWidget != NULL )
-				{
-					buttonWidget->SetDescription( "#str_swf_resume_desc" );
-				}
-				index++;
-				options->GetChildByIndex( index ).ClearEventActions();
-				options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PAUSE_CMD_SAVE );
-				buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
-				if( buttonWidget != NULL )
-				{
-					buttonWidget->SetDescription( "#str_02211" );
-				}
-				index++;
-				options->GetChildByIndex( index ).ClearEventActions();
-				options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PAUSE_CMD_LOAD );
-				buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
-				if( buttonWidget != NULL )
-				{
-					buttonWidget->SetDescription( "#str_02213" );
-				}
-				index++;
-				options->GetChildByIndex( index ).ClearEventActions();
-				options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PAUSE_CMD_SETTINGS );
-				buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
-				if( buttonWidget != NULL )
-				{
-					buttonWidget->SetDescription( "#str_02206" );
-				}
-				index++;
-				options->GetChildByIndex( index ).ClearEventActions();
-				options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, PAUSE_CMD_EXIT );
-				buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
-				if( buttonWidget != NULL )
-				{
-					buttonWidget->SetDescription( "#str_swf_exit_game_desc" );
-				}
 			}
 		}
 	}

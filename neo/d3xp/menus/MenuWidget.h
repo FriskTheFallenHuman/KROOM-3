@@ -1498,6 +1498,29 @@ private:
 
 /*
 ================================================
+idMenuWidget_Shell_ModInfo
+================================================
+*/
+class idMenuWidget_Shell_ModInfo : public idMenuWidget
+{
+public:
+	idMenuWidget_Shell_ModInfo() : modIndex( 0 ) {}
+
+	virtual void	Update();
+	virtual void	ObserveEvent( const idMenuWidget& widget, const idWidgetEvent& event );
+
+	void SetModList( const idList< idModInfo_t >* list )
+	{
+		modList = list;
+	}
+
+private:
+	const idList< idModInfo_t >* modList = nullptr;
+	int modIndex;
+};
+
+/*
+================================================
 idMenuWidget_PDA_AudioFiles
 ================================================
 */

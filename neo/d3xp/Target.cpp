@@ -195,13 +195,6 @@ idTarget_EndLevel::Event_Activate
 */
 void idTarget_EndLevel::Event_Activate( idEntity* activator )
 {
-	extern idCVar g_demoMode;
-	if( g_demoMode.GetInteger() > 0 )
-	{
-		gameLocal.sessionCommand = "disconnect";
-		return;
-	}
-
 	idPlayer* player = gameLocal.GetLocalPlayer();
 
 	const bool isTutorialMap = ( idStr::FindText( gameLocal.GetMapFileName(), "mars_city1" ) >= 0 ) ||
@@ -2043,8 +2036,7 @@ idTarget_Checkpoint::Event_Activate
 */
 void idTarget_Checkpoint::Event_Activate( idEntity* activator )
 {
-	extern idCVar g_demoMode; // no saving in demo mode
-	if( g_checkpoints.GetBool() && !g_demoMode.GetBool() )
+	if( g_checkpoints.GetBool() )
 	{
 		cmdSystem->AppendCommandText( "savegame autosave\n" );
 		idPlayer* player = gameLocal.GetLocalPlayer();

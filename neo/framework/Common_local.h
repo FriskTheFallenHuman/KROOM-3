@@ -723,7 +723,6 @@ private:
 
 	void	ScrubSaveGameFileName( idStr& saveFileName ) const;
 
-	void	DoModFilesystemChanges();
 	void	DoAdditionalLaunchOptions();
 	void	DoCustomBranding();
 };

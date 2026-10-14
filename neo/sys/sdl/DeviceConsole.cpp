@@ -330,6 +330,8 @@ void Sys_CreateConsole()
 		return;
 	}
 
+	wxInitAllImageHandlers();
+
 	s_consoleInited = true;
 
 	s_console = new ConsoleFrame();

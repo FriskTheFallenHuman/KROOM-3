@@ -186,9 +186,9 @@ public:
 	virtual idModList* 		ListMods() = 0;
 	// Frees the given mod list
 	virtual void			FreeModList( idModList* modList ) = 0;
-	// Reads <modname>/description.txt from fs_savepath then fs_basepath.
-	// Returns true if the manifest was found and parsed.
-	virtual bool			ReadModManifest( const char* modName, idModInfo_t& out ) = 0;
+	// Returns the mod information for the currently running mod.
+	// Returns false if no manifest was found for the current fs_game.
+	virtual bool			GetSelectedModInfo( idModInfo_t& out ) const = 0;
 	// Lists files with the given extension in the given directory.
 	// Directory should not have either a leading or trailing '/'
 	// The returned files will not include any directories or '/' unless fullRelativePath is set.

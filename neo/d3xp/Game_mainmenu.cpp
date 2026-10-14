@@ -161,26 +161,6 @@ void idGameMainMenuLocal::LoadingGui( const char* mapName, bool& hellMap )
 	defaultLoadscreen = false;
 	loadGUI = new idSWF( "loading/default", NULL );
 
-	extern idCVar g_demoMode;
-	if( g_demoMode.GetBool() )
-	{
-		hellMap = false;
-		if( loadGUI != NULL )
-		{
-			const idMaterial* defaultMat = declManager->FindMaterial( "guis/assets/loadscreens/default" );
-			renderSystem->LoadLevelImages();
-
-			loadGUI->Activate( true );
-			idSWFSpriteInstance* bgImg = loadGUI->GetRootObject().GetSprite( "bgImage" );
-			if( bgImg != NULL )
-			{
-				bgImg->SetMaterial( defaultMat );
-			}
-		}
-		defaultLoadscreen = true;
-		return;
-	}
-
 	// load / program a gui to stay up on the screen while loading
 	idStrStatic< MAX_OSPATH > stripped = mapName;
 	stripped.StripFileExtension();
@@ -193,10 +173,11 @@ void idGameMainMenuLocal::LoadingGui( const char* mapName, bool& hellMap )
 
 	renderSystem->LoadLevelImages();
 
-	if( mat->GetImageWidth() < 32 )
+	if( mat->IsImplicit() )
 	{
 		mat = declManager->FindMaterial( "guis/assets/loadscreens/default" );
 		renderSystem->LoadLevelImages();
+		defaultLoadscreen = true;
 	}
 
 	loadTipList.SetNum( loadTipList.Max() );

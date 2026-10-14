@@ -141,7 +141,7 @@ public:
 	virtual bool			IsInitialized() const;
 	virtual idModList* 		ListMods();
 	virtual void			FreeModList( idModList* modList );
-	virtual bool			ReadModManifest( const char* modName, idModInfo_t& out );
+	virtual bool			GetSelectedModInfo( idModInfo_t& out ) const;
 	virtual idFileList* 	ListFiles( const char* relativePath, const char* extension, bool sort = false, bool fullRelativePath = false, const char* gamedir = NULL );
 	virtual idFileList* 	ListFilesTree( const char* relativePath, const char* extension, bool sort = false, const char* gamedir = NULL );
 	virtual void			FreeFileList( idFileList* fileList );
@@ -240,6 +240,7 @@ public:
 	static void				DirTree_f( const idCmdArgs& args );
 	static void				Path_f( const idCmdArgs& args );
 	static void				ListMods_f( const idCmdArgs& args );
+	static void				SwitchMod_f( const idCmdArgs& args );
 	static void				TouchFile_f( const idCmdArgs& args );
 	static void				TouchFileList_f( const idCmdArgs& args );
 	static void				BuildGame_f( const idCmdArgs& args );
@@ -317,6 +318,12 @@ private:
 	// RB: PK4 support
 	idFile* 				GetZipFile( const char* fileName, bool memFile );
 	bool					GetZipCacheEntry( const char* fileName, idZipCacheEntry& rc );
+
+	bool					ReadModManifest( const char* gameFolder, idModInfo_t& out );
+	void					DoModFilesystemChanges();
+
+	idModInfo_t				selectedModInfo;
+	bool					haveSelectedModInfo = false;
 };
 
 idCVar	idFileSystemLocal::fs_debug( "fs_debug", "0", CVAR_SYSTEM | CVAR_INTEGER, "", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2> );
@@ -332,7 +339,9 @@ idCVar	fs_basepath( "fs_basepath", "", CVAR_SYSTEM | CVAR_INIT, "" );
 idCVar	fs_savepath( "fs_savepath", "", CVAR_SYSTEM | CVAR_INIT, "" );
 idCVar	fs_resourceLoadPriority( "fs_resourceLoadPriority", "0", CVAR_SYSTEM , "if 1, open requests will be honored from resource files first; if 0, the resource files are checked after normal search paths" );
 idCVar	fs_enableBackgroundCaching( "fs_enableBackgroundCaching", "1", CVAR_SYSTEM , "if 1 allow the 360 to precache game files in the background" );
+
 idCVar	fs_skipBase( "fs_skipBase", "0", CVAR_SYSTEM | CVAR_INIT | CVAR_BOOL, "do not mount the default folder" );
+idCVar	fs_playMod( "fs_playMod", "", CVAR_SYSTEM | CVAR_ROM | CVAR_INIT, "last selected mod" );
 
 idFileSystemLocal	fileSystemLocal;
 idFileSystem* 		fileSystem = &fileSystemLocal;
@@ -3051,6 +3060,53 @@ bool idFileSystemLocal::ReadModManifest( const char* gameFolder, idModInfo_t& ou
 
 /*
 ===============
+idFileSystemLocal::DoModFilesystemChanges
+===============
+*/
+void idFileSystemLocal::DoModFilesystemChanges()
+{
+	haveSelectedModInfo = false;
+
+	const char* game = fs_game.GetString();
+	if( game == NULL || game[0] == '\0' )
+	{
+		return;   // base game
+	}
+
+	idModInfo_t info;
+	if( !ReadModManifest( game, info ) )
+	{
+		return;   // no manifest
+	}
+
+	if( info.fs_game_base.Length() > 0 )
+	{
+		fs_game_base.SetString( info.fs_game_base.c_str() );
+	}
+
+	cvarSystem->SetCVarBool( "fs_skipBase", info.skipBase );
+
+	selectedModInfo = info;
+	haveSelectedModInfo = true;
+}
+
+/*
+===============
+idFileSystemLocal::GetSelectedModInfo
+===============
+*/
+bool idFileSystemLocal::GetSelectedModInfo( idModInfo_t& out ) const
+{
+	if( !haveSelectedModInfo )
+	{
+		return false;
+	}
+	out = selectedModInfo;
+	return true;
+}
+
+/*
+===============
 idFileSystemLocal::ListOSFiles
 
  call to the OS for a listing of files in an OS directory
@@ -3346,6 +3402,150 @@ void idFileSystemLocal::ListMods_f( const idCmdArgs& args )
 	common->Printf( "----------------------------------------\n" );
 
 	fileSystem->FreeModList( modList );
+}
+
+/*
+===============
+StripModCvarsFromCmdLine
+
+Removes every "+set fs_game X", "+set fs_game_base X" and "+set fs_skipBase X"
+pair from a command-line string.
+===============
+*/
+static void StripModCvarsFromCmdLine( idStr& cmdLine )
+{
+	static const char* modCvars[] = { "fs_game", "fs_game_base", "fs_skipBase" };
+	static const int   numModCvars = 3;
+
+	idList< idStr > tokens;
+
+	const char* p = cmdLine.c_str();
+	while( *p )
+	{
+		while( *p == ' ' || *p == '\t' ) p++;
+		if( !*p ) break;
+
+		idStr tok;
+		if( *p == '"' )
+		{
+			p++;
+			while( *p && *p != '"' ) tok.Append( *p++ );
+			if( *p == '"' ) p++;
+		}
+		else
+		{
+			while( *p && *p != ' ' && *p != '\t' ) tok.Append( *p++ );
+		}
+		tokens.Append( tok );
+	}
+
+	idList< idStr > keep;
+	for( int i = 0; i < tokens.Num(); ++i )
+	{
+		const idStr& t = tokens[i];
+
+		if( ( t.Icmp( "+set" ) == 0 || t.Icmp( "set" ) == 0 ) && ( i + 2 ) < tokens.Num() )
+		{
+			const idStr& cvarName = tokens[ i + 1 ];
+			bool matched = false;
+			for( int c = 0; c < numModCvars; ++c )
+			{
+				if( cvarName.Icmp( modCvars[ c ] ) == 0 ) { matched = true; break; }
+			}
+			if( matched )
+			{
+				i += 2;
+				continue;
+			}
+		}
+
+		keep.Append( t );
+	}
+
+	idStr result;
+	for( int i = 0; i < keep.Num(); ++i )
+	{
+		if( result.Length() ) result.Append( ' ' );
+		result.Append( keep[ i ] );
+	}
+	cmdLine = result;
+}
+
+/*
+===============
+idFileSystemLocal::SwitchMod_f
+===============
+*/
+void idFileSystemLocal::SwitchMod_f( const idCmdArgs& args )
+{
+	const char* target = ( args.Argc() >= 2 ) ? args.Argv( 1 ) : "";
+
+	idStr modName, modTitle, fsGame, fsGameBase;
+	bool skipBase = false;
+
+	if( target[0] != '\0' )
+	{
+		idModList* mods = fileSystemLocal.ListMods();
+		if( mods == NULL )
+		{
+			return;
+		}
+
+		const idModInfo_t* chosen = NULL;
+		for( int i = 0; i < mods->GetNumMods(); ++i )
+		{
+			const idModInfo_t& info = mods->GetInfo( i );
+			if( info.name.Icmp( target ) == 0 || info.title.Icmp( target ) == 0 )
+			{
+				chosen = &info;
+				break;
+			}
+		}
+
+		if( chosen == NULL )
+		{
+			common->Warning( "mod '%s' not found", target );
+			fileSystemLocal.FreeModList( mods );
+			return;
+		}
+
+		modName = chosen->name;
+		modTitle = chosen->title;
+		fsGame = chosen->fs_game;
+		fsGameBase = chosen->fs_game_base;
+		skipBase = chosen->skipBase;
+
+		fileSystemLocal.FreeModList( mods );
+
+		common->Printf( "Switching to mod '%s' (%s)...\n", modName.c_str(), modTitle.c_str() );
+	}
+	else
+	{
+		common->Printf( "Switching to base game...\n" );
+	}
+
+	idStr cmdLine = sys->GetCmdLine();
+	StripModCvarsFromCmdLine( cmdLine );
+
+	idStr newModCvars;
+	if( fsGameBase.Length() > 0 )
+	{
+		newModCvars.Append( va( "+set fs_game_base \"%s\" ", fsGameBase.c_str() ) );
+	}
+	if( fsGame.Length() > 0 )
+	{
+		newModCvars.Append( va( "+set fs_game \"%s\" ", fsGame.c_str() ) );
+	}
+	if( skipBase )
+	{
+		newModCvars.Append( "+set fs_skipBase 1 " );
+	}
+
+	idStr finalCmdLine = newModCvars;
+	finalCmdLine.Append( cmdLine );
+
+	common->Printf( "Relaunch cmdline: %s\n", finalCmdLine.c_str() );
+	sys->ReLaunch( ( void* )finalCmdLine.c_str() );
 }
 
 /*
@@ -3825,6 +4025,7 @@ void idFileSystemLocal::Startup()
 	cmdSystem->AddCommand( "dirtree", DirTree_f, CMD_FL_SYSTEM, "lists a folder with subfolders" );
 	cmdSystem->AddCommand( "path", Path_f, CMD_FL_SYSTEM, "lists search paths" );
 	cmdSystem->AddCommand( "listMods", ListMods_f, CMD_FL_SYSTEM, "lists available mods" );
+	cmdSystem->AddCommand( "switchMod", SwitchMod_f, CMD_FL_SYSTEM, "switches to a different mod" );
 	cmdSystem->AddCommand( "touchFile", TouchFile_f, CMD_FL_SYSTEM, "touches a file" );
 	cmdSystem->AddCommand( "touchFileList", TouchFileList_f, CMD_FL_SYSTEM, "touches a list of files" );
 
@@ -3872,6 +4073,9 @@ void idFileSystemLocal::Init()
 	{
 		fs_savepath.SetString( path );
 	}
+
+	// this is the only place where the filesystem is initialized, so we can apply the mod-to-mod filesystem changes here
+	DoModFilesystemChanges();
 
 	// try to start up normally
 	Startup();

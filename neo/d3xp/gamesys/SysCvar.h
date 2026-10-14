@@ -236,7 +236,6 @@ extern idCVar	g_grabberDamping;
 
 extern idCVar	g_xp_bind_run_once;
 extern idCVar	g_checkpoints;
-extern idCVar	g_demoMode;
 
 extern idCVar	aa_targetAimAssistEnable;
 

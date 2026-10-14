@@ -315,8 +315,6 @@ idCVar g_xp_bind_run_once(          "g_xp_bind_run_once",		"0",			CVAR_GAME | CV
 
 idCVar g_checkpoints(				"g_checkpoints",			"1",			CVAR_BOOL | CVAR_ARCHIVE, "Enable/Disable checkpoints" );
 
-idCVar g_demoMode(					"g_demoMode",				"0",			CVAR_INTEGER, "this is a demo" );
-
 idCVar aa_targetAimAssistEnable(	"aa_targetAimAssistEnable",	"0",			CVAR_BOOL | CVAR_ARCHIVE,	"Enables/Disables the entire Aim Assist system" );
 
 idCVar aa_targetAdhesionEnable(		"aa_targetAdhesionEnable",	"1",			CVAR_BOOL,	"Enables Target Adhesion" );

@@ -519,6 +519,29 @@ private:
 
 //*
 //================================================
+//idMenuScreen_Shell_Extras
+//================================================
+//*/
+class idMenuScreen_Shell_Extras : public idMenuScreen
+{
+public:
+	idMenuScreen_Shell_Extras() :
+		options( NULL ),
+		btnBack( NULL )
+	{
+	}
+	virtual void				Initialize( idMenuHandler* data );
+	virtual void				Update();
+	virtual void				ShowScreen( const mainMenuTransition_t transitionType );
+	virtual void				HideScreen( const mainMenuTransition_t transitionType );
+	virtual bool				HandleAction( idWidgetAction& action, const idWidgetEvent& event, idMenuWidget* widget, bool forceHandled = false );
+private:
+	idMenuWidget_DynamicList* 	options;
+	idMenuWidget_Button*			btnBack;
+};
+
+//*
+//================================================
 //idMenuScreen_Shell_Resolution
 //================================================
 //*/
@@ -873,6 +896,40 @@ private:
 	idMenuWidget_Button*			btnBack;
 	idMenuWidget_Button* 		btnDelete;
 	saveGameDetailsList_t		sortedSaves;
+};
+
+/*
+================================================
+idMenuScreen_Shell_Mods
+================================================
+*/
+class idMenuScreen_Shell_Mods : public idMenuScreen
+{
+public:
+	idMenuScreen_Shell_Mods() :
+		options( NULL ),
+		modInfo( NULL ),
+		btnBack( NULL ),
+		btnLaunch( NULL )
+	{
+	}
+
+	virtual void                Initialize( idMenuHandler* data );
+	virtual void                Update();
+	virtual void                ShowScreen( const mainMenuTransition_t transitionType );
+	virtual void                HideScreen( const mainMenuTransition_t transitionType );
+	virtual bool                HandleAction( idWidgetAction& action, const idWidgetEvent& event, idMenuWidget* widget, bool forceHandled = false );
+
+private:
+	void                        RefreshModList();
+	const idModInfo_t*          GetSelectedMod() const;
+
+	idMenuWidget_DynamicList*   options;
+	idMenuWidget_Shell_ModInfo* modInfo;
+	idMenuWidget_Button*        btnBack;
+	idMenuWidget_Button*        btnLaunch;
+
+	idList< idModInfo_t >       cachedMods;
 };
 
 //*

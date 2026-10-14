@@ -55,8 +55,6 @@ idCVar pm_clientInterpolation_Divergence( "pm_clientInterpolation_Divergence", "
 
 idCVar pm_clientAuthoritative_minSpeedSquared( "pm_clientAuthoritative_minSpeedSquared", "1000.0f", CVAR_FLOAT, "" );
 
-extern idCVar g_demoMode;
-
 /*
 ===============================================================================
 
@@ -2301,12 +2299,6 @@ void idPlayer::Spawn()
 	bloomEnabled			= false;
 	bloomSpeed				= 1;
 	bloomIntensity			= -0.01f;
-
-	if( g_demoMode.GetBool() && weapon.GetEntity() && weapon.GetEntity()->AmmoInClip() == 0 )
-	{
-		weapon.GetEntity()->ForceAmmoInClip();
-	}
-
 }
 
 /*
@@ -3340,7 +3332,7 @@ Restores any inventory and player stats when changing levels.
 */
 void idPlayer::RestorePersistantInfo()
 {
-	if( common->IsMultiplayer() || g_demoMode.GetBool() )
+	if( common->IsMultiplayer() )
 	{
 		gameLocal.persistentPlayerInfo[entityNumber].Clear();
 	}
@@ -10201,11 +10193,6 @@ int idPlayer::AdjustDamageAmount( const int inputDamage )
 			{
 				outputDamage *= scale;
 			}
-		}
-
-		if( g_demoMode.GetBool() )
-		{
-			outputDamage /= 2;
 		}
 
 		if( outputDamage < 1 )

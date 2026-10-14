@@ -204,11 +204,6 @@ idAchievementManager::EventCompletesAchievement
 */
 void idAchievementManager::EventCompletesAchievement( const achievement_t eventId )
 {
-	if( g_demoMode.GetBool() )
-	{
-		return;
-	}
-
 	idLocalUser* localUser = GetLocalUser();
 	if( localUser == NULL || localUser->GetProfile() == NULL )
 	{

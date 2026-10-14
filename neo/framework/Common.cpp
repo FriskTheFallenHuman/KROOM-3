@@ -1295,11 +1295,22 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 		// init commands
 		InitCommands();
 
-		// a mod is requesting some changes from the filesystem.
-		DoModFilesystemChanges();
-
 		// initialize the file system
 		fileSystem->Init();
+
+		// Ask the file system for the selected mod info, if any.
+		// This is used to override the title and icon.
+		idModInfo_t modInfo;
+		if( fileSystem->GetSelectedModInfo( modInfo ) )
+		{
+			selectedMod = modInfo;
+			haveSelectedMod = true;
+
+			if( modInfo.name.Length() > 0 )
+			{
+				cvarSystem->SetCVarString( "fs_playMod", modInfo.name.c_str() );
+			}
+		}
 
 		// Allow the system to set a default lanugage
 		Sys_SetLanguageFromSystem();
@@ -1786,46 +1797,6 @@ void idCommonLocal::Stop( bool resetSession )
 	{
 		session->QuitMatchToTitle();
 	}
-}
-
-/*
-=================
-idCommonLocal::DoModFilesystemChanges
-=================
-*/
-void idCommonLocal::DoModFilesystemChanges()
-{
-	haveSelectedMod = false;
-
-	const char* game = cvarSystem->GetCVarString( "fs_game" );
-	if( game == NULL || game[0] == '\0' )
-	{
-		return;
-	}
-
-	idModInfo_t info;
-	if( !fileSystem->ReadModManifest( game, info ) )
-	{
-		// No manifest
-		return;
-	}
-
-	// Filesystem overrides.
-	if( info.fs_game_base.Length() > 0 )
-	{
-		cvarSystem->SetCVarString( "fs_game_base", info.fs_game_base.c_str() );
-	}
-	if( info.fs_game.Length() > 0 && info.fs_game.Icmp( game ) != 0 )
-	{
-		cvarSystem->SetCVarString( "fs_game", info.fs_game.c_str() );
-	}
-
-	cvarSystem->SetCVarBool( "fs_skipBase", info.skipBase );
-
-	selectedMod = info;
-	haveSelectedMod = true;
-
-	cvarSystem->ClearModifiedFlags( CVAR_INIT );
 }
 
 /*

@@ -96,7 +96,7 @@ void idMenuScreen_Shell_Dev::Initialize( idMenuHandler* data )
 
 	btnBack = new( TAG_SWF ) idMenuWidget_Button();
 	btnBack->Initialize( data );
-	btnBack->SetLabel( "#str_swf_campaign" );
+	btnBack->SetLabel( "EXTRAS" );
 	btnBack->SetSpritePath( GetSpritePath(), "info", "btnBack" );
 	btnBack->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_GO_BACK );
 
@@ -128,10 +128,6 @@ void idMenuScreen_Shell_Dev::SetupDevOptions()
 	auto TryAddMap = [&]( const idStr & mapName, const idStr & displayName, bool isMP )
 	{
 		if( mapName.IsEmpty() )
-		{
-			return;
-		}
-		if( mapName.EndsWithIgnoreCase( "_extra_ents" ) )
 		{
 			return;
 		}
@@ -261,7 +257,7 @@ void idMenuScreen_Shell_Dev::Update()
 		idSWFTextInstance* heading = GetSprite()->GetScriptObject()->GetNestedText( "info", "txtHeading" );
 		if( heading != NULL )
 		{
-			heading->SetText( "DEV" );
+			heading->SetText( "DEV MENU" );
 			heading->SetStrokeInfo( true, 0.75f, 1.75f );
 		}
 
@@ -325,7 +321,7 @@ bool idMenuScreen_Shell_Dev::HandleAction( idWidgetAction& action, const idWidge
 	{
 		case WIDGET_ACTION_GO_BACK:
 		{
-			menuData->SetNextScreen( SHELL_AREA_CAMPAIGN, MENU_TRANSITION_SIMPLE );
+			menuData->SetNextScreen( SHELL_AREA_EXTRAS, MENU_TRANSITION_SIMPLE );
 			return true;
 		}
 		case WIDGET_ACTION_PRESS_FOCUSED:

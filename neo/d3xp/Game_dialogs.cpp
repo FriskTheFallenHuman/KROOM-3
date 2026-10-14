@@ -40,8 +40,6 @@ idGameDialogs* 				dialogs = &dialogsLocal;	// statically pointed at an idGameDi
 idCVar popupDialog_debug( "popupDialog_debug", "0", CVAR_BOOL | CVAR_ARCHIVE, "display debug spam" );
 idCVar dialog_saveClearLevel( "dialog_saveClearLevel", "1000", CVAR_INTEGER, "Time required to show long message" );
 
-extern idCVar g_demoMode;
-
 static const char* dialogStateToString[ GDM_MAX + 1 ] =
 {
 	ASSERT_ENUM_STRING( GDM_INVALID, 0 ),
@@ -838,14 +836,7 @@ idStr idGameDialogsLocal::GetDialogMsg( gameDialogMessages_t msg, idStr& message
 		{
 			title = idLocalization::GetString( "#str_04215" );
 			title.ToUpper();
-			if( g_demoMode.GetBool() )
-			{
-				message = "#str_04145";
-			}
-			else
-			{
-				message = "#str_dlg_quit_progress_lost";
-			}
+			message = "#str_dlg_quit_progress_lost";
 			break;
 		}
 		case GDM_SP_LOAD_SAVE:

@@ -748,7 +748,7 @@ void idMenuScreen_Shell_Credits::Initialize( idMenuHandler* data )
 
 	btnBack = new( TAG_SWF ) idMenuWidget_Button();
 	btnBack->Initialize( data );
-	btnBack->SetLabel( "#str_02305" );
+	btnBack->SetLabel( "EXTRAS" );
 	btnBack->SetSpritePath( GetSpritePath(), "info", "btnBack" );
 	btnBack->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_GO_BACK );
 	AddChild( btnBack );
@@ -894,7 +894,7 @@ bool idMenuScreen_Shell_Credits::HandleAction( idWidgetAction& action, const idW
 			}
 			else
 			{
-				menuData->SetNextScreen( SHELL_AREA_ROOT, MENU_TRANSITION_SIMPLE );
+				menuData->SetNextScreen( SHELL_AREA_EXTRAS, MENU_TRANSITION_SIMPLE );
 			}
 
 			return true;
@@ -937,7 +937,7 @@ void idMenuScreen_Shell_Credits::UpdateCredits()
 		}
 		else
 		{
-			menuData->SetNextScreen( SHELL_AREA_ROOT, MENU_TRANSITION_SIMPLE );
+			menuData->SetNextScreen( SHELL_AREA_EXTRAS, MENU_TRANSITION_SIMPLE );
 		}
 		return;
 	}

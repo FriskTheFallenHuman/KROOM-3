@@ -1174,11 +1174,11 @@ void idDeviceManagerLocal::SetWindowTitle( const char* modTitle )
 	idStr title;
 	if( modTitle && modTitle[0] )
 	{
-		title = va( "%s - %s (x%u Build)", modTitle, GAME_NAME, ( unsigned )( sizeof( void* ) * 8 ) );
+		title = va( "%s (x%u Build)", modTitle, ( unsigned )( sizeof( void* ) * 8 ) );
 	}
 	else
 	{
-		title = va( "%s (x%u Build)", GAME_NAME, ( unsigned )( sizeof( void* ) * 8 ) );
+		title = va( "%s - %s %s (x%u Build)", GAME_NAME, ID__DATE__, ID__TIME__, sizeof( void* ) * 8 );
 	}
 
 	SDL_SetWindowTitle( sdl.window, title.c_str() );

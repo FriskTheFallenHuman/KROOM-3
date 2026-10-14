@@ -165,8 +165,6 @@ void idMenuScreen_Shell_Singleplayer::ShowScreen( const mainMenuTransition_t tra
 		option.Append( "#str_01867" );	// load game
 		menuOptions.Append( option );
 		option.Clear();
-		option.Append( "Dev" );			// dev menu
-		menuOptions.Append( option );
 
 		int index = 0;
 		idMenuWidget_Button* buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
@@ -186,14 +184,6 @@ void idMenuScreen_Shell_Singleplayer::ShowScreen( const mainMenuTransition_t tra
 		{
 			buttonWidget->SetDescription( "#str_02213" );
 		}
-		index++;
-
-
-		buttonWidget = dynamic_cast<idMenuWidget_Button*>( &options->GetChildByIndex( index ) );
-		if( buttonWidget != NULL )
-		{
-			buttonWidget->SetDescription( "View a list of maps available for play" );
-		}
 	}
 	else
 	{
@@ -203,8 +193,6 @@ void idMenuScreen_Shell_Singleplayer::ShowScreen( const mainMenuTransition_t tra
 		option.Append( "#str_01867" );	// load game
 		menuOptions.Append( option );
 		option.Clear();
-		option.Append( "Dev" );			// dev menu
-		menuOptions.Append( option );
 
 		if( options != NULL )
 		{
@@ -219,13 +207,6 @@ void idMenuScreen_Shell_Singleplayer::ShowScreen( const mainMenuTransition_t tra
 			if( buttonWidget != NULL )
 			{
 				buttonWidget->SetDescription( "#str_02213" );
-			}
-
-			index++;
-			buttonWidget = dynamic_cast<idMenuWidget_Button*>( &options->GetChildByIndex( index ) );
-			if( buttonWidget != NULL )
-			{
-				buttonWidget->SetDescription( "View a list of maps available for play" );
 			}
 		}
 	}
@@ -381,10 +362,6 @@ bool idMenuScreen_Shell_Singleplayer::HandleAction( idWidgetAction& action, cons
 				{
 					menuData->SetNextScreen( SHELL_AREA_LOAD, MENU_TRANSITION_SIMPLE );
 				}
-				else if( selectionIndex == 3 )
-				{
-					menuData->SetNextScreen( SHELL_AREA_DEV, MENU_TRANSITION_SIMPLE );
-				}
 			}
 			else
 			{
@@ -395,10 +372,6 @@ bool idMenuScreen_Shell_Singleplayer::HandleAction( idWidgetAction& action, cons
 				else if( selectionIndex == 1 )
 				{
 					menuData->SetNextScreen( SHELL_AREA_LOAD, MENU_TRANSITION_SIMPLE );
-				}
-				else if( selectionIndex == 2 )
-				{
-					menuData->SetNextScreen( SHELL_AREA_DEV, MENU_TRANSITION_SIMPLE );
 				}
 			}
 

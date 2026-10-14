@@ -101,15 +101,12 @@ void idMenuScreen_Shell_Root::Update()
 			cmdBar->ClearAllButtons();
 			idMenuWidget_CommandBar::buttonInfo_t* buttonInfo;
 
-			if( !g_demoMode.GetBool() )
+			buttonInfo = cmdBar->GetButton( idMenuWidget_CommandBar::BUTTON_JOY2 );
+			if( menuData->GetPlatform() != 2 )
 			{
-				buttonInfo = cmdBar->GetButton( idMenuWidget_CommandBar::BUTTON_JOY2 );
-				if( menuData->GetPlatform() != 2 )
-				{
-					buttonInfo->label = "#str_00395";
-				}
-				buttonInfo->action.Set( WIDGET_ACTION_GO_BACK );
+				buttonInfo->label = "#str_00395";
 			}
+			buttonInfo->action.Set( WIDGET_ACTION_GO_BACK );
 
 			buttonInfo = cmdBar->GetButton( idMenuWidget_CommandBar::BUTTON_JOY1 );
 			if( menuData->GetPlatform() != 2 )
@@ -125,13 +122,11 @@ void idMenuScreen_Shell_Root::Update()
 
 enum rootMenuCmds_t
 {
-	ROOT_CMD_START_DEMO,
-	ROOT_CMD_START_DEMO2,
 	ROOT_CMD_SETTINGS,
 	ROOT_CMD_QUIT,
 	ROOT_CMD_CAMPAIGN,
 	ROOT_CMD_MULTIPLAYER,
-	ROOT_CMD_CREDITS
+	ROOT_CMD_EXTRAS
 };
 
 /*
@@ -149,128 +144,70 @@ void idMenuScreen_Shell_Root::ShowScreen( const mainMenuTransition_t transitionT
 
 		int index = 0;
 
-		if( g_demoMode.GetBool() )
+		idMenuWidget_Button* buttonWidget = NULL;
+
+		option.Clear();
+		option.Append( "#str_swf_campaign" );	// singleplayer
+		menuOptions.Append( option );
+		options->GetChildByIndex( index ).ClearEventActions();
+		options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, ROOT_CMD_CAMPAIGN );
+		buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
+		if( buttonWidget != NULL )
 		{
-			idMenuWidget_Button* buttonWidget = NULL;
-
-			option.Append( "START DEMO" );	// START DEMO
-			menuOptions.Append( option );
-			options->GetChildByIndex( index ).ClearEventActions();
-			options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, ROOT_CMD_START_DEMO );
-			buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
-			if( buttonWidget != NULL )
-			{
-				buttonWidget->SetDescription( "Launch the demo" );
-			}
-			index++;
-
-			if( g_demoMode.GetInteger() == 2 )
-			{
-				option.Clear();
-				option.Append( "START PRESS DEMO" );	// START DEMO
-				menuOptions.Append( option );
-				options->GetChildByIndex( index ).ClearEventActions();
-				options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, ROOT_CMD_START_DEMO2 );
-				buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
-				if( buttonWidget != NULL )
-				{
-					buttonWidget->SetDescription( "Launch the press demo" );
-				}
-				index++;
-			}
-
-			option.Clear();
-			option.Append( "#str_swf_settings" );	// settings
-			menuOptions.Append( option );
-			options->GetChildByIndex( index ).ClearEventActions();
-			options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, ROOT_CMD_SETTINGS );
-			buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
-			if( buttonWidget != NULL )
-			{
-				buttonWidget->SetDescription( "#str_02206" );
-			}
-			index++;
-
-			option.Clear();
-			option.Append( "#str_swf_quit" );	// quit
-			menuOptions.Append( option );
-			options->GetChildByIndex( index ).ClearEventActions();
-			options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, ROOT_CMD_QUIT );
-			buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
-			if( buttonWidget != NULL )
-			{
-				buttonWidget->SetDescription( "#str_01976" );
-			}
-			index++;
-
+			buttonWidget->SetDescription( "#str_swf_campaign_desc" );
 		}
-		else
+		index++;
+
+		option.Clear();
+		option.Append( "#str_swf_multiplayer" );	// multiplayer
+		menuOptions.Append( option );
+		options->GetChildByIndex( index ).ClearEventActions();
+		options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, ROOT_CMD_MULTIPLAYER );
+		buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
+		if( buttonWidget != NULL )
 		{
-
-			idMenuWidget_Button* buttonWidget = NULL;
-
-			option.Clear();
-			option.Append( "#str_swf_campaign" );	// singleplayer
-			menuOptions.Append( option );
-			options->GetChildByIndex( index ).ClearEventActions();
-			options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, ROOT_CMD_CAMPAIGN );
-			buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
-			if( buttonWidget != NULL )
-			{
-				buttonWidget->SetDescription( "#str_swf_campaign_desc" );
-			}
-			index++;
-
-			option.Clear();
-			option.Append( "#str_swf_multiplayer" );	// multiplayer
-			menuOptions.Append( option );
-			options->GetChildByIndex( index ).ClearEventActions();
-			options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, ROOT_CMD_MULTIPLAYER );
-			buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
-			if( buttonWidget != NULL )
-			{
-				buttonWidget->SetDescription( "#str_02215" );
-			}
-			index++;
-
-			option.Clear();
-			option.Append( "#str_swf_settings" );	// settings
-			menuOptions.Append( option );
-			options->GetChildByIndex( index ).ClearEventActions();
-			options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, ROOT_CMD_SETTINGS );
-			buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
-			if( buttonWidget != NULL )
-			{
-				buttonWidget->SetDescription( "#str_02206" );
-			}
-			index++;
-
-
-			option.Clear();
-			option.Append( "#str_swf_credits" );	// credits
-			menuOptions.Append( option );
-			options->GetChildByIndex( index ).ClearEventActions();
-			options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, ROOT_CMD_CREDITS );
-			buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
-			if( buttonWidget != NULL )
-			{
-				buttonWidget->SetDescription( "#str_02219" );
-			}
-			index++;
-
-			// only add quit option for PC
-			option.Clear();
-			option.Append( "#str_swf_quit" );	// quit
-			menuOptions.Append( option );
-			options->GetChildByIndex( index ).ClearEventActions();
-			options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, ROOT_CMD_QUIT );
-			buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
-			if( buttonWidget != NULL )
-			{
-				buttonWidget->SetDescription( "#str_01976" );
-			}
-			index++;
+			buttonWidget->SetDescription( "#str_02215" );
 		}
+		index++;
+
+		option.Clear();
+		option.Append( "#str_swf_settings" );	// settings
+		menuOptions.Append( option );
+		options->GetChildByIndex( index ).ClearEventActions();
+		options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, ROOT_CMD_SETTINGS );
+		buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
+		if( buttonWidget != NULL )
+		{
+			buttonWidget->SetDescription( "#str_02206" );
+		}
+		index++;
+
+
+		option.Clear();
+		option.Append( "EXTRAS" );	// extras
+		menuOptions.Append( option );
+		options->GetChildByIndex( index ).ClearEventActions();
+		options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, ROOT_CMD_EXTRAS );
+		buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
+		if( buttonWidget != NULL )
+		{
+			buttonWidget->SetDescription( "Extra things can be found here." );
+		}
+		index++;
+
+		// only add quit option for PC
+		option.Clear();
+		option.Append( "#str_swf_quit" );	// quit
+		menuOptions.Append( option );
+		options->GetChildByIndex( index ).ClearEventActions();
+		options->GetChildByIndex( index ).AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, ROOT_CMD_QUIT );
+		buttonWidget = dynamic_cast< idMenuWidget_Button* >( &options->GetChildByIndex( index ) );
+		if( buttonWidget != NULL )
+		{
+			buttonWidget->SetDescription( "#str_01976" );
+		}
+		index++;
+
 		options->SetListData( menuOptions );
 	}
 	else
@@ -476,16 +413,6 @@ bool idMenuScreen_Shell_Root::HandleAction( idWidgetAction& action, const idWidg
 		{
 			switch( parms[0].ToInteger() )
 			{
-				case ROOT_CMD_START_DEMO:
-				{
-					cmdSystem->AppendCommandText( va( "devmap %s %d\n", "demo/enpro_e3_2012", 1 ) );
-					break;
-				}
-				case ROOT_CMD_START_DEMO2:
-				{
-					cmdSystem->AppendCommandText( va( "devmap %s %d\n", "game/le_hell", 2 ) );
-					break;
-				}
 				case ROOT_CMD_SETTINGS:
 				{
 					menuData->SetNextScreen( SHELL_AREA_SETTINGS, MENU_TRANSITION_SIMPLE );
@@ -546,9 +473,9 @@ bool idMenuScreen_Shell_Root::HandleAction( idWidgetAction& action, const idWidg
 					}
 					break;
 				}
-				case ROOT_CMD_CREDITS:
+				case ROOT_CMD_EXTRAS:
 				{
-					menuData->SetNextScreen( SHELL_AREA_CREDITS, MENU_TRANSITION_SIMPLE );
+					menuData->SetNextScreen( SHELL_AREA_EXTRAS, MENU_TRANSITION_SIMPLE );
 					break;
 				}
 			}

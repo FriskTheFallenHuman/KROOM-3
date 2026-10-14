@@ -29,9 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 #include "../Game_local.h"
 
-
-extern idCVar g_demoMode;
-
 static const int PEER_UPDATE_INTERVAL = 500;
 static const int MAX_MENU_OPTIONS = 6;
 
@@ -484,7 +481,8 @@ void idMenuHandler_Shell::Initialize( const char* swfFile, idSoundWorld* sw )
 		BIND_SHELL_SCREEN( SHELL_AREA_CONTROLLER_LAYOUT, idMenuScreen_Shell_ControllerLayout, this );
 
 		BIND_SHELL_SCREEN( SHELL_AREA_GAMEPAD, idMenuScreen_Shell_Gamepad, this );
-		BIND_SHELL_SCREEN( SHELL_AREA_CREDITS, idMenuScreen_Shell_Credits, this );
+		BIND_SHELL_SCREEN( SHELL_AREA_EXTRAS, idMenuScreen_Shell_Extras, this );
+		BIND_SHELL_SCREEN( SHELL_AREA_MODS, idMenuScreen_Shell_Mods, this );
 
 	}
 	else
@@ -511,6 +509,8 @@ void idMenuHandler_Shell::Initialize( const char* swfFile, idSoundWorld* sw )
 		BIND_SHELL_SCREEN( SHELL_AREA_MODE_SELECT, idMenuScreen_Shell_ModeSelect, this );
 		BIND_SHELL_SCREEN( SHELL_AREA_BROWSER, idMenuScreen_Shell_GameBrowser, this );
 		BIND_SHELL_SCREEN( SHELL_AREA_CREDITS, idMenuScreen_Shell_Credits, this );
+		BIND_SHELL_SCREEN( SHELL_AREA_EXTRAS, idMenuScreen_Shell_Extras, this );
+		BIND_SHELL_SCREEN( SHELL_AREA_MODS, idMenuScreen_Shell_Mods, this );
 
 		doom3Intro = declManager->FindMaterial( "gui/intro/introloop" );
 		roeIntro = declManager->FindMaterial( "gui/intro/marsflyby" );
@@ -753,12 +753,10 @@ void idMenuHandler_Shell::ActivateMenu( bool show )
 
 enum shellCommandsPC_t
 {
-	SHELL_CMD_DEMO0,
-	SHELL_CMD_DEMO1,
 	SHELL_CMD_CAMPAIGN,
 	SHELL_CMD_MULTIPLAYER,
 	SHELL_CMD_SETTINGS,
-	SHELL_CMD_CREDITS,
+	SHELL_CMD_EXTRAS,
 	SHELL_CMD_QUIT
 };
 
@@ -779,104 +777,54 @@ void idMenuHandler_Shell::SetupPCOptions()
 
 	if( GetPlatform() == 2 && menuBar != NULL )
 	{
-		if( g_demoMode.GetBool() )
-		{
-			navOptions.Append( "START DEMO" );	// START DEMO
-			if( g_demoMode.GetInteger() == 2 )
-			{
-				navOptions.Append( "START PRESS DEMO" );	// START DEMO
-			}
-			navOptions.Append( "#str_swf_settings" );	// settings
-			navOptions.Append( "#str_swf_quit" );	// quit
+		navOptions.Append( "#str_swf_campaign" );	// singleplayer
+		navOptions.Append( "#str_swf_multiplayer" );	// multiplayer
+		navOptions.Append( "#str_swf_settings" );	// settings
+		navOptions.Append( "EXTRAS" );	// extras
+		navOptions.Append( "#str_swf_quit" );	// quit
 
-			idMenuWidget_MenuButton* buttonWidget = NULL;
-			int index = 0;
-			buttonWidget = dynamic_cast< idMenuWidget_MenuButton* >( &menuBar->GetChildByIndex( index ) );
-			if( buttonWidget != NULL )
-			{
-				buttonWidget->ClearEventActions();
-				buttonWidget->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, SHELL_CMD_DEMO0, index );
-				buttonWidget->SetDescription( "Launch the demo" );
-			}
-			if( g_demoMode.GetInteger() == 2 )
-			{
-				index++;
-				buttonWidget = dynamic_cast< idMenuWidget_MenuButton* >( &menuBar->GetChildByIndex( index ) );
-				if( buttonWidget != NULL )
-				{
-					buttonWidget->ClearEventActions();
-					buttonWidget->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, SHELL_CMD_DEMO1, index );
-					buttonWidget->SetDescription( "Launch the press Demo" );
-				}
-			}
-			index++;
-			buttonWidget = dynamic_cast< idMenuWidget_MenuButton* >( &menuBar->GetChildByIndex( index ) );
-			if( buttonWidget != NULL )
-			{
-				buttonWidget->ClearEventActions();
-				buttonWidget->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, SHELL_CMD_SETTINGS, index );
-				buttonWidget->SetDescription( "#str_02206" );
-			}
-			index++;
-			buttonWidget = dynamic_cast< idMenuWidget_MenuButton* >( &menuBar->GetChildByIndex( index ) );
-			if( buttonWidget != NULL )
-			{
-				buttonWidget->ClearEventActions();
-				buttonWidget->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, SHELL_CMD_QUIT, index );
-				buttonWidget->SetDescription( "#str_01976" );
-			}
+
+		idMenuWidget_MenuButton* buttonWidget = NULL;
+		int index = 0;
+
+		buttonWidget = dynamic_cast< idMenuWidget_MenuButton* >( &menuBar->GetChildByIndex( index ) );
+		if( buttonWidget != NULL )
+		{
+			buttonWidget->ClearEventActions();
+			buttonWidget->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, SHELL_CMD_CAMPAIGN, index );
+			buttonWidget->SetDescription( "#str_swf_campaign_desc" );
 		}
-		else
+		index++;
+		buttonWidget = dynamic_cast< idMenuWidget_MenuButton* >( &menuBar->GetChildByIndex( index ) );
+		if( buttonWidget != NULL )
 		{
-			navOptions.Append( "#str_swf_campaign" );	// singleplayer
-			navOptions.Append( "#str_swf_multiplayer" );	// multiplayer
-			navOptions.Append( "#str_swf_settings" );	// settings
-			navOptions.Append( "#str_swf_credits" );	// credits
-			navOptions.Append( "#str_swf_quit" );	// quit
-
-
-			idMenuWidget_MenuButton* buttonWidget = NULL;
-			int index = 0;
-
-			buttonWidget = dynamic_cast< idMenuWidget_MenuButton* >( &menuBar->GetChildByIndex( index ) );
-			if( buttonWidget != NULL )
-			{
-				buttonWidget->ClearEventActions();
-				buttonWidget->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, SHELL_CMD_CAMPAIGN, index );
-				buttonWidget->SetDescription( "#str_swf_campaign_desc" );
-			}
-			index++;
-			buttonWidget = dynamic_cast< idMenuWidget_MenuButton* >( &menuBar->GetChildByIndex( index ) );
-			if( buttonWidget != NULL )
-			{
-				buttonWidget->ClearEventActions();
-				buttonWidget->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, SHELL_CMD_MULTIPLAYER, index );
-				buttonWidget->SetDescription( "#str_02215" );
-			}
-			index++;
-			buttonWidget = dynamic_cast< idMenuWidget_MenuButton* >( &menuBar->GetChildByIndex( index ) );
-			if( buttonWidget != NULL )
-			{
-				buttonWidget->ClearEventActions();
-				buttonWidget->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, SHELL_CMD_SETTINGS, index );
-				buttonWidget->SetDescription( "#str_02206" );
-			}
-			index++;
-			buttonWidget = dynamic_cast< idMenuWidget_MenuButton* >( &menuBar->GetChildByIndex( index ) );
-			if( buttonWidget != NULL )
-			{
-				buttonWidget->ClearEventActions();
-				buttonWidget->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, SHELL_CMD_CREDITS, index );
-				buttonWidget->SetDescription( "#str_02219" );
-			}
-			index++;
-			buttonWidget = dynamic_cast< idMenuWidget_MenuButton* >( &menuBar->GetChildByIndex( index ) );
-			if( buttonWidget != NULL )
-			{
-				buttonWidget->ClearEventActions();
-				buttonWidget->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, SHELL_CMD_QUIT, index );
-				buttonWidget->SetDescription( "#str_01976" );
-			}
+			buttonWidget->ClearEventActions();
+			buttonWidget->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, SHELL_CMD_MULTIPLAYER, index );
+			buttonWidget->SetDescription( "#str_02215" );
+		}
+		index++;
+		buttonWidget = dynamic_cast< idMenuWidget_MenuButton* >( &menuBar->GetChildByIndex( index ) );
+		if( buttonWidget != NULL )
+		{
+			buttonWidget->ClearEventActions();
+			buttonWidget->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, SHELL_CMD_SETTINGS, index );
+			buttonWidget->SetDescription( "#str_02206" );
+		}
+		index++;
+		buttonWidget = dynamic_cast< idMenuWidget_MenuButton* >( &menuBar->GetChildByIndex( index ) );
+		if( buttonWidget != NULL )
+		{
+			buttonWidget->ClearEventActions();
+			buttonWidget->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, SHELL_CMD_EXTRAS, index );
+			buttonWidget->SetDescription( "Extra things can be found here." );
+		}
+		index++;
+		buttonWidget = dynamic_cast< idMenuWidget_MenuButton* >( &menuBar->GetChildByIndex( index ) );
+		if( buttonWidget != NULL )
+		{
+			buttonWidget->ClearEventActions();
+			buttonWidget->AddEventAction( WIDGET_EVENT_PRESS ).Set( WIDGET_ACTION_COMMAND, SHELL_CMD_QUIT, index );
+			buttonWidget->SetDescription( "#str_01976" );
 		}
 	}
 
@@ -1022,16 +970,6 @@ bool idMenuHandler_Shell::HandleAction( idWidgetAction& action, const idWidgetEv
 
 			switch( cmd )
 			{
-				case SHELL_CMD_DEMO0:
-				{
-					cmdSystem->AppendCommandText( va( "devmap %s %d\n", "demo/enpro_e3_2012", 1 ) );
-					break;
-				}
-				case SHELL_CMD_DEMO1:
-				{
-					cmdSystem->AppendCommandText( va( "devmap %s %d\n", "game/le_hell", 2 ) );
-					break;
-				}
 				case SHELL_CMD_CAMPAIGN:
 				{
 					nextScreen = SHELL_AREA_CAMPAIGN;
@@ -1051,9 +989,9 @@ bool idMenuHandler_Shell::HandleAction( idWidgetAction& action, const idWidgetEv
 					transition = MENU_TRANSITION_SIMPLE;
 					break;
 				}
-				case SHELL_CMD_CREDITS:
+				case SHELL_CMD_EXTRAS:
 				{
-					nextScreen = SHELL_AREA_CREDITS;
+					nextScreen = SHELL_AREA_EXTRAS;
 					transition = MENU_TRANSITION_SIMPLE;
 					break;
 				}
@@ -1225,7 +1163,7 @@ void idMenuHandler_Shell::UpdateBGState()
 
 	if( smallFrameShowing )
 	{
-		if( nextScreen != SHELL_AREA_SETTINGS && nextScreen != SHELL_AREA_CAMPAIGN && nextScreen != SHELL_AREA_DEV )
+		if( nextScreen != SHELL_AREA_SETTINGS && nextScreen != SHELL_AREA_CAMPAIGN && nextScreen != SHELL_AREA_DEV && nextScreen != SHELL_AREA_EXTRAS )
 		{
 			if( nextScreen != SHELL_AREA_RESOLUTION && nextScreen != SHELL_AREA_GAMEPAD && nextScreen != SHELL_AREA_DIFFICULTY && nextScreen != SHELL_AREA_SYSTEM_OPTIONS && nextScreen != SHELL_AREA_GRAPHICS_OPTIONS && nextScreen != SHELL_AREA_GAME_OPTIONS && nextScreen != SHELL_AREA_NEW_GAME &&
 					nextScreen != SHELL_AREA_CONTROLS )
@@ -1236,7 +1174,7 @@ void idMenuHandler_Shell::UpdateBGState()
 	}
 	else
 	{
-		if( nextScreen == SHELL_AREA_RESOLUTION || nextScreen == SHELL_AREA_GAMEPAD || nextScreen == SHELL_AREA_SETTINGS || nextScreen == SHELL_AREA_CAMPAIGN || nextScreen == SHELL_AREA_CONTROLS || nextScreen == SHELL_AREA_DEV || nextScreen == SHELL_AREA_DIFFICULTY )
+		if( nextScreen == SHELL_AREA_RESOLUTION || nextScreen == SHELL_AREA_GAMEPAD || nextScreen == SHELL_AREA_SETTINGS || nextScreen == SHELL_AREA_EXTRAS || nextScreen == SHELL_AREA_CAMPAIGN || nextScreen == SHELL_AREA_CONTROLS || nextScreen == SHELL_AREA_DEV || nextScreen == SHELL_AREA_DIFFICULTY )
 		{
 			ShowSmallFrame( true );
 		}
@@ -1245,7 +1183,7 @@ void idMenuHandler_Shell::UpdateBGState()
 	if( largeFrameShowing )
 	{
 		if( nextScreen != SHELL_AREA_PARTY_LOBBY && nextScreen != SHELL_AREA_GAME_LOBBY && nextScreen != SHELL_AREA_CONTROLLER_LAYOUT && nextScreen != SHELL_AREA_KEYBOARD && nextScreen != SHELL_AREA_LEADERBOARDS && nextScreen != SHELL_AREA_MATCH_SETTINGS && nextScreen != SHELL_AREA_MODE_SELECT &&
-				nextScreen != SHELL_AREA_BROWSER && nextScreen != SHELL_AREA_LOAD && nextScreen != SHELL_AREA_SAVE && nextScreen != SHELL_AREA_CREDITS )
+				nextScreen != SHELL_AREA_BROWSER && nextScreen != SHELL_AREA_LOAD && nextScreen != SHELL_AREA_SAVE && nextScreen != SHELL_AREA_CREDITS && nextScreen != SHELL_AREA_MODS )
 		{
 			ShowMPFrame( false );
 		}
@@ -1253,7 +1191,7 @@ void idMenuHandler_Shell::UpdateBGState()
 	else
 	{
 		if( nextScreen == SHELL_AREA_PARTY_LOBBY || nextScreen == SHELL_AREA_CONTROLLER_LAYOUT || nextScreen == SHELL_AREA_GAME_LOBBY || nextScreen == SHELL_AREA_KEYBOARD || nextScreen == SHELL_AREA_LEADERBOARDS || nextScreen == SHELL_AREA_MATCH_SETTINGS || nextScreen == SHELL_AREA_MODE_SELECT ||
-				nextScreen == SHELL_AREA_BROWSER || nextScreen == SHELL_AREA_LOAD || nextScreen == SHELL_AREA_SAVE || nextScreen == SHELL_AREA_CREDITS )
+				nextScreen == SHELL_AREA_BROWSER || nextScreen == SHELL_AREA_LOAD || nextScreen == SHELL_AREA_SAVE || nextScreen == SHELL_AREA_CREDITS || nextScreen == SHELL_AREA_MODS )
 		{
 			ShowMPFrame( true );
 		}
