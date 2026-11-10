@@ -1761,6 +1761,57 @@ bool idMapFile::ApplyEditFile( const char* filename, bool osPath )
 					continue;
 				}
 
+				// an added entity with the name of an entity of the base map changes that entity, the keys of the
+				// block are put over the keys of the base entity.
+				{
+					const char* addName = mapEnt->epairs.GetString( "name" );
+					int baseMatch = -1;
+					if( addName != NULL && addName[0] != '\0' )
+					{
+						// entity 0 is the worldspawn, it can't be changed by an add
+						for( int b = 1; b < numBaseEntities && b < entities.Num(); b++ )
+						{
+							if( entities[b] != NULL && idStr::Icmp( entities[b]->epairs.GetString( "name" ), addName ) == 0 )
+							{
+								baseMatch = b;
+								break;
+							}
+						}
+					}
+
+					if( baseMatch >= 0 )
+					{
+						idMapEntity* baseEnt = entities[baseMatch];
+						bool changed = false;
+
+						for( int j = 0; j < mapEnt->epairs.GetNumKeyVals(); ++j )
+						{
+							const idKeyValue* kv = mapEnt->epairs.GetKeyVal( j );
+							const idKeyValue* oldKv = baseEnt->epairs.FindKey( kv->GetKey().c_str() );
+							const char* oldVal = ( oldKv != NULL ) ? oldKv->GetValue().c_str() : NULL;
+
+							if( oldVal == NULL || idStr::Cmp( oldVal, kv->GetValue().c_str() ) != 0 )
+							{
+								if( debug )
+								{
+									idLib::Printf( "[EDIT]     ~ \"%s\" (entity %d, added with the name of a base entity) %s: \"%s\" -> \"%s\"\n",
+												   addName, baseMatch, kv->GetKey().c_str(), oldVal ? oldVal : "(none)", kv->GetValue().c_str() );
+								}
+								baseEnt->epairs.Set( kv->GetKey().c_str(), kv->GetValue().c_str() );
+								changed = true;
+							}
+						}
+
+						if( changed )
+						{
+							numModified++;
+						}
+
+						delete mapEnt;
+						continue;
+					}
+				}
+
 				if( debug )
 				{
 					const char* cn   = mapEnt->epairs.GetString( "classname" );

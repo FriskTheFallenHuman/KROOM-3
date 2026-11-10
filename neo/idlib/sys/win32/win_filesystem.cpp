@@ -34,6 +34,9 @@ If you have questions concerning this license or the applicable additional terms
 #include <fcntl.h>
 #include <direct.h>
 #include <io.h>
+#undef StrCmpN
+#undef StrCmpNI
+#undef StrCmpI
 #include <conio.h>
 #include <mapi.h>
 #include <shellapi.h>
