@@ -677,6 +677,10 @@ static bool ReadEditFileInto( const char* baseName, idEditFileData& out )
 				{
 					entIndex = 0;   // worldspawn is always entity 0 in the base map
 				}
+				else if( isAdd )
+				{
+					entIndex = -1;
+				}
 				else if( sscanf( entTok.c_str(), "entity %d", &entIndex ) != 1 )
 				{
 					idLib::Warning( "%s: bad reference '%s', skipping block", __FUNCTION__, entTok.c_str() );

@@ -513,6 +513,9 @@ void idCommonLocal::Frame()
 		// Flush any messages queued by worker threads so they appear in the in-game console
 		FlushThreadedPrintQueue();
 
+		// queds up any command that was requested by any engine tool.
+		Compiler_FlushMainThreadCommands();
+
 		// allow changing SIMD usage on the fly
 		if( com_forceGenericSIMD.IsModified() )
 		{
