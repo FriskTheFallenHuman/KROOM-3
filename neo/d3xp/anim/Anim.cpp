@@ -1090,7 +1090,13 @@ void idMD5Anim::CheckModelHierarchy( const idRenderModel* model ) const
 	}
 
 	const idMD5Joint* modelJoints = model->GetJoints();
-	for( int i = 0; i < jointInfo.Num(); i++ )
+	const int numCheckedJoints = Min( jointInfo.Num(), model->NumJoints() );
+	if( modelJoints == NULL )
+	{
+		return;
+	}
+
+	for( int i = 0; i < numCheckedJoints; i++ )
 	{
 		int jointNum = jointInfo[ i ].nameIndex;
 		if( modelJoints[ i ].name != animationLibLocal.JointName( jointNum ) )

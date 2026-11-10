@@ -327,6 +327,12 @@ idRenderModel* idRenderModelManagerLocal::GetModel( const char* _modelName, bool
 				model->TouchData();
 			}
 
+			if( model->IsLoaded() && !model->IsDefaultModel() && extension.Icmp( MD5_MESH_EXT ) == 0 && model->NumJoints() == 0 )
+			{
+				common->Warning( "model '%s' was loaded without joints, loading it again", model->Name() );
+				model->LoadModel();
+			}
+
 			model->SetLevelLoadReferenced( true );
 			return model;
 		}

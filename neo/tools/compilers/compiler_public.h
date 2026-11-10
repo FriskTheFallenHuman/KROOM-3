@@ -55,4 +55,7 @@ void Amplitude_f( const idCmdArgs& args );
 
 void RegisterCompilerThreadCommands();
 
+void Compiler_QueueMainThreadCommand( const char* commandLine );
+void Compiler_FlushMainThreadCommands();
+
 #endif	/* !__COMPILER_PUBLIC_H__ */

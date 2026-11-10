@@ -35,6 +35,52 @@ If you have questions concerning this license or the applicable additional terms
 
 idCompilerThread g_compilerThread;
 
+// commands queued by a compiler thread for the main thread
+static idSysMutex g_mainThreadQueueMutex;
+static idStrList g_mainThreadQueue;
+
+/*
+========================
+Compiler_QueueMainThreadCommand
+========================
+*/
+void Compiler_QueueMainThreadCommand( const char* commandLine )
+{
+	idScopedCriticalSection lock( g_mainThreadQueueMutex );
+	g_mainThreadQueue.Append( commandLine );
+}
+
+/*
+========================
+Compiler_FlushMainThreadCommands
+
+Main thread only, the command buffer is not thread safe
+========================
+*/
+void Compiler_FlushMainThreadCommands()
+{
+	if( !idLib::IsMainThread() )
+	{
+		return;
+	}
+
+	idStrList pending;
+	{
+		idScopedCriticalSection lock( g_mainThreadQueueMutex );
+		if( g_mainThreadQueue.Num() == 0 )
+		{
+			return;
+		}
+		pending = g_mainThreadQueue;
+		g_mainThreadQueue.Clear();
+	}
+
+	for( int i = 0; i < pending.Num(); i++ )
+	{
+		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, va( "%s\n", pending[i].c_str() ) );
+	}
+}
+
 // Dmap needs a large stack because BuildFaceTree_r / OptimizeIsland recurse deeply.
 static const int COMPILER_STACK_SIZE = 8 * 1024 * 1024;   // 8 MB
 
