@@ -1,0 +1,88 @@
+name: Nightly
+
+on:
+  schedule:
+    - cron: '0 3 * * *'   # 03:00 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    uses: ./.github/workflows/linux.yml
+    with:
+      build_type: Release
+      compilers: '["gcc"]'
+      retention_days: 1
+
+  windows:
+    uses: ./.github/workflows/windows.yml
+    with:
+      build_type: Release
+      architectures: '["x64","x86"]'
+      retention_days: 1
+
+  publish:
+    name: Publish nightly and delete the old ones
+    needs: [linux, windows]
+    if: ${{ !cancelled() && (needs.linux.result == 'success' || needs.windows.result == 'success') }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write   # create/delete releases and tags
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: kroom3-*
+          path: dist
+          merge-multiple: true
+
+      - name: Create release notes
+        run: |
+          {
+            echo "Automated nightly build of \`${GITHUB_SHA::7}\` ($(date -u +'%Y-%m-%d %H:%M UTC'))."
+            echo
+            echo "| Platform | Build |"
+            echo "| --- | --- |"
+            echo "| Linux x86_64 | ${{ needs.linux.result }} |"
+            echo "| Windows x64 / x86 | ${{ needs.windows.result }} |"
+            echo
+            echo "These archives contain the engine, the game library and the \`platform\` folder only."
+            echo "The Doom 3 BFG Edition \`base\` game data is **not** included and must come from your own copy of the game."
+            echo
+            echo "This release is replaced by the next nightly and is deleted automatically, together with its tag."
+          } > notes.md
+
+      - name: Publish release
+        run: |
+          TAG="nightly-$(date -u +%Y-%m-%d)"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+          ls -lh dist
+          # a manual re-run on the same day replaces that day's release
+          gh release delete "$TAG" --cleanup-tag --yes 2>/dev/null || true
+          gh release create "$TAG" dist/* \
+            --target "$GITHUB_SHA" \
+            --title "Nightly $(date -u +%Y-%m-%d) (${GITHUB_SHA::7})" \
+            --notes-file notes.md \
+            --prerelease
+
+      - name: Delete previous nightly releases and tags
+        run: |
+          # releases (and their tags)
+          gh release list --limit 200 --json tagName --jq '.[].tagName' | grep '^nightly-' | grep -vx "$TAG" | while read -r old; do
+            echo "Deleting release $old"
+            gh release delete "$old" --cleanup-tag --yes
+          done || true
+          # tags that lost their release (failed or cancelled earlier runs)
+          gh api --paginate "repos/${GH_REPO}/git/matching-refs/tags/nightly-" --jq '.[].ref' | grep -vx "refs/tags/$TAG" | while read -r ref; do
+            echo "Deleting stray tag $ref"
+            gh api -X DELETE "repos/${GH_REPO}/git/${ref}"
+          done || true

@@ -1,0 +1,131 @@
+name: Linux
+on:
+  workflow_call:
+    inputs:
+      build_type:
+        type: string
+        default: Release
+      compilers:
+        description: JSON array of compilers to build with
+        type: string
+        default: '["gcc"]'
+      retention_days:
+        type: number
+        default: 1
+  workflow_dispatch:
+    inputs:
+      build_type:
+        type: choice
+        options: [Release, RelWithDebInfo, Debug]
+        default: Release
+  push:
+    branches: [main, master]
+    paths-ignore: ['**.md', 'assets/**', 'platform/**', '.github/workflows/windows.yml', '.github/workflows/nightly.yml']
+  pull_request:
+    paths-ignore: ['**.md', 'assets/**', 'platform/**', '.github/workflows/windows.yml', '.github/workflows/nightly.yml']
+
+concurrency:
+  group: linux-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  BUILD_TYPE: ${{ inputs.build_type || 'Release' }}
+  CCACHE_DIR: ${{ github.workspace }}/.ccache
+  CCACHE_BASEDIR: ${{ github.workspace }}
+  CCACHE_COMPRESS: "true"
+  CCACHE_COMPRESSLEVEL: "6"
+  CCACHE_MAXSIZE: 1500M
+  CCACHE_NOHASHDIR: "true"
+
+jobs:
+  build:
+    name: ${{ matrix.compiler }} (${{ inputs.build_type || 'Release' }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: ${{ fromJSON( inputs.compilers || '["gcc","clang"]' ) }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential clang ninja-build pkgconf ccache nasm \
+            libsdl2-dev libsdl2-image-dev libopenal-dev libglew-dev \
+            libgl1-mesa-dev libglu1-mesa-dev libwxgtk3.2-dev \
+            libzstd-dev zlib1g-dev libx11-dev libxext-dev
+
+      - name: Select compiler
+        run: |
+          if [ "${{ matrix.compiler }}" = "clang" ]; then
+            echo "CC=clang"   >> "$GITHUB_ENV"
+            echo "CXX=clang++" >> "$GITHUB_ENV"
+          else
+            echo "CC=gcc" >> "$GITHUB_ENV"
+            echo "CXX=g++" >> "$GITHUB_ENV"
+          fi
+
+      - name: Restore ccache
+        id: ccache-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: .ccache
+          key: ccache-linux-${{ matrix.compiler }}-${{ env.BUILD_TYPE }}-${{ github.run_id }}
+          restore-keys: |
+            ccache-linux-${{ matrix.compiler }}-${{ env.BUILD_TYPE }}-
+
+      - name: Configure
+        run: |
+          ccache --zero-stats
+          cmake -S neo -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE="$BUILD_TYPE" \
+            -DCMAKE_C_COMPILER="$CC" -DCMAKE_CXX_COMPILER="$CXX" \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DUSE_PRECOMPILED_HEADERS=OFF
+
+      - name: Build
+        run: cmake --build build --parallel "$(nproc)"
+
+      - name: ccache statistics
+        if: always()
+        run: ccache --show-stats --verbose || true
+
+      - name: Save ccache
+        if: always() && steps.ccache-restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .ccache
+          key: ccache-linux-${{ matrix.compiler }}-${{ env.BUILD_TYPE }}-${{ github.run_id }}
+
+      - name: Package
+        if: matrix.compiler == 'gcc'
+        id: package
+        run: |
+          stamp="$(date -u +%Y%m%d)-${GITHUB_SHA::7}"
+          name="Kroom3BFG-linux-x86_64-${stamp}"
+          mkdir -p "dist/${name}"
+          cp -a bin/x86_64/. "dist/${name}/"
+          cp -a platform "dist/${name}/platform"
+          cp .github/LICENSE.md .github/LICENSE_EXCEPTIONS.md "dist/${name}/"
+          strip --strip-unneeded "dist/${name}/Kroom3BFG" "dist/${name}/base/"*.so || true
+          tar -C dist -czf "${name}.tar.gz" "${name}"
+          echo "file=${name}.tar.gz" >> "$GITHUB_OUTPUT"
+          ls -lh "${name}.tar.gz"
+
+      - name: Upload artifact
+        if: matrix.compiler == 'gcc'
+        uses: actions/upload-artifact@v4
+        with:
+          name: kroom3-linux-x86_64
+          path: ${{ steps.package.outputs.file }}
+          retention-days: ${{ inputs.retention_days || 3 }}
+          compression-level: 0
+          if-no-files-found: error

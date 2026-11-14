@@ -1,0 +1,102 @@
+name: Windows
+on:
+  workflow_call:
+    inputs:
+      build_type:
+        type: string
+        default: Release
+      architectures:
+        description: JSON array, any of "x64" and "x86"
+        type: string
+        default: '["x64","x86"]'
+      retention_days:
+        type: number
+        default: 1
+  workflow_dispatch:
+    inputs:
+      build_type:
+        type: choice
+        options: [Release, RelWithDebInfo, Debug]
+        default: Release
+  push:
+    branches: [main, master]
+    paths-ignore: ['**.md', 'assets/**', 'platform/**', '.github/workflows/linux.yml', '.github/workflows/nightly.yml']
+  pull_request:
+    paths-ignore: ['**.md', 'assets/**', 'platform/**', '.github/workflows/linux.yml', '.github/workflows/nightly.yml']
+
+concurrency:
+  group: windows-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  BUILD_TYPE: ${{ inputs.build_type || 'Release' }}
+  SCCACHE_GHA_ENABLED: "true"
+
+jobs:
+  build:
+    name: ${{ matrix.arch }} (${{ inputs.build_type || 'Release' }})
+    runs-on: windows-2022
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: ${{ fromJSON( inputs.architectures || '["x64","x86"]' ) }}
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
+
+      - name: Set up MSVC environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
+
+      - name: Configure
+        run: |
+          sccache --zero-stats
+          cmake -S neo -B build -G Ninja `
+            -DCMAKE_BUILD_TYPE="$env:BUILD_TYPE" `
+            -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl `
+            -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache `
+            -DCMAKE_POLICY_DEFAULT_CMP0141=NEW -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded `
+            -DUSE_PRECOMPILED_HEADERS=OFF -DwxBUILD_PRECOMP=OFF
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: sccache statistics
+        if: always()
+        run: sccache --show-stats
+
+      - name: Package
+        id: package
+        run: |
+          $stamp = "$((Get-Date).ToUniversalTime().ToString('yyyyMMdd'))-$($env:GITHUB_SHA.Substring(0,7))"
+          $binDir = if ('${{ matrix.arch }}' -eq 'x64') { 'bin/x86_64' } else { 'bin/x86' }
+          $name = "Kroom3BFG-windows-${{ matrix.arch }}-$stamp"
+          New-Item -ItemType Directory -Force -Path "dist/$name" | Out-Null
+          Copy-Item -Recurse -Force "$binDir/*" "dist/$name/"
+          Copy-Item -Recurse -Force platform "dist/$name/platform"
+          Copy-Item .github/LICENSE.md, .github/LICENSE_EXCEPTIONS.md "dist/$name/"
+          Get-ChildItem "dist/$name" -Recurse -Include *.pdb, *.ilk, *.exp, *.lib, *.map -File | Remove-Item -Force
+          Compress-Archive -Path "dist/$name" -DestinationPath "$name.zip" -CompressionLevel Optimal
+          "file=$name.zip" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Get-Item "$name.zip" | Select-Object Name, Length
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kroom3-windows-${{ matrix.arch }}
+          path: ${{ steps.package.outputs.file }}
+          retention-days: ${{ inputs.retention_days || 3 }}
+          compression-level: 0
+          if-no-files-found: error
