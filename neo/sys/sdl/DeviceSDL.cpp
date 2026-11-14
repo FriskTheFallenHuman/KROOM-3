@@ -409,11 +409,14 @@ static void Sys_In_Restart_f( const idCmdArgs& args )
 
 /*
 =================
-Sys_PrintOSInfo
+Sys_PrintHardwareInfo
 =================
 */
-static void Sys_PrintOSInfo()
+static void Sys_PrintHardwareInfo()
 {
+	//
+	// OS Version
+	//
 	const char* platform = SDL_GetPlatform();
 	idStr osString = platform ? platform : "Unknown";
 
@@ -469,6 +472,21 @@ static void Sys_PrintOSInfo()
 #endif
 
 	common->Printf( "Detected: %s\n", osString.c_str() );
+
+	//
+	// CPU Type
+	//
+	common->Printf( "CPU Name: %s\n", Sys_GetProcessorString() );
+	common->Printf( "%1.0f CPU MHz ", Sys_ClockTicksPerSecond() / 1000000.0f );
+
+	common->Printf( "%d MB System Memory\n", Sys_GetSystemRam() );
+
+	int cpuFlags = Sys_GetProcessorId();
+	if( ( cpuFlags & CPUID_SSE ) == 0 )
+	{
+		common->Error( "SSE not supported!" );
+	}
+
 }
 
 /*
@@ -480,8 +498,6 @@ The cvar system must already be setup
 */
 void Sys_Init()
 {
-	int cpuFlags = Sys_GetProcessorId();
-
 #ifdef _WIN32
 	CoInitialize( NULL );
 #endif
@@ -489,21 +505,9 @@ void Sys_Init()
 	cmdSystem->AddCommand( "in_restart", Sys_In_Restart_f, CMD_FL_SYSTEM, "restarts the input system" );
 
 	//
-	// OS Info
+	// OS and CPU info
 	//
-	Sys_PrintOSInfo();
-
-	//
-	// CPU type
-	//
-	common->Printf( "CPU Name: %s\n", Sys_GetProcessorString() );
-	common->Printf( "%1.0f CPU MHz ", Sys_ClockTicksPerSecond() / 1000000.0f );
-
-	common->Printf( "%d MB System Memory\n", Sys_GetSystemRam() );
-	if( ( cpuFlags & CPUID_SSE ) == 0 )
-	{
-		common->Error( "SSE not supported!" );
-	}
+	Sys_PrintHardwareInfo();
 
 	sdl.g_Joystick.Init();
 }

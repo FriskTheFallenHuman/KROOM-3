@@ -37,9 +37,14 @@ If you have questions concerning this license or the applicable additional terms
 #undef vsnprintf
 // DG end
 
-#ifdef _MSC_VER
-	extern bool HasDAZ();
-	extern bool IsAMD();
+#ifdef _WIN32
+	#include <array>
+	#include <vector>
+	#include <bitset>
+
+	#ifdef _MSC_VER
+		extern bool HasDAZ();
+	#endif
 #endif
 
 #include <SDL2/SDL_cpuinfo.h>
@@ -110,31 +115,125 @@ void Sys_CPUCount( int& numLogicalCPUCores, int& numPhysicalCPUCores, int& numCP
 ==============================================================
 */
 
-#ifdef _MSC_VER
-/*
-================
-IsAMD
-================
-*/
-bool IsAMD()
+// Direct copy from https://docs.microsoft.com/en-us/cpp/intrinsics/cpuid-cpuidex?view=msvc-170
+// trimmed down to ONLY Retrieve Vendor ID and Brand Name
+class idCPUInfo
 {
-	int  info[4] = {0};
-	char vendor[13];
-
-	__cpuid( info, 0 );
-
-	memcpy( vendor, &info[1], 4 );
-	memcpy( vendor + 4, &info[2], 4 );
-	memcpy( vendor + 8, &info[3], 4 );
-	vendor[12] = '\0';
-
-	if( idStr::Cmp( vendor, "AuthenticAMD" ) == 0 )
+public:
+	idCPUInfo()
+		:
+		isIntel_{ false },
+		isAMD_{ false }
 	{
-		return true;
-	}
-	return false;
-}
+#ifdef _WIN32
+		std::array<int, 4> cpui;
+		std::vector<std::array<int, 4>> data_;
+		std::vector<std::array<int, 4>> extdata_;
+		int nIds_ = 0;
+		int nExIds_ = 0;
 
+		// Calling __cpuid with 0x0 as the function_id argument
+		// gets the number of the highest valid function ID.
+		__cpuid( cpui.data(), 0 );
+		nIds_ = cpui[0];
+
+		for( int i = 0; i <= nIds_; ++i )
+		{
+			__cpuidex( cpui.data(), i, 0 );
+			data_.push_back( cpui );
+		}
+
+		// Capture vendor string
+		char vendor[0x20];
+		memset( vendor, 0, sizeof( vendor ) );
+		*reinterpret_cast<int*>( vendor ) = data_[0][1];
+		*reinterpret_cast<int*>( vendor + 4 ) = data_[0][3];
+		*reinterpret_cast<int*>( vendor + 8 ) = data_[0][2];
+		vendor_ = vendor;
+		if( vendor_ == "GenuineIntel" )
+		{
+			isIntel_ = true;
+		}
+		else if( vendor_ == "AuthenticAMD" )
+		{
+			isAMD_ = true;
+		}
+
+		// Calling __cpuid with 0x80000000 as the function_id argument
+		// gets the number of the highest valid extended ID.
+		__cpuid( cpui.data(), 0x80000000 );
+		nExIds_ = cpui[0];
+
+		char brand[0x40];
+		memset( brand, 0, sizeof( brand ) );
+
+		for( int i = 0x80000000; i <= nExIds_; ++i )
+		{
+			__cpuidex( cpui.data(), i, 0 );
+			extdata_.push_back( cpui );
+		}
+
+		// Interpret CPU brand string if reported
+		if( nExIds_ >= 0x80000004 )
+		{
+			memcpy( brand, extdata_[2].data(), sizeof( cpui ) );
+			memcpy( brand + 16, extdata_[3].data(), sizeof( cpui ) );
+			memcpy( brand + 32, extdata_[4].data(), sizeof( cpui ) );
+			brand_ = brand;
+		}
+#elif __linux__
+		FILE* fd;
+
+		fd = fopen( "/proc/cpuinfo", "r" );
+		if( fd == NULL )
+		{
+			return;
+		}
+		int processor = 0;
+		size_t size = 0;
+		char* line = NULL;
+		while( getline( &line, &size, fd ) > 0 )
+		{
+			char* propertyName =  strtok( line, ":" );
+			char* propertyValue = strtok( NULL, ":" ) + 1;
+			if( strstr( propertyName, "processor" ) )
+			{
+				processor = atoi( propertyValue );
+			}
+			if( processor > 0 )
+			{
+				break;
+			}
+			if( strstr( propertyName, "vendor_id" ) )
+			{
+				if( propertyValue == "AuthenticAMD" )
+				{
+					isAMD_ = true;
+				}
+				else if( propertyValue == "GenuineIntel" )
+				{
+					isIntel_ = true;
+				}
+			}
+			if( strstr( propertyName, "model_name" ) )
+			{
+				brand_ = propertyValue;
+			}
+
+		}
+#endif
+	};
+
+	std::string vendor_;
+	std::string brand_;
+	bool isIntel_;
+	bool isAMD_;
+
+};
+
+const idCPUInfo CPU_Rep;
+
+#ifdef _MSC_VER
 /*
 ================
 HasDAZ
@@ -154,11 +253,11 @@ Sys_GetProcessorId
 */
 int Sys_GetProcessorId()
 {
-#ifdef _MSC_VER
 	int flags;
 
 	// check for an AMD
-	if( IsAMD() )
+	flags = CPUID_GENERIC;
+	if( CPU_Rep.isAMD_ )
 	{
 		flags = CPUID_AMD;
 	}
@@ -166,9 +265,6 @@ int Sys_GetProcessorId()
 	{
 		flags = CPUID_INTEL;
 	}
-#else
-	int flags = CPUID_GENERIC;
-#endif
 
 	// check for Multi Media Extensions
 	if( SDL_HasMMX() )
@@ -211,7 +307,7 @@ const char* Sys_GetProcessorString()
 		return "Intel CPU";
 	}
 
-	return "generic CPU";
+	return "Generic CPU";
 }
 
 /*
