@@ -3422,19 +3422,34 @@ static void StripModCvarsFromCmdLine( idStr& cmdLine )
 	const char* p = cmdLine.c_str();
 	while( *p )
 	{
-		while( *p == ' ' || *p == '\t' ) p++;
-		if( !*p ) break;
+		while( *p == ' ' || *p == '\t' )
+		{
+			p++;
+		}
+		if( !*p )
+		{
+			break;
+		}
 
 		idStr tok;
 		if( *p == '"' )
 		{
 			p++;
-			while( *p && *p != '"' ) tok.Append( *p++ );
-			if( *p == '"' ) p++;
+			while( *p && *p != '"' )
+			{
+				tok.Append( *p++ );
+			}
+			if( *p == '"' )
+			{
+				p++;
+			}
 		}
 		else
 		{
-			while( *p && *p != ' ' && *p != '\t' ) tok.Append( *p++ );
+			while( *p && *p != ' ' && *p != '\t' )
+			{
+				tok.Append( *p++ );
+			}
 		}
 		tokens.Append( tok );
 	}
@@ -3450,7 +3465,11 @@ static void StripModCvarsFromCmdLine( idStr& cmdLine )
 			bool matched = false;
 			for( int c = 0; c < numModCvars; ++c )
 			{
-				if( cvarName.Icmp( modCvars[ c ] ) == 0 ) { matched = true; break; }
+				if( cvarName.Icmp( modCvars[ c ] ) == 0 )
+				{
+					matched = true;
+					break;
+				}
 			}
 			if( matched )
 			{
@@ -3465,7 +3484,10 @@ static void StripModCvarsFromCmdLine( idStr& cmdLine )
 	idStr result;
 	for( int i = 0; i < keep.Num(); ++i )
 	{
-		if( result.Length() ) result.Append( ' ' );
+		if( result.Length() )
+		{
+			result.Append( ' ' );
+		}
 		result.Append( keep[ i ] );
 	}
 	cmdLine = result;

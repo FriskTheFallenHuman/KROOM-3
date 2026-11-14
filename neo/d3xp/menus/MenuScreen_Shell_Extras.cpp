@@ -65,7 +65,7 @@ void idMenuScreen_Shell_Extras::Initialize( idMenuHandler* data )
 	option.Append( "DEV MENU" );	// dev menu
 	menuOptions.Append( option );
 	option.Clear();
-	
+
 	option.Append( "#str_04098" );	// mods
 	menuOptions.Append( option );
 	option.Clear();
