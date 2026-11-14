@@ -3527,10 +3527,6 @@ void idGameLocal::RunDebugInfo()
 	{
 		editEntities->DisplayEntities();
 	}
-	else
-	{
-		editEntities->ClearEntityBillboards();
-	}
 
 	if( g_showCollisionWorld.GetBool() )
 	{
