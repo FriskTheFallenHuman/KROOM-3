@@ -30,6 +30,7 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "../Game_local.h"
+#include <cfloat>
 
 #pragma warning( disable: 4189 ) // local variable is initialized but not referenced
 

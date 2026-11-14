@@ -800,7 +800,7 @@ static void WriteEditFileFrom( const char* baseName, const idEditFileData& data 
 	idFile* f = fileSystem->OpenFileWrite( fileName, "fs_basepath" );
 	if( f == NULL )
 	{
-		idLib::Warning( __FUNCTION__ ": couldn't write %s", fileName.c_str() );
+		idLib::Warning( "%s: couldn't write %s", __FUNCTION__, fileName.c_str() );
 		return;
 	}
 

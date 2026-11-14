@@ -1140,7 +1140,7 @@ void idProjectile::Explode( const trace_t& collision, idEntity* ignore )
 	}
 
 	int surfaceType = collision.c.material != NULL ? collision.c.material->GetSurfaceType() : SURFTYPE_METAL;
-	if( !( fxname != NULL && *fxname != NULL ) )
+	if( !( fxname != NULL && *fxname != '\0' ) )
 	{
 		if( ( surfaceType == SURFTYPE_NONE ) || ( surfaceType == SURFTYPE_METAL ) || ( surfaceType == SURFTYPE_STONE ) )
 		{

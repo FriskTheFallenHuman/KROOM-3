@@ -197,12 +197,12 @@ bool rvDebuggerClient::ProcessMessages()
 void rvDebuggerClient::HandleRemoveBreakpoint( idBitMsg* msg )
 {
 	long lineNumber;
-	char filename[MAX_PATH];
+	char filename[MAX_OSPATH];
 
 	// Read the breakpoint info
 
 	lineNumber = msg->ReadLong();
-	msg->ReadString( filename, MAX_PATH );
+	msg->ReadString( filename, MAX_OSPATH );
 
 	rvDebuggerBreakpoint* bp = FindBreakpoint( filename, lineNumber );
 	if( bp )
@@ -221,7 +221,7 @@ by caching the file and linenumber where the break occured.
 */
 void rvDebuggerClient::HandleBreak( idBitMsg* msg )
 {
-	char filename[MAX_PATH];
+	char filename[MAX_OSPATH];
 
 	mBreak = true;
 
@@ -229,7 +229,7 @@ void rvDebuggerClient::HandleBreak( idBitMsg* msg )
 	mBreakLineNumber = msg->ReadLong();
 
 	// Filename
-	msg->ReadString( filename, MAX_PATH );
+	msg->ReadString( filename, MAX_OSPATH );
 	mBreakFilename   = filename;
 
 	//int64_t ptr64b = msg->ReadInt64();
@@ -435,7 +435,7 @@ bool rvDebuggerClient::WaitFor( EDebuggerMessage msg, int time )
 	while( mWaitFor != DBMSG_UNKNOWN && Sys_Milliseconds() - start < time )
 	{
 		ProcessMessages();
-		Sleep( 0 );
+		Sys_Sleep( 0 );
 	}
 
 	if( mWaitFor != DBMSG_UNKNOWN )

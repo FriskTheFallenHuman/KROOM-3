@@ -458,17 +458,29 @@ endif()
 if(USE_INTRINSICS_SSE)
 	SET_FORCED_OPTION(BUILD_DLL OFF)
 	SET_FORCED_OPTION(ENABLE_INSTALL OFF)
-	
+	if(NOT MSVC)
+		SET_FORCED_OPTION(USE_AVX512 ON)
+	endif()
+
 	# MaskedOcclusionCulling
 	find_or_fetch(MaskedOcclusionCulling
 		GIT_REPOSITORY https://github.com/FriskTheFallenHuman/MaskedOcclusionCulling.git
 		GIT_TAG v1.0.1)
+	if(NOT MSVC AND TARGET MaskedOcclusionCulling)
+		target_compile_options(MaskedOcclusionCulling PRIVATE -mxsave)
+		if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+			target_compile_options(MaskedOcclusionCulling PRIVATE "SHELL:-include cpuid.h"
+				"-D__cpuidex(r,l,s)=__cpuid_count(l,s,(r)[0],(r)[1],(r)[2],(r)[3])")
+		endif()
+	endif()
 	list(APPEND sys_thirdparty_dependencies MaskedOcclusionCulling)
 	list(APPEND sys_thirdparty MaskedOcclusionCulling)
 endif()
 
 # Reproc
 SET_FORCED_OPTION(REPROC_DEVELOP ON)
+# REPROC_DEVELOP turns on ASan/UBSan for reproc on *nix, and that leaks into the link line of the whole engine
+SET_FORCED_OPTION(REPROC_SANITIZERS OFF)
 SET_FORCED_OPTION(REPROC_TEST OFF)
 SET_FORCED_OPTION(REPROC_EXAMPLES OFF)
 SET_FORCED_OPTION(REPROC_TIDY OFF)
@@ -499,18 +511,26 @@ find_or_fetch(cpptrace
 
 # libBinkDec
 SET_FORCED_OPTION(CREATE_INSTALL OFF)
-SET_FORCED_OPTION(BUILD_STATIC OFF)
+if(WIN32)
+	SET_FORCED_OPTION(BUILD_SHARED ON)
+	SET_FORCED_OPTION(BUILD_STATIC OFF)
+	set(BINKDEC_TARGET BINKDEC::BINKDEC)
+else()
+	SET_FORCED_OPTION(BUILD_SHARED OFF)
+	SET_FORCED_OPTION(BUILD_STATIC ON)
+	set(BINKDEC_TARGET BINKDEC::BINKDECSTATIC)
+endif()
 
 find_or_fetch(libbinkdec
 	GIT_REPOSITORY https://github.com/FriskTheFallenHuman/libbinkdec.git
 	GIT_TAG v1.0.0-hotfix
 	GIT_SHALLOW TRUE)
-list(APPEND sys_thirdparty_dependencies BINKDEC::BINKDEC)
-list(APPEND sys_thirdparty BINKDEC::BINKDEC)
+list(APPEND sys_thirdparty_dependencies ${BINKDEC_TARGET})
+list(APPEND sys_thirdparty ${BINKDEC_TARGET})
 
 # wxWidgets
 if(UNIX)
-	find_package(wxWidgets REQUIRED COMPONENTS core base)
+	find_package(wxWidgets REQUIRED COMPONENTS core base adv aui gl propgrid stc)
 	include(${wxWidgets_USE_FILE})
 	set(WXWIDGETS_LIBRARY ${wxWidgets_LIBRARIES})
 else()
@@ -835,6 +855,10 @@ endif()
 add_subdirectory(idlib)
 add_subdirectory(d3xp)
 add_subdirectory(extern)
+
+if(NOT MSVC AND BUILD_GAME_DLL)
+	set_target_properties(idLib external PROPERTIES POSITION_INDEPENDENT_CODE ON)
+endif()
 
 # Group every FetchContent'd target under "third-party" in IDE solutions.
 function(_collect_targets out dir)

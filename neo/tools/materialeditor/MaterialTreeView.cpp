@@ -203,7 +203,7 @@ idStr MaterialTreeView::GetQuicktreePath( wxTreeItemId item ) const
 	wxTreeItemId cur = item;
 	while( cur.IsOk() && cur != root )
 	{
-		qt = idStr( "/" ) + GetItemTextSafe( cur ).c_str() + qt;
+		qt = idStr( "/" ) + GetItemTextSafe( cur ).utf8_str().data() + qt;
 		cur = m_tree->GetItemParent( cur );
 	}
 	return qt;
@@ -345,7 +345,7 @@ idStr MaterialTreeView::GetMediaPath( wxTreeItemId item, int type ) const
 
 	const wxTreeItemId root = m_tree->GetRootItem();
 
-	idStr mediaName = GetItemTextSafe( item ).c_str();
+	idStr mediaName = GetItemTextSafe( item ).utf8_str().data();
 	wxTreeItemId parent = m_tree->GetItemParent( item );
 	while( parent.IsOk() && parent != root )
 	{
@@ -354,7 +354,7 @@ idStr MaterialTreeView::GetMediaPath( wxTreeItemId item, int type ) const
 			break;
 		}
 
-		idStr strParent = GetItemTextSafe( parent ).c_str();
+		idStr strParent = GetItemTextSafe( parent ).utf8_str().data();
 		strParent += "/";
 		strParent += mediaName;
 		mediaName = strParent;
@@ -1105,7 +1105,7 @@ bool MaterialTreeView::FindNextMaterial( MaterialSearchData_t* searchData )
 
 		if( t == TYPE_MATERIAL )
 		{
-			idStr itemName = GetItemTextSafe( item ).c_str();
+			idStr itemName = GetItemTextSafe( item ).utf8_str().data();
 			int findPos = itemName.Find( searchData->searchText, false );
 			if( findPos != -1 )
 			{
@@ -1127,7 +1127,7 @@ bool MaterialTreeView::FindNextMaterial( MaterialSearchData_t* searchData )
 		}
 		else
 		{
-			idStr itemName = GetItemTextSafe( item ).c_str();
+			idStr itemName = GetItemTextSafe( item ).utf8_str().data();
 			int findPos = itemName.Find( searchData->searchText, false );
 			if( findPos != -1 )
 			{
@@ -1197,7 +1197,7 @@ void MaterialTreeView::OnEndLabelEdit( wxTreeEvent& event )
 	if( !event.IsEditCancelled() )
 	{
 		wxString newLabel = event.GetLabel();
-		idStr canonical = newLabel.c_str();
+		idStr canonical = newLabel.utf8_str().data();
 		canonical.ToLower();
 
 		wxTreeItemId item = event.GetItem();
@@ -1298,7 +1298,7 @@ void MaterialTreeView::RenameMaterial( wxTreeItemId item, const char* originalNa
 		materialName = GetMediaPath( parent, TYPE_MATERIAL_FOLDER );
 		materialName += "/";
 	}
-	materialName += GetItemTextSafe( item ).c_str();
+	materialName += GetItemTextSafe( item ).utf8_str().data();
 
 	materialToTree[ materialName.c_str() ] = item;
 

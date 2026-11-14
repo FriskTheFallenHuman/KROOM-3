@@ -285,7 +285,13 @@ idSysLocal::DLL_GetFileName
 */
 void idSysLocal::DLL_GetFileName( const char* baseName, char* dllName, int maxLength )
 {
+#if defined( _WIN32 )
 	idStr::snPrintf( dllName, maxLength, "%s" CPUSTRING ".dll", baseName );
+#elif defined( __APPLE__ )
+	idStr::snPrintf( dllName, maxLength, "%s" CPUSTRING ".dylib", baseName );
+#else
+	idStr::snPrintf( dllName, maxLength, "%s" CPUSTRING ".so", baseName );
+#endif
 }
 
 /*
@@ -531,7 +537,7 @@ bool idSysLocal::Exec( const char* appPath, const char* workingPath, const char*
 
 	auto ExecOutputFn = []( const char* text )
 	{
-		idLib::Printf( text );
+		idLib::Printf( "%s", text );
 	};
 
 	if( outputFn == nullptr )

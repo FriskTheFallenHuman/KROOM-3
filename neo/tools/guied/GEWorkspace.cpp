@@ -1650,7 +1650,8 @@ rvGEWorkspace::UpdateCursor
 */
 void rvGEWorkspace::UpdateCursor( float x, float y )
 {
-	const idVec2 point = WorkspaceToWindow( idVec2( x, y ) );
+	idVec2 point( x, y );
+	WorkspaceToWindow( point );
 	const rvGESelectionMgr::EHitTest type =	m_selections.HitTest( point.x, point.y );
 
 	if( type != rvGESelectionMgr::HT_NONE )
@@ -2297,7 +2298,7 @@ idWindow* rvGEWorkspace::NewWindow( idDict* state, rvGEWindowWrapper::EWindowTyp
 		}
 	}
 
-	idStr winName = count ? va( "%s%d", baseName.c_str(), count ) : baseName;
+	idStr winName = count ? idStr( va( "%s%d", baseName.c_str(), count ) ) : baseName;
 	idStr winTemplate = winName + " { }";
 
 	idParser src( winTemplate, winTemplate.Length(), "",

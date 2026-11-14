@@ -488,7 +488,7 @@ bool idDeviceManagerLocal::Init( vidParms_t parms )
 		}
 
 		// Show whether this is a 32-bit or 64-bit binary
-		idStr title = va( "%s - %s %s (x%u Build)", GAME_NAME, ID__DATE__, ID__TIME__, sizeof( void* ) * 8 );
+		idStr title = va( "%s - %s %s (x%u Build)", GAME_NAME, ID__DATE__, ID__TIME__, ( unsigned int )( sizeof( void* ) * 8 ) );
 
 		sdl.window = SDL_CreateWindow( title.c_str(),
 									   windowPosX, windowPosY,
@@ -1178,7 +1178,7 @@ void idDeviceManagerLocal::SetWindowTitle( const char* modTitle )
 	}
 	else
 	{
-		title = va( "%s - %s %s (x%u Build)", GAME_NAME, ID__DATE__, ID__TIME__, sizeof( void* ) * 8 );
+		title = va( "%s - %s %s (x%u Build)", GAME_NAME, ID__DATE__, ID__TIME__, ( unsigned int )( sizeof( void* ) * 8 ) );
 	}
 
 	SDL_SetWindowTitle( sdl.window, title.c_str() );

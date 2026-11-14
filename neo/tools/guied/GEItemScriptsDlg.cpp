@@ -219,7 +219,7 @@ bool rvGEItemScriptsDlg::Apply()
 	}
 
 	wxString text = m_edit->GetText();
-	idStr parse = text.utf8_str();
+	idStr parse = text.utf8_str().data();
 
 	try
 	{

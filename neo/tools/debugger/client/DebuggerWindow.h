@@ -85,7 +85,7 @@ public:
 
 	void							ProcessNetMessage( idBitMsg* msg );
 
-	void							Printf( VERIFY_FORMAT_STRING const char* fmt, ... ) ID_STATIC_ATTRIBUTE_PRINTF( 1, 2 );
+	void							Printf( VERIFY_FORMAT_STRING const char* fmt, ... ) ID_INSTANCE_ATTRIBUTE_PRINTF( 1, 2 );
 
 	void							AddWatch( const char* name, bool update = true );
 

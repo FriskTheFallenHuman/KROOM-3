@@ -930,7 +930,7 @@ bool rvGEItemPropsKeysPage::EditKeyDialog( const wxString& inKey, const wxString
 			continue;
 		}
 
-		idStr finalValue = v.utf8_str();
+		idStr finalValue = v.utf8_str().data();
 		if( !m_wrapper->VerfiyStateKey( k.utf8_str(), finalValue ) )
 		{
 			idStr quoted = "\"";

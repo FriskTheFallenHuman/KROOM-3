@@ -273,7 +273,7 @@ enum GUIEdIDs
 	ID_GUIED_VIEWER_START
 };
 
-const char* StringFromVec4( idVec4& vec );
+const char* StringFromVec4( const idVec4& vec );
 bool		IsExpression( const char* s );
 
 class rvGEApp : public wxFrame

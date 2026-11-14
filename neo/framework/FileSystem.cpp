@@ -657,7 +657,7 @@ char* idFileSystemLocal::ReadOSFile( char* buffer, int maxCount, idFileHandle st
 	buffer[totalChars] = '\0';
 	return buffer;
 #else
-	return ::fgets( buffer, maxCount, ( FILE* )stream.o );
+	return ::fgets( buffer, maxCount, stream );
 #endif
 }
 
@@ -4323,7 +4323,7 @@ idFile* idFileSystemLocal::GetZipFile( const char* fileName, bool memFile )
 			{
 				if( fs_debugResources.GetBool() )
 				{
-					idLib::Printf( "MEM: Allocating %05d bytes for a resource load\n", rc.length );
+					idLib::Printf( "MEM: Allocating %05llu bytes for a resource load\n", ( unsigned long long )rc.length );
 				}
 				buf = ( byte* )Mem_Alloc( rc.length, TAG_TEMP );
 			}
@@ -4390,7 +4390,7 @@ idFile* idFileSystemLocal::GetResourceFile( const char* fileName, bool memFile )
 			{
 				if( fs_debugResources.GetBool() )
 				{
-					idLib::Printf( "MEM: Allocating %05d bytes for a resource load\n", rc.length );
+					idLib::Printf( "MEM: Allocating %05llu bytes for a resource load\n", ( unsigned long long )rc.length );
 				}
 				buf = ( byte* )Mem_Alloc( rc.length, TAG_TEMP );
 			}
@@ -5006,7 +5006,7 @@ void idFileSystemLocal::FindDLL( const char* name, char _dllPath[ MAX_OSPATH ] )
 			dllPath = "";
 		}
 	}
-	idStr::snPrintf( _dllPath, MAX_OSPATH, dllPath.c_str() );
+	idStr::Copynz( _dllPath, dllPath.c_str(), MAX_OSPATH );
 }
 
 /*

@@ -443,7 +443,7 @@ void StageView::OnRenameStage()
 		wxTextEntryDialog dlg( this, "Stage name:", "Rename Stage", currentName );
 		if( dlg.ShowModal() == wxID_OK )
 		{
-			idStr newName = dlg.GetValue().c_str();
+			idStr newName = dlg.GetValue().utf8_str().data();
 			newName.ToLower();
 			if( newName.Length() > 0 && currentMaterial )
 			{

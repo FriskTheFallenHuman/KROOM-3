@@ -503,7 +503,7 @@ void MaterialPreviewPropView::OnPropertyGridChanged( wxPropertyGridEvent& event 
 		if( name.EndsWith( "_shader" ) )
 		{
 			wxString shaderName = event.GetPropertyValue().GetString();
-			m_preview->OnLightShaderChange( lightId, idStr( shaderName.c_str() ) );
+			m_preview->OnLightShaderChange( lightId, idStr( shaderName.utf8_str().data() ) );
 		}
 		else if( name.EndsWith( "_color" ) )
 		{

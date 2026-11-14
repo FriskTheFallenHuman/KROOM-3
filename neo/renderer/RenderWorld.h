@@ -398,7 +398,7 @@ typedef enum
 
 ===============================================================================
 */
-static char* predef_lightstyles[] =
+static const char* predef_lightstyles[] =
 {
 	"m",
 	"mmnmmommommnonmmonqnmmo",
@@ -414,7 +414,7 @@ static char* predef_lightstyles[] =
 	"abcdefghijklmnopqrrqponmlkjihgfedcba"
 };
 
-static char* predef_lightstylesinfo[] =
+static const char* predef_lightstylesinfo[] =
 {
 	"Normal",
 	"Flicker A",

@@ -59,7 +59,7 @@ rvGEViewer::rvGEViewer( wxWindow* parent )
 	const bool loaded = m_toolbarIcons.Load( "editors/gfx/guied_viewer_toolbar.bmp", 16, 16 );
 	if( !loaded )
 	{
-		common->FatalError( "%s: Couldn't load 'editors/gfx/guied_viewer_toolbar.bmp' aborting..." __FUNCTION__ );
+		common->FatalError( "%s: Couldn't load 'editors/gfx/guied_viewer_toolbar.bmp' aborting...", __FUNCTION__ );
 		return;
 	}
 
@@ -155,7 +155,7 @@ bool rvGEViewer::OpenFile( const char* filename )
 	idStr tempfile = filename;
 	tempfile.StripPath();
 	tempfile.StripFileExtension();
-	tempfile = va( "guis/temp.guied", tempfile.c_str() );
+	tempfile = va( "guis/temp.guied" );
 
 	idStr ospath = fileSystem->RelativePathToOSPath( tempfile, "fs_savepath" );
 

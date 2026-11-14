@@ -39,7 +39,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "GLState.h"
 #include "ScreenRect.h"
 #include "Image.h"
-#include "Font_Local.h"
+#include "Font_local.h"
 #include "Framebuffer.h"
 
 

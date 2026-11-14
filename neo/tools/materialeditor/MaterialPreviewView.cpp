@@ -38,10 +38,19 @@ If you have questions concerning this license or the applicable additional terms
 const char* const PREVIEW_CAPTURE_IMAGE = "_materialPreviewCapture";
 
 // TODO: I think i should remove these ones
+#ifdef _WIN32
 static bool Sys_KeyDown( int key )
 {
 	return ( ( ::GetAsyncKeyState( key ) & 0x8000 ) != 0 );
 }
+#define ME_KEY_ALT VK_MENU
+#else
+static bool Sys_KeyDown( int key )
+{
+	return wxGetKeyState( ( wxKeyCode )key );
+}
+#define ME_KEY_ALT WXK_ALT
+#endif
 
 static float fDiff( float f1, float f2 )
 {
@@ -234,7 +243,7 @@ void idGLDrawableView::mouseMove( float x, float y )
 	// Left mouse button rotates and zooms the view
 	if( button == MK_LBUTTON )
 	{
-		const bool doZoom = Sys_KeyDown( VK_MENU );
+		const bool doZoom = Sys_KeyDown( ME_KEY_ALT );
 		if( doZoom )
 		{
 			if( y != pressY )
@@ -276,7 +285,7 @@ void idGLDrawableView::mouseMove( float x, float y )
 
 		viewRotation.ToVectors( &lightForward, &lightRight, &lightUp );
 
-		const bool doZoom = Sys_KeyDown( VK_MENU );
+		const bool doZoom = Sys_KeyDown( ME_KEY_ALT );
 		if( doZoom )
 		{
 			if( y != pressY )

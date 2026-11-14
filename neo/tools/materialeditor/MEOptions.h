@@ -29,7 +29,7 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __MEOPTIONS_H__
 #define __MEOPTIONS_H__
 
-#include "../common/registryoptions.h"
+#include "../common/RegistryOptions.h"
 
 // Wrapper class that is responsible for reading and writing Material Editor
 // settings to the registry. Settings are written to materialeditor.cfg

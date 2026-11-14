@@ -31,6 +31,14 @@ If you have questions concerning this license or the applicable additional terms
 
 static const int SAMPLE_RATE = 60;
 
+static void AmpRead( void* dest, size_t size, FILE* f )
+{
+	if( fread( dest, size, 1, f ) != 1 )
+	{
+		idLib::Warning( "amplitude: short read" );
+	}
+}
+
 struct chunk_t
 {
 	unsigned int id;
@@ -90,7 +98,7 @@ int WAVE_ReadHeader( FILE* f )
 		unsigned int format;
 	} header;
 
-	fread( &header, sizeof( header ), 1, f );
+	AmpRead( &header, sizeof( header ), f );
 	Swap( header.id );
 	Swap( header.format );
 
@@ -182,7 +190,7 @@ bool Process( FILE* in, FILE* out )
 				return false;
 			}
 			fseek( in, chunks[i].offset, SEEK_SET );
-			fread( &format, sizeof( format ), 1, in );
+			AmpRead( &format, sizeof( format ), in );
 			foundFormat = true;
 		}
 		if( chunks[i].id == 'data' )
@@ -236,7 +244,7 @@ bool Process( FILE* in, FILE* out )
 		return false;
 	}
 	fseek( in, dataOffset, SEEK_SET );
-	fread( inputData, dataSize, 1, in );
+	AmpRead( inputData, dataSize, in );
 
 	int numOutputSamples = 1 + ( numSamples * SAMPLE_RATE / format.samplesPerSec );
 	float* min = ( float* )malloc( numOutputSamples * sizeof( float ) );
@@ -266,8 +274,8 @@ bool Process( FILE* in, FILE* out )
 			{
 				unsigned int index = i * SAMPLE_RATE / format.samplesPerSec;
 				float fdata = ( float )sdata[i] / 32767.0f;
-				min[index] = __min( min[index], fdata );
-				max[index] = __max( max[index], fdata );
+				min[index] = Min( min[index], fdata );
+				max[index] = Max( max[index], fdata );
 			}
 		}
 		else
@@ -279,8 +287,8 @@ bool Process( FILE* in, FILE* out )
 				for( unsigned int c = 0; c < format.numChannels; c++ )
 				{
 					float fdata = ( float )sdata[j++] / 32767.0f;
-					min[index] = __min( min[index], fdata );
-					max[index] = __max( max[index], fdata );
+					min[index] = Min( min[index], fdata );
+					max[index] = Max( max[index], fdata );
 				}
 			}
 		}
@@ -294,8 +302,8 @@ bool Process( FILE* in, FILE* out )
 			{
 				unsigned int index = i * SAMPLE_RATE / format.samplesPerSec;
 				float fdata = ( ( float )bdata[i] - 128.0f ) / 127.0f;
-				min[index] = __min( min[index], fdata );
-				max[index] = __max( max[index], fdata );
+				min[index] = Min( min[index], fdata );
+				max[index] = Max( max[index], fdata );
 			}
 		}
 		else
@@ -307,8 +315,8 @@ bool Process( FILE* in, FILE* out )
 				for( unsigned int c = 0; c < format.numChannels; c++ )
 				{
 					float fdata = ( ( float )bdata[j++] - 128.0f ) / 127.0f;
-					min[index] = __min( min[index], fdata );
-					max[index] = __max( max[index], fdata );
+					min[index] = Min( min[index], fdata );
+					max[index] = Max( max[index], fdata );
 				}
 			}
 		}
@@ -353,31 +361,33 @@ void Amplitude_f( const idCmdArgs& args )
 
 	idLib::Printf( "Processing %s: \n", inputFileName );
 
-	FILE* in = NULL;
-	if( fopen_s( &in, inputFileName, "rb" ) != 0 )
+	FILE* in = fopen( inputFileName, "rb" );
+	if( in == NULL )
 	{
 		idLib::Error( "Could not open input file\n" );
 		return;
 	}
 	char outputFileName[1024] = {0};
-	if( strcpy_s( outputFileName, inputFileName ) != 0 )
+	if( strlen( inputFileName ) >= sizeof( outputFileName ) )
 	{
 		idLib::Error( "Filename too long\n" );
 		return;
 	}
+	idStr::Copynz( outputFileName, inputFileName, sizeof( outputFileName ) );
 	char* dot = strrchr( outputFileName, '.' );
 	if( dot == NULL )
 	{
 		dot = outputFileName + strlen( outputFileName );
 	}
-	if( strcpy_s( dot, sizeof( outputFileName ) - ( dot - outputFileName ), ".amp" ) != 0 )
+	if( sizeof( outputFileName ) - ( dot - outputFileName ) < sizeof( ".amp" ) )
 	{
 		idLib::Error( "Filename too long\n" );
 		return;
 	}
+	idStr::Copynz( dot, ".amp", sizeof( outputFileName ) - ( dot - outputFileName ) );
 
-	FILE* out = NULL;
-	if( fopen_s( &out, outputFileName, "wb" ) != 0 )
+	FILE* out = fopen( outputFileName, "wb" );
+	if( out == NULL )
 	{
 		idLib::Error( "Could not open output file %s\n", outputFileName );
 		return;

@@ -28,6 +28,16 @@ file(GLOB src_external_imgui imgui/*.cpp imgui/misc/cpp/*.cpp imgui/misc/cpp/*.h
 source_group("ImGUI\\Core" FILES ${src_external_imgui})
 list(APPEND src_external ${src_external_imgui})
 
+if(UNIX)
+file(GLOB src_external_imgui_sdl
+	imgui/backends/imgui_impl_sdl2.cpp
+	imgui/backends/imgui_impl_sdl2.h
+	imgui/backends/imgui_impl_sdlrenderer2.cpp
+	imgui/backends/imgui_impl_sdlrenderer2.h)
+source_group("ImGUI\\Backends" FILES ${src_external_imgui_sdl})
+list(APPEND src_external ${src_external_imgui_sdl})
+endif()
+
 file(GLOB src_external_imguizmo imguizmo/*.cpp imguizmo/*.h)
 source_group("ImGUI\\ImGUIZmo" FILES ${src_external_imguizmo})
 list(APPEND src_external ${src_external_imguizmo})

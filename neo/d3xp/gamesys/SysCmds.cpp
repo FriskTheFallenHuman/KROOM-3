@@ -2807,7 +2807,7 @@ CONSOLE_COMMAND_SHIP( exportRagdolls, "export all ragdolls matching the specifie
 	{
 		idStr msg;
 		msg.Format( "Couldn't open '%s' for writing.", outFilePath.c_str() );
-		idLib::Warning( msg.c_str() );
+		idLib::Warning( "%s", msg.c_str() );
 		return;
 	}
 	file->Write( text.c_str(), text.Length() );

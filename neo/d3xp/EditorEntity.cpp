@@ -702,6 +702,8 @@ void idEditEntities::DisplayEntities()
 			{
 				//drawArrows = true;
 
+				idLight* light = static_cast<idLight*>( ent );
+
 				cvarSystem->SetCVarInteger( "r_singleLight", light->GetLightDefHandle() );
 				cvarSystem->SetCVarInteger( "r_showLights", 3 );
 

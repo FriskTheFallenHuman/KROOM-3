@@ -33,6 +33,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include <wx/wx.h>
 #include <wx/image.h>
+#include <wx/imaglist.h>
 #include <wx/mstream.h>
 
 #include "ToolBarStrip.h"

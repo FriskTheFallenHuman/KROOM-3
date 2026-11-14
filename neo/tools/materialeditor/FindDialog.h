@@ -32,7 +32,7 @@ If you have questions concerning this license or the applicable additional terms
 #include <wx/wx.h>
 
 #include "MaterialEditor.h"
-#include "../common/registryoptions.h"
+#include "../common/RegistryOptions.h"
 
 class MEMainFrame;
 

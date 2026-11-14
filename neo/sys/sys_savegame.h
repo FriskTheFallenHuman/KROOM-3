@@ -158,7 +158,7 @@ public:
 		descriptors.Clear();
 		damaged = false;
 		date = 0;
-		slotName[0] = NULL;
+		slotName[0] = '\0';
 	}
 	virtual bool	operator==( const idSaveGameDetails& other ) const
 	{

@@ -64,7 +64,10 @@ void* Mem_Alloc16( const size_t size, const memTag_t tag )
 #else
 	// DG: the POSIX solution for linux etc
 	void* ret = nullptr;
-	posix_memalign( &ret, 16, paddedSize );
+	if( posix_memalign( &ret, 16, paddedSize ) != 0 )
+	{
+		return nullptr;
+	}
 	return ret;
 #endif
 #endif

@@ -176,13 +176,13 @@ StringFromVec4
 Returns a clean string version of the given vec4
 ================
 */
-const char* StringFromVec4( idVec4& v )
+const char* StringFromVec4( const idVec4& v )
 {
 	return va( "%s,%s,%s,%s",
-			   idStr::FloatArrayToString( &v[0], 1, 8 ),
-			   idStr::FloatArrayToString( &v[1], 1, 8 ),
-			   idStr::FloatArrayToString( &v[2], 1, 8 ),
-			   idStr::FloatArrayToString( &v[3], 1, 8 ) );
+			   idStr::FloatArrayToString( v.ToFloatPtr(), 1, 8 ),
+			   idStr::FloatArrayToString( v.ToFloatPtr() + 1, 1, 8 ),
+			   idStr::FloatArrayToString( v.ToFloatPtr() + 2, 1, 8 ),
+			   idStr::FloatArrayToString( v.ToFloatPtr() + 3, 1, 8 ) );
 }
 
 /*

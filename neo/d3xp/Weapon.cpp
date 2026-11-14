@@ -2997,7 +2997,7 @@ const char* idWeapon::GetAmmoPickupNameForNum( ammo_t ammonum )
 
 	const char* name = GetAmmoNameForNum( ammonum );
 
-	if( name != NULL && *name != NULL )
+	if( name != NULL && *name != '\0' )
 	{
 		num = ammoDict->GetNumKeyVals();
 		for( i = 0; i < num; i++ )
@@ -4586,7 +4586,7 @@ void idWeapon::Event_Melee()
 						const char* decal;
 						// project decal
 						decal = weaponDef->dict.GetString( "mtr_strike" );
-						if( decal != NULL && *decal != NULL )
+						if( decal != NULL && *decal != '\0' )
 						{
 							gameLocal.ProjectDecal( tr.c.point, -tr.c.normal, 8.0f, true, 6.0, decal );
 						}

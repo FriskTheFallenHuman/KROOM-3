@@ -1191,7 +1191,7 @@ void idCommonLocal::UnloadGameDLL()
 	if( gameDLL )
 	{
 		Sys_DLL_Unload( gameDLL );
-		gameDLL = NULL;
+		gameDLL = 0;
 	}
 	game = NULL;
 	gameEdit = NULL;

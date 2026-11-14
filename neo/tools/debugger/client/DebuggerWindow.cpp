@@ -37,6 +37,10 @@ If you have questions concerning this license or the applicable additional terms
 #include "DebuggerQuickWatchDlg.h"
 #include "DebuggerFindDlg.h"
 
+#ifndef wxSTC_FIND_NONE
+#define wxSTC_FIND_NONE 0
+#endif
+
 #ifndef _MSC_VER
 	#include <stdio.h>
 	#include <stdlib.h>
@@ -1322,7 +1326,8 @@ void rvDebuggerWindow::OnScriptKeyDown( wxKeyEvent& event )
 {
 	if( event.ControlDown() && event.GetKeyCode() == 'F' )
 	{
-		OnMenuEditFind( wxCommandEvent() );
+		wxCommandEvent findEvent;
+		OnMenuEditFind( findEvent );
 		return;
 	}
 	event.Skip();
