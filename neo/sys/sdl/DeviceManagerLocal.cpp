@@ -63,8 +63,30 @@ idDeviceManagerLocal deviceManagerLocal;
 idDeviceManager* deviceManager = &deviceManagerLocal;
 
 #if !defined(USE_VULKAN)
-	// RB: FIXME this shit. We need the OpenGL alpha channel for advanced rendering effects
-	idCVar SDLVars_t::sdl_waylandcompat( "sdl_waylandcompat", "0", CVAR_SYSTEM | CVAR_NOCHEAT | CVAR_ARCHIVE, "wayland compatible framebuffer" );
+// RB: FIXME this shit. We need the OpenGL alpha channel for advanced rendering effects
+idCVar SDLVars_t::sdl_waylandcompat( "sdl_waylandcompat", "0", CVAR_SYSTEM | CVAR_NOCHEAT | CVAR_ARCHIVE, "wayland compatible framebuffer" );
+
+/*
+========================
+GLVersionToDriverVersion
+========================
+*/
+static graphicsVersionType_t GLVersionToDriverVersion( int major, int minor )
+{
+	static const graphicsVersionType_t gl4x[] =
+	{
+		GL_OPENGL_40, GL_OPENGL_41, GL_OPENGL_42, GL_OPENGL_43,
+		GL_OPENGL_44, GL_OPENGL_45, GL_OPENGL_46
+	};
+
+	if( major >= 4 )
+	{
+		return gl4x[ idMath::ClampInt( 0, 6, minor ) ];
+	}
+
+	// 3.1 is the minimum, 3.3 the maximum of the 3.x series
+	return ( minor >= 3 ) ? GL_OPENGL_33 : ( ( minor == 2 ) ? GL_OPENGL_32 : GL_OPENGL_31 );
+}
 #endif
 
 /*
@@ -357,47 +379,7 @@ bool idDeviceManagerLocal::Init( vidParms_t parms )
 		const int glMajorVersion = r_glVersionMajor.GetInteger();
 		const int glMinorVersion = r_glVersionMinor.GetInteger();
 
-		// Krispy: This is Mega stupid, im sorry
-		if( glMajorVersion >= 3 && glMajorVersion >= 1 )
-		{
-			glConfig.driverVersion = GL_OPENGL_31;
-		}
-		else if( glMajorVersion >= 3 && glMajorVersion >= 2 )
-		{
-			glConfig.driverVersion = GL_OPENGL_32;
-		}
-		else if( glMajorVersion >= 3 && glMajorVersion >= 3 )
-		{
-			glConfig.driverVersion = GL_OPENGL_33;
-		}
-		else if( glMajorVersion >= 4 && glMajorVersion >= 0 )
-		{
-			glConfig.driverVersion = GL_OPENGL_40;
-		}
-		else if( glMajorVersion >= 4 && glMajorVersion >= 1 )
-		{
-			glConfig.driverVersion = GL_OPENGL_41;
-		}
-		else if( glMajorVersion >= 4 && glMajorVersion >= 2 )
-		{
-			glConfig.driverVersion = GL_OPENGL_42;
-		}
-		else if( glMajorVersion >= 4 && glMajorVersion >= 3 )
-		{
-			glConfig.driverVersion = GL_OPENGL_43;
-		}
-		else if( glMajorVersion >= 4 && glMajorVersion >= 4 )
-		{
-			glConfig.driverVersion = GL_OPENGL_44;
-		}
-		else if( glMajorVersion >= 4 && glMajorVersion >= 5 )
-		{
-			glConfig.driverVersion = GL_OPENGL_45;
-		}
-		else if( glMajorVersion >= 4 && glMajorVersion >= 6 )
-		{
-			glConfig.driverVersion = GL_OPENGL_46;
-		}
+		glConfig.driverVersion = GLVersionToDriverVersion( glMajorVersion, glMinorVersion );
 
 		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, glMajorVersion );
 		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, glMinorVersion );
@@ -421,7 +403,8 @@ bool idDeviceManagerLocal::Init( vidParms_t parms )
 			profileCore = SDL_GL_CONTEXT_PROFILE_COMPATIBILITY; // ES support?
 		}
 
-		SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, profileCore ); // ES support?
+		// Profiles were introduced with OpenGL 3.2, for older versions the mask is meaningless
+		SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, ( glConfig.driverVersion != GL_OPENGL_31 ) ? profileCore : 0 ); // ES support?
 
 		if( r_debugContext.GetBool() )
 		{
@@ -524,6 +507,15 @@ bool idDeviceManagerLocal::Init( vidParms_t parms )
 		}
 
 #if !defined(USE_VULKAN)
+		if( !sdl.context )
+		{
+			common->Warning( "Couldn't create an OpenGL %d.%d context (profile %d): %s",
+							 glMajorVersion, glMinorVersion, r_glProfile.GetInteger(), SDL_GetError() );
+			SDL_DestroyWindow( sdl.window );
+			sdl.window = NULL;
+			continue;
+		}
+
 		if( SDL_GL_SetSwapInterval( r_swapInterval.GetInteger() ) < 0 )
 		{
 			common->Warning( "SDL_GL_SetSwapInterval(%d) failed: %s", r_swapInterval.GetInteger(), SDL_GetError() );

@@ -1360,52 +1360,26 @@ idStr idRenderProgManager::ConvertCG2GLSL( const idStr& in, const char* name, rp
 	}
 	else
 	{
-		switch( glConfig.driverVersion )
-		{
-			default:
-			case GL_OPENGL_31:
-				filenameVersionNumber = "140";
-				break;
-			case GL_OPENGL_32:
-				filenameVersionNumber = "150";
-				break;
-			case GL_OPENGL_33:
-				filenameVersionNumber = "330";
-				break;
-			case GL_OPENGL_40:
-				filenameVersionNumber = "400";
-				break;
-			case GL_OPENGL_41:
-				filenameVersionNumber = "410";
-				break;
-			case GL_OPENGL_42:
-				filenameVersionNumber = "420";
-				break;
-			case GL_OPENGL_43:
-				filenameVersionNumber = "430";
-				break;
-			case GL_OPENGL_44:
-				filenameVersionNumber = "440";
-				break;
-			case GL_OPENGL_45:
-				filenameVersionNumber = "450";
-				break;
-			case GL_OPENGL_46:
-				filenameVersionNumber = "460";
-				break;
-		}
+		static const char* const glslVersions[] = { "140", "150", "330", "400", "410", "420", "430", "440", "450", "460" };
+		static_assert( ARRAY_COUNT( glslVersions ) == GL_OPENGL_46 + 1, "glslVersions is out of sync with graphicsVersionType_t" );
+
+		const int versionIndex = idMath::ClampInt( 0, ARRAY_COUNT( glslVersions ) - 1, ( int )glConfig.driverVersion );
+		filenameVersionNumber = glslVersions[versionIndex];
 	}
+
+	// the "core" / "compatibility" profile tokens only exist from #version 150 on
+	const bool profilesAllowed = ( atoi( filenameVersionNumber.c_str() ) >= 150 );
 	switch( glConfig.driverType )
 	{
 		case GLDRV_OPENGL_CORE_PROFILE:
 		case GLDRV_OPENGL_MESA_CORE_PROFILE:
 		case GLDRV_VULKAN:
-			filenameProfile = " core";
+			filenameProfile = profilesAllowed ? " core" : "";
 			break;
 
 		case GLDRV_OPENGL_COMPATIBILITY_PROFILE:
 		case GLDRV_OPENGL_MESA_COMPATIBILITY_PROFILE:
-			filenameProfile = " compatibility";
+			filenameProfile = profilesAllowed ? " compatibility" : "";
 			break;
 
 		default:
