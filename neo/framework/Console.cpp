@@ -68,7 +68,7 @@ public:
 	virtual	void		Print( const char* text );
 	virtual	void		Draw( bool forceFullScreen, bool skipNotifyLines = false );
 
-	virtual void		PrintOverlay( idOverlayHandle& handle, justify_t justify, VERIFY_FORMAT_STRING const char* text, idVec4& textColor, bool showbackground, ... );
+	virtual void		PrintOverlay( idOverlayHandle& handle, justify_t justify, VERIFY_FORMAT_STRING const char* text, idVec4& textColor, int showbackground, ... );
 
 	virtual idDebugGraph* 	CreateGraph( int numItems );
 	virtual void			DestroyGraph( idDebugGraph* graph );
@@ -1632,7 +1632,7 @@ void idConsoleLocal::Draw( bool forceFullScreen, bool skipNotifyLines )
 idConsoleLocal::PrintOverlay
 ========================
 */
-void idConsoleLocal::PrintOverlay( idOverlayHandle& handle, justify_t justify, VERIFY_FORMAT_STRING const char* text, idVec4& textColor, bool showbackground, ... )
+void idConsoleLocal::PrintOverlay( idOverlayHandle& handle, justify_t justify, VERIFY_FORMAT_STRING const char* text, idVec4& textColor, int showbackground, ... )
 {
 	if( handle.index >= 0 && handle.index < overlayText.Num() )
 	{
@@ -1653,7 +1653,7 @@ void idConsoleLocal::PrintOverlay( idOverlayHandle& handle, justify_t justify, V
 	overlay.textColor = textColor;
 	overlay.justify = justify;
 	overlay.time = Sys_Milliseconds();
-	overlay.showbackground = showbackground;
+	overlay.showbackground = ( showbackground != 0 );
 
 	handle.index = overlayText.Num() - 1;
 	handle.time = overlay.time;

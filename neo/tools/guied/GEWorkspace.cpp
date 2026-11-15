@@ -1837,7 +1837,7 @@ void rvGEWorkspace::AddModifierSize( const char* modName, float l, float t, floa
 rvGEWorkspace::AddModifiers
 ================
 */
-void rvGEWorkspace::AddModifiers( EModifierType type, ... )
+void rvGEWorkspace::AddModifiers( int type, ... )
 {
 	if( !m_selections.Num() )
 	{
@@ -1852,7 +1852,7 @@ void rvGEWorkspace::AddModifiers( EModifierType type, ... )
 		{
 			va_list args;
 			va_start( args, type );
-			group->Append( CreateModifier( type, m_selections[i], args ) );
+			group->Append( CreateModifier( ( EModifierType )type, m_selections[i], args ) );
 			va_end( args );
 		}
 
@@ -1862,7 +1862,7 @@ void rvGEWorkspace::AddModifiers( EModifierType type, ... )
 	{
 		va_list args;
 		va_start( args, type );
-		m_modifiers.Append( CreateModifier( type, m_selections[0], args ) );
+		m_modifiers.Append( CreateModifier( ( EModifierType )type, m_selections[0], args ) );
 		va_end( args );
 	}
 
@@ -1874,11 +1874,11 @@ void rvGEWorkspace::AddModifiers( EModifierType type, ... )
 rvGEWorkspace::AddModifiers
 ================
 */
-void rvGEWorkspace::AddModifiers( idWindow* window, EModifierType type, ... )
+void rvGEWorkspace::AddModifiers( idWindow* window, int type, ... )
 {
 	va_list args;
 	va_start( args, type );
-	m_modifiers.Append( CreateModifier( type, window, args ) );
+	m_modifiers.Append( CreateModifier( ( EModifierType )type, window, args ) );
 	va_end( args );
 
 	SetModified( true );

@@ -44,6 +44,32 @@ If you have questions concerning this license or the applicable additional terms
 
 /*
 ================
+ConstraintTypeFromDecl
+================
+*/
+static constraintType_t ConstraintTypeFromDecl( declAFConstraintType_t type )
+{
+	switch( type )
+	{
+		case DECLAF_CONSTRAINT_FIXED:
+			return CONSTRAINT_FIXED;
+		case DECLAF_CONSTRAINT_BALLANDSOCKETJOINT:
+			return CONSTRAINT_BALLANDSOCKETJOINT;
+		case DECLAF_CONSTRAINT_UNIVERSALJOINT:
+			return CONSTRAINT_UNIVERSALJOINT;
+		case DECLAF_CONSTRAINT_HINGE:
+			return CONSTRAINT_HINGE;
+		case DECLAF_CONSTRAINT_SLIDER:
+			return CONSTRAINT_SLIDER;
+		case DECLAF_CONSTRAINT_SPRING:
+			return CONSTRAINT_SPRING;
+		default:
+			return CONSTRAINT_INVALID;
+	}
+}
+
+/*
+================
 idAF::idAF
 ================
 */
@@ -1022,13 +1048,8 @@ bool idAF::Load( idEntity* ent, const char* fileName )
 		idAFConstraint* constraint = physicsObj.GetConstraint( i );
 		for( j = 0; j < file->constraints.Num(); j++ )
 		{
-			// DG: FIXME: GCC rightfully complains that file->constraints[j]->type and constraint->GetType()
-			//  are of different enum types, and their values are different in some cases:
-			//  CONSTRAINT_HINGESTEERING has no DECLAF_CONSTRAINT_ equivalent,
-			//  and thus DECLAF_CONSTRAINT_SLIDER != CONSTRAINT_SLIDER (5 != 6)
-			//  and DECLAF_CONSTRAINT_SPRING != CONSTRAINT_SPRING (6 != 10)
 			if( file->constraints[j]->name.Icmp( constraint->GetName() ) == 0 &&
-					file->constraints[j]->type == constraint->GetType() )
+					ConstraintTypeFromDecl( file->constraints[j]->type ) == constraint->GetType() )
 			{
 				break;
 			}

@@ -191,8 +191,8 @@ private:
 
 	void RenderGuiIntoCurrentFBO( int w, int h );
 
-	void AddModifiers( EModifierType type, ... );
-	void AddModifiers( idWindow* window, EModifierType type, ... );
+	void AddModifiers( int type, ... );
+	void AddModifiers( idWindow* window, int type, ... );
 	rvGEModifier* CreateModifier( EModifierType type, idWindow* window, va_list args );
 	void AddModifierMoveNudge( float x, float y, bool snap )
 	{

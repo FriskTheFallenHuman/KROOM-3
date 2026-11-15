@@ -98,7 +98,7 @@ public:
 	virtual void	Draw( bool forceFullScreen, bool skipNotifyLines = false ) = 0;
 	virtual void	Print( const char* text ) = 0;
 
-	virtual void	PrintOverlay( idOverlayHandle& handle, justify_t justify, VERIFY_FORMAT_STRING const char* text, idVec4& textColor, bool showbackground, ... ) = 0;
+	virtual void	PrintOverlay( idOverlayHandle& handle, justify_t justify, VERIFY_FORMAT_STRING const char* text, idVec4& textColor, int showbackground, ... ) = 0;
 
 	virtual idDebugGraph* 	CreateGraph( int numItems ) = 0;
 	virtual void			DestroyGraph( idDebugGraph* graph ) = 0;
