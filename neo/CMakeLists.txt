@@ -411,7 +411,7 @@ else()
 	# OpenAL
 	find_or_fetch(OpenAL
 		GIT_REPOSITORY https://github.com/kcat/openal-soft.git
-		GIT_TAG 1.25.2
+		GIT_TAG master #1.25.2 # This is broken on vs2026
 		GIT_SHALLOW TRUE)
 
 	set(OPENAL_LIBRARY OpenAL::OpenAL)
