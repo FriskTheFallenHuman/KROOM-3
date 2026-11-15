@@ -46,19 +46,24 @@ file(GLOB src_external_imguicolortextedit ImGuiColorTextEdit/*.cpp ImGuiColorTex
 source_group("ImGUI\\ImGuiColorTextEdit" FILES ${src_external_imguicolortextedit})
 list(APPEND src_external ${src_external_imguicolortextedit})
 
-if(WIN32)
 if(NOT USE_VULKAN)
-file(GLOB src_external_glew glew/src/*.c glew/include/GL/*.h)
-list(REMOVE_ITEM src_external_glew ${CMAKE_CURRENT_SOURCE_DIR}/glew/src/visualinfo.c)
+file(GLOB_RECURSE src_external_glad glad/src/*.c glad/include/*.h)
 if(WIN32)
-list(REMOVE_ITEM src_external_glew ${CMAKE_CURRENT_SOURCE_DIR}/glew/include/GL/glxew.h)
+list(REMOVE_ITEM src_external_glad
+	${CMAKE_CURRENT_SOURCE_DIR}/glad/src/glx.c
+	${CMAKE_CURRENT_SOURCE_DIR}/glad/src/egl.c
+	${CMAKE_CURRENT_SOURCE_DIR}/glad/include/glad/glx.h
+	${CMAKE_CURRENT_SOURCE_DIR}/glad/include/glad/egl.h
+	${CMAKE_CURRENT_SOURCE_DIR}/glad/include/EGL/eglplatform.h
+	${CMAKE_CURRENT_SOURCE_DIR}/glad/include/KHR/khrplatform.h)
 else()
-list(REMOVE_ITEM src_external_glew ${CMAKE_CURRENT_SOURCE_DIR}/glew/include/GL/wglew.h)
+list(REMOVE_ITEM src_external_glad
+	${CMAKE_CURRENT_SOURCE_DIR}/glad/src/wgl.c
+	${CMAKE_CURRENT_SOURCE_DIR}/glad/include/GL/wglew.h)
 endif()
-source_group("Glew" FILES ${src_external_glew})
-list(APPEND src_external ${src_external_glew})
-list(APPEND src_external_includes ${CMAKE_CURRENT_SOURCE_DIR}/glew/include)
-endif()
+source_group("Glad" FILES ${src_external_glad})
+list(APPEND src_external ${src_external_glad})
+list(APPEND src_external_includes ${CMAKE_CURRENT_SOURCE_DIR}/glad/include)
 endif()
 
 file(GLOB src_external_stb stb/*.h)

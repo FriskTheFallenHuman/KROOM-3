@@ -32,14 +32,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
-#if !defined(USE_VULKAN)
-	#ifdef _WIN32
-		#include "glew/include/GL/glew.h"
-	#else
-		#include <GL/glew.h>
-	#endif
-#endif
-
 // DG: SDL.h somehow needs the following functions, so #undef those silly
 //     "don't use" #defines from Str.h
 #undef strncmp
@@ -232,13 +224,6 @@ idDeviceManagerLocal::PreInit
 */
 void idDeviceManagerLocal::PreInit()
 {
-	if( !SDL_WasInit( SDL_INIT_VIDEO ) )
-	{
-		if( SDL_Init( SDL_INIT_VIDEO ) )
-		{
-			common->Error( "Error while initializing SDL: %s", SDL_GetError() );
-		}
-	}
 }
 
 
@@ -586,19 +571,15 @@ bool idDeviceManagerLocal::Init( vidParms_t parms )
 	}
 
 #if !defined(USE_VULKAN)
-#ifdef __APPLE__
-	glewExperimental = GL_TRUE;
-#endif
-
-	GLenum glewResult = glewInit();
-	if( GLEW_OK != glewResult )
+	int gladResult = gladLoadGL( ( GLADloadfunc )SDL_GL_GetProcAddress );
+	if( !gladResult )
 	{
-		// glewInit failed, something is seriously wrong
-		common->Printf( "^3GLimp_Init() - GLEW could not load OpenGL subsystem: %s", glewGetErrorString( glewResult ) );
+		// gladLoadGL failed, something is seriously wrong
+		common->FatalError( "^3GLimp_Init() - GLAD could not load OpenGL subsystem" );
 	}
 	else
 	{
-		common->Printf( "Using GLEW %s\n", glewGetString( GLEW_VERSION ) );
+		common->Printf( "Using GLAD %d.%d\n", GLAD_VERSION_MAJOR( gladResult ), GLAD_VERSION_MINOR( gladResult ) );
 	}
 
 	int originalInterval = SDL_GL_GetSwapInterval();

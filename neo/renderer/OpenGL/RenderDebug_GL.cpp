@@ -3301,7 +3301,7 @@ void idRenderBackend::DBG_ShowShadowMaps()
 		DrawElementsWithCounters( &testImageSurface );
 	}
 
-	glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE );
+	glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE_ARB );
 }
 // RB end
 

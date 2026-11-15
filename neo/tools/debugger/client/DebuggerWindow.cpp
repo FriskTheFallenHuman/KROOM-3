@@ -38,7 +38,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "DebuggerFindDlg.h"
 
 #ifndef wxSTC_FIND_NONE
-#define wxSTC_FIND_NONE 0
+	#define wxSTC_FIND_NONE 0
 #endif
 
 #ifndef _MSC_VER

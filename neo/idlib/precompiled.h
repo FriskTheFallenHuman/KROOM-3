@@ -102,11 +102,7 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 #if defined(USE_VULKAN)
 	#include "renderer/Vulkan/qvk.h"
 #else
-	#ifdef _WIN32
-		#include "glew/include/GL/glew.h"
-	#else
-		#include <GL/glew.h>
-	#endif
+	#include <glad/gl.h>
 #endif
 #include "renderer/Cinematic.h"
 #include "renderer/Material.h"

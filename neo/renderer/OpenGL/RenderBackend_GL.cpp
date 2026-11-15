@@ -248,11 +248,11 @@ static void R_CheckPortableExtensions()
 	}
 	else
 	{
-		glConfig.multitextureAvailable = GLEW_ARB_multitexture != 0;
+		glConfig.multitextureAvailable = GLAD_GL_ARB_multisample != 0;
 	}
 
 	// GL_EXT_direct_state_access
-	glConfig.directStateAccess = GLEW_EXT_direct_state_access != 0;
+	glConfig.directStateAccess = GLAD_GL_EXT_direct_state_access != 0;
 
 
 	// GL_ARB_texture_compression + GL_S3_s3tc
@@ -263,10 +263,10 @@ static void R_CheckPortableExtensions()
 	}
 	else
 	{
-		glConfig.textureCompressionAvailable = GLEW_ARB_texture_compression != 0 && GLEW_EXT_texture_compression_s3tc != 0;
+		glConfig.textureCompressionAvailable = GLAD_GL_ARB_texture_compression != 0 && GLAD_GL_EXT_texture_compression_s3tc != 0;
 	}
 	// GL_EXT_texture_filter_anisotropic
-	glConfig.anisotropicFilterAvailable = GLEW_EXT_texture_filter_anisotropic != 0;
+	glConfig.anisotropicFilterAvailable = GLAD_GL_EXT_texture_filter_anisotropic != 0;
 	if( glConfig.anisotropicFilterAvailable )
 	{
 		glGetFloatv( GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &glConfig.maxTextureAnisotropy );
@@ -280,11 +280,11 @@ static void R_CheckPortableExtensions()
 	// GL_EXT_texture_lod_bias
 	// The actual extension is broken as specificed, storing the state in the texture unit instead
 	// of the texture object.  The behavior in GL 1.4 is the behavior we use.
-	glConfig.textureLODBiasAvailable = ( glConfig.glVersion >= 1.4 || GLEW_EXT_texture_lod_bias != 0 );
+	glConfig.textureLODBiasAvailable = ( glConfig.glVersion >= 1.4 || GLAD_GL_EXT_texture_lod_bias != 0 );
 	R_PrintExtensionStatus( glConfig.textureLODBiasAvailable, "GL_EXT_texture_lod_bias" );
 
 	// GL_ARB_seamless_cube_map
-	glConfig.seamlessCubeMapAvailable = GLEW_ARB_seamless_cube_map != 0;
+	glConfig.seamlessCubeMapAvailable = GLAD_GL_ARB_seamless_cube_map != 0;
 	r_useSeamlessCubeMap.SetModified();		// the CheckCvars() next frame will enable / disable it
 
 	// GL_ARB_vertex_buffer_object
@@ -294,7 +294,7 @@ static void R_CheckPortableExtensions()
 	}
 	else
 	{
-		glConfig.vertexBufferObjectAvailable = GLEW_ARB_vertex_buffer_object != 0;
+		glConfig.vertexBufferObjectAvailable = GLAD_GL_ARB_vertex_buffer_object != 0;
 	}
 
 	// GL_ARB_map_buffer_range, map a section of a buffer object's data store
@@ -304,7 +304,7 @@ static void R_CheckPortableExtensions()
 	//}
 	//else
 	{
-		glConfig.mapBufferRangeAvailable = GLEW_ARB_map_buffer_range != 0;
+		glConfig.mapBufferRangeAvailable = GLAD_GL_ARB_map_buffer_range != 0;
 	}
 
 	// GL_ARB_vertex_array_object
@@ -314,11 +314,11 @@ static void R_CheckPortableExtensions()
 	//}
 	//else
 	{
-		glConfig.vertexArrayObjectAvailable = GLEW_ARB_vertex_array_object != 0;
+		glConfig.vertexArrayObjectAvailable = GLAD_GL_ARB_vertex_array_object != 0;
 	}
 
 	// GL_ARB_draw_elements_base_vertex
-	glConfig.drawElementsBaseVertexAvailable = GLEW_ARB_draw_elements_base_vertex != 0;
+	glConfig.drawElementsBaseVertexAvailable = GLAD_GL_ARB_draw_elements_base_vertex != 0;
 
 	// GL_ARB_vertex_program and GL_ARB_fragment_program aren't needed
 	glGetIntegerv( GL_MAX_TEXTURE_IMAGE_UNITS, ( GLint* )&glConfig.maxTextureImageUnits );
@@ -327,7 +327,7 @@ static void R_CheckPortableExtensions()
 	glConfig.glslAvailable = ( glConfig.glVersion >= 2.0f );
 
 	// GL_ARB_uniform_buffer_object
-	glConfig.uniformBufferAvailable = GLEW_ARB_uniform_buffer_object != 0;
+	glConfig.uniformBufferAvailable = GLAD_GL_ARB_uniform_buffer_object != 0;
 	if( glConfig.uniformBufferAvailable )
 	{
 		glGetIntegerv( GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, ( GLint* )&glConfig.uniformBufferOffsetAlignment );
@@ -340,38 +340,38 @@ static void R_CheckPortableExtensions()
 	glConfig.gpuSkinningAvailable = glConfig.uniformBufferAvailable && ( glConfig.driverType == GLDRV_OPENGL || glConfig.driverType == GLDRV_OPENGL_CORE_PROFILE || glConfig.driverType == GLDRV_OPENGL_COMPATIBILITY_PROFILE );
 
 	// GL_EXT_depth_bounds_test
-	glConfig.depthBoundsTestAvailable = GLEW_EXT_depth_bounds_test != 0;
+	glConfig.depthBoundsTestAvailable = GLAD_GL_EXT_depth_bounds_test != 0;
 
 	// GL_ARB_polygon_offset_clamp / GL_EXT_polygon_offset_clamp
-	glConfig.polygonOffsetClampAvailable = GLEW_ARB_polygon_offset_clamp != 0 || GLEW_EXT_polygon_offset_clamp != 0;
+	glConfig.polygonOffsetClampAvailable = GLAD_GL_ARB_polygon_offset_clamp != 0 || GLAD_GL_EXT_polygon_offset_clamp != 0;
 
 	// GL_ARB_sync
-	glConfig.syncAvailable = GLEW_ARB_sync &&
+	glConfig.syncAvailable = GLAD_GL_ARB_sync &&
 							 // as of 5/24/2012 (driver version 15.26.12.64.2761) sync objects
 							 // do not appear to work for the Intel HD 4000 graphics
 							 ( glConfig.vendor != VENDOR_INTEL || r_skipIntelWorkarounds.GetBool() );
 
 	// GL_ARB_occlusion_query
-	glConfig.occlusionQueryAvailable = GLEW_ARB_occlusion_query != 0;
+	glConfig.occlusionQueryAvailable = GLAD_GL_ARB_occlusion_query != 0;
 
 #if defined(__APPLE__)
 	// SRS - DSA not available in Apple OpenGL 4.1, but enable for OSX anyways since elapsed time query will be used to get timing info instead
-	glConfig.timerQueryAvailable = ( GLEW_ARB_timer_query != 0 || GLEW_EXT_timer_query != 0 );
+	glConfig.timerQueryAvailable = ( GLAD_GL_ARB_timer_query != 0 || GLAD_GL_EXT_timer_query != 0 );
 #else
 	// GL_ARB_timer_query using the DSA interface
-	glConfig.timerQueryAvailable = ( GLEW_ARB_direct_state_access != 0 && GLEW_ARB_timer_query != 0 );
+	glConfig.timerQueryAvailable = ( GLAD_GL_ARB_direct_state_access != 0 && GLAD_GL_ARB_timer_query != 0 );
 #endif
 
 	// GREMEDY_string_marker
-	glConfig.gremedyStringMarkerAvailable = GLEW_GREMEDY_string_marker != 0;
+	glConfig.gremedyStringMarkerAvailable = GLAD_GL_GREMEDY_string_marker != 0;
 	R_PrintExtensionStatus( glConfig.gremedyStringMarkerAvailable, "GL_GREMEDY_string_marker" );
 
 	// KHR_debug
-	glConfig.khronosDebugAvailable = GLEW_KHR_debug != 0;
-	R_PrintExtensionStatus( glConfig.khronosDebugAvailable, "GLEW_KHR_debug" );
+	glConfig.khronosDebugAvailable = GLAD_GL_KHR_debug != 0;
+	R_PrintExtensionStatus( glConfig.khronosDebugAvailable, "GL_AD_GL_KHR_debug" );
 
 	// GL_ARB_framebuffer_object
-	glConfig.framebufferObjectAvailable = GLEW_ARB_framebuffer_object != 0;
+	glConfig.framebufferObjectAvailable = GLAD_GL_ARB_framebuffer_object != 0;
 	R_PrintExtensionStatus( glConfig.framebufferObjectAvailable, "GL_ARB_framebuffer_object" );
 	if( glConfig.framebufferObjectAvailable )
 	{
@@ -380,11 +380,11 @@ static void R_CheckPortableExtensions()
 	}
 
 	// GL_EXT_framebuffer_blit
-	glConfig.framebufferBlitAvailable = GLEW_EXT_framebuffer_blit != 0;
+	glConfig.framebufferBlitAvailable = GLAD_GL_EXT_framebuffer_blit != 0;
 	R_PrintExtensionStatus( glConfig.framebufferBlitAvailable, "GL_EXT_framebuffer_blit" );
 
 	// GL_ARB_debug_output
-	glConfig.debugOutputAvailable = GLEW_ARB_debug_output != 0;
+	glConfig.debugOutputAvailable = GLAD_GL_ARB_debug_output != 0;
 	if( glConfig.debugOutputAvailable )
 	{
 		if( r_debugContext.GetInteger() >= 1 )
@@ -1150,7 +1150,7 @@ void idRenderBackend::GL_State( uint64 stateBits, bool forceGlState )
 		{
 			if( glConfig.polygonOffsetClampAvailable && polyOfsClamp > 0.0f )
 			{
-				if( GLEW_ARB_polygon_offset_clamp != 0 )
+				if( GLAD_GL_ARB_polygon_offset_clamp != 0 )
 				{
 					glPolygonOffsetClamp( polyOfsScale, polyOfsBias, polyOfsClamp );
 				}
@@ -1375,7 +1375,7 @@ void idRenderBackend::GL_PolygonOffset( float scale, float bias, float clamp )
 	{
 		if( glConfig.polygonOffsetClampAvailable && clamp > 0.0f )
 		{
-			if( GLEW_ARB_polygon_offset_clamp != 0 )
+			if( GLAD_GL_ARB_polygon_offset_clamp != 0 )
 			{
 				glPolygonOffsetClamp( scale, bias, clamp );
 			}
