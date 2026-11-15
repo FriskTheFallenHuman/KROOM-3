@@ -206,21 +206,22 @@ public:
 			}
 			if( strstr( propertyName, "vendor_id" ) )
 			{
-				if( propertyValue == "AuthenticAMD" )
+				if( strstr( propertyValue, "AuthenticAMD" ) )
 				{
 					isAMD_ = true;
 				}
-				else if( propertyValue == "GenuineIntel" )
+				else if( strstr( propertyValue, "GenuineIntel" ) )
 				{
 					isIntel_ = true;
 				}
 			}
-			if( strstr( propertyName, "model_name" ) )
+			if( strstr( propertyName, "model name" ) )
 			{
 				brand_ = propertyValue;
 			}
-
 		}
+		free( line );
+		fclose( fd );
 #endif
 	};
 
