@@ -247,4 +247,4 @@ private:
 	DISALLOW_COPY_AND_ASSIGN( idUniformBuffer );
 };
 
-#endif // !__BUFFEROBJECT_H__
+#endif /* !__BUFFEROBJECT_H__ */
