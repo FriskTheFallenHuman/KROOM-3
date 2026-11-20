@@ -32,24 +32,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "Game_local.h"
 #include "PredictedValue_impl.h"
 
-/*
-================
-ProjectileForcesReplication
-
-This is so i don't need to ship modified .def files
-================
-*/
-static bool ProjectileForcesReplication( const idDict& projectileDict )
-{
-	if( projectileDict.GetBool( "net_replicate" ) )
-	{
-		return true;
-	}
-
-	const idTypeInfo* projectileClass = idClass::GetClass( projectileDict.GetString( "spawnclass" ) );
-	return projectileClass != NULL && projectileClass->IsType( idBFGProjectile::Type );
-}
-
 /***********************************************************************
 
   idWeapon
@@ -4010,7 +3992,7 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 	// for sound & visual effects. Damage will be handled through reliable messages to the host.
 	const bool isHitscan = projectileDict.GetBool( "net_instanthit" );
 	const bool attackerIsLocal = owner->IsLocallyControlled();
-	const bool forceReplication = ProjectileForcesReplication( projectileDict );
+	const bool forceReplication = projectileDict.GetBool( "net_replicate" );
 	const bool actuallySpawnProjectile = common->IsServer() || ( attackerIsLocal && !forceReplication ) || isHitscan;
 
 	if( actuallySpawnProjectile )
@@ -4228,7 +4210,7 @@ void idWeapon::Event_LaunchProjectilesEllipse( int num_projectiles, float spread
 	// for sound & visual effects. Damage will be handled through reliable messages to the host.
 	const bool isHitscan = projectileDict.GetBool( "net_instanthit" );
 	const bool attackerIsLocal = owner->IsLocallyControlled();
-	const bool forceReplication = ProjectileForcesReplication( projectileDict );
+	const bool forceReplication = projectileDict.GetBool( "net_replicate" ) || projectileEnt->GetEntityDefName() == "projectile_bfg_mp"; // HACK: i don't want to ship modified def files
 	const bool actuallySpawnProjectile = common->IsServer() || ( attackerIsLocal && !forceReplication ) || isHitscan;
 
 	if( actuallySpawnProjectile )
