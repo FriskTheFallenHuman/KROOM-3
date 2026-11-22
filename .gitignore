@@ -48,3 +48,4 @@ neo/cmake-build-*/
 bin/*
 
 neo/extern/PipeDownloader/steam/*
+libbinkdec*.pdb
