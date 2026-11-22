@@ -9,6 +9,10 @@ on:
         description: JSON array, any of "x64" and "x86"
         type: string
         default: '["x64","x86"]'
+      simd_levels:
+        description: JSON array of x86 instruction set levels (CMake SIMD_LEVEL) to build, any of sse2, sse3, sse41, avx, avx2
+        type: string
+        default: '["sse2"]'
       retention_days:
         type: number
         default: 1
@@ -37,13 +41,14 @@ env:
 
 jobs:
   build:
-    name: ${{ matrix.arch }} (${{ inputs.build_type || 'Release' }})
+    name: ${{ matrix.arch }} ${{ matrix.simd }} (${{ inputs.build_type || 'Release' }})
     runs-on: windows-2022
     timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
         arch: ${{ fromJSON( inputs.architectures || '["x64","x86"]' ) }}
+        simd: ${{ fromJSON( inputs.simd_levels || '["sse2"]' ) }}
     defaults:
       run:
         shell: pwsh
@@ -68,6 +73,7 @@ jobs:
             -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl `
             -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache `
             -DCMAKE_POLICY_DEFAULT_CMP0141=NEW -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded `
+            -DSIMD_LEVEL=${{ matrix.simd }} `
             -DUSE_PRECOMPILED_HEADERS=OFF -DwxBUILD_PRECOMP=OFF
 
       - name: Build
@@ -82,7 +88,7 @@ jobs:
         run: |
           $stamp = "$((Get-Date).ToUniversalTime().ToString('yyyyMMdd'))-$($env:GITHUB_SHA.Substring(0,7))"
           $binDir = if ('${{ matrix.arch }}' -eq 'x64') { 'bin/x86_64' } else { 'bin/x86' }
-          $name = "Kroom3BFG-windows-${{ matrix.arch }}-$stamp"
+          $name = "Kroom3BFG-windows-${{ matrix.arch }}-${{ matrix.simd }}-$stamp"
           New-Item -ItemType Directory -Force -Path "dist/$name" | Out-Null
           Copy-Item -Recurse -Force "$binDir/*" "dist/$name/"
           Copy-Item -Recurse -Force platform "dist/$name/platform"
@@ -95,7 +101,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: kroom3-windows-${{ matrix.arch }}
+          name: kroom3-windows-${{ matrix.arch }}-${{ matrix.simd }}
           path: ${{ steps.package.outputs.file }}
           retention-days: ${{ inputs.retention_days || 3 }}
           compression-level: 0

@@ -78,7 +78,20 @@ void idSIMD::InitProcessor( const char* module, bool forceGeneric )
 		if( processor == NULL )
 		{
 #if defined(USE_INTRINSICS_SSE)
-			if( ( cpuid & CPUID_MMX ) && ( cpuid & CPUID_SSE ) )
+			const int simdLevel = Sys_GetSIMDLevel( cpuid );
+			if( simdLevel >= ID_SIMD_LEVEL_AVX2 )
+			{
+				processor = new( TAG_MATH ) idSIMD_AVX2;
+			}
+			else if( simdLevel >= ID_SIMD_LEVEL_AVX )
+			{
+				processor = new( TAG_MATH ) idSIMD_AVX;
+			}
+			else if( simdLevel >= ID_SIMD_LEVEL_SSE41 )
+			{
+				processor = new( TAG_MATH ) idSIMD_SSE41;
+			}
+			else if( ( cpuid & CPUID_MMX ) && ( cpuid & CPUID_SSE ) )
 			{
 				processor = new( TAG_MATH ) idSIMD_SSE;
 			}
@@ -1393,10 +1406,37 @@ void idSIMD::Test_f( const idCmdArgs& args )
 			}
 			p_simd = new( TAG_MATH ) idSIMD_SSE;
 		}
+		else if( idStr::Icmp( argString, "SSE41" ) == 0 || idStr::Icmp( argString, "SSE4.1" ) == 0 )
+		{
+			if( Sys_GetSIMDLevel( cpuid ) < ID_SIMD_LEVEL_SSE41 )
+			{
+				common->Printf( "CPU does not support SSE4.1\n" );
+				return;
+			}
+			p_simd = new( TAG_MATH ) idSIMD_SSE41;
+		}
+		else if( idStr::Icmp( argString, "AVX" ) == 0 )
+		{
+			if( Sys_GetSIMDLevel( cpuid ) < ID_SIMD_LEVEL_AVX )
+			{
+				common->Printf( "CPU does not support AVX\n" );
+				return;
+			}
+			p_simd = new( TAG_MATH ) idSIMD_AVX;
+		}
+		else if( idStr::Icmp( argString, "AVX2" ) == 0 )
+		{
+			if( Sys_GetSIMDLevel( cpuid ) < ID_SIMD_LEVEL_AVX2 )
+			{
+				common->Printf( "CPU does not support AVX2 and FMA\n" );
+				return;
+			}
+			p_simd = new( TAG_MATH ) idSIMD_AVX2;
+		}
 		else
 #endif
 		{
-			common->Printf( "invalid argument, use: MMX, 3DNow, SSE, SSE2, SSE3, AltiVec\n" );
+			common->Printf( "invalid argument, use: SSE, SSE41, AVX, AVX2\n" );
 			return;
 		}
 	}

@@ -17,11 +17,14 @@ KROOM-3 is a fork of the [RBDOOM-3-BFG](https://github.com/RobertBeckebans/RBDOO
 
 Nightly builds are published on the **Releases** page of this repository as a pre-release named `nightly-YYYY-MM-DD`:
 
-| Archive                                         | Platform       |
-| ----------------------------------------------- | -------------- |
-| `Kroom3BFG-linux-x86_64-<date>-<commit>.tar.gz` | Linux x86_64   |
-| `Kroom3BFG-windows-x64-<date>-<commit>.zip`     | Windows 64-bit |
-| `Kroom3BFG-windows-x86-<date>-<commit>.zip`     | Windows 32-bit |
+| Archive                                                 | Platform       |
+| ------------------------------------------------------- | -------------- |
+| `Kroom3BFG-linux-x86_64-<level>-<date>-<commit>.tar.gz` | Linux x86_64   |
+| `Kroom3BFG-windows-x64-<level>-<date>-<commit>.zip`     | Windows 64-bit |
+| `Kroom3BFG-windows-x86-<level>-<date>-<commit>.zip`     | Windows 32-bit |
+
+`<level>` is the x86 instruction set level the engine was compiled for: `sse2`, `sse3`, `sse41`, `avx` or `avx2`.
+**Use `sse2` unless you know your CPU**. 
 
 There is only ever one nightly: it is replaced by the next one, and the old release and its tag are deleted. Do not link to a nightly release or tag, they disappear.
 
@@ -92,19 +95,20 @@ wxWidgets is required on Linux even with `-DTOOLS=OFF`.
 
 ### CMake options
 
-| Option                    | Default | Description                                                                      |
-| ------------------------- | ------- | -------------------------------------------------------------------------------- |
-| `TOOLS`                   | ON      | Compile the built-in wxWidgets tools                                             |
-| `BUILD_GAME_DLL`          | ON      | Build the game as a separate library instead of embedding it in the executable   |
-| `USE_PRECOMPILED_HEADERS` | ON      | Precompiled headers. Turn this off when using a compiler cache (ccache, sccache) |
-| `USE_SYSTEM_LIBS`         | OFF     | Require system installed libraries instead of fetching them                      |
-| `USE_STEAMWORKS`          | OFF     | Steamworks integration (`STEAM_APP_ID`, default 208200)                          |
-| `USE_VULKAN`              | OFF     | Vulkan renderer, not usable yet                                                  |
-| `FFMPEG`                  | OFF     | Use FFmpeg to play more video formats                                            |
-| `ONATIVE`                 | OFF     | Optimize for the host CPU                                                        |
-| `REPRODUCIBLE_BUILD`      | OFF     | Replace `__DATE__` and `__TIME__` with fixed values                              |
-| `COMPILE_COMMANDS`        | OFF     | Generate `compile_commands.json`                                                 |
-| `FORCE_COLOR_OUTPUT`      | OFF     | ANSI colored compiler output (GCC/Clang)                                         |
+| Option                    | Default | Description                                                                                                                                  |
+| ------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TOOLS`                   | ON      | Compile the built-in wxWidgets tools                                                                                                         |
+| `BUILD_GAME_DLL`          | ON      | Build the game as a separate library instead of embedding it in the executable                                                               |
+| `USE_PRECOMPILED_HEADERS` | ON      | Precompiled headers. Turn this off when using a compiler cache (ccache, sccache)                                                             |
+| `USE_SYSTEM_LIBS`         | OFF     | Require system installed libraries instead of fetching them                                                                                  |
+| `USE_STEAMWORKS`          | OFF     | Steamworks integration (`STEAM_APP_ID`, default 208200)                                                                                      |
+| `USE_VULKAN`              | OFF     | Vulkan renderer, not usable yet                                                                                                              |
+| `FFMPEG`                  | OFF     | Use FFmpeg to play more video formats                                                                                                        |
+| `ONATIVE`                 | OFF     | Optimize for the host CPU (`-march=native`, overrides `SIMD_LEVEL`)                                                                          |
+| `SIMD_LEVEL`              | `sse2`  | x86 instruction set level the whole engine is compiled for: `sse2`, `sse3`, `sse4.1` (or `sse41`), `avx`, `avx2` |
+| `REPRODUCIBLE_BUILD`      | OFF     | Replace `__DATE__` and `__TIME__` with fixed values                                                                                          |
+| `COMPILE_COMMANDS`        | OFF     | Generate `compile_commands.json`                                                                                                             |
+| `FORCE_COLOR_OUTPUT`      | OFF     | ANSI colored compiler output (GCC/Clang)                                                                                                     |
 
 ## Third-party components and licenses
 

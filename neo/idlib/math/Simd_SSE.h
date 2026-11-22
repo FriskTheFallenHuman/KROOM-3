@@ -40,18 +40,25 @@ If you have questions concerning this license or the applicable additional terms
 
 #if defined(USE_INTRINSICS_SSE)
 
-class idSIMD_SSE : public idSIMD_Generic
-{
-public:
-	virtual const char* VPCALL GetName() const;
+// We use SSE has a template :p
+#define ID_SIMD_X86_PROCESSOR_CLASS( className ) \
+	class className : public idSIMD_Generic \
+	{ \
+	public: \
+		virtual const char* VPCALL GetName() const; \
+		\
+		virtual void VPCALL BlendJoints( idJointQuat* joints, const idJointQuat* blendJoints, const float lerp, const int* index, const int numJoints ); \
+		virtual void VPCALL BlendJointsFast( idJointQuat* joints, const idJointQuat* blendJoints, const float lerp, const int* index, const int numJoints ); \
+		virtual void VPCALL ConvertJointQuatsToJointMats( idJointMat* jointMats, const idJointQuat* jointQuats, const int numJoints ); \
+		virtual void VPCALL ConvertJointMatsToJointQuats( idJointQuat* jointQuats, const idJointMat* jointMats, const int numJoints ); \
+		virtual void VPCALL TransformJoints( idJointMat* jointMats, const int* parents, const int firstJoint, const int lastJoint ); \
+		virtual void VPCALL UntransformJoints( idJointMat* jointMats, const int* parents, const int firstJoint, const int lastJoint ); \
+	};
 
-	virtual void VPCALL BlendJoints( idJointQuat* joints, const idJointQuat* blendJoints, const float lerp, const int* index, const int numJoints );
-	virtual void VPCALL BlendJointsFast( idJointQuat* joints, const idJointQuat* blendJoints, const float lerp, const int* index, const int numJoints );
-	virtual void VPCALL ConvertJointQuatsToJointMats( idJointMat* jointMats, const idJointQuat* jointQuats, const int numJoints );
-	virtual void VPCALL ConvertJointMatsToJointQuats( idJointQuat* jointQuats, const idJointMat* jointMats, const int numJoints );
-	virtual void VPCALL TransformJoints( idJointMat* jointMats, const int* parents, const int firstJoint, const int lastJoint );
-	virtual void VPCALL UntransformJoints( idJointMat* jointMats, const int* parents, const int firstJoint, const int lastJoint );
-};
+ID_SIMD_X86_PROCESSOR_CLASS( idSIMD_SSE )		// SSE2
+ID_SIMD_X86_PROCESSOR_CLASS( idSIMD_SSE41 )		// SSE4.1: blend and dot product instructions
+ID_SIMD_X86_PROCESSOR_CLASS( idSIMD_AVX )		// AVX: VEX encoding (three operand instructions)
+ID_SIMD_X86_PROCESSOR_CLASS( idSIMD_AVX2 )		// AVX2: FMA
 
 #endif
 

@@ -50,6 +50,10 @@ If you have questions concerning this license or the applicable additional terms
 #include <SDL2/SDL_cpuinfo.h>
 #include <SDL2/SDL_timer.h>
 
+#if defined(__x86_64__) || defined(__i386__)
+	#include <cpuid.h>
+#endif
+
 /*
 ==============================================================
 
@@ -234,6 +238,25 @@ public:
 
 const idCPUInfo CPU_Rep;
 
+/*
+================
+HasFMA
+================
+*/
+static bool HasFMA()
+{
+#if defined(_MSC_VER) && ( defined(_M_X64) || defined(_M_IX86) )
+	int info[4] = { 0 };
+	__cpuid( info, 1 );
+	return ( info[2] & ( 1 << 12 ) ) != 0 && SDL_HasAVX();
+#elif defined(__x86_64__) || defined(__i386__)
+	unsigned int eax, ebx, ecx, edx;
+	return __get_cpuid( 1, &eax, &ebx, &ecx, &edx ) && ( ecx & ( 1u << 12 ) ) != 0 && SDL_HasAVX();
+#else
+	return false;
+#endif
+}
+
 #ifdef _MSC_VER
 /*
 ================
@@ -277,6 +300,35 @@ int Sys_GetProcessorId()
 	if( SDL_HasSSE() )
 	{
 		flags |= CPUID_SSE | CPUID_FTZ;
+	}
+
+	if( SDL_HasSSE2() )
+	{
+		flags |= CPUID_SSE2;
+	}
+	if( SDL_HasSSE3() )
+	{
+		flags |= CPUID_SSE3;
+	}
+	if( SDL_HasSSE41() )
+	{
+		flags |= CPUID_SSE41;
+	}
+	if( SDL_HasSSE42() )
+	{
+		flags |= CPUID_SSE42;
+	}
+	if( SDL_HasAVX() )
+	{
+		flags |= CPUID_AVX;
+	}
+	if( SDL_HasAVX2() )
+	{
+		flags |= CPUID_AVX2;
+	}
+	if( HasFMA() )
+	{
+		flags |= CPUID_FMA;
 	}
 
 #ifdef _MSC_VER

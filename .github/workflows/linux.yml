@@ -6,9 +6,15 @@ on:
         type: string
         default: Release
       compilers:
-        description: JSON array of compilers to build with
+        description: JSON array of compilers to build with (the first gcc leg is packaged)
         type: string
         default: '["gcc"]'
+      simd_levels:
+        description: >-
+          JSON array of x86 instruction set levels (CMake SIMD_LEVEL) to build, any of sse2, sse3, sse41, avx, avx2.
+          Only gcc builds every level, the other compilers build the first one.
+        type: string
+        default: '["sse2"]'
       retention_days:
         type: number
         default: 1
@@ -41,14 +47,32 @@ env:
   CCACHE_NOHASHDIR: "true"
 
 jobs:
+  plan:
+    name: Plan build matrix
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - name: Compilers x instruction set levels
+        id: matrix
+        env:
+          COMPILERS: ${{ inputs.compilers || '["gcc","clang"]' }}
+          LEVELS: ${{ inputs.simd_levels || '["sse2"]' }}
+        run: |
+          # gcc builds every level (these are the release archives), the other compilers only the first one
+          matrix="$(jq -cn --argjson compilers "$COMPILERS" --argjson levels "$LEVELS" \
+            '{include: [ $compilers[] as $c | $levels[] as $l | select( $c == "gcc" or $l == $levels[0] ) | {compiler: $c, simd: $l} ]}')"
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "$matrix"
+
   build:
-    name: ${{ matrix.compiler }} (${{ inputs.build_type || 'Release' }})
+    name: ${{ matrix.compiler }} ${{ matrix.simd }} (${{ inputs.build_type || 'Release' }})
+    needs: plan
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     strategy:
       fail-fast: false
-      matrix:
-        compiler: ${{ fromJSON( inputs.compilers || '["gcc","clang"]' ) }}
+      matrix: ${{ fromJSON( needs.plan.outputs.matrix ) }}
 
     steps:
       - name: Checkout
@@ -78,9 +102,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .ccache
-          key: ccache-linux-${{ matrix.compiler }}-${{ env.BUILD_TYPE }}-${{ github.run_id }}
+          key: ccache-linux-${{ matrix.compiler }}-${{ matrix.simd }}-${{ env.BUILD_TYPE }}-${{ github.run_id }}
           restore-keys: |
-            ccache-linux-${{ matrix.compiler }}-${{ env.BUILD_TYPE }}-
+            ccache-linux-${{ matrix.compiler }}-${{ matrix.simd }}-${{ env.BUILD_TYPE }}-
 
       - name: Configure
         run: |
@@ -89,10 +113,30 @@ jobs:
             -DCMAKE_BUILD_TYPE="$BUILD_TYPE" \
             -DCMAKE_C_COMPILER="$CC" -DCMAKE_CXX_COMPILER="$CXX" \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DSIMD_LEVEL=${{ matrix.simd }} \
             -DUSE_PRECOMPILED_HEADERS=OFF
 
       - name: Build
         run: cmake --build build --parallel "$(nproc)"
+
+      - name: Check SIMD objects for leaked instructions
+        if: matrix.simd == 'sse2'
+        run: |
+          python3 - <<'EOF'
+          import re, subprocess, sys
+          bad = []
+          for level in ('SSE41', 'AVX', 'AVX2'):
+              obj = f'build/idlib/CMakeFiles/idLib.dir/math/Simd_{level}.cpp.o'
+              weak = {l.split()[2] for l in subprocess.run(['nm', obj], capture_output=True, text=True, check=True).stdout.splitlines()
+                      if len(l.split()) == 3 and l.split()[1] in 'WVwv'}
+              dis = subprocess.run(['objdump', '-d', '--no-show-raw-insn', obj], capture_output=True, text=True, check=True).stdout
+              for block in re.split(r'\n(?=[0-9a-f]+ <)', dis):
+                  m = re.match(r'[0-9a-f]+ <([^>]+)>:', block)
+                  if m and m.group(1) in weak and re.search(r'\n\s+[0-9a-f]+:\s+(v[a-z0-9]+|blendvps|dpps)\s', block):
+                      bad.append(f'{level}: {m.group(1)}')
+          print('leaked:', bad or 'none')
+          sys.exit(1 if bad else 0)
+          EOF
 
       - name: ccache statistics
         if: always()
@@ -103,14 +147,14 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: .ccache
-          key: ccache-linux-${{ matrix.compiler }}-${{ env.BUILD_TYPE }}-${{ github.run_id }}
+          key: ccache-linux-${{ matrix.compiler }}-${{ matrix.simd }}-${{ env.BUILD_TYPE }}-${{ github.run_id }}
 
       - name: Package
         if: matrix.compiler == 'gcc'
         id: package
         run: |
           stamp="$(date -u +%Y%m%d)-${GITHUB_SHA::7}"
-          name="Kroom3BFG-linux-x86_64-${stamp}"
+          name="Kroom3BFG-linux-x86_64-${{ matrix.simd }}-${stamp}"
           mkdir -p "dist/${name}"
           cp -a bin/x86_64/. "dist/${name}/"
           cp -a platform "dist/${name}/platform"
@@ -124,7 +168,7 @@ jobs:
         if: matrix.compiler == 'gcc'
         uses: actions/upload-artifact@v4
         with:
-          name: kroom3-linux-x86_64
+          name: kroom3-linux-x86_64-${{ matrix.simd }}
           path: ${{ steps.package.outputs.file }}
           retention-days: ${{ inputs.retention_days || 3 }}
           compression-level: 0

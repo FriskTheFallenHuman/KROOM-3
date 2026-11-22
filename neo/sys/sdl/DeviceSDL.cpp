@@ -584,6 +584,18 @@ main
 */
 int main( int argc, char* argv[] )
 {
+#if defined(USE_INTRINSICS_SSE) && ( ID_SIMD_BASE_LEVEL > ID_SIMD_LEVEL_SSE2 )
+	if( Sys_GetSIMDLevel( Sys_GetProcessorId() ) < ID_SIMD_BASE_LEVEL )
+	{
+		static const char* const levelNames[] = { "SSE2", "SSE3", "SSE4.1", "AVX", "AVX2 and FMA" };
+		char message[256];
+		idStr::snPrintf( message, sizeof( message ), "Sorry, this build requires a CPU with %s support. Please use a build for an older instruction levelset.", levelNames[ID_SIMD_BASE_LEVEL] );
+		fprintf( stderr, "%s\n", message );
+		SDL_ShowSimpleMessageBox( SDL_MESSAGEBOX_ERROR, "Unsupported CPU", message, NULL );
+		return EXIT_FAILURE;
+	}
+#endif
+
 #ifdef _WIN32
 	::SetCursor( NULL );
 #endif

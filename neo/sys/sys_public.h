@@ -44,15 +44,59 @@ class idStr;
 
 enum cpuid_t
 {
+	// CPU vendors
 	CPUID_NONE							= 0x00000,
 	CPUID_GENERIC						= 0x00001,	// unrecognized processor
 	CPUID_INTEL							= 0x00002,	// Intel
 	CPUID_AMD							= 0x00004,	// AMD
+
+	// CPU features
 	CPUID_MMX							= 0x00008,	// Multi Media Extensions
 	CPUID_SSE							= 0x00010,	// Streaming SIMD Extensions
 	CPUID_FTZ							= 0x00020,	// Flush-To-Zero mode (denormal results are flushed to zero)
 	CPUID_DAZ							= 0x00040,	// Denormals-Are-Zero mode (denormal source operands are set to zero)
+	CPUID_SSE2							= 0x00080,	// Streaming SIMD Extensions 2
+	CPUID_SSE3							= 0x00100,	// Streaming SIMD Extensions 3
+	CPUID_SSE41							= 0x00200,	// Streaming SIMD Extensions 4.1
+	CPUID_SSE42							= 0x00400,	// Streaming SIMD Extensions 4.2
+	CPUID_AVX							= 0x00800,	// Advanced Vector Extensions
+	CPUID_AVX2							= 0x01000,	// Advanced Vector Extensions 2
+	CPUID_FMA							= 0x02000,	// Fused multiply-add (FMA3)
 };
+
+//
+/*
+========================
+Sys_GetSIMDLevel
+
+returns the highest ID_SIMD_LEVEL_* the given CPUID_* flags allow, or -1 when not even SSE2 is available
+========================
+*/
+ID_INLINE_EXTERN int Sys_GetSIMDLevel( int cpuFlags )
+{
+	int level = -1;
+	if( ( cpuFlags & CPUID_SSE ) && ( cpuFlags & CPUID_SSE2 ) )
+	{
+		level = ID_SIMD_LEVEL_SSE2;
+		if( cpuFlags & CPUID_SSE3 )
+		{
+			level = ID_SIMD_LEVEL_SSE3;
+			if( cpuFlags & CPUID_SSE41 )
+			{
+				level = ID_SIMD_LEVEL_SSE41;
+				if( cpuFlags & CPUID_AVX )
+				{
+					level = ID_SIMD_LEVEL_AVX;
+					if( ( cpuFlags & CPUID_AVX2 ) && ( cpuFlags & CPUID_FMA ) )
+					{
+						level = ID_SIMD_LEVEL_AVX2;
+					}
+				}
+			}
+		}
+	}
+	return level;
+}
 
 enum joystickAxis_t
 {

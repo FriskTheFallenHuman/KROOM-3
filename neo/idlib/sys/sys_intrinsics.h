@@ -29,8 +29,30 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __SYS_INTRIINSICS_H__
 #define __SYS_INTRIINSICS_H__
 
+#define ID_SIMD_LEVEL_SSE2		0
+#define ID_SIMD_LEVEL_SSE3		1
+#define ID_SIMD_LEVEL_SSE41		2
+#define ID_SIMD_LEVEL_AVX		3
+#define ID_SIMD_LEVEL_AVX2		4	// AVX2 and FMA3
+
 #if defined(USE_INTRINSICS_SSE)
-	#include <emmintrin.h>
+	#include <immintrin.h>
+
+	#if !defined(ID_SIMD_BASE_LEVEL)
+		#if defined(__AVX2__) && ( defined(__FMA__) || defined(_MSC_VER) )
+			#define ID_SIMD_BASE_LEVEL	ID_SIMD_LEVEL_AVX2
+		#elif defined(__AVX__)
+			#define ID_SIMD_BASE_LEVEL	ID_SIMD_LEVEL_AVX
+		#elif defined(__SSE4_1__)
+			#define ID_SIMD_BASE_LEVEL	ID_SIMD_LEVEL_SSE41
+		#elif defined(__SSE3__)
+			#define ID_SIMD_BASE_LEVEL	ID_SIMD_LEVEL_SSE3
+		#else
+			#define ID_SIMD_BASE_LEVEL	ID_SIMD_LEVEL_SSE2
+		#endif
+	#endif
+#else
+	#define ID_SIMD_BASE_LEVEL		ID_SIMD_LEVEL_SSE2
 #endif
 /*
 ================================================================================================
@@ -252,8 +274,6 @@ typedef union DECLSPEC_INTRINTYPE _CRT_ALIGN( 16 ) __m128c
 	__m128i		m128i;
 } __m128c;
 
-#define _mm_madd_ps( a, b, c )				_mm_add_ps( _mm_mul_ps( (a), (b) ), (c) )
-#define _mm_nmsub_ps( a, b, c )				_mm_sub_ps( (c), _mm_mul_ps( (a), (b) ) )
 #define _mm_splat_ps( x, i )				__m128c( _mm_shuffle_epi32( __m128c( x ), _MM_SHUFFLE( i, i, i, i ) ) )
 #define _mm_perm_ps( x, perm )				__m128c( _mm_shuffle_epi32( __m128c( x ), perm ) )
 #define _mm_sel_ps( a, b, c )  				_mm_or_ps( _mm_andnot_ps( __m128c( c ), a ), _mm_and_ps( __m128c( c ), b ) )
@@ -261,19 +281,22 @@ typedef union DECLSPEC_INTRINTYPE _CRT_ALIGN( 16 ) __m128c
 #define _mm_sld_ps( x, y, imm )				__m128c( _mm_or_si128( _mm_srli_si128( __m128c( x ), imm ), _mm_slli_si128( __m128c( y ), 16 - imm ) ) )
 #define _mm_sld_si128( x, y, imm )			_mm_or_si128( _mm_srli_si128( x, imm ), _mm_slli_si128( y, 16 - imm ) )
 
-ID_FORCE_INLINE_EXTERN __m128 _mm_msum3_ps( __m128 a, __m128 b )
+ID_FORCE_INLINE_EXTERN __m128 _mm_msum3_ps_sse2( __m128 a, __m128 b )
 {
 	__m128 c = _mm_mul_ps( a, b );
 	return _mm_add_ps( _mm_splat_ps( c, 0 ), _mm_add_ps( _mm_splat_ps( c, 1 ), _mm_splat_ps( c, 2 ) ) );
 }
 
-ID_FORCE_INLINE_EXTERN __m128 _mm_msum4_ps( __m128 a, __m128 b )
+ID_FORCE_INLINE_EXTERN __m128 _mm_msum4_ps_sse2( __m128 a, __m128 b )
 {
 	__m128 c = _mm_mul_ps( a, b );
 	c = _mm_add_ps( c, _mm_perm_ps( c, _MM_SHUFFLE( 1, 0, 3, 2 ) ) );
 	c = _mm_add_ps( c, _mm_perm_ps( c, _MM_SHUFFLE( 2, 3, 0, 1 ) ) );
 	return c;
 }
+
+#define ID_SIMD_LEVEL	ID_SIMD_BASE_LEVEL
+#include "sys_intrinsics_levels.h"
 
 #define _mm_shufmix_epi32( x, y, perm )		__m128c( _mm_shuffle_ps( __m128c( x ), __m128c( y ), perm ) )
 #define _mm_loadh_epi64( x, address )		__m128c( _mm_loadh_pi( __m128c( x ), (__m64 *)address ) )

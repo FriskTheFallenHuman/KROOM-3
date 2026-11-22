@@ -32,6 +32,12 @@ If you have questions concerning this license or the applicable additional terms
 #include "Simd_Generic.h"
 #include "Simd_SSE.h"
 
+#if !defined(ID_SIMD_CLS)
+	#define ID_SIMD_CLS				idSIMD_SSE
+	#define ID_SIMD_IMPL_LEVEL		ID_SIMD_LEVEL_SSE2
+	#define ID_SIMD_IMPL_NAME		"MMX & SSE"
+#endif
+
 //===============================================================
 //                                                        M
 //  SSE implementation of idSIMDProcessor                MrE
@@ -42,26 +48,53 @@ If you have questions concerning this license or the applicable additional terms
 
 #include <xmmintrin.h>
 
+#if ID_SIMD_IMPL_LEVEL > ID_SIMD_BASE_LEVEL && !defined(_MSC_VER)
+	#if defined(__clang__)
+		#if ID_SIMD_IMPL_LEVEL == ID_SIMD_LEVEL_AVX2
+			#pragma clang attribute push( __attribute__(( target( "avx2,fma" ) )), apply_to = function )
+		#elif ID_SIMD_IMPL_LEVEL == ID_SIMD_LEVEL_AVX
+			#pragma clang attribute push( __attribute__(( target( "avx" ) )), apply_to = function )
+		#else
+			#pragma clang attribute push( __attribute__(( target( "sse4.1" ) )), apply_to = function )
+		#endif
+	#else
+		#pragma GCC push_options
+		#if ID_SIMD_IMPL_LEVEL == ID_SIMD_LEVEL_AVX2
+			#pragma GCC target( "avx2,fma" )
+		#elif ID_SIMD_IMPL_LEVEL == ID_SIMD_LEVEL_AVX
+			#pragma GCC target( "avx" )
+		#else
+			#pragma GCC target( "sse4.1" )
+		#endif
+	#endif
+#endif
+
+#if ID_SIMD_IMPL_LEVEL > ID_SIMD_BASE_LEVEL
+	#undef ID_SIMD_LEVEL
+	#define ID_SIMD_LEVEL	ID_SIMD_IMPL_LEVEL
+	#include "../sys/sys_intrinsics_levels.h"
+#endif
+
 #ifndef M_PI // DG: this is already defined in math.h
 	#define M_PI	3.14159265358979323846f
 #endif
 
 /*
 ============
-idSIMD_SSE::GetName
+ID_SIMD_CLS::GetName
 ============
 */
-const char* idSIMD_SSE::GetName() const
+const char* ID_SIMD_CLS::GetName() const
 {
-	return "MMX & SSE";
+	return ID_SIMD_IMPL_NAME;
 }
 
 /*
 ============
-idSIMD_SSE::BlendJoints
+ID_SIMD_CLS::BlendJoints
 ============
 */
-void VPCALL idSIMD_SSE::BlendJoints( idJointQuat* joints, const idJointQuat* blendJoints, const float lerp, const int* index, const int numJoints )
+void VPCALL ID_SIMD_CLS::BlendJoints( idJointQuat* joints, const idJointQuat* blendJoints, const float lerp, const int* index, const int numJoints )
 {
 
 	if( lerp <= 0.0f )
@@ -311,10 +344,10 @@ void VPCALL idSIMD_SSE::BlendJoints( idJointQuat* joints, const idJointQuat* ble
 
 /*
 ============
-idSIMD_SSE::BlendJointsFast
+ID_SIMD_CLS::BlendJointsFast
 ============
 */
-void VPCALL idSIMD_SSE::BlendJointsFast( idJointQuat* joints, const idJointQuat* blendJoints, const float lerp, const int* index, const int numJoints )
+void VPCALL ID_SIMD_CLS::BlendJointsFast( idJointQuat* joints, const idJointQuat* blendJoints, const float lerp, const int* index, const int numJoints )
 {
 	assert_16_byte_aligned( joints );
 	assert_16_byte_aligned( blendJoints );
@@ -500,10 +533,10 @@ void VPCALL idSIMD_SSE::BlendJointsFast( idJointQuat* joints, const idJointQuat*
 
 /*
 ============
-idSIMD_SSE::ConvertJointQuatsToJointMats
+ID_SIMD_CLS::ConvertJointQuatsToJointMats
 ============
 */
-void VPCALL idSIMD_SSE::ConvertJointQuatsToJointMats( idJointMat* jointMats, const idJointQuat* jointQuats, const int numJoints )
+void VPCALL ID_SIMD_CLS::ConvertJointQuatsToJointMats( idJointMat* jointMats, const idJointQuat* jointQuats, const int numJoints )
 {
 	assert( sizeof( idJointQuat ) == JOINTQUAT_SIZE );
 	assert( sizeof( idJointMat ) == JOINTMAT_SIZE );
@@ -638,10 +671,10 @@ void VPCALL idSIMD_SSE::ConvertJointQuatsToJointMats( idJointMat* jointMats, con
 
 /*
 ============
-idSIMD_SSE::ConvertJointMatsToJointQuats
+ID_SIMD_CLS::ConvertJointMatsToJointQuats
 ============
 */
-void VPCALL idSIMD_SSE::ConvertJointMatsToJointQuats( idJointQuat* jointQuats, const idJointMat* jointMats, const int numJoints )
+void VPCALL ID_SIMD_CLS::ConvertJointMatsToJointQuats( idJointQuat* jointQuats, const idJointMat* jointMats, const int numJoints )
 {
 
 	assert( sizeof( idJointQuat ) == JOINTQUAT_SIZE );
@@ -761,15 +794,15 @@ void VPCALL idSIMD_SSE::ConvertJointMatsToJointQuats( idJointQuat* jointQuats, c
 		m0 = _mm_or_ps( m0, m2 );
 		m2 = _mm_or_ps( m2, m3 );
 
-		__m128 fq0 = _mm_sel_ps( q0, q3, m0 );
-		__m128 fq1 = _mm_sel_ps( q1, q2, m0 );
-		__m128 fq2 = _mm_sel_ps( q2, q1, m0 );
-		__m128 fq3 = _mm_sel_ps( q3, q0, m0 );
+		__m128 fq0 = _mm_selm_ps( q0, q3, m0 );
+		__m128 fq1 = _mm_selm_ps( q1, q2, m0 );
+		__m128 fq2 = _mm_selm_ps( q2, q1, m0 );
+		__m128 fq3 = _mm_selm_ps( q3, q0, m0 );
 
-		__m128 rq0 = _mm_sel_ps( fq0, fq2, m2 );
-		__m128 rq1 = _mm_sel_ps( fq1, fq3, m2 );
-		__m128 rq2 = _mm_sel_ps( fq2, fq0, m2 );
-		__m128 rq3 = _mm_sel_ps( fq3, fq1, m2 );
+		__m128 rq0 = _mm_selm_ps( fq0, fq2, m2 );
+		__m128 rq1 = _mm_selm_ps( fq1, fq3, m2 );
+		__m128 rq2 = _mm_selm_ps( fq2, fq0, m2 );
+		__m128 rq3 = _mm_selm_ps( fq3, fq1, m2 );
 
 		__m128 tq0 = _mm_unpacklo_ps( rq0, rq2 );
 		__m128 tq1 = _mm_unpackhi_ps( rq0, rq2 );
@@ -856,10 +889,10 @@ void VPCALL idSIMD_SSE::ConvertJointMatsToJointQuats( idJointQuat* jointQuats, c
 
 /*
 ============
-idSIMD_SSE::TransformJoints
+ID_SIMD_CLS::TransformJoints
 ============
 */
-void VPCALL idSIMD_SSE::TransformJoints( idJointMat* jointMats, const int* parents, const int firstJoint, const int lastJoint )
+void VPCALL ID_SIMD_CLS::TransformJoints( idJointMat* jointMats, const int* parents, const int firstJoint, const int lastJoint )
 {
 	const __m128 vector_float_mask_keep_last	= __m128c( _mm_set_epi32( 0xFFFFFFFF, 0x00000000, 0x00000000, 0x00000000 ) );
 
@@ -918,10 +951,10 @@ void VPCALL idSIMD_SSE::TransformJoints( idJointMat* jointMats, const int* paren
 
 /*
 ============
-idSIMD_SSE::UntransformJoints
+ID_SIMD_CLS::UntransformJoints
 ============
 */
-void VPCALL idSIMD_SSE::UntransformJoints( idJointMat* jointMats, const int* parents, const int firstJoint, const int lastJoint )
+void VPCALL ID_SIMD_CLS::UntransformJoints( idJointMat* jointMats, const int* parents, const int firstJoint, const int lastJoint )
 {
 	const __m128 vector_float_mask_keep_last	= __m128c( _mm_set_epi32( 0xFFFFFFFF, 0x00000000, 0x00000000, 0x00000000 ) );
 
@@ -973,6 +1006,14 @@ void VPCALL idSIMD_SSE::UntransformJoints( idJointMat* jointMats, const int* par
 		_mm_store_ps( childMatrix + 8, pmc );
 	}
 }
+
+#if ID_SIMD_IMPL_LEVEL > ID_SIMD_BASE_LEVEL && !defined(_MSC_VER)
+	#if defined(__clang__)
+		#pragma clang attribute pop
+	#else
+		#pragma GCC pop_options
+	#endif
+#endif
 
 #endif // #if defined(USE_INTRINSICS_SSE)
 
