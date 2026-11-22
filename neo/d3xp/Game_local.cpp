@@ -1631,6 +1631,11 @@ bool idGameLocal::InitFromSaveGame( const char* mapName, idRenderWorld* renderWo
 	lastAIAlertEntity.Restore( &savegame );
 	savegame.ReadInt( lastAIAlertTime );
 
+	if( lastAIAlertTime > framenum + 1 )
+	{
+		lastAIAlertTime = 0;
+	}
+
 	savegame.ReadDict( &spawnArgs );
 
 	savegame.ReadInt( playerPVS.i );
@@ -4478,8 +4483,7 @@ void idGameLocal::AlertAI( idEntity* ent )
 {
 	if( ent && ent->IsType( idActor::Type ) )
 	{
-		// alert them for the next frame
-		lastAIAlertTime = time + 1;
+		lastAIAlertTime = framenum + 1;
 		lastAIAlertEntity = static_cast<idActor*>( ent );
 	}
 }
