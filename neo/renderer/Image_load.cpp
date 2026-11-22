@@ -513,7 +513,14 @@ void idImage::ActuallyLoadImage( bool fromBackEnd )
 
 			if( pic == NULL )
 			{
-				idLib::Warning( "Couldn't load image:" S_COLOR_GRAY "'%s'" S_COLOR_WHITE " : " S_COLOR_GRAY "'%s'", GetName(), generatedName.c_str() );
+				if( idStr::Icmpn( GetName(), "env/", 4 ) == 0 )
+				{
+					common->DPrintf( "No baked GI image '%s', using the default environment\n", GetName() );
+				}
+				else
+				{
+					idLib::Warning( "Couldn't load image:" S_COLOR_GRAY "'%s'" S_COLOR_WHITE " : " S_COLOR_GRAY "'%s'", GetName(), generatedName.c_str() );
+				}
 
 				// create a default so it doesn't get continuously reloaded
 				opts.width = 8;
