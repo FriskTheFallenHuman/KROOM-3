@@ -181,6 +181,7 @@ void idSoundVoice_OpenAL::DestroyInternal()
 {
 	if( alIsSource( openalSource )  == AL_TRUE )
 	{
+		alSourceStop( openalSource );
 		alSourcei( openalSource, AL_BUFFER, 0 );
 
 		alDeleteSources( 1, &openalSource );
@@ -513,7 +514,7 @@ void idSoundVoice_OpenAL::FlushSourceBuffers()
 {
 	if( alIsSource( openalSource ) == AL_TRUE )
 	{
-
+		alSourceStop( openalSource );
 		alSourcei( openalSource, AL_BUFFER, 0 );
 		for( int i = 0; i < 3; i++ )
 		{
