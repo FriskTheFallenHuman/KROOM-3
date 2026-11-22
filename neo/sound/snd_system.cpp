@@ -770,21 +770,31 @@ void idSoundSystemLocal::EndLevelLoad( const char* mapstring )
 	}
 
 	// GK: Just like the OG Doom 3
-	idStr efxname( "efxs/" );
-	idStr mapname( mapstring );
+	idStr mapname( mapstring != NULL ? mapstring : "" );
 
-	mapname.SetFileExtension( ".efx" );
 	mapname.StripPath();
-	efxname += mapname;
+	mapname.StripFileExtension();
 
-	efxloaded = EFXDatabase.LoadFile( efxname );
-	if( efxloaded )
+	efxloaded = false;
+	if( mapname.Length() > 0 )
 	{
-		common->Printf( "sound: found %s\n", efxname.c_str() );
+		idStr efxname( "efxs/" );
+		efxname += mapname;
+		efxname += ".efx";
+
+		efxloaded = EFXDatabase.LoadFile( efxname );
+		if( efxloaded )
+		{
+			common->Printf( "sound: found %s\n", efxname.c_str() );
+		}
+		else
+		{
+			common->Printf( "sound: missing %s\n", efxname.c_str() );
+		}
 	}
-	else
+
+	if( !efxloaded )
 	{
-		common->Printf( "sound: missing %s\n", efxname.c_str() );
 		hardware->ShutdownReverbSystem();
 	}
 
