@@ -29,67 +29,76 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
-/*
-================================================================================================
-Contains the Image implementation for OpenGL.
-================================================================================================
-*/
-
 #include "../RenderCommon.h"
+#include "RenderBackend_GL.h"
+#include "Image_GL.h"
 
 /*
-====================
-idImage::idImage
-====================
+========================
+idImageGL::Create
+========================
 */
-idImage::idImage( const char* name ) : imgName( name )
+idImage* idImage::Create( const char* name )
 {
-	texnum = TEXTURE_NOT_LOADED;
-	internalFormat = 0;
-	dataFormat = 0;
-	dataType = 0;
-	generatorFunction = NULL;
-	filter = TF_DEFAULT;
-	repeat = TR_REPEAT;
-	usage = TD_DEFAULT;
-	cubeFiles = CF_2D;
-
-	referencedOutsideLevelLoad = false;
-	levelLoadReferenced = false;
-	defaulted = false;
-	sourceFileTime = FILE_NOT_FOUND_TIMESTAMP;
-	binaryFileTime = FILE_NOT_FOUND_TIMESTAMP;
-	refCount = 0;
+	return new idImageGL( name );
 }
 
 /*
-====================
-idImage::~idImage
-====================
+========================
+idImageGL::idImageGL
+========================
 */
-idImage::~idImage()
+idImageGL::idImageGL( const char* name ) : idImage( name )
+{
+	internalFormat = 0;
+	dataFormat = 0;
+	dataType = 0;
+}
+
+/*
+========================
+idImageGL::~idImageGL
+========================
+*/
+idImageGL::~idImageGL()
 {
 	PurgeImage();
 }
 
 /*
-====================
-idImage::IsLoaded
-====================
+========================
+idImageGL::IsLoaded
+========================
 */
-bool idImage::IsLoaded() const
+bool idImageGL::IsLoaded() const
 {
 	return texnum != TEXTURE_NOT_LOADED;
 }
 
 /*
-==============
-Bind
+========================
+idImageGL::GetImGuiTextureID
+========================
+*/
+void* idImageGL::GetImGuiTextureID()
+{
+	if( !IsLoaded() )
+	{
+		// load the image on demand here, which isn't our normal game operating mode
+		ActuallyLoadImage( true );
+	}
+
+	return ( void* )( intptr_t )texnum;
+}
+
+/*
+========================
+idImageGL::Bind
 
 Automatically enables 2D mapping or cube mapping if needed
-==============
+========================
 */
-void idImage::Bind()
+void idImageGL::Bind()
 {
 	RENDERLOG_PRINTF( "idImage::Bind( %s )\n", GetName() );
 
@@ -101,10 +110,11 @@ void idImage::Bind()
 		ActuallyLoadImage( true );
 	}
 
-	const int texUnit = backEnd.GetCurrentTextureUnit();
+	const int texUnit = glcontext.currenttmu;
 
 	// RB: added support for more types
 	tmu_t* tmu = &glcontext.tmu[texUnit];
+
 	// bind the texture
 	if( opts.textureType == TT_2D )
 	{
@@ -178,11 +188,11 @@ void idImage::Bind()
 }
 
 /*
-====================
-CopyFramebuffer
-====================
+========================
+idImageGL::CopyFramebuffer
+========================
 */
-void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight )
+void idImageGL::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight )
 {
 	int target = GL_TEXTURE_2D;
 	switch( opts.textureType )
@@ -221,15 +231,14 @@ void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight )
 		{
 			glBindFramebuffer( GL_READ_FRAMEBUFFER, globalFramebuffers.hdrFBO->GetFramebuffer() );
 			glBindFramebuffer( GL_DRAW_FRAMEBUFFER, globalFramebuffers.hdrNonMSAAFBO->GetFramebuffer() );
+
 			glBlitFramebuffer( 0, 0, glConfig.nativeScreenWidth, glConfig.nativeScreenHeight,
 							   0, 0, glConfig.nativeScreenWidth, glConfig.nativeScreenHeight,
 							   GL_COLOR_BUFFER_BIT,
 							   GL_LINEAR );
 
 			globalFramebuffers.hdrNonMSAAFBO->Bind();
-
 			glCopyTexImage2D( target, 0, GL_RGBA16F, x, y, imageWidth, imageHeight, 0 );
-
 			globalFramebuffers.hdrFBO->Bind();
 		}
 		else
@@ -246,7 +255,6 @@ void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight )
 	// these shouldn't be necessary if the image was initialized properly
 	glTexParameterf( target, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 	glTexParameterf( target, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-
 	glTexParameterf( target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	glTexParameterf( target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 
@@ -254,14 +262,13 @@ void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight )
 }
 
 /*
-====================
-CopyDepthbuffer
-====================
+========================
+idImageGL::CopyDepthbuffer
+========================
 */
-void idImage::CopyDepthbuffer( int x, int y, int imageWidth, int imageHeight )
+void idImageGL::CopyDepthbuffer( int x, int y, int imageWidth, int imageHeight )
 {
 	glBindTexture( ( opts.textureType == TT_CUBIC ) ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D, texnum );
-
 	opts.width = imageWidth;
 	opts.height = imageHeight;
 	glCopyTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, x, y, imageWidth, imageHeight, 0 );
@@ -271,15 +278,14 @@ void idImage::CopyDepthbuffer( int x, int y, int imageWidth, int imageHeight )
 
 /*
 ========================
-idImage::SubImageUpload
+idImageGL::SubImageUpload
 ========================
 */
-void idImage::SubImageUpload( int mipLevel, int x, int y, int z, int width, int height, const void* pic, int pixelPitch )
+void idImageGL::SubImageUpload( int mipLevel, int x, int y, int z, int width, int height, const void* pic, int pixelPitch )
 {
 	assert( x >= 0 && y >= 0 && mipLevel >= 0 && width >= 0 && height >= 0 && mipLevel < opts.numLevels );
 
 	int compressedSize = 0;
-
 	if( IsCompressed() )
 	{
 		assert( !( x & 3 ) && !( y & 3 ) );
@@ -291,8 +297,8 @@ void idImage::SubImageUpload( int mipLevel, int x, int y, int z, int width, int 
 
 		int padW = ( opts.width + 3 ) & ~3;
 		int padH = ( opts.height + 3 ) & ~3;
-
 		assert( x + width <= padW && y + height <= padH );
+
 		// upload the non-aligned value, OpenGL understands that there
 		// will be padding
 		if( x + width > opts.width )
@@ -334,7 +340,6 @@ void idImage::SubImageUpload( int mipLevel, int x, int y, int z, int width, int 
 	{
 		glPixelStorei( GL_UNPACK_ROW_LENGTH, pixelPitch );
 	}
-
 	if( opts.format == FMT_RGB565 )
 	{
 		glPixelStorei( GL_UNPACK_SWAP_BYTES, GL_TRUE );
@@ -343,13 +348,13 @@ void idImage::SubImageUpload( int mipLevel, int x, int y, int z, int width, int 
 #if defined(DEBUG)
 	GL_CheckErrors();
 #endif
+
 	if( IsCompressed() )
 	{
 		glCompressedTexSubImage2D( uploadTarget, mipLevel, x, y, width, height, internalFormat, compressedSize, pic );
 	}
 	else
 	{
-
 		// make sure the pixel store alignment is correct so that lower mips get created
 		// properly for odd shaped textures - this fixes the mip mapping issues with
 		// fonts
@@ -382,10 +387,10 @@ void idImage::SubImageUpload( int mipLevel, int x, int y, int z, int width, int 
 
 /*
 ========================
-idImage::SetSamplerState
+idImageGL::SetSamplerState
 ========================
 */
-void idImage::SetSamplerState( textureFilter_t tf, textureRepeat_t tr )
+void idImageGL::SetSamplerState( textureFilter_t tf, textureRepeat_t tr )
 {
 	if( tf == filter && tr == repeat )
 	{
@@ -393,26 +398,17 @@ void idImage::SetSamplerState( textureFilter_t tf, textureRepeat_t tr )
 	}
 	filter = tf;
 	repeat = tr;
+
 	glBindTexture( ( opts.textureType == TT_CUBIC ) ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D, texnum );
 	SetTexParameters();
 }
 
 /*
 ========================
-idImage::SetPixel
+idImageGL::SetTexParameters
 ========================
 */
-void idImage::SetPixel( int mipLevel, int x, int y, const void* data, int dataSize )
-{
-	SubImageUpload( mipLevel, x, y, 0, 1, 1, data );
-}
-
-/*
-========================
-idImage::SetTexParameters
-========================
-*/
-void idImage::SetTexParameters()
+void idImageGL::SetTexParameters()
 {
 	int target = GL_TEXTURE_2D;
 	switch( opts.textureType )
@@ -496,17 +492,20 @@ void idImage::SetTexParameters()
 			}
 			glTexParameterf( target, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 			break;
+
 		case TF_LINEAR:
 			glTexParameterf( target, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 			glTexParameterf( target, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 			break;
+
 		case TF_NEAREST:
 		case TF_NEAREST_MIPMAP:
 			glTexParameterf( target, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 			glTexParameterf( target, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 			break;
+
 		default:
-			common->FatalError( "%s: bad texture filter %d", GetName(), filter );
+			idLib::FatalError( "%s: bad texture filter %d", GetName(), filter );
 	}
 
 	if( glConfig.anisotropicFilterAvailable )
@@ -530,7 +529,6 @@ void idImage::SetTexParameters()
 			glTexParameterf( target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1 );
 		}
 	}
-
 	if( glConfig.textureLODBiasAvailable && ( usage != TD_FONT ) )
 	{
 		// use a blurring LOD bias in combination with high anisotropy to fix our aliasing grate textures...
@@ -544,6 +542,7 @@ void idImage::SetTexParameters()
 			glTexParameterf( target, GL_TEXTURE_WRAP_S, GL_REPEAT );
 			glTexParameterf( target, GL_TEXTURE_WRAP_T, GL_REPEAT );
 			break;
+
 		case TR_CLAMP_TO_ZERO:
 		{
 			float color[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -552,6 +551,7 @@ void idImage::SetTexParameters()
 			glTexParameterf( target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER );
 		}
 		break;
+
 		case TR_CLAMP_TO_ZERO_ALPHA:
 		{
 			float color[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -560,12 +560,14 @@ void idImage::SetTexParameters()
 			glTexParameterf( target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER );
 		}
 		break;
+
 		case TR_CLAMP:
 			glTexParameterf( target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 			glTexParameterf( target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 			break;
+
 		default:
-			common->FatalError( "%s: bad texture repeat %d", GetName(), repeat );
+			idLib::FatalError( "%s: bad texture repeat %d", GetName(), repeat );
 	}
 
 	// RB: added shadow compare parameters for shadow map textures
@@ -579,7 +581,7 @@ void idImage::SetTexParameters()
 
 /*
 ========================
-idImage::AllocImage
+idImageGL::AllocImage
 
 Every image will pass through this function. Allocates all the necessary MipMap levels for the
 Image, but doesn't put anything in them.
@@ -587,9 +589,10 @@ Image, but doesn't put anything in them.
 This should not be done during normal game-play, if you can avoid it.
 ========================
 */
-void idImage::AllocImage()
+void idImageGL::AllocImage()
 {
 	GL_CheckErrors();
+
 	PurgeImage();
 
 	switch( opts.format )
@@ -689,6 +692,7 @@ void idImage::AllocImage()
 			dataFormat = GL_LUMINANCE;
 			dataType = GL_UNSIGNED_SHORT;
 			break;
+
 		case FMT_Y16_X16:
 			internalFormat = GL_LUMINANCE16_ALPHA16;
 			dataFormat = GL_LUMINANCE_ALPHA;
@@ -774,13 +778,14 @@ void idImage::AllocImage()
 		{
 			int w = opts.width;
 			int h = opts.height;
+
 			if( opts.textureType == TT_CUBIC )
 			{
 				h = w;
 			}
+
 			for( int level = 0; level < opts.numLevels; level++ )
 			{
-
 				// clear out any previous error
 				GL_CheckErrors();
 
@@ -840,10 +845,10 @@ void idImage::AllocImage()
 
 /*
 ========================
-idImage::PurgeImage
+idImageGL::PurgeImage
 ========================
 */
-void idImage::PurgeImage()
+void idImageGL::PurgeImage()
 {
 	if( texnum != TEXTURE_NOT_LOADED )
 	{
@@ -865,16 +870,10 @@ void idImage::PurgeImage()
 
 /*
 ========================
-idImage::Resize
+R_UsesAppleVulkanWorkarounds
 ========================
 */
-void idImage::Resize( int width, int height )
+bool R_UsesAppleVulkanWorkarounds()
 {
-	if( opts.width == width && opts.height == height )
-	{
-		return;
-	}
-	opts.width = width;
-	opts.height = height;
-	AllocImage();
+	return false;
 }

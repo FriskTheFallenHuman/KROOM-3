@@ -26,12 +26,9 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
+
 #ifndef __BUFFEROBJECT_H__
 #define __BUFFEROBJECT_H__
-
-#if defined( USE_VULKAN )
-	#include "Vulkan/Allocator_VK.h"
-#endif
 
 enum bufferMapType_t
 {
@@ -48,6 +45,7 @@ enum bufferUsageType_t
 // Returns all targets to virtual memory use instead of buffer object use.
 // Call this before doing any conventional buffer reads, like screenshots.
 void UnbindBufferObjects();
+
 bool IsWriteCombined( void* base );
 void CopyBuffer( byte* dst, const byte* src, int numBytes );
 
@@ -63,6 +61,7 @@ class idBufferObject
 {
 public:
 	idBufferObject();
+	virtual ~idBufferObject();
 
 	int					GetSize() const
 	{
@@ -76,17 +75,6 @@ public:
 	{
 		return usage;
 	}
-#if defined( USE_VULKAN )
-	VkBuffer			GetAPIObject() const
-	{
-		return apiObject;
-	}
-#else
-	GLintptr			GetAPIObject() const
-	{
-		return apiObject;
-	}
-#endif
 	int					GetOffset() const
 	{
 		return ( offsetInOtherBuffer & ~OWNS_BUFFER_FLAG );
@@ -96,6 +84,16 @@ public:
 	{
 		return ( size & MAPPED_FLAG ) != 0;
 	}
+
+	// Allocate or free the buffer.
+	virtual bool		AllocBufferObject( const void* data, int allocSize, bufferUsageType_t usage ) = 0;
+	virtual void		FreeBufferObject() = 0;
+
+	// Copies data to the buffer. 'size' may be less than the originally allocated size.
+	virtual void		Update( const void* data, int size, int offset = 0 ) const = 0;
+
+	virtual void* 		MapBuffer( bufferMapType_t mapType ) = 0;
+	virtual void		UnmapBuffer() = 0;
 
 protected:
 	void				SetMapped() const
@@ -111,26 +109,12 @@ protected:
 		return ( ( offsetInOtherBuffer & OWNS_BUFFER_FLAG ) != 0 );
 	}
 
-protected:
+	// copies the backend specific handle / allocation from another buffer of the same backend
+	virtual void		CopyBackendState( const idBufferObject& other ) = 0;
+
 	int					size;					// size in bytes
 	int					offsetInOtherBuffer;	// offset in bytes
 	bufferUsageType_t	usage;
-
-#if defined( USE_VULKAN )
-	VkBuffer			apiObject;
-
-#if defined( USE_AMD_ALLOCATOR )
-	VmaAllocation		vmaAllocation;
-	VmaAllocationInfo	allocation;
-#else
-	vulkanAllocation_t	allocation;
-#endif
-
-#else
-	// GL
-	GLintptr			apiObject;
-	void* 				buffer;
-#endif
 
 	// sizeof() confuses typeinfo...
 	static const int	MAPPED_FLAG			= 1 << ( 4 /* sizeof( int ) */ * 8 - 1 );
@@ -147,30 +131,20 @@ idVertexBuffer
 class idVertexBuffer : public idBufferObject
 {
 public:
-	idVertexBuffer();
-	~idVertexBuffer();
+	static idVertexBuffer*	Create();
 
-	// Allocate or free the buffer.
-	bool				AllocBufferObject( const void* data, int allocSize, bufferUsageType_t usage );
-	void				FreeBufferObject();
+	idVertexBuffer() {}
 
 	// Make this buffer a reference to another buffer.
 	void				Reference( const idVertexBuffer& other );
 	void				Reference( const idVertexBuffer& other, int refOffset, int refSize );
 
-	// Copies data to the buffer. 'size' may be less than the originally allocated size.
-	void				Update( const void* data, int size, int offset = 0 ) const;
-
-	void* 				MapBuffer( bufferMapType_t mapType );
 	idDrawVert* 		MapVertexBuffer( bufferMapType_t mapType )
 	{
 		return static_cast< idDrawVert* >( MapBuffer( mapType ) );
 	}
-	void				UnmapBuffer();
 
 private:
-	void				ClearWithoutFreeing();
-
 	DISALLOW_COPY_AND_ASSIGN( idVertexBuffer );
 };
 
@@ -184,30 +158,20 @@ idIndexBuffer
 class idIndexBuffer : public idBufferObject
 {
 public:
-	idIndexBuffer();
-	~idIndexBuffer();
+	static idIndexBuffer*	Create();
 
-	// Allocate or free the buffer.
-	bool				AllocBufferObject( const void* data, int allocSize, bufferUsageType_t usage );
-	void				FreeBufferObject();
+	idIndexBuffer() {}
 
 	// Make this buffer a reference to another buffer.
 	void				Reference( const idIndexBuffer& other );
 	void				Reference( const idIndexBuffer& other, int refOffset, int refSize );
 
-	// Copies data to the buffer. 'size' may be less than the originally allocated size.
-	void				Update( const void* data, int size, int offset = 0 ) const;
-
-	void* 				MapBuffer( bufferMapType_t mapType );
 	triIndex_t* 		MapIndexBuffer( bufferMapType_t mapType )
 	{
 		return static_cast< triIndex_t* >( MapBuffer( mapType ) );
 	}
-	void				UnmapBuffer();
 
 private:
-	void				ClearWithoutFreeing();
-
 	DISALLOW_COPY_AND_ASSIGN( idIndexBuffer );
 };
 
@@ -224,26 +188,15 @@ so joint offsets, which are multiples of 48 bytes, must be in multiples of 16 = 
 class idUniformBuffer : public idBufferObject
 {
 public:
-	idUniformBuffer();
-	~idUniformBuffer();
+	static idUniformBuffer*	Create();
 
-	// Allocate or free the buffer.
-	bool				AllocBufferObject( const void* data, int allocSize, bufferUsageType_t usage );
-	void				FreeBufferObject();
+	idUniformBuffer() {}
 
 	// Make this buffer a reference to another buffer.
 	void				Reference( const idUniformBuffer& other );
 	void				Reference( const idUniformBuffer& other, int refOffset, int refSize );
 
-	// Copies data to the buffer. 'size' may be less than the originally allocated size.
-	void				Update( const void* data, int size, int offset = 0 ) const;
-
-	void* 				MapBuffer( bufferMapType_t mapType );
-	void				UnmapBuffer();
-
 private:
-	void				ClearWithoutFreeing();
-
 	DISALLOW_COPY_AND_ASSIGN( idUniformBuffer );
 };
 

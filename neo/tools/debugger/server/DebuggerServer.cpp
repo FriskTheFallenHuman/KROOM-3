@@ -711,10 +711,8 @@ void rvDebuggerServer::Break( idInterpreter* interpreter, idProgram* program, in
 	Sys_Sleep( 150 );
 
 	// Bring the window back to the foreground
-	SDL_RaiseWindow( sdl.window );
-#if !defined(USE_VULKAN)
-	SDL_GL_SwapWindow( sdl.window );
-#endif
+	SDL_RaiseWindow( ( SDL_Window* )deviceManager->GetWindow() );
+	deviceManager->SwapBuffers();
 #endif
 
 	// Give the mouse cursor back to the game

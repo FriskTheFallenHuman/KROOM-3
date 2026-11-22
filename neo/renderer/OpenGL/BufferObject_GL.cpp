@@ -27,18 +27,17 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
+
 #include "precompiled.h"
 #pragma hdrstop
+
 #include "../RenderCommon.h"
+#include "BufferObject_GL.h"
 
 extern idCVar r_showBuffers;
 
-
 //static const GLenum bufferUsage = GL_STATIC_DRAW;
 static const GLenum bufferUsage = GL_DYNAMIC_DRAW;
-
-
-
 
 /*
 ================================================================================================
@@ -64,42 +63,81 @@ void UnbindBufferObjects()
 	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
 }
 
+/*
+========================
+idVertexBuffer::Create
+========================
+*/
+idVertexBuffer* idVertexBuffer::Create()
+{
+	return new idVertexBufferGL();
+}
 
+/*
+========================
+idIndexBuffer::Create
+========================
+*/
+idIndexBuffer* idIndexBuffer::Create()
+{
+	return new idIndexBufferGL();
+}
+
+/*
+========================
+idUniformBuffer::Create
+========================
+*/
+idUniformBuffer* idUniformBuffer::Create()
+{
+	return new idUniformBufferGL();
+}
 
 /*
 ================================================================================================
 
-idVertexBuffer
+idVertexBufferGL
 
 ================================================================================================
 */
 
 /*
 ========================
-idVertexBuffer::idVertexBuffer
+idVertexBufferGL::idVertexBufferGL
 ========================
 */
-idVertexBuffer::idVertexBuffer()
+idVertexBufferGL::idVertexBufferGL()
 {
 	size = 0;
 	offsetInOtherBuffer = OWNS_BUFFER_FLAG;
 	apiObject = 0xFFFF;
+	buffer = NULL;
 	SetUnmapped();
 }
 
 /*
 ========================
-idVertexBuffer::AllocBufferObject
+idVertexBufferGL::~idVertexBufferGL
 ========================
 */
-bool idVertexBuffer::AllocBufferObject( const void* data, int allocSize, bufferUsageType_t _usage )
+idVertexBufferGL::~idVertexBufferGL()
+{
+	FreeBufferObject();
+}
+
+/*
+========================
+idVertexBufferGL::AllocBufferObject
+========================
+*/
+bool idVertexBufferGL::AllocBufferObject( const void* data, int allocSize, bufferUsageType_t _usage )
 {
 	assert( apiObject == 0xFFFF );
 	assert_16_byte_aligned( data );
 
 	if( allocSize <= 0 )
 	{
-		idLib::Error( "idVertexBuffer::AllocBufferObject: allocSize = %i", allocSize );
+		idLib::Error( "idVertexBufferGL::AllocBufferObject: allocSize = %i", allocSize );
 	}
 
 	size = allocSize;
@@ -115,8 +153,9 @@ bool idVertexBuffer::AllocBufferObject( const void* data, int allocSize, bufferU
 	glGenBuffers( 1, ( GLuint* ) &apiObject );
 	if( apiObject == 0xFFFF )
 	{
-		idLib::FatalError( "idVertexBuffer::AllocBufferObject: failed" );
+		idLib::FatalError( "idVertexBufferGL::AllocBufferObject: failed" );
 	}
+
 	glBindBuffer( GL_ARRAY_BUFFER, apiObject );
 
 	// these are rewritten every frame
@@ -125,7 +164,7 @@ bool idVertexBuffer::AllocBufferObject( const void* data, int allocSize, bufferU
 	GLenum err = glGetError();
 	if( err == GL_OUT_OF_MEMORY )
 	{
-		idLib::Warning( "idVertexBuffer::AllocBufferObject: allocation failed" );
+		idLib::Warning( "idVertexBufferGL::AllocBufferObject: allocation failed" );
 		allocationFailed = true;
 	}
 
@@ -137,7 +176,7 @@ bool idVertexBuffer::AllocBufferObject( const void* data, int allocSize, bufferU
 	// copy the data
 	if( data != NULL )
 	{
-		Update( data, allocSize );
+		Update( data, allocSize, 0 );
 	}
 
 	return !allocationFailed;
@@ -145,10 +184,10 @@ bool idVertexBuffer::AllocBufferObject( const void* data, int allocSize, bufferU
 
 /*
 ========================
-idVertexBuffer::FreeBufferObject
+idVertexBufferGL::FreeBufferObject
 ========================
 */
-void idVertexBuffer::FreeBufferObject()
+void idVertexBufferGL::FreeBufferObject()
 {
 	if( IsMapped() )
 	{
@@ -179,10 +218,10 @@ void idVertexBuffer::FreeBufferObject()
 
 /*
 ========================
-idVertexBuffer::Update
+idVertexBufferGL::Update
 ========================
 */
-void idVertexBuffer::Update( const void* data, int updateSize, int offset ) const
+void idVertexBufferGL::Update( const void* data, int updateSize, int offset ) const
 {
 	assert( apiObject != 0xFFFF );
 	assert_16_byte_aligned( data );
@@ -190,7 +229,7 @@ void idVertexBuffer::Update( const void* data, int updateSize, int offset ) cons
 
 	if( updateSize > GetSize() )
 	{
-		idLib::FatalError( "idVertexBuffer::Update: size overrun, %i > %i\n", updateSize, GetSize() );
+		idLib::FatalError( "idVertexBufferGL::Update: size overrun, %i > %i\n", updateSize, GetSize() );
 	}
 
 	int numBytes = ( updateSize + 15 ) & ~15;
@@ -208,10 +247,10 @@ void idVertexBuffer::Update( const void* data, int updateSize, int offset ) cons
 
 /*
 ========================
-idVertexBuffer::MapBuffer
+idVertexBufferGL::MapBuffer
 ========================
 */
-void* idVertexBuffer::MapBuffer( bufferMapType_t mapType )
+void* idVertexBufferGL::MapBuffer( bufferMapType_t mapType )
 {
 	assert( apiObject != 0xFFFF );
 	assert( IsMapped() == false );
@@ -246,17 +285,17 @@ void* idVertexBuffer::MapBuffer( bufferMapType_t mapType )
 
 	if( buffer == NULL )
 	{
-		idLib::FatalError( "idVertexBuffer::MapBuffer: failed" );
+		idLib::FatalError( "idVertexBufferGL::MapBuffer: failed" );
 	}
 	return buffer;
 }
 
 /*
 ========================
-idVertexBuffer::UnmapBuffer
+idVertexBufferGL::UnmapBuffer
 ========================
 */
-void idVertexBuffer::UnmapBuffer()
+void idVertexBufferGL::UnmapBuffer()
 {
 	assert( apiObject != 0xFFFF );
 	assert( IsMapped() );
@@ -264,7 +303,7 @@ void idVertexBuffer::UnmapBuffer()
 	glBindBuffer( GL_ARRAY_BUFFER, apiObject );
 	if( !glUnmapBuffer( GL_ARRAY_BUFFER ) )
 	{
-		idLib::Printf( "idVertexBuffer::UnmapBuffer failed\n" );
+		idLib::Printf( "idVertexBufferGL::UnmapBuffer failed\n" );
 	}
 
 	SetUnmapped();
@@ -272,10 +311,10 @@ void idVertexBuffer::UnmapBuffer()
 
 /*
 ========================
-idVertexBuffer::ClearWithoutFreeing
+idVertexBufferGL::ClearWithoutFreeing
 ========================
 */
-void idVertexBuffer::ClearWithoutFreeing()
+void idVertexBufferGL::ClearWithoutFreeing()
 {
 	size = 0;
 	offsetInOtherBuffer = OWNS_BUFFER_FLAG;
@@ -283,39 +322,60 @@ void idVertexBuffer::ClearWithoutFreeing()
 }
 
 /*
+========================
+idVertexBufferGL::CopyBackendState
+========================
+*/
+void idVertexBufferGL::CopyBackendState( const idBufferObject& other )
+{
+	apiObject = static_cast< const idVertexBufferGL& >( other ).apiObject;
+}
+
+/*
 ================================================================================================
 
-idIndexBuffer
+idIndexBufferGL
 
 ================================================================================================
 */
 
 /*
 ========================
-idIndexBuffer::idIndexBuffer
+idIndexBufferGL::idIndexBufferGL
 ========================
 */
-idIndexBuffer::idIndexBuffer()
+idIndexBufferGL::idIndexBufferGL()
 {
 	size = 0;
 	offsetInOtherBuffer = OWNS_BUFFER_FLAG;
 	apiObject = 0xFFFF;
+	buffer = NULL;
 	SetUnmapped();
 }
 
 /*
 ========================
-idIndexBuffer::AllocBufferObject
+idIndexBufferGL::~idIndexBufferGL
 ========================
 */
-bool idIndexBuffer::AllocBufferObject( const void* data, int allocSize, bufferUsageType_t _usage )
+idIndexBufferGL::~idIndexBufferGL()
+{
+	FreeBufferObject();
+}
+
+/*
+========================
+idIndexBufferGL::AllocBufferObject
+========================
+*/
+bool idIndexBufferGL::AllocBufferObject( const void* data, int allocSize, bufferUsageType_t _usage )
 {
 	assert( apiObject == 0xFFFF );
 	assert_16_byte_aligned( data );
 
 	if( allocSize <= 0 )
 	{
-		idLib::Error( "idIndexBuffer::AllocBufferObject: allocSize = %i", allocSize );
+		idLib::Error( "idIndexBufferGL::AllocBufferObject: allocSize = %i", allocSize );
 	}
 
 	size = allocSize;
@@ -333,7 +393,7 @@ bool idIndexBuffer::AllocBufferObject( const void* data, int allocSize, bufferUs
 	if( apiObject == 0xFFFF )
 	{
 		GLenum error = glGetError();
-		idLib::FatalError( "idIndexBuffer::AllocBufferObject: failed - GL_Error %d", error );
+		idLib::FatalError( "idIndexBufferGL:AllocBufferObject: failed - GL_Error %d", error );
 	}
 	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, apiObject );
 
@@ -343,7 +403,7 @@ bool idIndexBuffer::AllocBufferObject( const void* data, int allocSize, bufferUs
 	GLenum err = glGetError();
 	if( err == GL_OUT_OF_MEMORY )
 	{
-		idLib::Warning( "idIndexBuffer:AllocBufferObject: allocation failed" );
+		idLib::Warning( "idIndexBufferGL:AllocBufferObject: allocation failed" );
 		allocationFailed = true;
 	}
 
@@ -355,7 +415,7 @@ bool idIndexBuffer::AllocBufferObject( const void* data, int allocSize, bufferUs
 	// copy the data
 	if( data != NULL )
 	{
-		Update( data, allocSize );
+		Update( data, allocSize, 0 );
 	}
 
 	return !allocationFailed;
@@ -363,10 +423,10 @@ bool idIndexBuffer::AllocBufferObject( const void* data, int allocSize, bufferUs
 
 /*
 ========================
-idIndexBuffer::FreeBufferObject
+idIndexBufferGL::FreeBufferObject
 ========================
 */
-void idIndexBuffer::FreeBufferObject()
+void idIndexBufferGL::FreeBufferObject()
 {
 	if( IsMapped() )
 	{
@@ -397,10 +457,10 @@ void idIndexBuffer::FreeBufferObject()
 
 /*
 ========================
-idIndexBuffer::Update
+idIndexBufferGL::Update
 ========================
 */
-void idIndexBuffer::Update( const void* data, int updateSize, int offset ) const
+void idIndexBufferGL::Update( const void* data, int updateSize, int offset ) const
 {
 	assert( apiObject != 0xFFFF );
 	assert_16_byte_aligned( data );
@@ -408,7 +468,7 @@ void idIndexBuffer::Update( const void* data, int updateSize, int offset ) const
 
 	if( updateSize > GetSize() )
 	{
-		idLib::FatalError( "idIndexBuffer::Update: size overrun, %i > %i\n", updateSize, GetSize() );
+		idLib::FatalError( "idIndexBufferGL::Update: size overrun, %i > %i\n", updateSize, GetSize() );
 	}
 
 	int numBytes = ( updateSize + 15 ) & ~15;
@@ -426,10 +486,10 @@ void idIndexBuffer::Update( const void* data, int updateSize, int offset ) const
 
 /*
 ========================
-idIndexBuffer::MapBuffer
+idIndexBufferGL::MapBuffer
 ========================
 */
-void* idIndexBuffer::MapBuffer( bufferMapType_t mapType )
+void* idIndexBufferGL::MapBuffer( bufferMapType_t mapType )
 {
 	assert( apiObject != 0xFFFF );
 	assert( IsMapped() == false );
@@ -467,17 +527,17 @@ void* idIndexBuffer::MapBuffer( bufferMapType_t mapType )
 
 	if( buffer == NULL )
 	{
-		idLib::FatalError( "idIndexBuffer::MapBuffer: failed" );
+		idLib::FatalError( "idIndexBufferGL::MapBuffer: failed" );
 	}
 	return buffer;
 }
 
 /*
 ========================
-idIndexBuffer::UnmapBuffer
+idIndexBufferGL::UnmapBuffer
 ========================
 */
-void idIndexBuffer::UnmapBuffer()
+void idIndexBufferGL::UnmapBuffer()
 {
 	assert( apiObject != 0xFFFF );
 	assert( IsMapped() );
@@ -485,7 +545,7 @@ void idIndexBuffer::UnmapBuffer()
 	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, apiObject );
 	if( !glUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER ) )
 	{
-		idLib::Printf( "idIndexBuffer::UnmapBuffer failed\n" );
+		idLib::Printf( "idIndexBufferGL::UnmapBuffer failed\n" );
 	}
 
 	buffer = NULL;
@@ -495,10 +555,10 @@ void idIndexBuffer::UnmapBuffer()
 
 /*
 ========================
-idIndexBuffer::ClearWithoutFreeing
+idIndexBufferGL::ClearWithoutFreeing
 ========================
 */
-void idIndexBuffer::ClearWithoutFreeing()
+void idIndexBufferGL::ClearWithoutFreeing()
 {
 	size = 0;
 	offsetInOtherBuffer = OWNS_BUFFER_FLAG;
@@ -506,39 +566,60 @@ void idIndexBuffer::ClearWithoutFreeing()
 }
 
 /*
+========================
+idIndexBufferGL::CopyBackendState
+========================
+*/
+void idIndexBufferGL::CopyBackendState( const idBufferObject& other )
+{
+	apiObject = static_cast< const idIndexBufferGL& >( other ).apiObject;
+}
+
+/*
 ================================================================================================
 
-idUniformBuffer
+idUniformBufferGL
 
 ================================================================================================
 */
 
 /*
 ========================
-idUniformBuffer::idUniformBuffer
+idUniformBufferGL::idUniformBufferGL
 ========================
 */
-idUniformBuffer::idUniformBuffer()
+idUniformBufferGL::idUniformBufferGL()
 {
 	size = 0;
 	offsetInOtherBuffer = OWNS_BUFFER_FLAG;
 	apiObject = 0xFFFF;
+	buffer = NULL;
 	SetUnmapped();
 }
 
 /*
 ========================
-idUniformBuffer::AllocBufferObject
+idUniformBufferGL::~idUniformBufferGL
 ========================
 */
-bool idUniformBuffer::AllocBufferObject( const void* data, int allocSize, bufferUsageType_t _usage )
+idUniformBufferGL::~idUniformBufferGL()
+{
+	FreeBufferObject();
+}
+
+/*
+========================
+idUniformBufferGL::AllocBufferObject
+========================
+*/
+bool idUniformBufferGL::AllocBufferObject( const void* data, int allocSize, bufferUsageType_t _usage )
 {
 	assert( apiObject == 0xFFFF );
 	assert_16_byte_aligned( data );
 
 	if( allocSize <= 0 )
 	{
-		idLib::Error( "idUniformBuffer::AllocBufferObject: allocSize = %i", allocSize );
+		idLib::Error( "idUniformBufferGL::AllocBufferObject: allocSize = %i", allocSize );
 	}
 
 	size = allocSize;
@@ -561,7 +642,7 @@ bool idUniformBuffer::AllocBufferObject( const void* data, int allocSize, buffer
 	// copy the data
 	if( data != NULL )
 	{
-		Update( data, allocSize );
+		Update( data, allocSize, 0 );
 	}
 
 	return !allocationFailed;
@@ -569,10 +650,10 @@ bool idUniformBuffer::AllocBufferObject( const void* data, int allocSize, buffer
 
 /*
 ========================
-idUniformBuffer::FreeBufferObject
+idUniformBufferGL::FreeBufferObject
 ========================
 */
-void idUniformBuffer::FreeBufferObject()
+void idUniformBufferGL::FreeBufferObject()
 {
 	if( IsMapped() )
 	{
@@ -604,10 +685,10 @@ void idUniformBuffer::FreeBufferObject()
 
 /*
 ========================
-idUniformBuffer::Update
+idUniformBufferGL::Update
 ========================
 */
-void idUniformBuffer::Update( const void* data, int updateSize, int offset ) const
+void idUniformBufferGL::Update( const void* data, int updateSize, int offset ) const
 {
 	assert( apiObject != 0xFFFF );
 	assert_16_byte_aligned( data );
@@ -615,7 +696,7 @@ void idUniformBuffer::Update( const void* data, int updateSize, int offset ) con
 
 	if( updateSize > GetSize() )
 	{
-		idLib::FatalError( "idUniformBuffer::Update: size overrun, %i > %i\n", updateSize, GetSize() );
+		idLib::FatalError( "idUniformBufferGL::Update: size overrun, %i > %i\n", updateSize, GetSize() );
 	}
 
 	const int numBytes = ( updateSize + 15 ) & ~15;
@@ -633,10 +714,10 @@ void idUniformBuffer::Update( const void* data, int updateSize, int offset ) con
 
 /*
 ========================
-idUniformBuffer::MapBuffer
+idUniformBufferGL::MapBuffer
 ========================
 */
-void* idUniformBuffer::MapBuffer( bufferMapType_t mapType )
+void* idUniformBufferGL::MapBuffer( bufferMapType_t mapType )
 {
 	assert( IsMapped() == false );
 	assert( mapType == BM_WRITE );
@@ -661,17 +742,17 @@ void* idUniformBuffer::MapBuffer( bufferMapType_t mapType )
 
 	if( buffer == NULL )
 	{
-		idLib::FatalError( "idUniformBuffer::MapBuffer: failed" );
+		idLib::FatalError( "idUniformBufferGL::MapBuffer: failed" );
 	}
 	return ( float* ) buffer;
 }
 
 /*
 ========================
-idUniformBuffer::UnmapBuffer
+idUniformBufferGL::UnmapBuffer
 ========================
 */
-void idUniformBuffer::UnmapBuffer()
+void idUniformBufferGL::UnmapBuffer()
 {
 	assert( apiObject != 0xFFFF );
 	assert( IsMapped() );
@@ -679,7 +760,7 @@ void idUniformBuffer::UnmapBuffer()
 	glBindBuffer( GL_UNIFORM_BUFFER, apiObject );
 	if( !glUnmapBuffer( GL_UNIFORM_BUFFER ) )
 	{
-		idLib::Printf( "idUniformBuffer::UnmapBuffer failed\n" );
+		idLib::Printf( "idUniformBufferGL::UnmapBuffer failed\n" );
 	}
 
 	buffer = NULL;
@@ -689,12 +770,22 @@ void idUniformBuffer::UnmapBuffer()
 
 /*
 ========================
-idUniformBuffer::ClearWithoutFreeing
+idUniformBufferGL::ClearWithoutFreeing
 ========================
 */
-void idUniformBuffer::ClearWithoutFreeing()
+void idUniformBufferGL::ClearWithoutFreeing()
 {
 	size = 0;
 	offsetInOtherBuffer = OWNS_BUFFER_FLAG;
 	apiObject = 0xFFFF;
+}
+
+/*
+========================
+idUniformBufferGL::CopyBackendState
+========================
+*/
+void idUniformBufferGL::CopyBackendState( const idBufferObject& other )
+{
+	apiObject = static_cast< const idUniformBufferGL& >( other ).apiObject;
 }

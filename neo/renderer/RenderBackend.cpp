@@ -1209,17 +1209,10 @@ const int INTERACTION_TEXUNIT_PROJECTION	= 4;	// RB: also SSAO render target
 const int INTERACTION_TEXUNIT_SHADOWMAPS	= 5;
 const int INTERACTION_TEXUNIT_JITTER		= 6;
 
-#if defined( USE_VULKAN )
-	const int INTERACTION_TEXUNIT_AMBIENT_CUBE1 = 5;
-	const int INTERACTION_TEXUNIT_SPECULAR_CUBE1 = 6;
-	const int INTERACTION_TEXUNIT_SPECULAR_CUBE2 = 7;
-	const int INTERACTION_TEXUNIT_SPECULAR_CUBE3 = 8;
-#else
-	const int INTERACTION_TEXUNIT_AMBIENT_CUBE1 = 7;
-	const int INTERACTION_TEXUNIT_SPECULAR_CUBE1 = 8;
-	const int INTERACTION_TEXUNIT_SPECULAR_CUBE2 = 9;
-	const int INTERACTION_TEXUNIT_SPECULAR_CUBE3 = 10;
-#endif
+#define INTERACTION_TEXUNIT_AMBIENT_CUBE1	( RB_InteractionCubeTexUnitBase + 0 )
+#define INTERACTION_TEXUNIT_SPECULAR_CUBE1	( RB_InteractionCubeTexUnitBase + 1 )
+#define INTERACTION_TEXUNIT_SPECULAR_CUBE2	( RB_InteractionCubeTexUnitBase + 2 )
+#define INTERACTION_TEXUNIT_SPECULAR_CUBE3	( RB_InteractionCubeTexUnitBase + 3 )
 
 /*
 ==================
@@ -1410,9 +1403,6 @@ void idRenderBackend::DrawSingleInteraction( drawInteraction_t* din, bool useFas
 		globalImages->brdfLutImage->Bind();
 
 		GL_SelectTexture( INTERACTION_TEXUNIT_PROJECTION );
-#if defined( USE_VULKAN )
-		globalImages->whiteImage->Bind();
-#else
 		if( !r_useSSAO.GetBool() || ( viewDef->renderView.rdflags & ( RDF_NOAMBIENT | RDF_IRRADIANCE ) ) )
 		{
 			globalImages->whiteImage->Bind();
@@ -1421,7 +1411,6 @@ void idRenderBackend::DrawSingleInteraction( drawInteraction_t* din, bool useFas
 		{
 			globalImages->ambientOcclusionImage[0]->Bind();
 		}
-#endif
 
 		GL_SelectTexture( INTERACTION_TEXUNIT_AMBIENT_CUBE1 );
 		lightGrid.GetIrradianceImage()->Bind();
@@ -1492,9 +1481,6 @@ void idRenderBackend::DrawSingleInteraction( drawInteraction_t* din, bool useFas
 		globalImages->brdfLutImage->Bind();
 
 		GL_SelectTexture( INTERACTION_TEXUNIT_PROJECTION );
-#if defined( USE_VULKAN )
-		globalImages->whiteImage->Bind();
-#else
 		if( !r_useSSAO.GetBool() || ( viewDef->renderView.rdflags & ( RDF_NOAMBIENT | RDF_IRRADIANCE ) ) )
 		{
 			globalImages->whiteImage->Bind();
@@ -1503,7 +1489,6 @@ void idRenderBackend::DrawSingleInteraction( drawInteraction_t* din, bool useFas
 		{
 			globalImages->ambientOcclusionImage[0]->Bind();
 		}
-#endif
 
 		GL_SelectTexture( INTERACTION_TEXUNIT_AMBIENT_CUBE1 );
 		viewDef->irradianceImage->Bind();
@@ -2194,14 +2179,6 @@ void idRenderBackend::AmbientPass( const drawSurf_t* const* drawSurfs, int numDr
 	{
 		return;
 	}
-
-#if defined( USE_VULKAN )
-	if( fillGbuffer )
-	{
-		return;
-	}
-#endif
-
 
 	/*
 	if( !fillGbuffer )
@@ -2975,6 +2952,8 @@ void idRenderBackend::ShadowMapPass( const drawSurf_t* drawSurfs, const viewLigh
 		MatrixOrthogonalProjectionRH( lightProjectionMatrix, cropBounds[0][0], cropBounds[1][0], cropBounds[0][1], cropBounds[1][1], -cropBounds[1][2], -cropBounds[0][2] );
 		idRenderMatrix::Transpose( *( idRenderMatrix* )lightProjectionMatrix, lightProjectionRenderMatrix );
 
+		ApplyShadowClipSpace( lightProjectionRenderMatrix, 0 );
+
 		shadowV[side] = lightViewRenderMatrix;
 		shadowP[side] = lightProjectionRenderMatrix;
 	}
@@ -3096,6 +3075,8 @@ void idRenderBackend::ShadowMapPass( const drawSurf_t* drawSurfs, const viewLigh
 
 		idRenderMatrix::Transpose( *( idRenderMatrix* )lightProjectionMatrix, lightProjectionRenderMatrix );
 
+		ApplyShadowClipSpace( lightProjectionRenderMatrix, 1 );
+
 		shadowV[side] = lightViewRenderMatrix;
 		shadowP[side] = lightProjectionRenderMatrix;
 	}
@@ -3104,31 +3085,32 @@ void idRenderBackend::ShadowMapPass( const drawSurf_t* drawSurfs, const viewLigh
 		lightViewRenderMatrix.Identity();
 		lightProjectionRenderMatrix = vLight->baseLightProject;
 
+		ApplyShadowClipSpace( lightProjectionRenderMatrix, 2 );
+
 		shadowV[0] = lightViewRenderMatrix;
 		shadowP[0] = lightProjectionRenderMatrix;
 	}
 
 
-	// FIXME
-#if !defined(USE_VULKAN)
-	globalFramebuffers.shadowFBO[vLight->shadowLOD]->Bind();
-
-	if( side < 0 )
 	{
-		globalFramebuffers.shadowFBO[vLight->shadowLOD]->AttachImageDepthLayer( globalImages->shadowImage[vLight->shadowLOD], 0 );
+		globalFramebuffers.shadowFBO[vLight->shadowLOD]->Bind();
+
+		if( side < 0 )
+		{
+			globalFramebuffers.shadowFBO[vLight->shadowLOD]->AttachImageDepthLayer( globalImages->shadowImage[vLight->shadowLOD], 0 );
+		}
+		else
+		{
+			globalFramebuffers.shadowFBO[vLight->shadowLOD]->AttachImageDepthLayer( globalImages->shadowImage[vLight->shadowLOD], side );
+		}
+
+		globalFramebuffers.shadowFBO[vLight->shadowLOD]->Check();
+
+		GL_ViewportAndScissor( 0, 0, shadowMapResolutions[vLight->shadowLOD], shadowMapResolutions[vLight->shadowLOD] );
+
+
+		ClearDepthForShadowPass();
 	}
-	else
-	{
-		globalFramebuffers.shadowFBO[vLight->shadowLOD]->AttachImageDepthLayer( globalImages->shadowImage[vLight->shadowLOD], side );
-	}
-
-	globalFramebuffers.shadowFBO[vLight->shadowLOD]->Check();
-
-	GL_ViewportAndScissor( 0, 0, shadowMapResolutions[vLight->shadowLOD], shadowMapResolutions[vLight->shadowLOD] );
-
-
-	glClear( GL_DEPTH_BUFFER_BIT );
-#endif
 
 	// process the chain of shadows with the current rendering state
 	currentSpace = NULL;
@@ -4278,11 +4260,14 @@ void idRenderBackend::CalculateAutomaticExposure()
 		// calculate the average scene luminance
 		globalFramebuffers.hdr64FBO->Bind();
 
-		// FIXME
-#if !defined(USE_VULKAN)
 		// read back the contents
-		glReadPixels( 0, 0, 64, 64, GL_RGBA, GL_FLOAT, image );
-#endif
+		if( !ReadbackHDR64( image ) )
+		{
+			hdrKey = r_hdrKey.GetFloat();
+			hdrAverageLuminance = r_hdrMinLuminance.GetFloat();
+			hdrMaxLuminance = 1;
+			return;
+		}
 
 		sum = 0.0f;
 		maxLuminance = 0.0f;
@@ -4466,7 +4451,7 @@ void idRenderBackend::Tonemap( const viewDef_t* _viewDef )
 	{
 		int ctrlPreset;
 		float ctrlExposure, ctrlSaturation, ctrlContrast, ctrlKey;
-		if( common->Game() != NULL && common->Game()->GetActiveTonemapState( ctrlPreset, ctrlExposure, ctrlSaturation, ctrlContrast, ctrlKey ) )
+		if( renderHost->GetActiveTonemapState( ctrlPreset, ctrlExposure, ctrlSaturation, ctrlContrast, ctrlKey ) )
 		{
 			activePreset = ctrlPreset;
 			activeSaturation = ctrlSaturation;
@@ -4511,12 +4496,6 @@ void idRenderBackend::Bloom( const viewDef_t* _viewDef )
 
 	//Framebuffer::Unbind();
 	//globalFramebuffers.hdrQuarterFBO->Bind();
-
-	// FIXME
-#if !defined(USE_VULKAN)
-	glClearColor( 0, 0, 0, 1 );
-//	glClear( GL_COLOR_BUFFER_BIT );
-#endif
 
 	GL_State( /*GLS_SRCBLEND_ONE | GLS_DSTBLEND_ZERO |*/ GLS_DEPTHMASK | GLS_DEPTHFUNC_ALWAYS | GLS_CULL_TWOSIDED );
 
@@ -4594,10 +4573,7 @@ void idRenderBackend::Bloom( const viewDef_t* _viewDef )
 	{
 		globalFramebuffers.bloomRenderFBO[( j + 1 ) % 2 ]->Bind();
 
-		// FIXME
-#if !defined(USE_VULKAN)
-		glClear( GL_COLOR_BUFFER_BIT );
-#endif
+		GL_Clear( true, false, false, 0, 0, 0, 0, 1, false );
 
 		globalImages->bloomRenderImage[j % 2]->Bind();
 
@@ -4625,7 +4601,6 @@ void idRenderBackend::Bloom( const viewDef_t* _viewDef )
 
 void idRenderBackend::DrawScreenSpaceAmbientOcclusion( const viewDef_t* _viewDef, bool downModulateScreen )
 {
-#if !defined(USE_VULKAN)
 	if( !_viewDef->viewEntitys || _viewDef->is2Dgui )
 	{
 		// 3D views only
@@ -4683,7 +4658,7 @@ void idRenderBackend::DrawScreenSpaceAmbientOcclusion( const viewDef_t* _viewDef
 
 			GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ZERO | GLS_DEPTHMASK | GLS_DEPTHFUNC_ALWAYS | GLS_CULL_TWOSIDED );
 
-			glClear( GL_COLOR_BUFFER_BIT );
+			GL_Clear( true, false, false, 0, 0, 0, 0, 1, false );
 
 			if( i == 0 )
 			{
@@ -4734,8 +4709,7 @@ void idRenderBackend::DrawScreenSpaceAmbientOcclusion( const viewDef_t* _viewDef
 		{
 			globalFramebuffers.ambientOcclusionFBO[0]->Bind();
 
-			glClearColor( 0, 0, 0, 0 );
-			glClear( GL_COLOR_BUFFER_BIT );
+			GL_Clear( true, false, false, 0, 0, 0, 0, 0, false );
 
 			renderProgManager.BindShader_AmbientOcclusion();
 		}
@@ -4764,8 +4738,7 @@ void idRenderBackend::DrawScreenSpaceAmbientOcclusion( const viewDef_t* _viewDef
 
 		GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ZERO | GLS_DEPTHMASK | GLS_DEPTHFUNC_ALWAYS | GLS_CULL_TWOSIDED );
 
-		glClearColor( 0, 0, 0, 0 );
-		glClear( GL_COLOR_BUFFER_BIT );
+		GL_Clear( true, false, false, 0, 0, 0, 0, 0, false );
 
 		if( r_ssaoFiltering.GetBool() )
 		{
@@ -4936,7 +4909,6 @@ void idRenderBackend::DrawScreenSpaceAmbientOcclusion( const viewDef_t* _viewDef
 	renderLog.CloseMainBlock();
 
 	//GL_CheckErrors();
-#endif
 }
 
 /*
@@ -5092,7 +5064,6 @@ void idRenderBackend::DrawAtmos( const viewDef_t* _viewDef )
 
 void idRenderBackend::DrawScreenSpaceGlobalIllumination( const viewDef_t* _viewDef )
 {
-#if !defined(USE_VULKAN)
 	if( !_viewDef->viewEntitys || _viewDef->is2Dgui )
 	{
 		// 3D views only
@@ -5141,7 +5112,6 @@ void idRenderBackend::DrawScreenSpaceGlobalIllumination( const viewDef_t* _viewD
 	{
 		renderProgManager.BindShader_AmbientOcclusionMinify();
 
-		glClearColor( 0, 0, 0, 1 );
 
 		GL_SelectTexture( 0 );
 		//globalImages->currentDepthImage->Bind();
@@ -5156,7 +5126,7 @@ void idRenderBackend::DrawScreenSpaceGlobalIllumination( const viewDef_t* _viewD
 
 			globalFramebuffers.csDepthFBO[i]->Bind();
 
-			glClear( GL_COLOR_BUFFER_BIT );
+			GL_Clear( true, false, false, 0, 0, 0, 0, 1, false );
 
 			if( i == 0 )
 			{
@@ -5202,8 +5172,7 @@ void idRenderBackend::DrawScreenSpaceGlobalIllumination( const viewDef_t* _viewD
 		globalFramebuffers.ambientOcclusionFBO[0]->Bind();
 
 		// FIXME remove and mix with color from previous frame
-		glClearColor( 0, 0, 0, 0 );
-		glClear( GL_COLOR_BUFFER_BIT );
+		GL_Clear( true, false, false, 0, 0, 0, 0, 0, false );
 
 		renderProgManager.BindShader_DeepGBufferRadiosity();
 	}
@@ -5359,7 +5328,6 @@ void idRenderBackend::DrawScreenSpaceGlobalIllumination( const viewDef_t* _viewD
 	GL_State( GLS_DEFAULT );
 
 	//GL_CheckErrors();
-#endif
 }
 // RB end
 
@@ -5574,10 +5542,8 @@ void idRenderBackend::DrawViewInternal( const viewDef_t* _viewDef )
 
 	//GL_CheckErrors();
 
-#if !defined(USE_VULKAN)
-	// bind one global Vertex Array Object (VAO)
-	glBindVertexArray( glConfig.global_vao );
-#endif
+	// bind one global Vertex Array Object (VAO) on OpenGL
+	BindGlobalVertexArray();
 
 	//------------------------------------
 	// sets variables that can be used by all programs
@@ -5658,7 +5624,7 @@ void idRenderBackend::DrawViewInternal( const viewDef_t* _viewDef )
 	//-------------------------------------------------
 	softParticleDepthValid = false;
 #if !defined( USE_HDR_MSAA )
-	if( needSoftDepth )
+	if( needSoftDepth && CanCopyDepthForSoftParticles( useHDR ) )
 	{
 		Framebuffer* previousFramebuffer = currentFramebuffer;
 		if( useHDR && previousFramebuffer != globalFramebuffers.hdrFBO )
@@ -5752,8 +5718,6 @@ void idRenderBackend::DrawViewInternal( const viewDef_t* _viewDef )
 	//-------------------------------------------------
 	DBG_RenderDebugTools( drawSurfs, numDrawSurfs );
 
-#if !defined(USE_VULKAN)
-
 // SRS - For OSX OpenGL record the final portion of GPU time while no other elapsed time query is active (after final shader pass and before post processing)
 #if defined(__APPLE__)
 	renderLog.OpenMainBlock( MRB_GPU_TIME );
@@ -5804,12 +5768,7 @@ void idRenderBackend::DrawViewInternal( const viewDef_t* _viewDef )
 		else
 #endif
 		{
-			glBindFramebuffer( GL_READ_FRAMEBUFFER_EXT, globalFramebuffers.hdrFBO->GetFramebuffer() );
-			glBindFramebuffer( GL_DRAW_FRAMEBUFFER_EXT, globalFramebuffers.hdr64FBO->GetFramebuffer() );
-			glBlitFramebuffer( 0, 0, renderSystem->GetWidth(), renderSystem->GetHeight(),
-							   0, 0, 64, 64,
-							   GL_COLOR_BUFFER_BIT,
-							   GL_LINEAR );
+			BlitHDRTo64();
 		}
 
 		CalculateAutomaticExposure();
@@ -5824,8 +5783,6 @@ void idRenderBackend::DrawViewInternal( const viewDef_t* _viewDef )
 
 #if defined(__APPLE__)
 	renderLog.CloseMainBlock();
-#endif
-
 #endif
 
 	renderLog.CloseBlock();
@@ -5861,12 +5818,7 @@ void idRenderBackend::MotionBlur()
 	// we can avoid blurring them
 	GL_State( GLS_COLORMASK | GLS_DEPTHMASK );
 
-// FIXME
-#if !defined(USE_VULKAN)
-	glClearColor( 0, 0, 0, 1 );
-	glClear( GL_COLOR_BUFFER_BIT );
-
-#endif
+	ClearColorBlack();
 
 	GL_Color( 0, 0, 0, 0 );
 	GL_SelectTexture( 0 );
@@ -6038,9 +5990,6 @@ void idRenderBackend::PostProcess( const void* data )
 	renderLog.OpenMainBlock( MRB_POSTPROCESS );
 	renderLog.OpenBlock( "Render_PostProcessing", colorBlue );
 
-// FIXME
-#if !defined(USE_VULKAN)
-
 	// resolve the scaled rendering to a temporary texture
 	postProcessCommand_t* cmd = ( postProcessCommand_t* )data;
 	const idScreenRect& viewport = cmd->viewDef->viewport;
@@ -6088,8 +6037,7 @@ void idRenderBackend::PostProcess( const void* data )
 
 		globalFramebuffers.smaaEdgesFBO->Bind();
 
-		glClearColor( 0, 0, 0, 0 );
-		glClear( GL_COLOR_BUFFER_BIT );
+		GL_Clear( true, false, false, 0, 0, 0, 0, 0, false );
 
 		GL_SelectTexture( 0 );
 		globalImages->smaaInputImage->Bind();
@@ -6103,7 +6051,7 @@ void idRenderBackend::PostProcess( const void* data )
 		globalFramebuffers.smaaBlendFBO->Bind();
 		//Framebuffer::Unbind();
 
-		glClear( GL_COLOR_BUFFER_BIT );
+		GL_Clear( true, false, false, 0, 0, 0, 0, 0, false );
 
 		GL_SelectTexture( 0 );
 		globalImages->smaaEdgesImage->Bind();
@@ -6170,8 +6118,6 @@ void idRenderBackend::PostProcess( const void* data )
 
 	GL_SelectTexture( 0 );
 	renderProgManager.Unbind();
-
-#endif
 
 	renderLog.CloseBlock();
 	renderLog.CloseMainBlock();

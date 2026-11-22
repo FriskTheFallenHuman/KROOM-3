@@ -1122,9 +1122,9 @@ static void CarveGroupsByLight( uEntity_t* e, mapLight_t* light )
 			nextGroup = group->nextGroup;
 
 			// if the surface doesn't get lit, don't carve it up
-			if( ( light->def.lightShader->IsFogLight() && !group->material->ReceivesFog() )
-					|| ( !light->def.lightShader->IsFogLight() && !group->material->ReceivesLighting() )
-					|| !group->bounds.IntersectsBounds( light->def.globalLightBounds ) )
+			if( ( light->def->lightShader->IsFogLight() && !group->material->ReceivesFog() )
+					|| ( !light->def->lightShader->IsFogLight() && !group->material->ReceivesLighting() )
+					|| !group->bounds.IntersectsBounds( light->def->globalLightBounds ) )
 			{
 
 				group->nextGroup = carvedGroups;
@@ -1140,9 +1140,9 @@ static void CarveGroupsByLight( uEntity_t* e, mapLight_t* light )
 
 			// if the group doesn't face the light,
 			// it won't get carved at all
-			if( !light->def.lightShader->LightEffectsBackSides() &&
+			if( !light->def->lightShader->LightEffectsBackSides() &&
 					!group->material->ReceivesLightingOnBackSides() &&
-					dmapGlobals.mapPlanes[ group->planeNum ].Distance( light->def.parms.origin ) <= 0 )
+					dmapGlobals.mapPlanes[ group->planeNum ].Distance( light->def->parms.origin ) <= 0 )
 			{
 
 				group->nextGroup = carvedGroups;

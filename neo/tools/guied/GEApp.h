@@ -69,6 +69,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "../../ui/UserInterfaceLocal.h"
 
 #include "../../renderer/RenderCommon.h"
+#include "../../renderer/RenderInternal.h"
 #include "../../renderer/RenderContext.h"
 #include "../../sys/sdl/DeviceSDL.h"
 #include "../../framework/Common_local.h"

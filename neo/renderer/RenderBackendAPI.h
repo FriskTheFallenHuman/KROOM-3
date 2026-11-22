@@ -2,8 +2,7 @@
 ===========================================================================
 
 Doom 3 BFG Edition GPL Source Code
-Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company.
-Copyright (C) 2016-2017 Dustin Land
+Copyright (C) 2014-2016 Robert Beckebans
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -26,63 +25,21 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
+#ifndef __RENDERBACKENDAPI_H__
+#define __RENDERBACKENDAPI_H__
 
-#ifndef __STAGING_VK__
-#define __STAGING_VK__
+const char*	R_API_Name();
+void		R_API_MakeContextCurrent();
+void		R_API_DisableContext();
+bool		R_UsesAppleVulkanWorkarounds();
+extern const int RB_InteractionCubeTexUnitBase;
 
-/*
-===========================================================================
-
-idVulkanStagingManager
-
-===========================================================================
-*/
-
-struct stagingBuffer_t
+struct rendererAPIDefaults_t
 {
-	stagingBuffer_t() :
-		submitted( false ),
-		commandBuffer( VK_NULL_HANDLE ),
-		buffer( VK_NULL_HANDLE ),
-		fence( VK_NULL_HANDLE ),
-		offset( 0 ),
-		data( NULL ) {}
-
-	bool				submitted;
-	VkCommandBuffer		commandBuffer;
-	VkBuffer			buffer;
-	VkFence				fence;
-	VkDeviceSize		offset;
-	byte* 				data;
-
-	int stagedCommands;
+	const char*		skipPostProcess;		// r_skipPostProcess
+	float			forceAmbientMax;		// upper limit of r_forceAmbient
+	int				ssaoCvarFlags;			// extra flags of r_useSSAO
 };
+extern const rendererAPIDefaults_t rendererAPIDefaults;
 
-class idVulkanStagingManager
-{
-public:
-	idVulkanStagingManager();
-	~idVulkanStagingManager();
-
-	void			Init();
-	void			Shutdown();
-
-	byte* 			Stage( const int size, const int alignment, VkCommandBuffer& commandBuffer, VkBuffer& buffer, int& bufferOffset );
-	void			Flush();
-
-private:
-	void			Wait( stagingBuffer_t& stage );
-
-private:
-	int				maxBufferSize;
-	int				currentBuffer;
-	byte* 			mappedData;
-	VkDeviceMemory	memory;
-	VkCommandPool	commandPool;
-
-	stagingBuffer_t buffers[ NUM_FRAME_DATA ];
-};
-
-extern idVulkanStagingManager stagingManager;
-
-#endif /* !__STAGING_VK__ */
+#endif /* !__RENDERBACKENDAPI_H__ */

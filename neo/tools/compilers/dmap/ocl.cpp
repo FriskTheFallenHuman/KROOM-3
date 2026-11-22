@@ -64,7 +64,7 @@ void BuildLightOccluders( uEntity_t* e, mapLight_t* light )
 
 	memset( light->occluders, 0, sizeof( light->occluders ) );
 
-	if( !light->def.LightCastsShadows() )
+	if( !light->def->LightCastsShadows() )
 	{
 		return;
 	}
@@ -72,7 +72,7 @@ void BuildLightOccluders( uEntity_t* e, mapLight_t* light )
 	// the name is the only thing that links the occluders to the light entity at runtime
 	if( light->name[0] == '\0' )
 	{
-		idLib::Warning( "BuildLightOccluders: light at (%f,%f,%f) has no name, skipping occluders", light->def.parms.origin.x, light->def.parms.origin.y, light->def.parms.origin.z );
+		idLib::Warning( "BuildLightOccluders: light at (%f,%f,%f) has no name, skipping occluders", light->def->parms.origin.x, light->def->parms.origin.y, light->def->parms.origin.z );
 		return;
 	}
 
@@ -93,7 +93,7 @@ void BuildLightOccluders( uEntity_t* e, mapLight_t* light )
 			}
 
 			// if the group bounds doesn't intersect the light bounds, skip it
-			if( !group->bounds.IntersectsBounds( light->def.globalLightBounds ) )
+			if( !group->bounds.IntersectsBounds( light->def->globalLightBounds ) )
 			{
 				continue;
 			}

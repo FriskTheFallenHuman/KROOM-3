@@ -49,16 +49,12 @@ idRenderContext
 class idRenderContext
 {
 public:
-#if !defined( USE_VULKAN )
 	void			InitContext( SDL_Window* window, SDL_GLContext context );
-#endif
 	void			MakeCurrent();
 	void			Disable();
 private:
-#if !defined( USE_VULKAN )
 	SDL_Window*		oldWindow;
 	SDL_GLContext	oldContext;
-#endif
 };
 
 extern idRenderContext rRenderContext;

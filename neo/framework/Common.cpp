@@ -38,7 +38,8 @@ If you have questions concerning this license or the applicable additional terms
 #include "../sound/sound.h"
 
 #include "../sys/sys_savegame.h"
-#include "../sys/sdl/DeviceManagerLocal.h"
+#include "RenderLoader.h"
+#include "../renderer/RenderInternal.h"
 
 #ifdef USE_STEAMWORKS
 	#include "../sys/steam/steam_local.h"
@@ -1325,6 +1326,9 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 
 		fileSystem->BeginLevelLoad( "_startup", saveFile.GetDataPtr(), saveFile.GetAllocated() );
 
+		// load the renderer module.
+		R_LoadRendererModule();
+
 		// initialize the declaration manager
 		declManager->Init();
 
@@ -1559,7 +1563,7 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 		{
 			idPreloadManifest manifest;
 			manifest.LoadManifest( "_common.preload" );
-			globalImages->Preload( manifest, false );
+			Image_Preload( manifest, false );
 			soundSystem->Preload( manifest );
 		}
 
@@ -1576,7 +1580,7 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 				idImage* image = splashScreen->GetStage( i )->texture.image;
 				if( image != NULL )
 				{
-					image->PurgeImage();
+					Image_Purge( image );
 				}
 			}
 		}
@@ -1589,7 +1593,7 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 				idImage* image2 = photsensitivityScreen->GetStage( i )->texture.image;
 				if( image2 != NULL )
 				{
-					image2->PurgeImage();
+					Image_Purge( image2 );
 				}
 			}
 		}
@@ -1826,7 +1830,7 @@ void idCommonLocal::DoCustomBranding()
 {
 	const char* title = haveSelectedMod && selectedMod.title.Length() > 0 ? selectedMod.title.c_str() : GAME_NAME;
 
-	idDeviceManagerLocal* device = dynamic_cast< idDeviceManagerLocal* >( deviceManager );
+	idDeviceManager* device = deviceManager;
 	if( device )
 	{
 		device->SetWindowTitle( title );

@@ -170,6 +170,11 @@ extern const idRenderMatrix renderMatrix_windowSpaceToClipSpace;
 // RB begin
 extern const idRenderMatrix renderMatrix_clipSpaceToWindowSpace;
 // RB end
+#if defined( CLIP_SPACE_D3D )
+	extern const idRenderMatrix renderMatrix_vkShadowOrtho;
+	extern const idRenderMatrix renderMatrix_vkShadowPerspective;
+	extern const idRenderMatrix renderMatrix_vkShadowWindowFlipY;
+#endif
 
 /*
 ========================

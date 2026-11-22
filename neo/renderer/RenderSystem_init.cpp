@@ -117,11 +117,7 @@ idCVar r_jitter( "r_jitter", "0", CVAR_RENDERER | CVAR_BOOL, "randomly subpixel 
 idCVar r_skipStaticInteractions( "r_skipStaticInteractions", "0", CVAR_RENDERER | CVAR_BOOL, "skip interactions created at level load" );
 idCVar r_skipDynamicInteractions( "r_skipDynamicInteractions", "0", CVAR_RENDERER | CVAR_BOOL, "skip interactions created after level load" );
 idCVar r_skipSuppress( "r_skipSuppress", "0", CVAR_RENDERER | CVAR_BOOL, "ignore the per-view suppressions" );
-#if defined( USE_VULKAN )
-	idCVar r_skipPostProcess( "r_skipPostProcess", "1", CVAR_RENDERER | CVAR_BOOL, "skip all post-process renderings except bloom" );
-#else
-	idCVar r_skipPostProcess( "r_skipPostProcess", "0", CVAR_RENDERER | CVAR_BOOL, "skip all post-process renderings except bloom" );
-#endif
+idCVar r_skipPostProcess( "r_skipPostProcess", rendererAPIDefaults.skipPostProcess, CVAR_RENDERER | CVAR_BOOL, "skip all post-process renderings except bloom" );
 idCVar r_skipBloom( "r_skipBloom", "0", CVAR_RENDERER | CVAR_BOOL, "Skip bloom" );
 idCVar r_skipInteractions( "r_skipInteractions", "0", CVAR_RENDERER | CVAR_BOOL, "skip all light/surface interaction drawing" );
 idCVar r_skipDynamicTextures( "r_skipDynamicTextures", "0", CVAR_RENDERER | CVAR_BOOL, "don't dynamically create textures" );
@@ -252,11 +248,7 @@ idCVar r_shadowMapRegularDepthBiasScale( "r_shadowMapRegularDepthBiasScale", "0.
 idCVar r_shadowMapSunDepthBiasScale( "r_shadowMapSunDepthBiasScale", "0.999991", CVAR_RENDERER | CVAR_FLOAT, "shadowmap bias to fight shadow acne for cascaded shadow mapping with parallel lights" );
 
 // RB: HDR parameters
-#if defined( USE_VULKAN )
-	idCVar r_useHDR( "r_useHDR", "0", CVAR_RENDERER | CVAR_ROM | CVAR_STATIC | CVAR_BOOL, "Can't be changed, is broken on Vulkan backend" );
-#else
-	idCVar r_useHDR( "r_useHDR", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "Use high dynamic range rendering" );
-#endif
+idCVar r_useHDR( "r_useHDR", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "Use high dynamic range rendering" );
 
 idCVar r_hdrAutoExposure( "r_hdrAutoExposure", "0", CVAR_RENDERER | CVAR_BOOL, "EXPENSIVE: enables adapative HDR tone mapping otherwise the exposure is derived by r_exposure" );
 idCVar r_hdrMinLuminance( "r_hdrMinLuminance", "0.005", CVAR_RENDERER | CVAR_FLOAT, "" );
@@ -273,21 +265,13 @@ idCVar r_ldrContrastOffset( "r_ldrContrastOffset", "3", CVAR_RENDERER | CVAR_FLO
 
 idCVar r_useFilmicPostProcessing( "r_useFilmicPostProcessing", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "apply several post process effects to mimic a filmic look" );
 
-#if defined( USE_VULKAN )
-	idCVar r_forceAmbient( "r_forceAmbient", "0.01", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "render additional ambient pass to make the game less dark", 0.0f, 0.75f );
-#else
-	idCVar r_forceAmbient( "r_forceAmbient", "0.01", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "render additional ambient pass to make the game less dark", 0.0f, 1.0f );
-#endif
+idCVar r_forceAmbient( "r_forceAmbient", "0.01", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "render additional ambient pass to make the game less dark", 0.0f, rendererAPIDefaults.forceAmbientMax );
 
 idCVar r_useSSGI( "r_useSSGI", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "use screen space global illumination and reflections" );
 idCVar r_ssgiDebug( "r_ssgiDebug", "0", CVAR_RENDERER | CVAR_INTEGER, "" );
 idCVar r_ssgiFiltering( "r_ssgiFiltering", "1", CVAR_RENDERER | CVAR_BOOL, "" );
 
-#if defined( USE_VULKAN )
-	idCVar r_useSSAO( "r_useSSAO", "0", CVAR_RENDERER | CVAR_ROM | CVAR_STATIC | CVAR_BOOL, "use screen space ambient occlusion to darken corners" );
-#else
-	idCVar r_useSSAO( "r_useSSAO", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "use screen space ambient occlusion to darken corners" );
-#endif
+idCVar r_useSSAO( "r_useSSAO", "0", CVAR_RENDERER | rendererAPIDefaults.ssaoCvarFlags | CVAR_BOOL, "use screen space ambient occlusion to darken corners" );
 idCVar r_ssaoDebug( "r_ssaoDebug", "0", CVAR_RENDERER | CVAR_INTEGER, "" );
 idCVar r_ssaoFiltering( "r_ssaoFiltering", "0", CVAR_RENDERER | CVAR_BOOL, "" );
 idCVar r_useHierarchicalDepthBuffer( "r_useHierarchicalDepthBuffer", "1", CVAR_RENDERER | CVAR_BOOL, "" );
@@ -308,11 +292,9 @@ idCVar r_softParticles( "r_softParticles", "1", CVAR_RENDERER | CVAR_ARCHIVE | C
 idCVar r_defaultParticleSoftness( "r_defaultParticleSoftness", "0.35", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "auto softness (stages with softness < 0) as a fraction of the largest billboard size, 0 = no auto softness" );
 idCVar r_softParticleNearFade( "r_softParticleNearFade", "1.0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "soft particles fade out near the camera over this multiple of their softness range instead of popping at the near plane, 0 = no near fade" );
 
-#if !defined( USE_VULKAN )
-	idCVar r_glVersionMajor( "r_glVersionMajor", "4", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "OpenGL major version (>= 3.2 is the minimun supported level!)", 3, 4 );
-	idCVar r_glVersionMinor( "r_glVersionMinor", "5", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "OpenGL minor version (>= 3.2 is the minimun supported level!)", 2, 5 );
-	idCVar r_glProfile( "r_glProfile", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "0 = no profile, 1 = prefer compatibility, 2 = prefer core", 0, 2 );
-#endif
+idCVar r_glVersionMajor( "r_glVersionMajor", "4", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "OpenGL major version (>= 3.2 is the minimun supported level!)", 3, 4 );
+idCVar r_glVersionMinor( "r_glVersionMinor", "5", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "OpenGL minor version (>= 3.2 is the minimun supported level!)", 2, 5 );
+idCVar r_glProfile( "r_glProfile", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "0 = no profile, 1 = prefer compatibility, 2 = prefer core", 0, 2 );
 
 const char* fileExten[4] = { "tga", "png", "jpg", "exr" };
 const char* envDirection[6] = { "_px", "_nx", "_py", "_ny", "_pz", "_nz" };
@@ -560,6 +542,8 @@ void R_SetNewMode( const bool fullInit )
 
 				// DG: ImGui must be initialized after the window has been created, it needs an opengl context
 				imguiSystem->Init( parms.width, parms.height );
+
+				ImGui::SetCurrentContext( ( ImGuiContext* )renderHost->GetImGuiContext() );
 
 				setModeWorked = true;
 				break;
@@ -890,159 +874,7 @@ If ref isn't specified, the full session UpdateScreen will be done.
 */
 void R_ReadTiledPixels( int width, int height, byte* buffer, renderView_t* ref = NULL )
 {
-	// FIXME
-#if !defined(USE_VULKAN)
-
-	// include extra space for OpenGL padding to word boundaries
-	int sysWidth = renderSystem->GetWidth();
-	int sysHeight = renderSystem->GetHeight();
-
-	byte* temp = NULL;
-	if( ref && ref->rdflags & RDF_IRRADIANCE )
-	{
-		// * 2 = sizeof( half float )
-		//temp = ( byte* )R_StaticAlloc( ENVPROBE_CAPTURE_SIZE * ENVPROBE_CAPTURE_SIZE * 3 * 2 );
-	}
-	else
-	{
-		temp = ( byte* )R_StaticAlloc( ( sysWidth + 3 ) * sysHeight * 3 );
-	}
-
-	// foresthale 2014-03-01: fixed custom screenshot resolution by doing a more direct render path
-#ifdef BUGFIXEDSCREENSHOTRESOLUTION
-	if( sysWidth > width )
-	{
-		sysWidth = width;
-	}
-
-	if( sysHeight > height )
-	{
-		sysHeight = height;
-	}
-
-	// make sure the game / draw thread has completed
-	commonLocal.WaitGameThread();
-
-	// discard anything currently on the list
-	tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
-
-	int originalNativeWidth = glConfig.nativeScreenWidth;
-	int originalNativeHeight = glConfig.nativeScreenHeight;
-
-	//if( !ref || ( ref && !( ref->rdflags & RDF_IRRADIANCE ) ) )
-	{
-		glConfig.nativeScreenWidth = sysWidth;
-		glConfig.nativeScreenHeight = sysHeight;
-	}
-#endif
-
-	// disable scissor, so we don't need to adjust all those rects
-	r_useScissor.SetBool( false );
-
-	for( int xo = 0 ; xo < width ; xo += sysWidth )
-	{
-		for( int yo = 0 ; yo < height ; yo += sysHeight )
-		{
-			// foresthale 2014-03-01: fixed custom screenshot resolution by doing a more direct render path
-#ifdef BUGFIXEDSCREENSHOTRESOLUTION
-			// discard anything currently on the list
-			tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
-			if( ref )
-			{
-				// ref is only used by envShot, Event_camShot, etc to grab screenshots of things in the world,
-				// so this omits the hud and other effects
-				tr.primaryWorld->RenderScene( ref );
-			}
-			else
-			{
-				// build all the draw commands without running a new game tic
-				commonLocal.Draw();
-			}
-			// this should exit right after vsync, with the GPU idle and ready to draw
-			const emptyCommand_t* cmd = tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
-
-			// get the GPU busy with new commands
-			tr.RenderCommandBuffers( cmd );
-
-			// discard anything currently on the list (this triggers SwapBuffers)
-			tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
-#else
-			// foresthale 2014-03-01: note: ref is always NULL in every call path to this function
-			if( ref )
-			{
-				// discard anything currently on the list
-				tr.SwapCommandBuffers( NULL, NULL, NULL, NULL );
-
-				// build commands to render the scene
-				tr.primaryWorld->RenderScene( ref );
-
-				// finish off these commands
-				const emptyCommand_t* cmd = tr.SwapCommandBuffers( NULL, NULL, NULL, NULL );
-
-				// issue the commands to the GPU
-				tr.RenderCommandBuffers( cmd );
-			}
-			else
-			{
-				const bool captureToImage = false;
-				common->UpdateScreen( captureToImage, false );
-			}
-#endif
-
-			int w = sysWidth;
-			if( xo + w > width )
-			{
-				w = width - xo;
-			}
-			int h = sysHeight;
-			if( yo + h > height )
-			{
-				h = height - yo;
-			}
-
-			if( ref && ref->rdflags & RDF_IRRADIANCE )
-			{
-				globalFramebuffers.envprobeFBO->Bind();
-
-				glPixelStorei( GL_PACK_ROW_LENGTH, ENVPROBE_CAPTURE_SIZE );
-				glReadPixels( 0, 0, w, h, GL_RGB, GL_HALF_FLOAT, buffer );
-
-				R_VerticalFlipRGB16F( buffer, w, h );
-
-				Framebuffer::Unbind();
-			}
-			else
-			{
-				glReadBuffer( GL_FRONT );
-				glReadPixels( 0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, temp );
-
-				int	row = ( w * 3 + 3 ) & ~3;		// OpenGL pads to dword boundaries
-
-				for( int y = 0 ; y < h ; y++ )
-				{
-					memcpy( buffer + ( ( yo + y )* width + xo ) * 3,
-							temp + y * row, w * 3 );
-				}
-			}
-		}
-	}
-
-	// foresthale 2014-03-01: fixed custom screenshot resolution by doing a more direct render path
-#ifdef BUGFIXEDSCREENSHOTRESOLUTION
-	// discard anything currently on the list
-	tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
-
-	if( !ref || ( ref && !( ref->rdflags & RDF_IRRADIANCE ) ) )
-	{
-		glConfig.nativeScreenWidth = originalNativeWidth;
-		glConfig.nativeScreenHeight = originalNativeHeight;
-	}
-#endif
-
-	r_useScissor.SetBool( true );
-
-	R_StaticFree( temp );
-#endif
+	backEnd.ReadTiledPixels( width, height, buffer, ref );
 }
 
 
@@ -1305,7 +1137,7 @@ void R_ScreenShot_f( const idCmdArgs& args )
 	}
 
 	// put the console away
-	console->Close();
+	renderHost->CloseConsole();
 
 	tr.TakeScreenshot( width, height, checkname, blends, NULL, TGA );
 
@@ -1612,16 +1444,17 @@ void GfxInfo_f( const idCmdArgs& args )
 
 	common->Printf( "-------\n" );
 
-#if !defined(USE_VULKAN)
-	if( r_swapInterval.GetInteger() )
+	if( glConfig.driverType != GLDRV_VULKAN )
 	{
-		common->Printf( "Forcing swapInterval %i\n", r_swapInterval.GetInteger() );
+		if( r_swapInterval.GetInteger() )
+		{
+			common->Printf( "Forcing swapInterval %i\n", r_swapInterval.GetInteger() );
+		}
+		else
+		{
+			common->Printf( "swapInterval not forced\n" );
+		}
 	}
-	else
-	{
-		common->Printf( "swapInterval not forced\n" );
-	}
-#endif
 
 	idLib::Printf( "%i multisamples\n", glConfig.multisamples );
 
@@ -2384,8 +2217,6 @@ idRenderSystemLocal::Shutdown
 */
 void idRenderSystemLocal::Shutdown()
 {
-	extern idCVar com_smp;
-
 	common->Printf( "idRenderSystem::Shutdown()\n" );
 
 	fonts.DeleteContents();
@@ -2553,13 +2384,7 @@ void idRenderSystemLocal::InitBackend()
 		// Reloading images here causes the rendertargets to get deleted. Figure out how to handle this properly on 360
 		//globalImages->ReloadImages( true );
 
-#if !defined(USE_VULKAN)
-		int err = glGetError();
-		if( err != GL_NO_ERROR )
-		{
-			common->Printf( "glGetError() = 0x%x\n", err );
-		}
-#endif
+		GL_CheckErrors();
 	}
 }
 

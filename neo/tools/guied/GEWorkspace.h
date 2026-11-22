@@ -251,9 +251,6 @@ private:
 
 	bool m_suppressSelectionUpdate;
 
-	unsigned int m_fbo;
-	unsigned int m_colorTex;
-	unsigned int m_depthStencil;
 	int m_fboWidth;
 	int m_fboHeight;
 

@@ -28,6 +28,7 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
+
 #ifndef __RENDERPROGS_H__
 #define __RENDERPROGS_H__
 
@@ -257,14 +258,14 @@ public:
 	void	Init();
 	void	Shutdown();
 
-	void	StartFrame();
+	virtual void	StartFrame() = 0;
 
 	void	SetRenderParm( renderParm_t rp, const float value[4] );
 	void	SetRenderParms( renderParm_t rp, const float values[], int numValues );
 
 	int		FindShader( const char* name, rpStage_t stage, const char* nameOutSuffix, uint32 features, bool builtin, vertexLayoutType_t vertexLayout = LAYOUT_DRAW_VERT );
 
-	void	BindProgram( int progIndex );
+	virtual void	BindProgram( int progIndex ) = 0;
 
 	void	BindShader_GUI( )
 	{
@@ -712,16 +713,16 @@ public:
 	// the joints buffer should only be bound for vertex programs that use joints
 	bool		ShaderUsesJoints() const
 	{
-		return renderProgs[current].usesJoints;
+		return renderProgs[current]->usesJoints;
 	}
 	// the rpEnableSkinning render parm should only be set for vertex programs that use it
 	bool		ShaderHasOptionalSkinning() const
 	{
-		return renderProgs[current].optionalSkinning;
+		return renderProgs[current]->optionalSkinning;
 	}
 
 	// unbind the currently bound render program
-	void		Unbind();
+	virtual void	Unbind() = 0;
 
 	// RB begin
 	bool		IsShaderBound() const;
@@ -729,26 +730,66 @@ public:
 
 	// this should only be called via the reload shader console command
 	void		LoadAllShaders();
-	void		KillAllShaders();
+	virtual void	KillAllShaders() = 0;
 
 	static const int	MAX_GLSL_USER_PARMS = 8;
 	const char*	GetGLSLParmName( int rp ) const;
 
 	void		SetUniformValue( const renderParm_t rp, const float value[4] );
-	void		CommitUniforms( uint64 stateBits );
-	void		CachePipeline( uint64 stateBits );
+	virtual void	CommitUniforms( uint64 stateBits ) = 0;
 	int			FindGLSLProgram( const char* name, int vIndex, int fIndex );
 	void		ZeroUniforms();
 
-#if defined(USE_VULKAN)
-	void		PrintPipelines();
-	void		ClearPipelines();
-#endif
+protected:
+	struct shader_t
+	{
+		shader_t() :
+			shaderFeatures( 0 ),
+			builtin( false ),
+			stage( SHADER_STAGE_DEFAULT ),
+			vertexLayout( LAYOUT_DRAW_VERT ) {}
+		virtual ~shader_t() {}
 
-private:
-	void		LoadShader( int index, rpStage_t stage );
+		idStr				name;
+		idStr				nameOutSuffix;
+		uint32				shaderFeatures;		// RB: Cg compile macros
+		bool				builtin;			// RB: part of the core shaders built into the executable
+		rpStage_t			stage;
+		vertexLayoutType_t	vertexLayout;
+	};
 
-	idStr		StripDeadCode( const idStr& in, const char* name, const idStrList& compileMacros, bool builtin );
+	struct renderProg_t
+	{
+		renderProg_t() :
+			progId( INVALID_PROGID ),
+			usesJoints( false ),
+			optionalSkinning( false ),
+			builtin( false ),
+			vertexLayout( LAYOUT_DRAW_VERT ),
+			vertexShaderIndex( -1 ),
+			fragmentShaderIndex( -1 ) {}
+		virtual ~renderProg_t() {}
+
+		idStr				name;
+		uint				progId;
+		bool				usesJoints;
+		bool				optionalSkinning;
+		bool				builtin;			// RB: part of the core shaders built into the executable
+		vertexLayoutType_t	vertexLayout;
+		int					vertexShaderIndex;
+		int					fragmentShaderIndex;
+	};
+
+	virtual shader_t*		CreateShader() = 0;
+	virtual renderProg_t*	CreateRenderProg() = 0;
+
+	virtual void			InitBackend() = 0;
+
+	virtual void			LoadShader( int index, rpStage_t stage ) = 0;
+	virtual void			LoadShader( shader_t& shader ) = 0;
+	virtual void			LoadGLSLProgram( const int programIndex, const int vertexShaderIndex, const int fragmentShaderIndex ) = 0;
+
+	idStr		StripDeadCode( const idStr& in, const char* name, const idStrList& compileMacros, bool builtin, bool vkGLSL );
 	idStr		ConvertCG2GLSL( const idStr& in, const char* name, rpStage_t stage, idStr& outLayout, bool vkGLSL, bool hasGPUSkinning, vertexLayoutType_t vertexLayout );
 
 	enum
@@ -884,135 +925,15 @@ private:
 	const char*	GetGLSLMacroName( shaderFeature_t sf ) const;
 
 	bool	CompileGLSL( uint target, const char* name );
-	void	LoadGLSLProgram( const int programIndex, const int vertexShaderIndex, const int fragmentShaderIndex );
 
 	static const uint INVALID_PROGID = 0xFFFFFFFF;
 
-#if defined(USE_VULKAN)
-	struct shader_t
-	{
-		shader_t() :
-			shaderFeatures( 0 ),
-			builtin( false ),
-			vertexLayout( LAYOUT_DRAW_VERT ),
-			module( VK_NULL_HANDLE ) {}
-		idStr				name;
-		idStr				nameOutSuffix;
-		uint32				shaderFeatures;		// RB: Cg compile macros
-		bool				builtin;			// RB: part of the core shaders built into the executable
-		rpStage_t			stage;
-		vertexLayoutType_t	vertexLayout;
-		VkShaderModule		module;
-		idList<rpBinding_t>	bindings;
-		idList<int>			parmIndices;
-	};
-
-	struct renderProg_t
-	{
-		renderProg_t() :
-			progId( INVALID_PROGID ),
-			usesJoints( false ),
-			optionalSkinning( false ),
-			builtin( false ),
-			vertexShaderIndex( -1 ),
-			fragmentShaderIndex( -1 ),
-			vertexLayout( LAYOUT_DRAW_VERT ),
-			pipelineLayout( VK_NULL_HANDLE ),
-			descriptorSetLayout( VK_NULL_HANDLE ) {}
-
-		struct pipelineState_t
-		{
-			pipelineState_t() :
-				stateBits( 0 ),
-				pipeline( VK_NULL_HANDLE )
-			{
-			}
-
-			uint64		stateBits;
-			VkPipeline	pipeline;
-		};
-
-		VkPipeline GetPipeline( uint64 stateBits, VkShaderModule vertexShader, VkShaderModule fragmentShader );
-
-		idStr				name;
-		uint				progId;
-		bool				usesJoints;
-		bool				optionalSkinning;
-		bool				builtin;			// RB: part of the core shaders built into the executable
-		int					vertexShaderIndex;
-		int					fragmentShaderIndex;
-
-		vertexLayoutType_t		vertexLayout;
-		VkPipelineLayout		pipelineLayout;
-		VkDescriptorSetLayout	descriptorSetLayout;
-		idList<rpBinding_t>		bindings;
-		idList<pipelineState_t>	pipelines;
-	};
-
-	static void		CreateDescriptorSetLayout( const shader_t& vertexShader, const shader_t& fragmentShader, renderProg_t& renderProg );
-	void			AllocParmBlockBuffer( const idList<int>& parmIndices, idUniformBuffer& ubo );
-#else
-	struct shader_t
-	{
-		shader_t() :
-			progId( INVALID_PROGID ),
-			shaderFeatures( 0 ),
-			builtin( false ),
-			vertexLayout( LAYOUT_DRAW_VERT ),
-			uniformArray( -1 ) {}
-		idStr			name;
-		idStr			nameOutSuffix;
-		uint32			shaderFeatures;		// RB: Cg compile macros
-		bool			builtin;			// RB: part of the core shaders built into the executable
-		vertexLayoutType_t	vertexLayout;
-		rpStage_t		stage;
-		uint			progId;
-		int				uniformArray;
-		idList<int>		uniforms;
-	};
-
-	struct renderProg_t
-	{
-		renderProg_t() :
-			progId( INVALID_PROGID ),
-			usesJoints( false ),
-			optionalSkinning( false ),
-			builtin( false ),
-			vertexLayout( LAYOUT_UNKNOWN ),
-			vertexShaderIndex( -1 ),
-			fragmentShaderIndex( -1 ) {}
-
-		idStr				name;
-		uint				progId;
-		bool				usesJoints;
-		bool				optionalSkinning;
-		bool				builtin;			// RB: part of the core shaders built into the executable
-		vertexLayoutType_t	vertexLayout;
-		int					vertexShaderIndex;
-		int					fragmentShaderIndex;
-	};
-#endif
-
-	void							LoadShader( shader_t& shader );
-
 	int											current;
-	idList<renderProg_t, TAG_RENDER>			renderProgs;
-	idList<shader_t, TAG_RENDER>				shaders;
-
+	idList<renderProg_t*, TAG_RENDER>			renderProgs;
+	idList<shader_t*, TAG_RENDER>				shaders;
 	idStaticList < idVec4, RENDERPARM_TOTAL >	uniforms;
-
-#if defined( USE_VULKAN )
-	int					counter;
-	int					currentData;
-	int					currentDescSet;
-	int					currentParmBufferOffset;
-	VkDescriptorPool	descriptorPools[ NUM_FRAME_DATA ];
-	VkDescriptorSet		descriptorSets[ NUM_FRAME_DATA ][ MAX_DESC_SETS ];
-
-	idUniformBuffer* 	parmBuffers[ NUM_FRAME_DATA ];
-#endif
 };
 
-extern idRenderProgManager renderProgManager;
+extern idRenderProgManager& renderProgManager;
 
-#endif
+#endif /* !__RENDERPROGS_H__ */

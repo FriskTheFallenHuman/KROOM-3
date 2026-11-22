@@ -441,6 +441,13 @@ static bool R_ParseImageProgram_r( idLexer& src, byte** pic, int* width, int* he
 
 	src.ReadToken( &token );
 
+	// A brace can never be part of an image program.
+	if( token == "}" || token == "{" )
+	{
+		src.UnreadToken( &token );
+		return false;
+	}
+
 	// Since all interaction shaders now assume YCoCG diffuse textures.  We replace all entries for the intrinsic
 	// _black texture to the black texture on disk.  Doing this will cause a YCoCG compliant texture to be generated.
 	// Without a YCoCG compliant black texture we will get color artifacts for any interaction

@@ -27,8 +27,10 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
+
 #include "precompiled.h"
 #pragma hdrstop
+
 #include "RenderCommon.h"
 
 idCVar r_showBuffers( "r_showBuffers", "0", CVAR_INTEGER, "" );
@@ -111,7 +113,7 @@ void CopyBuffer( byte* dst, const byte* src, int numBytes )
 /*
 ================================================================================================
 
-	idBufferObject
+idBufferObject
 
 ================================================================================================
 */
@@ -126,37 +128,24 @@ idBufferObject::idBufferObject()
 	size = 0;
 	offsetInOtherBuffer = OWNS_BUFFER_FLAG;
 	usage = BU_STATIC;
-
-#if defined( USE_VULKAN )
-	apiObject = VK_NULL_HANDLE;
-
-#if defined( USE_AMD_ALLOCATOR )
-	vmaAllocation = NULL;
-#endif
-
-#else
-	apiObject = 0;
-	buffer = NULL;
-#endif
 }
 
 /*
-================================================================================================
-
-	idVertexBuffer
-
-================================================================================================
-*/
-
-/*
 ========================
-idVertexBuffer::~idVertexBuffer
+idBufferObject::~idBufferObject
 ========================
 */
-idVertexBuffer::~idVertexBuffer()
+idBufferObject::~idBufferObject()
 {
-	FreeBufferObject();
 }
+
+/*
+================================================================================================
+
+idVertexBuffer
+
+================================================================================================
+*/
 
 /*
 ========================
@@ -173,10 +162,7 @@ void idVertexBuffer::Reference( const idVertexBuffer& other )
 	size = other.GetSize();					// this strips the MAPPED_FLAG
 	offsetInOtherBuffer = other.GetOffset();	// this strips the OWNS_BUFFER_FLAG
 	usage = other.usage;
-	apiObject = other.apiObject;
-#if defined( USE_VULKAN )
-	allocation = other.allocation;
-#endif
+	CopyBackendState( other );
 	assert( OwnsBuffer() == false );
 }
 
@@ -197,10 +183,7 @@ void idVertexBuffer::Reference( const idVertexBuffer& other, int refOffset, int 
 	size = refSize;
 	offsetInOtherBuffer = other.GetOffset() + refOffset;
 	usage = other.usage;
-	apiObject = other.apiObject;
-#if defined( USE_VULKAN )
-	allocation = other.allocation;
-#endif
+	CopyBackendState( other );
 	assert( OwnsBuffer() == false );
 }
 
@@ -211,16 +194,6 @@ idIndexBuffer
 
 ================================================================================================
 */
-
-/*
-========================
-idIndexBuffer::~idIndexBuffer
-========================
-*/
-idIndexBuffer::~idIndexBuffer()
-{
-	FreeBufferObject();
-}
 
 /*
 ========================
@@ -237,10 +210,7 @@ void idIndexBuffer::Reference( const idIndexBuffer& other )
 	size = other.GetSize();					// this strips the MAPPED_FLAG
 	offsetInOtherBuffer = other.GetOffset();	// this strips the OWNS_BUFFER_FLAG
 	usage = other.usage;
-	apiObject = other.apiObject;
-#if defined( USE_VULKAN )
-	allocation = other.allocation;
-#endif
+	CopyBackendState( other );
 	assert( OwnsBuffer() == false );
 }
 
@@ -261,10 +231,7 @@ void idIndexBuffer::Reference( const idIndexBuffer& other, int refOffset, int re
 	size = refSize;
 	offsetInOtherBuffer = other.GetOffset() + refOffset;
 	usage = other.usage;
-	apiObject = other.apiObject;
-#if defined( USE_VULKAN )
-	allocation = other.allocation;
-#endif
+	CopyBackendState( other );
 	assert( OwnsBuffer() == false );
 }
 
@@ -275,16 +242,6 @@ idUniformBuffer
 
 ================================================================================================
 */
-
-/*
-========================
-idUniformBuffer::~idUniformBuffer
-========================
-*/
-idUniformBuffer::~idUniformBuffer()
-{
-	FreeBufferObject();
-}
 
 /*
 ========================
@@ -301,10 +258,8 @@ void idUniformBuffer::Reference( const idUniformBuffer& other )
 	size = other.GetSize();					// this strips the MAPPED_FLAG
 	offsetInOtherBuffer = other.GetOffset();	// this strips the OWNS_BUFFER_FLAG
 	usage = other.usage;
-	apiObject = other.apiObject;
-#if defined( USE_VULKAN )
-	allocation = other.allocation;
-#endif
+	CopyBackendState( other );
+
 	assert( OwnsBuffer() == false );
 }
 
@@ -325,9 +280,7 @@ void idUniformBuffer::Reference( const idUniformBuffer& other, int refOffset, in
 	size = refSize;
 	offsetInOtherBuffer = other.GetOffset() + refOffset;
 	usage = other.usage;
-	apiObject = other.apiObject;
-#if defined( USE_VULKAN )
-	allocation = other.allocation;
-#endif
+	CopyBackendState( other );
+
 	assert( OwnsBuffer() == false );
 }

@@ -49,32 +49,35 @@ static	int shadowMapResolutions[MAX_SHADOWMAP_RESOLUTIONS] = { 1024, 1024, 1024,
 class Framebuffer
 {
 public:
-
-	Framebuffer( const char* name, int width, int height );
-	virtual ~Framebuffer();
+	static Framebuffer*		Create( const char* name, int width, int height );
 
 	static void				Init();
 	static void				Shutdown();
 
 	static void				CheckFramebuffers();
 
-	void					Bind();
+	virtual void			Bind() = 0;
 	bool					IsBound();
 	static void				Unbind();
 	static bool				IsDefaultFramebufferActive();
 	static Framebuffer*		GetActiveFramebuffer();
 
-	void					AttachImage2D( int target, const idImage* image, int index, int mipmapLod = 0 );
-	void					AttachImage3D( const idImage* image );
-	void					AttachImageDepth( int target, const idImage* image );
-	void					AttachImageDepthLayer( const idImage* image, int layer );
+	// renders into an offscreen RGBA8 target instead of the window and reads it back, rows top to bottom
+	static bool				EditorTargetBegin( int width, int height, const float* clearColor );
+	static bool				EditorTargetEnd( byte* rgba );
 
-#if !defined(USE_VULKAN)
-	static void				SetEditorDefaultFramebuffer( GLuint fbo );
-#endif
+	virtual void			AttachImage2D( int target, const idImage* image, int index, int mipmapLod = 0 ) = 0;
+	virtual void			AttachImageDepth( int target, const idImage* image ) = 0;
+	virtual void			AttachImageDepthLayer( const idImage* image, int layer ) = 0;
 
-	// check for OpenGL errors
-	void					Check();
+	static void				SetEditorDefaultFramebuffer( uint32_t fbo );
+
+	// check for framebuffer errors
+	virtual void			Check() = 0;
+
+	// reads the color attachment back as tightly packed RGB half floats, top row first
+	virtual bool			ReadbackColorRGB16F( int w, int h, byte* rgb16f ) = 0;
+
 	uint32_t				GetFramebuffer() const
 	{
 		return frameBuffer;
@@ -96,7 +99,11 @@ public:
 		height = height_;
 	}
 
-private:
+	virtual ~Framebuffer();
+
+protected:
+	Framebuffer( const char* name, int width, int height );
+
 	idStr					fboName;
 
 	// FBO object
@@ -105,6 +112,7 @@ private:
 	int						width;
 	int						height;
 
+private:
 	static idList<Framebuffer*>	framebuffers;
 };
 
@@ -127,4 +135,4 @@ struct globalFramebuffers_t
 };
 extern globalFramebuffers_t globalFramebuffers;
 
-#endif // __FRAMEBUFFER_H__
+#endif /* !__FRAMEBUFFER_H__ */

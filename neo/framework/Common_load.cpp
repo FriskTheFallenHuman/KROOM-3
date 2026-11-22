@@ -32,6 +32,7 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "Common_local.h"
+#include "../renderer/RenderInternal.h"
 #include "../sys/sys_lobby_backend.h"
 
 #ifdef USE_STEAMWORKS
@@ -523,8 +524,9 @@ void idCommonLocal::ExecuteMapChange()
 	}
 
 	{
-		int vertexMemUsedKB = vertexCache.staticData.vertexMemUsed.GetValue() / 1024;
-		int indexMemUsedKB = vertexCache.staticData.indexMemUsed.GetValue() / 1024;
+		int vertexMemUsedKB = 0;
+		int indexMemUsedKB = 0;
+		VertexCache_GetStaticMemKB( &vertexMemUsedKB, &indexMemUsedKB );
 		idLib::Printf( "Used %dkb of static vertex memory (%d%%)\n", vertexMemUsedKB, vertexMemUsedKB * 100 / ( STATIC_VERTEX_MEMORY / 1024 ) );
 		idLib::Printf( "Used %dkb of static index memory (%d%%)\n", indexMemUsedKB, indexMemUsedKB * 100 / ( STATIC_INDEX_MEMORY / 1024 ) );
 	}

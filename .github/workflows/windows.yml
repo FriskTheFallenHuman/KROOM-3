@@ -79,6 +79,12 @@ jobs:
       - name: Build
         run: cmake --build build --parallel
 
+      - name: Check renderer modules
+        run: |
+          $binDir = if ('${{ matrix.arch }}' -eq 'x64') { 'bin/x86_64' } else { 'bin/x86' }
+          if (-not (Get-ChildItem "$binDir/ref_neo_opengl*.dll")) { throw "How the fuck this happened?" }
+          Get-ChildItem "$binDir/ref_neo_*.dll" | Select-Object Name, Length
+
       - name: sccache statistics
         if: always()
         run: sccache --show-stats

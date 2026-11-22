@@ -26,6 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
+
 #ifndef __RENDERLOG_H__
 #define __RENDERLOG_H__
 
@@ -72,6 +73,22 @@ enum renderLogIndentLabel_t
 
 // using this macro avoids printf parameter overhead if the renderlog isn't active
 #define RENDERLOG_PRINTF( ... ) if ( renderLog.activeLevel ) renderLog.Printf( __VA_ARGS__ );
+
+/*
+================================================================================================
+Performance Events abstraction layer for OpenGL, Vulkan, DX12
+see https://devblogs.nvidia.com/best-practices-gpu-performance-events/
+================================================================================================
+*/
+void PC_BeginNamedEvent( const char* szName, const idVec4& color = colorBlack );
+void PC_EndNamedEvent();
+
+// GPU timestamp queries around a main block
+void PC_BeginMainBlock( renderLogMainBlock_t block );
+void PC_EndMainBlock( renderLogMainBlock_t block );
+
+// free form marker string, ignored by backends without support
+void PC_LogMarker( const char* text );
 
 #if !defined( STUB_RENDER_LOG )
 
@@ -211,4 +228,4 @@ public:
 
 extern idRenderLog renderLog;
 
-#endif // !__RENDERLOG_H__
+#endif /* !__RENDERLOG_H__ */

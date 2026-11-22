@@ -31,6 +31,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "../../renderer/RenderCommon.h"
 #include "../../renderer/RenderContext.h"
+#include "../../renderer/RenderInternal.h"
 
 #include "MaterialPreviewView.h"
 #include "MaterialDocManager.h"
@@ -779,9 +780,6 @@ MaterialPreviewView::MaterialPreviewView( wxWindow* parent )
 	: wxPanel( parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE | wxWANTS_CHARS )
 	, m_repaintTimer( this )
 	, m_needsRepaint( false )
-	, m_fbo( 0 )
-	, m_colorTex( 0 )
-	, m_depthStencil( 0 )
 	, m_fboWidth( 0 )
 	, m_fboHeight( 0 )
 {
@@ -811,11 +809,7 @@ MaterialPreviewView::~MaterialPreviewView
 */
 MaterialPreviewView::~MaterialPreviewView()
 {
-	if( m_fbo || m_colorTex || m_depthStencil )
-	{
-		rRenderContext.MakeCurrent();
-		DestroyPreviewFBO();
-	}
+	DestroyPreviewFBO();
 }
 
 /*
@@ -825,40 +819,10 @@ MaterialPreviewView::EnsurePreviewFBO
 */
 void MaterialPreviewView::EnsurePreviewFBO( int w, int h )
 {
-	if( m_fbo && w == m_fboWidth && h == m_fboHeight )
+	if( w == m_fboWidth && h == m_fboHeight )
 	{
 		return;
 	}
-
-	if( !m_fbo )
-	{
-		glGenFramebuffers( 1, &m_fbo );
-		glGenTextures( 1, &m_colorTex );
-		glGenRenderbuffers( 1, &m_depthStencil );
-	}
-
-	glBindTexture( GL_TEXTURE_2D, m_colorTex );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-
-	glBindRenderbuffer( GL_RENDERBUFFER, m_depthStencil );
-	glRenderbufferStorage( GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, w, h );
-
-	glBindFramebuffer( GL_FRAMEBUFFER, m_fbo );
-	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_colorTex, 0 );
-	glFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_depthStencil );
-
-	const GLenum status = glCheckFramebufferStatus( GL_FRAMEBUFFER );
-	if( status != GL_FRAMEBUFFER_COMPLETE )
-	{
-		common->Warning( "MaterialPreviewView: FBO incomplete: 0x%x", status );
-	}
-
-	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-	glBindRenderbuffer( GL_RENDERBUFFER, 0 );
 
 	m_fboWidth  = w;
 	m_fboHeight = h;
@@ -875,26 +839,10 @@ MaterialPreviewView::DestroyPreviewFBO
 */
 void MaterialPreviewView::DestroyPreviewFBO()
 {
-	if( m_fbo )
-	{
-		glDeleteFramebuffers( 1, &m_fbo );
-		m_fbo = 0;
-	}
-
-	if( m_colorTex )
-	{
-		glDeleteTextures( 1, &m_colorTex );
-		m_colorTex = 0;
-	}
-
-	if( m_depthStencil )
-	{
-		glDeleteRenderbuffers( 1, &m_depthStencil );
-		m_depthStencil = 0;
-	}
-
 	m_fboWidth  = 0;
 	m_fboHeight = 0;
+
+	m_pixels.clear();
 }
 
 /*
@@ -938,32 +886,24 @@ void MaterialPreviewView::OnPaint( wxPaintEvent& /*event*/ )
 	rRenderContext.MakeCurrent();
 	EnsurePreviewFBO( w, h );
 
-	glBindFramebuffer( GL_FRAMEBUFFER, m_fbo );
-	glViewport( 0, 0, w, h );
-	glScissor( 0, 0, w, h );
-	glClearColor( 0.1f, 0.1f, 0.1f, 1.0f );
-	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
+	const float clearColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
 
-	Framebuffer::SetEditorDefaultFramebuffer( m_fbo );
+	if( !Render_EditorTargetBegin( w, h, clearColor ) )
+	{
+		s_inEditorRender = false;
+		return;
+	}
 
 	m_renderedView.renderToEngineFramebuffer( w, h );
 
-	Framebuffer::SetEditorDefaultFramebuffer( 0 );
-	glBindFramebuffer( GL_FRAMEBUFFER, m_fbo );
-
-	glReadBuffer( GL_COLOR_ATTACHMENT0 );
-	glPixelStorei( GL_PACK_ALIGNMENT, 1 );
-
-	glReadPixels( 0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, m_pixels.data() );
-
-	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+	Render_EditorTargetEnd( m_pixels.data() );
 
 	wxImage img( w, h );
 	unsigned char* dst = img.GetData();
 
 	for( int y = 0; y < h; ++y )
 	{
-		const unsigned char* srcRow = m_pixels.data() + size_t( h - 1 - y ) * size_t( w ) * 4u;
+		const unsigned char* srcRow = m_pixels.data() + size_t( y ) * size_t( w ) * 4u;
 		unsigned char* dstRow = dst + size_t( y ) * size_t( w ) * 3u;
 
 		for( int x = 0; x < w; ++x )

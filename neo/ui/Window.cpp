@@ -1422,19 +1422,19 @@ void idWindow::Redraw( float x, float y, bool hud )
 {
 	idStr str;
 
-	if( r_skipGuiShaders.GetInteger() == 1 || dc == NULL )
+	if( cvarSystem->GetCVarInteger( "r_skipGuiShaders" ) == 1 || dc == NULL )
 	{
 		return;
 	}
 
 	int time = gui->GetTime();
 
-	if( flags & WIN_DESKTOP && r_skipGuiShaders.GetInteger() != 3 )
+	if( flags & WIN_DESKTOP && cvarSystem->GetCVarInteger( "r_skipGuiShaders" ) != 3 )
 	{
 		RunTimeEvents( time );
 	}
 
-	if( r_skipGuiShaders.GetInteger() == 2 )
+	if( cvarSystem->GetCVarInteger( "r_skipGuiShaders" ) == 2 )
 	{
 		return;
 	}
@@ -1495,7 +1495,7 @@ void idWindow::Redraw( float x, float y, bool hud )
 		dc->PushClipRect( clientRect );
 	}
 
-	if( r_skipGuiShaders.GetInteger() < 5 )
+	if( cvarSystem->GetCVarInteger( "r_skipGuiShaders" ) < 5 )
 	{
 		Draw( time, x, y );
 	}

@@ -51,6 +51,11 @@ struct vidMode_t
 	}
 };
 
+const int GRAB_ENABLE		= BIT( 0 );
+const int GRAB_REENABLE		= BIT( 1 );
+const int GRAB_HIDECURSOR	= BIT( 2 );
+const int GRAB_SETSTATE		= BIT( 3 );
+
 struct vidParms_t
 {
 	int			x;				// ignored in fullscreen
@@ -107,6 +112,13 @@ public:
 
 	virtual int			GetNumVideoDisplays() = 0;
 	virtual void		DumpAllDisplayDevices() = 0;
+
+	virtual void*		GetWindow() = 0;					// SDL_Window*, NULL before Init()
+	virtual void		GrabInput( int flags ) = 0;			// GRAB_* flags
+	virtual void		SetWindowTitle( const char* title ) = 0;
+	virtual bool		SetTitleIcon( const char* OSPath ) = 0;
+	virtual bool		IsFullscreen() = 0;
+	virtual void		NotifyWindowResized( int width, int height ) = 0;
 };
 
 extern idDeviceManager* 		deviceManager;

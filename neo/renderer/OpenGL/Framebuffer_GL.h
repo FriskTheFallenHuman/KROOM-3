@@ -2,7 +2,7 @@
 ===========================================================================
 
 Doom 3 BFG Edition GPL Source Code
-Copyright (C) 2014-2020 Robert Beckebans
+Copyright (C) 2014-2016 Robert Beckebans
 
 This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").
 
@@ -26,56 +26,26 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "precompiled.h"
-#pragma hdrstop
+#ifndef __FRAMEBUFFER_GL_H__
+#define __FRAMEBUFFER_GL_H__
 
-#include "../RenderCommon.h"
 #include "../Framebuffer.h"
 
-void Framebuffer::Init()
+class FramebufferGL : public Framebuffer
 {
-	// TODO
-}
+public:
+	FramebufferGL( const char* name, int width, int height );
+	virtual			~FramebufferGL();
 
-void Framebuffer::Shutdown()
-{
-	// TODO
-}
+	virtual void	Bind();
 
-bool Framebuffer::IsDefaultFramebufferActive()
-{
-	// TODO
-	return true;
-}
+	virtual void	AttachImage2D( int target, const idImage* image, int index, int mipmapLod = 0 );
+	virtual void	AttachImageDepth( int target, const idImage* image );
+	virtual void	AttachImageDepthLayer( const idImage* image, int layer );
 
-Framebuffer* Framebuffer::GetActiveFramebuffer()
-{
-	// TODO
-	return NULL;
-}
+	virtual void	Check();
 
-void Framebuffer::Bind()
-{
-	// TODO
-}
+	virtual bool	ReadbackColorRGB16F( int w, int h, byte* rgb16f );
+};
 
-void Framebuffer::Unbind()
-{
-	// TODO
-}
-
-bool Framebuffer::IsBound()
-{
-	// TODO
-	return true;
-}
-
-void Framebuffer::Check()
-{
-	// TODO
-}
-
-void Framebuffer::CheckFramebuffers()
-{
-	// TODO
-}
+#endif /* !__FRAMEBUFFER_GL_H__ */

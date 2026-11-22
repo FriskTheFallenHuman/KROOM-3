@@ -30,6 +30,7 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "../../renderer/RenderCommon.h"
+#include "../../renderer/RenderInternal.h"
 
 #include "AboutDialog.h"
 
@@ -275,6 +276,9 @@ wxString AboutDialog::BuildRenderInfoText()
 {
 	wxString info;
 
+	glconfig_t glConfig;
+	Render_GetGLConfig( &glConfig );
+
 	auto row = []( const char* label, const wxString & value ) -> wxString
 	{
 		return wxString::Format( "%-20s %s\n", label, value.c_str() );
@@ -289,15 +293,31 @@ wxString AboutDialog::BuildRenderInfoText()
 	info << row( "OpenGL GLSL:",     wxString::Format( "%.1f", glslVersion ) );
 	info << "\n";
 
-	GLint numExtensions = 0;
-	glGetIntegerv( GL_NUM_EXTENSIONS, &numExtensions );
-
-	info << wxString::Format( "OpenGL Extensions (%d):\n", ( int )numExtensions );
-
-	for( GLint i = 0; i < numExtensions; i++ )
+	idStrList extensions;
+	if( glConfig.extensions_string != NULL )
 	{
-		info << "  " << ( const char* )glGetStringi( GL_EXTENSIONS, i );
-		if( i < numExtensions - 1 )
+		idStr extString = glConfig.extensions_string;
+		extString.Replace( "\n", " " );
+		int start = 0;
+		for( int i = 0; i <= extString.Length(); i++ )
+		{
+			if( i == extString.Length() || extString[ i ] == ' ' )
+			{
+				if( i > start )
+				{
+					extensions.Append( extString.Mid( start, i - start ) );
+				}
+				start = i + 1;
+			}
+		}
+	}
+
+	info << wxString::Format( "Extensions (%d):\n", extensions.Num() );
+
+	for( int i = 0; i < extensions.Num(); i++ )
+	{
+		info << "  " << extensions[ i ].c_str();
+		if( i < extensions.Num() - 1 )
 		{
 			info << "\n";
 		}

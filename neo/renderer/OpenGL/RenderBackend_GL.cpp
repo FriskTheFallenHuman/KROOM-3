@@ -45,7 +45,9 @@ If you have questions concerning this license or the applicable additional terms
 // SRS end
 
 #include "../RenderCommon.h"
+#include "RenderBackend_GL.h"
 #include "../RenderBackend.h"
+#include "BufferObject_GL.h"
 #include "../../framework/Common_local.h"
 
 idCVar r_drawFlickerBox( "r_drawFlickerBox", "0", CVAR_RENDERER | CVAR_BOOL, "visual test for dropping frames" );
@@ -120,10 +122,15 @@ bool GL_CheckErrors_( const char* filename, int line )
 	return error;
 }
 
-
-
-
-
+/*
+========================
+R_GetProjectionYSign
+========================
+*/
+float R_GetProjectionYSign()
+{
+	return 1.0f;
+}
 
 /*
 ========================
@@ -248,11 +255,12 @@ static void R_CheckPortableExtensions()
 	}
 	else
 	{
-		glConfig.multitextureAvailable = GLAD_GL_ARB_multisample != 0;
+		glConfig.multitextureAvailable = GLAD_GL_ARB_multitexture != 0;
 	}
 
 	// GL_EXT_direct_state_access
-	glConfig.directStateAccess = GLAD_GL_EXT_direct_state_access != 0;
+	glConfig.directStateAccess = GLAD_GL_EXT_direct_state_access != 0 && glad_glBindMultiTextureEXT != NULL;
+	R_PrintExtensionStatus( glConfig.directStateAccess, "GL_EXT_direct_state_access" );
 
 
 	// GL_ARB_texture_compression + GL_S3_s3tc
@@ -495,8 +503,8 @@ void idRenderBackend::Init()
 
 	R_SetNewMode( true );
 
-	// input and sound systems need to be tied to the new window
-	Sys_InitInput();
+	// notify the engine that the windows has been created.
+	renderHost->OnWindowCreated();
 
 	glConfig.forceShaderGeneration = false;
 
@@ -561,6 +569,9 @@ void idRenderBackend::Init()
 	// allocate the vertex array range or vertex objects
 	vertexCache.Init( glConfig.uniformBufferOffsetAlignment );
 
+	// allocate the index buffer range or index objects
+	glcontext.jointBufferRef = idUniformBuffer::Create();
+
 	// allocate the frame data, which may be more if smp is enabled
 	R_InitFrameData();
 
@@ -575,10 +586,43 @@ idRenderBackend::Shutdown
 */
 void idRenderBackend::Shutdown()
 {
+	delete glcontext.jointBufferRef;
+	glcontext.jointBufferRef = NULL;
+
 	if( deviceManager )
 	{
 		deviceManager->Shutdown();
 	}
+}
+
+/*
+=============
+GL_GetBufferName
+=============
+*/
+static ID_INLINE GLintptr GL_GetBufferName( const idVertexBuffer* buffer )
+{
+	return static_cast<const idVertexBufferGL*>( buffer )->GetAPIObject();
+}
+
+/*
+=============
+GL_GetBufferName
+=============
+*/
+static ID_INLINE GLintptr GL_GetBufferName( const idIndexBuffer* buffer )
+{
+	return static_cast<const idIndexBufferGL*>( buffer )->GetAPIObject();
+}
+
+/*
+=============
+GL_GetBufferName
+=============
+*/
+static ID_INLINE GLintptr GL_GetBufferName( const idUniformBuffer* buffer )
+{
+	return static_cast<const idUniformBufferGL*>( buffer )->GetAPIObject();
 }
 
 /*
@@ -593,7 +637,7 @@ void idRenderBackend::DrawElementsWithCounters( const drawSurf_t* surf )
 	idVertexBuffer* vertexBuffer;
 	if( vertexCache.CacheIsStatic( vbHandle ) )
 	{
-		vertexBuffer = &vertexCache.staticData.vertexBuffer;
+		vertexBuffer = vertexCache.staticData.vertexBuffer;
 	}
 	else
 	{
@@ -603,7 +647,7 @@ void idRenderBackend::DrawElementsWithCounters( const drawSurf_t* surf )
 			idLib::Warning( "RB_DrawElementsWithCounters, vertexBuffer == NULL" );
 			return;
 		}
-		vertexBuffer = &vertexCache.frameData[vertexCache.drawListNum].vertexBuffer;
+		vertexBuffer = vertexCache.frameData[vertexCache.drawListNum].vertexBuffer;
 	}
 	const int vertOffset = ( int )( vbHandle >> VERTCACHE_OFFSET_SHIFT ) & VERTCACHE_OFFSET_MASK;
 
@@ -612,7 +656,7 @@ void idRenderBackend::DrawElementsWithCounters( const drawSurf_t* surf )
 	idIndexBuffer* indexBuffer;
 	if( vertexCache.CacheIsStatic( ibHandle ) )
 	{
-		indexBuffer = &vertexCache.staticData.indexBuffer;
+		indexBuffer = vertexCache.staticData.indexBuffer;
 	}
 	else
 	{
@@ -622,7 +666,7 @@ void idRenderBackend::DrawElementsWithCounters( const drawSurf_t* surf )
 			idLib::Warning( "RB_DrawElementsWithCounters, indexBuffer == NULL" );
 			return;
 		}
-		indexBuffer = &vertexCache.frameData[vertexCache.drawListNum].indexBuffer;
+		indexBuffer = vertexCache.frameData[vertexCache.drawListNum].indexBuffer;
 	}
 	// RB: 64 bit fixes, changed int to GLintptr
 	const GLintptr indexOffset = ( GLintptr )( ibHandle >> VERTCACHE_OFFSET_SHIFT ) & VERTCACHE_OFFSET_MASK;
@@ -656,34 +700,33 @@ void idRenderBackend::DrawElementsWithCounters( const drawSurf_t* surf )
 
 	if( surf->jointCache )
 	{
-		idUniformBuffer jointBuffer;
-		if( !vertexCache.GetJointBuffer( surf->jointCache, &jointBuffer ) )
+		if( !vertexCache.GetJointBuffer( surf->jointCache, glcontext.jointBufferRef ) )
 		{
 			idLib::Warning( "RB_DrawElementsWithCounters, jointBuffer == NULL" );
 			return;
 		}
-		assert( ( jointBuffer.GetOffset() & ( glConfig.uniformBufferOffsetAlignment - 1 ) ) == 0 );
+		assert( ( glcontext.jointBufferRef->GetOffset() & ( glConfig.uniformBufferOffsetAlignment - 1 ) ) == 0 );
 
 		// RB: 64 bit fixes, changed GLuint to GLintptr
-		const GLintptr ubo = jointBuffer.GetAPIObject();
+		const GLintptr ubo = GL_GetBufferName( glcontext.jointBufferRef );
 		// RB end
 
-		glBindBufferRange( GL_UNIFORM_BUFFER, 0, ubo, jointBuffer.GetOffset(), jointBuffer.GetSize() );
+		glBindBufferRange( GL_UNIFORM_BUFFER, 0, ubo, glcontext.jointBufferRef->GetOffset(), glcontext.jointBufferRef->GetSize() );
 	}
 
 	renderProgManager.CommitUniforms( glStateBits );
 
 	// RB: 64 bit fixes, changed GLuint to GLintptr
-	if( currentIndexBuffer != ( GLintptr )indexBuffer->GetAPIObject() || !r_useStateCaching.GetBool() )
+	if( glcontext.currentIndexBuffer != ( GLintptr )GL_GetBufferName( indexBuffer ) || !r_useStateCaching.GetBool() )
 	{
-		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, ( GLintptr )indexBuffer->GetAPIObject() );
-		currentIndexBuffer = ( GLintptr )indexBuffer->GetAPIObject();
+		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, GL_GetBufferName( indexBuffer ) );
+		glcontext.currentIndexBuffer = ( GLintptr )GL_GetBufferName( indexBuffer );
 	}
 
-	if( ( vertexLayout != LAYOUT_DRAW_VERT ) || ( currentVertexBuffer != ( GLintptr )vertexBuffer->GetAPIObject() ) || !r_useStateCaching.GetBool() )
+	if( ( glcontext.vertexLayout != LAYOUT_DRAW_VERT ) || ( glcontext.currentVertexBuffer != ( GLintptr )GL_GetBufferName( vertexBuffer ) ) || !r_useStateCaching.GetBool() )
 	{
-		glBindBuffer( GL_ARRAY_BUFFER, ( GLintptr )vertexBuffer->GetAPIObject() );
-		currentVertexBuffer = ( GLintptr )vertexBuffer->GetAPIObject();
+		glBindBuffer( GL_ARRAY_BUFFER, GL_GetBufferName( vertexBuffer ) );
+		glcontext.currentVertexBuffer = ( GLintptr )GL_GetBufferName( vertexBuffer );
 
 		glEnableVertexAttribArray( PC_ATTRIB_INDEX_VERTEX );
 		glEnableVertexAttribArray( PC_ATTRIB_INDEX_NORMAL );
@@ -699,7 +742,7 @@ void idRenderBackend::DrawElementsWithCounters( const drawSurf_t* surf )
 		glVertexAttribPointer( PC_ATTRIB_INDEX_ST, 2, GL_HALF_FLOAT, GL_TRUE, sizeof( idDrawVert ), ( void* )( DRAWVERT_ST_OFFSET ) );
 		glVertexAttribPointer( PC_ATTRIB_INDEX_TANGENT, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof( idDrawVert ), ( void* )( DRAWVERT_TANGENT_OFFSET ) );
 
-		vertexLayout = LAYOUT_DRAW_VERT;
+		glcontext.vertexLayout = LAYOUT_DRAW_VERT;
 	}
 	// RB end
 
@@ -876,14 +919,14 @@ void idRenderBackend::GL_SetDefaultState()
 
 	// make sure our GL state vector is set correctly
 	memset( &glcontext.tmu, 0, sizeof( glcontext.tmu ) );
-	currenttmu = 0;
-	currentVertexBuffer = 0;
-	currentIndexBuffer = 0;
+	glcontext.currenttmu = 0;
+	glcontext.currentVertexBuffer = 0;
+	glcontext.currentIndexBuffer = 0;
 	currentFramebuffer = 0;
-	vertexLayout = LAYOUT_UNKNOWN;
-	polyOfsScale = 0.0f;
-	polyOfsBias = 0.0f;
-	polyOfsClamp = 0.0f;
+	glcontext.vertexLayout = LAYOUT_UNKNOWN;
+	glcontext.polyOfsScale = 0.0f;
+	glcontext.polyOfsBias = 0.0f;
+	glcontext.polyOfsClamp = 0.0f;
 	glStateBits = 0;
 
 	hdrAverageLuminance = 0;
@@ -1148,20 +1191,20 @@ void idRenderBackend::GL_State( uint64 stateBits, bool forceGlState )
 	{
 		if( stateBits & GLS_POLYGON_OFFSET )
 		{
-			if( glConfig.polygonOffsetClampAvailable && polyOfsClamp > 0.0f )
+			if( glConfig.polygonOffsetClampAvailable && glcontext.polyOfsClamp > 0.0f )
 			{
 				if( GLAD_GL_ARB_polygon_offset_clamp != 0 )
 				{
-					glPolygonOffsetClamp( polyOfsScale, polyOfsBias, polyOfsClamp );
+					glPolygonOffsetClamp( glcontext.polyOfsScale, glcontext.polyOfsBias, glcontext.polyOfsClamp );
 				}
 				else
 				{
-					glPolygonOffsetClampEXT( polyOfsScale, polyOfsBias, polyOfsClamp );
+					glPolygonOffsetClampEXT( glcontext.polyOfsScale, glcontext.polyOfsBias, glcontext.polyOfsClamp );
 				}
 			}
 			else
 			{
-				glPolygonOffset( polyOfsScale, polyOfsBias );
+				glPolygonOffset( glcontext.polyOfsScale, glcontext.polyOfsBias );
 			}
 			glEnable( GL_POLYGON_OFFSET_FILL );
 			glEnable( GL_POLYGON_OFFSET_LINE );
@@ -1322,7 +1365,7 @@ idRenderBackend::SelectTexture
 */
 void idRenderBackend::GL_SelectTexture( int unit )
 {
-	if( currenttmu == unit )
+	if( glcontext.currenttmu == unit )
 	{
 		return;
 	}
@@ -1335,7 +1378,7 @@ void idRenderBackend::GL_SelectTexture( int unit )
 
 	RENDERLOG_PRINTF( "GL_SelectTexture( %i );\n", unit );
 
-	currenttmu = unit;
+	glcontext.currenttmu = unit;
 }
 
 
@@ -1367,9 +1410,9 @@ idRenderBackend::GL_PolygonOffset
 */
 void idRenderBackend::GL_PolygonOffset( float scale, float bias, float clamp )
 {
-	polyOfsScale = scale;
-	polyOfsBias = bias;
-	polyOfsClamp = clamp;
+	glcontext.polyOfsScale = scale;
+	glcontext.polyOfsBias = bias;
+	glcontext.polyOfsClamp = clamp;
 
 	if( glStateBits & GLS_POLYGON_OFFSET )
 	{
@@ -1695,6 +1738,431 @@ void idRenderBackend::SetBuffer( const void* data )
 
 /*
 =============
+idRenderBackend::ExecuteBackEndCommandsTimed
+=============
+*/
+void idRenderBackend::ExecuteBackEndCommandsTimed( const emptyCommand_t* cmds )
+{
+// SRS - For OSX skip total rendering time query due to missing GL_TIMESTAMP support in Apple OpenGL 4.1, will calculate it inside ReadGPUTimers instead
+#if !defined(__APPLE__)
+	if( glConfig.timerQueryAvailable )
+	{
+		if( glcontext.renderLogMainBlockTimeQueryIds[ glcontext.frameParity ][ MRB_GPU_TIME ] == 0 )
+		{
+			glCreateQueries( GL_TIMESTAMP, 2, &glcontext.renderLogMainBlockTimeQueryIds[ glcontext.frameParity ][MRB_GPU_TIME ] );
+		}
+
+		glQueryCounter( glcontext.renderLogMainBlockTimeQueryIds[ glcontext.frameParity ][ MRB_GPU_TIME * 2 + 0 ], GL_TIMESTAMP );
+		ExecuteBackEndCommands( cmds );
+		glQueryCounter( glcontext.renderLogMainBlockTimeQueryIds[ glcontext.frameParity ][ MRB_GPU_TIME * 2 + 1 ], GL_TIMESTAMP );
+
+		glcontext.renderLogMainBlockTimeQueryIssued[ glcontext.frameParity ][ MRB_GPU_TIME * 2 + 1 ]++;
+
+		glFlush();
+
+		return;
+	}
+#endif
+
+	ExecuteBackEndCommands( cmds );
+}
+
+/*
+=============
+idRenderBackend::ReadGPUTimers
+
+reads back the start and end timer queries from the previous frame
+=============
+*/
+void idRenderBackend::ReadGPUTimers( uint64* gpuMicroSec )
+{
+	if( glConfig.timerQueryAvailable )
+	{
+		GLuint64EXT gpuStartNanoseconds = 0;
+		GLuint64EXT gpuEndNanoseconds = 0;
+
+		if( glcontext.renderLogMainBlockTimeQueryIssued[ glcontext.frameParity ^ 1 ][ MRB_GPU_TIME * 2 + 1 ] > 0 )
+		{
+			glGetQueryObjectui64vEXT( glcontext.renderLogMainBlockTimeQueryIds[ glcontext.frameParity ^ 1 ][ MRB_GPU_TIME * 2 + 0], GL_QUERY_RESULT, &gpuStartNanoseconds );
+			glGetQueryObjectui64vEXT( glcontext.renderLogMainBlockTimeQueryIds[ glcontext.frameParity ^ 1 ][ MRB_GPU_TIME * 2 + 1], GL_QUERY_RESULT, &gpuEndNanoseconds );
+
+			backEnd.pc.gpuMicroSec = ( gpuEndNanoseconds - gpuStartNanoseconds ) / 1000;
+
+			if( gpuMicroSec != NULL )
+			{
+				*gpuMicroSec = backEnd.pc.gpuMicroSec;
+			}
+		}
+
+		if( glcontext.renderLogMainBlockTimeQueryIssued[ glcontext.frameParity ^ 1 ][ MRB_FILL_DEPTH_BUFFER  * 2 + 1 ] > 0 )
+		{
+			glGetQueryObjectui64vEXT( glcontext.renderLogMainBlockTimeQueryIds[ glcontext.frameParity ^ 1 ][ MRB_FILL_DEPTH_BUFFER * 2 + 0], GL_QUERY_RESULT, &gpuStartNanoseconds );
+			glGetQueryObjectui64vEXT( glcontext.renderLogMainBlockTimeQueryIds[ glcontext.frameParity ^ 1 ][ MRB_FILL_DEPTH_BUFFER * 2 + 1], GL_QUERY_RESULT, &gpuEndNanoseconds );
+
+			backEnd.pc.gpuDepthMicroSec = ( gpuEndNanoseconds - gpuStartNanoseconds ) / 1000;
+		}
+
+		if( glcontext.renderLogMainBlockTimeQueryIssued[ glcontext.frameParity ^ 1 ][ MRB_SSAO_PASS  * 2 + 1 ] > 0 )
+		{
+			glGetQueryObjectui64vEXT( glcontext.renderLogMainBlockTimeQueryIds[ glcontext.frameParity ^ 1 ][ MRB_SSAO_PASS * 2 + 0], GL_QUERY_RESULT, &gpuStartNanoseconds );
+			glGetQueryObjectui64vEXT( glcontext.renderLogMainBlockTimeQueryIds[ glcontext.frameParity ^ 1 ][ MRB_SSAO_PASS * 2 + 1], GL_QUERY_RESULT, &gpuEndNanoseconds );
+
+			backEnd.pc.gpuScreenSpaceAmbientOcclusionMicroSec = ( gpuEndNanoseconds - gpuStartNanoseconds ) / 1000;
+		}
+
+		if( glcontext.renderLogMainBlockTimeQueryIssued[ glcontext.frameParity ^ 1 ][ MRB_AMBIENT_PASS  * 2 + 1 ] > 0 )
+		{
+			glGetQueryObjectui64vEXT( glcontext.renderLogMainBlockTimeQueryIds[ glcontext.frameParity ^ 1 ][ MRB_AMBIENT_PASS * 2 + 0], GL_QUERY_RESULT, &gpuStartNanoseconds );
+			glGetQueryObjectui64vEXT( glcontext.renderLogMainBlockTimeQueryIds[ glcontext.frameParity ^ 1 ][ MRB_AMBIENT_PASS * 2 + 1], GL_QUERY_RESULT, &gpuEndNanoseconds );
+
+			backEnd.pc.gpuAmbientPassMicroSec = ( gpuEndNanoseconds - gpuStartNanoseconds ) / 1000;
+		}
+
+		if( glcontext.renderLogMainBlockTimeQueryIssued[ glcontext.frameParity ^ 1 ][ MRB_DRAW_INTERACTIONS  * 2 + 1 ] > 0 )
+		{
+			glGetQueryObjectui64vEXT( glcontext.renderLogMainBlockTimeQueryIds[ glcontext.frameParity ^ 1 ][ MRB_DRAW_INTERACTIONS * 2 + 0], GL_QUERY_RESULT, &gpuStartNanoseconds );
+			glGetQueryObjectui64vEXT( glcontext.renderLogMainBlockTimeQueryIds[ glcontext.frameParity ^ 1 ][ MRB_DRAW_INTERACTIONS * 2 + 1], GL_QUERY_RESULT, &gpuEndNanoseconds );
+
+			backEnd.pc.gpuInteractionsMicroSec = ( gpuEndNanoseconds - gpuStartNanoseconds ) / 1000;
+		}
+
+		if( glcontext.renderLogMainBlockTimeQueryIssued[ glcontext.frameParity ^ 1 ][ MRB_DRAW_SHADER_PASSES  * 2 + 1 ] > 0 )
+		{
+			glGetQueryObjectui64vEXT( glcontext.renderLogMainBlockTimeQueryIds[ glcontext.frameParity ^ 1 ][ MRB_DRAW_SHADER_PASSES * 2 + 0], GL_QUERY_RESULT, &gpuStartNanoseconds );
+			glGetQueryObjectui64vEXT( glcontext.renderLogMainBlockTimeQueryIds[ glcontext.frameParity ^ 1 ][ MRB_DRAW_SHADER_PASSES * 2 + 1], GL_QUERY_RESULT, &gpuEndNanoseconds );
+
+			backEnd.pc.gpuShaderPassMicroSec = ( gpuEndNanoseconds - gpuStartNanoseconds ) / 1000;
+		}
+
+		if( glcontext.renderLogMainBlockTimeQueryIssued[ glcontext.frameParity ^ 1 ][ MRB_POSTPROCESS  * 2 + 1 ] > 0 )
+		{
+			glGetQueryObjectui64vEXT( glcontext.renderLogMainBlockTimeQueryIds[ glcontext.frameParity ^ 1 ][ MRB_POSTPROCESS * 2 + 0], GL_QUERY_RESULT, &gpuStartNanoseconds );
+			glGetQueryObjectui64vEXT( glcontext.renderLogMainBlockTimeQueryIds[ glcontext.frameParity ^ 1 ][ MRB_POSTPROCESS * 2 + 1], GL_QUERY_RESULT, &gpuEndNanoseconds );
+
+			backEnd.pc.gpuPostProcessingMicroSec = ( gpuEndNanoseconds - gpuStartNanoseconds ) / 1000;
+		}
+
+// SRS - For OSX OpenGL calculate total rendering time vs direct measurement due to missing GL_TIMESTAMP support in Apple OpenGL 4.1
+#if defined(__APPLE__)
+		// SRS - On OSX gpuMicroSec starts with only a portion of the GPU rendering time, must add additional components for more accurate estimate
+		backEnd.pc.gpuMicroSec += backEnd.pc.gpuDepthMicroSec + backEnd.pc.gpuScreenSpaceAmbientOcclusionMicroSec + backEnd.pc.gpuScreenSpaceReflectionsMicroSec + backEnd.pc.gpuAmbientPassMicroSec + backEnd.pc.gpuInteractionsMicroSec + backEnd.pc.gpuShaderPassMicroSec + backEnd.pc.gpuPostProcessingMicroSec;
+
+		// SRS - For OSX elapsed time queries, no need to perform unnecessary calls to glGetQueryObjectui64vEXT since gpuStartNanoseconds will always equal 0
+		if( glcontext.renderLogMainBlockTimeQueryIssued[ glcontext.frameParity ^ 1 ][ MRB_FILL_GEOMETRY_BUFFER  * 2 + 1 ] > 0 )
+		{
+			glGetQueryObjectui64vEXT( glcontext.renderLogMainBlockTimeQueryIds[ glcontext.frameParity ^ 1 ][ MRB_FILL_GEOMETRY_BUFFER * 2 + 1], GL_QUERY_RESULT, &gpuEndNanoseconds );
+
+			backEnd.pc.gpuMicroSec += gpuEndNanoseconds / 1000;
+		}
+
+		if( glcontext.renderLogMainBlockTimeQueryIssued[ glcontext.frameParity ^ 1 ][ MRB_FOG_ALL_LIGHTS  * 2 + 1 ] > 0 )
+		{
+			glGetQueryObjectui64vEXT( glcontext.renderLogMainBlockTimeQueryIds[ glcontext.frameParity ^ 1 ][ MRB_FOG_ALL_LIGHTS * 2 + 1], GL_QUERY_RESULT, &gpuEndNanoseconds );
+
+			backEnd.pc.gpuMicroSec += gpuEndNanoseconds / 1000;
+		}
+
+		if( glcontext.renderLogMainBlockTimeQueryIssued[ glcontext.frameParity ^ 1 ][ MRB_DRAW_SHADER_PASSES_POST  * 2 + 1 ] > 0 )
+		{
+			glGetQueryObjectui64vEXT( glcontext.renderLogMainBlockTimeQueryIds[ glcontext.frameParity ^ 1 ][ MRB_DRAW_SHADER_PASSES_POST * 2 + 1], GL_QUERY_RESULT, &gpuEndNanoseconds );
+
+			backEnd.pc.gpuMicroSec += gpuEndNanoseconds / 1000;
+		}
+
+		if( glcontext.renderLogMainBlockTimeQueryIssued[ glcontext.frameParity ^ 1 ][ MRB_DRAW_DEBUG_TOOLS  * 2 + 1 ] > 0 )
+		{
+			glGetQueryObjectui64vEXT( glcontext.renderLogMainBlockTimeQueryIds[ glcontext.frameParity ^ 1 ][ MRB_DRAW_DEBUG_TOOLS * 2 + 1], GL_QUERY_RESULT, &gpuEndNanoseconds );
+
+			backEnd.pc.gpuMicroSec += gpuEndNanoseconds / 1000;
+		}
+
+		if( glcontext.renderLogMainBlockTimeQueryIssued[ glcontext.frameParity ^ 1 ][ MRB_DRAW_GUI  * 2 + 1 ] > 0 )
+		{
+			glGetQueryObjectui64vEXT( glcontext.renderLogMainBlockTimeQueryIds[ glcontext.frameParity ^ 1 ][ MRB_DRAW_GUI * 2 + 1], GL_QUERY_RESULT, &gpuEndNanoseconds );
+
+			backEnd.pc.gpuMicroSec += gpuEndNanoseconds / 1000;
+		}
+
+		if( gpuMicroSec != NULL )
+		{
+			*gpuMicroSec = backEnd.pc.gpuMicroSec;
+		}
+#endif
+
+		for( int i = 0; i < MRB_TOTAL_QUERIES; i++ )
+		{
+			glcontext.renderLogMainBlockTimeQueryIssued[ glcontext.frameParity ^ 1 ][ i ] = 0;
+		}
+	}
+}
+
+/*
+=============
+idRenderBackend::RequestScreenCapture
+=============
+*/
+void idRenderBackend::RequestScreenCapture()
+{
+	// OpenGL reads the back buffer directly
+}
+
+/*
+=============
+idRenderBackend::WriteScreenCaptureTGA
+=============
+*/
+bool idRenderBackend::WriteScreenCaptureTGA( const char* fileName, const idScreenRect& rc )
+{
+	glReadBuffer( GL_BACK );
+
+	// include extra space for OpenGL padding to word boundaries
+	int	c = ( rc.GetWidth() + 3 ) * rc.GetHeight();
+	byte* data = ( byte* )R_StaticAlloc( c * 3 );
+
+	glReadPixels( rc.x1, rc.y1, rc.GetWidth(), rc.GetHeight(), GL_RGB, GL_UNSIGNED_BYTE, data );
+
+	byte* data2 = ( byte* )R_StaticAlloc( c * 4 );
+
+	for( int i = 0 ; i < c ; i++ )
+	{
+		data2[ i * 4 ] = data[ i * 3 ];
+		data2[ i * 4 + 1 ] = data[ i * 3 + 1 ];
+		data2[ i * 4 + 2 ] = data[ i * 3 + 2 ];
+		data2[ i * 4 + 3 ] = 0xff;
+	}
+
+	R_WriteTGA( fileName, data2, rc.GetWidth(), rc.GetHeight(), true );
+
+	R_StaticFree( data );
+	R_StaticFree( data2 );
+
+	return true;
+}
+
+/*
+=============
+idRenderBackend::BindGlobalVertexArray
+=============
+*/
+void idRenderBackend::BindGlobalVertexArray()
+{
+	glBindVertexArray( glConfig.global_vao );
+}
+
+bool idRenderBackend::CanCopyDepthForSoftParticles( bool useHDR ) const
+{
+	return true;
+}
+
+void idRenderBackend::ClearColorBlack()
+{
+	glClearColor( 0, 0, 0, 1 );
+	glClear( GL_COLOR_BUFFER_BIT );
+}
+
+void idRenderBackend::ClearDepthForShadowPass()
+{
+	glClear( GL_DEPTH_BUFFER_BIT );
+}
+
+void idRenderBackend::ApplyShadowClipSpace( idRenderMatrix& projection, int kind )
+{
+	// the OpenGL clip space is what the shadow matrices are built for
+}
+
+bool idRenderBackend::ReadbackHDR64( float* image )
+{
+	glReadPixels( 0, 0, 64, 64, GL_RGBA, GL_FLOAT, image );
+	return true;
+}
+
+void idRenderBackend::BlitHDRTo64()
+{
+	glBindFramebuffer( GL_READ_FRAMEBUFFER_EXT, globalFramebuffers.hdrFBO->GetFramebuffer() );
+	glBindFramebuffer( GL_DRAW_FRAMEBUFFER_EXT, globalFramebuffers.hdr64FBO->GetFramebuffer() );
+	glBlitFramebuffer( 0, 0, renderSystem->GetWidth(), renderSystem->GetHeight(),
+					   0, 0, 64, 64,
+					   GL_COLOR_BUFFER_BIT,
+					   GL_LINEAR );
+}
+
+/*
+=============
+idRenderBackend::ReadTiledPixels
+=============
+*/
+void idRenderBackend::ReadTiledPixels( int width, int height, byte* buffer, renderView_t* ref )
+{
+	// FIXME
+
+	// include extra space for OpenGL padding to word boundaries
+	int sysWidth = renderSystem->GetWidth();
+	int sysHeight = renderSystem->GetHeight();
+
+	byte* temp = NULL;
+	if( ref && ref->rdflags & RDF_IRRADIANCE )
+	{
+		// * 2 = sizeof( half float )
+		//temp = ( byte* )R_StaticAlloc( ENVPROBE_CAPTURE_SIZE * ENVPROBE_CAPTURE_SIZE * 3 * 2 );
+	}
+	else
+	{
+		temp = ( byte* )R_StaticAlloc( ( sysWidth + 3 ) * sysHeight * 3 );
+	}
+
+	// foresthale 2014-03-01: fixed custom screenshot resolution by doing a more direct render path
+#ifdef BUGFIXEDSCREENSHOTRESOLUTION
+	if( sysWidth > width )
+	{
+		sysWidth = width;
+	}
+
+	if( sysHeight > height )
+	{
+		sysHeight = height;
+	}
+
+	// make sure the game / draw thread has completed
+	renderHost->WaitGameThread();
+
+	// discard anything currently on the list
+	tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
+
+	int originalNativeWidth = glConfig.nativeScreenWidth;
+	int originalNativeHeight = glConfig.nativeScreenHeight;
+
+	//if( !ref || ( ref && !( ref->rdflags & RDF_IRRADIANCE ) ) )
+	{
+		glConfig.nativeScreenWidth = sysWidth;
+		glConfig.nativeScreenHeight = sysHeight;
+	}
+#endif
+
+	// disable scissor, so we don't need to adjust all those rects
+	r_useScissor.SetBool( false );
+
+	for( int xo = 0 ; xo < width ; xo += sysWidth )
+	{
+		for( int yo = 0 ; yo < height ; yo += sysHeight )
+		{
+			// foresthale 2014-03-01: fixed custom screenshot resolution by doing a more direct render path
+#ifdef BUGFIXEDSCREENSHOTRESOLUTION
+			// discard anything currently on the list
+			tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
+			if( ref )
+			{
+				// ref is only used by envShot, Event_camShot, etc to grab screenshots of things in the world,
+				// so this omits the hud and other effects
+				tr.primaryWorld->RenderScene( ref );
+			}
+			else
+			{
+				// build all the draw commands without running a new game tic
+				renderHost->DrawGameFrame();
+			}
+			// this should exit right after vsync, with the GPU idle and ready to draw
+			const emptyCommand_t* cmd = tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
+
+			// get the GPU busy with new commands
+			tr.RenderCommandBuffers( cmd );
+
+			// discard anything currently on the list (this triggers SwapBuffers)
+			tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
+#else
+			// foresthale 2014-03-01: note: ref is always NULL in every call path to this function
+			if( ref )
+			{
+				// discard anything currently on the list
+				tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
+
+				// build commands to render the scene
+				tr.primaryWorld->RenderScene( ref );
+
+				// finish off these commands
+				const emptyCommand_t* cmd = tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
+
+				// issue the commands to the GPU
+				tr.RenderCommandBuffers( cmd );
+			}
+			else
+			{
+				const bool captureToImage = false;
+				common->UpdateScreen( captureToImage, false );
+			}
+#endif
+
+			int w = sysWidth;
+			if( xo + w > width )
+			{
+				w = width - xo;
+			}
+			int h = sysHeight;
+			if( yo + h > height )
+			{
+				h = height - yo;
+			}
+
+			if( ref && ref->rdflags & RDF_IRRADIANCE )
+			{
+				globalFramebuffers.envprobeFBO->Bind();
+
+				glPixelStorei( GL_PACK_ROW_LENGTH, ENVPROBE_CAPTURE_SIZE );
+				glReadPixels( 0, 0, w, h, GL_RGB, GL_HALF_FLOAT, buffer );
+
+				R_VerticalFlipRGB16F( buffer, w, h );
+
+				Framebuffer::Unbind();
+			}
+			else
+			{
+				glReadBuffer( GL_FRONT );
+				glReadPixels( 0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, temp );
+
+				int	row = ( w * 3 + 3 ) & ~3;		// OpenGL pads to dword boundaries
+
+				for( int y = 0 ; y < h ; y++ )
+				{
+					memcpy( buffer + ( ( yo + y )* width + xo ) * 3,
+							temp + y * row, w * 3 );
+				}
+			}
+		}
+	}
+
+	// foresthale 2014-03-01: fixed custom screenshot resolution by doing a more direct render path
+#ifdef BUGFIXEDSCREENSHOTRESOLUTION
+	// discard anything currently on the list
+	tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
+
+	if( !ref || ( ref && !( ref->rdflags & RDF_IRRADIANCE ) ) )
+	{
+		glConfig.nativeScreenWidth = originalNativeWidth;
+		glConfig.nativeScreenHeight = originalNativeHeight;
+	}
+#endif
+
+	r_useScissor.SetBool( true );
+
+	R_StaticFree( temp );
+}
+
+// the first interaction cube map slot, Vulkan has a smaller sampler table
+const int RB_InteractionCubeTexUnitBase = 7;
+
+const rendererAPIDefaults_t rendererAPIDefaults =
+{
+	"0",				// r_skipPostProcess
+	1.0f,				// r_forceAmbient max
+	CVAR_ARCHIVE		// r_useSSAO
+};
+
+const char* R_API_Name()
+{
+	return "OpenGL";
+}
+
+/*
+=============
 idRenderBackend::idRenderBackend
 =============
 */
@@ -1708,6 +2176,15 @@ idRenderBackend::idRenderBackend()
 
 	memset( glcontext.renderLogMainBlockTimeQueryIds, 0, sizeof( glcontext.renderLogMainBlockTimeQueryIds ) );
 	memset( glcontext.renderLogMainBlockTimeQueryIssued, 0, sizeof( glcontext.renderLogMainBlockTimeQueryIssued ) );
+
+	glcontext.currenttmu = 0;
+	glcontext.currentVertexBuffer = 0;
+	glcontext.currentIndexBuffer = 0;
+	glcontext.vertexLayout = LAYOUT_DRAW_VERT;
+	glcontext.polyOfsScale = 0.0f;
+	glcontext.polyOfsBias = 0.0f;
+	glcontext.polyOfsClamp = 0.0f;
+	glcontext.jointBufferRef = NULL;
 }
 
 /*

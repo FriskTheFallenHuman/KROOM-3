@@ -34,7 +34,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "Window.h"
 #include "UserInterfaceLocal.h"
 
-extern idCVar r_skipGuiShaders;		// 1 = don't render any gui elements on surfaces
 
 idUserInterfaceManagerLocal	uiManagerLocal;
 idUserInterfaceManager* 	uiManager = &uiManagerLocal;
@@ -561,7 +560,7 @@ void idUserInterfaceLocal::HandleNamedEvent( const char* eventName )
 
 void idUserInterfaceLocal::Redraw( int _time, bool hud )
 {
-	if( r_skipGuiShaders.GetInteger() > 5 )
+	if( cvarSystem->GetCVarInteger( "r_skipGuiShaders" ) > 5 )
 	{
 		return;
 	}

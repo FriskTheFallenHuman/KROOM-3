@@ -30,13 +30,8 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "RenderCommon.h"
-
+#include "RenderDLLHost.h"
 #include "CinematicFFMPEG.h"
-
-#include "../sound/OpenAL/AL_CinematicAudio.h"
-
-extern idCVar s_noSound;
-extern idCVar s_playCinematicAudio;
 
 const int DEFAULT_CIN_WIDTH = 512;
 const int DEFAULT_CIN_HEIGHT = 512;
@@ -298,8 +293,11 @@ bool idCinematicFFMPEG::InitFromFFMPEGFile( const char* qpath, bool amilooping )
 #endif
 						 GetSampleFormat( dec_ctx2->sample_fmt ), hasplanar );
 
-		cinematicAudio = new( TAG_AUDIO ) CinematicAudio_OpenAL( false );
-		cinematicAudio->InitAudio( dec_ctx2 );
+		cinematicAudio = renderHost->CreateCinematicAudio( false );
+		if( cinematicAudio != NULL )
+		{
+			cinematicAudio->InitAudio( dec_ctx2 );
+		}
 	}
 
 	CIN_WIDTH = dec_ctx->width;

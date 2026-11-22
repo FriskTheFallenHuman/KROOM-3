@@ -34,6 +34,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "../renderer/RenderCommon.h"
 #include "../renderer/Font.h"
 #include "Common_local.h"
+#include "RenderLoader.h"
 
 #define CON_MAX_LINES			4096
 #define	NUM_CON_TIMES			4
@@ -188,6 +189,10 @@ static idFont* Con_GetFont()
 // back into BFG's virtual surface so glyphs retain the font atlas aspect.
 static float Con_LogicalScreenWidth()
 {
+	if( renderSystem == NULL )
+	{
+		return static_cast<float>( SCREEN_WIDTH );
+	}
 	const int renderWidth = renderSystem->GetWidth();
 	const int renderHeight = renderSystem->GetHeight();
 	if( renderWidth <= 0 || renderHeight <= 0 )
@@ -453,13 +458,8 @@ float idConsoleLocal::DrawFPS( float y )
 	const uint64 totalCPUTime = ( com_smp.GetInteger() > 0 && com_editors == 0 ? Max( gameThreadTotalTime, rendererBackEndTime ) : gameThreadTotalTime + rendererBackEndTime );
 	const uint64 totalFrameTime = ( com_smp.GetInteger() > 0 && com_editors == 0 ? Max( gameThreadTotalTime, rendererEndFrameSyncTime ) : gameThreadTotalTime + rendererEndFrameSyncTime ) + rendererStartFrameSyncTime;
 
-#if defined( USE_VULKAN )
-	const char* API = "Vulkan";
-#else
-	const char* API = "OpenGL";
-#endif
+	const char* API = R_GetRendererAPIName();
 
-	extern idCVar r_antiAliasing;
 	static const int aaNumValues = 5;
 	static const char* aaValues[aaNumValues] =
 	{
@@ -472,7 +472,7 @@ float idConsoleLocal::DrawFPS( float y )
 
 	compile_time_assert( aaNumValues == ( ANTI_ALIASING_MSAA_8X + 1 ) );
 
-	const char* aaMode = aaValues[ r_antiAliasing.GetInteger() ];
+	const char* aaMode = aaValues[ cvarSystem->GetCVarInteger( "r_antiAliasing" ) ];
 
 	int width = renderSystem->GetWidth();
 	int height = renderSystem->GetHeight();

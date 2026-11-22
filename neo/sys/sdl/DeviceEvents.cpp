@@ -41,16 +41,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include <SDL2/SDL.h>
 
-#include "renderer/RenderCommon.h"
 #include "DeviceSDL.h"
-#include "DeviceManagerLocal.h"
-
-// DG: those are needed for moving/resizing windows
-extern idCVar r_windowX;
-extern idCVar r_windowY;
-extern idCVar r_windowWidth;
-extern idCVar r_windowHeight;
-// DG end
 
 const char* kbdNames[] =
 {
@@ -283,10 +274,9 @@ void Sys_GrabMouseCursor( bool grabIt )
 		flags = GRAB_SETSTATE;
 	}
 
-	idDeviceManagerLocal* device = dynamic_cast<idDeviceManagerLocal*>( deviceManager );
-	if( device )
+	if( deviceManager )
 	{
-		device->GrabInput( flags );
+		deviceManager->GrabInput( flags );
 	}
 }
 
@@ -404,13 +394,9 @@ sysEvent_t Sys_GetEvent()
 						int w = ev.window.data1;
 						int h = ev.window.data2;
 
-						glConfig.nativeScreenWidth = w;
-						glConfig.nativeScreenHeight = h;
-
-						if( glConfig.isFullscreen <= 0 )
+						if( deviceManager )
 						{
-							r_windowWidth.SetInteger( w );
-							r_windowHeight.SetInteger( h );
+							deviceManager->NotifyWindowResized( w, h );
 						}
 						break;
 					}
@@ -420,10 +406,10 @@ sysEvent_t Sys_GetEvent()
 						int x = ev.window.data1;
 						int y = ev.window.data2;
 
-						if( glConfig.isFullscreen <= 0 )
+						if( deviceManager && !deviceManager->IsFullscreen() )
 						{
-							r_windowX.SetInteger( x );
-							r_windowY.SetInteger( y );
+							cvarSystem->SetCVarInteger( "r_windowX", x );
+							cvarSystem->SetCVarInteger( "r_windowY", y );
 						}
 						break;
 					}

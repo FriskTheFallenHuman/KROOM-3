@@ -33,7 +33,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "RenderCommon.h"
 #include "CmdlineProgressbar.h"
-#include "../framework/Common_local.h" // commonLocal.WaitGameThread();
+#include "../framework/Common_local.h" // renderHost->WaitGameThread();
 
 
 #define LGRID_FILE_EXT			"lightgrid"
@@ -1205,7 +1205,7 @@ CONSOLE_COMMAND( bakeLightGrids, "Bake irradiance/vis light grid data", NULL )
 			//--------------------------------------------
 
 			// make sure the game / draw thread has completed
-			commonLocal.WaitGameThread();
+			renderHost->WaitGameThread();
 
 			glConfig.nativeScreenWidth = captureSize;
 			glConfig.nativeScreenHeight = captureSize;
@@ -1289,27 +1289,14 @@ CONSOLE_COMMAND( bakeLightGrids, "Bake irradiance/vis light grid data", NULL )
 							// discard anything currently on the list (this triggers SwapBuffers)
 							tr.SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
 
-#if defined(USE_VULKAN)
-
-							// TODO
-
-#else
-
-							glFinish();
-
-							glReadBuffer( GL_BACK );
-
-							globalFramebuffers.envprobeFBO->Bind();
-
-							glPixelStorei( GL_PACK_ROW_LENGTH, captureSize );
-							glReadPixels( 0, 0, captureSize, captureSize, GL_RGB, GL_HALF_FLOAT, float16FRGB );
-
-							R_VerticalFlipRGB16F( float16FRGB, captureSize, captureSize );
-
-							Framebuffer::Unbind();
+							// the readback returns the image top to bottom
+							if( !globalFramebuffers.envprobeFBO->ReadbackColorRGB16F( captureSize, captureSize, float16FRGB ) )
+							{
+								common->Warning( "lightgrid capture readback failed" );
+								memset( float16FRGB, 0, bufferSize );
+							}
 #endif
 
-#endif
 
 							jobParms->radiance[ side ] = float16FRGB;
 						}

@@ -28,6 +28,7 @@ If you have questions concerning this license or the applicable additional terms
 */
 
 #include "../../../renderer/RenderCommon.h"
+#include "../../../renderer/RenderInternal.h"
 
 
 typedef struct primitive_s
@@ -211,7 +212,7 @@ typedef struct mapSurface_s
 
 typedef struct
 {
-	idRenderLightLocal	def;
+	idRenderLightLocal*	def;				// allocated by the renderer module (R_AllocLightDef)
 	char				name[MAX_QPATH];		// for naming the occluder model (_occluder_<name>)
 
 	idPlane				frustumPlanes[6];		// RB: should be calculated after R_DeriveLightData()

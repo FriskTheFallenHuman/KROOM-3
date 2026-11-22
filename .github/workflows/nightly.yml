@@ -61,7 +61,7 @@ jobs:
             echo "**Use \`sse2\` if unsure the engine still picks AVX/AVX2 at runtime if supported.**"
             echo "The other levels compile the whole engine for that instruction set and refuse to start on older CPUs."
             echo
-            echo "These archives contain the engine, the game library and the \`platform\` folder only."
+            echo "These archives contain the engine, the renderer module (\`ref_neo_opengl\`), the game library and the \`platform\` folder only."
             echo "The Doom 3 BFG Edition \`base\` game data is **not** included and must come from your own copy of the game."
             echo
             echo "This release is replaced by the next nightly and is deleted automatically, together with its tag."

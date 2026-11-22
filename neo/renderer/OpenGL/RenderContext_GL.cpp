@@ -65,3 +65,23 @@ void idRenderContext::Disable()
 {
 	SDL_GL_MakeCurrent( NULL, NULL );
 }
+
+/*
+==================
+R_API_MakeContextCurrent
+==================
+*/
+void R_API_MakeContextCurrent()
+{
+	rRenderContext.MakeCurrent();
+}
+
+/*
+==================
+R_API_DisableContext
+==================
+*/
+void R_API_DisableContext()
+{
+	rRenderContext.Disable();
+}

@@ -608,6 +608,7 @@ void idCommonLocal::Frame()
 		{
 			rRenderContext.MakeCurrent();
 
+#ifdef ID_ALLOW_TOOLS
 			if( com_editors & EDITOR_MATERIAL )
 			{
 				//BSM Nerve: Add support for the material editor
@@ -619,6 +620,7 @@ void idCommonLocal::Frame()
 				// GUI editor
 				GUIEditorRun();
 			}
+#endif
 		}
 
 		// foresthale 2014-05-12: also check com_editors as many of them are not particularly thread-safe (editLights for example)

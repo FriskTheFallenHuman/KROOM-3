@@ -35,7 +35,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "CinematicBink.h"
 #include "CinematicRoQ.h"
 
-extern idCVar s_noSound;
 
 /*
 ==============

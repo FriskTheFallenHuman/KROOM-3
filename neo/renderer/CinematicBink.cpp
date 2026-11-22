@@ -32,13 +32,8 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "RenderCommon.h"
-
+#include "RenderDLLHost.h"
 #include "CinematicBink.h"
-
-#include "../sound/OpenAL/AL_CinematicAudio.h"
-
-extern idCVar s_noSound;
-extern idCVar s_playCinematicAudio;
 
 const int DEFAULT_CIN_WIDTH = 512;
 const int DEFAULT_CIN_HEIGHT = 512;
@@ -165,13 +160,16 @@ bool idCinematicBink::InitFromBinkDecFile( const char* qpath, bool amilooping )
 	}
 
 	audioTracks = Bink_GetNumAudioTracks( binkHandle );
-	if( audioTracks > 0 && s_playCinematicAudio.GetBool() )
+	if( audioTracks > 0 && cvarSystem->GetCVarBool( "s_playCinematicAudio" ) )
 	{
 		trackIndex = 0;
 		binkInfo = Bink_GetAudioTrackDetails( binkHandle, trackIndex );
 		common->DPrintf( "Cinematic audio stream found: Sample Rate=%d Hz, Channels=%d, Format=16-bit\n", binkInfo.sampleRate, binkInfo.nChannels );
-		cinematicAudio = new( TAG_AUDIO ) CinematicAudio_OpenAL( true );
-		cinematicAudio->InitAudio( &binkInfo );
+		cinematicAudio = renderHost->CreateCinematicAudio( true );
+		if( cinematicAudio != NULL )
+		{
+			cinematicAudio->InitAudio( &binkInfo );
+		}
 	}
 
 	frameRate = Bink_GetFrameRate( binkHandle );
@@ -420,20 +418,23 @@ cinData_t idCinematicBink::ImageForTimeBinkDec( int thisTime )
 		}
 		else if( h < CIN_HEIGHT )
 		{
-#if defined(__APPLE__) && defined(USE_VULKAN)
-			// SRS - For U and V channels on OSX Vulkan use full height image to work around stall that occurs with half-height chroma planes
-			// when exiting levels or returning from demo playback - depends on OSX-specific logic inside Vulkan version of SubImageUpload()
-			h = CIN_HEIGHT;
-#else
-			// the U and V channels have a lower resolution than the Y channel
-			// (or the logical video resolution), so use the aspect ratio to
-			// calculate the real height
-			int hExp = invAspRat * w + 0.5;
-			if( h > hExp )
+			if( R_UsesAppleVulkanWorkarounds() )
 			{
-				h = hExp;
+				// SRS - For U and V channels on OSX Vulkan use full height image to work around stall that occurs with half-height chroma planes
+				// when exiting levels or returning from demo playback - depends on OSX-specific logic inside Vulkan version of SubImageUpload()
+				h = CIN_HEIGHT;
 			}
-#endif
+			else
+			{
+				// the U and V channels have a lower resolution than the Y channel
+				// (or the logical video resolution), so use the aspect ratio to
+				// calculate the real height
+				int hExp = invAspRat * w + 0.5;
+				if( h > hExp )
+				{
+					h = hExp;
+				}
+			}
 		}
 
 		if( img->GetUploadWidth() != w || img->GetUploadHeight() != h )

@@ -96,15 +96,18 @@ enum cacheType_t
 
 struct geoBufferSet_t
 {
-	idIndexBuffer			indexBuffer;
-	idVertexBuffer			vertexBuffer;
-	idUniformBuffer			jointBuffer;
+	idIndexBuffer*			indexBuffer;
+	idVertexBuffer*			vertexBuffer;
+	idUniformBuffer*		jointBuffer;
+
 	byte* 					mappedVertexBase;
 	byte* 					mappedIndexBase;
 	byte* 					mappedJointBase;
+
 	idSysInterlockedInteger	indexMemUsed;
 	idSysInterlockedInteger	vertexMemUsed;
 	idSysInterlockedInteger	jointMemUsed;
+
 	int						allocations;	// number of index and vertex allocations combined
 };
 

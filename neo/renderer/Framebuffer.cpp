@@ -33,11 +33,58 @@ If you have questions concerning this license or the applicable additional terms
 #include "Framebuffer.h"
 
 idList<Framebuffer*>	Framebuffer::framebuffers;
-
 globalFramebuffers_t globalFramebuffers;
 
+/*
+================
+Framebuffer::Framebuffer
+================
+*/
+Framebuffer::Framebuffer( const char* name, int w, int h )
+{
+	fboName = name;
+	frameBuffer = 0;
+	width = w;
+	height = h;
 
+	framebuffers.Append( this );
+}
 
+/*
+================
+Framebuffer::~Framebuffer
+================
+*/
+Framebuffer::~Framebuffer()
+{
+}
 
+/*
+================
+Framebuffer::IsBound
+================
+*/
+bool Framebuffer::IsBound()
+{
+	return ( backEnd.currentFramebuffer == this );
+}
 
+/*
+================
+Framebuffer::IsDefaultFramebufferActive
+================
+*/
+bool Framebuffer::IsDefaultFramebufferActive()
+{
+	return ( backEnd.currentFramebuffer == NULL );
+}
 
+/*
+================
+Framebuffer::GetActiveFramebuffer
+================
+*/
+Framebuffer* Framebuffer::GetActiveFramebuffer()
+{
+	return backEnd.currentFramebuffer;
+}

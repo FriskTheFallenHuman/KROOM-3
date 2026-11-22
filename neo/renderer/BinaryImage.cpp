@@ -62,7 +62,7 @@ void idBinaryImage::Load2DFromMemory( int width, int height, const byte* pic_con
 	fileData.height = height;
 	fileData.numLevels = numLevels;
 
-	commonLocal.LoadPacifierBinarizeInfo( va( "(%d x %d)", width, height ) );
+	common->LoadPacifierBinarizeInfo( va( "(%d x %d)", width, height ) );
 
 	byte* pic = ( byte* )Mem_Alloc( width * height * 4, TAG_TEMP );
 	memcpy( pic, pic_const, width * height * 4 );
@@ -103,7 +103,7 @@ void idBinaryImage::Load2DFromMemory( int width, int height, const byte* pic_con
 	{
 		idBinaryImageData& img = images[ level ];
 
-		commonLocal.LoadPacifierBinarizeMiplevel( level + 1, numLevels );
+		common->LoadPacifierBinarizeMiplevel( level + 1, numLevels );
 
 		// Images that are going to be DXT compressed and aren't multiples of 4 need to be
 		// padded out before compressing.
@@ -142,13 +142,13 @@ void idBinaryImage::Load2DFromMemory( int width, int height, const byte* pic_con
 			img.Alloc( dxtWidth * dxtHeight / 2 );
 			if( image_highQualityCompression.GetBool() )
 			{
-				commonLocal.LoadPacifierBinarizeInfo( va( "(%d x %d) - DXT1HQ", width, height ) );
+				common->LoadPacifierBinarizeInfo( va( "(%d x %d) - DXT1HQ", width, height ) );
 
 				dxt.CompressImageDXT1HQ( dxtPic, img.data, dxtWidth, dxtHeight );
 			}
 			else
 			{
-				commonLocal.LoadPacifierBinarizeInfo( va( "(%d x %d) - DXT1Fast", width, height ) );
+				common->LoadPacifierBinarizeInfo( va( "(%d x %d) - DXT1Fast", width, height ) );
 
 				dxt.CompressImageDXT1Fast( dxtPic, img.data, dxtWidth, dxtHeight );
 			}
@@ -161,13 +161,13 @@ void idBinaryImage::Load2DFromMemory( int width, int height, const byte* pic_con
 			{
 				if( image_highQualityCompression.GetBool() )
 				{
-					commonLocal.LoadPacifierBinarizeInfo( va( "(%d x %d) - NormalMapDXT5HQ", width, height ) );
+					common->LoadPacifierBinarizeInfo( va( "(%d x %d) - NormalMapDXT5HQ", width, height ) );
 
 					dxt.CompressNormalMapDXT5HQ( dxtPic, img.data, dxtWidth, dxtHeight );
 				}
 				else
 				{
-					commonLocal.LoadPacifierBinarizeInfo( va( "(%d x %d) - NormalMapDXT5Fast", width, height ) );
+					common->LoadPacifierBinarizeInfo( va( "(%d x %d) - NormalMapDXT5Fast", width, height ) );
 
 					dxt.CompressNormalMapDXT5Fast( dxtPic, img.data, dxtWidth, dxtHeight );
 				}
@@ -176,13 +176,13 @@ void idBinaryImage::Load2DFromMemory( int width, int height, const byte* pic_con
 			{
 				if( image_highQualityCompression.GetBool() )
 				{
-					commonLocal.LoadPacifierBinarizeInfo( va( "(%d x %d) - YCoCgDXT5HQ", width, height ) );
+					common->LoadPacifierBinarizeInfo( va( "(%d x %d) - YCoCgDXT5HQ", width, height ) );
 
 					dxt.CompressYCoCgDXT5HQ( dxtPic, img.data, dxtWidth, dxtHeight );
 				}
 				else
 				{
-					commonLocal.LoadPacifierBinarizeInfo( va( "(%d x %d) - YCoCgDXT5Fast", width, height ) );
+					common->LoadPacifierBinarizeInfo( va( "(%d x %d) - YCoCgDXT5Fast", width, height ) );
 
 					dxt.CompressYCoCgDXT5Fast( dxtPic, img.data, dxtWidth, dxtHeight );
 				}
@@ -192,13 +192,13 @@ void idBinaryImage::Load2DFromMemory( int width, int height, const byte* pic_con
 				fileData.colorFormat = colorFormat = CFM_DEFAULT;
 				if( image_highQualityCompression.GetBool() )
 				{
-					commonLocal.LoadPacifierBinarizeInfo( va( "(%d x %d) - DXT5HQ", width, height ) );
+					common->LoadPacifierBinarizeInfo( va( "(%d x %d) - DXT5HQ", width, height ) );
 
 					dxt.CompressImageDXT5HQ( dxtPic, img.data, dxtWidth, dxtHeight );
 				}
 				else
 				{
-					commonLocal.LoadPacifierBinarizeInfo( va( "(%d x %d) - DXT5Fast", width, height ) );
+					common->LoadPacifierBinarizeInfo( va( "(%d x %d) - DXT5Fast", width, height ) );
 
 					dxt.CompressImageDXT5Fast( dxtPic, img.data, dxtWidth, dxtHeight );
 				}
@@ -322,7 +322,7 @@ void idBinaryImage::Load2DAtlasMipchainFromMemory( int width, int height, const 
 	fileData.height = height;
 	fileData.numLevels = numLevels;
 
-	commonLocal.LoadPacifierBinarizeInfo( va( "(%d x %d)", width, height ) );
+	common->LoadPacifierBinarizeInfo( va( "(%d x %d)", width, height ) );
 
 	byte* sourcePic = ( byte* )Mem_Alloc( width * height * 4, TAG_TEMP );
 	memcpy( sourcePic, pic_const, width * height * 4 );
@@ -417,7 +417,7 @@ void idBinaryImage::Load2DAtlasMipchainFromMemory( int width, int height, const 
 		common->LoadPacifierBinarizeProgressIncrement( rect.x * rect.y );
 		// RB end
 
-		commonLocal.LoadPacifierBinarizeMiplevel( level + 1, numLevels );
+		common->LoadPacifierBinarizeMiplevel( level + 1, numLevels );
 
 		// Images that are going to be DXT compressed and aren't multiples of 4 need to be
 		// padded out before compressing.
@@ -456,13 +456,13 @@ void idBinaryImage::Load2DAtlasMipchainFromMemory( int width, int height, const 
 			img.Alloc( dxtWidth * dxtHeight / 2 );
 			if( image_highQualityCompression.GetBool() )
 			{
-				commonLocal.LoadPacifierBinarizeInfo( va( "(%d x %d) - DXT1HQ", width, height ) );
+				common->LoadPacifierBinarizeInfo( va( "(%d x %d) - DXT1HQ", width, height ) );
 
 				dxt.CompressImageDXT1HQ( dxtPic, img.data, dxtWidth, dxtHeight );
 			}
 			else
 			{
-				commonLocal.LoadPacifierBinarizeInfo( va( "(%d x %d) - DXT1Fast", width, height ) );
+				common->LoadPacifierBinarizeInfo( va( "(%d x %d) - DXT1Fast", width, height ) );
 
 				dxt.CompressImageDXT1Fast( dxtPic, img.data, dxtWidth, dxtHeight );
 			}
@@ -475,13 +475,13 @@ void idBinaryImage::Load2DAtlasMipchainFromMemory( int width, int height, const 
 			{
 				if( image_highQualityCompression.GetBool() )
 				{
-					commonLocal.LoadPacifierBinarizeInfo( va( "(%d x %d) - NormalMapDXT5HQ", width, height ) );
+					common->LoadPacifierBinarizeInfo( va( "(%d x %d) - NormalMapDXT5HQ", width, height ) );
 
 					dxt.CompressNormalMapDXT5HQ( dxtPic, img.data, dxtWidth, dxtHeight );
 				}
 				else
 				{
-					commonLocal.LoadPacifierBinarizeInfo( va( "(%d x %d) - NormalMapDXT5Fast", width, height ) );
+					common->LoadPacifierBinarizeInfo( va( "(%d x %d) - NormalMapDXT5Fast", width, height ) );
 
 					dxt.CompressNormalMapDXT5Fast( dxtPic, img.data, dxtWidth, dxtHeight );
 				}
@@ -490,13 +490,13 @@ void idBinaryImage::Load2DAtlasMipchainFromMemory( int width, int height, const 
 			{
 				if( image_highQualityCompression.GetBool() )
 				{
-					commonLocal.LoadPacifierBinarizeInfo( va( "(%d x %d) - YCoCgDXT5HQ", width, height ) );
+					common->LoadPacifierBinarizeInfo( va( "(%d x %d) - YCoCgDXT5HQ", width, height ) );
 
 					dxt.CompressYCoCgDXT5HQ( dxtPic, img.data, dxtWidth, dxtHeight );
 				}
 				else
 				{
-					commonLocal.LoadPacifierBinarizeInfo( va( "(%d x %d) - YCoCgDXT5Fast", width, height ) );
+					common->LoadPacifierBinarizeInfo( va( "(%d x %d) - YCoCgDXT5Fast", width, height ) );
 
 					dxt.CompressYCoCgDXT5Fast( dxtPic, img.data, dxtWidth, dxtHeight );
 				}
@@ -506,13 +506,13 @@ void idBinaryImage::Load2DAtlasMipchainFromMemory( int width, int height, const 
 				fileData.colorFormat = colorFormat = CFM_DEFAULT;
 				if( image_highQualityCompression.GetBool() )
 				{
-					commonLocal.LoadPacifierBinarizeInfo( va( "(%d x %d) - DXT5HQ", width, height ) );
+					common->LoadPacifierBinarizeInfo( va( "(%d x %d) - DXT5HQ", width, height ) );
 
 					dxt.CompressImageDXT5HQ( dxtPic, img.data, dxtWidth, dxtHeight );
 				}
 				else
 				{
-					commonLocal.LoadPacifierBinarizeInfo( va( "(%d x %d) - DXT5Fast", width, height ) );
+					common->LoadPacifierBinarizeInfo( va( "(%d x %d) - DXT5Fast", width, height ) );
 
 					dxt.CompressImageDXT5Fast( dxtPic, img.data, dxtWidth, dxtHeight );
 				}
@@ -656,7 +656,7 @@ idBinaryImage::LoadCubeFromMemory
 */
 void idBinaryImage::LoadCubeFromMemory( int width, const byte* pics[6], int numLevels, textureFormat_t& textureFormat, bool gammaMips )
 {
-	commonLocal.LoadPacifierBinarizeInfo( va( "cube (%d)", width ) );
+	common->LoadPacifierBinarizeInfo( va( "cube (%d)", width ) );
 
 	fileData.textureType = TT_CUBIC;
 	fileData.format = textureFormat;
@@ -677,7 +677,7 @@ void idBinaryImage::LoadCubeFromMemory( int width, const byte* pics[6], int numL
 			// compress data or convert floats as necessary
 			idBinaryImageData& img = images[ level * 6 + side ];
 
-			commonLocal.LoadPacifierBinarizeMiplevel( level, fileData.numLevels );
+			common->LoadPacifierBinarizeMiplevel( level, fileData.numLevels );
 
 			// handle padding blocks less than 4x4 for the DXT compressors
 			ALIGN16( byte padBlock[64] );
@@ -706,13 +706,13 @@ void idBinaryImage::LoadCubeFromMemory( int width, const byte* pics[6], int numL
 
 				if( image_highQualityCompression.GetBool() )
 				{
-					commonLocal.LoadPacifierBinarizeInfo( va( "(%d x %d) - DXT1HQ", width, width ) );
+					common->LoadPacifierBinarizeInfo( va( "(%d x %d) - DXT1HQ", width, width ) );
 
 					dxt.CompressImageDXT1HQ( padSrc, img.data, padSize, padSize );
 				}
 				else
 				{
-					commonLocal.LoadPacifierBinarizeInfo( va( "(%d x %d) - DXT1Fast", width, width ) );
+					common->LoadPacifierBinarizeInfo( va( "(%d x %d) - DXT1Fast", width, width ) );
 
 					dxt.CompressImageDXT1Fast( padSrc, img.data, padSize, padSize );
 				}
@@ -724,13 +724,13 @@ void idBinaryImage::LoadCubeFromMemory( int width, const byte* pics[6], int numL
 
 				if( image_highQualityCompression.GetBool() )
 				{
-					commonLocal.LoadPacifierBinarizeInfo( va( "(%d x %d) - DXT5HQ", width, width ) );
+					common->LoadPacifierBinarizeInfo( va( "(%d x %d) - DXT5HQ", width, width ) );
 
 					dxt.CompressImageDXT5HQ( padSrc, img.data, padSize, padSize );
 				}
 				else
 				{
-					commonLocal.LoadPacifierBinarizeInfo( va( "(%d x %d) - DXT5Fast", width, width ) );
+					common->LoadPacifierBinarizeInfo( va( "(%d x %d) - DXT5Fast", width, width ) );
 
 					dxt.CompressImageDXT5Fast( padSrc, img.data, padSize, padSize );
 				}
@@ -928,10 +928,11 @@ bool idBinaryImage::LoadFromGeneratedFile( idFile* bFile, ID_TIME_T sourceTimeSt
 		// sizes are still retained, so the stored data size may be larger than
 		// just the multiplication of dimensions
 		assert( img.dataSize >= img.width * img.height * BitsForFormat( ( textureFormat_t )fileData.format ) / 8 );
-#if defined(__APPLE__) && defined(USE_VULKAN)
+		// SRS - the Vulkan renderer on Apple platforms converts FMT_RGB565 to FMT_RGBA8 while loading
+		const bool expandRGB565 = R_UsesAppleVulkanWorkarounds() && ( ( textureFormat_t )fileData.format == FMT_RGB565 );
 		int imgfile_dataSize = img.dataSize;
 		// SRS - Allocate 2x memory to prepare for in-place conversion from FMT_RGB565 to FMT_RGBA8
-		if( ( textureFormat_t )fileData.format == FMT_RGB565 )
+		if( expandRGB565 )
 		{
 			img.Alloc( img.dataSize * 2 );
 		}
@@ -951,7 +952,7 @@ bool idBinaryImage::LoadFromGeneratedFile( idFile* bFile, ID_TIME_T sourceTimeSt
 		}
 
 		// SRS - Convert FMT_RGB565 16-bits to FMT_RGBA8 32-bits in place using pre-allocated space
-		if( ( textureFormat_t )fileData.format == FMT_RGB565 )
+		if( expandRGB565 )
 		{
 			//SRS - Make sure we have an integer number of RGBA8 storage slots
 			assert( img.dataSize % 4 == 0 );
@@ -974,18 +975,6 @@ bool idBinaryImage::LoadFromGeneratedFile( idFile* bFile, ID_TIME_T sourceTimeSt
 				img.data[pixelIndex * 2 + 3] = 0xFF;
 			}
 		}
-#else
-		img.Alloc( img.dataSize );
-		if( img.data == NULL )
-		{
-			return false;
-		}
-
-		if( bFile->Read( img.data, img.dataSize ) <= 0 )
-		{
-			return false;
-		}
-#endif
 	}
 
 	return true;

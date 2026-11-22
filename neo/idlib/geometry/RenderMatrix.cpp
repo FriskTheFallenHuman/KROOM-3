@@ -53,13 +53,6 @@ If you have questions concerning this license or the applicable additional terms
 
 //#define CLIP_SPACE_OGL		// the OpenGL clip space Z is in the range [-1, 1]
 
-// RB: Vulkan requires the clip space Z is in the range [0, 1]
-// This change is especially important for all kinds of light bounding box -> clip space transformations so
-// the depth bounding tests clipping tests work properly
-#if defined( USE_VULKAN )
-	#define CLIP_SPACE_D3D	1
-#endif
-
 /*
 ================================================================================================
 
@@ -84,6 +77,48 @@ ALIGNTYPE16 const idRenderMatrix renderMatrix_flipToOpenGL(
 	0.0f,  0.0f, 0.0f, 1.0f
 );
 
+#if defined( CLIP_SPACE_D3D )
+
+// Vulkan 0 to 1.
+ALIGNTYPE16 const idRenderMatrix renderMatrix_windowSpaceToClipSpace(
+	2.0f, 0.0f, 0.0f, -1.0f,
+	0.0f, 2.0f, 0.0f, -1.0f,
+	0.0f, 0.0f, 1.0f,  0.0f,
+	0.0f, 0.0f, 0.0f,  1.0f
+);
+
+// RB begin
+ALIGNTYPE16 const idRenderMatrix renderMatrix_clipSpaceToWindowSpace(
+	0.5f, 0.0f, 0.0f, 0.5f,
+	0.0f, 0.5f, 0.0f, 0.5f,
+	0.0f, 0.0f, 1.0f, 0.0f,
+	0.0f, 0.0f, 0.0f, 1.0f
+);
+// RB end
+
+ALIGNTYPE16 const idRenderMatrix renderMatrix_vkShadowOrtho(
+	1.0f,  0.0f, 0.0f, 0.0f,
+	0.0f, -1.0f, 0.0f, 0.0f,
+	0.0f,  0.0f, 1.0f, 0.0f,
+	0.0f,  0.0f, 0.0f, 1.0f
+);
+
+ALIGNTYPE16 const idRenderMatrix renderMatrix_vkShadowPerspective(
+	1.0f,  0.0f, 0.0f, 0.0f,
+	0.0f, -1.0f, 0.0f, 0.0f,
+	0.0f,  0.0f, 0.5f, 0.5f,
+	0.0f,  0.0f, 0.0f, 1.0f
+);
+
+ALIGNTYPE16 const idRenderMatrix renderMatrix_vkShadowWindowFlipY(
+	1.0f,  0.0f, 0.0f, 0.0f,
+	0.0f, -1.0f, 0.0f, 1.0f,
+	0.0f,  0.0f, 1.0f, 0.0f,
+	0.0f,  0.0f, 0.0f, 1.0f
+);
+
+#else
+
 // OpenGL -1 to 1.
 ALIGNTYPE16 const idRenderMatrix renderMatrix_windowSpaceToClipSpace(
 	2.0f, 0.0f, 0.0f, -1.0f,
@@ -100,6 +135,8 @@ ALIGNTYPE16 const idRenderMatrix renderMatrix_clipSpaceToWindowSpace(
 	0.0f, 0.0f, 0.0f, 1.0f
 );
 // RB end
+
+#endif
 
 /*
 ================================================================================================
@@ -145,19 +182,19 @@ Box definition
 */
 
 /*
-            4----{E}---5
+			4----{E}---5
  +         /|         /|
  Z      {H} {I}    {F} |
  -     /    |     /   {J}
-      7--{G}-----6     |
-      |     |    |     |
-     {L}    0----|-{A}-1
-      |    /    {K}   /       -
-      | {D}      | {B}       Y
-      |/         |/         +
-      3---{C}----2
+	  7--{G}-----6     |
+	  |     |    |     |
+	 {L}    0----|-{A}-1
+	  |    /    {K}   /       -
+	  | {D}      | {B}       Y
+	  |/         |/         +
+	  3---{C}----2
 
-	    - X +
+		- X +
 */
 
 static const short boxPolygonVertices[6][4] =
@@ -2425,19 +2462,19 @@ completely branchless SIMD.
 void idRenderMatrix::ProjectedNearClippedBounds( idBounds& projected, const idRenderMatrix& mvp, const idBounds& bounds, bool windowSpace )
 {
 	/*
-	            4----{E}---5
+				4----{E}---5
 	 +         /|         /|
 	 Z      {H} {I}    {F} |
 	 -     /    |     /   {J}
-	      7--{G}-----6     |
-	      |     |    |     |
-	     {L}    0----|-{A}-1
-	      |    /    {K}   /       -
-	      | {D}      | {B}       Y
-	      |/         |/         +
-	      3---{C}----2
+		  7--{G}-----6     |
+		  |     |    |     |
+		 {L}    0----|-{A}-1
+		  |    /    {K}   /       -
+		  | {D}      | {B}       Y
+		  |/         |/         +
+		  3---{C}----2
 
-		    - X +
+			- X +
 	*/
 
 #if defined(USE_INTRINSICS_SSE)

@@ -462,13 +462,7 @@ void R_SetupProjectionMatrix( viewDef_t* viewDef )
 	viewDef->projectionMatrix[3 * 4 + 0] = 0.0f;
 
 	viewDef->projectionMatrix[0 * 4 + 1] = 0.0f;
-
-	// RB: Y axis now points down the screen
-#if defined(USE_VULKAN)
-	viewDef->projectionMatrix[1 * 4 + 1] = -2.0f * zNear / height;
-#else
-	viewDef->projectionMatrix[1 * 4 + 1] = 2.0f * zNear / height;
-#endif
+	viewDef->projectionMatrix[1 * 4 + 1] = R_GetProjectionYSign() * 2.0f * zNear / height;
 	viewDef->projectionMatrix[2 * 4 + 1] = ( ymax + ymin ) / height;	// normally 0
 	viewDef->projectionMatrix[3 * 4 + 1] = 0.0f;
 
@@ -552,9 +546,7 @@ void R_SetupProjectionMatrix2( const viewDef_t* viewDef, const float zNear, cons
 		projectionMatrix[1 * 4 + 3] = -viewDef->projectionMatrix[1 * 4 + 3];
 	}
 
-#if defined(USE_VULKAN)
-	projectionMatrix[1 * 4 + 1] *= -1.0F;
-#endif
+	projectionMatrix[1 * 4 + 1] *= R_GetProjectionYSign();
 }
 
 /*

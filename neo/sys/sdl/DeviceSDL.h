@@ -46,29 +46,12 @@ struct SDLVars_t
 {
 	SDLVars_t()
 	{
-		window = NULL;
-#if !defined(USE_VULKAN)
-		context = NULL;
-#endif
-
-		grabbed = false;
 	}
-
-	SDL_Window* window;
-
-#if !defined(USE_VULKAN)
-	SDL_GLContext context;
-#endif
-
-	bool grabbed;
 
 #ifndef _WIN32
 	static idCVar	com_pid;
 #endif
 	static idCVar	in_nograb;
-#if !defined(USE_VULKAN)
-	static idCVar	sdl_waylandcompat;
-#endif
 	static idCVar	sdl_outputEditString;
 	static idCVar	sdl_viewlog;
 

@@ -35,6 +35,19 @@ If you have questions concerning this license or the applicable additional terms
 #define GUIED_GRABSIZE		7
 #define GUIED_CENTERSIZE	5
 
+static void GE_FillRect( float x, float y, float w, float h )
+{
+	renderSystem->DrawStretchPic( x, y, w, h, 0.0f, 0.0f, 1.0f, 1.0f, declManager->FindMaterial( "_white" ) );
+}
+
+static void GE_OutlineRect( float x, float y, float w, float h )
+{
+	GE_FillRect( x, y, w, 1.0f );
+	GE_FillRect( x, y + h - 1.0f, w, 1.0f );
+	GE_FillRect( x, y, 1.0f, h );
+	GE_FillRect( x + w - 1.0f, y, 1.0f, h );
+}
+
 rvGESelectionMgr::rvGESelectionMgr()
 {
 	mWorkspace = NULL;
@@ -165,24 +178,12 @@ void rvGESelectionMgr::Render()
 		return;
 	}
 
-	glEnable( GL_BLEND );
-	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-
 	UpdateRectangle();
 
-	glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-
 	idVec4&	color = gApp->GetOptions().GetSelectionColor();
-	glColor4f( color[0], color[1], color[2], 1.0f );
+	renderSystem->SetColor4( color[0], color[1], color[2], 1.0f );
 
-	glBegin( GL_LINE_LOOP );
-	glVertex2f( mRect.x, mRect.y );
-	glVertex2f( mRect.x + mRect.w, mRect.y );
-	glVertex2f( mRect.x + mRect.w, mRect.y + mRect.h );
-	glVertex2f( mRect.x, mRect.y + mRect.h );
-	glEnd();
-
-	glColor4f( color[0], color[1], color[2], 0.75f );
+	GE_OutlineRect( mRect.x, mRect.y, mRect.w, mRect.h );
 
 	int i;
 	for( i = 0; i < mSelections.Num(); i ++ )
@@ -196,31 +197,17 @@ void rvGESelectionMgr::Render()
 		rect = wrapper->GetScreenRect();
 		mWorkspace->WorkspaceToWindow( rect );
 
+		renderSystem->SetColor4( color[0], color[1], color[2], 0.75f );
+
 		if( i == 0 )
 		{
-			glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-			glBegin( GL_TRIANGLES );
-			glVertex2f( rect.x, rect.y );
-			glVertex2f( rect.x + GUIED_GRABSIZE, rect.y );
-			glVertex2f( rect.x, rect.y + GUIED_GRABSIZE );
-			glEnd();
+			// the grab corner of the primary selection (a triangle with immediate mode GL, a square here)
+			GE_FillRect( rect.x, rect.y, GUIED_GRABSIZE, GUIED_GRABSIZE );
 		}
 
-		glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-		glBegin( GL_LINE_LOOP );
-		glVertex2f( rect.x, rect.y );
-		glVertex2f( rect.x + rect.w, rect.y );
-		glVertex2f( rect.x + rect.w, rect.y + rect.h );
-		glVertex2f( rect.x, rect.y + rect.h );
-		glEnd();
+		GE_OutlineRect( rect.x, rect.y, rect.w, rect.h );
 
-		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-		glBegin( GL_QUADS );
-		glVertex2f( rect.x + ( rect.w - GUIED_CENTERSIZE ) / 2, rect.y + ( rect.h - GUIED_CENTERSIZE ) / 2 );
-		glVertex2f( rect.x + ( rect.w + GUIED_CENTERSIZE ) / 2, rect.y + ( rect.h - GUIED_CENTERSIZE ) / 2 );
-		glVertex2f( rect.x + ( rect.w + GUIED_CENTERSIZE ) / 2, rect.y + ( rect.h + GUIED_CENTERSIZE ) / 2 );
-		glVertex2f( rect.x + ( rect.w - GUIED_CENTERSIZE ) / 2, rect.y + ( rect.h + GUIED_CENTERSIZE ) / 2 );
-		glEnd();
+		GE_FillRect( rect.x + ( rect.w - GUIED_CENTERSIZE ) / 2, rect.y + ( rect.h - GUIED_CENTERSIZE ) / 2, GUIED_CENTERSIZE, GUIED_CENTERSIZE );
 	}
 
 	if( mExpression )
@@ -228,62 +215,25 @@ void rvGESelectionMgr::Render()
 		return;
 	}
 
-	glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+	renderSystem->SetColor4( color[0], color[1], color[2], 1.0f );
 
-	glColor4f( color[0], color[1], color[2], 1.0f );
-	glBegin( GL_QUADS );
+	// the size handles around the selection rectangle
+	const float g = GUIED_GRABSIZE;
+	const float cx = mRect.x + mRect.w / 2;
+	const float cy = mRect.y + mRect.h / 2;
+	const float l = mRect.x - g;
+	const float r = mRect.x + mRect.w + 1;
+	const float t = mRect.y - g;
+	const float b = mRect.y + mRect.h + 1;
 
-	// Top Left
-	glVertex2f( mRect.x - GUIED_GRABSIZE, mRect.y - GUIED_GRABSIZE );
-	glVertex2f( mRect.x - 1, mRect.y - GUIED_GRABSIZE );
-	glVertex2f( mRect.x - 1, mRect.y - 1 );
-	glVertex2f( mRect.x - GUIED_GRABSIZE, mRect.y - 1 );
-
-	// Left
-	glVertex2f( mRect.x - GUIED_GRABSIZE, mRect.y + mRect.h / 2 - GUIED_GRABSIZE / 2 );
-	glVertex2f( mRect.x - 1, mRect.y + mRect.h / 2 - GUIED_GRABSIZE / 2 );
-	glVertex2f( mRect.x - 1, mRect.y + mRect.h / 2 + GUIED_GRABSIZE / 2 );
-	glVertex2f( mRect.x - GUIED_GRABSIZE, mRect.y + mRect.h / 2 + GUIED_GRABSIZE / 2 );
-
-	// Bototm Left
-	glVertex2f( mRect.x - GUIED_GRABSIZE, mRect.y + mRect.h + 1 );
-	glVertex2f( mRect.x - 1, mRect.y + mRect.h + 1 );
-	glVertex2f( mRect.x - 1, mRect.y + mRect.h + GUIED_GRABSIZE );
-	glVertex2f( mRect.x - GUIED_GRABSIZE, mRect.y + mRect.h + GUIED_GRABSIZE );
-
-	// Bottom
-	glVertex2f( mRect.x - GUIED_GRABSIZE / 2 + mRect.w / 2, mRect.y + mRect.h + 1 );
-	glVertex2f( mRect.x + GUIED_GRABSIZE / 2 + mRect.w / 2, mRect.y + mRect.h + 1 );
-	glVertex2f( mRect.x + GUIED_GRABSIZE / 2 + mRect.w / 2, mRect.y + mRect.h + GUIED_GRABSIZE );
-	glVertex2f( mRect.x - GUIED_GRABSIZE / 2 + mRect.w / 2, mRect.y + mRect.h + GUIED_GRABSIZE );
-
-	// Bottom Right
-	glVertex2f( mRect.x + mRect.w + 1, mRect.y + mRect.h + 1 );
-	glVertex2f( mRect.x + mRect.w + GUIED_GRABSIZE, mRect.y + mRect.h + 1 );
-	glVertex2f( mRect.x + mRect.w + GUIED_GRABSIZE, mRect.y + mRect.h + GUIED_GRABSIZE );
-	glVertex2f( mRect.x + mRect.w + 1, mRect.y + mRect.h + GUIED_GRABSIZE );
-
-	// Right
-	glVertex2f( mRect.x + mRect.w + 1, mRect.y + mRect.h / 2 - GUIED_GRABSIZE / 2 );
-	glVertex2f( mRect.x + mRect.w + GUIED_GRABSIZE, mRect.y + mRect.h / 2 - GUIED_GRABSIZE / 2 );
-	glVertex2f( mRect.x + mRect.w + GUIED_GRABSIZE, mRect.y + mRect.h / 2 + GUIED_GRABSIZE / 2 );
-	glVertex2f( mRect.x + mRect.w + 1, mRect.y + mRect.h / 2 + GUIED_GRABSIZE / 2 );
-
-	// Top Right
-	glVertex2f( mRect.x + mRect.w + 1, mRect.y - GUIED_GRABSIZE );
-	glVertex2f( mRect.x + mRect.w + GUIED_GRABSIZE, mRect.y - GUIED_GRABSIZE );
-	glVertex2f( mRect.x + mRect.w + GUIED_GRABSIZE, mRect.y - 1 );
-	glVertex2f( mRect.x + mRect.w + 1, mRect.y - 1 );
-
-	// Top
-	glVertex2f( mRect.x - GUIED_GRABSIZE / 2 + mRect.w / 2, mRect.y - GUIED_GRABSIZE );
-	glVertex2f( mRect.x + GUIED_GRABSIZE / 2 + mRect.w / 2, mRect.y - GUIED_GRABSIZE );
-	glVertex2f( mRect.x + GUIED_GRABSIZE / 2 + mRect.w / 2, mRect.y - 1 );
-	glVertex2f( mRect.x - GUIED_GRABSIZE / 2 + mRect.w / 2, mRect.y - 1 );
-
-	glEnd();
-
-	glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+	GE_OutlineRect( l, t, g - 1, g - 1 );				// Top Left
+	GE_OutlineRect( l, cy - g / 2, g - 1, g );			// Left
+	GE_OutlineRect( l, b, g - 1, g - 1 );				// Bottom Left
+	GE_OutlineRect( cx - g / 2, b, g, g - 1 );			// Bottom
+	GE_OutlineRect( r, b, g - 1, g - 1 );				// Bottom Right
+	GE_OutlineRect( r, cy - g / 2, g - 1, g );			// Right
+	GE_OutlineRect( r, t, g - 1, g - 1 );				// Top Right
+	GE_OutlineRect( cx - g / 2, t, g, g - 1 );			// Top
 }
 
 /*

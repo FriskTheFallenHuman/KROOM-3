@@ -39,7 +39,10 @@ idCVar r_writeDemoOverlays( "r_writeDemoOverlays", "1", CVAR_BOOL | CVAR_SYSTEM,
 //idCVar r_writeDemoGUI( "r_writeDemoGUI", "0", CVAR_BOOL | CVAR_SYSTEM, "enable Writing of GUI elements to demo files." );
 //#define WRITE_GUIS
 
-extern void WriteDeclCache( idDemoFile* f, int demoCategory, int demoCode, declType_t  declType );
+static void WriteDeclCache( idDemoFile* f, int demoCategory, int demoCode, declType_t  declType )
+{
+	renderHost->WriteDeclCache( f, demoCategory, demoCode, declType );
+}
 
 typedef struct
 {
@@ -235,7 +238,7 @@ bool		idRenderWorldLocal::ProcessDemoCommand( idDemoFile* readDemo, renderView_t
 			// possibly change the time offset if this is from a new map
 			if( newMap && demoTimeOffset )
 			{
-				*demoTimeOffset = renderView->time[1] - eventLoop->Milliseconds();
+				*demoTimeOffset = renderView->time[1] - renderHost->EventLoopMilliseconds();
 			}
 			return false;
 		}

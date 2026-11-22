@@ -37,7 +37,7 @@ If you have questions concerning this license or the applicable additional terms
 extern idCVar in_useJoystick;
 
 // bypass rendersystem to directly work on guiModel
-extern idGuiModel* tr_guiModel;
+#include "../renderer/RenderInternal.h"
 
 idVec4 idDeviceContext::colorPurple;
 idVec4 idDeviceContext::colorOrange;
@@ -1248,7 +1248,7 @@ int idDeviceContextOptimized::DrawText( float x, float y, float scale, idVec4 co
 			float x2 = xOffset + ( drawX + w ) * xScale;
 			float y1 = yOffset + drawY * yScale;
 			float y2 = yOffset + ( drawY + h ) * yScale;
-			idDrawVert* verts = tr_guiModel->AllocTris( 4, quadPicIndexes, 6, glyphInfo.material, 0 );
+			idDrawVert* verts = GuiModel_AllocTris( 4, quadPicIndexes, 6, glyphInfo.material, 0 );
 			if( verts != NULL )
 			{
 				verts[0].xyz[0] = x1;

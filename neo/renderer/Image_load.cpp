@@ -94,6 +94,46 @@ int BitsForFormat( textureFormat_t format )
 
 /*
 ========================
+idImage::idImage
+========================
+*/
+idImage::idImage( const char* name ) : imgName( name )
+{
+	texnum = TEXTURE_NOT_LOADED;
+	generatorFunction = NULL;
+	filter = TF_DEFAULT;
+	repeat = TR_REPEAT;
+	usage = TD_DEFAULT;
+	cubeFiles = CF_2D;
+	referencedOutsideLevelLoad = false;
+	levelLoadReferenced = false;
+	defaulted = false;
+	sourceFileTime = FILE_NOT_FOUND_TIMESTAMP;
+	binaryFileTime = FILE_NOT_FOUND_TIMESTAMP;
+	refCount = 0;
+}
+
+/*
+========================
+idImage::~idImage
+========================
+*/
+idImage::~idImage()
+{
+}
+
+/*
+========================
+idImage::TranslateBinaryFormat
+========================
+*/
+textureFormat_t idImage::TranslateBinaryFormat( textureFormat_t binaryFormat ) const
+{
+	return binaryFormat;
+}
+
+/*
+========================
 idImage::DeriveOpts
 ========================
 */
@@ -398,34 +438,18 @@ void idImage::ActuallyLoadImage( bool fromBackEnd )
 			}
 		}
 	}
-	const bimageFile_t& header = im.GetFileHeader();
 
+	const bimageFile_t& header = im.GetFileHeader();
 	if( ( fileSystem->InProductionMode() && binaryFileTime != FILE_NOT_FOUND_TIMESTAMP ) || ( ( binaryFileTime != FILE_NOT_FOUND_TIMESTAMP )
 			&& ( header.colorFormat == opts.colorFormat )
-#if defined(__APPLE__) && defined(USE_VULKAN)
-			// SRS - Handle case when image read is cached and RGB565 format conversion is already done
-			&& ( header.format == opts.format || ( header.format == FMT_RGB565 && opts.format == FMT_RGBA8 ) )
-#else
-			&& ( header.format == opts.format )
-#endif
-			&& ( header.textureType == opts.textureType )
-																							) )
+			&& ( header.format == opts.format || TranslateBinaryFormat( ( textureFormat_t )header.format ) == opts.format )
+			&& ( header.textureType == opts.textureType ) ) )
 	{
 		opts.width = header.width;
 		opts.height = header.height;
 		opts.numLevels = header.numLevels;
 		opts.colorFormat = ( textureColor_t )header.colorFormat;
-#if defined(__APPLE__) && defined(USE_VULKAN)
-		// SRS - Set in-memory format to FMT_RGBA8 for converted FMT_RGB565 image
-		if( header.format == FMT_RGB565 )
-		{
-			opts.format = FMT_RGBA8;
-		}
-		else
-#endif
-		{
-			opts.format = ( textureFormat_t )header.format;
-		}
+		opts.format = TranslateBinaryFormat( ( textureFormat_t )header.format );
 		opts.textureType = ( textureType_t )header.textureType;
 		if( cvarSystem->GetCVarBool( "fs_buildresources" ) )
 		{
@@ -477,21 +501,21 @@ void idImage::ActuallyLoadImage( bool fromBackEnd )
 			// foresthale 2014-05-30: give a nice progress display when binarizing
 			if( !globalImages->cacheImages )
 			{
-				commonLocal.LoadPacifierBinarizeFilename( generatedName.c_str(), binarizeReason.c_str() );
+				common->LoadPacifierBinarizeFilename( generatedName.c_str(), binarizeReason.c_str() );
 			}
 
 			if( opts.numLevels > 1 )
 			{
-				commonLocal.LoadPacifierBinarizeProgressTotal( opts.width * opts.width * 6 * 4 / 3 );
+				common->LoadPacifierBinarizeProgressTotal( opts.width * opts.width * 6 * 4 / 3 );
 			}
 			else
 			{
-				commonLocal.LoadPacifierBinarizeProgressTotal( opts.width * opts.width * 6 );
+				common->LoadPacifierBinarizeProgressTotal( opts.width * opts.width * 6 );
 			}
 
 			im.LoadCubeFromMemory( size, ( const byte** )pics, opts.numLevels, opts.format, opts.gammaMips );
 
-			commonLocal.LoadPacifierBinarizeEnd();
+			common->LoadPacifierBinarizeEnd();
 
 			repeat = TR_CLAMP;
 
@@ -561,9 +585,9 @@ void idImage::ActuallyLoadImage( bool fromBackEnd )
 			{
 				if( !globalImages->cacheImages )
 				{
-					commonLocal.LoadPacifierBinarizeFilename( generatedName.c_str(), binarizeReason.c_str() );
+					common->LoadPacifierBinarizeFilename( generatedName.c_str(), binarizeReason.c_str() );
 				}
-				commonLocal.LoadPacifierBinarizeProgressTotal( width * opts.height );
+				common->LoadPacifierBinarizeProgressTotal( width * opts.height );
 
 				im.Load2DAtlasMipchainFromMemory( width, opts.height, pic, opts.numLevels, opts.format, opts.colorFormat );
 			}
@@ -571,21 +595,21 @@ void idImage::ActuallyLoadImage( bool fromBackEnd )
 			{
 				if( !globalImages->cacheImages )
 				{
-					commonLocal.LoadPacifierBinarizeFilename( generatedName.c_str(), binarizeReason.c_str() );
+					common->LoadPacifierBinarizeFilename( generatedName.c_str(), binarizeReason.c_str() );
 				}
 
 				if( opts.numLevels > 1 )
 				{
-					commonLocal.LoadPacifierBinarizeProgressTotal( opts.width * opts.height * 4 / 3 );
+					common->LoadPacifierBinarizeProgressTotal( opts.width * opts.height * 4 / 3 );
 				}
 				else
 				{
-					commonLocal.LoadPacifierBinarizeProgressTotal( opts.width * opts.height );
+					common->LoadPacifierBinarizeProgressTotal( opts.width * opts.height );
 				}
 
 				im.Load2DFromMemory( opts.width, opts.height, pic, opts.numLevels, opts.format, opts.colorFormat, opts.gammaMips );
 			}
-			commonLocal.LoadPacifierBinarizeEnd();
+			common->LoadPacifierBinarizeEnd();
 
 			Mem_Free( pic );
 		}
@@ -784,6 +808,33 @@ void idImage::Reload( bool force )
 
 /*
 ================
+idImage::SetPixel
+================
+*/
+void idImage::SetPixel( int mipLevel, int x, int y, const void* data, int dataSize )
+{
+	SubImageUpload( mipLevel, x, y, 0, 1, 1, data );
+}
+
+/*
+================
+idImage::Resize
+================
+*/
+void idImage::Resize( int width, int height )
+{
+	if( opts.width == width && opts.height == height )
+	{
+		return;
+	}
+
+	opts.width = width;
+	opts.height = height;
+	AllocImage();
+}
+
+/*
+================
 GenerateImage
 ================
 */
@@ -815,43 +866,20 @@ void idImage::GenerateImage( const byte* pic, int width, int height, textureFilt
 	{
 		AllocImage();
 
-		// RB: shouldn't be needed as the Vulkan backend is not feature complete yet
-		// I just make sure r_useSSAO is 0
-#if 0 //defined(USE_VULKAN)
-		// SRS - update layout of Ambient Occlusion image otherwise get Vulkan validation layer errors with SSAO enabled
-		if( imgName == "_ao0" || imgName == "_ao1" )
-		{
-			VkImageSubresourceRange subresourceRange;
-			if( internalFormat == VK_FORMAT_D32_SFLOAT_S8_UINT || opts.format == FMT_DEPTH )
-			{
-				subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-			}
-			else
-			{
-				subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			}
-			subresourceRange.baseMipLevel = 0;
-			subresourceRange.levelCount = opts.numLevels;
-			subresourceRange.baseArrayLayer = 0;
-			subresourceRange.layerCount = 1;
-
-			SetImageLayout( image, subresourceRange, VK_IMAGE_LAYOUT_UNDEFINED, layout );
-		}
-#endif
 	}
 	else
 	{
 		idBinaryImage im( GetName() );
 
 		// foresthale 2014-05-30: give a nice progress display when binarizing
-		commonLocal.LoadPacifierBinarizeFilename( GetName() , "generated image" );
+		common->LoadPacifierBinarizeFilename( GetName() , "generated image" );
 		if( opts.numLevels > 1 )
 		{
-			commonLocal.LoadPacifierBinarizeProgressTotal( opts.width * opts.height * 4 / 3 );
+			common->LoadPacifierBinarizeProgressTotal( opts.width * opts.height * 4 / 3 );
 		}
 		else
 		{
-			commonLocal.LoadPacifierBinarizeProgressTotal( opts.width * opts.height );
+			common->LoadPacifierBinarizeProgressTotal( opts.width * opts.height );
 		}
 
 		if( cubeFiles == CF_2D_PACKED_MIPCHAIN )
@@ -863,7 +891,7 @@ void idImage::GenerateImage( const byte* pic, int width, int height, textureFilt
 			im.Load2DFromMemory( width, height, pic, opts.numLevels, opts.format, opts.colorFormat, opts.gammaMips );
 		}
 
-		commonLocal.LoadPacifierBinarizeEnd();
+		common->LoadPacifierBinarizeEnd();
 
 		AllocImage();
 
@@ -911,19 +939,19 @@ void idImage::GenerateCubeImage( const byte* pic[6], int size, textureFilter_t f
 	idBinaryImage im( GetName() );
 
 	// foresthale 2014-05-30: give a nice progress display when binarizing
-	commonLocal.LoadPacifierBinarizeFilename( GetName(), "generated cube image" );
+	common->LoadPacifierBinarizeFilename( GetName(), "generated cube image" );
 	if( opts.numLevels > 1 )
 	{
-		commonLocal.LoadPacifierBinarizeProgressTotal( opts.width * opts.width * 6 * 4 / 3 );
+		common->LoadPacifierBinarizeProgressTotal( opts.width * opts.width * 6 * 4 / 3 );
 	}
 	else
 	{
-		commonLocal.LoadPacifierBinarizeProgressTotal( opts.width * opts.width * 6 );
+		common->LoadPacifierBinarizeProgressTotal( opts.width * opts.width * 6 );
 	}
 
 	im.LoadCubeFromMemory( size, pic, opts.numLevels, opts.format, opts.gammaMips );
 
-	commonLocal.LoadPacifierBinarizeEnd();
+	common->LoadPacifierBinarizeEnd();
 
 	AllocImage();
 

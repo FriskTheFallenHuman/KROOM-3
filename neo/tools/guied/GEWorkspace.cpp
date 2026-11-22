@@ -66,9 +66,6 @@ rvGEWorkspace::rvGEWorkspace( rvGEApp* app, wxWindow* parent )
 	, m_modified( false )
 	, m_new( false )
 	, m_suppressSelectionUpdate( false )
-	, m_fbo( 0 )
-	, m_colorTex( 0 )
-	, m_depthStencil( 0 )
 	, m_fboWidth( 0 )
 	, m_fboHeight( 0 )
 {
@@ -115,11 +112,7 @@ rvGEWorkspace::~rvGEWorkspace()
 	m_interface = NULL;
 	m_renderWorld = NULL;
 
-	if( m_fbo || m_colorTex || m_depthStencil )
-	{
-		rRenderContext.MakeCurrent();
-		DestroyPreviewFBO();
-	}
+	DestroyPreviewFBO();
 }
 
 /*
@@ -510,15 +503,12 @@ void rvGEWorkspace::RenderGuiIntoCurrentFBO( int w, int h )
 		return;
 	}
 
-	const float savedShaderTime = tr.frameShaderTime;
-	tr.frameShaderTime = 0.0f;
+	const float savedShaderTime = Render_GetFrameShaderTime();
+	Render_SetFrameShaderTime( 0.0f );
 
-	tr.guiModel->Clear();
+	GuiModel_Clear();
 
-	tr.renderCrops[tr.currentRenderCrop].x1 = ( short )rx;
-	tr.renderCrops[tr.currentRenderCrop].y1 = ( short )ry;
-	tr.renderCrops[tr.currentRenderCrop].x2 = ( short )( rx + rw - 1 );
-	tr.renderCrops[tr.currentRenderCrop].y2 = ( short )( ry + rh - 1 );
+	Render_SetEditorRenderCrop( rx, ry, rx + rw - 1, ry + rh - 1 );
 
 	renderSystem->CropRenderSize( rw, rh );
 
@@ -529,8 +519,8 @@ void rvGEWorkspace::RenderGuiIntoCurrentFBO( int w, int h )
 
 	m_interface->Redraw( 0, false );
 
-	tr.guiModel->EmitFullScreen();
-	tr.guiModel->Clear();
+	GuiModel_EmitFullScreen();
+	GuiModel_Clear();
 
 	renderSystem->UnCrop();
 
@@ -540,7 +530,7 @@ void rvGEWorkspace::RenderGuiIntoCurrentFBO( int w, int h )
 		renderSystem->RenderCommandBuffers( cmd );
 	}
 
-	tr.frameShaderTime = savedShaderTime;
+	Render_SetFrameShaderTime( savedShaderTime );
 }
 
 /*
@@ -552,43 +542,10 @@ Lazily creates or resizes the offscreen framebuffer.
 */
 void rvGEWorkspace::EnsurePreviewFBO( int w, int h )
 {
-	if( m_fbo && w == m_fboWidth && h == m_fboHeight )
+	if( w == m_fboWidth && h == m_fboHeight )
 	{
 		return;
 	}
-
-	if( !m_fbo )
-	{
-		glGenFramebuffers( 1, &m_fbo );
-		glGenTextures( 1, &m_colorTex );
-		glGenRenderbuffers( 1, &m_depthStencil );
-	}
-
-	glBindTexture( GL_TEXTURE_2D, m_colorTex );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-
-	glBindRenderbuffer( GL_RENDERBUFFER, m_depthStencil );
-	glRenderbufferStorage( GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, w, h );
-
-	glBindFramebuffer( GL_FRAMEBUFFER, m_fbo );
-	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_colorTex, 0 );
-	glFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_depthStencil );
-
-	const GLenum status = glCheckFramebufferStatus( GL_FRAMEBUFFER );
-	if( status != GL_FRAMEBUFFER_COMPLETE )
-	{
-		common->Warning( "rvGEWorkspace: FBO incomplete: 0x%x", status );
-		glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-		glBindRenderbuffer( GL_RENDERBUFFER, 0 );
-		return;
-	}
-
-	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-	glBindRenderbuffer( GL_RENDERBUFFER, 0 );
 
 	m_fboWidth  = w;
 	m_fboHeight = h;
@@ -603,26 +560,10 @@ rvGEWorkspace::DestroyPreviewFBO
 */
 void rvGEWorkspace::DestroyPreviewFBO()
 {
-	if( m_fbo )
-	{
-		glDeleteFramebuffers( 1, &m_fbo );
-		m_fbo = 0;
-	}
-
-	if( m_colorTex )
-	{
-		glDeleteTextures( 1, &m_colorTex );
-		m_colorTex = 0;
-	}
-
-	if( m_depthStencil )
-	{
-		glDeleteRenderbuffers( 1, &m_depthStencil );
-		m_depthStencil = 0;
-	}
-
 	m_fboWidth  = 0;
 	m_fboHeight = 0;
+
+	m_pixels.clear();
 }
 
 /*
@@ -665,32 +606,25 @@ void rvGEWorkspace::OnPaint( wxPaintEvent& )
 		return;
 	}
 
-	glBindFramebuffer( GL_FRAMEBUFFER, m_fbo );
-	glViewport( 0, 0, w, h );
-	glScissor( 0, 0, w, h );
-
 	const idVec4& bg = m_app->GetOptions().GetWorkspaceColor();
-	glClearColor( bg.x, bg.y, bg.z, 1.0f );
-	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 
-	Framebuffer::SetEditorDefaultFramebuffer( m_fbo );
+	const float clearColor[4] = { bg.x, bg.y, bg.z, 1.0f };
+
+	if( !Render_EditorTargetBegin( w, h, clearColor ) )
+	{
+		s_inRender = false;
+		return;
+	}
 
 	RenderGuiIntoCurrentFBO( w, h );
 
-	Framebuffer::SetEditorDefaultFramebuffer( 0 );
-	glBindFramebuffer( GL_FRAMEBUFFER, m_fbo );
-
-	glReadBuffer( GL_COLOR_ATTACHMENT0 );
-	glPixelStorei( GL_PACK_ALIGNMENT, 1 );
-	glReadPixels( 0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, m_pixels.data() );
-
-	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+	Render_EditorTargetEnd( m_pixels.data() );
 
 	wxImage img( w, h );
 	unsigned char* dst = img.GetData();
 	for( int y = 0; y < h; ++y )
 	{
-		const unsigned char* srcRow = m_pixels.data() + size_t( h - 1 - y ) * size_t( w ) * 4u;
+		const unsigned char* srcRow = m_pixels.data() + size_t( y ) * size_t( w ) * 4u;
 		unsigned char* dstRow       = dst + size_t( y ) * size_t( w ) * 3u;
 		for( int x = 0; x < w; ++x )
 		{

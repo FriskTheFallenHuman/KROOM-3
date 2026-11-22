@@ -588,6 +588,7 @@ static void CreateMapLight( const idMapEntity* mapEnt )
 	}
 
 	light = new mapLight_t;
+	light->def = R_AllocLightDef();
 	memset( light->occluders, 0, sizeof( light->occluders ) );
 
 	// the name is used to match the occluder model (_occluder_<name>) to the light at runtime
@@ -597,18 +598,18 @@ static void CreateMapLight( const idMapEntity* mapEnt )
 	// parse parms exactly as the game do
 	// use the game's epair parsing code so
 	// we can use the same renderLight generation
-	gameEdit->ParseSpawnArgsToRenderLight( &mapEnt->epairs, &light->def.parms );
+	gameEdit->ParseSpawnArgsToRenderLight( &mapEnt->epairs, &light->def->parms );
 
-	light->def.lightShader = light->def.parms.shader;
-	if( light->def.lightShader == NULL )
+	light->def->lightShader = light->def->parms.shader;
+	if( light->def->lightShader == NULL )
 	{
-		light->def.lightShader = DmapFindMaterial( light->def.parms.pointLight ? "lights/defaultPointLight" : "lights/defaultProjectedLight" );
+		light->def->lightShader = DmapFindMaterial( light->def->parms.pointLight ? "lights/defaultPointLight" : "lights/defaultProjectedLight" );
 	}
 
-	R_DeriveLightData( &light->def );
+	R_DeriveLightData( light->def );
 
 	// RB begin
-	idRenderMatrix::GetFrustumPlanes( light->frustumPlanes, light->def.baseLightProject, true, true );
+	idRenderMatrix::GetFrustumPlanes( light->frustumPlanes, light->def->baseLightProject, true, true );
 
 	// the DOOM 3 frustum planes point outside the frustum
 	for( int i = 0; i < 6; i++ )
@@ -829,7 +830,9 @@ void FreeDMapFile()
 	// free the map lights
 	for( i = 0; i < dmapGlobals.mapLights.Num(); i++ )
 	{
-		R_FreeLightDefDerivedData( &dmapGlobals.mapLights[i]->def );
+		R_FreeLightDefDerivedData( dmapGlobals.mapLights[i]->def );
+		R_FreeLightDef( dmapGlobals.mapLights[i]->def );
+		dmapGlobals.mapLights[i]->def = NULL;
 	}
 	dmapGlobals.mapLights.DeleteContents( true );
 }

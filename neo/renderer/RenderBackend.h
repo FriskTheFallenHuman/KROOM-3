@@ -112,129 +112,6 @@ void RB_SetVertexColorParms( stageVertexColor_t svc );
 //bool ChangeDisplaySettingsIfNeeded( gfxImpParms_t parms );
 //bool CreateGameWindow( gfxImpParms_t parms );
 
-#if defined( USE_VULKAN )
-
-// SRS - Generalized Vulkan SDL platform
-#include <SDL.h>
-#include <SDL_vulkan.h>
-
-struct gpuInfo_t
-{
-	VkPhysicalDevice					device;
-	VkPhysicalDeviceProperties			props;
-	VkPhysicalDeviceMemoryProperties	memProps;
-	VkSurfaceCapabilitiesKHR			surfaceCaps;
-	idList< VkSurfaceFormatKHR >		surfaceFormats;
-	idList< VkPresentModeKHR >			presentModes;
-	idList< VkQueueFamilyProperties >	queueFamilyProps;
-	idList< VkExtensionProperties >		extensionProps;
-};
-
-struct vulkanContext_t
-{
-	// Eric: If on linux, use this to pass SDL_Window pointer to the SDL_Vulkan_* methods not in sdl_vkimp.cpp file.
-	// SRS - Generalized Vulkan SDL platform
-	SDL_Window*						sdlWindow = nullptr;
-
-	uint64							frameCounter;
-	uint32							frameParity;
-
-	vertCacheHandle_t				jointCacheHandle;
-
-	VkInstance						instance;
-
-	// selected physical device
-	VkPhysicalDevice				physicalDevice;
-	VkPhysicalDeviceFeatures		physicalDeviceFeatures;
-
-	// logical device
-	VkDevice						device;
-
-	VkQueue							graphicsQueue;
-	VkQueue							presentQueue;
-	int								graphicsFamilyIdx;
-	int								presentFamilyIdx;
-	VkDebugReportCallbackEXT		callback;
-
-	idList< const char* >			instanceExtensions;
-	idList< const char* >			deviceExtensions;
-	idList< const char* >			validationLayers;
-
-	bool							debugMarkerSupportAvailable;
-	bool							debugUtilsSupportAvailable;
-	bool                            deviceProperties2Available;     // SRS - For getting device properties in support of gfxInfo
-
-	// selected GPU
-	gpuInfo_t* 						gpu;
-
-	// all GPUs found on the system
-	idList< gpuInfo_t >				gpus;
-
-	VkCommandPool					commandPool;
-	idArray< VkCommandBuffer, NUM_FRAME_DATA >	commandBuffer;
-	idArray< VkFence, NUM_FRAME_DATA >			commandBufferFences;
-	idArray< bool, NUM_FRAME_DATA >				commandBufferRecorded;
-
-	VkSurfaceKHR					surface;
-	VkPresentModeKHR				presentMode;
-	VkFormat						depthFormat;
-	VkRenderPass					renderPass;
-	VkPipelineCache					pipelineCache;
-	VkSampleCountFlagBits			sampleCount;
-	bool							supersampling;
-
-	int								fullscreen;
-	VkSwapchainKHR					swapchain;
-	VkFormat						swapchainFormat;
-	VkExtent2D						swapchainExtent;
-	uint32							currentSwapIndex;
-	VkImage							msaaImage;
-	VkImageView						msaaImageView;
-#if defined( USE_AMD_ALLOCATOR )
-	VmaAllocation					msaaVmaAllocation;
-	VmaAllocationInfo				msaaAllocation;
-#else
-	vulkanAllocation_t				msaaAllocation;
-#endif
-	idArray< VkImage, NUM_FRAME_DATA >			swapchainImages;
-	idArray< VkImageView, NUM_FRAME_DATA >		swapchainViews;
-
-	idArray< VkFramebuffer, NUM_FRAME_DATA >	frameBuffers;
-	idArray< VkSemaphore, NUM_FRAME_DATA >		acquireSemaphores;
-	idArray< VkSemaphore, NUM_FRAME_DATA >		renderCompleteSemaphores;
-
-	int											currentImageParm;
-	idArray< idImage*, MAX_IMAGE_PARMS >		imageParms;
-
-	//typedef uint32 QueryTuple[2];
-
-	// GPU timestamp queries
-	idArray< uint32, NUM_FRAME_DATA >									queryIndex;
-	idArray< idArray< uint32, MRB_TOTAL_QUERIES >, NUM_FRAME_DATA >		queryAssignedIndex;
-	idArray< idArray< uint64, NUM_TIMESTAMP_QUERIES >, NUM_FRAME_DATA >	queryResults;
-	idArray< VkQueryPool, NUM_FRAME_DATA >		queryPools;
-};
-
-extern vulkanContext_t vkcontext;
-
-#else //if defined( ID_OPENGL )
-
-struct glContext_t
-{
-	uint64		frameCounter;
-	uint32		frameParity;
-
-	tmu_t		tmu[ MAX_MULTITEXTURE_UNITS ];
-	uint64		stencilOperations[ STENCIL_FACE_NUM ];
-
-	// for GL_TIME_ELAPSED_EXT queries
-	GLuint		renderLogMainBlockTimeQueryIds[ NUM_FRAME_DATA ][ MRB_TOTAL_QUERIES ];
-	uint32		renderLogMainBlockTimeQueryIssued[ NUM_FRAME_DATA ][ MRB_TOTAL_QUERIES ];
-};
-
-extern glContext_t glcontext;
-
-#endif
 
 /*
 ===========================================================================
@@ -246,6 +123,7 @@ all state modified by the back end is separated from the front end state
 ===========================================================================
 */
 struct ImDrawData;
+class idUniformBuffer;
 
 class idRenderBackend
 {
@@ -257,21 +135,11 @@ public:
 	idRenderBackend();
 	~idRenderBackend();
 
-	void				Init();
-	void				Shutdown();
-
 	void				ExecuteBackEndCommands( const emptyCommand_t* cmds );
 
 	void				Print();
-	void				CheckCVars();
-
-	static void			ImGui_RenderDrawLists( ImDrawData* draw_data );
 
 private:
-	void				DrawFlickerBox();
-
-	void				DrawElementsWithCounters( const drawSurf_t* surf );
-
 	void				SetColorMappings();
 	void				ResizeImages();
 
@@ -322,16 +190,21 @@ private:
 	void				MotionBlur();
 	void				PostProcess( const void* data );
 
-	void				SetBuffer( const void* data );
-
 public:
-	void				GL_BlockingSwapBuffers();
+	// lifecycle
+	void				Init();
+	void				Shutdown();
+	void				CheckCVars();
 
+	// frame
+	void				GL_BlockingSwapBuffers();
 	void				GL_StartFrame();
 	void				GL_EndFrame();
+	void				ExecuteBackEndCommandsTimed( const emptyCommand_t* cmds );
+	void				ReadGPUTimers( uint64* gpuMicroSec );
 
+	// state
 	uint64				GL_GetCurrentState() const;
-
 	uint64				GL_GetCurrentStateMinusStencil() const;
 	void				GL_SetDefaultState();
 
@@ -339,10 +212,6 @@ public:
 //	void				GL_SeparateStencil( stencilFace_t face, uint64 stencilBits );
 
 	void				GL_SelectTexture( int unit );
-//	void				GL_BindTexture( idImage* image );
-
-//	void				GL_CopyFrameBuffer( idImage* image, int x, int y, int imageWidth, int imageHeight );
-//	void				GL_CopyDepthBuffer( idImage* image, int x, int y, int imageWidth, int imageHeight );
 
 	// RB: HDR parm
 	void				GL_Clear( bool color, bool depth, bool stencil, byte stencilValue, float r, float g, float b, float a, bool clearHDR = true );
@@ -391,6 +260,29 @@ public:
 	}
 
 //	void				GL_Color( float* color );
+
+	// clears and clip space differences
+	void				BindGlobalVertexArray();
+	void				ClearColorBlack();
+	void				ClearDepthForShadowPass();
+	void				ApplyShadowClipSpace( idRenderMatrix& projection, int kind );		// kind: 0 = sun ortho, 1 = point light face, 2 = projected light in window space
+	bool				CanCopyDepthForSoftParticles( bool useHDR ) const;
+
+	// HDR auto exposure
+	bool				ReadbackHDR64( float* image );
+	void				BlitHDRTo64();
+
+	// screenshots
+	void				RequestScreenCapture();
+	bool				WriteScreenCaptureTGA( const char* fileName, const idScreenRect& rect );
+	void				ReadTiledPixels( int width, int height, byte* buffer, renderView_t* ref );
+
+	static void			ImGui_RenderDrawLists( ImDrawData* draw_data );
+
+private:
+	void				DrawFlickerBox();
+	void				DrawElementsWithCounters( const drawSurf_t* surf );
+	void				SetBuffer( const void* data );
 
 private:
 	void				DBG_SimpleSurfaceSetup( const drawSurf_t* drawSurf );
@@ -467,27 +359,8 @@ private:
 	float				hdrKey;
 	// RB end
 
-private:
-#if !defined( USE_VULKAN )
-	int					currenttmu;
-
-	unsigned int		currentVertexBuffer;
-	unsigned int		currentIndexBuffer;
-	Framebuffer*		currentFramebuffer;		// RB: for offscreen rendering
-
-	vertexLayoutType_t	vertexLayout;
-
-	float				polyOfsScale;
-	float				polyOfsBias;
-	float				polyOfsClamp;
-
 public:
-	int					GetCurrentTextureUnit() const
-	{
-		return currenttmu;
-	}
-
-#endif // !defined( USE_VULKAN )
+	Framebuffer*		currentFramebuffer;		// RB: for offscreen rendering
 };
 
 #endif

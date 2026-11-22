@@ -228,11 +228,7 @@ void idGuiModel::EmitFullScreen()
 	viewDef->projectionMatrix[0 * 4 + 3] = 0.0f;
 
 	viewDef->projectionMatrix[1 * 4 + 0] = 0.0f;
-#if defined(USE_VULKAN)
-	viewDef->projectionMatrix[1 * 4 + 1] = 2.0f / SCREEN_HEIGHT;
-#else
-	viewDef->projectionMatrix[1 * 4 + 1] = -2.0f / SCREEN_HEIGHT;
-#endif
+	viewDef->projectionMatrix[1 * 4 + 1] = R_GetProjectionYSign() * -2.0f / SCREEN_HEIGHT;
 	viewDef->projectionMatrix[1 * 4 + 2] = 0.0f;
 	viewDef->projectionMatrix[1 * 4 + 3] = 0.0f;
 
@@ -242,11 +238,7 @@ void idGuiModel::EmitFullScreen()
 	viewDef->projectionMatrix[2 * 4 + 3] = 0.0f;
 
 	viewDef->projectionMatrix[3 * 4 + 0] = -1.0f; // RB: was -2.0f
-#if defined(USE_VULKAN)
-	viewDef->projectionMatrix[3 * 4 + 1] = -1.0f;
-#else
-	viewDef->projectionMatrix[3 * 4 + 1] = 1.0f;
-#endif
+	viewDef->projectionMatrix[3 * 4 + 1] = R_GetProjectionYSign();
 	viewDef->projectionMatrix[3 * 4 + 2] = 0.0f; // RB: was 1.0f
 	viewDef->projectionMatrix[3 * 4 + 3] = 1.0f;
 

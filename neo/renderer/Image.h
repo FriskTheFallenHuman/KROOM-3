@@ -179,7 +179,6 @@ ID_INLINE idImageOpts::idImageOpts()
 	textureType		= TT_2D;
 	gammaMips		= false;
 	readback		= false;
-
 };
 
 /*
@@ -258,11 +257,12 @@ typedef enum
 
 class idImage
 {
-	friend class Framebuffer;
+	friend class FramebufferGL;
 
 public:
-	idImage( const char* name );
-	~idImage();
+	static idImage* Create( const char* name );
+
+	virtual ~idImage();
 
 	const char* 	GetName() const
 	{
@@ -272,14 +272,14 @@ public:
 	// Makes this image active on the current GL texture unit.
 	// automatically enables or disables cube mapping
 	// May perform file loading if the image was not preloaded.
-	void		Bind();
+	virtual void	Bind() = 0;
 
 	// RB begin
 	void		GenerateShadowArray( int width, int height, textureFilter_t filter, textureRepeat_t repeat, textureUsage_t usage );
 	// RB end
 
-	void		CopyFramebuffer( int x, int y, int width, int height );
-	void		CopyDepthbuffer( int x, int y, int width, int height );
+	virtual void	CopyFramebuffer( int x, int y, int width, int height ) = 0;
+	virtual void	CopyDepthbuffer( int x, int y, int width, int height ) = 0;
 
 	void		UploadScratch( const byte* pic, int width, int height );
 
@@ -327,36 +327,16 @@ public:
 	}
 	void		ActuallyLoadImage( bool fromBackEnd );
 
-	//---------------------------------------------
-	// Platform specific implementations
-	//---------------------------------------------
-
-#if defined( USE_VULKAN )
-	static void	EmptyGarbage();
-
-	VkImage		GetImage() const
+	bool		IsDepthFormat() const
 	{
-		return image;
+		return opts.format == FMT_DEPTH || opts.format == FMT_SHADOW_ARRAY;
 	}
-	VkImageView	GetView() const
-	{
-		return view;
-	}
-	VkImageLayout GetLayout() const
-	{
-		return layout;
-	}
-	VkSampler	GetSampler() const
-	{
-		return sampler;
-	}
-#endif
 
 	void		AllocImage( const idImageOpts& imgOpts, textureFilter_t filter, textureRepeat_t repeat );
 
 	// Deletes the texture object, but leaves the structure so it can be reloaded
 	// or resized.
-	void		PurgeImage();
+	virtual void	PurgeImage() = 0;
 
 	// z is 0 for 2D textures, 0 - 5 for cube maps, and 0 - uploadDepth for 3D textures. Only
 	// one plane at a time of 3D textures can be uploaded. The data is assumed to be correct for
@@ -364,9 +344,9 @@ public:
 	// be in OpenGL RGBA format, the consoles may have to reorganize. pixelPitch is only needed
 	// when updating from a source subrect. Width, height, and dest* are always in pixels, so
 	// they must be a multiple of four for dxt data.
-	void		SubImageUpload( int mipLevel, int destX, int destY, int destZ,
-								int width, int height, const void* data,
-								int pixelPitch = 0 );
+	virtual void	SubImageUpload( int mipLevel, int destX, int destY, int destZ,
+									int width, int height, const void* data,
+									int pixelPitch = 0 ) = 0;
 
 	// SetPixel is assumed to be a fast memory write on consoles, degenerating to a
 	// SubImageUpload on PCs.  Used to update the page mapping images.
@@ -389,7 +369,7 @@ public:
 		return usage;
 	}
 
-	bool				IsLoaded() const;
+	virtual bool		IsLoaded() const = 0;
 
 	// RB
 	bool				IsDefaulted() const
@@ -413,32 +393,22 @@ public:
 	void		GenerateCubeImage( const byte* pic[6], int size,
 								   textureFilter_t filter, textureUsage_t usage );
 
-	void		SetTexParameters();	// update aniso and trilinear
+	virtual void	SetTexParameters() = 0;	// update aniso and trilinear
 
 	// DG: added for imgui integration (to be used with ImGui::Image() etc)
-	void*		GetImGuiTextureID()
-	{
-		if( !IsLoaded() )
-		{
-			// load the image on demand here, which isn't our normal game operating mode
-			ActuallyLoadImage( true );
-		}
-
-#if defined( USE_VULKAN )
-		return ( void* )( intptr_t )image;
-#else
-		return ( void* )( intptr_t )texnum;
-#endif
-
-	}
+	virtual void*	GetImGuiTextureID() = 0;
 	// DG end
 
-private:
+protected:
+	idImage( const char* name );
+
 	friend class idImageManager;
 
 	void		DeriveOpts();
-	void		AllocImage();
-	void		SetSamplerState( textureFilter_t tf, textureRepeat_t tr );
+
+	virtual void	AllocImage() = 0;
+	virtual void	SetSamplerState( textureFilter_t tf, textureRepeat_t tr ) = 0;
+	virtual textureFormat_t	TranslateBinaryFormat( textureFormat_t binaryFormat ) const;
 
 	// parameters that define this image
 	idStr				imgName;				// game path, including extension (except for cube maps), may be an image program
@@ -459,41 +429,9 @@ private:
 
 	int					refCount;				// overall ref count
 
+	uint32				texnum;				// texture handle
+
 	static const uint32 TEXTURE_NOT_LOADED = 0xFFFFFFFF;
-
-#if defined( USE_VULKAN )
-	void				CreateSampler();
-	// SRS - added method to set image layout
-	void                SetImageLayout( VkImage image, VkImageSubresourceRange subresourceRange, VkImageLayout oldImageLayout, VkImageLayout newImageLayout );
-	// SRS End
-
-	bool				bIsSwapChainImage;
-	VkFormat			internalFormat;
-	VkImage				image;
-	VkImageView			view;
-	VkImageLayout		layout;
-	VkSampler			sampler;
-
-#if defined( USE_AMD_ALLOCATOR )
-	VmaAllocation		allocation;
-	static idList< VmaAllocation >		allocationGarbage[ NUM_FRAME_DATA ];
-#else
-	vulkanAllocation_t	allocation;
-	static idList< vulkanAllocation_t > allocationGarbage[ NUM_FRAME_DATA ];
-#endif
-
-	static int						garbageIndex;
-	static idList< VkImage >		imageGarbage[ NUM_FRAME_DATA ];
-	static idList< VkImageView >	viewGarbage[ NUM_FRAME_DATA ];
-	static idList< VkSampler >		samplerGarbage[ NUM_FRAME_DATA ];
-#else
-	GLuint				texnum;				// gl texture binding
-
-	// we could derive these in subImageUpload each time if necessary
-	GLuint				internalFormat;
-	GLuint				dataFormat;
-	GLuint				dataType;
-#endif
 };
 
 // data is RGBA

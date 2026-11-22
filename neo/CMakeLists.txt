@@ -16,8 +16,7 @@ option(COMPILE_COMMANDS "Generate compile_commands.json" OFF)
 option(TOOLS "Compile the built-in wxWidgets based tools" ON)
 option(USE_PRECOMPILED_HEADERS "Use precompiled headers during build" ON)
 option(FFMPEG "Use FMPEG to render other video formats" OFF)
-option(USE_VULKAN "Use Vulkan instead of OpenGL" OFF)
-option(USE_MoltenVK	"Use MoltenVK library directly instead of Vulkan loader on macOS" OFF)
+option(BUILD_RENDERER_OPENGL "Build the OpenGL renderer module" ON)
 option(ONATIVE "Optimize for the host CPU" OFF)
 option(REPRODUCIBLE_BUILD "Replace __DATE__ and __TIME__ by hardcoded values for reproducible builds." OFF)
 option(WINRT "Build for Windows RT" OFF)
@@ -64,8 +63,8 @@ if (FORCE_COLOR_OUTPUT)
 		add_compile_options(-fdiagnostics-color=always)
 	elseif(CMAKE_C_COMPILER_ID MATCHES "Clang")
 		add_compile_options(-fcolor-diagnostics)
-	endif ()
-endif ()
+	endif()
+endif()
 
 macro(SET_FORCED_OPTION option value)
 	set(${option} ${value} CACHE INTERNAL "" FORCE)
@@ -351,58 +350,7 @@ if (USE_INTRINSICS_SSE)
 	endif()
 endif()
 
-if(USE_VULKAN)
-	# SRS - Set default VULKAN_SDK location if environment variable not defined on OSX
-	if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin" AND NOT DEFINED ENV{VULKAN_SDK})
-		if(NOT USE_MoltenVK)
-			# SRS - Vulkan SDK installer copies standard vulkan headers and libs to /usr/local on OSX
-			set(ENV{VULKAN_SDK} /usr/local)
-		else()
-			message(FATAL_ERROR "Must define VULKAN_SDK location if USE_MoltenVK option enabled!")
-		endif()
-	endif()
-
-	# Use FindVulkan module added with CMAKE 3.7
-	if(NOT CMAKE_VERSION VERSION_LESS 3.7.0)
-		message( STATUS "Using module to find Vulkan" )
-		find_package(Vulkan REQUIRED COMPONENTS shaderc_combined)
-	endif()
-
-	if(NOT Vulkan_FOUND)
-		message(FATAL_ERROR "Could not find Vulkan library!")
-	else()
-		add_definitions(-DUSE_VULKAN)
-		include_directories($ENV{VULKAN_SDK}/include)
-
-		find_or_fetch(VulkanMemoryAllocator
-			GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
-			GIT_TAG v3.4.0
-			GIT_SHALLOW TRUE)
-
-		set(VMA_LIBRARY VulkanMemoryAllocator::Headers GPUOpen::VulkanMemoryAllocator)
-
-		# SRS - Add case for UNIX/OSX
-		if(CMAKE_CL_64 OR UNIX)
-			link_directories($ENV{VULKAN_SDK}/Lib)
-		else()
-			link_directories($ENV{VULKAN_SDK}/Lib32)
-		endif()
-
-		if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-			# SRS - Enable Beta extensions for VULKAN_SDK portability subset features on OSX
-			add_definitions(-DVK_ENABLE_BETA_EXTENSIONS)
-			# SRS - Optionally use MoltenVK headers/library for runtime config functions on OSX
-			if(USE_MoltenVK)
-				add_definitions(-DUSE_MoltenVK)
-				include_directories($ENV{VULKAN_SDK}/../MoltenVK/include)
-				set(Vulkan_LIBRARY $ENV{VULKAN_SDK}/../MoltenVK/dylib/macOS/libMoltenVK.dylib CACHE FILEPATH "Path to MoltenVK library." FORCE)
-			endif()
-		endif()
-		message(STATUS "Using Vulkan: " ${Vulkan_LIBRARY})
-	endif()
-else()
-	include_directories(extern/glad/include)
-endif()
+include_directories(extern/glad/include)
 
 ##################### Dependencies ###########################
 
@@ -481,16 +429,6 @@ else()
 endif()
 list(APPEND sys_thirdparty ${SDLX_LIBRARY})
 
-if(NOT USE_VULKAN)
-  find_package(OpenGL REQUIRED)
-  include_directories(${OPENGL_INCLUDE_DIRS})
-  if(UNIX)
-	list(APPEND sys_thirdparty OpenGL::GL)
-  else()
-	list(APPEND sys_thirdparty OpenGL::GL OpenGL::GLU)
-  endif()
-endif()
-
 if(USE_INTRINSICS_SSE)
 	SET_FORCED_OPTION(BUILD_DLL OFF)
 	SET_FORCED_OPTION(ENABLE_INSTALL OFF)
@@ -566,7 +504,7 @@ list(APPEND sys_thirdparty ${BINKDEC_TARGET})
 
 # wxWidgets
 if(UNIX)
-	find_package(wxWidgets REQUIRED COMPONENTS core base adv aui gl propgrid stc)
+	find_package(wxWidgets REQUIRED COMPONENTS core base adv aui propgrid stc html xml)
 	include(${wxWidgets_USE_FILE})
 	set(WXWIDGETS_LIBRARY ${wxWidgets_LIBRARIES})
 else()
@@ -722,8 +660,7 @@ set_source_files_properties(
 	sound/stbvorbis_impl.c
 	PROPERTIES
 	SKIP_PRECOMPILE_HEADERS ON
-	LANGUAGE C
-)
+	LANGUAGE C)
 
 #always_optimize_sourcefile(sound/stbvorbis_impl.c)
 
@@ -734,8 +671,8 @@ file(GLOB src_sys_common sys/common/*.cpp sys/common/*.h)
 source_group("Sys\\Common" FILES ${src_sys_common})
 
 if(USE_STEAMWORKS)
-file(GLOB src_sys_steam sys/steam/*.cpp sys/steam/*.h)
-source_group("Sys\\Steam" FILES ${src_sys_steam})
+	file(GLOB src_sys_steam sys/steam/*.cpp sys/steam/*.h)
+	source_group("Sys\\Steam" FILES ${src_sys_steam})
 endif()
 
 file(GLOB src_sys_sdl sys/sdl/*.cpp sys/sdl/*.h)
@@ -745,13 +682,13 @@ file(GLOB src_ui ui/*.cpp ui/*.h)
 list(REMOVE_ITEM src_ui ${CMAKE_CURRENT_SOURCE_DIR}/ui/GameWindow.cpp)
 source_group("UI" FILES ${src_ui})
 
+list(REMOVE_ITEM src_sys_sdl
+	${CMAKE_CURRENT_SOURCE_DIR}/sys/sdl/DeviceManagerLocal.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/sys/sdl/DeviceManagerLocal.h)
+
 set(src_core
 	${src_cm}
 	${src_framework}
-	${src_renderer_base}
-	${src_renderer_color}
-	${src_renderer_dxt}
-	${src_renderer_smaa}
 	${src_sound}
 	${src_sys}
 	${src_sys_sdl}
@@ -759,7 +696,7 @@ set(src_core
 	${src_ui})
 
 if(USE_STEAMWORKS)
-list(APPEND src_core ${src_sys_steam})
+	list(APPEND src_core ${src_sys_steam})
 endif()
 
 ##################### Compilers ###########################
@@ -927,20 +864,6 @@ foreach(_tgt IN LISTS _all_targets)
 endforeach()
 
 if(MSVC)
-	if(USE_VULKAN)
-		list(APPEND sys_thirdparty ${Vulkan_LIBRARY} Vulkan::shaderc_combined ${VMA_LIBRARY})
-
-		file(GLOB src_renderer_vulkan renderer/Vulkan/*.cpp renderer/Vulkan/*.h)
-		source_group("Renderer\\Vulkan" FILES ${src_renderer_vulkan})
-
-		list(APPEND src_core ${src_renderer_vulkan})
-	else()
-		file(GLOB src_renderer_opengl renderer/OpenGL/*.cpp renderer/OpenGL/*.h)
-		source_group("Renderer\\OpenGL" FILES ${src_renderer_opengl})
-
-		list(APPEND src_core ${src_renderer_opengl})
-	endif()
-
 	file(GLOB src_sound_openal sound/OpenAL/*.cpp sound/OpenAL/*.h)
 	source_group("Sound\\OpenAL" FILES ${src_sound_openal})
 	list(APPEND src_core ${src_sound_openal})
@@ -956,9 +879,7 @@ if(MSVC)
 	source_group("Sys//Win32//RC" FILES ${src_sys_win32_rc})
 
 	list(APPEND src_core ${src_sys_win32} ${src_sys_win32_rc})
-
 else()
-
 	file(GLOB src_sys_posix sys/posix/*.cpp sys/posix/*.h)
 	source_group("Sys//Posix" FILES ${src_sys_posix})
 
@@ -974,21 +895,6 @@ else()
 		file(GLOB src_sound_openal sound/OpenAL/*.cpp sound/OpenAL/*.h)
 		source_group("Sound\\OpenAL" FILES ${src_sound_openal})
 		list(APPEND src_core ${src_sound_openal})
-
-		if(USE_VULKAN)
-			set(Vulkan_LIBRARIES ${Vulkan_LIBRARY} Vulkan::shaderc_combined GPUOpen::VulkanMemoryAllocator)
-
-			file(GLOB src_renderer_vulkan renderer/Vulkan/*.cpp renderer/Vulkan/*.h)
-			source_group("Renderer\\Vulkan" FILES ${src_renderer_vulkan})
-
-			list(APPEND src_core ${src_renderer_vulkan})
-		else()
-			file(GLOB src_renderer_opengl renderer/OpenGL/*.cpp renderer/OpenGL/*.h)
-			source_group("Renderer\\OpenGL" FILES ${src_renderer_opengl})
-
-			list(APPEND src_core ${src_renderer_opengl})
-		endif()
-
 	endif()
 
 	if(MACOSX_BUNDLE)
@@ -1010,8 +916,106 @@ else()
 	endif()
 endif()
 
+##################### Renderer modules ###########################
+
+function(add_renderer_module api)
+	set(_tgt ref_neo_${api})
+	if(api STREQUAL "opengl")
+		file(GLOB src_renderer_opengl renderer/OpenGL/*.cpp renderer/OpenGL/*.h)
+		source_group("Renderer\\OpenGL" FILES ${src_renderer_opengl})
+		set(_api_sources ${src_renderer_opengl})
+	endif()
+	
+	set(src_renderer_shared
+		${CMAKE_CURRENT_SOURCE_DIR}/sys/sdl/DeviceManagerLocal.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/sys/sdl/DeviceManagerLocal.h
+		${CMAKE_CURRENT_SOURCE_DIR}/framework/DeclTable.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/framework/DeclTable.h
+		${CMAKE_CURRENT_SOURCE_DIR}/framework/DeclSkin.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/framework/DeclSkin.h
+		${CMAKE_CURRENT_SOURCE_DIR}/framework/DeclParticle.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/framework/DeclParticle.h
+		${CMAKE_CURRENT_SOURCE_DIR}/framework/DeclAtmos.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/framework/DeclAtmos.h
+		${CMAKE_CURRENT_SOURCE_DIR}/framework/DemoFile.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/framework/DemoFile.h
+		${CMAKE_CURRENT_SOURCE_DIR}/framework/File.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/framework/File.h
+		${CMAKE_CURRENT_SOURCE_DIR}/framework/Compressor.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/framework/Compressor.h)
+
+	add_library(${_tgt} SHARED
+		${src_renderer_base}
+		${src_renderer_color}
+		${src_renderer_dxt}
+		${src_renderer_smaa}
+		${_api_sources}
+		${src_renderer_shared})
+
+	target_compile_definitions(${_tgt} PRIVATE RENDERER_DLL)
+
+	file(GLOB_RECURSE src_external_glad "${CMAKE_SOURCE_DIR}/extern/glad/src/*.c" "${CMAKE_SOURCE_DIR}/extern/glad/include/*.h")
+
+	if(api STREQUAL "opengl")
+		find_package(OpenGL REQUIRED)
+		include_directories(${OPENGL_INCLUDE_DIRS})
+		if(UNIX)
+			set(src_gl_libs OpenGL::GL)
+		else()
+			set(src_gl_libs OpenGL::GL OpenGL::GLU)
+		endif()
+
+		target_sources(${_tgt} PRIVATE ${CMAKE_SOURCE_DIR}/idlib/geometry/RenderMatrix.cpp)
+		set_source_files_properties(${CMAKE_SOURCE_DIR}/idlib/geometry/RenderMatrix.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+
+		set(glad_c_files ${src_external_glad})
+		list(FILTER glad_c_files INCLUDE REGEX "\\.c$")
+		set_source_files_properties(${glad_c_files} PROPERTIES LANGUAGE C SKIP_PRECOMPILE_HEADERS ON)
+		source_group("Glad" FILES ${src_external_glad})
+		target_sources(${_tgt} PRIVATE ${src_external_glad})
+		target_include_directories(${_tgt} BEFORE PRIVATE ${OPENGL_INCLUDE_DIRS} "${CMAKE_SOURCE_DIR}/extern/glad/include")
+		target_link_libraries(${_tgt} PRIVATE ${src_gl_libs})
+	endif()
+
+	set(_renderer_thirdparty ${sys_thirdparty})
+	list(REMOVE_ITEM _renderer_thirdparty ${OPENAL_LIBRARY})
+	target_link_libraries(${_tgt} PRIVATE idLib external ${sys_libs} ${_renderer_thirdparty})
+
+	if(USE_PRECOMPILED_HEADERS)
+		target_precompile_headers(${_tgt} PRIVATE ${CMAKE_SOURCE_DIR}/idlib/precompiled.h)
+	endif()
+
+	if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+		target_link_options(${_tgt} PRIVATE -Wl,--no-undefined)
+	endif()
+
+	set_target_properties(${_tgt} PROPERTIES PREFIX "" OUTPUT_NAME "${_tgt}${cpu_arch}" FOLDER "dlls")
+
+	if(NOT WIN32)
+		set_target_properties(${_tgt} PROPERTIES SUFFIX ".dll")
+	endif()
+
+	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+		set(_out ${CMAKE_SOURCE_DIR}/../bin/x86_64)
+	else()
+		set(_out ${CMAKE_SOURCE_DIR}/../bin/x86)
+	endif()
+	set_target_properties(${_tgt} PROPERTIES
+		RUNTIME_OUTPUT_DIRECTORY $<1:>${_out}
+		LIBRARY_OUTPUT_DIRECTORY $<1:>${_out})
+	add_dependencies(${CMAKE_PROJECT_NAME} ${_tgt})
+endfunction()
+
 add_executable(${CMAKE_PROJECT_NAME} MACOSX_BUNDLE WIN32 ${src_core})
 add_dependencies(${CMAKE_PROJECT_NAME} idLib external ${sys_thirdparty_dependencies})
+
+if(BUILD_RENDERER_OPENGL)
+	add_renderer_module(opengl)
+endif()
+
+if(NOT BUILD_RENDERER_OPENGL)
+	message(FATAL_ERROR "Enable at least one of BUILD_RENDERER_OPENGL")
+endif()
 
 target_link_libraries(${CMAKE_PROJECT_NAME} idLib $<$<NOT:$<BOOL:${BUILD_GAME_DLL}>>:game> external ${sys_libs} ${sys_thirdparty})
 if(NOT ${BUILD_GAME_DLL})

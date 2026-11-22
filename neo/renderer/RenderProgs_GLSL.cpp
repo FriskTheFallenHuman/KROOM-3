@@ -333,7 +333,7 @@ const char* idRenderProgManager::GLSLMacroNames[MAX_SHADER_MACRO_NAMES] =
 StripDeadCode
 ========================
 */
-idStr idRenderProgManager::StripDeadCode( const idStr& in, const char* name, const idStrList& compileMacros, bool builtin )
+idStr idRenderProgManager::StripDeadCode( const idStr& in, const char* name, const idStrList& compileMacros, bool builtin, bool vkGLSL )
 {
 	if( r_skipStripDeadCode.GetBool() )
 	{
@@ -375,9 +375,10 @@ idStr idRenderProgManager::StripDeadCode( const idStr& in, const char* name, con
 		src.AddDefine( "DEBUG_PBR" );
 	}
 
-#if defined( USE_VULKAN )
-	src.AddDefine( "USE_VULKAN" );
-#endif
+	if( vkGLSL )
+	{
+		src.AddDefine( "USE_VULKAN" );
+	}
 
 	// SMAA configuration
 	src.AddDefine( "SMAA_GLSL_3" );
@@ -893,71 +894,16 @@ idStr idRenderProgManager::ConvertCG2GLSL( const idStr& in, const char* name, rp
 	{
 		// check for uniforms
 
-		// RB: added special case for matrix arrays
-		while( token == "uniform" && ( src.CheckTokenString( "float4" ) || src.CheckTokenString( "float4x4" ) ) )
+		// uniforms and samplers can be declared in any order (e.g. samplers first, then a float4 uniform)
+		for( bool declFound = true; declFound; )
 		{
-			src.ReadToken( &token );
-			idStr uniform = token;
+			declFound = false;
 
-			// strip ': register()' from uniforms
-			if( src.CheckTokenString( ":" ) )
+			// RB: added special case for matrix arrays
+			while( token == "uniform" && ( src.CheckTokenString( "float4" ) || src.CheckTokenString( "float4x4" ) ) )
 			{
-				if( src.CheckTokenString( "register" ) )
-				{
-					src.SkipUntilString( ";" );
-				}
-			}
-
-
-			if( src.PeekTokenString( "[" ) )
-			{
-				while( src.ReadToken( &token ) )
-				{
-					uniform += token;
-
-					if( token == "]" )
-					{
-						break;
-					}
-				}
-			}
-
-			uniformList.Append( uniform );
-
-			src.ReadToken( &token );
-		}
-
-		// RB: check for sampler uniforms
-		if( vkGLSL )
-		{
-			while( token == "uniform" &&
-					( src.PeekTokenString( "sampler2D" ) ||
-					  src.PeekTokenString( "samplerCUBE" ) ||
-					  src.PeekTokenString( "sampler3D" ) ||
-					  src.PeekTokenString( "sampler2DArrayShadow" ) ||
-					  src.PeekTokenString( "sampler2DArray" ) ) )
-			{
-				idStr sampler;
-
-				// sampler2D or whatever
 				src.ReadToken( &token );
-
-				//  HACK
-				if( token == "samplerCUBE" )
-				{
-					sampler += "samplerCube";
-				}
-				else
-				{
-					sampler += token;
-				}
-				sampler += " ";
-
-				// the actual variable name
-				src.ReadToken( &token );
-				sampler += token;
-
-				samplerList.Append( sampler );
+				idStr uniform = token;
 
 				// strip ': register()' from uniforms
 				if( src.CheckTokenString( ":" ) )
@@ -968,9 +914,76 @@ idStr idRenderProgManager::ConvertCG2GLSL( const idStr& in, const char* name, rp
 					}
 				}
 
+
+				if( src.PeekTokenString( "[" ) )
+				{
+					while( src.ReadToken( &token ) )
+					{
+						uniform += token;
+
+						if( token == "]" )
+						{
+							break;
+						}
+					}
+				}
+
+				uniformList.Append( uniform );
+				declFound = true;
+
 				src.ReadToken( &token );
 			}
 
+
+			// RB: check for sampler uniforms
+			if( vkGLSL )
+			{
+				while( token == "uniform" &&
+						( src.PeekTokenString( "sampler2D" ) ||
+						  src.PeekTokenString( "samplerCUBE" ) ||
+						  src.PeekTokenString( "sampler3D" ) ||
+						  src.PeekTokenString( "sampler2DArrayShadow" ) ||
+						  src.PeekTokenString( "sampler2DArray" ) ) )
+				{
+					idStr sampler;
+
+					// sampler2D or whatever
+					src.ReadToken( &token );
+
+					//  HACK
+					if( token == "samplerCUBE" )
+					{
+						sampler += "samplerCube";
+					}
+					else
+					{
+						sampler += token;
+					}
+					sampler += " ";
+
+					// the actual variable name
+					src.ReadToken( &token );
+					sampler += token;
+
+					samplerList.Append( sampler );
+					declFound = true;
+
+					// strip ': register()' from uniforms
+					if( src.CheckTokenString( ":" ) )
+					{
+						if( src.CheckTokenString( "register" ) )
+						{
+							src.SkipUntilString( ";" );
+						}
+					}
+
+					src.ReadToken( &token );
+				}
+			}
+		}
+
+		if( vkGLSL )
+		{
 			// RB: HACK to add matrices uniform block layer
 			if( token == "uniform" && src.PeekTokenString( "matrices_ubo" ) )
 			{
@@ -1346,48 +1359,55 @@ idStr idRenderProgManager::ConvertCG2GLSL( const idStr& in, const char* name, rp
 	// RB: tell shader debuggers what shader we look at
 	idStr filenameHint = "// filename " + idStr( name ) + "\n";
 
-// SRS - OSX OpenGL only supports up to GLSL 4.1, but current RenderProgs shaders seem to work as-is on OSX OpenGL drivers
-#if defined(__APPLE__) && !defined(USE_VULKAN)
-	idStr filenameVersion = "#version 410\n";
-#else
-	idStr filenameVersionNumber;
-	idStr filenameProfile;
-
-	// Vulkan requires at least GLSL 4.50
-	if( glConfig.driverType == GLDRV_VULKAN )
+	// SRS - OSX OpenGL only supports up to GLSL 4.1, but current RenderProgs shaders seem to work as-is on OSX OpenGL drivers
+	idStr filenameVersion;
+#if defined(__APPLE__)
+	if( !vkGLSL )
 	{
-		filenameVersionNumber = "450";
+		filenameVersion = "#version 410\n";
 	}
 	else
-	{
-		static const char* const glslVersions[] = { "140", "150", "330", "400", "410", "420", "430", "440", "450", "460" };
-		static_assert( ARRAY_COUNT( glslVersions ) == GL_OPENGL_46 + 1, "glslVersions is out of sync with graphicsVersionType_t" );
-
-		const int versionIndex = idMath::ClampInt( 0, ARRAY_COUNT( glslVersions ) - 1, ( int )glConfig.driverVersion );
-		filenameVersionNumber = glslVersions[versionIndex];
-	}
-
-	// the "core" / "compatibility" profile tokens only exist from #version 150 on
-	const bool profilesAllowed = ( atoi( filenameVersionNumber.c_str() ) >= 150 );
-	switch( glConfig.driverType )
-	{
-		case GLDRV_OPENGL_CORE_PROFILE:
-		case GLDRV_OPENGL_MESA_CORE_PROFILE:
-		case GLDRV_VULKAN:
-			filenameProfile = profilesAllowed ? " core" : "";
-			break;
-
-		case GLDRV_OPENGL_COMPATIBILITY_PROFILE:
-		case GLDRV_OPENGL_MESA_COMPATIBILITY_PROFILE:
-			filenameProfile = profilesAllowed ? " compatibility" : "";
-			break;
-
-		default:
-			filenameProfile = " ";
-			break;
-	}
-	idStr filenameVersion = "#version " + filenameVersionNumber + filenameProfile + "\n";
 #endif
+	{
+		idStr filenameVersionNumber;
+		idStr filenameProfile;
+
+		// Vulkan requires at least GLSL 4.50
+		if( glConfig.driverType == GLDRV_VULKAN )
+		{
+			filenameVersionNumber = "450";
+		}
+		else
+		{
+			static const char* const glslVersions[] = { "140", "150", "330", "400", "410", "420", "430", "440", "450", "460" };
+			static_assert( ARRAY_COUNT( glslVersions ) == GL_OPENGL_46 + 1, "glslVersions is out of sync with graphicsVersionType_t" );
+
+			const int versionIndex = idMath::ClampInt( 0, ARRAY_COUNT( glslVersions ) - 1, ( int )glConfig.driverVersion );
+			filenameVersionNumber = glslVersions[versionIndex];
+		}
+
+		// the "core" / "compatibility" profile tokens only exist from #version 150 on
+		const bool profilesAllowed = ( atoi( filenameVersionNumber.c_str() ) >= 150 );
+		switch( glConfig.driverType )
+		{
+			case GLDRV_OPENGL_CORE_PROFILE:
+			case GLDRV_OPENGL_MESA_CORE_PROFILE:
+			case GLDRV_VULKAN:
+				filenameProfile = profilesAllowed ? " core" : "";
+				break;
+
+			case GLDRV_OPENGL_COMPATIBILITY_PROFILE:
+			case GLDRV_OPENGL_MESA_COMPATIBILITY_PROFILE:
+				filenameProfile = profilesAllowed ? " compatibility" : "";
+				break;
+
+			default:
+				filenameProfile = "";
+				break;
+		}
+
+		filenameVersion = "#version " + filenameVersionNumber + filenameProfile + "\n";
+	}
 
 	// RB: changed to allow multiple versions of GLSL
 	if( stage == SHADER_STAGE_VERTEX )
@@ -1554,14 +1574,15 @@ int	 idRenderProgManager::FindGLSLProgram( const char* name, int vIndex, int fIn
 {
 	for( int i = 0; i < renderProgs.Num(); ++i )
 	{
-		if( ( renderProgs[i].vertexShaderIndex == vIndex ) && ( renderProgs[i].fragmentShaderIndex == fIndex ) )
+		if( ( renderProgs[i]->vertexShaderIndex == vIndex ) && ( renderProgs[i]->fragmentShaderIndex == fIndex ) )
 		{
 			return i;
 		}
 	}
 
-	renderProg_t program;
-	program.name = name;
+	renderProg_t* program = CreateRenderProg();
+	program->name = name;
+
 	int index = renderProgs.Append( program );
 	LoadGLSLProgram( index, vIndex, fIndex );
 	return index;

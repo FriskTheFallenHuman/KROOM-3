@@ -29,11 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __DEVICEMANAGER_SDL_H__
 #define __DEVICEMANAGER_SDL_H__
 
-const int GRAB_ENABLE		= BIT( 0 );
-const int GRAB_REENABLE		= BIT( 1 );
-const int GRAB_HIDECURSOR	= BIT( 2 );
-const int GRAB_SETSTATE		= BIT( 3 );
-
 /*
 =================================
 idDeviceManagerLocal
@@ -53,16 +48,16 @@ public:
 	virtual void		SwapBuffers();
 	virtual int			GetNumVideoDisplays();
 	virtual void		DumpAllDisplayDevices();
+	virtual void*		GetWindow();
+	virtual void		GrabInput( int flags );
+	virtual void		SetWindowTitle( const char* modTitle );
+	virtual bool		SetTitleIcon( const char* OSPath );
+	virtual bool		IsFullscreen();
+	virtual void		NotifyWindowResized( int width, int height );
 
 public:
-	void				GrabInput( int flags );
 
-	void				SetWindowTitle( const char* modTitle );
-	bool				SetTitleIcon( const char* OSPath );
-
-#if defined(USE_VULKAN)
-	std::vector<const char*>	GetRequiredExtensions();
-#endif
+	std::vector<const char*>	GetRequiredExtensions();		// Vulkan only, defined in Vulkan/DeviceManager_VK.cpp
 
 private:
 	static void			TestSwapBuffers( const idCmdArgs& args );

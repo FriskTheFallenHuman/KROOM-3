@@ -32,27 +32,30 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "../RenderCommon.h"
-
+#include "RenderProgs_GL.h"
 
 idCVar r_displayGLSLCompilerMessages( "r_displayGLSLCompilerMessages", "1", CVAR_BOOL | CVAR_ARCHIVE, "Show info messages the GPU driver outputs when compiling the shaders" );
 idCVar r_alwaysExportGLSL( "r_alwaysExportGLSL", "0", CVAR_BOOL | CVAR_ARCHIVE, "Always exports to GLSL regardless of any shader change" );
 
+idRenderProgManagerGL renderProgManagerGL;
+idRenderProgManager& renderProgManager = renderProgManagerGL;
+
 /*
 ========================
-idRenderProgManager::StartFrame
+idRenderProgManagerGL::StartFrame
 ========================
 */
-void idRenderProgManager::StartFrame()
+void idRenderProgManagerGL::StartFrame()
 {
 
 }
 
 /*
 ================================================================================================
-idRenderProgManager::BindProgram
+idRenderProgManagerGL::BindProgram
 ================================================================================================
 */
-void idRenderProgManager::BindProgram( int index )
+void idRenderProgManagerGL::BindProgram( int index )
 {
 	if( current == index )
 	{
@@ -61,16 +64,16 @@ void idRenderProgManager::BindProgram( int index )
 
 	current = index;
 
-	RENDERLOG_PRINTF( "Binding GLSL Program %s\n", renderProgs[ index ].name.c_str() );
-	glUseProgram( renderProgs[ index ].progId );
+	RENDERLOG_PRINTF( "Binding GLSL Program %s\n", renderProgs[ index ]->name.c_str() );
+	glUseProgram( static_cast<renderProgGL_t*>( renderProgs[ index ] )->progId );
 }
 
 /*
 ================================================================================================
-idRenderProgManager::Unbind
+idRenderProgManagerGL::Unbind
 ================================================================================================
 */
-void idRenderProgManager::Unbind()
+void idRenderProgManagerGL::Unbind()
 {
 	current = -1;
 
@@ -79,50 +82,53 @@ void idRenderProgManager::Unbind()
 
 /*
 ================================================================================================
-idRenderProgManager::LoadShader
+idRenderProgManagerGL::LoadShader
 ================================================================================================
 */
-void idRenderProgManager::LoadShader( int index, rpStage_t stage )
+void idRenderProgManagerGL::LoadShader( int index, rpStage_t stage )
 {
-	if( shaders[index].progId != INVALID_PROGID )
+	if( static_cast<shaderGL_t*>( shaders[index] )->progId != INVALID_PROGID )
 	{
 		return; // Already loaded
 	}
 
-	LoadShader( shaders[index] );
+	LoadShader( *shaders[index] );
 }
 
 /*
 ================================================================================================
-idRenderProgManager::LoadGLSLShader
+idRenderProgManagerGL::LoadGLSLShader
 ================================================================================================
 */
-void idRenderProgManager::LoadShader( shader_t& shader )
+void idRenderProgManagerGL::LoadShader( shader_t& shader )
 {
+	shaderGL_t& glShader = static_cast<shaderGL_t&>( shader );
+
 	idStr inFile;
 	idStr outFileHLSL;
 	idStr outFileGLSL;
 	idStr outFileUniforms;
 
 	// RB: replaced backslashes
-	inFile.Format( "renderprogs/%s", shader.name.c_str() );
+	inFile.Format( "renderprogs/%s", glShader.name.c_str() );
 	inFile.StripFileExtension();
-	outFileHLSL.Format( "renderprogs/hlsl/%s%s", shader.name.c_str(), shader.nameOutSuffix.c_str() );
+
+	outFileHLSL.Format( "renderprogs/hlsl/%s%s", glShader.name.c_str(), glShader.nameOutSuffix.c_str() );
 	outFileHLSL.StripFileExtension();
 
 	switch( glConfig.driverType )
 	{
 		case GLDRV_OPENGL_MESA:
 		{
-			outFileGLSL.Format( "renderprogs/glsles-3_00/%s%s", shader.name.c_str(), shader.nameOutSuffix.c_str() );
-			outFileUniforms.Format( "renderprogs/glsles-3_00/%s%s", shader.name.c_str(), shader.nameOutSuffix.c_str() );
+			outFileGLSL.Format( "renderprogs/glsles-3_00/%s%s", glShader.name.c_str(), glShader.nameOutSuffix.c_str() );
+			outFileUniforms.Format( "renderprogs/glsles-3_00/%s%s", glShader.name.c_str(), glShader.nameOutSuffix.c_str() );
 			break;
 		}
 
 		case GLDRV_VULKAN:
 		{
-			outFileGLSL.Format( "renderprogs/vkglsl/%s%s", shader.name.c_str(), shader.nameOutSuffix.c_str() );
-			outFileUniforms.Format( "renderprogs/vkglsl/%s%s", shader.name.c_str(), shader.nameOutSuffix.c_str() );
+			outFileGLSL.Format( "renderprogs/vkglsl/%s%s", glShader.name.c_str(), glShader.nameOutSuffix.c_str() );
+			outFileUniforms.Format( "renderprogs/vkglsl/%s%s", glShader.name.c_str(), glShader.nameOutSuffix.c_str() );
 			break;
 		}
 
@@ -130,11 +136,11 @@ void idRenderProgManager::LoadShader( shader_t& shader )
 		{
 			//SRS - OSX supports only up to GLSL 4.1
 #if defined(__APPLE__)
-			outFileGLSL.Format( "renderprogs/glsl-4_10/%s%s", shader.name.c_str(), shader.nameOutSuffix.c_str() );
-			outFileUniforms.Format( "renderprogs/glsl-4_10/%s%s", shader.name.c_str(), shader.nameOutSuffix.c_str() );
+			outFileGLSL.Format( "renderprogs/glsl-4_10/%s%s", glShader.name.c_str(), glShader.nameOutSuffix.c_str() );
+			outFileUniforms.Format( "renderprogs/glsl-4_10/%s%s", glShader.name.c_str(), glShader.nameOutSuffix.c_str() );
 #else
-			outFileGLSL.Format( "renderprogs/glsl/%s%s", shader.name.c_str(), shader.nameOutSuffix.c_str() );
-			outFileUniforms.Format( "renderprogs/glsl/%s%s", shader.name.c_str(), shader.nameOutSuffix.c_str() );
+			outFileGLSL.Format( "renderprogs/glsl/%s%s", glShader.name.c_str(), glShader.nameOutSuffix.c_str() );
+			outFileUniforms.Format( "renderprogs/glsl/%s%s", glShader.name.c_str(), glShader.nameOutSuffix.c_str() );
 #endif
 		}
 	}
@@ -143,7 +149,7 @@ void idRenderProgManager::LoadShader( shader_t& shader )
 	outFileUniforms.StripFileExtension();
 
 	GLenum glTarget;
-	if( shader.stage == SHADER_STAGE_FRAGMENT )
+	if( glShader.stage == SHADER_STAGE_FRAGMENT )
 	{
 		glTarget = GL_FRAGMENT_SHADER;
 		inFile += ".ps.hlsl";
@@ -188,7 +194,7 @@ void idRenderProgManager::LoadShader( shader_t& shader )
 		idStrList compileMacros;
 		for( int j = 0; j < MAX_SHADER_MACRO_NAMES; j++ )
 		{
-			if( BIT( j ) & shader.shaderFeatures )
+			if( BIT( j ) & glShader.shaderFeatures )
 			{
 				const char* macroName = GetGLSLMacroName( ( shaderFeature_t ) j );
 				compileMacros.Append( idStr( macroName ) );
@@ -199,17 +205,17 @@ void idRenderProgManager::LoadShader( shader_t& shader )
 		// point we directly load a binary and the program source code is not available on the consoles
 		bool hasGPUSkinning = false;
 
-		if(	idStr::Icmp( shader.name.c_str(), "heatHaze" ) == 0 ||
-				idStr::Icmp( shader.name.c_str(), "heatHazeWithMask" ) == 0 ||
-				idStr::Icmp( shader.name.c_str(), "heatHazeWithMaskAndVertex" ) == 0 ||
-				( BIT( USE_GPU_SKINNING ) & shader.shaderFeatures ) )
+		if(	idStr::Icmp( glShader.name.c_str(), "heatHaze" ) == 0 ||
+				idStr::Icmp( glShader.name.c_str(), "heatHazeWithMask" ) == 0 ||
+				idStr::Icmp( glShader.name.c_str(), "heatHazeWithMaskAndVertex" ) == 0 ||
+				( BIT( USE_GPU_SKINNING ) & glShader.shaderFeatures ) )
 		{
 			hasGPUSkinning = true;
 		}
 
 		idStr hlslCode( ( const char* ) hlslFileBuffer );
-		idStr programHLSL = StripDeadCode( hlslCode, inFile, compileMacros, shader.builtin );
-		programGLSL = ConvertCG2GLSL( programHLSL, inFile.c_str(), shader.stage, programUniforms, false, hasGPUSkinning, shader.vertexLayout );
+		idStr programHLSL = StripDeadCode( hlslCode, inFile, compileMacros, glShader.builtin, false );
+		programGLSL = ConvertCG2GLSL( programHLSL, inFile.c_str(), glShader.stage, programUniforms, false, hasGPUSkinning, glShader.vertexLayout );
 
 		// use small letters for file names
 		idStr _outFileHLSL( outFileHLSL );
@@ -253,7 +259,7 @@ void idRenderProgManager::LoadShader( shader_t& shader )
 	// RB: find the uniforms locations in either the vertex or fragment uniform array
 	// this uses the new layout structure
 	{
-		shader.uniforms.Clear();
+		glShader.uniforms.Clear();
 
 		idLexer src( programUniforms, programUniforms.Length(), "uniforms" );
 		idToken token;
@@ -279,27 +285,27 @@ void idRenderProgManager::LoadShader( shader_t& shader )
 				{
 					idLib::Error( "couldn't find uniform %s for %s", token.c_str(), outFileGLSL.c_str() );
 				}
-				shader.uniforms.Append( index );
+				glShader.uniforms.Append( index );
 			}
 		}
 	}
 
 	// create and compile the shader
-	shader.progId = glCreateShader( glTarget );
-	if( shader.progId )
+	glShader.progId = glCreateShader( glTarget );
+	if( glShader.progId )
 	{
 		const char* source[1] = { programGLSL.c_str() };
 
-		glShaderSource( shader.progId, 1, source, NULL );
-		glCompileShader( shader.progId );
+		glShaderSource( glShader.progId, 1, source, NULL );
+		glCompileShader( glShader.progId );
 
 		int infologLength = 0;
-		glGetShaderiv( shader.progId, GL_INFO_LOG_LENGTH, &infologLength );
+		glGetShaderiv( glShader.progId, GL_INFO_LOG_LENGTH, &infologLength );
 		if( infologLength > 1 )
 		{
 			idTempArray<char> infoLog( infologLength );
 			int charsWritten = 0;
-			glGetShaderInfoLog( shader.progId, infologLength, &charsWritten, infoLog.Ptr() );
+			glGetShaderInfoLog( glShader.progId, infologLength, &charsWritten, infoLog.Ptr() );
 
 			// catch the strings the ATI and Intel drivers output on success
 			if( strstr( infoLog.Ptr(), "successfully compiled to run on hardware" ) != NULL ||
@@ -309,7 +315,7 @@ void idRenderProgManager::LoadShader( shader_t& shader )
 			}
 			else if( r_displayGLSLCompilerMessages.GetBool() ) // DG:  check for the CVar I added above
 			{
-				idLib::Printf( "While compiling %s program %s\n", ( shader.stage == SHADER_STAGE_FRAGMENT ) ? "fragment" : "vertex" , inFile.c_str() );
+				idLib::Printf( "While compiling %s program %s\n", ( glShader.stage == SHADER_STAGE_FRAGMENT ) ? "fragment" : "vertex" , inFile.c_str() );
 
 				const char separator = '\n';
 				idList<idStr> lines;
@@ -334,10 +340,11 @@ void idRenderProgManager::LoadShader( shader_t& shader )
 		}
 
 		GLint compiled = GL_FALSE;
-		glGetShaderiv( shader.progId, GL_COMPILE_STATUS, &compiled );
+		glGetShaderiv( glShader.progId, GL_COMPILE_STATUS, &compiled );
 		if( compiled == GL_FALSE )
 		{
-			glDeleteShader( shader.progId );
+			glDeleteShader( glShader.progId );
+			glShader.progId = INVALID_PROGID;
 			return;
 		}
 	}
@@ -345,23 +352,20 @@ void idRenderProgManager::LoadShader( shader_t& shader )
 
 /*
 ================================================================================================
-idRenderProgManager::LoadGLSLProgram
+idRenderProgManagerGL::LoadGLSLProgram
 ================================================================================================
 */
-void idRenderProgManager::LoadGLSLProgram( const int programIndex, const int vertexShaderIndex, const int fragmentShaderIndex )
+void idRenderProgManagerGL::LoadGLSLProgram( const int programIndex, const int vertexShaderIndex, const int fragmentShaderIndex )
 {
-	renderProg_t& prog = renderProgs[programIndex];
+	renderProgGL_t& prog = static_cast<renderProgGL_t&>( *renderProgs[programIndex] );
 
 	if( prog.progId != INVALID_PROGID )
 	{
 		return; // Already loaded
 	}
 
-	//shader_t& vertexShader = shaders[ vertexShaderIndex ];
-	//shader_t& fragmentShader = shaders[ fragmentShaderIndex ];
-
-	GLuint vertexProgID = ( vertexShaderIndex != -1 ) ? shaders[ vertexShaderIndex ].progId : INVALID_PROGID;
-	GLuint fragmentProgID = ( fragmentShaderIndex != -1 ) ? shaders[ fragmentShaderIndex ].progId : INVALID_PROGID;
+	GLuint vertexProgID = ( vertexShaderIndex != -1 ) ? static_cast<shaderGL_t*>( shaders[ vertexShaderIndex ] )->progId : INVALID_PROGID;
+	GLuint fragmentProgID = ( fragmentShaderIndex != -1 ) ? static_cast<shaderGL_t*>( shaders[ fragmentShaderIndex ] )->progId : INVALID_PROGID;
 
 	const GLuint program = glCreateProgram();
 	if( program )
@@ -404,8 +408,8 @@ void idRenderProgManager::LoadGLSLProgram( const int programIndex, const int ver
 			{
 				idLib::Printf( "While linking GLSL program %d with vertexShader %s and fragmentShader %s\n",
 							   programIndex,
-							   ( vertexShaderIndex >= 0 ) ? shaders[vertexShaderIndex].name.c_str() : "<Invalid>",
-							   ( fragmentShaderIndex >= 0 ) ? shaders[ fragmentShaderIndex ].name.c_str() : "<Invalid>" );
+							   ( vertexShaderIndex >= 0 ) ? shaders[vertexShaderIndex]->name.c_str() : "<Invalid>",
+							   ( fragmentShaderIndex >= 0 ) ? shaders[ fragmentShaderIndex ]->name.c_str() : "<Invalid>" );
 				idLib::Printf( "%s\n", infoLog );
 			}
 
@@ -420,29 +424,22 @@ void idRenderProgManager::LoadGLSLProgram( const int programIndex, const int ver
 		glDeleteProgram( program );
 		idLib::Error( "While linking GLSL program %d with vertexShader %s and fragmentShader %s\n",
 					  programIndex,
-					  ( vertexShaderIndex >= 0 ) ? shaders[vertexShaderIndex].name.c_str() : "<Invalid>",
-					  ( fragmentShaderIndex >= 0 ) ? shaders[ fragmentShaderIndex ].name.c_str() : "<Invalid>" );
+					  ( vertexShaderIndex >= 0 ) ? shaders[vertexShaderIndex]->name.c_str() : "<Invalid>",
+					  ( fragmentShaderIndex >= 0 ) ? shaders[ fragmentShaderIndex ]->name.c_str() : "<Invalid>" );
 		return;
 	}
 
-	//shaders[ vertexShaderIndex ].uniformArray = glGetUniformLocation( program, VERTEX_UNIFORM_ARRAY_NAME );
-	//shaders[ fragmentShaderIndex ].uniformArray = glGetUniformLocation( program, FRAGMENT_UNIFORM_ARRAY_NAME );
-
-	if( vertexShaderIndex > -1 && shaders[ vertexShaderIndex ].uniforms.Num() > 0 )
+	if( vertexShaderIndex > -1 && static_cast<shaderGL_t*>( shaders[ vertexShaderIndex ] )->uniforms.Num() > 0 )
 	{
-		shader_t& vertexShader = shaders[ vertexShaderIndex ];
+		shaderGL_t& vertexShader = static_cast<shaderGL_t&>( *shaders[ vertexShaderIndex ] );
 		vertexShader.uniformArray = glGetUniformLocation( program, VERTEX_UNIFORM_ARRAY_NAME );
 	}
 
-	if( fragmentShaderIndex > -1 && shaders[ fragmentShaderIndex ].uniforms.Num() > 0 )
+	if( fragmentShaderIndex > -1 && static_cast<shaderGL_t*>( shaders[ fragmentShaderIndex ] )->uniforms.Num() > 0 )
 	{
-		shader_t& fragmentShader = shaders[ fragmentShaderIndex ];
+		shaderGL_t& fragmentShader = static_cast<shaderGL_t&>( *shaders[ fragmentShaderIndex ] );
 		fragmentShader.uniformArray = glGetUniformLocation( program, FRAGMENT_UNIFORM_ARRAY_NAME );
 	}
-
-	assert( shaders[ vertexShaderIndex ].uniformArray != -1 || vertexShaderIndex > -1 || shaders[vertexShaderIndex].uniforms.Num() == 0 );
-	assert( shaders[ fragmentShaderIndex ].uniformArray != -1 || fragmentShaderIndex > -1 || shaders[fragmentShaderIndex].uniforms.Num() == 0 );
-
 
 	// RB: only load joint uniform buffers if available
 	if( glConfig.gpuSkinningAvailable )
@@ -469,7 +466,7 @@ void idRenderProgManager::LoadGLSLProgram( const int programIndex, const int ver
 		}
 	}
 
-	idStr programName = shaders[ vertexShaderIndex ].name;
+	idStr programName = shaders[ vertexShaderIndex ]->name;
 	programName.StripFileExtension();
 	prog.name = programName;
 	prog.progId = program;
@@ -478,9 +475,10 @@ void idRenderProgManager::LoadGLSLProgram( const int programIndex, const int ver
 
 	// RB: removed idStr::Icmp( name, "heatHaze.vfp" ) == 0  hack
 	// this requires r_useUniformArrays 1
-	for( int i = 0; i < shaders[vertexShaderIndex].uniforms.Num(); i++ )
+	shaderGL_t& vertexShader = static_cast<shaderGL_t&>( *shaders[ vertexShaderIndex ] );
+	for( int i = 0; i < vertexShader.uniforms.Num(); i++ )
 	{
-		if( shaders[vertexShaderIndex].uniforms[i] == RENDERPARM_ENABLE_SKINNING )
+		if( vertexShader.uniforms[i] == RENDERPARM_ENABLE_SKINNING )
 		{
 			prog.usesJoints = true;
 			prog.optionalSkinning = true;
@@ -493,19 +491,19 @@ void idRenderProgManager::LoadGLSLProgram( const int programIndex, const int ver
 
 /*
 ================================================================================================
-idRenderProgManager::CommitUnforms
+idRenderProgManagerGL::CommitUnforms
 ================================================================================================
 */
-void idRenderProgManager::CommitUniforms( uint64 stateBits )
+void idRenderProgManagerGL::CommitUniforms( uint64 stateBits )
 {
 	const int progID = current;
-	const renderProg_t& prog = renderProgs[progID];
+	const renderProg_t& prog = *renderProgs[progID];
 
 	//GL_CheckErrors();
 
 	ALIGNTYPE16 idVec4 localVectors[RENDERPARM_TOTAL];
 
-	auto commitarray = [&]( idVec4( &vectors )[ RENDERPARM_TOTAL ] , shader_t& shader )
+	auto commitarray = [&]( idVec4( &vectors )[ RENDERPARM_TOTAL ] , shaderGL_t& shader )
 	{
 		const int numUniforms = shader.uniforms.Num();
 		if( shader.uniformArray != -1 && numUniforms > 0 )
@@ -535,12 +533,12 @@ void idRenderProgManager::CommitUniforms( uint64 stateBits )
 
 	if( prog.vertexShaderIndex >= 0 )
 	{
-		commitarray( localVectors, shaders[ prog.vertexShaderIndex ] );
+		commitarray( localVectors, static_cast<shaderGL_t&>( *shaders[ prog.vertexShaderIndex ] ) );
 	}
 
 	if( prog.fragmentShaderIndex >= 0 )
 	{
-		commitarray( localVectors, shaders[ prog.fragmentShaderIndex ] );
+		commitarray( localVectors, static_cast<shaderGL_t&>( *shaders[ prog.fragmentShaderIndex ] ) );
 	}
 
 	//GL_CheckErrors();
@@ -548,36 +546,38 @@ void idRenderProgManager::CommitUniforms( uint64 stateBits )
 
 /*
 ================================================================================================
-idRenderProgManager::KillAllShaders()
+idRenderProgManagerGL::KillAllShaders()
 ================================================================================================
 */
-void idRenderProgManager::KillAllShaders()
+void idRenderProgManagerGL::KillAllShaders()
 {
 	Unbind();
 
 	for( int i = 0; i < shaders.Num(); i++ )
 	{
-		if( shaders[i].progId != INVALID_PROGID )
+		shaderGL_t& shader = static_cast<shaderGL_t&>( *shaders[i] );
+		if( shader.progId != INVALID_PROGID )
 		{
-			glDeleteShader( shaders[i].progId );
-			shaders[i].progId = INVALID_PROGID;
+			glDeleteShader( shader.progId );
+			shader.progId = INVALID_PROGID;
 		}
 	}
 
 	for( int i = 0; i < renderProgs.Num(); ++i )
 	{
-		if( renderProgs[i].progId != INVALID_PROGID )
+		renderProgGL_t& prog = static_cast<renderProgGL_t&>( *renderProgs[i] );
+		if( prog.progId != INVALID_PROGID )
 		{
-			glDeleteProgram( renderProgs[i].progId );
-			renderProgs[i].progId = INVALID_PROGID;
+			glDeleteProgram( prog.progId );
+			prog.progId = INVALID_PROGID;
 		}
 	}
 }
 
 /*
-====================
+================================================================================================
 idRenderBackend::ResizeImages
-====================
+================================================================================================
 */
 void idRenderBackend::ResizeImages()
 {

@@ -34,6 +34,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "../tools/imgui/ImGuiTools_local.h"
 #include "renderer/RenderCommon.h"
 #include "renderer/RenderBackend.h"
+#include "renderer/RenderInternal.h"
 
 idCVar imgui_showDemoWindow( "imgui_showDemoWindow", "0", CVAR_GUI | CVAR_BOOL, "show big ImGui demo window" );
 
@@ -902,7 +903,7 @@ void idImGuiSystemLocal::Render()
 		//ImGui::End();
 
 		ImGui::Render();
-		idRenderBackend::ImGui_RenderDrawLists( ImGui::GetDrawData() );
+		ImGui_RenderDrawLists( ImGui::GetDrawData() );
 		haveNewFrame = false;
 	}
 }

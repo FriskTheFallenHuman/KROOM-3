@@ -35,38 +35,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "RenderCommon.h"
 
-
-#if defined(USE_VULKAN)
-
-	extern idUniformBuffer emptyUBO;
-
-	void CreateVertexDescriptions();
-
-	void CreateDescriptorPools( VkDescriptorPool( &pools )[ NUM_FRAME_DATA ] );
-
-#endif
-
-
-idRenderProgManager renderProgManager;
-
-/*
-================================================================================================
-idRenderProgManager::idRenderProgManager()
-================================================================================================
-*/
-idRenderProgManager::idRenderProgManager()
-{
-}
-
-/*
-================================================================================================
-idRenderProgManager::~idRenderProgManager()
-================================================================================================
-*/
-idRenderProgManager::~idRenderProgManager()
-{
-}
-
 /*
 ================================================================================================
 R_ReloadShaders
@@ -80,7 +48,28 @@ static void R_ReloadShaders( const idCmdArgs& args )
 
 /*
 ================================================================================================
-idRenderProgManager::Init()
+idRenderProgManager::idRenderProgManager
+================================================================================================
+*/
+idRenderProgManager::idRenderProgManager()
+{
+	current = -1;
+}
+
+/*
+================================================================================================
+idRenderProgManager::~idRenderProgManager
+================================================================================================
+*/
+idRenderProgManager::~idRenderProgManager()
+{
+	shaders.DeleteContents( true );
+	renderProgs.DeleteContents( true );
+}
+
+/*
+================================================================================================
+idRenderProgManager::Init
 ================================================================================================
 */
 void idRenderProgManager::Init()
@@ -92,6 +81,9 @@ void idRenderProgManager::Init()
 	{
 		builtinShaders[i] = -1;
 	}
+
+	shaders.DeleteContents( true );
+	renderProgs.DeleteContents( true );
 
 	// RB: added checks for GPU skinning
 	struct builtinShaders_t
@@ -230,11 +222,11 @@ void idRenderProgManager::Init()
 
 	for( int i = 0; i < numBuiltins; i++ )
 	{
-		renderProg_t& prog = renderProgs[ i ];
+		renderProg_t* prog = renderProgs[ i ] = CreateRenderProg();
 
-		prog.name = builtins[i].name;
-		prog.builtin = true;
-		prog.vertexLayout = builtins[i].layout;
+		prog->name = builtins[i].name;
+		prog->builtin = true;
+		prog->vertexLayout = builtins[i].layout;
 
 		builtinShaders[builtins[i].index] = i;
 
@@ -276,59 +268,42 @@ void idRenderProgManager::Init()
 
 	if( glConfig.gpuSkinningAvailable )
 	{
-		renderProgs[builtinShaders[BUILTIN_TEXTURE_VERTEXCOLOR_SKINNED]].usesJoints = true;
-		renderProgs[builtinShaders[BUILTIN_TEXTURE_VERTEXCOLOR_SKINNED_SOFT]].usesJoints = true;
-		renderProgs[builtinShaders[BUILTIN_INTERACTION_SKINNED]].usesJoints = true;
-		renderProgs[builtinShaders[BUILTIN_INTERACTION_AMBIENT_SKINNED]].usesJoints = true;
-		renderProgs[builtinShaders[BUILTIN_ENVIRONMENT_SKINNED]].usesJoints = true;
-		renderProgs[builtinShaders[BUILTIN_BUMPY_ENVIRONMENT_SKINNED]].usesJoints = true;
-		renderProgs[builtinShaders[BUILTIN_DEPTH_SKINNED]].usesJoints = true;
-		renderProgs[builtinShaders[BUILTIN_FOG_SKINNED]].usesJoints = true;
+		renderProgs[builtinShaders[BUILTIN_TEXTURE_VERTEXCOLOR_SKINNED]]->usesJoints = true;
+		renderProgs[builtinShaders[BUILTIN_TEXTURE_VERTEXCOLOR_SKINNED_SOFT]]->usesJoints = true;
+		renderProgs[builtinShaders[BUILTIN_INTERACTION_SKINNED]]->usesJoints = true;
+		renderProgs[builtinShaders[BUILTIN_INTERACTION_AMBIENT_SKINNED]]->usesJoints = true;
+		renderProgs[builtinShaders[BUILTIN_ENVIRONMENT_SKINNED]]->usesJoints = true;
+		renderProgs[builtinShaders[BUILTIN_BUMPY_ENVIRONMENT_SKINNED]]->usesJoints = true;
+		renderProgs[builtinShaders[BUILTIN_DEPTH_SKINNED]]->usesJoints = true;
+		renderProgs[builtinShaders[BUILTIN_FOG_SKINNED]]->usesJoints = true;
 		// RB begin
-		renderProgs[builtinShaders[BUILTIN_DEBUG_LIGHTGRID_SKINNED]].usesJoints = true;
-		renderProgs[builtinShaders[BUILTIN_DEBUG_OCTAHEDRON_SKINNED]].usesJoints = true;
-		renderProgs[builtinShaders[BUILTIN_AMBIENT_LIGHTING_SKINNED]].usesJoints = true;
+		renderProgs[builtinShaders[BUILTIN_DEBUG_LIGHTGRID_SKINNED]]->usesJoints = true;
+		renderProgs[builtinShaders[BUILTIN_DEBUG_OCTAHEDRON_SKINNED]]->usesJoints = true;
+		renderProgs[builtinShaders[BUILTIN_AMBIENT_LIGHTING_SKINNED]]->usesJoints = true;
 
-		renderProgs[builtinShaders[BUILTIN_AMBIENT_LIGHTING_IBL_SKINNED]].usesJoints = true;
-		renderProgs[builtinShaders[BUILTIN_AMBIENT_LIGHTING_IBL_PBR_SKINNED]].usesJoints = true;
+		renderProgs[builtinShaders[BUILTIN_AMBIENT_LIGHTING_IBL_SKINNED]]->usesJoints = true;
+		renderProgs[builtinShaders[BUILTIN_AMBIENT_LIGHTING_IBL_PBR_SKINNED]]->usesJoints = true;
 
-		renderProgs[builtinShaders[BUILTIN_AMBIENT_LIGHTGRID_IBL_SKINNED]].usesJoints = true;
-		renderProgs[builtinShaders[BUILTIN_AMBIENT_LIGHTGRID_IBL_PBR_SKINNED]].usesJoints = true;
+		renderProgs[builtinShaders[BUILTIN_AMBIENT_LIGHTGRID_IBL_SKINNED]]->usesJoints = true;
+		renderProgs[builtinShaders[BUILTIN_AMBIENT_LIGHTGRID_IBL_PBR_SKINNED]]->usesJoints = true;
 
-		renderProgs[builtinShaders[BUILTIN_SMALL_GEOMETRY_BUFFER_SKINNED]].usesJoints = true;
-		renderProgs[builtinShaders[BUILTIN_INTERACTION_SHADOW_MAPPING_SPOT_SKINNED]].usesJoints = true;
-		renderProgs[builtinShaders[BUILTIN_INTERACTION_SHADOW_MAPPING_POINT_SKINNED]].usesJoints = true;
-		renderProgs[builtinShaders[BUILTIN_INTERACTION_SHADOW_MAPPING_PARALLEL_SKINNED]].usesJoints = true;
+		renderProgs[builtinShaders[BUILTIN_SMALL_GEOMETRY_BUFFER_SKINNED]]->usesJoints = true;
+		renderProgs[builtinShaders[BUILTIN_INTERACTION_SHADOW_MAPPING_SPOT_SKINNED]]->usesJoints = true;
+		renderProgs[builtinShaders[BUILTIN_INTERACTION_SHADOW_MAPPING_POINT_SKINNED]]->usesJoints = true;
+		renderProgs[builtinShaders[BUILTIN_INTERACTION_SHADOW_MAPPING_PARALLEL_SKINNED]]->usesJoints = true;
 
 		// PBR variants
-		renderProgs[builtinShaders[BUILTIN_PBR_INTERACTION_SKINNED]].usesJoints = true;
-		renderProgs[builtinShaders[BUILTIN_PBR_INTERACTION_AMBIENT_SKINNED]].usesJoints = true;
-		renderProgs[builtinShaders[BUILTIN_PBR_INTERACTION_SHADOW_MAPPING_SPOT_SKINNED]].usesJoints = true;
-		renderProgs[builtinShaders[BUILTIN_PBR_INTERACTION_SHADOW_MAPPING_POINT_SKINNED]].usesJoints = true;
-		renderProgs[builtinShaders[BUILTIN_PBR_INTERACTION_SHADOW_MAPPING_PARALLEL_SKINNED]].usesJoints = true;
+		renderProgs[builtinShaders[BUILTIN_PBR_INTERACTION_SKINNED]]->usesJoints = true;
+		renderProgs[builtinShaders[BUILTIN_PBR_INTERACTION_AMBIENT_SKINNED]]->usesJoints = true;
+		renderProgs[builtinShaders[BUILTIN_PBR_INTERACTION_SHADOW_MAPPING_SPOT_SKINNED]]->usesJoints = true;
+		renderProgs[builtinShaders[BUILTIN_PBR_INTERACTION_SHADOW_MAPPING_POINT_SKINNED]]->usesJoints = true;
+		renderProgs[builtinShaders[BUILTIN_PBR_INTERACTION_SHADOW_MAPPING_PARALLEL_SKINNED]]->usesJoints = true;
 		// RB end
 	}
 
 	cmdSystem->AddCommand( "reloadShaders", R_ReloadShaders, CMD_FL_RENDERER, "reloads shaders" );
 
-#if defined(USE_VULKAN)
-	counter = 0;
-
-	// Create Vertex Descriptions
-	CreateVertexDescriptions();
-
-	// Create Descriptor Pools
-	CreateDescriptorPools( descriptorPools );
-
-	for( int i = 0; i < NUM_FRAME_DATA; ++i )
-	{
-		parmBuffers[ i ] = new idUniformBuffer();
-		parmBuffers[ i ]->AllocBufferObject( NULL, MAX_DESC_SETS * MAX_DESC_SET_UNIFORMS * sizeof( idVec4 ), BU_DYNAMIC );
-	}
-
-	// Placeholder: mainly for optionalSkinning
-	emptyUBO.AllocBufferObject( NULL, sizeof( idVec4 ), BU_DYNAMIC );
-#endif
+	InitBackend();
 }
 
 /*
@@ -340,18 +315,18 @@ void idRenderProgManager::LoadAllShaders()
 {
 	for( int i = 0; i < shaders.Num(); i++ )
 	{
-		LoadShader( i, shaders[i].stage );
+		LoadShader( i, shaders[i]->stage );
 	}
 
 	for( int i = 0; i < renderProgs.Num(); ++i )
 	{
-		if( renderProgs[i].vertexShaderIndex == -1 || renderProgs[i].fragmentShaderIndex == -1 )
+		if( renderProgs[i]->vertexShaderIndex == -1 || renderProgs[i]->fragmentShaderIndex == -1 )
 		{
 			// RB: skip reloading because we didn't load it initially
 			continue;
 		}
 
-		LoadGLSLProgram( i, renderProgs[i].vertexShaderIndex, renderProgs[i].fragmentShaderIndex );
+		LoadGLSLProgram( i, renderProgs[i]->vertexShaderIndex, renderProgs[i]->fragmentShaderIndex );
 	}
 }
 
@@ -365,6 +340,9 @@ idRenderProgManager::Shutdown()
 void idRenderProgManager::Shutdown()
 {
 	KillAllShaders();
+
+	shaders.DeleteContents( true );
+	renderProgs.DeleteContents( true );
 }
 
 /*
@@ -380,35 +358,38 @@ int idRenderProgManager::FindShader( const char* name, rpStage_t stage, const ch
 
 	for( int i = 0; i < shaders.Num(); i++ )
 	{
-		shader_t& shader = shaders[ i ];
-		if( shader.name.Icmp( shaderName.c_str() ) == 0 && shader.stage == stage && shader.nameOutSuffix.Icmp( nameOutSuffix ) == 0 )
+		shader_t* shader = shaders[ i ];
+		if( shader->name.Icmp( shaderName.c_str() ) == 0 && shader->stage == stage && shader->nameOutSuffix.Icmp( nameOutSuffix ) == 0 )
 		{
 			LoadShader( i, stage );
 			return i;
 		}
 	}
 
-	shader_t shader;
-	shader.name = shaderName;
-	shader.nameOutSuffix = nameOutSuffix;
-	shader.shaderFeatures = features;
-	shader.builtin = builtin;
-	shader.stage = stage;
-	shader.vertexLayout = vertexLayout;
+	shader_t* shader = CreateShader();
+	shader->name = shaderName;
+	shader->nameOutSuffix = nameOutSuffix;
+	shader->shaderFeatures = features;
+	shader->builtin = builtin;
+	shader->stage = stage;
+	shader->vertexLayout = vertexLayout;
 
 	int index = shaders.Append( shader );
+
 	LoadShader( index, stage );
 
 	return index;
 }
 
-
-// RB begin
+/*
+================================================================================================
+idRenderProgManager::IsShaderBound
+================================================================================================
+*/
 bool idRenderProgManager::IsShaderBound() const
 {
 	return ( current != -1 );
 }
-// RB end
 
 /*
 ================================================================================================

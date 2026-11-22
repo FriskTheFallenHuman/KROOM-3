@@ -44,50 +44,23 @@ If you have questions concerning this license or the applicable additional terms
 #ifdef _WIN32
 	#include <SDL2/SDL_syswm.h>
 #endif
-#if defined(USE_VULKAN)
-	#include <SDL2/SDL_vulkan.h>
-	#include <vulkan/vulkan.h>
-
-	// SRS - optinally needed for VK_MVK_MOLTENVK_EXTENSION_NAME visibility
-	#if defined(__APPLE__) && defined(USE_MoltenVK)
-		#include <MoltenVK/vk_mvk_moltenvk.h>
-	#endif
-#endif
 
 #include "../renderer/RenderCommon.h"
-#include "../renderer/RenderContext.h"
-#include "DeviceSDL.h"
 #include "DeviceManagerLocal.h"
+#include "DeviceManagerAPI.h"
+
+extern idCVar r_windowWidth;
+extern idCVar r_windowHeight;
+
+static struct deviceWindowState_t
+{
+	SDL_Window*		window = NULL;
+	bool			grabbed = false;
+} sdl;
 
 idDeviceManagerLocal deviceManagerLocal;
 idDeviceManager* deviceManager = &deviceManagerLocal;
 
-#if !defined(USE_VULKAN)
-// RB: FIXME this shit. We need the OpenGL alpha channel for advanced rendering effects
-idCVar SDLVars_t::sdl_waylandcompat( "sdl_waylandcompat", "0", CVAR_SYSTEM | CVAR_NOCHEAT | CVAR_ARCHIVE, "wayland compatible framebuffer" );
-
-/*
-========================
-GLVersionToDriverVersion
-========================
-*/
-static graphicsVersionType_t GLVersionToDriverVersion( int major, int minor )
-{
-	static const graphicsVersionType_t gl4x[] =
-	{
-		GL_OPENGL_40, GL_OPENGL_41, GL_OPENGL_42, GL_OPENGL_43,
-		GL_OPENGL_44, GL_OPENGL_45, GL_OPENGL_46
-	};
-
-	if( major >= 4 )
-	{
-		return gl4x[ idMath::ClampInt( 0, 6, minor ) ];
-	}
-
-	// 3.1 is the minimum, 3.3 the maximum of the 3.x series
-	return ( minor >= 3 ) ? GL_OPENGL_33 : ( ( minor == 2 ) ? GL_OPENGL_32 : GL_OPENGL_31 );
-}
-#endif
 
 /*
 ========================
@@ -102,76 +75,7 @@ void idDeviceManagerLocal::TestSwapBuffers( const idCmdArgs& args )
 		return;
 	}
 
-#if !defined(USE_VULKAN)
-	common->Printf( "idDeviceManagerLocal::TestSwapBuffers\n" );
-	static const int MAX_FRAMES = 5;
-	uint64 timestamps[MAX_FRAMES];
-
-	int oldInterval = SDL_GL_GetSwapInterval();
-
-	// Disable scissor test for consistent timing
-	GLboolean scissorEnabled = glIsEnabled( GL_SCISSOR_TEST );
-	if( scissorEnabled )
-	{
-		glDisable( GL_SCISSOR_TEST );
-	}
-
-	// Test intervals: -1 (adaptive vsync if available), 0 (vsync off), 1 (vsync on), 2 (double vsync)
-	int intervals[] = { -1, 0, 1, 2 };
-	for( int idx = 0; idx < 4; idx++ )
-	{
-		int swapInterval = intervals[idx];
-
-		// Try to set the interval; skip if unsupported
-		if( SDL_GL_SetSwapInterval( swapInterval ) != 0 )
-		{
-			common->Printf( "Swap interval %d not supported: %s\n", swapInterval, SDL_GetError() );
-			continue;
-		}
-
-		// Allow a few frames to settle
-		for( int i = 0; i < MAX_FRAMES; i++ )
-		{
-			if( swapInterval == -1 && i == 0 )
-			{
-				SDL_Delay( 16 );    // ~60 Hz frame time
-			}
-
-			if( i & 1 )
-			{
-				glClearColor( 0, 1, 0, 1 );
-			}
-			else
-			{
-				glClearColor( 1, 0, 0, 1 );
-			}
-
-			glClear( GL_COLOR_BUFFER_BIT );
-			SDL_GL_SwapWindow( sdl.window );
-			glFinish();
-
-			timestamps[i] = SDL_GetPerformanceCounter();
-		}
-
-		common->Printf( "\nswapinterval %i\n", swapInterval );
-		uint64 freq = SDL_GetPerformanceFrequency();
-		for( int i = 1; i < MAX_FRAMES; i++ )
-		{
-			uint64 dt = timestamps[i] - timestamps[i - 1];
-			int microseconds = ( int )( ( dt * 1000000 ) / freq );
-			common->Printf( "%i microseconds\n", microseconds );
-		}
-	}
-
-	SDL_GL_SetSwapInterval( oldInterval );
-
-	if( scissorEnabled )
-	{
-		glEnable( GL_SCISSOR_TEST );
-	}
-#else
-	common->Printf( "Not implemented under vulkan\n" );
-#endif
+	DM_TestSwapBuffers( sdl.window );
 }
 
 /*
@@ -356,70 +260,7 @@ bool idDeviceManagerLocal::Init( vidParms_t parms )
 
 		Uint32 driverFlag = 0; // Unknow, yet to be initialied
 
-#if !defined(USE_VULKAN)
-		SDL_GL_SetAttribute( SDL_GL_RED_SIZE, channelcolorbits );
-		SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE, channelcolorbits );
-		SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE, channelcolorbits );
-		SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
-		SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, tdepthbits );
-		SDL_GL_SetAttribute( SDL_GL_STENCIL_SIZE, tstencilbits );
-
-		if( SDLVars_t::sdl_waylandcompat.GetBool() )
-		{
-			SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE, 0 );
-		}
-		else
-		{
-			SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE, channelcolorbits );
-		}
-
-		SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, parms.multiSamples ? 1 : 0 );
-		SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, parms.multiSamples );
-
-		const int glMajorVersion = r_glVersionMajor.GetInteger();
-		const int glMinorVersion = r_glVersionMinor.GetInteger();
-
-		glConfig.driverVersion = GLVersionToDriverVersion( glMajorVersion, glMinorVersion );
-
-		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, glMajorVersion );
-		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, glMinorVersion );
-
-		int useCoreProfile = r_glProfile.GetInteger();
-		int profileCore = 0;
-
-		if( useCoreProfile == 2 )
-		{
-			glConfig.driverType = GLDRV_OPENGL_CORE_PROFILE;
-			profileCore = SDL_GL_CONTEXT_PROFILE_CORE;
-		}
-		else if( useCoreProfile == 1 )
-		{
-			glConfig.driverType = GLDRV_OPENGL_COMPATIBILITY_PROFILE;
-			profileCore = SDL_GL_CONTEXT_PROFILE_COMPATIBILITY;
-		}
-		else
-		{
-			glConfig.driverType = GLDRV_OPENGL;
-			profileCore = SDL_GL_CONTEXT_PROFILE_COMPATIBILITY; // ES support?
-		}
-
-		// Profiles were introduced with OpenGL 3.2, for older versions the mask is meaningless
-		SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, ( glConfig.driverVersion != GL_OPENGL_31 ) ? profileCore : 0 ); // ES support?
-
-		if( r_debugContext.GetBool() )
-		{
-			SDL_GL_SetAttribute( SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG );
-		}
-
-		driverFlag = SDL_WINDOW_OPENGL;
-#else
-		glConfig.driverType = GLDRV_VULKAN;
-#if defined(__APPLE__)
-		driverFlag = SDL_WINDOW_METAL;
-#else
-		driverFlag = SDL_WINDOW_VULKAN;
-#endif
-#endif
+		driverFlag = DM_PrepareWindow( parms, channelcolorbits, tdepthbits, tstencilbits );
 
 		// DG: set display num for fullscreen
 		Uint32 flags = driverFlag | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
@@ -495,10 +336,6 @@ bool idDeviceManagerLocal::Init( vidParms_t parms )
 		SDL_RaiseWindow( sdl.window );
 #endif
 
-#if !defined(USE_VULKAN)
-		sdl.context = SDL_GL_CreateContext( sdl.window );
-#endif
-
 		if( !sdl.window )
 		{
 			common->DPrintf( "Couldn't set render mode %d/%d/%d: %s",
@@ -506,27 +343,14 @@ bool idDeviceManagerLocal::Init( vidParms_t parms )
 			continue;
 		}
 
-#if !defined(USE_VULKAN)
-		if( !sdl.context )
+		if( !DM_CreateContext( sdl.window ) )
 		{
-			common->Warning( "Couldn't create an OpenGL %d.%d context (profile %d): %s",
-							 glMajorVersion, glMinorVersion, r_glProfile.GetInteger(), SDL_GetError() );
 			SDL_DestroyWindow( sdl.window );
 			sdl.window = NULL;
 			continue;
 		}
 
-		if( SDL_GL_SetSwapInterval( r_swapInterval.GetInteger() ) < 0 )
-		{
-			common->Warning( "SDL_GL_SetSwapInterval(%d) failed: %s", r_swapInterval.GetInteger(), SDL_GetError() );
-		}
-#endif
-
 		SetWindowsIcon( sdl.window );
-
-#if defined(USE_VULKAN)
-		vkcontext.sdlWindow = sdl.window;
-#endif
 
 		// RB begin
 		SDL_GetWindowSize( sdl.window, &glConfig.nativeScreenWidth, &glConfig.nativeScreenHeight );
@@ -562,29 +386,7 @@ bool idDeviceManagerLocal::Init( vidParms_t parms )
 		return false;
 	}
 
-#if !defined(USE_VULKAN)
-	int gladResult = gladLoadGL( ( GLADloadfunc )SDL_GL_GetProcAddress );
-	if( !gladResult )
-	{
-		// gladLoadGL failed, something is seriously wrong
-		common->FatalError( "^3GLimp_Init() - GLAD could not load OpenGL subsystem" );
-	}
-	else
-	{
-		common->Printf( "Using GLAD %d.%d\n", GLAD_VERSION_MAJOR( gladResult ), GLAD_VERSION_MINOR( gladResult ) );
-	}
-
-	int originalInterval = SDL_GL_GetSwapInterval();
-	if( SDL_GL_SetSwapInterval( -1 ) == 0 )
-	{
-		glConfig.swapControlTearAvailable = true;
-		SDL_GL_SetSwapInterval( originalInterval );
-	}
-	else
-	{
-		glConfig.swapControlTearAvailable = false;
-	}
-#endif
+	DM_FinishInit( sdl.window );
 
 #if defined(__APPLE__)
 	// SRS - On OSX enable SDL2 relative mouse mode warping to capture mouse properly if outside of window
@@ -596,8 +398,6 @@ bool idDeviceManagerLocal::Init( vidParms_t parms )
 	// DG end
 
 	SaveGamma();
-
-	rRenderContext.InitContext( sdl.window, sdl.context );
 
 	return true;
 }
@@ -977,10 +777,7 @@ bool idDeviceManagerLocal::SetScreenParms( vidParms_t parms )
 	glConfig.displayFrequency = parms.displayHz;
 	glConfig.multisamples = parms.multiSamples;
 
-#if !defined(USE_VULKAN)
-	SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, parms.multiSamples ? 1 : 0 );
-	SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, parms.multiSamples );
-#endif
+	DM_SetMultisamples( parms.multiSamples );
 
 	// Re-applies our icon windows icon
 	SetWindowsIcon( sdl.window );
@@ -995,11 +792,7 @@ idDeviceManagerLocal::Shutdown
 */
 void idDeviceManagerLocal::Shutdown( bool shutdownSDL )
 {
-#if !defined(USE_VULKAN)
-	common->Printf( "Shutting down OpenGL subsystem\n" );
-#else
-	common->Printf( "Shutting down Vulkan subsystem\n" );
-#endif
+	common->Printf( "Shutting down %s subsystem\n", DM_APIName() );
 
 	RestoreGamma();
 
@@ -1009,13 +802,7 @@ void idDeviceManagerLocal::Shutdown( bool shutdownSDL )
 		SDL_Delay( 100 );
 	}
 
-#if !defined(USE_VULKAN)
-	if( sdl.context )
-	{
-		SDL_GL_DeleteContext( sdl.context );
-		sdl.context = NULL;
-	}
-#endif
+	DM_DestroyContext();
 
 	if( sdl.window )
 	{
@@ -1023,12 +810,7 @@ void idDeviceManagerLocal::Shutdown( bool shutdownSDL )
 		sdl.window = NULL;
 	}
 
-#if defined(USE_VULKAN)
-	if( shutdownSDL && SDL_WasInit( 0 ) )
-	{
-		SDL_Quit();
-	}
-#endif
+	DM_ShutdownSDL( shutdownSDL );
 }
 
 /*
@@ -1038,24 +820,46 @@ idDeviceManagerLocal::SwapBuffers
 */
 void idDeviceManagerLocal::SwapBuffers()
 {
-#if !defined(USE_VULKAN)
-	if( r_swapInterval.IsModified() )
+	DM_SwapBuffers( sdl.window );
+}
+
+/*
+===================
+idDeviceManagerLocal::GetWindow
+===================
+*/
+void* idDeviceManagerLocal::GetWindow()
+{
+	return sdl.window;
+}
+
+/*
+===================
+idDeviceManagerLocal::IsFullscreen
+===================
+*/
+bool idDeviceManagerLocal::IsFullscreen()
+{
+	return glConfig.isFullscreen > 0;
+}
+
+/*
+===================
+idDeviceManagerLocal::NotifyWindowResized
+
+Called by the executable's event pump when SDL reports a resize.
+===================
+*/
+void idDeviceManagerLocal::NotifyWindowResized( int width, int height )
+{
+	glConfig.nativeScreenWidth = width;
+	glConfig.nativeScreenHeight = height;
+
+	if( glConfig.isFullscreen <= 0 )
 	{
-		r_swapInterval.ClearModified();
-
-		int interval = r_swapInterval.GetInteger();
-		if( interval == 1 && glConfig.swapControlTearAvailable )
-		{
-			interval = -1;
-		}
-		if( SDL_GL_SetSwapInterval( interval ) < 0 )
-		{
-			common->Warning( "Failed to set swap interval %d: %s", interval, SDL_GetError() );
-		}
+		r_windowWidth.SetInteger( width );
+		r_windowHeight.SetInteger( height );
 	}
-
-	SDL_GL_SwapWindow( sdl.window );
-#endif
 }
 
 /*
@@ -1077,7 +881,7 @@ void idDeviceManagerLocal::GrabInput( int flags )
 		sdl.grabbed = grab;
 	}
 
-	if( SDLVars_t::in_nograb.GetBool() )
+	if( cvarSystem->GetCVarBool( "in_nograb" ) )
 	{
 		grab = false;
 	}
@@ -1180,33 +984,3 @@ bool idDeviceManagerLocal::SetTitleIcon( const char* OSPath )
 	SDL_FreeSurface( icon );
 	return true;
 }
-
-#if defined(USE_VULKAN)
-// Eric: Integrate this into RBDoom3BFG's source code ecosystem.
-// Helper function for using SDL2 and Vulkan on Linux.
-
-/*
-========================
-idDeviceManagerLocal::GetRequiredExtensions
-========================
-*/
-std::vector<const char*> idDeviceManagerLocal::GetRequiredExtensions()
-{
-	uint32_t sdlCount = 0;
-	std::vector<const char*> sdlInstanceExtensions = {};
-
-	SDL_Vulkan_GetInstanceExtensions( nullptr, &sdlCount, nullptr );
-	sdlInstanceExtensions.resize( sdlCount );
-	SDL_Vulkan_GetInstanceExtensions( nullptr, &sdlCount, sdlInstanceExtensions.data() );
-
-	// SRS - needed for MoltenVK portability implementation and optionally for MoltenVK configuration on OSX
-#if defined(__APPLE__)
-	sdlInstanceExtensions.push_back( VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME );
-#if defined(USE_MoltenVK)
-	sdlInstanceExtensions.push_back( VK_MVK_MOLTENVK_EXTENSION_NAME );
-#endif
-#endif
-
-	return sdlInstanceExtensions;
-}
-#endif

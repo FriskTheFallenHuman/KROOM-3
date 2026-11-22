@@ -53,7 +53,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "../sys_local.h"
 #include "DeviceConsole.h"
 #include "DeviceSDL.h"
-#include "DeviceManagerLocal.h"
 
 namespace fs = std::filesystem;
 
@@ -91,15 +90,11 @@ void Sys_Error( const char* error, ... )
 
 	if( deviceManager )
 	{
-		idDeviceManagerLocal* device = dynamic_cast<idDeviceManagerLocal*>( deviceManager );
-		if( device )
-		{
-			device->GrabInput( GRAB_SETSTATE );
-		}
+		deviceManager->GrabInput( GRAB_SETSTATE );
 	}
 
 	SDL_ShowCursor( SDL_ENABLE );
-	//SDL_HideWindow( sdl.window );
+	//SDL_HideWindow( ( SDL_Window* )deviceManager->GetWindow() );
 	SDL_SetRelativeMouseMode( SDL_FALSE );
 
 	Sys_ShowConsole( 1, true );
@@ -269,11 +264,11 @@ void Sys_ShowWindow( bool show )
 {
 	if( show )
 	{
-		SDL_ShowWindow( sdl.window );
+		SDL_ShowWindow( ( SDL_Window* )deviceManager->GetWindow() );
 	}
 	else
 	{
-		SDL_HideWindow( sdl.window );
+		SDL_HideWindow( ( SDL_Window* )deviceManager->GetWindow() );
 	}
 }
 
@@ -284,7 +279,7 @@ Sys_IsWindowVisible
 */
 bool Sys_IsWindowVisible()
 {
-	Uint32 flags = SDL_GetWindowFlags( sdl.window );
+	Uint32 flags = SDL_GetWindowFlags( ( SDL_Window* )deviceManager->GetWindow() );
 	return ( flags & SDL_WINDOW_SHOWN ) != 0;
 }
 

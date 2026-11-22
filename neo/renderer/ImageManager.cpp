@@ -287,7 +287,7 @@ idImage* idImageManager::AllocImage( const char* name )
 
 	int hash = idStr( name ).FileNameHash();
 
-	idImage* image = new( TAG_IMAGE ) idImage( name );
+	idImage* image = idImage::Create( name );
 
 	imageHash.Add( hash, images.Append( image ) );
 
@@ -309,7 +309,7 @@ idImage* idImageManager::AllocStandaloneImage( const char* name )
 		common->Error( "idImageManager::AllocImage: \"%s\" is too long\n", name );
 	}
 
-	idImage* image = new( TAG_IMAGE ) idImage( name );
+	idImage* image = idImage::Create( name );
 
 	return image;
 }
