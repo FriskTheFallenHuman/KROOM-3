@@ -831,7 +831,11 @@ void idConsoleLocal::Dump( const char* fileName )
 			plain.Append( static_cast<char>( line[i] & 0xff ) );
 		}
 		plain.StripTrailingWhitespace();
-		f->Printf( "%s\r\n", plain.c_str() );
+		if( lineNumber == current && plain.IsEmpty() )
+		{
+			continue;
+		}
+		f->Printf( "%s\n", plain.c_str() );
 	}
 	fileSystem->CloseFile( f );
 }
