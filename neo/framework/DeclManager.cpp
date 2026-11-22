@@ -266,6 +266,7 @@ private:
 };
 
 idCVar idDeclManagerLocal::decl_show( "decl_show", "0", CVAR_SYSTEM, "set to 1 to print parses, 2 to also print references", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2> );
+static idCVar decl_warn_duplicates( "decl_warn_duplicates", "0", CVAR_SYSTEM | CVAR_NOCHEAT | CVAR_ARCHIVE, "display warnings about duplicate decl entries" );
 
 idDeclManagerLocal	declManagerLocal;
 idDeclManager* 		declManager = &declManagerLocal;
@@ -805,8 +806,11 @@ int idDeclFile::LoadAndParse()
 			// update the existing copy
 			if( newDecl->sourceFile != this || newDecl->redefinedInReload )
 			{
-				src.Warning( "%s '%s' previously defined at %s:%i", declManagerLocal.GetDeclNameFromType( identifiedType ),
-							 name.c_str(), newDecl->sourceFile->fileName.c_str(), newDecl->sourceLine );
+				if( decl_warn_duplicates.GetBool() )
+				{
+					src.Warning( "%s '%s' previously defined at %s:%i", declManagerLocal.GetDeclNameFromType( identifiedType ),
+								 name.c_str(), newDecl->sourceFile->fileName.c_str(), newDecl->sourceLine );
+				}
 				continue;
 			}
 			if( newDecl->declState != DS_UNPARSED )
