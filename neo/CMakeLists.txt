@@ -499,6 +499,11 @@ find_or_fetch(libbinkdec
 	GIT_REPOSITORY https://github.com/FriskTheFallenHuman/libbinkdec.git
 	GIT_TAG v1.0.0-hotfix
 	GIT_SHALLOW TRUE)
+
+if(TARGET binkdec_static)
+	set_target_properties(binkdec_static PROPERTIES POSITION_INDEPENDENT_CODE ON)
+endif()
+
 list(APPEND sys_thirdparty_dependencies ${BINKDEC_TARGET})
 list(APPEND sys_thirdparty ${BINKDEC_TARGET})
 
