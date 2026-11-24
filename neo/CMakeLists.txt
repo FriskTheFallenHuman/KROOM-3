@@ -440,11 +440,15 @@ if(USE_INTRINSICS_SSE)
 	find_or_fetch(MaskedOcclusionCulling
 		GIT_REPOSITORY https://github.com/FriskTheFallenHuman/MaskedOcclusionCulling.git
 		GIT_TAG v1.0.1)
-	if(NOT MSVC AND TARGET MaskedOcclusionCulling)
-		target_compile_options(MaskedOcclusionCulling PRIVATE -mxsave)
-		if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-			target_compile_options(MaskedOcclusionCulling PRIVATE "SHELL:-include cpuid.h"
-				"-D__cpuidex(r,l,s)=__cpuid_count(l,s,(r)[0],(r)[1],(r)[2],(r)[3])")
+	if(TARGET MaskedOcclusionCulling)
+		if(MSVC)
+			set_source_files_properties(${MaskedOcclusionCulling_SOURCE_DIR}/MaskedOcclusionCulling.cpp PROPERTIES COMPILE_OPTIONS "/arch:SSE2")
+		else()
+			target_compile_options(MaskedOcclusionCulling PRIVATE -mxsave)
+			if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+				target_compile_options(MaskedOcclusionCulling PRIVATE "SHELL:-include cpuid.h"
+					"-D__cpuidex(r,l,s)=__cpuid_count(l,s,(r)[0],(r)[1],(r)[2],(r)[3])")
+			endif()
 		endif()
 	endif()
 	list(APPEND sys_thirdparty_dependencies MaskedOcclusionCulling)
